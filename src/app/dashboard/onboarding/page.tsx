@@ -1,6 +1,7 @@
 
 import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button'; // Added Button import
 import { Rocket, Users } from 'lucide-react';
 import Link from 'next/link';
 
@@ -42,3 +43,6 @@ export default function OnboardingPage() {
           </div>
         </CardContent>
       </Card>
+    </div>
+  );
+}

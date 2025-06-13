@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronDown, Home, Users } from 'lucide-react';
+import { Home, Users } from 'lucide-react'; // ChevronDown was unused
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading } = useFamily();
@@ -38,3 +38,11 @@ export function FamilyContextSwitcher() {
           <SelectItem key={context.id} value={context.id}>
             <div className="flex items-center gap-2">
               {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+              <span>{context.name}</span>
+            </div>
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+}

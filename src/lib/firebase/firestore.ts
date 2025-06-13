@@ -11,11 +11,12 @@ import {
   where,
   serverTimestamp,
   Timestamp,
-  writeBatch
+  writeBatch,
+  setDoc // Added setDoc for consistency
 } from 'firebase/firestore';
-import { db, auth } from './config';
+import { db } from './config'; // auth was unused here
 import type { ChildProfile, Family, FamilyMembership, Task, Reward, Dream, UserProfile } from '@/lib/types';
-import { v4 as uuidv4 } from 'uuid'; // For generating unique IDs if needed client-side. Firebase auto-IDs are preferred.
+// import { v4 as uuidv4 } from 'uuid'; // Firebase auto-IDs are preferred
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -68,7 +69,6 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   };
   await setDoc(newFamilyRef, newFamily);
   
-  // Automatically add the owner as a family member (AdminMaster role)
   const newMembershipRef = doc(collection(db, 'familyMemberships'));
   const ownerMembership: FamilyMembership = {
     id: newMembershipRef.id,
@@ -88,12 +88,11 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
 
   if (familySnapshot.empty) {
     console.error('Invalid invite code');
-    return null; // Or throw error
+    return null; 
   }
   const familyDoc = familySnapshot.docs[0];
   const family = { id: familyDoc.id, ...familyDoc.data() } as Family;
 
-  // Check if user is already a member
   const existingMembershipQuery = query(collection(db, 'familyMemberships'), 
     where('familyId', '==', family.id),
     where('userId', '==', userId)
@@ -114,13 +113,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   };
   await setDoc(newMembershipRef, newMembership);
 
-  // Add familyId to children owned by the joining user IF they are the owner of the family being joined (edge case)
-  // Or if a policy allows collaborators to add their children to a family (more complex)
-  // For now, only update children if the joining user is also the family owner (which means they created it, handled in createFamily)
-  // This part needs careful consideration of permissions and data structure.
-  // If children are to be associated with the family, update their familyId field.
-  // Example: If joining user wants their children to be part of this family
-  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null)); // only update children not already in a family
+  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null)); 
   const childrenSnapshot = await getDocs(childrenToUpdateQuery);
   const batch = writeBatch(db);
   childrenSnapshot.forEach(childDoc => {
@@ -157,14 +150,12 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompl
   return newTask;
 };
 
-// Add similar functions for getTasks, updateTask, deleteTask
-// And for Rewards and Dreams
-
-// Helper to find a child by access code (used by backend function ideally)
 export const findChildByAccessCode = async (accessCode: string): Promise<ChildProfile | null> => {
   const q = query(collection(db, 'children'), where('accessCode', '==', accessCode));
   const querySnapshot = await getDocs(q);
   if (querySnapshot.empty) {
     return null;
   }
-  
+  const childDoc = querySnapshot.docs[0];
+  return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
+};
