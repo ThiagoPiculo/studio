@@ -177,7 +177,7 @@ export default function ManageChildPage() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle>Visão Geral de {child.name}</CardTitle>
-                <CardDescription>Resumo das atividades e progresso do seu Mini Heroi.</CardDescription>
+                <CardDescription>Resumo das atividades e progresso.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p>Aqui você verá um resumo das atividades recentes, tarefas pendentes e recompensas disponíveis para {child.name}.</p>
