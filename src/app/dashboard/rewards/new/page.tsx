@@ -232,12 +232,12 @@ export default function CreateRewardPage() {
                 control={form.control}
                 name="isMaterial"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30">
+                  <FormItem className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-4 shadow-sm bg-muted/30">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={form.getValues('category') === 'material'} // Desabilita se categoria já é material
+                        disabled={form.getValues('category') === 'material'}
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
