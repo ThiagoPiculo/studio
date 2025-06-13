@@ -21,7 +21,10 @@ import { findChildByAccessCode } from "@/lib/firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 
 const childLoginSchema = z.object({
-  accessCode: z.string().length(6, { message: "O código mágico deve ter 6 números." }).regex(/^\d{6}$/, { message: "O código mágico deve ser apenas números."}),
+  accessCode: z
+    .string()
+    .length(6, { message: "Hmm, sua Chave Secreta tem que ter 6 números. Conte direitinho e tente de novo, herói!" })
+    .regex(/^\d{6}$/, { message: "Opa! A Chave Secreta só usa números, como 1, 2, 3... Tente digitar só os números mágicos!" }),
 });
 
 type ChildLoginFormValues = z.infer<typeof childLoginSchema>;
