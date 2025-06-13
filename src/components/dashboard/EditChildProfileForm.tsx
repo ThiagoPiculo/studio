@@ -14,6 +14,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
 import { updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile } from "@/lib/types";
@@ -23,6 +24,9 @@ import { Loader2, Save } from "lucide-react";
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
   age: z.coerce.number().min(0, { message: "A idade não pode ser negativa." }).max(18, { message: "A idade deve ser 18 ou menos." }),
+  gender: z.enum(['boy', 'girl', 'not-informed'], {
+    required_error: "Por favor, selecione o gênero.",
+  }),
   // avatar: z.string().url({ message: "Por favor, insira uma URL válida para o avatar." }).optional().or(z.literal("")),
 });
 
@@ -42,6 +46,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     defaultValues: {
       name: child.name || "",
       age: child.age || 0,
+      gender: child.gender || "not-informed",
       // avatar: child.avatar || "",
     },
   });
@@ -50,6 +55,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     form.reset({
       name: child.name || "",
       age: child.age || 0,
+      gender: child.gender || "not-informed",
       // avatar: child.avatar || "",
     });
   }, [child, form]);
@@ -60,6 +66,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       const updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'updatedAt'>> = {
         name: data.name,
         age: data.age,
+        gender: data.gender,
         // avatar: data.avatar,
       };
       await updateChildProfile(child.id, updates);
@@ -104,6 +111,42 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
               <FormLabel>Idade</FormLabel>
               <FormControl>
                 <Input type="number" placeholder="Idade" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Gênero</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value} // Use value aqui para controle
+                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
+                >
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="boy" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Menino</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="girl" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Menina</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="not-informed" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                  </FormItem>
+                </RadioGroup>
               </FormControl>
               <FormMessage />
             </FormItem>
