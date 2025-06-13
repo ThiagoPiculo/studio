@@ -17,81 +17,93 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isChildAuthenticated, setIsChildAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const [profileUnsubscribe, setProfileUnsubscribe] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: User | null) => {
+    setLoading(true);
+    const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+        setProfileUnsubscribe(null);
+      }
+
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDocSnap = await getDoc(userDocRef);
-
-        if (userDocSnap.exists()) {
-          const userProfileData = userDocSnap.data() as UserProfile;
-          setUser(userProfileData);
-          setIsChildAuthenticated(false);
-          setChildProfile(null);
-          
-          const unsubProfile = onSnapshot(userDocRef, (doc) => {
-            setUser(doc.data() as UserProfile);
-          });
-          return () => unsubProfile();
-
-        } else {
-          if (firebaseUser.providerData.some(p => p.providerId === GoogleAuthProvider.PROVIDER_ID) && !userDocSnap.exists()) {
-            const newUserProfile: UserProfile = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: firebaseUser.displayName,
-              createdAt: serverTimestamp() as any, 
-            };
-            await setDoc(userDocRef, newUserProfile);
-            setUser(newUserProfile);
+        const newProfileUnsubscribe = onSnapshot(userDocRef,
+          async (docSnap) => { // Make this async to handle profile creation
+            if (docSnap.exists()) {
+              setUser(docSnap.data() as UserProfile);
+              setLoading(false);
+            } else {
+              // Profile doesn't exist. Check if it's a Google sign-in to create one.
+              if (firebaseUser.providerData.some(p => p.providerId === GoogleAuthProvider.PROVIDER_ID)) {
+                const newUserProfile: UserProfile = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email,
+                  name: firebaseUser.displayName,
+                  createdAt: serverTimestamp() as any,
+                };
+                try {
+                  await setDoc(userDocRef, newUserProfile);
+                  setUser(newUserProfile);
+                } catch (e) {
+                  console.error("Failed to create profile for Google user", e);
+                  setUser(null);
+                } finally {
+                  setLoading(false);
+                }
+              } else {
+                // For email/password, if doc doesn't exist, user is effectively not fully logged in for app purposes
+                setUser(null);
+                setLoading(false);
+              }
+            }
+          },
+          (error) => {
+            console.error("Error listening to user profile:", error);
+            setUser(null);
+            setLoading(false);
           }
-        }
+        );
+        setProfileUnsubscribe(() => newProfileUnsubscribe);
+        setIsChildAuthenticated(false);
+        setChildProfile(null);
       } else {
+        // No Firebase user
         setUser(null);
         setChildProfile(null);
         setIsChildAuthenticated(false);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      authUnsubscribe();
+      if (profileUnsubscribe) {
+        profileUnsubscribe();
+      }
+    };
+  // Deliberately empty dependency array to run only on mount and unmount
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loginWithGoogle = async () => {
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const firebaseUser = result.user;
-      const userDocRef = doc(db, 'users', firebaseUser.uid);
-      const userDocSnap = await getDoc(userDocRef);
-
-      if (!userDocSnap.exists()) {
-        const newUserProfile: UserProfile = {
-          uid: firebaseUser.uid,
-          email: firebaseUser.email,
-          name: firebaseUser.displayName,
-          createdAt: serverTimestamp() as any,
-        };
-        await setDoc(userDocRef, newUserProfile);
-        setUser(newUserProfile);
-      } else {
-         setUser(userDocSnap.data() as UserProfile);
-      }
-      setIsChildAuthenticated(false);
-      setChildProfile(null);
-      router.push('/dashboard');
+      // onAuthStateChanged will handle setting user and loading state
+      // router.push('/dashboard'); // Let onAuthStateChanged and page logic handle redirects
     } catch (error) {
       console.error("Error during Google sign-in:", error);
+      setLoading(false); // Ensure loading is false on error
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-      setUser(null);
-      setChildProfile(null);
-      setIsChildAuthenticated(false);
+      // onAuthStateChanged will handle setting user to null and loading to false
       router.push('/auth/login');
     } catch (error) {
       console.error("Error signing out:", error);
@@ -99,6 +111,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const setChildAuthenticatedState = (profile: ChildProfile) => {
+    if (profileUnsubscribe) {
+      profileUnsubscribe(); // Unsubscribe from any admin profile listener
+      setProfileUnsubscribe(null);
+    }
     setChildProfile(profile);
     setUser(null); 
     setIsChildAuthenticated(true);
