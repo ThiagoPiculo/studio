@@ -1,10 +1,11 @@
+
 "use client";
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { UserNav } from './UserNav';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
-import { Rocket, Users, ListChecks, ShieldCheck, LogIn } from 'lucide-react'; // Added ShieldCheck, LogIn
+import { Rocket, Users, ListChecks, ShieldCheck, LogIn } from 'lucide-react';
 
 export function Header() {
   const { user, loading, isChildAuthenticated } = useAuth();
@@ -20,15 +21,15 @@ export function Header() {
         <nav className="flex items-center space-x-4">
           {loading ? null : user ? (
             <>
-              <Link href="/dashboard" legacyBehavior passHref>
+              <Link href="/dashboard">
                 <Button variant="ghost" className="text-foreground hover:bg-accent/10">Dashboard</Button>
               </Link>
-              <Link href="/dashboard/family" legacyBehavior passHref>
+              <Link href="/dashboard/family">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
                   <Users className="h-4 w-4" /> Family
                 </Button>
               </Link>
-              <Link href="/dashboard/tasks" legacyBehavior passHref>
+              <Link href="/dashboard/tasks">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
                   <ListChecks className="h-4 w-4" /> Tasks
                 </Button>
@@ -43,12 +44,12 @@ export function Header() {
             </>
           ) : (
             <>
-              <Link href="/auth/login" legacyBehavior passHref>
+              <Link href="/auth/login">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
                   <LogIn className="h-4 w-4" /> Admin Login
                 </Button>
               </Link>
-              <Link href="/child-login" legacyBehavior passHref>
+              <Link href="/child-login">
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
                   <ShieldCheck className="h-4 w-4 mr-2" /> Child Access
                 </Button>

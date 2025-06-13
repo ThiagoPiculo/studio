@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -61,7 +62,7 @@ export default function DashboardPage() {
       <section>
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-headline">Your MiniHeroes</h2>
-          <Link href="/dashboard/onboarding" passHref legacyBehavior>
+          <Link href="/dashboard/onboarding">
             <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Child</Button>
           </Link>
         </div>
@@ -73,7 +74,7 @@ export default function DashboardPage() {
               <Smile className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">No MiniHeroes Yet!</h3>
               <p className="text-muted-foreground mb-4">It looks a bit empty here. Start by adding your first child.</p>
-              <Link href="/dashboard/onboarding" passHref legacyBehavior>
+              <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
                   <PlusCircle className="mr-2 h-5 w-5" /> Add Your First Hero
                 </Button>
@@ -103,7 +104,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-muted-foreground">Level: {child.level}</p>
                   <p className="text-lg font-bold text-accent">{child.stars} Stars <Star className="inline h-5 w-5 fill-accent" /></p>
                   <p className="text-sm text-muted-foreground">XP: {child.xp}</p>
-                  <Link href={`/dashboard/child/${child.id}/manage`} passHref legacyBehavior>
+                  <Link href={`/dashboard/child/${child.id}/manage`}>
                     <Button className="w-full mt-4">Manage {child.name}</Button>
                   </Link>
                 </CardContent>
@@ -119,9 +120,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2"><CheckSquare className="text-primary"/> Quick Actions</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/dashboard/tasks/new" passHref legacyBehavior><Button variant="outline" className="w-full justify-start">Assign a New Task</Button></Link>
-            <Link href="/dashboard/rewards/new" passHref legacyBehavior><Button variant="outline" className="w-full justify-start">Create a Reward</Button></Link>
-            <Link href="/dashboard/family" passHref legacyBehavior><Button variant="outline" className="w-full justify-start">Manage Family & Collaborators</Button></Link>
+            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start">Assign a New Task</Button></Link>
+            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start">Create a Reward</Button></Link>
+            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start">Manage Family & Collaborators</Button></Link>
           </CardContent>
         </Card>
         <Card>
@@ -130,7 +131,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-3">Need inspiration? Use our AI Task Suggester!</p>
-            <Link href="/dashboard/tasks" passHref legacyBehavior>
+            <Link href="/dashboard/tasks">
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
                 <Sun className="mr-2 h-4 w-4"/> Get Task Suggestions
               </Button>

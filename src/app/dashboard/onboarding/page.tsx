@@ -1,7 +1,7 @@
 
 import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button'; // Added Button import
+import { Button } from '@/components/ui/button';
 import { Rocket, Users } from 'lucide-react';
 import Link from 'next/link';
 
@@ -26,12 +26,12 @@ export default function OnboardingPage() {
               Want to manage habits with another parent or guardian? You can set up or join a family group.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/dashboard/family?action=create" passHref legacyBehavior>
+                <Link href="/dashboard/family?action=create">
                     <Button variant="outline" className="w-full sm:w-auto">
                         <Users className="mr-2 h-4 w-4" /> Create a Family
                     </Button>
                 </Link>
-                <Link href="/dashboard/family?action=join" passHref legacyBehavior>
+                <Link href="/dashboard/family?action=join">
                     <Button variant="outline" className="w-full sm:w-auto">
                         <Users className="mr-2 h-4 w-4" /> Join a Family
                     </Button>

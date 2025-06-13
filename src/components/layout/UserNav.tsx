@@ -24,10 +24,10 @@ export function UserNav() {
 
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
   const displayEmail = isChildAuthenticated ? `Access Code: ${childProfile?.accessCode}` : user?.email;
-  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; // Assuming child might have an avatar
+  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; 
 
   const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; // MiniHeroes
+    if (!name) return "MH"; 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
@@ -57,7 +57,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {!isChildAuthenticated && user && (
-            <Link href="/dashboard/profile" passHref legacyBehavior>
+            <Link href="/dashboard/profile">
               <DropdownMenuItem className="cursor-pointer">
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>Profile</span>
@@ -65,7 +65,7 @@ export function UserNav() {
             </Link>
           )}
            {isChildAuthenticated && childProfile && (
-             <Link href={`/dashboard/child/${childProfile.id}`} passHref legacyBehavior>
+             <Link href={`/dashboard/child/${childProfile.id}`}>
               <DropdownMenuItem className="cursor-pointer">
                 <Rocket className="mr-2 h-4 w-4" />
                 <span>My Hero Page</span>
