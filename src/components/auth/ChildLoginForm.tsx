@@ -78,7 +78,7 @@ export function ChildLoginForm() {
           name="accessCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-lg font-semibold text-center block mb-2">Sua Chave Secreta de Herói (são 6 números!)</FormLabel>
+              <FormLabel className="text-lg font-semibold text-center block mb-2">Digite seu código de acesso (sua Chave Secreta de 6 números)</FormLabel>
               <FormControl>
                 <Input
                   placeholder="1 2 3 4 5 6"

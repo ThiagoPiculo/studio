@@ -14,7 +14,7 @@ export default function ChildLoginPage() {
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Heroi!</CardTitle>
           <CardDescription className="text-primary-foreground/90 text-base mt-1">
-            Use sua Chave Secreta (são 6 números!) para destravar suas missões!
+            Seu <strong>código de acesso</strong> é sua <strong>Chave Secreta de Herói</strong>! São 6 números mágicos para destravar suas missões e aventuras!
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
@@ -41,7 +41,7 @@ export default function ChildLoginPage() {
           </p>
           <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">
             <HelpCircle className="mr-2 h-4 w-4 text-primary" />
-            <span>Não sabe sua Chave Secreta? Peça ajuda a um adulto!</span>
+            <span>Não sabe seu <strong>código de acesso</strong> (sua Chave Secreta)? Peça ajuda a um adulto!</span>
           </div>
         </CardContent>
       </Card>
