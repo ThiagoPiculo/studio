@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { addReward } from '@/lib/firebase/firestore';
 import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
-import type { ChildProfile, RewardCategory } from '@/lib/types';
+import type { ChildProfile, RewardCategory, Reward } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; // Importando as categorias
 import { Loader2, Gift, PlusCircle, ArrowLeft } from 'lucide-react';
 
@@ -50,6 +50,7 @@ export default function CreateRewardPage() {
       childId: '',
       title: '',
       description: '',
+      category: undefined, // Explicitly undefined, or pick a default like rewardCategories[0].id
       starsCost: 10,
       isMaterial: false,
     },
@@ -95,17 +96,26 @@ export default function CreateRewardPage() {
     }
     setIsLoading(true);
     try {
-      const rewardData = {
-        ...values,
+      const rewardDataPayload: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'familyId'> & { familyId?: string } = {
+        childId: values.childId,
         ownerId: user.uid,
-        familyId: currentContext !== 'my-space' ? currentContext : undefined,
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        starsCost: values.starsCost,
+        isMaterial: values.isMaterial,
       };
-      await addReward(rewardData);
+
+      if (currentContext !== 'my-space') {
+        rewardDataPayload.familyId = currentContext;
+      }
+      
+      await addReward(rewardDataPayload as Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt'>);
       toast({
         title: 'Recompensa Criada!',
         description: `A recompensa "${values.title}" foi adicionada com sucesso.`,
       });
-      router.push('/dashboard/rewards');
+      router.push('/dashboard/rewards'); // Ou para a página do filho específico se aplicável
     } catch (error) {
       console.error('Error creating reward:', error);
       toast({
@@ -216,9 +226,11 @@ export default function CreateRewardPage() {
                       <SelectContent>
                         {rewardCategories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
-                            <span className={`mr-2 px-2 py-0.5 rounded-full text-xs ${category.colorClasses}`}>
-                              {category.label}
-                            </span>
+                             <div className="flex items-center">
+                              <span className={`mr-2 px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                                {category.label}
+                              </span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -237,7 +249,7 @@ export default function CreateRewardPage() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={form.getValues('category') === 'material'}
+                        disabled={form.getValues('category') === 'material'} 
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
@@ -290,3 +302,4 @@ export default function CreateRewardPage() {
     </div>
   );
 }
+
