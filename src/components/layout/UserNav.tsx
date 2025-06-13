@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, UserCircle, Rocket } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings } from "lucide-react";
 import Link from "next/link";
 
 export function UserNav() {
@@ -57,12 +57,20 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
           {!isChildAuthenticated && user && (
-            <Link href="/dashboard/profile">
-              <DropdownMenuItem className="cursor-pointer">
-                <UserCircle className="mr-2 h-4 w-4" />
-                <span>Perfil</span>
-              </DropdownMenuItem>
-            </Link>
+            <>
+              <Link href="/dashboard/profile">
+                <DropdownMenuItem className="cursor-pointer">
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/dashboard/settings">
+                <DropdownMenuItem className="cursor-pointer">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Configurações</span>
+                </DropdownMenuItem>
+              </Link>
+            </>
           )}
            {isChildAuthenticated && childProfile && (
              <Link href={`/dashboard/child/${childProfile.id}`}>
