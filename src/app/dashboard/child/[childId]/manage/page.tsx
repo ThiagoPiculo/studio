@@ -262,8 +262,7 @@ export default function ManageChildPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name}
-                           e todos os seus dados associados (tarefas, recompensas, progresso).
+                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (tarefas, recompensas, progresso).
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
