@@ -1,7 +1,7 @@
 
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles, ListChecks, Star as StarIcon, Trophy } from 'lucide-react';
+import { Sparkles, ListChecks, Star as StarIcon, Trophy, HelpCircle } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ChildLoginPage() {
@@ -39,6 +39,10 @@ export default function ChildLoginPage() {
               Login Admin
             </Link>
           </p>
+          <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">
+            <HelpCircle className="mr-2 h-4 w-4 text-primary" />
+            <span>Não sabe sua Chave Secreta? Peça ajuda a um adulto!</span>
+          </div>
         </CardContent>
       </Card>
     </div>
