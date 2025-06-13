@@ -1,6 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
-import type { LucideIcon, Icon as LucideIconType } from 'lucide-react'; // Import LucideIcon
+import type { Icon as LucideIconType } from 'lucide-react';
 import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag } from 'lucide-react';
 
 export interface UserProfile {
@@ -74,17 +74,16 @@ export type RewardCategoryDetails = typeof rewardCategories[number];
 
 export interface Reward {
   id: string; // Document ID
-  childId: string; // Obrigatório, ID da criança específica
-  ownerId: string; // UID do Admin Master (para contexto de criação/visualização)
+  childId: string;
+  ownerId: string;
   title: string;
   description?: string;
   category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
   createdAt: Timestamp;
-  familyId?: string | null; // Contexto da família, se aplicável, para filtragem do admin
+  familyId?: string | null;
 
-  // Campos de estado e rastreamento
   status: 'active' | 'redeemed' | 'disabled'; // Estado principal gerenciado pelo admin/sistema
   isRedeemed: boolean; // Indica se o ato de resgate ocorreu
   redeemedAt?: Timestamp; // Data do resgate

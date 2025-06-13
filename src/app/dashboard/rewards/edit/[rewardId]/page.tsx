@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -13,17 +13,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { addReward } from '@/lib/firebase/firestore';
-import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
-import type { ChildProfile, RewardCategory, Reward } from '@/lib/types';
+import { updateReward, getRewardById, getChildProfileById } from '@/lib/firebase/firestore';
+import type { RewardCategory, Reward, ChildProfile } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, PlusCircle, ArrowLeft } from 'lucide-react';
+import { Loader2, Gift, Save, ArrowLeft } from 'lucide-react';
 
 const rewardFormSchema = z.object({
-  childId: z.string().min(1, { message: "Selecione uma criança." }),
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional(),
   category: z.custom<RewardCategory>((val) => rewardCategories.map(rc => rc.id).includes(val as RewardCategory) , {
@@ -31,23 +28,27 @@ const rewardFormSchema = z.object({
   }),
   starsCost: z.coerce.number().min(1, { message: "O custo deve ser de pelo menos 1 estrela." }).max(10000, {message: "O custo não pode ser superior a 10.000 estrelas."}),
   isMaterial: z.boolean().default(false),
+  // childId não é editável, mas pode ser necessário no schema se você o incluísse no formulário de alguma forma
 });
 
 type RewardFormValues = z.infer<typeof rewardFormSchema>;
 
-export default function CreateRewardPage() {
+export default function EditRewardPage() {
   const { toast } = useToast();
   const router = useRouter();
+  const params = useParams();
+  const rewardId = params.rewardId as string;
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  
   const [isLoading, setIsLoading] = useState(false);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  const [isFetchingData, setIsFetchingData] = useState(true);
+  const [reward, setReward] = useState<Reward | null>(null);
+  const [childName, setChildName] = useState<string | null>(null);
+
 
   const form = useForm<RewardFormValues>({
     resolver: zodResolver(rewardFormSchema),
     defaultValues: {
-      childId: '',
       title: '',
       description: '',
       category: undefined, 
@@ -57,28 +58,45 @@ export default function CreateRewardPage() {
   });
 
   useEffect(() => {
-    const fetchChildren = async () => {
-      if (!user) return;
-      setIsLoadingChildren(true);
+    if (!rewardId || !user) {
+      setIsFetchingData(false);
+      if(!user) router.push('/auth/login');
+      else router.push('/dashboard/rewards');
+      return;
+    }
+
+    const fetchRewardData = async () => {
+      setIsFetchingData(true);
       try {
-        let profiles: ChildProfile[];
-        if (currentContext === 'my-space') {
-          profiles = await getChildProfilesByOwner(user.uid);
+        const fetchedReward = await getRewardById(rewardId);
+        if (fetchedReward) {
+          setReward(fetchedReward);
+          form.reset({
+            title: fetchedReward.title,
+            description: fetchedReward.description || '',
+            category: fetchedReward.category,
+            starsCost: fetchedReward.starsCost,
+            isMaterial: fetchedReward.isMaterial,
+          });
+          if (fetchedReward.childId) {
+            const child = await getChildProfileById(fetchedReward.childId);
+            setChildName(child?.name || 'Criança não encontrada');
+          }
         } else {
-          profiles = await getChildProfilesByFamily(currentContext);
+          toast({ title: "Recompensa não encontrada", variant: "destructive" });
+          router.push('/dashboard/rewards');
         }
-        setChildren(profiles);
       } catch (error) {
-        console.error("Error fetching children:", error);
-        toast({ title: "Erro ao buscar crianças", description: "Não foi possível carregar a lista de crianças.", variant: "destructive" });
-        setChildren([]);
+        console.error("Error fetching reward:", error);
+        toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
+        router.push('/dashboard/rewards');
       } finally {
-        setIsLoadingChildren(false);
+        setIsFetchingData(false);
       }
     };
-    fetchChildren();
-  }, [user, currentContext, toast]);
-  
+    fetchRewardData();
+  }, [rewardId, user, router, toast, form]);
+
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
@@ -90,40 +108,56 @@ export default function CreateRewardPage() {
 
 
   const onSubmit = async (values: RewardFormValues) => {
-    if (!user) {
-      toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
+    if (!user || !reward) {
+      toast({ title: "Erro de Autenticação ou Dados", description: "Não foi possível salvar.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
-      const rewardDataPayload: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'status' | 'updatedAt'> = {
-        childId: values.childId,
-        ownerId: user.uid,
+      const updatePayload: Partial<Omit<Reward, 'id' | 'createdAt' | 'childId' | 'ownerId' | 'familyId' | 'status' | 'isRedeemed' | 'redeemedAt'>> = {
         title: values.title,
         description: values.description,
         category: values.category,
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
-        familyId: currentContext === 'my-space' ? null : currentContext,
       };
       
-      await addReward(rewardDataPayload);
+      await updateReward(reward.id, updatePayload);
       toast({
-        title: 'Recompensa Criada!',
-        description: `A recompensa "${values.title}" foi adicionada com sucesso.`,
+        title: 'Recompensa Atualizada!',
+        description: `A recompensa "${values.title}" foi salva com sucesso.`,
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
-      console.error('Error creating reward:', error);
+      console.error('Error updating reward:', error);
       toast({
-        title: 'Erro ao Criar Recompensa',
-        description: 'Não foi possível criar a recompensa. Tente novamente.',
+        title: 'Erro ao Atualizar Recompensa',
+        description: 'Não foi possível salvar as alterações. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isFetchingData) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-3">Carregando dados da recompensa...</p>
+      </div>
+    );
+  }
+
+  if (!reward) {
+     return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
+        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar para Recompensas</Button>
+      </div>
+    );
+  }
+
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
@@ -135,9 +169,9 @@ export default function CreateRewardPage() {
           <div className="flex items-center gap-3 mb-2">
             <Gift className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Criar Nova Recompensa</CardTitle>
+              <CardTitle className="text-3xl font-headline">Editar Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Defina um novo item ou experiência que seus Mini Herois podem resgatar com suas estrelas.
+                Modifique os detalhes da recompensa para {childName || 'Mini Heroi'}.
               </CardDescription>
             </div>
           </div>
@@ -145,36 +179,13 @@ export default function CreateRewardPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="childId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Para Qual Mini Heroi?</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoadingChildren}>
-                      <FormControl>
-                        <SelectTrigger>
-                          {isLoadingChildren ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          <SelectValue placeholder="Selecione uma criança..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {isLoadingChildren && <SelectItem value="loading" disabled>Carregando crianças...</SelectItem>}
-                        {!isLoadingChildren && children.length === 0 && <SelectItem value="no-children" disabled>Nenhuma criança encontrada.</SelectItem>}
-                        {children.map((child) => (
-                          <SelectItem key={child.id} value={child.id}>
-                            {child.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      A recompensa será associada a esta criança.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {childName && (
+                <FormItem>
+                    <FormLabel>Para o Mini Heroi</FormLabel>
+                    <Input value={childName} disabled className="bg-muted/50" />
+                    <FormDescription>A criança associada a esta recompensa não pode ser alterada.</FormDescription>
+                </FormItem>
+              )}
 
               <FormField
                 control={form.control}
@@ -214,7 +225,7 @@ export default function CreateRewardPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoria da Recompensa</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria..." />
@@ -280,20 +291,20 @@ export default function CreateRewardPage() {
                 )}
               />
               
-              <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isLoadingChildren || children.length === 0}>
+              <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isFetchingData}>
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <PlusCircle className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 h-4 w-4" />
                 )}
-                Criar Recompensa
+                Salvar Alterações
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter>
             <p className="text-xs text-muted-foreground">
-                As recompensas são uma ótima forma de motivar e celebrar as conquistas dos seus Mini Herois!
+                Mantenha as recompensas atualizadas e motivadoras para seus Mini Herois!
             </p>
         </CardFooter>
       </Card>

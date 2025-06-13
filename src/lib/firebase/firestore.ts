@@ -114,6 +114,14 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   };
   await setDoc(newMembershipRef, ownerMembership);
 
+  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
+  const childrenSnapshot = await getDocs(childrenToUpdateQuery);
+  const batch = writeBatch(db);
+  childrenSnapshot.forEach(childDoc => {
+    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id });
+  });
+  await batch.commit();
+
   return newFamily;
 };
 
@@ -156,10 +164,11 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   });
   await batch.commit();
 
+
   return newMembership;
 };
 
-export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]> => {
+export const getFamilyMembers = async (userId: string): Promise<UserProfile[]> => {
   const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
   const membershipsSnapshot = await getDocs(membershipsQuery);
   const memberUserIds = membershipsSnapshot.docs.map(doc => (doc.data() as FamilyMembership).userId);
@@ -198,11 +207,11 @@ export const addReward = async (rewardData: Omit<Reward, 'id' | 'createdAt' | 'i
     category: rewardData.category,
     starsCost: rewardData.starsCost,
     isMaterial: rewardData.isMaterial,
-    familyId: rewardData.familyId === undefined ? null : rewardData.familyId, // Ensure null if undefined for queries
+    familyId: rewardData.familyId === undefined ? null : rewardData.familyId,
     isRedeemed: false,
     status: 'active', // Default status
     createdAt: now,
-    updatedAt: now,
+    updatedAt: now, // Initialize updatedAt
   };
   await setDoc(newRewardRef, newReward);
   return newReward;
@@ -219,6 +228,15 @@ export const updateReward = async (rewardId: string, updates: Partial<Omit<Rewar
 export const deleteReward = async (rewardId: string): Promise<void> => {
   const rewardRef = doc(db, 'rewards', rewardId);
   await deleteDoc(rewardRef);
+};
+
+export const getRewardById = async (rewardId: string): Promise<Reward | null> => {
+  const docRef = doc(db, 'rewards', rewardId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as Reward;
+  }
+  return null;
 };
 
 
