@@ -14,7 +14,7 @@ export interface ChildProfile {
   familyId?: string; // Optional, ID of the family if shared
   name: string;
   age: number;
-  gender?: 'boy' | 'girl' | 'not-informed'; // Novo campo
+  gender?: 'boy' | 'girl' | 'not-informed';
   stars: number;
   xp: number;
   level: number;
@@ -55,17 +55,34 @@ export interface Task {
   category?: string; // e.g., Chores, Learning, Creative, Health
 }
 
+export const rewardCategories = [
+  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30' },
+  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30' },
+  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/10 text-secondary-foreground border-secondary/30' },
+  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30' },
+  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30' },
+  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30' },
+  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border' },
+] as const;
+
+
+export type RewardCategory = typeof rewardCategories[number]['id'];
+
 export interface Reward {
   id: string; // Document ID
   childId: string;
-  ownerId: string;
+  ownerId: string; // UID do Admin Master ou ID da Família
   title: string;
   description?: string;
+  category: RewardCategory;
   starsCost: number;
+  isMaterial: boolean; // Derivado da categoria 'material' ou um checkbox explícito
   isRedeemed: boolean;
   createdAt: Timestamp;
   redeemedAt?: Timestamp;
+  familyId?: string; // Se a recompensa é visível para toda a família
 }
+
 
 export interface Dream {
   id: string; // Document ID
@@ -82,6 +99,26 @@ export interface Dream {
 }
 
 // Context types
+export type Theme = {
+  id: string;
+  label: string;
+  color?: string; // Para preview no seletor, não para aplicar o tema
+  previewColors: {
+    background: string;
+    foreground: string;
+    primary: string;
+    accent: string;
+  };
+};
+
+
+export type ThemeContextType = {
+  theme: Theme['id'];
+  setTheme: (themeId: Theme['id']) => void;
+  availableThemes: Theme[];
+  isMounted: boolean;
+};
+
 export type FamilyContextType = {
   currentContext: 'my-space' | string; // 'my-space' or familyId
   setCurrentContext: (context: 'my-space' | string) => void;
@@ -97,7 +134,5 @@ export type AuthContextType = {
   childProfile: ChildProfile | null; // Store child profile if child is logged in
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  setChildAuthenticatedState: (profile: ChildProfile) => void; // Add this line
-  // Add other auth methods as needed, e.g., email/password login/signup
+  setChildAuthenticatedState: (profile: ChildProfile) => void;
 };
-

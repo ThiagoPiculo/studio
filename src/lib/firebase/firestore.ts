@@ -15,7 +15,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, Task, Reward, Dream, UserProfile } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, Task, Reward, Dream, UserProfile, RewardCategory } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -33,7 +33,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     ownerId,
     name: childData.name,
     age: childData.age,
-    gender: childData.gender, // Salvar o gênero
+    gender: childData.gender,
     stars: 0,
     xp: 0,
     level: 1,
@@ -171,7 +171,7 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 };
 
 
-// --- Tasks, Rewards, Dreams (Example for Tasks) ---
+// --- Tasks ---
 export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompleted'>): Promise<Task> => {
   const newTaskRef = doc(collection(db, 'tasks'));
   const newTask: Task = {
@@ -184,6 +184,33 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompl
   return newTask;
 };
 
+// --- Rewards ---
+export const addReward = async (rewardData: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt'>): Promise<Reward> => {
+  const newRewardRef = doc(collection(db, 'rewards'));
+  const newReward: Reward = {
+    id: newRewardRef.id,
+    ...rewardData,
+    isRedeemed: false,
+    createdAt: serverTimestamp() as Timestamp,
+  };
+  await setDoc(newRewardRef, newReward);
+  return newReward;
+};
+
+export const getRewardsByChild = async (childId: string): Promise<Reward[]> => {
+  const q = query(collection(db, 'rewards'), where('childId', '==', childId));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+};
+
+export const getRewardsByFamily = async (familyId: string): Promise<Reward[]> => {
+    const q = query(collection(db, 'rewards'), where('familyId', '==', familyId));
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+};
+
+
+// --- Child Login ---
 export const findChildByAccessCode = async (accessCode: string): Promise<ChildProfile | null> => {
   const q = query(collection(db, 'children'), where('accessCode', '==', accessCode));
   const querySnapshot = await getDocs(q);
@@ -193,4 +220,3 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
-
