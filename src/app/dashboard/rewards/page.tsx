@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily(); // availableContexts já está aqui
   const { toast } = useToast();
 
   const [rewards, setRewards] = useState<Reward[]>([]);
@@ -68,6 +68,11 @@ export default function RewardsHubPage() {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
 
+  const currentFamilyName = availableContexts.find(f => f.id === currentContext)?.name || 'Desconhecida';
+  const rewardsDescription = currentContext === 'my-space'
+    ? "Recompensas criadas em seu espaço pessoal."
+    : `Recompensas disponíveis para a família: ${currentFamilyName}.`;
+
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
@@ -106,12 +111,7 @@ export default function RewardsHubPage() {
       <Card>
         <CardHeader>
           <CardTitle>Recompensas Ativas</CardTitle>
-          <CardDescription>
-            {currentContext === 'my-space' 
-              ? "Recompensas criadas em seu espaço pessoal."
-              : `Recompensas disponíveis para a família: ${useFamily().availableContexts.find(c => c.id === currentContext)?.name || 'Desconhecida'}.`
-            }
-          </CardDescription>
+          <CardDescription>{rewardsDescription}</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -133,7 +133,7 @@ export default function RewardsHubPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {rewards.map((reward) => {
                 const categoryDetails = getCategoryDetails(reward.category);
-                const CategoryIcon = categoryDetails?.icon;
+                const CategoryIconComponent = categoryDetails?.icon; // Renomeado para evitar conflito
                 const childName = childrenMap.get(reward.childId);
                 return (
                   <Card key={reward.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
@@ -147,7 +147,7 @@ export default function RewardsHubPage() {
                       {categoryDetails && (
                         <div className="flex items-center">
                            <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                            {CategoryIcon && <CategoryIcon className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                            {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
                           </span>
                           <Badge variant="outline" className={categoryDetails.colorClasses}>
                             {categoryDetails.label}
@@ -194,4 +194,3 @@ export default function RewardsHubPage() {
     </div>
   );
 }
-
