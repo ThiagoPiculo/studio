@@ -6,11 +6,11 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 selection:bg-accent selection:text-accent-foreground">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-accent selection:text-accent-foreground">
       <Card className="w-full max-w-md shadow-xl">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <Rocket className="h-16 w-16 text-primary" />
+            <Rocket className="h-16 w-16 text-primary animate-pulse" />
           </div>
           <CardTitle className="font-headline text-3xl">Bem-vindo(a) de volta, Admin Master!</CardTitle>
           <CardDescription>Faça login para gerenciar seus MiniHeroes.</CardDescription>
