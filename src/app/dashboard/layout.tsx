@@ -1,13 +1,15 @@
+
 "use client";
-import { useEffect, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { Header } from '@/components/layout/Header';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, loading, isChildAuthenticated, childProfile } = useAuth();
+  const { user, loading, isChildAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,7 +40,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4">Redirecting to login...</p>
+        <p className="ml-4">Redirecionando para o login...</p>
       </div>
     );
   }

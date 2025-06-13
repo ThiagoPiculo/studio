@@ -1,29 +1,30 @@
+
 // src/ai/flows/suggest-tasks.ts
 'use server';
 
 /**
- * @fileOverview An AI agent that suggests tasks for children based on their age and interests.
+ * @fileOverview Um agente de IA que sugere tarefas para crianças com base na idade e interesses.
  *
- * - suggestTasks - A function that handles the task suggestion process.
- * - SuggestTasksInput - The input type for the suggestTasks function.
- * - SuggestTasksOutput - The return type for the suggestTasks function.
+ * - suggestTasks - Uma função que lida com o processo de sugestão de tarefas.
+ * - SuggestTasksInput - O tipo de entrada para a função suggestTasks.
+ * - SuggestTasksOutput - O tipo de retorno para a função suggestTasks.
  */
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestTasksInputSchema = z.object({
-  childAge: z.number().describe('The age of the child in years.'),
+  childAge: z.number().describe('A idade da criança em anos.'),
   childInterests: z
     .string()
-    .describe('A comma-separated list of the child\'s interests.'),
+    .describe('Uma lista dos interesses da criança, separados por vírgula.'),
 });
 export type SuggestTasksInput = z.infer<typeof SuggestTasksInputSchema>;
 
 const SuggestTasksOutputSchema = z.object({
   tasks: z
     .array(z.string())
-    .describe('A list of suggested tasks appropriate for the child.'),
+    .describe('Uma lista de tarefas sugeridas apropriadas para a criança.'),
 });
 export type SuggestTasksOutput = z.infer<typeof SuggestTasksOutputSchema>;
 
@@ -35,18 +36,18 @@ const prompt = ai.definePrompt({
   name: 'suggestTasksPrompt',
   input: {schema: SuggestTasksInputSchema},
   output: {schema: SuggestTasksOutputSchema},
-  prompt: `You are a helpful assistant for parents. Your task is to suggest age-appropriate tasks for children to encourage positive habit formation.
+  prompt: `Você é um assistente prestativo para pais. Sua tarefa é sugerir atividades apropriadas para a idade das crianças para encorajar a formação de hábitos positivos.
 
-  Consider the child's age and interests when generating the list of tasks.
-  Provide a diverse list of tasks, covering areas like chores, learning, creative activities and health.
+  Considere a idade e os interesses da criança ao gerar a lista de tarefas.
+  Forneça uma lista diversificada de tarefas, cobrindo áreas como tarefas domésticas, aprendizado, atividades criativas e saúde.
 
-  Child's Age: {{{childAge}}}
-  Child's Interests: {{{childInterests}}}
+  Idade da Criança: {{{childAge}}}
+  Interesses da Criança: {{{childInterests}}}
 
-  Please suggest tasks in the following format:
-  - Task 1
-  - Task 2
-  - Task 3
+  Por favor, sugira tarefas no seguinte formato:
+  - Tarefa 1
+  - Tarefa 2
+  - Tarefa 3
 `,
 });
 

@@ -90,7 +90,7 @@ export default function DashboardPage() {
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando sua primeira criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
+                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Herói
                 </Button>
               </Link>
             </CardContent>
@@ -116,7 +116,7 @@ export default function DashboardPage() {
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <p className="text-sm text-muted-foreground text-center mb-1">Idade: {child.age}</p>
+                  <p className="text-sm text-muted-foreground text-center mb-1">Idade: {child.age} Anos</p>
                   <p className="text-sm text-muted-foreground text-center mb-2">Nível: {child.level}</p>
                   <div className="text-center mb-3">
                     <span className="text-xl font-bold text-accent">{child.stars} Estrelas </span>

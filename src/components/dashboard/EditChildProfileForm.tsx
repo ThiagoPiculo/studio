@@ -90,7 +90,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
             <FormItem>
               <FormLabel>Nome da Criança</FormLabel>
               <FormControl>
-                <Input placeholder="Nome do MiniHero" {...field} />
+                <Input placeholder="Nome do Mini Heroi" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
