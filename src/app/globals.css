@@ -4,95 +4,95 @@
 
 @layer base {
   :root {
-    --background: 207 90% 95%; /* Very Light Blue - #E3F2FD */
-    --foreground: 215 28% 17%; /* Dark Slate Blue - For text */
+    --background: 250 60% 97%; /* Lilás Muito, Muito Claro (quase branco) */
+    --foreground: 250 40% 25%; /* Roxo Escuro Profundo */
 
-    --card: 207 90% 97%; /* Slightly lighter than background for cards */
-    --card-foreground: 215 28% 17%;
+    --card: 250 60% 100%; /* Branco */
+    --card-foreground: 250 40% 25%;
 
-    --popover: 207 90% 97%;
-    --popover-foreground: 215 28% 17%;
+    --popover: 250 60% 100%;
+    --popover-foreground: 250 40% 25%;
 
-    --primary: 207 89% 67%; /* Cheerful Light Blue - #64B5F6 */
-    --primary-foreground: 0 0% 100%; /* White */
+    --primary: 250 65% 60%; /* Lilás Vibrante */
+    --primary-foreground: 250 60% 98%; /* Quase Branco para contraste */
 
-    --secondary: 207 80% 85%; /* Lighter shade of primary blue */
-    --secondary-foreground: 215 28% 17%;
+    --secondary: 250 60% 85%; /* Lilás Mais Claro */
+    --secondary-foreground: 250 40% 25%;
 
-    --muted: 207 70% 90%; /* Muted blue */
-    --muted-foreground: 215 20% 45%; /* Greyer text for muted */
+    --muted: 250 50% 90%; /* Lilás Suave */
+    --muted-foreground: 250 30% 45%; /* Roxo Médio para texto silenciado */
 
-    --accent: 33 100% 65%; /* Contrasting Yellow-Orange - #FFB74D */
-    --accent-foreground: 24 70% 20%; /* Dark Brown for text on accent */
+    --accent: 270 70% 65%; /* Roxo Levemente Azulado como destaque sutil */
+    --accent-foreground: 250 60% 98%; /* Quase Branco para contraste */
 
-    --destructive: 0 72% 51%; /* Standard destructive red */
+    --destructive: 0 72% 51%; /* Vermelho Padrão */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 207 50% 80%; /* Light blue border */
-    --input: 207 50% 88%; /* Light blue input background */
-    --ring: 207 89% 67%; /* Primary color for rings */
+    --border: 250 50% 88%; /* Borda Lilás Clara */
+    --input: 250 50% 92%; /* Fundo de Input Lilás Bem Claro */
+    --ring: 250 65% 60%; /* Lilás Vibrante para anéis de foco */
 
     --radius: 0.5rem;
 
-    --chart-1: 207 89% 67%;
-    --chart-2: 33 100% 65%;
-    --chart-3: 120 60% 60%; /* Green */
-    --chart-4: 280 70% 70%; /* Purple */
-    --chart-5: 0 80% 70%; /* Red */
+    --chart-1: 250 65% 60%;
+    --chart-2: 270 70% 65%;
+    --chart-3: 300 60% 60%; /* Rosa/Magenta */
+    --chart-4: 45 100% 60%; /* Amarelo Dourado */
+    --chart-5: 180 50% 60%; /* Ciano Suave */
     
-    --sidebar-background: 207 90% 93%;
-    --sidebar-foreground: 215 28% 17%;
-    --sidebar-primary: 207 89% 67%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 33 100% 65%;
-    --sidebar-accent-foreground: 24 70% 20%;
-    --sidebar-border: 207 50% 80%;
-    --sidebar-ring: 207 89% 67%;
+    --sidebar-background: 250 60% 94%;
+    --sidebar-foreground: 250 40% 25%;
+    --sidebar-primary: 250 65% 60%;
+    --sidebar-primary-foreground: 250 60% 98%;
+    --sidebar-accent: 270 70% 65%;
+    --sidebar-accent-foreground: 250 60% 98%;
+    --sidebar-border: 250 50% 88%;
+    --sidebar-ring: 250 65% 60%;
   }
 
   .dark {
-    --background: 215 28% 17%; /* Dark Slate Blue */
-    --foreground: 207 90% 95%; /* Very Light Blue */
+    --background: 250 20% 12%; /* Roxo Muito Escuro */
+    --foreground: 250 60% 95%; /* Lilás Muito Claro */
 
-    --card: 215 28% 20%; /* Slightly lighter dark blue for cards */
-    --card-foreground: 207 90% 95%;
+    --card: 250 20% 15%; /* Roxo Escuro para Cards */
+    --card-foreground: 250 60% 95%;
 
-    --popover: 215 28% 20%;
-    --popover-foreground: 207 90% 95%;
+    --popover: 250 20% 15%;
+    --popover-foreground: 250 60% 95%;
 
-    --primary: 207 89% 67%; /* Cheerful Light Blue - #64B5F6 */
-    --primary-foreground: 215 28% 10%; /* Darker for contrast on light blue */
+    --primary: 250 65% 65%; /* Lilás Vibrante (pode ser um pouco mais claro no dark) */
+    --primary-foreground: 250 20% 10%; /* Roxo Mais Escuro para contraste */
     
-    --secondary: 207 80% 55%; /* Darker shade of primary blue for dark mode */
-    --secondary-foreground: 207 90% 95%;
+    --secondary: 250 50% 45%; /* Roxo Médio Escuro */
+    --secondary-foreground: 250 60% 95%;
 
-    --muted: 215 25% 30%; /* Muted dark blue */
-    --muted-foreground: 207 70% 80%; /* Lighter greyish blue text */
+    --muted: 250 25% 30%; /* Roxo Escuro Suave */
+    --muted-foreground: 250 50% 80%; /* Lilás Claro para texto silenciado */
 
-    --accent: 33 100% 65%; /* Contrasting Yellow-Orange - #FFB74D */
-    --accent-foreground: 24 70% 15%; /* Very Dark Brown for text on accent */
+    --accent: 270 70% 70%; /* Roxo Levemente Azulado (mais claro no dark) */
+    --accent-foreground: 250 20% 10%;
 
-    --destructive: 0 63% 40%; /* Darker destructive red */
+    --destructive: 0 63% 45%; /* Vermelho Escuro */
     --destructive-foreground: 0 0% 98%;
 
-    --border: 207 50% 40%; /* Darker blue border */
-    --input: 207 50% 35%; /* Darker blue input background */
-    --ring: 207 89% 67%; /* Primary color for rings */
+    --border: 250 30% 35%; /* Borda Roxo Escuro */
+    --input: 250 30% 28%; /* Fundo de Input Roxo Escuro */
+    --ring: 250 65% 65%; 
     
-    --chart-1: 207 89% 67%;
-    --chart-2: 33 100% 65%;
-    --chart-3: 120 50% 50%;
-    --chart-4: 280 60% 60%;
-    --chart-5: 0 70% 60%;
+    --chart-1: 250 65% 65%;
+    --chart-2: 270 70% 70%;
+    --chart-3: 300 50% 55%;
+    --chart-4: 45 90% 55%;
+    --chart-5: 180 40% 55%;
 
-    --sidebar-background: 215 28% 15%;
-    --sidebar-foreground: 207 90% 95%;
-    --sidebar-primary: 207 89% 67%;
-    --sidebar-primary-foreground: 215 28% 10%;
-    --sidebar-accent: 33 100% 65%;
-    --sidebar-accent-foreground: 24 70% 15%;
-    --sidebar-border: 207 50% 40%;
-    --sidebar-ring: 207 89% 67%;
+    --sidebar-background: 250 20% 10%;
+    --sidebar-foreground: 250 60% 95%;
+    --sidebar-primary: 250 65% 65%;
+    --sidebar-primary-foreground: 250 20% 10%;
+    --sidebar-accent: 270 70% 70%;
+    --sidebar-accent-foreground: 250 20% 10%;
+    --sidebar-border: 250 30% 35%;
+    --sidebar-ring: 250 65% 65%;
   }
 }
 
