@@ -123,3 +123,5 @@ export const getCurrentUser = (): UserProfile | null => {
     email: fbUser.email,
     name: fbUser.displayName,
     createdAt: serverTimestamp() as any, // Placeholder,
+  };
+};
