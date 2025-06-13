@@ -69,9 +69,24 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
+      let description = "Ocorreu um erro inesperado. Por favor, tente novamente.";
+      if (mode === "login") {
+        description = "E-mail ou senha incorretos. Verifique seus dados e tente novamente. Se o problema persistir, tente redefinir sua senha.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+             description = "E-mail ou senha inválidos. Verifique seus dados e tente novamente.";
+        } else if (error.message) {
+            description = error.message;
+        }
+      } else if (mode === "register") {
+        if (error.code === 'auth/email-already-in-use') {
+          description = "Este e-mail já está cadastrado. Tente fazer login ou use outro e-mail.";
+        } else {
+          description = "Não foi possível criar a conta. Verifique os dados fornecidos ou tente novamente mais tarde.";
+        }
+      }
       toast({
         title: `${mode === "login" ? "Falha no Login" : "Falha no Cadastro"}`,
-        description: error.message || `Ocorreu um erro inesperado. Por favor, tente novamente.`,
+        description: description,
         variant: "destructive",
       });
     } finally {
@@ -89,7 +104,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
       console.error("Google Sign-In failed:", error);
       toast({
         title: "Falha no Login com Google",
-        description: error.message || "Não foi possível fazer login com o Google. Por favor, tente novamente.",
+        description: "Não foi possível fazer login com o Google. Verifique sua conexão ou tente novamente. Se o erro persistir, pode haver um problema com sua conta Google.",
         variant: "destructive",
       });
     } finally {

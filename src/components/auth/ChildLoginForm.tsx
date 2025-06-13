@@ -45,17 +45,21 @@ export function ChildLoginForm() {
       if (childProfile) {
         setChildAuthenticatedState(childProfile);
 
-        toast({ title: "Login Efetuado com Sucesso", description: `Bem-vindo(a), ${childProfile.name}!` });
+        toast({ title: "Login Efetuado com Sucesso!", description: `Bem-vindo(a) de volta, ${childProfile.name}!` });
         router.push(`/dashboard/child/${childProfile.id}`);
       } else {
-        throw new Error("Código de acesso inválido. Por favor, tente novamente.");
+        throw new Error("Código de acesso inválido."); // More generic error here, specific message in catch
       }
 
     } catch (error: any) {
       console.error("Child login failed:", error);
+      let description = "Não foi possível fazer login. Verifique o código e tente novamente.";
+      if (error.message.includes("Código de acesso inválido")) {
+        description = "Código de acesso inválido. Verifique se digitou os 6 números corretamente ou peça para um adulto conferir o código no painel de gerenciamento.";
+      }
       toast({
         title: "Falha no Login",
-        description: error.message || "Não foi possível fazer login. Verifique o código e tente novamente.",
+        description: description,
         variant: "destructive",
       });
     } finally {

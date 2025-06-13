@@ -37,13 +37,13 @@ export function OnboardingForm() {
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       childName: "",
-      childAge: '' as unknown as number, // Initialize with empty string to avoid uncontrolled input error
+      childAge: '' as unknown as number, 
     },
   });
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
-      toast({ title: "Erro", description: "Você precisa estar logado para adicionar uma criança.", variant: "destructive" });
+      toast({ title: "Erro de Autenticação", description: "Você precisa estar logado para adicionar uma criança. Por favor, faça login novamente.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
@@ -55,7 +55,7 @@ export function OnboardingForm() {
       console.error("Failed to add child profile:", error);
       toast({
         title: "Falha ao Adicionar Mini Heroi",
-        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
+        description: "Não foi possível adicionar o Mini Heroi. Verifique os dados informados ou tente novamente mais tarde. Se o erro persistir, contate o suporte.",
         variant: "destructive",
       });
     } finally {

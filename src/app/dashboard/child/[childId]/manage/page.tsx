@@ -44,13 +44,13 @@ export default function ManageChildPage() {
           if (profile) {
             setChild(profile);
           } else {
-            toast({ title: "Erro", description: "Perfil da criança não encontrado.", variant: "destructive" });
+            toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi. Verifique o link ou volte ao painel.", variant: "destructive" });
             router.push('/dashboard');
           }
         })
         .catch((error) => {
           console.error("Error fetching child profile:", error);
-          toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados da criança.", variant: "destructive" });
+          toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados da criança. Verifique sua conexão ou tente recarregar a página.", variant: "destructive" });
         })
         .finally(() => {
           setIsLoading(false);
@@ -62,7 +62,7 @@ export default function ManageChildPage() {
   
   const handleProfileUpdate = (updatedProfile: Partial<ChildProfile>) => {
     setChild(prev => prev ? { ...prev, ...updatedProfile } : null);
-    toast({ title: "Perfil Atualizado", description: "As informações da criança foram atualizadas com sucesso." });
+    toast({ title: "Perfil Atualizado!", description: "As informações da criança foram atualizadas com sucesso." });
   };
 
   const handleRegenerateAccessCode = async () => {
@@ -73,12 +73,12 @@ export default function ManageChildPage() {
       setChild(prev => prev ? { ...prev, accessCode: newAccessCode } : null);
       toast({
         title: "Código de Acesso Regenerado!",
-        description: `O novo código de acesso para ${child.name} é: ${newAccessCode}`,
-        duration: 10000, // Show for longer
+        description: `O novo código de acesso para ${child.name} é: ${newAccessCode}. Guarde bem este código!`,
+        duration: 10000, 
       });
     } catch (error) {
       console.error("Error regenerating access code:", error);
-      toast({ title: "Erro", description: "Não foi possível regenerar o código de acesso.", variant: "destructive" });
+      toast({ title: "Erro ao Regenerar Código", description: "Não foi possível regenerar o código de acesso. Por favor, tente novamente mais tarde.", variant: "destructive" });
     } finally {
       setIsRegeneratingCode(false);
     }
@@ -89,11 +89,11 @@ export default function ManageChildPage() {
     setIsDeleting(true);
     try {
       await deleteChildProfile(child.id);
-      toast({ title: "Perfil Excluído", description: `${child.name} foi removido(a) do sistema.` });
+      toast({ title: "Perfil Excluído", description: `O perfil de ${child.name} foi removido(a) do sistema com sucesso.` });
       router.push('/dashboard');
     } catch (error) {
       console.error("Error deleting child profile:", error);
-      toast({ title: "Erro ao Excluir", description: "Não foi possível excluir o perfil da criança.", variant: "destructive" });
+      toast({ title: "Erro ao Excluir", description: "Não foi possível excluir o perfil da criança. Por favor, tente novamente mais tarde.", variant: "destructive" });
       setIsDeleting(false);
     }
   };

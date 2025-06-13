@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import { updateChildProfile } from "@/lib/firebase/firestore"; // Assumindo que esta função existe e está correta
+import { updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save } from "lucide-react";
@@ -66,13 +66,13 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       onProfileUpdate(updates); 
       toast({
         title: "Perfil Atualizado!",
-        description: `As informações de ${data.name} foram salvas.`,
+        description: `As informações de ${data.name} foram salvas com sucesso.`,
       });
     } catch (error) {
       console.error("Error updating child profile:", error);
       toast({
         title: "Erro ao Atualizar",
-        description: "Não foi possível salvar as alterações do perfil. Tente novamente.",
+        description: "Não foi possível salvar as alterações. Verifique os dados e tente novamente. Se o erro persistir, atualize a página.",
         variant: "destructive",
       });
     } finally {
