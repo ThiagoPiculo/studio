@@ -14,7 +14,7 @@ export default function ChildLoginPage() {
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Heroi!</CardTitle>
           <CardDescription className="text-primary-foreground/90 text-base mt-1">
-            Use sua chave mágica de 6 números para destravar suas missões!
+            Use sua Chave Secreta (são 6 números!) para destravar suas missões!
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
