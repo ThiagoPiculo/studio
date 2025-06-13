@@ -1,6 +1,6 @@
 
 import type { Timestamp } from 'firebase/firestore';
-import type { LucideIcon } from 'lucide-react'; // Import LucideIcon
+import type { LucideIcon, Icon as LucideIconType } from 'lucide-react'; // Import LucideIcon
 import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag } from 'lucide-react';
 
 export interface UserProfile {
@@ -58,13 +58,13 @@ export interface Task {
 }
 
 export const rewardCategories = [
-  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as LucideIcon },
-  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as LucideIcon },
-  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as LucideIcon },
-  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as LucideIcon },
-  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as LucideIcon },
-  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as LucideIcon },
-  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as LucideIcon },
+  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as LucideIconType },
+  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as LucideIconType },
+  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as LucideIconType },
+  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as LucideIconType },
+  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as LucideIconType },
+  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as LucideIconType },
+  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as LucideIconType },
 ] as const;
 
 
@@ -74,17 +74,21 @@ export type RewardCategoryDetails = typeof rewardCategories[number];
 
 export interface Reward {
   id: string; // Document ID
-  childId: string;
-  ownerId: string; // UID do Admin Master ou ID da Família
+  childId: string; // Obrigatório, ID da criança específica
+  ownerId: string; // UID do Admin Master (para contexto de criação/visualização)
   title: string;
   description?: string;
   category: RewardCategory;
   starsCost: number;
-  isMaterial: boolean; // Derivado da categoria 'material' ou um checkbox explícito
-  isRedeemed: boolean;
+  isMaterial: boolean;
   createdAt: Timestamp;
-  redeemedAt?: Timestamp;
-  familyId?: string; // Se a recompensa é visível para toda a família
+  familyId?: string | null; // Contexto da família, se aplicável, para filtragem do admin
+
+  // Campos de estado e rastreamento
+  status: 'active' | 'redeemed' | 'disabled'; // Estado principal gerenciado pelo admin/sistema
+  isRedeemed: boolean; // Indica se o ato de resgate ocorreu
+  redeemedAt?: Timestamp; // Data do resgate
+  updatedAt: Timestamp; // Última atualização de dados ou status
 }
 
 
@@ -106,7 +110,7 @@ export interface Dream {
 export type Theme = {
   id: string;
   label: string;
-  color?: string; 
+  color?: string;
   previewColors: {
     background: string;
     foreground: string;
@@ -141,3 +145,5 @@ export type AuthContextType = {
   setChildAuthenticatedState: (profile: ChildProfile) => void;
 };
 
+// Alteração para usar IconType de lucide-react se LucideIcon não for o tipo correto para elementos de ícone
+export type IconType = LucideIconType;

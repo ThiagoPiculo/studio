@@ -28,6 +28,7 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level'>): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
   const newChildRef = doc(collection(db, 'children')); // Auto-generate ID
+  const now = serverTimestamp() as Timestamp;
   const newChild: ChildProfile = {
     id: newChildRef.id,
     ownerId,
@@ -38,8 +39,8 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     xp: 0,
     level: 1,
     accessCode,
-    createdAt: serverTimestamp() as Timestamp,
-    updatedAt: serverTimestamp() as Timestamp,
+    createdAt: now,
+    updatedAt: now,
   };
   await setDoc(newChildRef, newChild);
   return newChild;
@@ -102,7 +103,7 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
     createdAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newFamilyRef, newFamily);
-  
+
   const newMembershipRef = doc(collection(db, 'familyMemberships'));
   const ownerMembership: FamilyMembership = {
     id: newMembershipRef.id,
@@ -122,12 +123,12 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
 
   if (familySnapshot.empty) {
     console.error('Invalid invite code');
-    return null; 
+    return null;
   }
   const familyDoc = familySnapshot.docs[0];
   const family = { id: familyDoc.id, ...familyDoc.data() } as Family;
 
-  const existingMembershipQuery = query(collection(db, 'familyMemberships'), 
+  const existingMembershipQuery = query(collection(db, 'familyMemberships'),
     where('familyId', '==', family.id),
     where('userId', '==', userId)
   );
@@ -147,7 +148,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   };
   await setDoc(newMembershipRef, newMembership);
 
-  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null)); 
+  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
   const childrenSnapshot = await getDocs(childrenToUpdateQuery);
   const batch = writeBatch(db);
   childrenSnapshot.forEach(childDoc => {
@@ -185,17 +186,41 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompl
 };
 
 // --- Rewards ---
-export const addReward = async (rewardData: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt'>): Promise<Reward> => {
+export const addReward = async (rewardData: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'status' | 'updatedAt'>): Promise<Reward> => {
   const newRewardRef = doc(collection(db, 'rewards'));
+  const now = serverTimestamp() as Timestamp;
   const newReward: Reward = {
     id: newRewardRef.id,
-    ...rewardData,
+    childId: rewardData.childId,
+    ownerId: rewardData.ownerId,
+    title: rewardData.title,
+    description: rewardData.description,
+    category: rewardData.category,
+    starsCost: rewardData.starsCost,
+    isMaterial: rewardData.isMaterial,
+    familyId: rewardData.familyId === undefined ? null : rewardData.familyId, // Ensure null if undefined for queries
     isRedeemed: false,
-    createdAt: serverTimestamp() as Timestamp,
+    status: 'active', // Default status
+    createdAt: now,
+    updatedAt: now,
   };
   await setDoc(newRewardRef, newReward);
   return newReward;
 };
+
+export const updateReward = async (rewardId: string, updates: Partial<Omit<Reward, 'id' | 'createdAt' | 'childId' | 'ownerId' | 'familyId'>>): Promise<void> => {
+  const rewardRef = doc(db, 'rewards', rewardId);
+  await updateDoc(rewardRef, {
+    ...updates,
+    updatedAt: serverTimestamp() as Timestamp,
+  });
+};
+
+export const deleteReward = async (rewardId: string): Promise<void> => {
+  const rewardRef = doc(db, 'rewards', rewardId);
+  await deleteDoc(rewardRef);
+};
+
 
 export const getRewardsByChild = async (childId: string): Promise<Reward[]> => {
   const q = query(collection(db, 'rewards'), where('childId', '==', childId));
@@ -226,4 +251,3 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
-
