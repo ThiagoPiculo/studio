@@ -4,14 +4,26 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2 } from 'lucide-react'; // Renamed Star to StarIcon to avoid conflict
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export default function ManageChildPage() {
   const params = useParams();
@@ -21,6 +33,8 @@ export default function ManageChildPage() {
 
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   useEffect(() => {
     if (childId) {
@@ -45,6 +59,45 @@ export default function ManageChildPage() {
         router.push('/dashboard');
     }
   }, [childId, router, toast]);
+  
+  const handleProfileUpdate = (updatedProfile: Partial<ChildProfile>) => {
+    setChild(prev => prev ? { ...prev, ...updatedProfile } : null);
+    toast({ title: "Perfil Atualizado", description: "As informações da criança foram atualizadas com sucesso." });
+  };
+
+  const handleRegenerateAccessCode = async () => {
+    if (!child) return;
+    setIsRegeneratingCode(true);
+    try {
+      const newAccessCode = await regenerateChildAccessCode(child.id);
+      setChild(prev => prev ? { ...prev, accessCode: newAccessCode } : null);
+      toast({
+        title: "Código de Acesso Regenerado!",
+        description: `O novo código de acesso para ${child.name} é: ${newAccessCode}`,
+        duration: 10000, // Show for longer
+      });
+    } catch (error) {
+      console.error("Error regenerating access code:", error);
+      toast({ title: "Erro", description: "Não foi possível regenerar o código de acesso.", variant: "destructive" });
+    } finally {
+      setIsRegeneratingCode(false);
+    }
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!child) return;
+    setIsDeleting(true);
+    try {
+      await deleteChildProfile(child.id);
+      toast({ title: "Perfil Excluído", description: `${child.name} foi removido(a) do sistema.` });
+      router.push('/dashboard');
+    } catch (error) {
+      console.error("Error deleting child profile:", error);
+      toast({ title: "Erro ao Excluir", description: "Não foi possível excluir o perfil da criança.", variant: "destructive" });
+      setIsDeleting(false);
+    }
+  };
+
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -98,9 +151,14 @@ export default function ManageChildPage() {
                 <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
                 <span className="font-semibold">XP: {child.xp}</span>
               </div>
-              <p className="text-xs text-muted-foreground mt-2 flex items-center justify-center sm:justify-start">
-                <ShieldCheck className="mr-1 h-3 w-3 text-primary" /> Código de Acesso: <span className="font-semibold text-primary ml-1">{child.accessCode}</span>
-              </p>
+              <div className="mt-3 text-center sm:text-left">
+                <span className="text-sm text-muted-foreground align-middle">
+                  <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código de Acesso:
+                </span>
+                <span className="ml-2 text-xl font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                  {child.accessCode}
+                </span>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -179,10 +237,45 @@ export default function ManageChildPage() {
                 <CardTitle>Editar Perfil de {child.name}</CardTitle>
                 <CardDescription>Atualize as informações da criança e configurações.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">O formulário para editar nome, idade, avatar e outras configurações (como regenerar código de acesso) está em desenvolvimento.</p>
-                {/* Placeholder for edit form component or direct form fields */}
-                <Button variant="destructive" disabled>Excluir Perfil (Em breve)</Button>
+              <CardContent className="space-y-6">
+                <EditChildProfileForm child={child} onProfileUpdate={handleProfileUpdate} />
+                
+                <div className="space-y-3">
+                  <Button 
+                    variant="outline" 
+                    onClick={handleRegenerateAccessCode} 
+                    disabled={isRegeneratingCode}
+                    className="w-full shadow-sm"
+                  >
+                    {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Regerar Código de Acesso
+                  </Button>
+
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="destructive" className="w-full shadow-sm" disabled={isDeleting}>
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Excluir Perfil de {child.name}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name}
+                           e todos os seus dados associados (tarefas, recompensas, progresso).
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90">
+                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                          Sim, Excluir Perfil
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -191,3 +284,4 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
