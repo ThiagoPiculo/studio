@@ -8,7 +8,7 @@ export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 selection:bg-primary selection:text-primary-foreground">
       <header className="text-center mb-12">
-        <h1 className="text-6xl font-bold text-primary mb-3 font-headline">MiniHeróis</h1>
+        <h1 className="text-6xl font-bold text-primary mb-3 font-headline">Mini Heroi</h1>
         <p className="text-xl text-foreground/80">
           Transforme pequenos hábitos em grandes conquistas!
         </p>
@@ -20,7 +20,7 @@ export default function WelcomePage() {
           <CardDescription className="text-lg text-muted-foreground mt-1">Você é...</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col sm:flex-row gap-4 p-6 pt-2">
-          <Link href="/auth/login" passHref className="flex-1">
+          <Link href="/auth/login" className="flex-1">
             <Button variant="outline" size="lg" className="w-full h-20 text-lg border-2 border-primary/50 hover:border-primary hover:bg-primary/10 group">
               <div className="flex flex-col items-center">
                 <Users className="h-8 w-8 mb-1 text-primary group-hover:scale-110 transition-transform" />
@@ -28,7 +28,7 @@ export default function WelcomePage() {
               </div>
             </Button>
           </Link>
-          <Link href="/child-login" passHref className="flex-1">
+          <Link href="/child-login" className="flex-1">
             <Button variant="outline" size="lg" className="w-full h-20 text-lg border-2 border-primary/50 hover:border-primary hover:bg-primary/10 group">
               <div className="flex flex-col items-center">
                 <Home className="h-8 w-8 mb-1 text-primary group-hover:scale-110 transition-transform" />
@@ -69,7 +69,7 @@ export default function WelcomePage() {
         </div>
       </section>
       <footer className="mt-16 text-center">
-        <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} MiniHeróis. Todos os direitos reservados.</p>
+        <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Mini Heroi. Todos os direitos reservados.</p>
       </footer>
     </div>
   );

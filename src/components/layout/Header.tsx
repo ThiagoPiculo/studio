@@ -15,7 +15,7 @@ export function Header() {
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
         <Link href="/" className="flex items-center space-x-2">
           <Rocket className="h-8 w-8 text-primary" />
-          <span className="font-headline text-2xl font-bold text-foreground">MiniHeroes</span>
+          <span className="font-headline text-2xl font-bold text-foreground">Mini Heroi</span>
         </Link>
         
         <nav className="flex items-center space-x-4">

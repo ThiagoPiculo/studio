@@ -64,7 +64,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         await signUpAdmin(name, email, password);
-        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao MiniHeroes! Por favor, faça login." });
+        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao Mini Heroi! Por favor, faça login." });
         router.push("/auth/login");
       }
     } catch (error: any) {

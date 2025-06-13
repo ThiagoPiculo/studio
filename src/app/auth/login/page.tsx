@@ -13,7 +13,7 @@ export default function LoginPage() {
             <Rocket className="h-16 w-16 text-primary animate-pulse" />
           </div>
           <CardTitle className="font-headline text-3xl">Bem-vindo(a) de volta, Admin Master!</CardTitle>
-          <CardDescription>Faça login para gerenciar seus MiniHeroes.</CardDescription>
+          <CardDescription>Faça login para gerenciar seus Mini Herois.</CardDescription>
         </CardHeader>
         <CardContent>
           <AdminAuthForm mode="login" />
@@ -24,7 +24,7 @@ export default function LoginPage() {
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Você é um MiniHero?{' '}
+            Você é um Mini Heroi?{' '}
             <Link href="/child-login" className="font-medium text-primary hover:underline">
               Login Infantil
             </Link>

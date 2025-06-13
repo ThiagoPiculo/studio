@@ -49,12 +49,12 @@ export function OnboardingForm() {
     setIsLoading(true);
     try {
       await addChildProfile(user.uid, { name: values.childName, age: values.childAge });
-      toast({ title: "MiniHero Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
+      toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({
-        title: "Falha ao Adicionar MiniHero",
+        title: "Falha ao Adicionar Mini Heroi",
         description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
@@ -98,7 +98,7 @@ export function OnboardingForm() {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          Adicionar MiniHero
+          Adicionar Mini Heroi
         </Button>
       </form>
     </Form>

@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 
 export const metadata: Metadata = {
-  title: 'MiniHeroes Construtor de Hábitos',
+  title: 'Mini Heroi Construtor de Hábitos',
   description: 'Plataforma gamificada para ajudar a gerenciar e incentivar a formação de hábitos em crianças.',
 };
 

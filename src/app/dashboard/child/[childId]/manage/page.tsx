@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -108,7 +108,7 @@ export default function ManageChildPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando dados do MiniHero...</p>
+        <p className="text-lg text-muted-foreground">Carregando dados do Mini Heroi...</p>
       </div>
     );
   }
@@ -116,7 +116,7 @@ export default function ManageChildPage() {
   if (!child) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
-        <p className="text-lg text-destructive">MiniHero não encontrado.</p>
+        <p className="text-lg text-destructive">Mini Heroi não encontrado.</p>
         <Button onClick={() => router.push('/dashboard')} className="mt-4">
             Voltar ao Painel
         </Button>
@@ -177,7 +177,7 @@ export default function ManageChildPage() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle>Visão Geral de {child.name}</CardTitle>
-                <CardDescription>Resumo das atividades e progresso do seu MiniHero.</CardDescription>
+                <CardDescription>Resumo das atividades e progresso do seu Mini Heroi.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p>Aqui você verá um resumo das atividades recentes, tarefas pendentes e recompensas disponíveis para {child.name}.</p>
@@ -284,4 +284,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-

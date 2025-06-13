@@ -63,30 +63,30 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Admin Master"}!</CardTitle>
-          <CardDescription>Aqui está uma visão geral dos seus MiniHeroes em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
+          <CardDescription>Aqui está uma visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Gerencie tarefas, recompensas e veja seus MiniHeroes crescerem!</p>
+          <p>Gerencie tarefas, recompensas e veja seus Mini Herois crescerem!</p>
         </CardContent>
       </Card>
 
       <section>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-headline">Seus MiniHeroes</h2>
+          <h2 className="text-2xl font-headline">Seus Mini Herois</h2>
           <Link href="/dashboard/onboarding">
-            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo MiniHero</Button>
+            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Mini Heroi</Button>
           </Link>
         </div>
         {isLoadingChildren ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-            Carregando MiniHeroes...
+            Carregando Mini Herois...
           </div>
         ) : children.length === 0 ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum MiniHero Ainda!</h3>
+              <h3 className="text-xl font-semibold mb-2">Nenhum Mini Heroi Ainda!</h3>
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando sua primeira criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
@@ -125,7 +125,7 @@ export default function DashboardPage() {
                   
                   <p className="text-xs text-muted-foreground text-center">XP: {child.xp}</p>
                   
-                  <Link href={`/dashboard/child/${child.id}/manage`} passHref>
+                  <Link href={`/dashboard/child/${child.id}/manage`}>
                     <Button className="w-full mt-4 shadow-sm">Gerenciar {child.name}</Button>
                   </Link>
                 </CardContent>
@@ -141,9 +141,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2 text-xl"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/dashboard/tasks/new" passHref><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Atribuir Nova Tarefa</Button></Link>
-            <Link href="/dashboard/rewards/new" passHref><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Criar Recompensa</Button></Link>
-            <Link href="/dashboard/family" passHref><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Gerenciar Família e Colaboradores</Button></Link>
+            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Atribuir Nova Tarefa</Button></Link>
+            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Criar Recompensa</Button></Link>
+            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Gerenciar Família e Colaboradores</Button></Link>
           </CardContent>
         </Card>
         <Card className="shadow-md bg-gradient-to-br from-accent/10 to-card">
@@ -152,7 +152,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground mb-4">Precisa de inspiração? Use nosso Sugestor de Tarefas inteligente!</p>
-            <Link href="/dashboard/tasks" passHref>
+            <Link href="/dashboard/tasks">
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg">
                 <Sun className="mr-2 h-4 w-4"/> Obter Sugestões de Tarefas
               </Button>

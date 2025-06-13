@@ -13,7 +13,7 @@ export default function OnboardingPage() {
           <div className="mb-4 flex justify-center">
             <Rocket className="h-20 w-20 text-primary animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-4xl">Vamos Adicionar Seu Primeiro MiniHero!</CardTitle>
+          <CardTitle className="font-headline text-4xl">Vamos Adicionar Seu Primeiro Mini Heroi!</CardTitle>
           <CardDescription className="text-lg">
             Toda grande aventura começa com um herói. Conte-nos um pouco sobre sua criança para começar.
           </CardDescription>
