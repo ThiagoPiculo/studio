@@ -1,5 +1,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
+import type { LucideIcon } from 'lucide-react'; // Import LucideIcon
+import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag } from 'lucide-react';
 
 export interface UserProfile {
   uid: string;
@@ -56,17 +58,19 @@ export interface Task {
 }
 
 export const rewardCategories = [
-  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30' },
-  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30' },
-  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/10 text-secondary-foreground border-secondary/30' },
-  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30' },
-  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30' },
-  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30' },
-  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border' },
+  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as LucideIcon },
+  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as LucideIcon },
+  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as LucideIcon },
+  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as LucideIcon },
+  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as LucideIcon },
+  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as LucideIcon },
+  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as LucideIcon },
 ] as const;
 
 
 export type RewardCategory = typeof rewardCategories[number]['id'];
+export type RewardCategoryDetails = typeof rewardCategories[number];
+
 
 export interface Reward {
   id: string; // Document ID
@@ -102,7 +106,7 @@ export interface Dream {
 export type Theme = {
   id: string;
   label: string;
-  color?: string; // Para preview no seletor, não para aplicar o tema
+  color?: string; 
   previewColors: {
     background: string;
     foreground: string;
@@ -136,3 +140,4 @@ export type AuthContextType = {
   logout: () => Promise<void>;
   setChildAuthenticatedState: (profile: ChildProfile) => void;
 };
+

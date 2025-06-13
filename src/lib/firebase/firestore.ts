@@ -203,6 +203,12 @@ export const getRewardsByChild = async (childId: string): Promise<Reward[]> => {
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
 };
 
+export const getRewardsByOwner = async (ownerId: string): Promise<Reward[]> => {
+  const q = query(collection(db, 'rewards'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+};
+
 export const getRewardsByFamily = async (familyId: string): Promise<Reward[]> => {
     const q = query(collection(db, 'rewards'), where('familyId', '==', familyId));
     const querySnapshot = await getDocs(q);
@@ -220,3 +226,4 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
+
