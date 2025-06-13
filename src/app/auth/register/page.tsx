@@ -12,15 +12,15 @@ export default function RegisterPage() {
           <div className="mb-4 flex justify-center">
             <UserPlus className="h-16 w-16 text-primary" />
           </div>
-          <CardTitle className="font-headline text-3xl">Become an Admin Master</CardTitle>
-          <CardDescription>Create your account to start the MiniHeroes journey.</CardDescription>
+          <CardTitle className="font-headline text-3xl">Torne-se um Admin Master</CardTitle>
+          <CardDescription>Crie sua conta para iniciar a jornada MiniHeroes.</CardDescription>
         </CardHeader>
         <CardContent>
           <AdminAuthForm mode="register" />
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Already an Admin Master?{' '}
+            Já é um Admin Master?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Log in
+              Faça login
             </Link>
           </p>
         </CardContent>

@@ -1,3 +1,4 @@
+
 "use client";
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
@@ -12,20 +13,18 @@ const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [currentContext, setCurrentContextState] = useState<'my-space' | string>('my-space');
-  const [availableContexts, setAvailableContextsState] = useState<{ id: string; name: string }[]>([{ id: 'my-space', name: 'My Space' }]);
+  const [availableContexts, setAvailableContextsState] = useState<{ id: string; name: string }[]>([{ id: 'my-space', name: 'Meu Espaço' }]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (user) {
       setIsLoading(true);
-      const initialContexts = [{ id: 'my-space', name: 'My Space' }];
+      const initialContexts = [{ id: 'my-space', name: 'Meu Espaço' }];
       
-      // Fetch families where the user is the owner
       const ownedFamiliesQuery = query(collection(db, 'families'), where('ownerId', '==', user.uid));
       const unsubscribeOwned = onSnapshot(ownedFamiliesQuery, async (snapshot) => {
         const ownedFamilies = snapshot.docs.map(doc => ({ id: doc.id, name: (doc.data() as Family).name }));
         
-        // Fetch families where the user is a collaborator
         const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
         const membershipsSnapshot = await getDocs(membershipsQuery);
         const memberFamilyIds = membershipsSnapshot.docs.map(doc => (doc.data() as FamilyMembership).familyId);
@@ -43,7 +42,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             ...collaboratorFamilies
         ];
         
-        // Remove duplicates by id
         const uniqueContexts = allContexts.filter((context, index, self) =>
             index === self.findIndex((c) => (
                 c.id === context.id
@@ -54,7 +52,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }, (error) => {
         console.error("Error fetching family contexts:", error);
-        setAvailableContextsState(initialContexts); // Fallback to My Space
+        setAvailableContextsState(initialContexts); 
         setIsLoading(false);
       });
 
@@ -64,7 +62,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
       setCurrentContextState('my-space');
-      setAvailableContextsState([{ id: 'my-space', name: 'My Space' }]);
+      setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço' }]);
       setIsLoading(false);
     }
   }, [user]);

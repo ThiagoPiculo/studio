@@ -21,7 +21,7 @@ import { findChildByAccessCode } from "@/lib/firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 
 const childLoginSchema = z.object({
-  accessCode: z.string().length(6, { message: "Access code must be 6 digits." }).regex(/^\d{6}$/, { message: "Access code must be 6 digits."}),
+  accessCode: z.string().length(6, { message: "O código de acesso deve ter 6 dígitos." }).regex(/^\d{6}$/, { message: "O código de acesso deve ser composto por 6 dígitos."}),
 });
 
 type ChildLoginFormValues = z.infer<typeof childLoginSchema>;
@@ -43,22 +43,19 @@ export function ChildLoginForm() {
       const childProfile = await findChildByAccessCode(values.accessCode);
 
       if (childProfile) {
-        // In a real app, your backend would generate a custom token for childProfile.id
-        // Then you'd use Firebase's signInWithCustomToken(auth, customToken)
-        // For this example, we are directly setting the auth state. This is NOT secure for production.
         setChildAuthenticatedState(childProfile);
 
-        toast({ title: "Login Successful", description: `Welcome, ${childProfile.name}!` });
+        toast({ title: "Login Efetuado com Sucesso", description: `Bem-vindo(a), ${childProfile.name}!` });
         router.push(`/dashboard/child/${childProfile.id}`);
       } else {
-        throw new Error("Invalid access code. Please try again.");
+        throw new Error("Código de acesso inválido. Por favor, tente novamente.");
       }
 
     } catch (error: any) {
       console.error("Child login failed:", error);
       toast({
-        title: "Login Failed",
-        description: error.message || "Could not log in. Please check the code and try again.",
+        title: "Falha no Login",
+        description: error.message || "Não foi possível fazer login. Verifique o código e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -74,7 +71,7 @@ export function ChildLoginForm() {
           name="accessCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-lg font-semibold">Your Secret Access Code</FormLabel>
+              <FormLabel className="text-lg font-semibold">Seu Código de Acesso Secreto</FormLabel>
               <FormControl>
                 <Input
                   placeholder="123456"
@@ -93,7 +90,7 @@ export function ChildLoginForm() {
           ) : (
             <KeyRound className="mr-2 h-5 w-5" />
           )}
-          Enter Code
+          Digitar Código
         </Button>
       </form>
     </Form>

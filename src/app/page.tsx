@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -14,7 +15,7 @@ export default function HomePage() {
       if (user) {
         router.replace('/dashboard');
       } else if (isChildAuthenticated && childProfile) {
-        router.replace(`/dashboard/child/${childProfile.id}`); // Example child dashboard route
+        router.replace(`/dashboard/child/${childProfile.id}`); 
       }
       else {
         router.replace('/auth/login');
@@ -25,7 +26,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4">
       <Loader2 className="h-16 w-16 animate-spin text-primary" />
-      <p className="mt-4 text-lg text-foreground">Loading MiniHeroes...</p>
+      <p className="mt-4 text-lg text-foreground">Carregando MiniHeroes...</p>
     </div>
   );
 }

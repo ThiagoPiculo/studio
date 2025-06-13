@@ -13,32 +13,32 @@ export default function OnboardingPage() {
           <div className="mb-4 flex justify-center">
             <Rocket className="h-20 w-20 text-primary animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-4xl">Let's Add Your First MiniHero!</CardTitle>
+          <CardTitle className="font-headline text-4xl">Vamos Adicionar Seu Primeiro MiniHero!</CardTitle>
           <CardDescription className="text-lg">
-            Every great adventure starts with a hero. Tell us a bit about your child to get started.
+            Toda grande aventura começa com um herói. Conte-nos um pouco sobre sua criança para começar.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 md:p-8">
           <OnboardingForm />
            <div className="mt-8 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-2 text-center">Family Collaboration (Optional)</h3>
+            <h3 className="text-lg font-semibold mb-2 text-center">Colaboração Familiar (Opcional)</h3>
             <p className="text-center text-sm text-muted-foreground mb-4">
-              Want to manage habits with another parent or guardian? You can set up or join a family group.
+              Quer gerenciar hábitos com outro pai/mãe ou responsável? Você pode configurar ou entrar em um grupo familiar.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/dashboard/family?action=create">
                     <Button variant="outline" className="w-full sm:w-auto">
-                        <Users className="mr-2 h-4 w-4" /> Create a Family
+                        <Users className="mr-2 h-4 w-4" /> Criar uma Família
                     </Button>
                 </Link>
                 <Link href="/dashboard/family?action=join">
                     <Button variant="outline" className="w-full sm:w-auto">
-                        <Users className="mr-2 h-4 w-4" /> Join a Family
+                        <Users className="mr-2 h-4 w-4" /> Entrar em uma Família
                     </Button>
                 </Link>
             </div>
             <p className="mt-4 text-center text-xs text-muted-foreground">
-                You can always do this later from the 'Family' menu.
+                Você sempre pode fazer isso mais tarde no menu 'Família'.
             </p>
           </div>
         </CardContent>

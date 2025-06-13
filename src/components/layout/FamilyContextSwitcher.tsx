@@ -8,7 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Home, Users } from 'lucide-react'; // ChevronDown was unused
+import { Home, Users } from 'lucide-react';
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading } = useFamily();
@@ -16,12 +16,12 @@ export function FamilyContextSwitcher() {
   if (isLoading) {
     return (
       <div className="flex items-center space-x-2 px-3 py-2 rounded-md border border-input bg-background text-sm text-muted-foreground">
-        Loading contexts...
+        Carregando contextos...
       </div>
     );
   }
   
-  if (!availableContexts || availableContexts.length <= 1) { // Only show if more than "My Space"
+  if (!availableContexts || availableContexts.length <= 1) { 
     return null;
   }
 
@@ -30,7 +30,7 @@ export function FamilyContextSwitcher() {
       <SelectTrigger className="w-auto min-w-[180px] h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
         <div className="flex items-center gap-2">
           {currentContext === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-          <SelectValue placeholder="Select context..." />
+          <SelectValue placeholder="Selecionar contexto..." />
         </div>
       </SelectTrigger>
       <SelectContent>

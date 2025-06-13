@@ -18,20 +18,20 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
-import { signInAdmin, signUpAdmin, signInWithGoogle } from "@/lib/firebase/auth"; // Assuming these are in firebase/auth.ts
+import { signInAdmin, signUpAdmin, signInWithGoogle } from "@/lib/firebase/auth";
 
 const loginSchema = z.object({
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  email: z.string().email({ message: "Endereço de e-mail inválido." }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
 });
 
 const registerSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  confirmPassword: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }),
+  email: z.string().email({ message: "Endereço de e-mail inválido." }),
+  password: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
+  confirmPassword: z.string().min(6, { message: "A senha deve ter pelo menos 6 caracteres." }),
 }).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match.",
+  message: "As senhas não coincidem.",
   path: ["confirmPassword"],
 });
 
@@ -59,19 +59,19 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
       if (mode === "login") {
         const { email, password } = values as z.infer<typeof loginSchema>;
         await signInAdmin(email, password);
-        toast({ title: "Login Successful", description: "Welcome back!" });
+        toast({ title: "Login Efetuado com Sucesso", description: "Bem-vindo(a) de volta!" });
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         await signUpAdmin(name, email, password);
-        toast({ title: "Registration Successful", description: "Welcome to MiniHeroes! Please log in." });
-        router.push("/auth/login"); // Or directly to dashboard if auto-login after signup
+        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao MiniHeroes! Por favor, faça login." });
+        router.push("/auth/login");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
       toast({
-        title: `${mode === "login" ? "Login" : "Registration"} Failed`,
-        description: error.message || `An unexpected error occurred. Please try again.`,
+        title: `${mode === "login" ? "Falha no Login" : "Falha no Cadastro"}`,
+        description: error.message || `Ocorreu um erro inesperado. Por favor, tente novamente.`,
         variant: "destructive",
       });
     } finally {
@@ -83,13 +83,13 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      toast({ title: "Google Sign-In Successful", description: "Welcome!" });
+      toast({ title: "Login com Google Efetuado com Sucesso", description: "Bem-vindo(a)!" });
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);
       toast({
-        title: "Google Sign-In Failed",
-        description: error.message || "Could not sign in with Google. Please try again.",
+        title: "Falha no Login com Google",
+        description: error.message || "Não foi possível fazer login com o Google. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -108,9 +108,9 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Nome Completo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your Name" {...field} />
+                  <Input placeholder="Seu Nome" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -122,7 +122,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>E-mail</FormLabel>
               <FormControl>
                 <Input type="email" placeholder="admin@example.com" {...field} />
               </FormControl>
@@ -135,7 +135,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel>Senha</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
@@ -154,7 +154,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel>Confirme a Senha</FormLabel>
                 <FormControl>
                  <div className="relative">
                     <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
@@ -176,7 +176,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          {mode === "login" ? "Log In" : "Create Account"}
+          {mode === "login" ? "Entrar" : "Criar Conta"}
         </Button>
       </form>
       <div className="relative my-6">
@@ -185,7 +185,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
+            Ou continue com
           </span>
         </div>
       </div>

@@ -23,7 +23,7 @@ export function UserNav() {
   };
 
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
-  const displayEmail = isChildAuthenticated ? `Access Code: ${childProfile?.accessCode}` : user?.email;
+  const displayEmail = isChildAuthenticated ? `Código de Acesso: ${childProfile?.accessCode}` : user?.email;
   const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; 
 
   const getInitials = (name?: string | null) => {
@@ -50,7 +50,7 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName || (isChildAuthenticated ? "Hero" : "Admin")}</p>
+            <p className="text-sm font-medium leading-none">{displayName || (isChildAuthenticated ? "Herói" : "Admin")}</p>
             {displayEmail && <p className="text-xs leading-none text-muted-foreground">{displayEmail}</p>}
           </div>
         </DropdownMenuLabel>
@@ -60,7 +60,7 @@ export function UserNav() {
             <Link href="/dashboard/profile">
               <DropdownMenuItem className="cursor-pointer">
                 <UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span>
+                <span>Perfil</span>
               </DropdownMenuItem>
             </Link>
           )}
@@ -68,7 +68,7 @@ export function UserNav() {
              <Link href={`/dashboard/child/${childProfile.id}`}>
               <DropdownMenuItem className="cursor-pointer">
                 <Rocket className="mr-2 h-4 w-4" />
-                <span>My Hero Page</span>
+                <span>Minha Página de Herói</span>
               </DropdownMenuItem>
             </Link>
            )}
@@ -76,7 +76,7 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive-foreground focus:bg-destructive">
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Log out</span>
+          <span>Sair</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

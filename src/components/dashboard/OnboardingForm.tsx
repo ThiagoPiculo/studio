@@ -21,8 +21,8 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus } from "lucide-react";
 
 const onboardingSchema = z.object({
-  childName: z.string().min(2, { message: "Child's name must be at least 2 characters." }).max(50, { message: "Child's name must be 50 characters or less." }),
-  childAge: z.coerce.number().min(1, { message: "Age must be at least 1." }).max(18, { message: "Age must be 18 or less." }),
+  childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
+  childAge: z.coerce.number().min(1, { message: "A idade deve ser pelo menos 1." }).max(18, { message: "A idade deve ser 18 ou menos." }),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -43,22 +43,19 @@ export function OnboardingForm() {
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
-      toast({ title: "Error", description: "You must be logged in to add a child.", variant: "destructive" });
+      toast({ title: "Erro", description: "Você precisa estar logado para adicionar uma criança.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
       await addChildProfile(user.uid, { name: values.childName, age: values.childAge });
-      toast({ title: "MiniHero Added!", description: `${values.childName} is ready for adventure!` });
-      // Optionally, redirect to the main dashboard or a page listing children
+      toast({ title: "MiniHero Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard"); 
-      // Or refresh data if staying on the same page and displaying a list
-      // form.reset(); // Reset form after successful submission
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({
-        title: "Failed to Add MiniHero",
-        description: error.message || "An unexpected error occurred. Please try again.",
+        title: "Falha ao Adicionar MiniHero",
+        description: error.message || "Ocorreu um erro inesperado. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -74,9 +71,9 @@ export function OnboardingForm() {
           name="childName"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Child's Name</FormLabel>
+              <FormLabel>Nome da Criança</FormLabel>
               <FormControl>
-                <Input placeholder="E.g., Alex" {...field} />
+                <Input placeholder="Ex: Alex" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -87,9 +84,9 @@ export function OnboardingForm() {
           name="childAge"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Child's Age</FormLabel>
+              <FormLabel>Idade da Criança</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="E.g., 7" {...field} />
+                <Input type="number" placeholder="Ex: 7" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -101,7 +98,7 @@ export function OnboardingForm() {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          Add MiniHero
+          Adicionar MiniHero
         </Button>
       </form>
     </Form>

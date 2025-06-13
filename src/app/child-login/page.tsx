@@ -12,15 +12,15 @@ export default function ChildLoginPage() {
           <div className="mb-3 flex justify-center">
             <Sparkles className="h-16 w-16 text-accent" />
           </div>
-          <CardTitle className="font-headline text-3xl">Hello MiniHero!</CardTitle>
-          <CardDescription className="text-primary-foreground/80">Enter your secret code to start your adventure.</CardDescription>
+          <CardTitle className="font-headline text-3xl">Olá MiniHero!</CardTitle>
+          <CardDescription className="text-primary-foreground/80">Digite seu código secreto para iniciar sua aventura.</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <ChildLoginForm />
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Are you an Admin Master?{' '}
+            Você é um Admin Master?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Admin Login
+              Login Admin
             </Link>
           </p>
         </CardContent>

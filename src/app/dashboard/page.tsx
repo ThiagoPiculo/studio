@@ -13,7 +13,7 @@ import { getChildProfilesByOwner, getChildProfilesByFamily } from "@/lib/firebas
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
@@ -26,7 +26,6 @@ export default function DashboardPage() {
         if (currentContext === 'my-space') {
           profiles = await getChildProfilesByOwner(user.uid);
         } else {
-          // Assuming currentContext is a familyId
           profiles = await getChildProfilesByFamily(currentContext);
         }
         setChildren(profiles);
@@ -42,41 +41,43 @@ export default function DashboardPage() {
   }, [user, currentContext]);
 
   if (!user) {
-    return <p>Loading user data...</p>;
+    return <p>Carregando dados do usuário...</p>;
   }
 
-  const contextName = currentContext === 'my-space' ? "Your Space" : `Family: ${currentContext}`; // Replace with actual family name
+  const currentContextData = availableContexts.find(c => c.id === currentContext);
+  const contextName = currentContextData ? currentContextData.name : (currentContext === 'my-space' ? "Seu Espaço" : `Família: ${currentContext}`);
+
 
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">Welcome, {user.name || "Admin Master"}!</CardTitle>
-          <CardDescription>Here's an overview of your MiniHeroes in <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
+          <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Admin Master"}!</CardTitle>
+          <CardDescription>Aqui está uma visão geral dos seus MiniHeroes em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Manage tasks, rewards, and watch your MiniHeroes grow!</p>
+          <p>Gerencie tarefas, recompensas e veja seus MiniHeroes crescerem!</p>
         </CardContent>
       </Card>
 
       <section>
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-headline">Your MiniHeroes</h2>
+          <h2 className="text-2xl font-headline">Seus MiniHeroes</h2>
           <Link href="/dashboard/onboarding">
-            <Button><PlusCircle className="mr-2 h-4 w-4" /> Add New Child</Button>
+            <Button><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Criança</Button>
           </Link>
         </div>
         {isLoadingChildren ? (
-          <p>Loading children...</p>
+          <p>Carregando crianças...</p>
         ) : children.length === 0 ? (
           <Card className="text-center py-8">
             <CardContent>
               <Smile className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">No MiniHeroes Yet!</h3>
-              <p className="text-muted-foreground mb-4">It looks a bit empty here. Start by adding your first child.</p>
+              <h3 className="text-xl font-semibold mb-2">Nenhum MiniHero Ainda!</h3>
+              <p className="text-muted-foreground mb-4">Parece um pouco vazio por aqui. Comece adicionando sua primeira criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Add Your First Hero
+                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Herói
                 </Button>
               </Link>
             </CardContent>
@@ -100,12 +101,12 @@ export default function DashboardPage() {
                       className="rounded-full border-4 border-primary"
                     />
                   </div>
-                  <p className="text-sm text-muted-foreground">Age: {child.age}</p>
-                  <p className="text-sm text-muted-foreground">Level: {child.level}</p>
-                  <p className="text-lg font-bold text-accent">{child.stars} Stars <Star className="inline h-5 w-5 fill-accent" /></p>
+                  <p className="text-sm text-muted-foreground">Idade: {child.age}</p>
+                  <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
+                  <p className="text-lg font-bold text-accent">{child.stars} Estrelas <Star className="inline h-5 w-5 fill-accent" /></p>
                   <p className="text-sm text-muted-foreground">XP: {child.xp}</p>
                   <Link href={`/dashboard/child/${child.id}/manage`}>
-                    <Button className="w-full mt-4">Manage {child.name}</Button>
+                    <Button className="w-full mt-4">Gerenciar {child.name}</Button>
                   </Link>
                 </CardContent>
               </Card>
@@ -117,23 +118,23 @@ export default function DashboardPage() {
       <section className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><CheckSquare className="text-primary"/> Quick Actions</CardTitle>
+            <CardTitle className="flex items-center gap-2"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2">
-            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start">Assign a New Task</Button></Link>
-            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start">Create a Reward</Button></Link>
-            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start">Manage Family & Collaborators</Button></Link>
+            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start">Atribuir Nova Tarefa</Button></Link>
+            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start">Criar Recompensa</Button></Link>
+            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start">Gerenciar Família e Colaboradores</Button></Link>
           </CardContent>
         </Card>
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Brain className="text-accent"/> Task Ideas</CardTitle>
+            <CardTitle className="flex items-center gap-2"><Brain className="text-accent"/> Ideias de Tarefas</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-3">Need inspiration? Use our AI Task Suggester!</p>
+            <p className="text-muted-foreground mb-3">Precisa de inspiração? Use nosso Sugestor de Tarefas IA!</p>
             <Link href="/dashboard/tasks">
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                <Sun className="mr-2 h-4 w-4"/> Get Task Suggestions
+                <Sun className="mr-2 h-4 w-4"/> Obter Sugestões de Tarefas
               </Button>
             </Link>
           </CardContent>

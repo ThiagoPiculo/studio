@@ -22,16 +22,16 @@ export function Header() {
           {loading ? null : user ? (
             <>
               <Link href="/dashboard">
-                <Button variant="ghost" className="text-foreground hover:bg-accent/10">Dashboard</Button>
+                <Button variant="ghost" className="text-foreground hover:bg-accent/10">Painel</Button>
               </Link>
               <Link href="/dashboard/family">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
-                  <Users className="h-4 w-4" /> Family
+                  <Users className="h-4 w-4" /> Família
                 </Button>
               </Link>
               <Link href="/dashboard/tasks">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
-                  <ListChecks className="h-4 w-4" /> Tasks
+                  <ListChecks className="h-4 w-4" /> Tarefas
                 </Button>
               </Link>
               <FamilyContextSwitcher />
@@ -46,12 +46,12 @@ export function Header() {
             <>
               <Link href="/auth/login">
                 <Button variant="ghost" className="flex items-center gap-2 text-foreground hover:bg-accent/10">
-                  <LogIn className="h-4 w-4" /> Admin Login
+                  <LogIn className="h-4 w-4" /> Login Admin
                 </Button>
               </Link>
               <Link href="/child-login">
                 <Button variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                  <ShieldCheck className="h-4 w-4 mr-2" /> Child Access
+                  <ShieldCheck className="h-4 w-4 mr-2" /> Acesso Infantil
                 </Button>
               </Link>
             </>
