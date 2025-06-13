@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addReward } from '@/lib/firebase/firestore';
 import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
 import type { ChildProfile, RewardCategory, Reward } from '@/lib/types';
-import { rewardCategories } from '@/lib/types'; // Importando as categorias
+import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, PlusCircle, ArrowLeft } from 'lucide-react';
 
 const rewardFormSchema = z.object({
@@ -50,7 +50,7 @@ export default function CreateRewardPage() {
       childId: '',
       title: '',
       description: '',
-      category: undefined, // Explicitly undefined, or pick a default like rewardCategories[0].id
+      category: undefined, 
       starsCost: 10,
       isMaterial: false,
     },
@@ -96,7 +96,7 @@ export default function CreateRewardPage() {
     }
     setIsLoading(true);
     try {
-      const rewardDataPayload: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'familyId'> & { familyId?: string } = {
+      const rewardDataPayload: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'familyId'> & { familyId?: string | null } = {
         childId: values.childId,
         ownerId: user.uid,
         title: values.title,
@@ -104,18 +104,15 @@ export default function CreateRewardPage() {
         category: values.category,
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
+        familyId: currentContext === 'my-space' ? null : currentContext,
       };
-
-      if (currentContext !== 'my-space') {
-        rewardDataPayload.familyId = currentContext;
-      }
       
       await addReward(rewardDataPayload as Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt'>);
       toast({
         title: 'Recompensa Criada!',
         description: `A recompensa "${values.title}" foi adicionada com sucesso.`,
       });
-      router.push('/dashboard/rewards'); // Ou para a página do filho específico se aplicável
+      router.push('/dashboard/rewards'); 
     } catch (error) {
       console.error('Error creating reward:', error);
       toast({
@@ -227,7 +224,8 @@ export default function CreateRewardPage() {
                         {rewardCategories.map((category) => (
                           <SelectItem key={category.id} value={category.id}>
                              <div className="flex items-center">
-                              <span className={`mr-2 px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                               {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
+                              <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
                                 {category.label}
                               </span>
                             </div>
@@ -302,4 +300,3 @@ export default function CreateRewardPage() {
     </div>
   );
 }
-
