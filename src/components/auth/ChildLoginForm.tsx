@@ -21,7 +21,7 @@ import { findChildByAccessCode } from "@/lib/firebase/firestore";
 import { useAuth } from "@/contexts/AuthContext";
 
 const childLoginSchema = z.object({
-  accessCode: z.string().length(6, { message: "O código de acesso deve ter 6 dígitos." }).regex(/^\d{6}$/, { message: "O código de acesso deve ser composto por 6 dígitos."}),
+  accessCode: z.string().length(6, { message: "O código mágico deve ter 6 números." }).regex(/^\d{6}$/, { message: "O código mágico deve ser apenas números."}),
 });
 
 type ChildLoginFormValues = z.infer<typeof childLoginSchema>;
@@ -45,21 +45,21 @@ export function ChildLoginForm() {
       if (childProfile) {
         setChildAuthenticatedState(childProfile);
 
-        toast({ title: "Login Efetuado com Sucesso!", description: `Bem-vindo(a) de volta, ${childProfile.name}!` });
-        router.push(`/dashboard/child/${childProfile.id}`);
+        toast({ title: "Portal Desbloqueado!", description: `Bem-vindo(a) à aventura, ${childProfile.name}!` });
+        router.push(`/dashboard/child/${childProfile.id}`); // Redirect to a child-specific dashboard
       } else {
-        throw new Error("Código de acesso inválido."); // More generic error here, specific message in catch
+        toast({
+          title: "Ops! Código Mágico Errado",
+          description: "Essa chave não abriu o portal. Peça para um adulto conferir seu código ou tente digitar de novo com atenção!",
+          variant: "destructive",
+        });
       }
 
     } catch (error: any) {
       console.error("Child login failed:", error);
-      let description = "Não foi possível fazer login. Verifique o código e tente novamente.";
-      if (error.message.includes("Código de acesso inválido")) {
-        description = "Código de acesso inválido. Verifique se digitou os 6 números corretamente ou peça para um adulto conferir o código no painel de gerenciamento.";
-      }
       toast({
-        title: "Falha no Login",
-        description: description,
+        title: "Algo Deu Errado...",
+        description: "Não consegui verificar seu código mágico. Tente de novo daqui a pouquinho ou chame um adulto se o problema continuar.",
         variant: "destructive",
       });
     } finally {
@@ -75,26 +75,30 @@ export function ChildLoginForm() {
           name="accessCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-lg font-semibold">Seu Código de Acesso Secreto</FormLabel>
+              <FormLabel className="text-lg font-semibold text-center block mb-2">Sua Chave Secreta de Herói (são 6 números!)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="123456"
+                  placeholder="1 2 3 4 5 6"
                   {...field}
-                  className="h-14 text-2xl text-center tracking-[0.3em]"
+                  className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-inner bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary"
                   maxLength={6}
+                  autoComplete="off"
+                  type="tel" // Use type="tel" for numeric input on mobile devices
+                  inputMode="numeric" // Hint for numeric keyboard
+                  pattern="\d*" // Pattern for numeric input
                 />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-center" />
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full h-12 text-lg" disabled={isLoading}>
+        <Button type="submit" className="w-full h-14 text-xl rounded-lg shadow-lg transform hover:scale-105 transition-transform" disabled={isLoading}>
           {isLoading ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <Loader2 className="mr-2 h-6 w-6 animate-spin" />
           ) : (
-            <KeyRound className="mr-2 h-5 w-5" />
+            <KeyRound className="mr-2 h-6 w-6" />
           )}
-          Digitar Código
+          Entrar na Aventura!
         </Button>
       </form>
     </Form>

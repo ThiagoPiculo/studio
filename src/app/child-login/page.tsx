@@ -10,10 +10,12 @@ export default function ChildLoginPage() {
       <Card className="w-full max-w-sm shadow-xl overflow-hidden">
          <CardHeader className="bg-primary text-primary-foreground text-center p-6">
           <div className="mb-3 flex justify-center">
-            <Sparkles className="h-16 w-16 text-accent" />
+            <Sparkles className="h-16 w-16 text-accent animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-3xl">Olá MiniHero!</CardTitle>
-          <CardDescription className="text-primary-foreground/80">Digite seu código secreto para iniciar sua aventura.</CardDescription>
+          <CardTitle className="font-headline text-3xl">Olá Mini Heroi!</CardTitle>
+          <CardDescription className="text-primary-foreground/90 text-base mt-1">
+            Use sua chave mágica de 6 números para destravar suas missões!
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <ChildLoginForm />
