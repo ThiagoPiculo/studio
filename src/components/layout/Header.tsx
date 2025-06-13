@@ -22,20 +22,20 @@ export function Header() {
           {loading ? null : user ? (
             <>
               <Link href="/dashboard" passHref>
-                <Button variant="ghost" className="text-foreground hover:bg-accent/10 px-2 md:px-3">Painel</Button>
+                <Button variant="ghost" className="text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">Painel</Button>
               </Link>
               <Link href="/dashboard/family" passHref>
-                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent/10 px-2 md:px-3">
+                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
                   <Users className="h-4 w-4" /> Família
                 </Button>
               </Link>
               <Link href="/dashboard/tasks" passHref>
-                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent/10 px-2 md:px-3">
+                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
                   <ListChecks className="h-4 w-4" /> Tarefas
                 </Button>
               </Link>
               <Link href="/dashboard/rewards" passHref>
-                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent/10 px-2 md:px-3">
+                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
                   <Gift className="h-4 w-4" /> Recompensas
                 </Button>
               </Link>
@@ -50,7 +50,7 @@ export function Header() {
           ) : (
             <>
               <Link href="/auth/login" passHref>
-                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent/10 px-2 md:px-3">
+                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
                   <LogIn className="h-4 w-4" /> Login Admin
                 </Button>
               </Link>
