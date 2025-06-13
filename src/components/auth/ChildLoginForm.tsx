@@ -46,7 +46,7 @@ export function ChildLoginForm() {
         setChildAuthenticatedState(childProfile);
 
         toast({ title: "Portal Desbloqueado!", description: `Bem-vindo(a) à aventura, ${childProfile.name}!` });
-        router.push(`/dashboard/child/${childProfile.id}`); // Redirect to a child-specific dashboard
+        router.push(`/dashboard/child/${childProfile.id}`); 
       } else {
         toast({
           title: "Ops! Código Mágico Errado",
@@ -80,12 +80,12 @@ export function ChildLoginForm() {
                 <Input
                   placeholder="1 2 3 4 5 6"
                   {...field}
-                  className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-inner bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary"
+                  className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-inner bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary text-primary"
                   maxLength={6}
                   autoComplete="off"
-                  type="tel" // Use type="tel" for numeric input on mobile devices
-                  inputMode="numeric" // Hint for numeric keyboard
-                  pattern="\d*" // Pattern for numeric input
+                  type="tel" 
+                  inputMode="numeric" 
+                  pattern="\d*" 
                 />
               </FormControl>
               <FormMessage className="text-center" />

@@ -19,16 +19,16 @@ export default function ChildLoginPage() {
         </CardHeader>
         <CardContent className="p-6">
           <ChildLoginForm />
-          <div className="mt-8 space-y-3 text-center">
-            <div className="flex items-center justify-center text-sm text-muted-foreground">
+          <div className="mt-8 space-y-3">
+            <div className="flex items-center justify-start text-sm text-muted-foreground">
               <ListChecks className="h-5 w-5 mr-2 text-primary" />
               <span>Complete suas missões diárias!</span>
             </div>
-            <div className="flex items-center justify-center text-sm text-muted-foreground">
+            <div className="flex items-center justify-start text-sm text-muted-foreground">
               <StarIcon className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400" />
               <span>Ganhe estrelas brilhantes!</span>
             </div>
-            <div className="flex items-center justify-center text-sm text-muted-foreground">
+            <div className="flex items-center justify-start text-sm text-muted-foreground">
               <Trophy className="h-5 w-5 mr-2 text-orange-500" />
               <span>Conquiste recompensas incríveis!</span>
             </div>
