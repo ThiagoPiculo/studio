@@ -1,7 +1,7 @@
 
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, ListChecks, Star as StarIcon, Trophy } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ChildLoginPage() {
@@ -10,16 +10,30 @@ export default function ChildLoginPage() {
       <Card className="w-full max-w-sm shadow-xl overflow-hidden">
          <CardHeader className="bg-primary text-primary-foreground text-center p-6">
           <div className="mb-3 flex justify-center">
-            <Sparkles className="h-16 w-16 text-accent animate-pulse" />
+            <Sparkles className="h-16 w-16 text-accent-foreground animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-3xl">Olá Mini Heroi!</CardTitle>
+          <CardTitle className="font-headline text-3xl">Olá, Mini Heroi!</CardTitle>
           <CardDescription className="text-primary-foreground/90 text-base mt-1">
             Use sua chave mágica de 6 números para destravar suas missões!
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <ChildLoginForm />
-          <p className="mt-6 text-center text-sm text-muted-foreground">
+          <div className="mt-8 space-y-3 text-center">
+            <div className="flex items-center justify-center text-sm text-muted-foreground">
+              <ListChecks className="h-5 w-5 mr-2 text-primary" />
+              <span>Complete suas missões diárias!</span>
+            </div>
+            <div className="flex items-center justify-center text-sm text-muted-foreground">
+              <StarIcon className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400" />
+              <span>Ganhe estrelas brilhantes!</span>
+            </div>
+            <div className="flex items-center justify-center text-sm text-muted-foreground">
+              <Trophy className="h-5 w-5 mr-2 text-orange-500" />
+              <span>Conquiste recompensas incríveis!</span>
+            </div>
+          </div>
+          <p className="mt-8 text-center text-sm text-muted-foreground">
             Você é um Admin Master?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
               Login Admin
