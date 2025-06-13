@@ -44,6 +44,15 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
+export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
+  const docRef = doc(db, 'children', childId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as ChildProfile;
+  }
+  return null;
+};
+
 export const getChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
   const q = query(collection(db, 'children'), where('ownerId', '==', ownerId));
   const querySnapshot = await getDocs(q);
