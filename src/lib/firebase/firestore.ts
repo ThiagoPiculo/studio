@@ -12,11 +12,10 @@ import {
   serverTimestamp,
   Timestamp,
   writeBatch,
-  setDoc // Added setDoc for consistency
+  setDoc
 } from 'firebase/firestore';
-import { db } from './config'; // auth was unused here
+import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, Task, Reward, Dream, UserProfile } from '@/lib/types';
-// import { v4 as uuidv4 } from 'uuid'; // Firebase auto-IDs are preferred
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -63,6 +62,30 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
   const q = query(collection(db, 'children'), where('familyId', '==', familyId));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+};
+
+export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'updatedAt'>>) => {
+  const childRef = doc(db, 'children', childId);
+  await updateDoc(childRef, {
+    ...updates,
+    updatedAt: serverTimestamp()
+  });
+};
+
+export const regenerateChildAccessCode = async (childId: string): Promise<string> => {
+  const newAccessCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const childRef = doc(db, 'children', childId);
+  await updateDoc(childRef, {
+    accessCode: newAccessCode,
+    updatedAt: serverTimestamp()
+  });
+  return newAccessCode;
+};
+
+export const deleteChildProfile = async (childId: string): Promise<void> => {
+  const childRef = doc(db, 'children', childId);
+  await deleteDoc(childRef);
+  // TODO: Consider deleting associated tasks, rewards, dreams etc. if necessary (cascade delete).
 };
 
 // --- Family ---
