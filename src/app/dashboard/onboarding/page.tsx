@@ -1,21 +1,66 @@
 
+"use client";
+
 import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Users } from 'lucide-react';
+import { Rocket, Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffect, useState } from 'react';
+import { getChildProfilesByOwner } from '@/lib/firebase/firestore';
+import type { ChildProfile } from '@/lib/types';
 
 export default function OnboardingPage() {
+  const { user } = useAuth();
+  const [childrenCount, setChildrenCount] = useState<number | null>(null);
+  const [isLoadingCount, setIsLoadingCount] = useState(true);
+
+  useEffect(() => {
+    const fetchChildrenCount = async () => {
+      if (user) {
+        setIsLoadingCount(true);
+        try {
+          const profiles = await getChildProfilesByOwner(user.uid);
+          setChildrenCount(profiles.length);
+        } catch (error) {
+          console.error("Error fetching children count:", error);
+          setChildrenCount(0); // Assume 0 on error to be safe
+        } finally {
+          setIsLoadingCount(false);
+        }
+      } else {
+        setIsLoadingCount(false); // No user, so not loading
+      }
+    };
+    fetchChildrenCount();
+  }, [user]);
+
+  const getTitle = () => {
+    if (isLoadingCount) return "Carregando...";
+    return childrenCount === 0 ? "Vamos Adicionar Seu Primeiro Mini Herói!" : "Vamos Adicionar Mais um Mini Herói!";
+  };
+
+  const getDescription = () => {
+    if (isLoadingCount) return "Aguarde um momento...";
+    return childrenCount === 0 
+      ? "Toda grande aventura começa com um herói (ou heroína!). Conte-nos um pouco sobre sua criança para começar." 
+      : "A equipe de Mini Heróis está crescendo! Conte-nos um pouco sobre a nova criança.";
+  };
+
+
   return (
     <div className="container mx-auto max-w-2xl py-8">
       <Card className="shadow-xl">
         <CardHeader className="text-center">
           <div className="mb-4 flex justify-center">
-            <Rocket className="h-20 w-20 text-primary animate-pulse" />
+            {isLoadingCount ? <Loader2 className="h-20 w-20 text-primary animate-spin" /> : <Rocket className="h-20 w-20 text-primary animate-pulse" />}
           </div>
-          <CardTitle className="font-headline text-4xl">Vamos Adicionar Seu Primeiro Mini Heroi!</CardTitle>
+          <CardTitle className="font-headline text-4xl">
+            {getTitle()}
+          </CardTitle>
           <CardDescription className="text-lg">
-            Toda grande aventura começa com um herói. Conte-nos um pouco sobre sua criança para começar.
+            {getDescription()}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 md:p-8">

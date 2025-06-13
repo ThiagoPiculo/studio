@@ -31,7 +31,9 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   const newChild: ChildProfile = {
     id: newChildRef.id,
     ownerId,
-    ...childData,
+    name: childData.name,
+    age: childData.age,
+    gender: childData.gender, // Salvar o gênero
     stars: 0,
     xp: 0,
     level: 1,
@@ -191,3 +193,4 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
+

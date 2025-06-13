@@ -14,6 +14,7 @@ export interface ChildProfile {
   familyId?: string; // Optional, ID of the family if shared
   name: string;
   age: number;
+  gender?: 'boy' | 'girl' | 'not-informed'; // Novo campo
   stars: number;
   xp: number;
   level: number;
@@ -99,3 +100,4 @@ export type AuthContextType = {
   setChildAuthenticatedState: (profile: ChildProfile) => void; // Add this line
   // Add other auth methods as needed, e.g., email/password login/signup
 };
+
