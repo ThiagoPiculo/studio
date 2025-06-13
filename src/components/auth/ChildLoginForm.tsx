@@ -17,8 +17,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, KeyRound } from "lucide-react";
-import { childLoginWithAccessCode, signInWithChildCustomToken, findChildByAccessCode } from "@/lib/firebase/firestore"; // Placeholder path, use actual firebase interaction
-import { useAuth } from "@/contexts/AuthContext"; // Assuming AuthContext can handle child sessions
+import { findChildByAccessCode } from "@/lib/firebase/firestore";
+import { useAuth } from "@/contexts/AuthContext";
 
 const childLoginSchema = z.object({
   accessCode: z.string().length(6, { message: "Access code must be 6 digits." }).regex(/^\d{6}$/, { message: "Access code must be 6 digits."}),
@@ -30,7 +30,7 @@ export function ChildLoginForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  // const { setChildAuthenticatedState } = useAuth(); // Assuming a method to set child auth state in AuthContext
+  const { setChildAuthenticatedState } = useAuth();
 
   const form = useForm<ChildLoginFormValues>({
     resolver: zodResolver(childLoginSchema),
@@ -40,22 +40,16 @@ export function ChildLoginForm() {
   const onSubmit = async (values: ChildLoginFormValues) => {
     setIsLoading(true);
     try {
-      // Step 1: Client calls a (ideally backend) function to validate access code and get a custom token.
-      // This is simplified / simulated here.
-      // const tokenResponse = await childLoginWithAccessCode(values.accessCode); // This function would call your backend
-      
-      // For now, directly check access code and simulate token flow
       const childProfile = await findChildByAccessCode(values.accessCode);
 
       if (childProfile) {
-        // In a real app, you would get a custom token from your backend for childProfile.id (or childProfile.uid)
-        // Then use signInWithCustomToken(auth, customToken)
-        // For this example, we'll simulate setting the child state directly after finding the profile.
-        // This is NOT secure for a real application.
-        // setChildAuthenticatedState(childProfile); // Update AuthContext
-        
+        // In a real app, your backend would generate a custom token for childProfile.id
+        // Then you'd use Firebase's signInWithCustomToken(auth, customToken)
+        // For this example, we are directly setting the auth state. This is NOT secure for production.
+        setChildAuthenticatedState(childProfile);
+
         toast({ title: "Login Successful", description: `Welcome, ${childProfile.name}!` });
-        router.push(`/dashboard/child/${childProfile.id}`); // Navigate to a child-specific dashboard
+        router.push(`/dashboard/child/${childProfile.id}`);
       } else {
         throw new Error("Invalid access code. Please try again.");
       }
@@ -82,9 +76,9 @@ export function ChildLoginForm() {
             <FormItem>
               <FormLabel className="text-lg font-semibold">Your Secret Access Code</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="123456" 
-                  {...field} 
+                <Input
+                  placeholder="123456"
+                  {...field}
                   className="h-14 text-2xl text-center tracking-[0.3em]"
                   maxLength={6}
                 />
@@ -99,4 +93,9 @@ export function ChildLoginForm() {
           ) : (
             <KeyRound className="mr-2 h-5 w-5" />
           )}
-          Enter The
+          Enter Code
+        </Button>
+      </form>
+    </Form>
+  );
+}

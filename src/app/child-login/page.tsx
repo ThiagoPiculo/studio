@@ -1,7 +1,7 @@
 
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldCheck, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import Link from 'next/link';
 
 export default function ChildLoginPage() {
@@ -25,4 +25,6 @@ export default function ChildLoginPage() {
           </p>
         </CardContent>
       </Card>
-       <p className="mt-8 text-center text-xs text-muted-
+    </div>
+  );
+}
