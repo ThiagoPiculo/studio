@@ -37,7 +37,7 @@ export function OnboardingForm() {
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       childName: "",
-      childAge: undefined,
+      childAge: '' as unknown as number, // Initialize with empty string to avoid uncontrolled input error
     },
   });
 
@@ -86,7 +86,7 @@ export function OnboardingForm() {
             <FormItem>
               <FormLabel>Idade da Criança</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="Ex: 7" {...field} />
+                <Input type="number" placeholder="Ex: 7" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>
