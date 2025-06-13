@@ -141,9 +141,9 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2 text-xl"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Atribuir Nova Tarefa</Button></Link>
-            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Criar Recompensa</Button></Link>
-            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10">Gerenciar Família e Colaboradores</Button></Link>
+            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Atribuir Nova Tarefa</Button></Link>
+            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Criar Recompensa</Button></Link>
+            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Gerenciar Família e Colaboradores</Button></Link>
           </CardContent>
         </Card>
         <Card className="shadow-md bg-gradient-to-br from-accent/10 to-card">
