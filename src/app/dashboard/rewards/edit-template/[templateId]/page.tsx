@@ -111,6 +111,7 @@ export default function EditRewardTemplatePage() {
     }
     setIsLoading(true);
     try {
+      const originalStatus = rewardTemplate.status;
       const updatePayload: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
         title: values.title,
         description: values.description,
@@ -121,9 +122,15 @@ export default function EditRewardTemplatePage() {
       };
       
       await updateRewardTemplate(rewardTemplate.id, updatePayload);
+
+      let toastDescription = `A recompensa "${values.title}" foi atualizada com sucesso.`;
+      if (originalStatus === 'archived' && values.status === 'active') {
+        toastDescription = `A recompensa "${values.title}" foi atualizada e reativada no catálogo.`;
+      }
+
       toast({
         title: 'Recompensa Atualizada!',
-        description: `A recompensa "${values.title}" foi salva com sucesso.`,
+        description: toastDescription,
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
@@ -323,4 +330,3 @@ export default function EditRewardTemplatePage() {
     </div>
   );
 }
-
