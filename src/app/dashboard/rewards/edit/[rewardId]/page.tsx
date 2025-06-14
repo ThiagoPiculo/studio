@@ -90,12 +90,12 @@ export default function EditRewardTemplatePage() {
             status: fetchedTemplate.status,
           });
         } else {
-          toast({ title: "Modelo de recompensa não encontrado", variant: "destructive" });
+          toast({ title: "Recompensa não encontrada", variant: "destructive" });
           router.push('/dashboard/rewards');
         }
       } catch (error) {
         console.error("Error fetching reward template:", error);
-        toast({ title: "Erro ao carregar modelo", variant: "destructive" });
+        toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
         router.push('/dashboard/rewards');
       } finally {
         setIsFetchingData(false);
@@ -107,7 +107,7 @@ export default function EditRewardTemplatePage() {
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
-        form.setValue('isMaterial', value.category === 'material');
+        form.setValue('isMaterial', value.category === 'material_items');
       }
     });
     return () => subscription.unsubscribe();
@@ -132,14 +132,14 @@ export default function EditRewardTemplatePage() {
       
       await updateRewardTemplate(rewardTemplate.id, updatePayload);
       toast({
-        title: 'Modelo de Recompensa Atualizado!',
-        description: `O modelo "${values.title}" foi salvo com sucesso.`,
+        title: 'Recompensa Atualizada!',
+        description: `A recompensa "${values.title}" foi salva com sucesso.`,
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
       console.error('Error updating reward template:', error);
       toast({
-        title: 'Erro ao Atualizar Modelo',
+        title: 'Erro ao Atualizar Recompensa',
         description: 'Não foi possível salvar as alterações. Tente novamente.',
         variant: 'destructive',
       });
@@ -152,7 +152,7 @@ export default function EditRewardTemplatePage() {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-3">Carregando dados do modelo...</p>
+        <p className="ml-3">Carregando dados da recompensa...</p>
       </div>
     );
   }
@@ -160,7 +160,7 @@ export default function EditRewardTemplatePage() {
   if (!rewardTemplate) {
      return (
       <div className="flex flex-col justify-center items-center min-h-screen">
-        <p className="text-lg text-destructive mb-4">Modelo de recompensa não encontrado.</p>
+        <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
         <Button onClick={() => router.push('/dashboard/rewards')}>Voltar para o Catálogo</Button>
       </div>
     );
@@ -177,9 +177,9 @@ export default function EditRewardTemplatePage() {
           <div className="flex items-center gap-3 mb-2">
             <Package className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Editar Modelo de Recompensa</CardTitle>
+              <CardTitle className="text-3xl font-headline">Editar Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Modifique os detalhes deste modelo de recompensa.
+                Modifique os detalhes desta recompensa.
               </CardDescription>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function EditRewardTemplatePage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título do Modelo</FormLabel>
+                    <FormLabel>Título da Recompensa</FormLabel>
                     <FormControl>
                       <Input placeholder="Ex: Uma tarde de jogos de tabuleiro" {...field} />
                     </FormControl>
@@ -209,7 +209,7 @@ export default function EditRewardTemplatePage() {
                     <FormLabel>Descrição (Opcional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Detalhes sobre o modelo."
+                        placeholder="Detalhes sobre a recompensa."
                         className="resize-none"
                         {...field}
                       />
@@ -258,12 +258,12 @@ export default function EditRewardTemplatePage() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        disabled={form.getValues('category') === 'material'} 
+                        disabled={form.getValues('category') === 'material_items'} 
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        Este modelo é para um item material?
+                        Esta recompensa é para um item material?
                       </FormLabel>
                       <FormDescription>
                         Marque se a recompensa é um objeto físico.
@@ -294,20 +294,20 @@ export default function EditRewardTemplatePage() {
                 name="status"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Status do Modelo</FormLabel>
+                    <FormLabel>Status da Recompensa</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status do modelo..." />
+                          <SelectValue placeholder="Selecione o status da recompensa..." />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="active">Ativo (pode ser atribuído)</SelectItem>
-                        <SelectItem value="archived">Arquivado (não pode ser atribuído)</SelectItem>
+                        <SelectItem value="active">Ativa (pode ser atribuída)</SelectItem>
+                        <SelectItem value="archived">Arquivada (não pode ser atribuída)</SelectItem>
                       </SelectContent>
                     </Select>
                      <FormDescription>
-                      Modelos ativos podem ser atribuídos a crianças. Modelos arquivados não aparecerão para novas atribuições.
+                      Recompensas ativas podem ser atribuídas a crianças. Recompensas arquivadas não aparecerão para novas atribuições.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -320,17 +320,18 @@ export default function EditRewardTemplatePage() {
                 ) : (
                   <Save className="mr-2 h-4 w-4" />
                 )}
-                Salvar Alterações no Modelo
+                Salvar Alterações na Recompensa
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter>
             <p className="text-xs text-muted-foreground">
-                Alterações aqui afetam o modelo base da recompensa.
+                Alterações aqui afetam a recompensa base do catálogo. A lógica para propagar alterações para recompensas já atribuídas será implementada futuramente.
             </p>
         </CardFooter>
       </Card>
     </div>
   );
 }
+
