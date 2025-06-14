@@ -20,6 +20,7 @@ import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, PackagePlus, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -39,8 +40,12 @@ function CreateRewardTemplatePageContent() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const { currentContext } = useFamily();
-  const [isLoading, setIsLoading] = useState(false);
 
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<RewardTemplate | null>(null);
+
+  // Ler parâmetros da URL para defaultValues
   const initialTitle = searchParams.get('title') || '';
   const initialDescription = searchParams.get('description') || '';
   const categoryParam = searchParams.get('category') as RewardCategory | null;
@@ -55,8 +60,6 @@ function CreateRewardTemplatePageContent() {
   if (isMaterialParam !== null) {
     resolvedInitialIsMaterial = isMaterialParam === 'true';
   } else if (resolvedInitialCategory === 'material_items') {
-    // Se isMaterial não veio na URL, mas a categoria é 'material_items',
-    // então marcamos como material por padrão para essa categoria.
     resolvedInitialIsMaterial = true;
   }
 
@@ -72,34 +75,48 @@ function CreateRewardTemplatePageContent() {
   });
   
   useEffect(() => {
+    // Este useEffect lida com a lógica reativa quando a categoria é alterada pelo usuário
+    // ou se a categoria inicial (via URL) for 'material_items'.
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
         const currentCategoryValue = value.category;
-        const isMaterialExplicitlySetByUrl = isMaterialParam === 'true';
+        const isCategoryMaterial = currentCategoryValue === 'material_items';
 
-        if (currentCategoryValue === 'material_items') {
-          // Se a categoria é material, forçar isMaterial a ser true.
-          // E mostrar o toast de aviso.
+        // Atualiza isMaterial se a categoria for 'material_items'
+        if (isCategoryMaterial) {
           form.setValue('isMaterial', true, { shouldValidate: true });
-          toast({
-            title: "Atenção: Recompensas Materiais",
-            description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
-            variant: "default", 
-            duration: 10000, // Duração maior para dar tempo de ler
-          });
         } else {
-          // Se a categoria mudou para NÃO material, e 'isMaterial' NÃO foi explicitamente setado como true pela URL,
-          // então desmarcamos 'isMaterial'.
-          if (!isMaterialExplicitlySetByUrl) {
-            form.setValue('isMaterial', false, { shouldValidate: true });
-          }
-          // Se isMaterial foi explicitamente setado como true pela URL, e o usuário mudou para uma categoria não material,
-          // mantemos isMaterial como true (o usuário pode querer uma recompensa "não material" que ele considera material).
+            // Se a categoria mudou para NÃO material E 'isMaterial' não foi explicitamente definido como true via URL
+            // desmarcamos 'isMaterial'.
+            // Se isMaterialParam === 'true', o usuário explicitamente passou, então não desmarcamos automaticamente
+            // ao mudar para categoria não-material. Ele pode querer.
+             if (isMaterialParam !== 'true') {
+                 form.setValue('isMaterial', false, { shouldValidate: true });
+             }
+        }
+        
+        // Mostra o toast de aviso para recompensas materiais, se aplicável
+        if (isCategoryMaterial) {
+            toast({
+                title: "Atenção: Recompensas Materiais",
+                description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
+                variant: "default", 
+                duration: 10000,
+            });
         }
       }
     });
+    // Disparar a lógica do toast se a categoria inicial for material
+    if (form.getValues('category') === 'material_items') {
+        toast({
+            title: "Atenção: Recompensas Materiais",
+            description: "Lembre-se de não condicionar itens essenciais ao cumprimento de tarefas. A recompensa deve ser um 'extra'.",
+            variant: "default",
+            duration: 10000,
+        });
+    }
     return () => subscription.unsubscribe();
-  }, [form, toast, isMaterialParam]); // Adicionado isMaterialParam às dependências
+  }, [form, toast, isMaterialParam]);
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
@@ -119,17 +136,20 @@ function CreateRewardTemplatePageContent() {
         familyId: currentContext === 'my-space' ? null : currentContext,
       };
       
-      await addRewardTemplate(templateDataPayload);
+      const createdTemplate = await addRewardTemplate(templateDataPayload);
       toast({
-        title: 'Modelo de Recompensa Criado!',
-        description: `O modelo "${values.title}" foi adicionado ao catálogo com sucesso.`,
+        title: 'Recompensa Criada!',
+        description: `A recompensa "${createdTemplate.title}" foi adicionada ao catálogo. Agora você pode atribuí-la.`,
       });
-      router.push('/dashboard/rewards'); 
+      setNewlyCreatedTemplate(createdTemplate);
+      setIsAssignDialogOpen(true);
+      form.reset(); // Limpa o formulário após o sucesso
+
     } catch (error) {
       console.error('Error creating reward template:', error);
       toast({
-        title: 'Erro ao Criar Modelo',
-        description: 'Não foi possível criar o modelo de recompensa. Tente novamente.',
+        title: 'Erro ao Criar Recompensa',
+        description: 'Não foi possível criar a recompensa. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
@@ -147,7 +167,7 @@ function CreateRewardTemplatePageContent() {
           <div className="flex items-center gap-3 mb-2">
             <PackagePlus className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Criar Novo Modelo de Recompensa</CardTitle>
+              <CardTitle className="text-3xl font-headline">Criar Recompensa para Mini Herois</CardTitle>
               <CardDescription className="text-md">
                 Defina um novo item ou experiência para o catálogo. Depois você poderá atribuí-lo aos Mini Herois.
               </CardDescription>
@@ -162,7 +182,7 @@ function CreateRewardTemplatePageContent() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título do Modelo</FormLabel>
+                    <FormLabel>Título da Recompensa</FormLabel>
                     <FormControl>
                       <Input placeholder="Ex: Uma tarde de jogos de tabuleiro" {...field} />
                     </FormControl>
@@ -179,7 +199,7 @@ function CreateRewardTemplatePageContent() {
                     <FormLabel>Descrição (Opcional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Detalhes sobre o modelo da recompensa."
+                        placeholder="Detalhes sobre a recompensa."
                         className="resize-none"
                         {...field}
                       />
@@ -228,14 +248,12 @@ function CreateRewardTemplatePageContent() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        // A categoria 'material_items' força este checkbox.
-                        // O usuário pode desmarcar se mudar para outra categoria (a menos que isMaterial tenha vindo da URL)
                         disabled={form.getValues('category') === 'material_items'} 
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        Este modelo de recompensa é para um item material?
+                        Esta recompensa é para um item material?
                       </FormLabel>
                       <FormDescription>
                         Marque se é um objeto físico (ex: brinquedo, livro).
@@ -268,14 +286,14 @@ function CreateRewardTemplatePageContent() {
                 ) : (
                   <PackagePlus className="mr-2 h-4 w-4" />
                 )}
-                Criar Modelo de Recompensa
+                Criar Recompensa
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex-col items-start space-y-2">
             <p className="text-xs text-muted-foreground">
-                Modelos são a base para as recompensas que seus Mini Herois poderão ganhar!
+                Recompensas são a base para os prêmios que seus Mini Herois poderão ganhar!
             </p>
             {form.getValues('category') === 'material_items' && (
                  <div className="p-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-700 text-xs flex items-start gap-2">
@@ -287,13 +305,29 @@ function CreateRewardTemplatePageContent() {
             )}
         </CardFooter>
       </Card>
+
+      {newlyCreatedTemplate && (
+        <AssignRewardDialog
+          template={newlyCreatedTemplate}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={(isOpen) => {
+            setIsAssignDialogOpen(isOpen);
+            if (!isOpen) { // Se o diálogo for fechado
+              setNewlyCreatedTemplate(null); // Limpar o template
+              router.push('/dashboard/rewards'); // Navegar para o catálogo
+            }
+          }}
+          onAssigned={() => {
+            toast({ title: "Recompensa Atribuída!", description: "A nova recompensa foi atribuída às crianças selecionadas."});
+          }}
+        />
+      )}
     </div>
   );
 }
 
-export default function CreateRewardTemplatePage() {
+export default function CreateRewardPage() {
   return (
-    // Suspense é importante aqui porque CreateRewardTemplatePageContent usa useSearchParams
     <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
       <CreateRewardTemplatePageContent />
     </Suspense>
