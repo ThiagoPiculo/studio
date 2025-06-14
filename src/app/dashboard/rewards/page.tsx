@@ -90,7 +90,7 @@ export default function RewardTemplatesHubPage() {
     return availableContexts.find(f => f.id === currentContext)?.name || `Família ${currentContext}`;
   }, [availableContexts, currentContext]);
 
-  const templatesDescription = `Catálogo de modelos de recompensa para ${currentContextName}.`;
+  const templatesDescription = `Catálogo de modelos de recompensa para ${currentContextName}. Crie modelos que podem ser atribuídos aos seus Mini Herois.`;
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -157,13 +157,13 @@ export default function RewardTemplatesHubPage() {
             Catálogo de Recompensas para os Mini Herois
           </CardTitle>
           <CardDescription>
-            {templatesDescription} Crie modelos que podem ser atribuídos aos seus Mini Herois.
+            {templatesDescription}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Link href="/dashboard/rewards/new">
             <Button className="w-full md:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
-              <PlusCircle className="mr-2 h-5 w-5" /> Criar Novo Modelo de Recompensa
+              <PlusCircle className="mr-2 h-5 w-5" /> Criar nova recompensa
             </Button>
           </Link>
         </CardContent>
