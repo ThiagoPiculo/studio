@@ -238,136 +238,143 @@ export default function RewardTemplatesHubPage() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-md">
-        <CardHeader>
-            <CardTitle className="text-2xl font-headline">Seus Modelos Criados</CardTitle>
-            <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="mb-6 p-4 border rounded-lg bg-muted/30 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-                <Filter className="h-5 w-5 text-primary" />
-                <h3 className="text-md font-semibold">Filtrar por Status:</h3>
+      <Accordion type="single" collapsible className="w-full" defaultValue="user-templates">
+        <AccordionItem value="user-templates" className="rounded-lg border bg-card text-card-foreground shadow-md">
+          <AccordionTrigger className="p-6 hover:no-underline w-full">
+            <div className="flex flex-1 items-center justify-between">
+              <div className="text-left">
+                <CardTitle className="text-2xl font-headline">Seus Modelos Criados</CardTitle>
+                <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
+              </div>
+              {/* Chevron is automatically added by AccordionTrigger */}
             </div>
-            <RadioGroup
-              value={statusFilter}
-              onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
-              className="flex flex-wrap gap-x-6 gap-y-2"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="all" id="filter-all" />
-                <Label htmlFor="filter-all" className="cursor-pointer hover:text-primary">Todos os Modelos</Label>
+          </AccordionTrigger>
+          <AccordionContent className="p-6 pt-0"> {/* Mimics CardContent padding */}
+            <div className="mb-6 mt-4 p-4 border rounded-lg bg-muted/30 shadow-sm"> {/* mt-4 to give some space after trigger */}
+              <div className="flex items-center gap-2 mb-2">
+                  <Filter className="h-5 w-5 text-primary" />
+                  <h3 className="text-md font-semibold">Filtrar por Status:</h3>
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="active" id="filter-active" />
-                <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary">Somente Ativos</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="archived" id="filter-archived" />
-                <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary">Somente Arquivados</Label>
-              </div>
-            </RadioGroup>
-          </div>
+              <RadioGroup
+                value={statusFilter}
+                onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
+                className="flex flex-wrap gap-x-6 gap-y-2"
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="filter-all" />
+                  <Label htmlFor="filter-all" className="cursor-pointer hover:text-primary">Todos os Modelos</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="active" id="filter-active" />
+                  <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary">Somente Ativos</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="archived" id="filter-archived" />
+                  <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary">Somente Arquivados</Label>
+                </div>
+              </RadioGroup>
+            </div>
 
-          {isLoading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="ml-3 text-muted-foreground">Carregando modelos de recompensa...</p>
-            </div>
-          ) : error ? (
-            <p className="text-destructive text-center py-10">{error}</p>
-          ) : filteredTemplates.length === 0 ? (
-            <div className="text-center py-10">
-              <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">
-                {statusFilter === 'all' 
-                  ? "Nenhum modelo de recompensa encontrado neste catálogo." 
-                  : `Nenhum modelo ${statusFilter === 'active' ? 'ativo' : 'arquivado'} encontrado.`}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {statusFilter === 'all' 
-                  ? "Crie seu primeiro modelo ou use uma das ideias acima!" 
-                  : "Tente um filtro diferente ou crie um novo modelo."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((template) => {
-                const categoryDetails = getCategoryDetails(template.category);
-                const CategoryIconComponent = categoryDetails?.icon;
-                return (
-                  <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl">{template.title}</CardTitle>
-                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                            {template.status === 'active' ? 'Ativo' : 'Arquivado'}
-                        </Badge>
-                      </div>
-                      {template.description && (
-                        <CardDescription className="text-sm pt-1 line-clamp-3">{template.description}</CardDescription>
-                      )}
-                    </CardHeader>
-                    <CardContent className="space-y-3 flex-grow">
-                      {categoryDetails && (
-                        <div className="flex items-center">
-                          <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                              {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                          </span>
-                          <Badge variant="outline" className={categoryDetails.colorClasses}>
-                            {categoryDetails.label}
+            {isLoading ? (
+              <div className="flex justify-center items-center py-10">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+                <p className="ml-3 text-muted-foreground">Carregando modelos de recompensa...</p>
+              </div>
+            ) : error ? (
+              <p className="text-destructive text-center py-10">{error}</p>
+            ) : filteredTemplates.length === 0 ? (
+              <div className="text-center py-10">
+                <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                <p className="text-lg text-muted-foreground">
+                  {statusFilter === 'all' 
+                    ? "Nenhum modelo de recompensa encontrado neste catálogo." 
+                    : `Nenhum modelo ${statusFilter === 'active' ? 'ativo' : 'arquivado'} encontrado.`}
+                </p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {statusFilter === 'all' 
+                    ? "Crie seu primeiro modelo ou use uma das ideias acima!" 
+                    : "Tente um filtro diferente ou crie um novo modelo."}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredTemplates.map((template) => {
+                  const categoryDetails = getCategoryDetails(template.category);
+                  const CategoryIconComponent = categoryDetails?.icon;
+                  return (
+                    <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
+                      <CardHeader>
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-xl">{template.title}</CardTitle>
+                          <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                              {template.status === 'active' ? 'Ativo' : 'Arquivado'}
                           </Badge>
                         </div>
-                      )}
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
-                        Custo Base: {template.starsCost} estrelas
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Gift className="h-5 w-5 mr-1.5 text-gray-500" />
-                        Tipo: {template.isMaterial ? "Material" : "Não Material"}
-                      </div>
-                      {template.updatedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          Atualizado em: {new Date((template.updatedAt as any).seconds * 1000).toLocaleDateString()}
-                        </p>
-                      )}
-                    </CardContent>
-                    <CardFooter className="flex-col space-y-2 pt-4">
-                      <Button 
-                        variant="default" 
-                        className="w-full" 
-                        onClick={() => handleOpenAssignDialog(template)}
-                        disabled={isProcessingAction || template.status === 'archived'}
-                      >
-                         <Users className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
-                            <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Gerenciar Modelo</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
-                            <Edit3 className="mr-2 h-4 w-4" /> Editar Modelo
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Modelo
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                        {template.description && (
+                          <CardDescription className="text-sm pt-1 line-clamp-3">{template.description}</CardDescription>
+                        )}
+                      </CardHeader>
+                      <CardContent className="space-y-3 flex-grow">
+                        {categoryDetails && (
+                          <div className="flex items-center">
+                            <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                                {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                            </span>
+                            <Badge variant="outline" className={categoryDetails.colorClasses}>
+                              {categoryDetails.label}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
+                          Custo Base: {template.starsCost} estrelas
+                        </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Gift className="h-5 w-5 mr-1.5 text-gray-500" />
+                          Tipo: {template.isMaterial ? "Material" : "Não Material"}
+                        </div>
+                        {template.updatedAt && (
+                          <p className="text-xs text-muted-foreground">
+                            Atualizado em: {new Date((template.updatedAt as any).seconds * 1000).toLocaleDateString()}
+                          </p>
+                        )}
+                      </CardContent>
+                      <CardFooter className="flex-col space-y-2 pt-4">
+                        <Button 
+                          variant="default" 
+                          className="w-full" 
+                          onClick={() => handleOpenAssignDialog(template)}
+                          disabled={isProcessingAction || template.status === 'archived'}
+                        >
+                           <Users className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
+                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
+                              <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuLabel>Gerenciar Modelo</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
+                              <Edit3 className="mr-2 h-4 w-4" /> Editar Modelo
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Modelo
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </CardFooter>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
       
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
@@ -396,11 +403,9 @@ export default function RewardTemplatesHubPage() {
           onOpenChange={setIsAssignDialogOpen}
           onAssigned={() => {
             toast({ title: "Recompensas Atribuídas!", description: "As instâncias da recompensa foram criadas para as crianças selecionadas."});
-            // Poderíamos re-fetch ou atualizar a contagem de atribuições se exibíssemos isso nos cards.
           }}
         />
       )}
     </div>
   );
 }
-
