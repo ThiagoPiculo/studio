@@ -24,7 +24,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
@@ -34,6 +34,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { predefinedRewardGroups, type PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
+import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
+
 
 export default function RewardTemplatesHubPage() {
   const { user } = useAuth();
@@ -46,6 +48,9 @@ export default function RewardTemplatesHubPage() {
   const [error, setError] = useState<string | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
+
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -107,7 +112,7 @@ export default function RewardTemplatesHubPage() {
   const getStatusBadgeVariant = (status: RewardTemplate['status']): "default" | "secondary" | "outline" => {
     switch (status) {
       case 'active': return 'default';
-      case 'archived': return 'outline';
+      case 'archived': return 'secondary'; // Using secondary for archived to differentiate
       default: return 'outline';
     }
   };
@@ -122,10 +127,12 @@ export default function RewardTemplatesHubPage() {
     if (idea.isMaterialSuggestion !== undefined) {
       queryParams.append('isMaterial', String(idea.isMaterialSuggestion));
     }
-    // if (idea.suggestedStarsCost) {
-    //   queryParams.append('starsCost', String(idea.suggestedStarsCost));
-    // }
     router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
+  };
+
+  const handleOpenAssignDialog = (template: RewardTemplate) => {
+    setTemplateToAssign(template);
+    setIsAssignDialogOpen(true);
   };
 
   return (
@@ -263,12 +270,12 @@ export default function RewardTemplatesHubPage() {
                     </CardContent>
                     <CardFooter className="flex-col space-y-2 pt-4">
                       <Button 
-                        variant="outline" 
+                        variant="default" 
                         className="w-full" 
-                        onClick={() => toast({ title: "Funcionalidade em Breve", description: "Atribuir este modelo a Mini Herois."})}
+                        onClick={() => handleOpenAssignDialog(template)}
                         disabled={isProcessingAction || template.status === 'archived'}
                       >
-                         Atribuir a Mini Herois
+                         <Users className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
                       </Button>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -315,6 +322,18 @@ export default function RewardTemplatesHubPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+
+      {templateToAssign && (
+        <AssignRewardDialog
+          template={templateToAssign}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={() => {
+            toast({ title: "Recompensas Atribuídas!", description: "As instâncias da recompensa foram criadas para as crianças selecionadas."});
+            // Poderíamos re-fetch ou atualizar a contagem de atribuições se exibíssemos isso nos cards.
+          }}
+        />
       )}
     </div>
   );

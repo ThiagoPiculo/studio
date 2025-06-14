@@ -73,39 +73,39 @@ export type RewardCategory = typeof rewardCategories[number]['id'];
 export type RewardCategoryDetails = typeof rewardCategories[number];
 
 
-// Novo: Modelo de Recompensa (Catálogo de Recompensas)
 export interface RewardTemplate {
-  id: string; // Document ID
-  ownerId: string; // UID do Admin Master que criou/possui este modelo
-  familyId?: string | null; // Se este modelo pertence a uma família específica ou é pessoal do ownerId
+  id: string; 
+  ownerId: string; 
+  familyId?: string | null;
   title: string;
   description?: string;
   category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
-  // Potencialmente: iconUrl, defaultFrequency, etc.
   createdAt: Timestamp;
   updatedAt: Timestamp;
-  status: 'active' | 'archived'; // Status do modelo no catálogo
+  status: 'active' | 'archived';
 }
 
-// Renomeado e ajustado: Recompensa Atribuída à Criança (Instância da Recompensa)
 export interface ChildRewardInstance {
   id: string; // Document ID da instância
   templateId: string; // ID do RewardTemplate original
   childId: string; // ID da criança a quem esta instância pertence
-  ownerId: string; // UID do Admin Master (para regras de segurança, pode ser redundante se o template tem)
-  familyId?: string | null; // ID da Família (para regras de segurança, pode ser redundante se o template tem)
+  ownerId: string; // UID do Admin Master do perfil da criança ou do contexto familiar
+  familyId?: string | null; // ID da Família, se aplicável
 
-  // Detalhes podem ser herdados do template, mas podem ser sobrescritos se necessário no futuro
-  // title: string; // Herdado do template
-  // starsCost: number; // Herdado do template
+  // Snapshot dos detalhes do template no momento da atribuição
+  title: string;
+  description?: string;
+  category: RewardCategory;
+  starsCost: number;
+  isMaterial: boolean;
 
   status: 'active' | 'redeemed' | 'disabled'; // Status desta instância específica para esta criança
-  isRedeemed: boolean;
-  redeemedAt?: Timestamp;
+  isRedeemed: boolean; // Pode ser usado para UI, mas 'status' é a fonte da verdade
+  redeemedAt?: Timestamp; // Quando foi resgatada
   assignedAt: Timestamp; // Quando foi atribuída à criança
-  updatedAt: Timestamp; // Última atualização de status desta instância
+  updatedAt: Timestamp; // Última atualização de status ou dados desta instância
 }
 
 
@@ -163,3 +163,4 @@ export type AuthContextType = {
 };
 
 export type IconType = LucideIconType;
+
