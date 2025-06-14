@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance } from '@/lib/firebase/firestore';
@@ -35,6 +35,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { serverTimestamp } from 'firebase/firestore';
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 
 
 export default function ManageChildPage() {
@@ -55,6 +57,7 @@ export default function ManageChildPage() {
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
   const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
+  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
 
 
   useEffect(() => {
@@ -89,8 +92,8 @@ export default function ManageChildPage() {
           setChildRewards(rewards.sort((a, b) => {
             if (a.status === 'active' && b.status !== 'active') return -1;
             if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1; // Inativas antes de resgatadas
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1; // Resgatadas depois de inativas
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
         })
@@ -245,6 +248,21 @@ export default function ManageChildPage() {
     }
   };
 
+  const filteredChildRewards = useMemo(() => {
+    if (instanceStatusFilter === 'all') {
+      return childRewards;
+    }
+    return childRewards.filter(reward => reward.status === instanceStatusFilter);
+  }, [childRewards, instanceStatusFilter]);
+
+  const getStatusFilterDisplayName = (filterValue: typeof instanceStatusFilter) => {
+    switch (filterValue) {
+      case 'active': return 'Ativas';
+      case 'redeemed': return 'Resgatadas';
+      case 'disabled': return 'Inativas';
+      default: return 'Todas';
+    }
+  };
 
   if (isLoading) {
     return (
@@ -364,6 +382,31 @@ export default function ManageChildPage() {
               <CardHeader>
                 <CardTitle>Recompensas Atribuídas a {child.name}</CardTitle>
                 <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
+                <div className="pt-4">
+                  <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
+                  <RadioGroup
+                    value={instanceStatusFilter}
+                    onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'redeemed' | 'disabled')}
+                    className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id={`instance-filter-all-${childId}`} />
+                      <Label htmlFor={`instance-filter-all-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="active" id={`instance-filter-active-${childId}`} />
+                      <Label htmlFor={`instance-filter-active-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childId}`} />
+                      <Label htmlFor={`instance-filter-redeemed-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childId}`} />
+                      <Label htmlFor={`instance-filter-disabled-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
@@ -374,17 +417,25 @@ export default function ManageChildPage() {
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     <p className="ml-3 text-muted-foreground">Carregando recompensas...</p>
                   </div>
-                ) : childRewards.length === 0 ? (
+                ) : filteredChildRewards.length === 0 ? (
                   <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                     <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-lg text-muted-foreground">{child.name} ainda não tem recompensas atribuídas.</p>
+                    <p className="text-lg text-muted-foreground">
+                      {childRewards.length === 0 
+                        ? `${child.name} ainda não tem recompensas atribuídas.`
+                        : `Nenhuma recompensa encontrada com o status "${getStatusFilterDisplayName(instanceStatusFilter)}".`
+                      }
+                    </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      Vá ao catálogo para atribuir algumas!
+                      {childRewards.length === 0 
+                        ? 'Vá ao catálogo para atribuir algumas!'
+                        : 'Tente um filtro diferente ou verifique o catálogo.'
+                      }
                     </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {childRewards.map((instance) => {
+                    {filteredChildRewards.map((instance) => {
                       const categoryDetails = getCategoryDetails(instance.category);
                       const CategoryIconComponent = categoryDetails?.icon;
                       return (
