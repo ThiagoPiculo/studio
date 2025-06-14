@@ -23,15 +23,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Tag, Users, MoreHorizontal, Edit3, Trash2, PackagePlus, ExternalLink, ListChecks } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, RewardCategory } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { predefinedRewardGroups, type PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 
 export default function RewardTemplatesHubPage() {
   const { user } = useAuth();
@@ -110,13 +112,29 @@ export default function RewardTemplatesHubPage() {
     }
   };
 
+  const handleUseIdea = (idea: PredefinedRewardIdea) => {
+    const queryParams = new URLSearchParams();
+    queryParams.append('title', idea.title);
+    if (idea.description) {
+      queryParams.append('description', idea.description);
+    }
+    queryParams.append('category', idea.suggestedAppCategory);
+    if (idea.isMaterialSuggestion !== undefined) {
+      queryParams.append('isMaterial', String(idea.isMaterialSuggestion));
+    }
+    // if (idea.suggestedStarsCost) {
+    //   queryParams.append('starsCost', String(idea.suggestedStarsCost));
+    // }
+    router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-10">
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
             <PackagePlus className="mr-3 h-8 w-8 text-primary" />
-            Catálogo de Recompensas
+            Catálogo de Modelos de Recompensa
           </CardTitle>
           <CardDescription>
             {templatesDescription} Crie modelos que podem ser atribuídos aos seus Mini Herois.
@@ -131,100 +149,153 @@ export default function RewardTemplatesHubPage() {
         </CardContent>
       </Card>
 
-      {isLoading ? (
-        <div className="flex justify-center items-center py-10">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-          <p className="ml-3 text-muted-foreground">Carregando modelos de recompensa...</p>
-        </div>
-      ) : error ? (
-        <p className="text-destructive text-center py-10">{error}</p>
-      ) : rewardTemplates.length === 0 ? (
-        <Card className="text-center py-10">
-          <CardContent>
-            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-            <p className="text-lg text-muted-foreground">Nenhum modelo de recompensa encontrado neste catálogo.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Crie seu primeiro modelo para começar a atribuir recompensas!
-            </p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rewardTemplates.map((template) => {
-            const categoryDetails = getCategoryDetails(template.category);
-            const CategoryIconComponent = categoryDetails?.icon;
-            return (
-              <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col">
-                <CardHeader>
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{template.title}</CardTitle>
-                    <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                        {template.status === 'active' ? 'Ativo' : 'Arquivado'}
-                    </Badge>
+      <Card className="shadow-lg">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline flex items-center">
+            <Sparkles className="mr-3 h-7 w-7 text-accent" />
+            Inspire-se: Ideias de Recompensas
+          </CardTitle>
+          <CardDescription>
+            Não sabe por onde começar? Use estas ideias como base para criar seus modelos!
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Accordion type="single" collapsible className="w-full">
+            {predefinedRewardGroups.map((group) => (
+              <AccordionItem value={group.userCategory} key={group.userCategory}>
+                <AccordionTrigger className="text-lg hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <group.icon className="h-5 w-5 text-primary" />
+                    {group.userCategory}
                   </div>
-                  {template.description && (
-                    <CardDescription className="text-sm pt-1">{template.description}</CardDescription>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3 flex-grow">
-                  {categoryDetails && (
-                    <div className="flex items-center">
-                       <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                          {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                       </span>
-                      <Badge variant="outline" className={categoryDetails.colorClasses}>
-                        {categoryDetails.label}
-                      </Badge>
-                    </div>
-                  )}
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
-                    Custo Base: {template.starsCost} estrelas
-                  </div>
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Tag className="h-5 w-5 mr-1.5 text-gray-500" />
-                    Tipo: {template.isMaterial ? "Material" : "Não Material"}
-                  </div>
-                  {template.updatedAt && (
-                    <p className="text-xs text-muted-foreground">
-                      Atualizado em: {new Date((template.updatedAt as any).seconds * 1000).toLocaleDateString()}
-                    </p>
-                  )}
-                </CardContent>
-                <CardFooter className="flex-col space-y-2">
-                  <Button 
-                    variant="outline" 
-                    className="w-full" 
-                    onClick={() => toast({ title: "Funcionalidade em Breve", description: "Atribuir este modelo a Mini Herois."})}
-                    disabled={isProcessingAction}
-                  >
-                    <ListChecks className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
-                        <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
+                </AccordionTrigger>
+                <AccordionContent>
+                  <ul className="space-y-3 pt-2">
+                    {group.items.map((idea) => (
+                      <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div>
+                            <h4 className="font-semibold text-md">{idea.title}</h4>
+                            {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
+                          </div>
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleUseIdea(idea)}
+                            className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                          >
+                            Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </CardContent>
+      </Card>
+
+      <Card className="shadow-md">
+        <CardHeader>
+            <CardTitle className="text-2xl font-headline">Seus Modelos Criados</CardTitle>
+            <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex justify-center items-center py-10">
+              <Loader2 className="h-12 w-12 animate-spin text-primary" />
+              <p className="ml-3 text-muted-foreground">Carregando modelos de recompensa...</p>
+            </div>
+          ) : error ? (
+            <p className="text-destructive text-center py-10">{error}</p>
+          ) : rewardTemplates.length === 0 ? (
+            <div className="text-center py-10">
+              <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              <p className="text-lg text-muted-foreground">Nenhum modelo de recompensa encontrado neste catálogo.</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Crie seu primeiro modelo ou use uma das ideias acima!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {rewardTemplates.map((template) => {
+                const categoryDetails = getCategoryDetails(template.category);
+                const CategoryIconComponent = categoryDetails?.icon;
+                return (
+                  <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="text-xl">{template.title}</CardTitle>
+                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                            {template.status === 'active' ? 'Ativo' : 'Arquivado'}
+                        </Badge>
+                      </div>
+                      {template.description && (
+                        <CardDescription className="text-sm pt-1 line-clamp-3">{template.description}</CardDescription>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-3 flex-grow">
+                      {categoryDetails && (
+                        <div className="flex items-center">
+                          <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                              {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                          </span>
+                          <Badge variant="outline" className={categoryDetails.colorClasses}>
+                            {categoryDetails.label}
+                          </Badge>
+                        </div>
+                      )}
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
+                        Custo Base: {template.starsCost} estrelas
+                      </div>
+                      <div className="flex items-center text-sm text-muted-foreground">
+                        <Gift className="h-5 w-5 mr-1.5 text-gray-500" />
+                        Tipo: {template.isMaterial ? "Material" : "Não Material"}
+                      </div>
+                      {template.updatedAt && (
+                        <p className="text-xs text-muted-foreground">
+                          Atualizado em: {new Date((template.updatedAt as any).seconds * 1000).toLocaleDateString()}
+                        </p>
+                      )}
+                    </CardContent>
+                    <CardFooter className="flex-col space-y-2 pt-4">
+                      <Button 
+                        variant="outline" 
+                        className="w-full" 
+                        onClick={() => toast({ title: "Funcionalidade em Breve", description: "Atribuir este modelo a Mini Herois."})}
+                        disabled={isProcessingAction || template.status === 'archived'}
+                      >
+                         Atribuir a Mini Herois
                       </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-48">
-                      <DropdownMenuLabel>Gerenciar Modelo</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
-                        <Edit3 className="mr-2 h-4 w-4" /> Editar Modelo
-                      </DropdownMenuItem>
-                      {/* Futuramente: Arquivar/Desarquivar */}
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
-                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Modelo
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
+                            <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          <DropdownMenuLabel>Gerenciar Modelo</DropdownMenuLabel>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
+                            <Edit3 className="mr-2 h-4 w-4" /> Editar Modelo
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Modelo
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
       
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
@@ -232,7 +303,7 @@ export default function RewardTemplatesHubPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir o modelo de recompensa "{templateToDelete.title}"? Esta ação não pode ser desfeita e pode afetar recompensas já atribuídas se não houver verificação adicional (a ser implementada).
+                Tem certeza que deseja excluir o modelo de recompensa "{templateToDelete.title}"? Esta ação não pode ser desfeita. As recompensas já atribuídas com base neste modelo não serão afetadas, mas você não poderá atribuí-lo novamente.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

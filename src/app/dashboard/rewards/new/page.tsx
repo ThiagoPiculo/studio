@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -13,18 +13,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, PackagePlus, ArrowLeft } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, AlertTriangle } from 'lucide-react';
 
-// Schema for RewardTemplate
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
-  description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional(),
+  description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional().default(''),
   category: z.custom<RewardCategory>((val) => rewardCategories.map(rc => rc.id).includes(val as RewardCategory) , {
     message: "Selecione uma categoria válida.",
   }),
@@ -34,9 +33,10 @@ const rewardTemplateFormSchema = z.object({
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-export default function CreateRewardTemplatePage() {
+function CreateRewardTemplatePageContent() {
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
@@ -51,15 +51,45 @@ export default function CreateRewardTemplatePage() {
       isMaterial: false,
     },
   });
+
+  useEffect(() => {
+    const titleParam = searchParams.get('title');
+    const descriptionParam = searchParams.get('description');
+    const categoryParam = searchParams.get('category') as RewardCategory | null;
+    const isMaterialParam = searchParams.get('isMaterial');
+
+    if (titleParam) form.setValue('title', titleParam);
+    if (descriptionParam) form.setValue('description', descriptionParam);
+    if (categoryParam && rewardCategories.some(rc => rc.id === categoryParam)) {
+      form.setValue('category', categoryParam);
+    }
+    if (isMaterialParam !== null) {
+      form.setValue('isMaterial', isMaterialParam === 'true');
+    }
+    
+    // Auto-check isMaterial if category is 'material' and it wasn't set by params
+    if (categoryParam === 'material' && isMaterialParam === null) {
+        form.setValue('isMaterial', true);
+    }
+
+  }, [searchParams, form]);
   
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
         form.setValue('isMaterial', value.category === 'material');
       }
+      if (name === 'category' && value.category === 'material') {
+        toast({
+          title: "Atenção: Recompensas Materiais",
+          description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
+          variant: "default", 
+          duration: 8000,
+        });
+      }
     });
     return () => subscription.unsubscribe();
-  }, [form]);
+  }, [form, toast]);
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
@@ -100,7 +130,7 @@ export default function CreateRewardTemplatePage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para o Catálogo
+        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
       </Button>
       <Card className="shadow-xl">
         <CardHeader>
@@ -109,7 +139,7 @@ export default function CreateRewardTemplatePage() {
             <div>
               <CardTitle className="text-3xl font-headline">Criar Novo Modelo de Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Defina um novo item ou experiência para o catálogo de recompensas. Depois você poderá atribuí-lo aos Mini Herois.
+                Defina um novo item ou experiência para o catálogo. Depois você poderá atribuí-lo aos Mini Herois.
               </CardDescription>
             </div>
           </div>
@@ -155,7 +185,7 @@ export default function CreateRewardTemplatePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria..." />
@@ -231,12 +261,28 @@ export default function CreateRewardTemplatePage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-col items-start space-y-2">
             <p className="text-xs text-muted-foreground">
                 Modelos são a base para as recompensas que seus Mini Herois poderão ganhar!
             </p>
+            {form.getValues('category') === 'material' && (
+                 <div className="p-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-700 text-xs flex items-start gap-2">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-600 flex-shrink-0" />
+                    <span>
+                        <strong>Atenção:</strong> Recompensas materiais devem ser extras e não itens essenciais (como roupas básicas, material escolar obrigatório ou comida).
+                    </span>
+                </div>
+            )}
         </CardFooter>
       </Card>
     </div>
   );
+}
+
+export default function CreateRewardTemplatePage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
+      <CreateRewardTemplatePageContent />
+    </Suspense>
+  )
 }
