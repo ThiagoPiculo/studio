@@ -240,9 +240,9 @@ export default function RewardTemplatesHubPage() {
         </CardContent>
       </Card>
 
-      <Accordion type="single" collapsible className="w-full" defaultValue="user-rewards-accordion">
+      <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="user-rewards-accordion" className="rounded-lg border bg-card text-card-foreground shadow-md">
-          <AccordionTrigger className="p-6 hover:no-underline w-full">
+          <AccordionTrigger className="p-6 hover:no-underline w-full group">
             <div className="flex flex-1 items-center justify-between">
               <div className="text-left">
                 <CardTitle className="text-2xl font-headline">Recompensas do Catálogo</CardTitle>
@@ -252,9 +252,9 @@ export default function RewardTemplatesHubPage() {
           </AccordionTrigger>
           <AccordionContent className="p-6 pt-0">
             
-            <Accordion type="single" collapsible className="w-full mb-6 mt-4" defaultValue="filters-accordion-item">
+            <Accordion type="single" collapsible className="w-full mb-6 mt-4">
               <AccordionItem value="filters-accordion-item" className="border rounded-lg bg-muted/30 shadow-sm overflow-hidden">
-                <AccordionTrigger className="w-full p-4 text-left hover:no-underline">
+                <AccordionTrigger className="w-full p-4 text-left hover:no-underline group">
                   <div className="flex items-center gap-2">
                     <Filter className="h-5 w-5 text-primary" />
                     <h3 className="text-lg font-semibold">Filtrar Recompensas:</h3>
@@ -262,7 +262,7 @@ export default function RewardTemplatesHubPage() {
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 pt-2 border-t border-border/30">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div>
+                     <div>
                       <Label htmlFor="child-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Mini Herois:</Label>
                       <Select 
                         value={selectedChildIdForFilter} 
@@ -455,9 +455,9 @@ export default function RewardTemplatesHubPage() {
         </AccordionItem>
       </Accordion>
 
-      <Accordion type="single" collapsible className="w-full" defaultValue="predefined-rewards-accordion">
+      <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="predefined-rewards-accordion" className="rounded-lg border bg-card text-card-foreground shadow-lg">
-          <AccordionTrigger className="p-6 hover:no-underline w-full">
+          <AccordionTrigger className="p-6 hover:no-underline w-full group">
             <div className="flex flex-1 items-center justify-between">
                 <div className="text-left">
                     <CardTitle className="text-2xl font-headline flex items-center">
