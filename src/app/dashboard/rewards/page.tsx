@@ -154,7 +154,7 @@ export default function RewardTemplatesHubPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
             <PackagePlus className="mr-3 h-8 w-8 text-primary" />
-            Catálogo de Modelos de Recompensa
+            Catálogo de Recompensas para os Mini Herois
           </CardTitle>
           <CardDescription>
             {templatesDescription} Crie modelos que podem ser atribuídos aos seus Mini Herois.
