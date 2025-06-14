@@ -1,7 +1,7 @@
 
-# Design System - Mini Heroi
+# Design System - Mini Herois
 
-Este documento descreve os princípios visuais e de componentes para o projeto Mini Heroi, visando manter a consistência e a qualidade da interface do usuário.
+Este documento descreve os princípios visuais e de componentes para o projeto Mini Herois, visando manter a consistência e a qualidade da interface do usuário.
 
 ## 1. Paleta de Cores
 
@@ -49,7 +49,7 @@ As cores são definidas em `src/app/globals.css` usando variáveis HSL CSS. O si
 - **Destructive Foreground (`--destructive-foreground`):** `0 0% 98%`
 - **Border (`--border`):** `250 30% 35%` (Borda Roxo Escuro)
 - **Input (`--input`):** `250 30% 28%` (Fundo de Input Roxo Escuro)
-- **Ring (`--ring`):** `250 65% 65%`
+- **Ring (`--ring`):** `250 65% 65%` 
 
 Cores para gráficos (`--chart-1` a `--chart-5`) também são definidas para ambos os temas.
 
@@ -90,4 +90,3 @@ O dimensionamento do texto, peso e outros estilos são gerenciados principalment
 ---
 
 Este documento será atualizado conforme o design system evolui.
-      

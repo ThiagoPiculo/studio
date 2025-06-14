@@ -68,7 +68,7 @@ export default function ManageChildPage() {
           if (profile) {
             setChild(profile);
           } else {
-            toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi. Verifique o link ou volte ao painel.", variant: "destructive" });
+            toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herois. Verifique o link ou volte ao painel.", variant: "destructive" });
             router.push('/dashboard');
           }
         })
@@ -268,7 +268,7 @@ export default function ManageChildPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando dados do Mini Heroi...</p>
+        <p className="text-lg text-muted-foreground">Carregando dados do Mini Herois...</p>
       </div>
     );
   }
@@ -276,7 +276,7 @@ export default function ManageChildPage() {
   if (!child) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
-        <p className="text-lg text-destructive">Mini Heroi não encontrado.</p>
+        <p className="text-lg text-destructive">Mini Herois não encontrado.</p>
         <Button onClick={() => router.push('/dashboard')} className="mt-4">
             Voltar ao Painel
         </Button>

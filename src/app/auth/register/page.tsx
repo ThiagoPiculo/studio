@@ -13,7 +13,7 @@ export default function RegisterPage() {
             <UserPlus className="h-16 w-16 text-primary" />
           </div>
           <CardTitle className="font-headline text-3xl">Torne-se um Admin Master</CardTitle>
-          <CardDescription>Crie sua conta para iniciar a jornada Mini Heroi.</CardDescription>
+          <CardDescription>Crie sua conta para iniciar a jornada Mini Herois.</CardDescription>
         </CardHeader>
         <CardContent>
           <AdminAuthForm mode="register" />

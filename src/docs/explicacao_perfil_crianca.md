@@ -1,6 +1,7 @@
-# Entendendo o Perfil do Mini Herói
 
-Esta seção apresenta um resumo das informações e progresso da criança no aplicativo "Mini Heroi". Vamos detalhar cada item:
+# Entendendo o Perfil do Mini Herois
+
+Esta seção apresenta um resumo das informações e progresso da criança no aplicativo "Mini Herois". Vamos detalhar cada item:
 
 1.  **Círculo com Inicial (Ex: "J")**:
     *   **O que é**: Este é o **Avatar** da criança.
@@ -13,7 +14,7 @@ Esta seção apresenta um resumo das informações e progresso da criança no ap
     *   **O que é**: Indica a **Idade** atual da criança, conforme registrada.
 
 4.  **Nível (Ex: "Nível: 1")**:
-    *   **O que é**: O **Nível** da criança dentro do sistema de gamificação do "Mini Heroi".
+    *   **O que é**: O **Nível** da criança dentro do sistema de gamificação do "Mini Herois".
     *   **Detalhes**: As crianças geralmente começam no Nível 1 e progridem ao acumular Pontos de Experiência (XP) completando tarefas. Subir de nível pode desbloquear novas funcionalidades ou simplesmente marcar o progresso da criança.
 
 5.  **Estrelas (Ex: "⭐ 0")**:

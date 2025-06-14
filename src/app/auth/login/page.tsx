@@ -24,7 +24,7 @@ export default function LoginPage() {
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-muted-foreground">
-            Você é um Mini Heroi?{' '}
+            Você é um Mini Herois?{' '}
             <Link href="/child-login" className="font-medium text-primary hover:underline">
               Login Infantil
             </Link>

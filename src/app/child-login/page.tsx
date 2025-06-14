@@ -12,7 +12,7 @@ export default function ChildLoginPage() {
           <div className="mb-3 flex justify-center">
             <Sparkles className="h-16 w-16 text-accent-foreground animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-3xl">Olá, Mini Heroi!</CardTitle>
+          <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
           <CardDescription className="text-primary-foreground/90 text-base mt-1">
             Seu <strong>código de acesso</strong> é sua <strong>Chave Secreta de Herói</strong>! São 6 números mágicos para destravar suas missões e aventuras!
           </CardDescription>

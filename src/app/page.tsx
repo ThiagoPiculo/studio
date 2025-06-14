@@ -8,7 +8,7 @@ export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-6 selection:bg-primary selection:text-primary-foreground">
       <header className="text-center mb-12">
-        <h1 className="text-6xl font-bold text-primary mb-3 font-headline">Mini Heroi</h1>
+        <h1 className="text-6xl font-bold text-primary mb-3 font-headline">Mini Herois</h1>
         <p className="text-xl text-foreground/80">
           Transforme pequenos hábitos em grandes conquistas!
         </p>
@@ -69,7 +69,7 @@ export default function WelcomePage() {
         </div>
       </section>
       <footer className="mt-16 text-center">
-        <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Mini Heroi. Todos os direitos reservados.</p>
+        <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Mini Herois. Todos os direitos reservados.</p>
       </footer>
     </div>
   );
