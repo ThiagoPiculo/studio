@@ -58,36 +58,35 @@ export interface Task {
   category?: string; // e.g., Chores, Learning, Creative, Health
 }
 
-// Novas categorias alinhadas com as "Ideias de Recompensa"
 export const rewardCategories = [
   {
     id: 'privileges',
     label: 'Privilégios',
-    colorClasses: 'bg-purple-500/10 text-purple-700 border-purple-500/30', // Cor para Privilégios
+    colorClasses: 'bg-purple-500/10 text-purple-700 border-purple-500/30',
     icon: Crown as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
   },
   {
     id: 'experiences',
     label: 'Experiências',
-    colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30', // Cor para Experiências
+    colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30',
     icon: PartyPopper as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
   },
   {
     id: 'material_items',
     label: 'Itens Materiais',
-    colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30', // Cor para Itens Materiais
+    colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30',
     icon: ShoppingBag as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
   },
   {
     id: 'personal_development',
     label: 'Desenvolvimento Pessoal',
-    colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30', // Cor para Desenvolvimento Pessoal
+    colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30',
     icon: GraduationCap as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
   },
   {
     id: 'impact_generosity',
     label: 'Impacto e Generosidade',
-    colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30', // Cor para Impacto e Generosidade
+    colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30',
     icon: HeartHandshake as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
   },
 ] as const;
@@ -103,7 +102,7 @@ export interface RewardTemplate {
   familyId?: string | null;
   title: string;
   description?: string;
-  category: RewardCategory; // Usará os novos IDs
+  category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
   createdAt: Timestamp;
@@ -121,7 +120,7 @@ export interface ChildRewardInstance {
   // Snapshot dos detalhes do template no momento da atribuição
   title: string;
   description?: string;
-  category: RewardCategory; // Usará os novos IDs
+  category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
 
@@ -187,3 +186,4 @@ export type AuthContextType = {
 };
 
 export type IconType = LucideIconType;
+

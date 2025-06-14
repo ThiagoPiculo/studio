@@ -9,7 +9,6 @@ export interface PredefinedRewardIdea {
   userSubCategory?: string; // A subcategoria do usuário (ex: "Controle")
   suggestedAppCategory: RewardCategory; // A categoria correspondente do app (USA OS NOVOS IDs)
   isMaterialSuggestion?: boolean; // Se a sugestão tende a ser material
-  // suggestedStarsCost?: number; // Opcional: custo sugerido
 }
 
 export interface PredefinedRewardGroup {
@@ -80,7 +79,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Tempo extra de videogame, tablet ou TV.",
         userCategory: "Privilégios",
         userSubCategory: "Flexibilidade",
-        suggestedAppCategory: "privileges", // Pode ser 'experiences' ou 'privileges' dependendo da abordagem. Mantendo privileges por enquanto.
+        suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
       },
       {
@@ -121,7 +120,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Um 'encontro exclusivo' com o pai ou a mãe para uma atividade 1-para-1.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
-        suggestedAppCategory: "experiences", // Mais alinhado com experiências
+        suggestedAppCategory: "experiences", 
         isMaterialSuggestion: false,
       },
       {
@@ -145,7 +144,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Ter um café da manhã ou lanche especial servido na cama.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
-        suggestedAppCategory: "experiences", // Alinhado com experiências
+        suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
       },
       {
@@ -297,7 +296,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Livro novo escolhido",
         description: "Um livro novo escolhido pela criança na livraria.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -305,7 +304,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Kit de arte específico",
         description: "Um kit de arte ou material específico (aquarelas, argila, canetas especiais).",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -313,7 +312,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Acessório para esporte",
         description: "Um acessório para um esporte que pratica (meião de futebol, munhequeira).",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -321,7 +320,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Partitura nova",
         description: "Partitura de uma música nova para o instrumento que estuda.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -329,7 +328,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Adesivos decorativos",
         description: "Adesivos novos para decorar o skate, bicicleta ou caderno.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -338,7 +337,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Escolher modelo/cor de item planejado",
         description: "O direito de escolher o modelo/cor de um tênis ou roupa que já seria comprado.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -346,7 +345,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Escolher estampa de material escolar",
         description: "Escolher a estampa da mochila ou do estojo para o próximo ano letivo.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -355,7 +354,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Pacote de figurinhas",
         description: "Pacote de figurinhas para um álbum.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -363,7 +362,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Gibi ou revista em quadrinhos",
         description: "Um gibi ou revista em quadrinhos.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -371,7 +370,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Chaveiro de personagem",
         description: "Um chaveiro do seu personagem favorito.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -379,7 +378,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       {
         title: "Massinha de modelar nova cor",
         description: "Massinha de modelar de uma cor diferente.",
-        userCategory: "Itens Materiais",
+        userCategory: "Itens Materiais (com Ressalvas)",
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
@@ -405,7 +404,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Um kit de ciências (química, vulcões, fósseis).",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
-        suggestedAppCategory: "personal_development", // Pode ser 'material_items' se o foco for o item, ou 'personal_development' se o foco for a atividade de aprendizado.
+        suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
       },
       {
@@ -422,14 +421,14 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
-        isMaterialSuggestion: false, // O app em si é digital.
+        isMaterialSuggestion: false, 
       },
       {
         title: "Assinatura de revista infantil educativa",
         description: "Assinatura de uma revista infantil educativa.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
-        suggestedAppCategory: "personal_development", // Pode ser 'material_items' (revista física) ou 'personal_development'.
+        suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
       },
       // Criatividade
@@ -454,7 +453,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Ingressos para uma oficina de arte ou teatro.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Criatividade",
-        suggestedAppCategory: "experiences", // Alinhado com experiências.
+        suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
       },
       {
@@ -528,7 +527,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Passar uma tarde em família ajudando em um abrigo de animais.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Voluntariado",
-        suggestedAppCategory: "impact_generosity", // Pode ser 'experiences' também
+        suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
       },
       {
@@ -536,7 +535,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Participar de um mutirão de limpeza de uma praça ou praia local.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Voluntariado",
-        suggestedAppCategory: "impact_generosity", // Pode ser 'experiences' também
+        suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
       },
       {
@@ -569,9 +568,10 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         description: "Comprar flores com os pais para dar de presente surpresa a um parente.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Atos de Gentileza",
-        suggestedAppCategory: "impact_generosity", // Pode ser 'material_items' (as flores) ou 'impact_generosity' pelo ato.
-        isMaterialSuggestion: true, // As flores são materiais
+        suggestedAppCategory: "impact_generosity", 
+        isMaterialSuggestion: true,
       },
     ],
   },
 ];
+
