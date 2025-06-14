@@ -1,7 +1,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag, Package } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 
 export interface UserProfile {
@@ -58,14 +58,38 @@ export interface Task {
   category?: string; // e.g., Chores, Learning, Creative, Health
 }
 
+// Novas categorias alinhadas com as "Ideias de Recompensa"
 export const rewardCategories = [
-  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
-  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  {
+    id: 'privileges',
+    label: 'Privilégios',
+    colorClasses: 'bg-purple-500/10 text-purple-700 border-purple-500/30', // Cor para Privilégios
+    icon: Crown as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
+  },
+  {
+    id: 'experiences',
+    label: 'Experiências',
+    colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30', // Cor para Experiências
+    icon: PartyPopper as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
+  },
+  {
+    id: 'material_items',
+    label: 'Itens Materiais',
+    colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30', // Cor para Itens Materiais
+    icon: ShoppingBag as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
+  },
+  {
+    id: 'personal_development',
+    label: 'Desenvolvimento Pessoal',
+    colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30', // Cor para Desenvolvimento Pessoal
+    icon: GraduationCap as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
+  },
+  {
+    id: 'impact_generosity',
+    label: 'Impacto e Generosidade',
+    colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30', // Cor para Impacto e Generosidade
+    icon: HeartHandshake as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>,
+  },
 ] as const;
 
 
@@ -79,7 +103,7 @@ export interface RewardTemplate {
   familyId?: string | null;
   title: string;
   description?: string;
-  category: RewardCategory;
+  category: RewardCategory; // Usará os novos IDs
   starsCost: number;
   isMaterial: boolean;
   createdAt: Timestamp;
@@ -97,7 +121,7 @@ export interface ChildRewardInstance {
   // Snapshot dos detalhes do template no momento da atribuição
   title: string;
   description?: string;
-  category: RewardCategory;
+  category: RewardCategory; // Usará os novos IDs
   starsCost: number;
   isMaterial: boolean;
 
@@ -163,4 +187,3 @@ export type AuthContextType = {
 };
 
 export type IconType = LucideIconType;
-
