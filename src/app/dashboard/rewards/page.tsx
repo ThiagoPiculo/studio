@@ -329,18 +329,27 @@ export default function RewardTemplatesHubPage() {
                 <AccordionContent className="px-4 pb-4 pt-2 border-t border-border/30">
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="search-filter"
-                          type="search"
-                          placeholder="Título, descrição..."
-                          value={searchFilter}
-                          onChange={(e) => setSearchFilter(e.target.value)}
-                          className="w-full pl-8"
-                        />
-                      </div>
+                      <Label htmlFor="child-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Mini Herois:</Label>
+                      <Select 
+                        value={selectedChildIdForFilter} 
+                        onValueChange={setSelectedChildIdForFilter}
+                        disabled={isLoadingFilterData || eligibleChildrenForFilter.length === 0}
+                      >
+                        <SelectTrigger id="child-filter" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder={isLoadingFilterData ? "Carregando crianças..." : "Selecione um Mini Heroi..."} />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Qualquer Mini Heroi</SelectItem>
+                          {eligibleChildrenForFilter.map(child => (
+                            <SelectItem key={child.id} value={child.id}>Atribuídas a {child.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                       {isLoadingFilterData && <p className="text-xs text-muted-foreground mt-1">Carregando lista de crianças...</p>}
+                       {!isLoadingFilterData && eligibleChildrenForFilter.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma criança no contexto atual.</p>}
                     </div>
                     <div>
                       <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
@@ -381,7 +390,7 @@ export default function RewardTemplatesHubPage() {
                         id="status-filter"
                         value={statusFilter}
                         onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
-                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2" // Added pt-2 for alignment with Selects
+                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2" 
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="all" id="filter-all-status" />
@@ -397,28 +406,19 @@ export default function RewardTemplatesHubPage() {
                         </div>
                       </RadioGroup>
                     </div>
-                     <div>
-                      <Label htmlFor="child-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Mini Herois:</Label>
-                      <Select 
-                        value={selectedChildIdForFilter} 
-                        onValueChange={setSelectedChildIdForFilter}
-                        disabled={isLoadingFilterData || eligibleChildrenForFilter.length === 0}
-                      >
-                        <SelectTrigger id="child-filter" className="w-full">
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <SelectValue placeholder={isLoadingFilterData ? "Carregando crianças..." : "Selecione um Mini Heroi..."} />
-                          </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">Qualquer Mini Heroi</SelectItem>
-                          {eligibleChildrenForFilter.map(child => (
-                            <SelectItem key={child.id} value={child.id}>Atribuídas a {child.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                       {isLoadingFilterData && <p className="text-xs text-muted-foreground mt-1">Carregando lista de crianças...</p>}
-                       {!isLoadingFilterData && eligibleChildrenForFilter.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma criança no contexto atual.</p>}
+                    <div>
+                      <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="search-filter"
+                          type="search"
+                          placeholder="Título, descrição..."
+                          value={searchFilter}
+                          onChange={(e) => setSearchFilter(e.target.value)}
+                          className="w-full pl-8"
+                        />
+                      </div>
                     </div>
                   </div>
                 </AccordionContent>
