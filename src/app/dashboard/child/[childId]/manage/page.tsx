@@ -87,12 +87,11 @@ export default function ManageChildPage() {
       getChildRewardInstancesByChild(childId)
         .then(rewards => {
           setChildRewards(rewards.sort((a, b) => {
-            // Prioritize active, then disabled, then redeemed
             if (a.status === 'active' && b.status !== 'active') return -1;
             if (a.status !== 'active' && b.status === 'active') return 1;
             if (a.status === 'disabled' && b.status === 'redeemed') return -1;
             if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; // newest first
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
         })
         .catch(error => {
@@ -154,9 +153,9 @@ export default function ManageChildPage() {
 
   const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
-      case 'active': return 'default'; // Primary color (e.g. green or blue)
-      case 'redeemed': return 'secondary'; // Success color (e.g. lighter green or gray)
-      case 'disabled': return 'outline'; // Muted color (e.g. gray)
+      case 'active': return 'default'; 
+      case 'redeemed': return 'secondary'; 
+      case 'disabled': return 'outline'; 
       default: return 'outline';
     }
   };
@@ -165,7 +164,7 @@ export default function ManageChildPage() {
     switch (status) {
       case 'active': return 'Ativa';
       case 'redeemed': return 'Resgatada';
-      case 'disabled': return `Desativada para ${child?.name || 'esta criança'}`;
+      case 'disabled': return `Inativa para ${child?.name || 'esta criança'}`;
       default: return 'Desconhecido';
     }
   };
@@ -217,9 +216,12 @@ export default function ManageChildPage() {
             if (a.status === 'redeemed' && b.status === 'disabled') return 1;
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
-      toast({ title: "Status da Recompensa Atualizado", description: `A recompensa "${instance.title}" foi ${newStatus === 'active' ? 'reativada' : 'desativada'} para ${child?.name}.` });
+      toast({ 
+        title: "Status da Recompensa Atualizado", 
+        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'ativa' : 'inativa'} para ${child?.name}.` 
+      });
     } catch (error) {
-      console.error(`Error ${newStatus === 'active' ? 'activating' : 'deactivating'} reward instance:`, error);
+      console.error(`Error toggling reward instance status:`, error);
       toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
     } finally {
       setIsProcessingRewardAction(false);
@@ -437,7 +439,7 @@ export default function ManageChildPage() {
                                         <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
                                       </DropdownMenuItem>
                                       <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isProcessingRewardAction}>
-                                        <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Desativar para {child.name}
+                                        <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
                                       </DropdownMenuItem>
                                     </>
                                   )}
