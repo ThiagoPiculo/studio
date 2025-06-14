@@ -23,8 +23,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
@@ -51,6 +53,8 @@ export default function RewardTemplatesHubPage() {
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
+
 
   useEffect(() => {
     if (!user) {
@@ -90,7 +94,7 @@ export default function RewardTemplatesHubPage() {
     return availableContexts.find(f => f.id === currentContext)?.name || `Família ${currentContext}`;
   }, [availableContexts, currentContext]);
 
-  const templatesDescription = `Catálogo de modelos de recompensa para ${currentContextName}. Crie modelos que podem ser atribuídos aos seus Mini Herois.`;
+  const templatesDescription = `Catálogo de recompensas para ${currentContextName}. Crie modelos que podem ser atribuídos aos seus Mini Herois.`;
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -135,10 +139,9 @@ export default function RewardTemplatesHubPage() {
     setIsAssignDialogOpen(true);
   };
 
-  // Helper to group ideas by subCategory for rendering
   const groupIdeasBySubCategory = (items: PredefinedRewardIdea[]) => {
     return items.reduce((acc, idea) => {
-      const subCategory = idea.userSubCategory || 'Outras Ideias'; // Default if no subcategory
+      const subCategory = idea.userSubCategory || 'Outras Ideias';
       if (!acc[subCategory]) {
         acc[subCategory] = [];
       }
@@ -146,6 +149,13 @@ export default function RewardTemplatesHubPage() {
       return acc;
     }, {} as Record<string, PredefinedRewardIdea[]>);
   };
+  
+  const filteredTemplates = useMemo(() => {
+    if (statusFilter === 'all') {
+      return rewardTemplates;
+    }
+    return rewardTemplates.filter(template => template.status === statusFilter);
+  }, [rewardTemplates, statusFilter]);
 
 
   return (
@@ -234,6 +244,31 @@ export default function RewardTemplatesHubPage() {
             <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
+          <div className="mb-6 p-4 border rounded-lg bg-muted/30 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+                <Filter className="h-5 w-5 text-primary" />
+                <h3 className="text-md font-semibold">Filtrar por Status:</h3>
+            </div>
+            <RadioGroup
+              value={statusFilter}
+              onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
+              className="flex flex-wrap gap-x-6 gap-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="all" id="filter-all" />
+                <Label htmlFor="filter-all" className="cursor-pointer hover:text-primary">Todos os Modelos</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="active" id="filter-active" />
+                <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary">Somente Ativos</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="archived" id="filter-archived" />
+                <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary">Somente Arquivados</Label>
+              </div>
+            </RadioGroup>
+          </div>
+
           {isLoading ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -241,17 +276,23 @@ export default function RewardTemplatesHubPage() {
             </div>
           ) : error ? (
             <p className="text-destructive text-center py-10">{error}</p>
-          ) : rewardTemplates.length === 0 ? (
+          ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-10">
               <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">Nenhum modelo de recompensa encontrado neste catálogo.</p>
+              <p className="text-lg text-muted-foreground">
+                {statusFilter === 'all' 
+                  ? "Nenhum modelo de recompensa encontrado neste catálogo." 
+                  : `Nenhum modelo ${statusFilter === 'active' ? 'ativo' : 'arquivado'} encontrado.`}
+              </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Crie seu primeiro modelo ou use uma das ideias acima!
+                {statusFilter === 'all' 
+                  ? "Crie seu primeiro modelo ou use uma das ideias acima!" 
+                  : "Tente um filtro diferente ou crie um novo modelo."}
               </p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {rewardTemplates.map((template) => {
+              {filteredTemplates.map((template) => {
                 const categoryDetails = getCategoryDetails(template.category);
                 const CategoryIconComponent = categoryDetails?.icon;
                 return (
