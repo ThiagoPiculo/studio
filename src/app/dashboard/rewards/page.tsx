@@ -186,7 +186,7 @@ export default function RewardTemplatesHubPage() {
         if (starsCostFilter === '11-50') return cost >= 11 && cost <= 50;
         if (starsCostFilter === '51-100') return cost >= 51 && cost <= 100;
         if (starsCostFilter === '101+') return cost >= 101;
-        return true; // Should not happen if 'all' is handled
+        return true; 
       });
     }
 
@@ -294,86 +294,93 @@ export default function RewardTemplatesHubPage() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="p-6 pt-0">
-            <div className="mb-6 mt-4 p-4 border rounded-lg bg-muted/30 shadow-sm">
-              <div className="flex items-center gap-2 mb-3">
-                  <Filter className="h-5 w-5 text-primary" />
-                  <h3 className="text-lg font-semibold">Filtrar Modelos:</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Status:</Label>
-                  <RadioGroup
-                    id="status-filter"
-                    value={statusFilter}
-                    onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
-                    className="flex flex-wrap gap-x-4 gap-y-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id="filter-all-status" />
-                      <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todos</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="active" id="filter-active" />
-                      <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativos</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="archived" id="filter-archived" />
-                      <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivados</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-
-                <div>
-                  <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
-                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger id="category-filter" className="w-full">
-                      <div className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Selecione uma categoria..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as Categorias</SelectItem>
-                      {rewardCategories.map(cat => (
-                        <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div>
-                  <Label htmlFor="stars-cost-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Custo (Estrelas):</Label>
-                  <Select value={starsCostFilter} onValueChange={setStarsCostFilter}>
-                    <SelectTrigger id="stars-cost-filter" className="w-full">
-                     <div className="flex items-center gap-2">
-                        <Coins className="h-4 w-4 text-muted-foreground" />
-                        <SelectValue placeholder="Selecione o custo..." />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {starCostFilterOptions.map(opt => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
-                  <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      id="search-filter"
-                      type="search"
-                      placeholder="Título, descrição..."
-                      value={searchFilter}
-                      onChange={(e) => setSearchFilter(e.target.value)}
-                      className="w-full pl-8"
-                    />
+            
+            <Accordion type="single" collapsible className="w-full mb-6 mt-4" defaultValue="filters-accordion-item">
+              <AccordionItem value="filters-accordion-item" className="border rounded-lg bg-muted/30 shadow-sm overflow-hidden">
+                <AccordionTrigger className="w-full p-4 text-left hover:no-underline">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-5 w-5 text-primary" />
+                    <h3 className="text-lg font-semibold">Filtrar Modelos:</h3>
                   </div>
-                </div>
-              </div>
-            </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-4 pb-4 pt-2 border-t border-border/30">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <Label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Status:</Label>
+                      <RadioGroup
+                        id="status-filter"
+                        value={statusFilter}
+                        onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
+                        className="flex flex-wrap gap-x-4 gap-y-2"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="filter-all-status" />
+                          <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todos</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="active" id="filter-active" />
+                          <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativos</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="archived" id="filter-archived" />
+                          <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivados</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
+                      <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                        <SelectTrigger id="category-filter" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Selecione uma categoria..." />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Todas as Categorias</SelectItem>
+                          {rewardCategories.map(cat => (
+                            <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="stars-cost-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Custo (Estrelas):</Label>
+                      <Select value={starsCostFilter} onValueChange={setStarsCostFilter}>
+                        <SelectTrigger id="stars-cost-filter" className="w-full">
+                         <div className="flex items-center gap-2">
+                            <Coins className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder="Selecione o custo..." />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {starCostFilterOptions.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="search-filter"
+                          type="search"
+                          placeholder="Título, descrição..."
+                          value={searchFilter}
+                          onChange={(e) => setSearchFilter(e.target.value)}
+                          className="w-full pl-8"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            </Accordion>
 
             {isLoading ? (
               <div className="flex justify-center items-center py-10">
@@ -504,3 +511,4 @@ export default function RewardTemplatesHubPage() {
     </div>
   );
 }
+
