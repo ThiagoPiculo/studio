@@ -547,7 +547,6 @@ export default function RewardTemplatesHubPage() {
           onOpenChange={setIsAssignDialogOpen}
           onAssigned={() => {
             toast({ title: "Recompensas Atribuídas!", description: "As instâncias da recompensa foram criadas para as crianças selecionadas."});
-            // Opcional: recarregar instâncias para o filtro de criança
             if (user) {
               const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
               setIsLoadingFilterData(true);
