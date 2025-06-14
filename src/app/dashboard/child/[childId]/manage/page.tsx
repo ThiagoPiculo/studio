@@ -34,6 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { serverTimestamp } from 'firebase/firestore';
 
 
 export default function ManageChildPage() {
@@ -85,7 +86,14 @@ export default function ManageChildPage() {
       setIsLoadingRewards(true);
       getChildRewardInstancesByChild(childId)
         .then(rewards => {
-          setChildRewards(rewards);
+          setChildRewards(rewards.sort((a, b) => {
+            // Prioritize active, then disabled, then redeemed
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; // newest first
+          }));
         })
         .catch(error => {
           console.error("Error fetching child rewards:", error);
@@ -166,8 +174,8 @@ export default function ManageChildPage() {
     if (!instanceToManage || !child) return;
     setIsProcessingRewardAction(true);
     try {
-      const currentChildProfile = await getChildProfileById(child.id); // Fetch latest profile
-      if (!currentChildProfile) throw new Error("Child profile not found for star check.");
+      const currentChildProfile = await getChildProfileById(child.id); 
+      if (!currentChildProfile) throw new Error("Perfil da criança não encontrado para verificação de estrelas.");
 
       if (currentChildProfile.stars < instanceToManage.starsCost) {
         toast({ title: "Estrelas Insuficientes", description: `${child.name} não possui estrelas suficientes para resgatar "${instanceToManage.title}".`, variant: "destructive", duration: 7000 });
@@ -179,7 +187,13 @@ export default function ManageChildPage() {
       await updateChildProfile(child.id, { stars: currentChildProfile.stars - instanceToManage.starsCost });
       await updateChildRewardInstance(instanceToManage.id, { status: 'redeemed', isRedeemed: true, redeemedAt: serverTimestamp() as any });
       
-      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? {...r, status: 'redeemed', isRedeemed: true, redeemedAt: new Date() as any } : r));
+      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? {...r, status: 'redeemed', isRedeemed: true, redeemedAt: new Date() as any } : r).sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
+          }));
       setChild(prev => prev ? { ...prev, stars: currentChildProfile.stars - instanceToManage.starsCost } : null);
       toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi marcada como resgatada por ${child.name}.` });
     } catch (error) {
@@ -196,7 +210,13 @@ export default function ManageChildPage() {
     setIsProcessingRewardAction(true);
     try {
       await updateChildRewardInstance(instance.id, { status: newStatus });
-      setChildRewards(prev => prev.map(r => r.id === instance.id ? {...r, status: newStatus } : r));
+      setChildRewards(prev => prev.map(r => r.id === instance.id ? {...r, status: newStatus } : r).sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
+          }));
       toast({ title: "Status da Recompensa Atualizado", description: `A recompensa "${instance.title}" foi ${newStatus === 'active' ? 'reativada' : 'desativada'} para ${child?.name}.` });
     } catch (error) {
       console.error(`Error ${newStatus === 'active' ? 'activating' : 'deactivating'} reward instance:`, error);
@@ -344,7 +364,7 @@ export default function ManageChildPage() {
                 <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4">
+                <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
                   <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Catálogo (Atribuir Novas)
                 </Button>
                 {isLoadingRewards ? (
@@ -404,7 +424,7 @@ export default function ManageChildPage() {
                             {instance.status !== 'redeemed' ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm" className="w-full" disabled={isProcessingRewardAction}>
+                                  <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isProcessingRewardAction}>
                                     <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -501,18 +521,24 @@ export default function ManageChildPage() {
       </Tabs>
 
       {/* Redeem Confirmation Dialog */}
-      {instanceToManage && isRedeemConfirmOpen && (
+      {instanceToManage && isRedeemConfirmOpen && child && (
         <AlertDialog open={isRedeemConfirmOpen} onOpenChange={setIsRedeemConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Resgate de Recompensa</AlertDialogTitle>
               <AlertDialogDescription>
                 Você tem certeza que deseja marcar a recompensa "{instanceToManage.title}" ({instanceToManage.starsCost} estrelas) como resgatada por {child.name}? Isso deduzirá as estrelas do saldo de {child.name}.
+                <br/>
+                Saldo atual de estrelas de {child.name}: {child.stars}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isProcessingRewardAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleMarkAsRedeemed} className="bg-green-600 hover:bg-green-700" disabled={isProcessingRewardAction}>
+              <AlertDialogAction 
+                onClick={handleMarkAsRedeemed} 
+                className="bg-green-600 hover:bg-green-700" 
+                disabled={isProcessingRewardAction || child.stars < instanceToManage.starsCost}
+              >
                 {isProcessingRewardAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 Sim, Marcar como Resgatada
               </AlertDialogAction>
@@ -528,7 +554,7 @@ export default function ManageChildPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Remoção da Atribuição</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja remover a atribuição da recompensa "{instanceToManage.title}" para {child.name}? Esta ação não pode ser desfeita para esta criança específica.
+                Tem certeza que deseja remover a atribuição da recompensa "{instanceToManage.title}" para {child?.name}? Esta ação não pode ser desfeita para esta criança específica.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -545,5 +571,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-
-```
