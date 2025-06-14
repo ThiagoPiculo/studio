@@ -41,59 +41,53 @@ function CreateRewardTemplatePageContent() {
   const { currentContext } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
 
+  const initialTitle = searchParams.get('title') || '';
+  const initialDescription = searchParams.get('description') || '';
+  const categoryParam = searchParams.get('category') as RewardCategory | null;
+  const isMaterialParam = searchParams.get('isMaterial');
+
+  let resolvedInitialCategory: RewardCategory | undefined = undefined;
+  if (categoryParam && rewardCategories.some(rc => rc.id === categoryParam)) {
+    resolvedInitialCategory = categoryParam;
+  }
+
+  let resolvedInitialIsMaterial = false;
+  if (isMaterialParam !== null) {
+    resolvedInitialIsMaterial = isMaterialParam === 'true';
+  } else if (resolvedInitialCategory === 'material_items') {
+    resolvedInitialIsMaterial = true;
+  }
+
   const form = useForm<RewardTemplateFormValues>({
     resolver: zodResolver(rewardTemplateFormSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      category: undefined, 
+      title: initialTitle,
+      description: initialDescription,
+      category: resolvedInitialCategory, 
       starsCost: 10,
-      isMaterial: false,
+      isMaterial: resolvedInitialIsMaterial,
     },
   });
-
-  useEffect(() => {
-    const titleParam = searchParams.get('title');
-    const descriptionParam = searchParams.get('description');
-    const categoryParam = searchParams.get('category') as RewardCategory | null;
-    const isMaterialParam = searchParams.get('isMaterial');
-
-    if (titleParam) form.setValue('title', titleParam);
-    if (descriptionParam) form.setValue('description', descriptionParam);
-    if (categoryParam && rewardCategories.some(rc => rc.id === categoryParam)) {
-      form.setValue('category', categoryParam);
-    }
-    if (isMaterialParam !== null) {
-      form.setValue('isMaterial', isMaterialParam === 'true');
-    }
-    
-    // Auto-check isMaterial if category is 'material' and it wasn't set by params
-    // This specific condition will be handled by the watchEffect below more robustly
-    // if (categoryParam === 'material' && isMaterialParam === null) {
-    //     form.setValue('isMaterial', true);
-    // }
-
-  }, [searchParams, form]);
   
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
-        // If category is set (either by user or programmatically from URL param),
-        // update isMaterial accordingly.
-        // If isMaterial was explicitly set by URL param, that takes precedence
-        // (handled in the useEffect above for searchParams).
+        const currentCategory = value.category;
         const isMaterialFromParam = searchParams.get('isMaterial');
-        if (isMaterialFromParam === null) { // Only auto-set if not explicitly in params
-          form.setValue('isMaterial', value.category === 'material');
-        }
 
-        if (value.category === 'material') {
+        if (currentCategory === 'material_items') {
+          form.setValue('isMaterial', true, { shouldValidate: true }); // Forçar 'isMaterial' se a categoria for 'material_items'
           toast({
             title: "Atenção: Recompensas Materiais",
             description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
             variant: "default", 
             duration: 8000,
           });
+        } else {
+           // Se a categoria mudou para não-material E 'isMaterial' não foi forçado pela URL, desmarque 'isMaterial'
+           if (isMaterialFromParam === null) {
+            form.setValue('isMaterial', false, { shouldValidate: true });
+           }
         }
       }
     });
@@ -227,9 +221,7 @@ function CreateRewardTemplatePageContent() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
-                        // Disabled if category is 'material' (auto-set), but allow override if user changes category away from material then back.
-                        // Or more simply, allow user to always toggle it unless category IS 'material'.
-                        disabled={form.getValues('category') === 'material'} 
+                        disabled={form.getValues('category') === 'material_items'} 
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
@@ -276,7 +268,7 @@ function CreateRewardTemplatePageContent() {
             <p className="text-xs text-muted-foreground">
                 Modelos são a base para as recompensas que seus Mini Herois poderão ganhar!
             </p>
-            {form.getValues('category') === 'material' && (
+            {form.getValues('category') === 'material_items' && (
                  <div className="p-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-700 text-xs flex items-start gap-2">
                     <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-600 flex-shrink-0" />
                     <span>
