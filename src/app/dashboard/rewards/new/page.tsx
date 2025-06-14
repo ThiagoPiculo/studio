@@ -55,6 +55,8 @@ function CreateRewardTemplatePageContent() {
   if (isMaterialParam !== null) {
     resolvedInitialIsMaterial = isMaterialParam === 'true';
   } else if (resolvedInitialCategory === 'material_items') {
+    // Se isMaterial não veio na URL, mas a categoria é 'material_items',
+    // então marcamos como material por padrão para essa categoria.
     resolvedInitialIsMaterial = true;
   }
 
@@ -72,27 +74,32 @@ function CreateRewardTemplatePageContent() {
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
-        const currentCategory = value.category;
-        const isMaterialFromParam = searchParams.get('isMaterial');
+        const currentCategoryValue = value.category;
+        const isMaterialExplicitlySetByUrl = isMaterialParam === 'true';
 
-        if (currentCategory === 'material_items') {
-          form.setValue('isMaterial', true, { shouldValidate: true }); // Forçar 'isMaterial' se a categoria for 'material_items'
+        if (currentCategoryValue === 'material_items') {
+          // Se a categoria é material, forçar isMaterial a ser true.
+          // E mostrar o toast de aviso.
+          form.setValue('isMaterial', true, { shouldValidate: true });
           toast({
             title: "Atenção: Recompensas Materiais",
             description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
             variant: "default", 
-            duration: 8000,
+            duration: 10000, // Duração maior para dar tempo de ler
           });
         } else {
-           // Se a categoria mudou para não-material E 'isMaterial' não foi forçado pela URL, desmarque 'isMaterial'
-           if (isMaterialFromParam === null) {
+          // Se a categoria mudou para NÃO material, e 'isMaterial' NÃO foi explicitamente setado como true pela URL,
+          // então desmarcamos 'isMaterial'.
+          if (!isMaterialExplicitlySetByUrl) {
             form.setValue('isMaterial', false, { shouldValidate: true });
-           }
+          }
+          // Se isMaterial foi explicitamente setado como true pela URL, e o usuário mudou para uma categoria não material,
+          // mantemos isMaterial como true (o usuário pode querer uma recompensa "não material" que ele considera material).
         }
       }
     });
     return () => subscription.unsubscribe();
-  }, [form, toast, searchParams]);
+  }, [form, toast, isMaterialParam]); // Adicionado isMaterialParam às dependências
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
@@ -221,6 +228,8 @@ function CreateRewardTemplatePageContent() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        // A categoria 'material_items' força este checkbox.
+                        // O usuário pode desmarcar se mudar para outra categoria (a menos que isMaterial tenha vindo da URL)
                         disabled={form.getValues('category') === 'material_items'} 
                       />
                     </FormControl>
@@ -284,6 +293,7 @@ function CreateRewardTemplatePageContent() {
 
 export default function CreateRewardTemplatePage() {
   return (
+    // Suspense é importante aqui porque CreateRewardTemplatePageContent usa useSearchParams
     <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
       <CreateRewardTemplatePageContent />
     </Suspense>
