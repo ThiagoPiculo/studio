@@ -72,26 +72,8 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
 export const getChildProfilesForAttribution = async (currentUserId: string, currentContextId: 'my-space' | string): Promise<ChildProfile[]> => {
   let profilesQuery;
   if (currentContextId === 'my-space') {
-    // Crianças do usuário que não estão em nenhuma família ou estão em 'my-space' implicitamente
-    profilesQuery = query(
-      collection(db, 'children'),
-      where('ownerId', '==', currentUserId),
-      // where('familyId', '==', null) // Se 'my-space' implica familyId ser null
-    );
-    // Para ser mais abrangente, pode ser melhor pegar todas do ownerId e filtrar no client se for preciso distinguir familyId.
-    // Ou, se 'my-space' significa que children.familyId é null ou não existe:
-    // profilesQuery = query(collection(db, 'children'), where('ownerId', '==', currentUserId));
-    // E então filtrar na aplicação se `familyId` não é null, OU refinar a query:
-    // Este pode ser um ponto de atenção dependendo da lógica exata de "my-space" vs famílias.
-    // Por agora, vamos assumir que se está em "my-space", quer todas as crianças cujo ownerId é o currentUserId.
-    // O familyContextSwitcher já lida com a lógica de qual contexto está ativo.
-    // Se o contexto é 'my-space', o currentContextId NÃO é um familyId.
-    // Então, buscamos as crianças do ownerId que NÃO TÊM familyId (são pessoais)
      profilesQuery = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
-
-
   } else {
-    // Crianças da família selecionada
     profilesQuery = query(collection(db, 'children'), where('familyId', '==', currentContextId));
   }
   const querySnapshot = await getDocs(profilesQuery);
@@ -211,18 +193,18 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 };
 
 
-// --- Tasks ---
-export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompleted'>): Promise<Task> => {
-  const newTaskRef = doc(collection(db, 'tasks'));
-  const newTask: Task = {
-    id: newTaskRef.id,
-    ...taskData,
-    isCompleted: false,
-    createdAt: serverTimestamp() as Timestamp,
-  };
-  await setDoc(newTaskRef, newTask);
-  return newTask;
-};
+// --- Tasks (Stubs for now) ---
+// export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompleted'>): Promise<Task> => {
+//   const newTaskRef = doc(collection(db, 'tasks'));
+//   const newTask: Task = {
+//     id: newTaskRef.id,
+//     ...taskData,
+//     isCompleted: false,
+//     createdAt: serverTimestamp() as Timestamp,
+//   };
+//   await setDoc(newTaskRef, newTask);
+//   return newTask;
+// };
 
 // --- Reward Templates (Catálogo de Recompensas) ---
 export const addRewardTemplate = async (templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
@@ -275,28 +257,26 @@ export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyI
 
 // --- Child Reward Instances (Recompensas Atribuídas) ---
 export const addChildRewardInstance = async (
-  instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt'>,
-  templateSnapshot: RewardTemplate // Pass the template data to create snapshot
+  instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'>,
+  templateSnapshot: RewardTemplate
 ): Promise<ChildRewardInstance> => {
   const newInstanceRef = doc(collection(db, 'childRewardInstances'));
   const now = serverTimestamp() as Timestamp;
+  
   const newInstance: ChildRewardInstance = {
     id: newInstanceRef.id,
     templateId: instanceData.templateId,
     childId: instanceData.childId,
     ownerId: instanceData.ownerId,
     familyId: instanceData.familyId || null,
-
-    // Snapshot from template
     title: templateSnapshot.title,
-    description: templateSnapshot.description,
+    description: templateSnapshot.description || '', 
     category: templateSnapshot.category,
     starsCost: templateSnapshot.starsCost,
     isMaterial: templateSnapshot.isMaterial,
-
-    status: 'active', // Default status for a new instance
+    status: 'active', 
     isRedeemed: false,
-    redeemedAt: undefined,
+    // redeemedAt is intentionally omitted here as it's undefined for a new, unredeemed instance
     assignedAt: now,
     updatedAt: now,
   };
