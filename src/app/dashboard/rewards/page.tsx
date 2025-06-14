@@ -86,9 +86,9 @@ export default function RewardTemplatesHubPage() {
         setRewardTemplates(fetchedTemplates);
       } catch (err) {
         console.error("Error fetching reward templates:", err);
-        setError("Não foi possível carregar os modelos de recompensa. Tente atualizar a página.");
+        setError("Não foi possível carregar as recompensas do catálogo. Tente atualizar a página.");
         toast({
-          title: "Erro ao Carregar Modelos",
+          title: "Erro ao Carregar Recompensas",
           description: "Houve um problema ao buscar os dados. Verifique sua conexão ou tente mais tarde.",
           variant: "destructive",
         });
@@ -109,7 +109,7 @@ export default function RewardTemplatesHubPage() {
     return availableContexts.find(f => f.id === currentContext)?.name || `Família ${currentContext}`;
   }, [availableContexts, currentContext]);
 
-  const templatesDescription = `Catálogo de recompensas para ${currentContextName}. Crie modelos que podem ser atribuídos aos seus Mini Herois.`;
+  const templatesDescription = `Catálogo de itens para recompensa em ${currentContextName}. Crie recompensas que podem ser atribuídas aos seus Mini Herois.`;
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -117,11 +117,11 @@ export default function RewardTemplatesHubPage() {
     try {
       await deleteRewardTemplate(templateToDelete.id);
       setRewardTemplates(prev => prev.filter(rt => rt.id !== templateToDelete.id));
-      toast({ title: "Modelo Excluído!", description: `O modelo "${templateToDelete.title}" foi removido do catálogo.` });
+      toast({ title: "Recompensa Excluída do Catálogo!", description: `A recompensa "${templateToDelete.title}" foi removida do catálogo.` });
     } catch (error)
     {
       console.error("Error deleting reward template:", error);
-      toast({ title: "Erro ao Excluir Modelo", description: "Não foi possível remover o modelo.", variant: "destructive" });
+      toast({ title: "Erro ao Excluir Recompensa", description: "Não foi possível remover a recompensa do catálogo.", variant: "destructive" });
     } finally {
       setTemplateToDelete(null);
       setIsProcessingAction(false);
@@ -231,7 +231,7 @@ export default function RewardTemplatesHubPage() {
             Inspire-se: Ideias de Recompensas
           </CardTitle>
           <CardDescription>
-            Não sabe por onde começar? Use estas ideias como base para criar seus modelos!
+            Não sabe por onde começar? Use estas ideias como base para criar suas recompensas!
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -288,8 +288,8 @@ export default function RewardTemplatesHubPage() {
           <AccordionTrigger className="p-6 hover:no-underline w-full">
             <div className="flex flex-1 items-center justify-between">
               <div className="text-left">
-                <CardTitle className="text-2xl font-headline">Seus Modelos Criados</CardTitle>
-                <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
+                <CardTitle className="text-2xl font-headline">Recompensas do Catálogo</CardTitle>
+                <CardDescription>Abaixo estão as recompensas que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
               </div>
             </div>
           </AccordionTrigger>
@@ -300,7 +300,7 @@ export default function RewardTemplatesHubPage() {
                 <AccordionTrigger className="w-full p-4 text-left hover:no-underline">
                   <div className="flex items-center gap-2">
                     <Filter className="h-5 w-5 text-primary" />
-                    <h3 className="text-lg font-semibold">Filtrar Modelos:</h3>
+                    <h3 className="text-lg font-semibold">Filtrar Recompensas:</h3>
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 pt-2 border-t border-border/30">
@@ -315,15 +315,15 @@ export default function RewardTemplatesHubPage() {
                       >
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="all" id="filter-all-status" />
-                          <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todos</Label>
+                          <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="active" id="filter-active" />
-                          <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativos</Label>
+                          <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="archived" id="filter-archived" />
-                          <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivados</Label>
+                          <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivadas</Label>
                         </div>
                       </RadioGroup>
                     </div>
@@ -385,17 +385,17 @@ export default function RewardTemplatesHubPage() {
             {isLoading ? (
               <div className="flex justify-center items-center py-10">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                <p className="ml-3 text-muted-foreground">Carregando modelos de recompensa...</p>
+                <p className="ml-3 text-muted-foreground">Carregando recompensas...</p>
               </div>
             ) : error ? (
               <p className="text-destructive text-center py-10">{error}</p>
             ) : filteredTemplates.length === 0 ? (
               <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg mt-6">
                 <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-lg text-muted-foreground">Nenhum modelo encontrado com os filtros atuais.</p>
+                <p className="text-lg text-muted-foreground">Nenhuma recompensa encontrada com os filtros atuais.</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Tente ajustar os filtros ou{" "}
-                  <Link href="/dashboard/rewards/new" className="text-primary hover:underline">crie um novo modelo de recompensa</Link>.
+                  <Link href="/dashboard/rewards/new" className="text-primary hover:underline">crie uma nova recompensa</Link>.
                 </p>
               </div>
             ) : (
@@ -409,7 +409,7 @@ export default function RewardTemplatesHubPage() {
                         <div className="flex justify-between items-start">
                           <CardTitle className="text-xl">{template.title}</CardTitle>
                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                              {template.status === 'active' ? 'Ativo' : 'Arquivado'}
+                              {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                           </Badge>
                         </div>
                         {template.description && (
@@ -457,14 +457,14 @@ export default function RewardTemplatesHubPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel>Gerenciar Modelo</DropdownMenuLabel>
+                            <DropdownMenuLabel>Gerenciar Recompensa</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
-                              <Edit3 className="mr-2 h-4 w-4" /> Editar Modelo
+                              <Edit3 className="mr-2 h-4 w-4" /> Editar Recompensa
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
-                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Modelo
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Recompensa
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -484,14 +484,14 @@ export default function RewardTemplatesHubPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir o modelo de recompensa "{templateToDelete.title}"? Esta ação não pode ser desfeita. As recompensas já atribuídas com base neste modelo não serão afetadas, mas você não poderá atribuí-lo novamente.
+                Tem certeza que deseja excluir a recompensa "{templateToDelete.title}" do catálogo? As recompensas já atribuídas com base neste item do catálogo não serão afetadas, mas você não poderá usá-la para novas atribuições.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setTemplateToDelete(null)} disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction}>
                 {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sim, Excluir Modelo
+                Sim, Excluir Recompensa
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
