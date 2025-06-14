@@ -68,28 +68,37 @@ function CreateRewardTemplatePageContent() {
     }
     
     // Auto-check isMaterial if category is 'material' and it wasn't set by params
-    if (categoryParam === 'material' && isMaterialParam === null) {
-        form.setValue('isMaterial', true);
-    }
+    // This specific condition will be handled by the watchEffect below more robustly
+    // if (categoryParam === 'material' && isMaterialParam === null) {
+    //     form.setValue('isMaterial', true);
+    // }
 
   }, [searchParams, form]);
   
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
-        form.setValue('isMaterial', value.category === 'material');
-      }
-      if (name === 'category' && value.category === 'material') {
-        toast({
-          title: "Atenção: Recompensas Materiais",
-          description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
-          variant: "default", 
-          duration: 8000,
-        });
+        // If category is set (either by user or programmatically from URL param),
+        // update isMaterial accordingly.
+        // If isMaterial was explicitly set by URL param, that takes precedence
+        // (handled in the useEffect above for searchParams).
+        const isMaterialFromParam = searchParams.get('isMaterial');
+        if (isMaterialFromParam === null) { // Only auto-set if not explicitly in params
+          form.setValue('isMaterial', value.category === 'material');
+        }
+
+        if (value.category === 'material') {
+          toast({
+            title: "Atenção: Recompensas Materiais",
+            description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
+            variant: "default", 
+            duration: 8000,
+          });
+        }
       }
     });
     return () => subscription.unsubscribe();
-  }, [form, toast]);
+  }, [form, toast, searchParams]);
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
@@ -218,6 +227,8 @@ function CreateRewardTemplatePageContent() {
                       <Checkbox
                         checked={field.value}
                         onCheckedChange={field.onChange}
+                        // Disabled if category is 'material' (auto-set), but allow override if user changes category away from material then back.
+                        // Or more simply, allow user to always toggle it unless category IS 'material'.
                         disabled={form.getValues('category') === 'material'} 
                       />
                     </FormControl>
@@ -286,3 +297,4 @@ export default function CreateRewardTemplatePage() {
     </Suspense>
   )
 }
+
