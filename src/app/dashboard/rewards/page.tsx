@@ -31,8 +31,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, RewardCategory, PredefinedRewardGroup } from '@/lib/types';
+import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate, getChildProfilesForAttribution, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
+import type { RewardTemplate, RewardCategoryDetails, RewardCategory, PredefinedRewardGroup, ChildProfile, ChildRewardInstance } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -65,39 +65,55 @@ export default function RewardTemplatesHubPage() {
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
   
   // Filter states
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
-  const [categoryFilter, setCategoryFilter] = useState<string>('all'); // 'all' or category ID
-  const [starsCostFilter, setStarsCostFilter] = useState<string>('all'); // 'all' or range string e.g. '0-10'
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('active'); // Default to active
+  const [categoryFilter, setCategoryFilter] = useState<string>('all'); 
+  const [starsCostFilter, setStarsCostFilter] = useState<string>('all'); 
   const [searchFilter, setSearchFilter] = useState<string>('');
+  const [selectedChildIdForFilter, setSelectedChildIdForFilter] = useState<string>('all');
+  const [eligibleChildrenForFilter, setEligibleChildrenForFilter] = useState<ChildProfile[]>([]);
+  const [childRewardInstancesInContext, setChildRewardInstancesInContext] = useState<ChildRewardInstance[]>([]);
+  const [isLoadingFilterData, setIsLoadingFilterData] = useState(false);
 
 
   useEffect(() => {
     if (!user) {
       setIsLoading(false);
+      setIsLoadingFilterData(false);
       return;
     }
 
-    const fetchRewardTemplates = async () => {
+    const fetchAllData = async () => {
       setIsLoading(true);
+      setIsLoadingFilterData(true);
       setError(null);
       try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const fetchedTemplates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+        
+        const [fetchedTemplates, fetchedChildren, fetchedInstances] = await Promise.all([
+          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+          getChildProfilesForAttribution(user.uid, currentContext),
+          getChildRewardInstancesForContext(user.uid, familyIdToQuery)
+        ]);
+
         setRewardTemplates(fetchedTemplates);
+        setEligibleChildrenForFilter(fetchedChildren);
+        setChildRewardInstancesInContext(fetchedInstances);
+
       } catch (err) {
-        console.error("Error fetching reward templates:", err);
-        setError("Não foi possível carregar as recompensas do catálogo. Tente atualizar a página.");
+        console.error("Error fetching data for rewards page:", err);
+        setError("Não foi possível carregar os dados. Tente atualizar a página.");
         toast({
-          title: "Erro ao Carregar Recompensas",
+          title: "Erro ao Carregar Dados",
           description: "Houve um problema ao buscar os dados. Verifique sua conexão ou tente mais tarde.",
           variant: "destructive",
         });
       } finally {
         setIsLoading(false);
+        setIsLoadingFilterData(false);
       }
     };
 
-    fetchRewardTemplates();
+    fetchAllData();
   }, [user, currentContext, toast]);
 
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
@@ -168,17 +184,12 @@ export default function RewardTemplatesHubPage() {
   const filteredTemplates = useMemo(() => {
     let tempTemplates = rewardTemplates;
 
-    // Aplicar filtro de status
     if (statusFilter !== 'all') {
       tempTemplates = tempTemplates.filter(template => template.status === statusFilter);
     }
-
-    // Aplicar filtro de categoria
     if (categoryFilter !== 'all') {
       tempTemplates = tempTemplates.filter(template => template.category === categoryFilter);
     }
-    
-    // Aplicar filtro de custo em estrelas
     if (starsCostFilter !== 'all') {
       tempTemplates = tempTemplates.filter(template => {
         const cost = template.starsCost;
@@ -189,8 +200,6 @@ export default function RewardTemplatesHubPage() {
         return true; 
       });
     }
-
-    // Aplicar filtro de busca textual
     if (searchFilter.trim() !== '') {
       const lowercasedSearch = searchFilter.toLowerCase();
       tempTemplates = tempTemplates.filter(template =>
@@ -198,9 +207,16 @@ export default function RewardTemplatesHubPage() {
         (template.description && template.description.toLowerCase().includes(lowercasedSearch))
       );
     }
+    if (selectedChildIdForFilter !== 'all') {
+      const assignedTemplateIds = childRewardInstancesInContext
+        .filter(instance => instance.childId === selectedChildIdForFilter)
+        .map(instance => instance.templateId);
+      const uniqueAssignedTemplateIds = [...new Set(assignedTemplateIds)];
+      tempTemplates = tempTemplates.filter(template => uniqueAssignedTemplateIds.includes(template.id));
+    }
 
     return tempTemplates;
-  }, [rewardTemplates, statusFilter, categoryFilter, starsCostFilter, searchFilter]);
+  }, [rewardTemplates, statusFilter, categoryFilter, starsCostFilter, searchFilter, selectedChildIdForFilter, childRewardInstancesInContext]);
 
 
   return (
@@ -283,8 +299,8 @@ export default function RewardTemplatesHubPage() {
         </CardContent>
       </Card>
 
-      <Accordion type="single" collapsible className="w-full" defaultValue="user-templates">
-        <AccordionItem value="user-templates" className="rounded-lg border bg-card text-card-foreground shadow-md">
+      <Accordion type="single" collapsible className="w-full" defaultValue="user-rewards-accordion">
+        <AccordionItem value="user-rewards-accordion" className="rounded-lg border bg-card text-card-foreground shadow-md">
           <AccordionTrigger className="p-6 hover:no-underline w-full">
             <div className="flex flex-1 items-center justify-between">
               <div className="text-left">
@@ -304,30 +320,21 @@ export default function RewardTemplatesHubPage() {
                   </div>
                 </AccordionTrigger>
                 <AccordionContent className="px-4 pb-4 pt-2 border-t border-border/30">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div>
-                      <Label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Status:</Label>
-                      <RadioGroup
-                        id="status-filter"
-                        value={statusFilter}
-                        onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
-                        className="flex flex-wrap gap-x-4 gap-y-2"
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="all" id="filter-all-status" />
-                          <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="active" id="filter-active" />
-                          <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="archived" id="filter-archived" />
-                          <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivadas</Label>
-                        </div>
-                      </RadioGroup>
+                      <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
+                      <div className="relative">
+                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          id="search-filter"
+                          type="search"
+                          placeholder="Título, descrição..."
+                          value={searchFilter}
+                          onChange={(e) => setSearchFilter(e.target.value)}
+                          className="w-full pl-8"
+                        />
+                      </div>
                     </div>
-
                     <div>
                       <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
                       <Select value={categoryFilter} onValueChange={setCategoryFilter}>
@@ -345,7 +352,6 @@ export default function RewardTemplatesHubPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    
                     <div>
                       <Label htmlFor="stars-cost-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Custo (Estrelas):</Label>
                       <Select value={starsCostFilter} onValueChange={setStarsCostFilter}>
@@ -362,20 +368,50 @@ export default function RewardTemplatesHubPage() {
                         </SelectContent>
                       </Select>
                     </div>
-
-                    <div>
-                      <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
-                      <div className="relative">
-                        <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                          id="search-filter"
-                          type="search"
-                          placeholder="Título, descrição..."
-                          value={searchFilter}
-                          onChange={(e) => setSearchFilter(e.target.value)}
-                          className="w-full pl-8"
-                        />
-                      </div>
+                     <div>
+                      <Label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Status:</Label>
+                      <RadioGroup
+                        id="status-filter"
+                        value={statusFilter}
+                        onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
+                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2" // Added pt-2 for alignment with Selects
+                      >
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="all" id="filter-all-status" />
+                          <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="active" id="filter-active" />
+                          <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="archived" id="filter-archived" />
+                          <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivadas</Label>
+                        </div>
+                      </RadioGroup>
+                    </div>
+                     <div>
+                      <Label htmlFor="child-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Mini Herois:</Label>
+                      <Select 
+                        value={selectedChildIdForFilter} 
+                        onValueChange={setSelectedChildIdForFilter}
+                        disabled={isLoadingFilterData || eligibleChildrenForFilter.length === 0}
+                      >
+                        <SelectTrigger id="child-filter" className="w-full">
+                          <div className="flex items-center gap-2">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                            <SelectValue placeholder={isLoadingFilterData ? "Carregando crianças..." : "Selecione um Mini Heroi..."} />
+                          </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">Qualquer Mini Heroi</SelectItem>
+                          {eligibleChildrenForFilter.map(child => (
+                            <SelectItem key={child.id} value={child.id}>Atribuídas a {child.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                       {isLoadingFilterData && <p className="text-xs text-muted-foreground mt-1">Carregando lista de crianças...</p>}
+                       {!isLoadingFilterData && eligibleChildrenForFilter.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma criança no contexto atual.</p>}
                     </div>
                   </div>
                 </AccordionContent>
@@ -505,6 +541,15 @@ export default function RewardTemplatesHubPage() {
           onOpenChange={setIsAssignDialogOpen}
           onAssigned={() => {
             toast({ title: "Recompensas Atribuídas!", description: "As instâncias da recompensa foram criadas para as crianças selecionadas."});
+            // Opcional: recarregar instâncias para o filtro de criança
+            if (user) {
+              const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+              setIsLoadingFilterData(true);
+              getChildRewardInstancesForContext(user.uid, familyIdToQuery)
+                .then(setChildRewardInstancesInContext)
+                .catch(err => console.error("Error refetching instances after assignment:", err))
+                .finally(() => setIsLoadingFilterData(false));
+            }
           }}
         />
       )}
