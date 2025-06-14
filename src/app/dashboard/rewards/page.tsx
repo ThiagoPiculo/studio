@@ -25,8 +25,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
@@ -37,6 +39,14 @@ import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { predefinedRewardGroups, type PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
+
+const starCostFilterOptions = [
+  { value: 'all', label: 'Qualquer Custo' },
+  { value: '0-10', label: 'Até 10 estrelas' },
+  { value: '11-50', label: '11 - 50 estrelas' },
+  { value: '51-100', label: '51 - 100 estrelas' },
+  { value: '101+', label: 'Mais de 100 estrelas' },
+];
 
 
 export default function RewardTemplatesHubPage() {
@@ -53,7 +63,12 @@ export default function RewardTemplatesHubPage() {
 
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
+  
+  // Filter states
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'archived'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all'); // 'all' or category ID
+  const [starsCostFilter, setStarsCostFilter] = useState<string>('all'); // 'all' or range string e.g. '0-10'
+  const [searchFilter, setSearchFilter] = useState<string>('');
 
 
   useEffect(() => {
@@ -151,11 +166,41 @@ export default function RewardTemplatesHubPage() {
   };
   
   const filteredTemplates = useMemo(() => {
-    if (statusFilter === 'all') {
-      return rewardTemplates;
+    let tempTemplates = rewardTemplates;
+
+    // Aplicar filtro de status
+    if (statusFilter !== 'all') {
+      tempTemplates = tempTemplates.filter(template => template.status === statusFilter);
     }
-    return rewardTemplates.filter(template => template.status === statusFilter);
-  }, [rewardTemplates, statusFilter]);
+
+    // Aplicar filtro de categoria
+    if (categoryFilter !== 'all') {
+      tempTemplates = tempTemplates.filter(template => template.category === categoryFilter);
+    }
+    
+    // Aplicar filtro de custo em estrelas
+    if (starsCostFilter !== 'all') {
+      tempTemplates = tempTemplates.filter(template => {
+        const cost = template.starsCost;
+        if (starsCostFilter === '0-10') return cost >= 0 && cost <= 10;
+        if (starsCostFilter === '11-50') return cost >= 11 && cost <= 50;
+        if (starsCostFilter === '51-100') return cost >= 51 && cost <= 100;
+        if (starsCostFilter === '101+') return cost >= 101;
+        return true; // Should not happen if 'all' is handled
+      });
+    }
+
+    // Aplicar filtro de busca textual
+    if (searchFilter.trim() !== '') {
+      const lowercasedSearch = searchFilter.toLowerCase();
+      tempTemplates = tempTemplates.filter(template =>
+        template.title.toLowerCase().includes(lowercasedSearch) ||
+        (template.description && template.description.toLowerCase().includes(lowercasedSearch))
+      );
+    }
+
+    return tempTemplates;
+  }, [rewardTemplates, statusFilter, categoryFilter, starsCostFilter, searchFilter]);
 
 
   return (
@@ -246,33 +291,88 @@ export default function RewardTemplatesHubPage() {
                 <CardTitle className="text-2xl font-headline">Seus Modelos Criados</CardTitle>
                 <CardDescription>Abaixo estão os modelos de recompensa que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
               </div>
-              {/* Chevron is automatically added by AccordionTrigger */}
             </div>
           </AccordionTrigger>
-          <AccordionContent className="p-6 pt-0"> {/* Mimics CardContent padding */}
-            <div className="mb-6 mt-4 p-4 border rounded-lg bg-muted/30 shadow-sm"> {/* mt-4 to give some space after trigger */}
-              <div className="flex items-center gap-2 mb-2">
+          <AccordionContent className="p-6 pt-0">
+            <div className="mb-6 mt-4 p-4 border rounded-lg bg-muted/30 shadow-sm">
+              <div className="flex items-center gap-2 mb-3">
                   <Filter className="h-5 w-5 text-primary" />
-                  <h3 className="text-md font-semibold">Filtrar por Status:</h3>
+                  <h3 className="text-lg font-semibold">Filtrar Modelos:</h3>
               </div>
-              <RadioGroup
-                value={statusFilter}
-                onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
-                className="flex flex-wrap gap-x-6 gap-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="filter-all" />
-                  <Label htmlFor="filter-all" className="cursor-pointer hover:text-primary">Todos os Modelos</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div>
+                  <Label htmlFor="status-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Status:</Label>
+                  <RadioGroup
+                    id="status-filter"
+                    value={statusFilter}
+                    onValueChange={(value) => setStatusFilter(value as 'all' | 'active' | 'archived')}
+                    className="flex flex-wrap gap-x-4 gap-y-2"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="all" id="filter-all-status" />
+                      <Label htmlFor="filter-all-status" className="cursor-pointer hover:text-primary text-sm">Todos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="active" id="filter-active" />
+                      <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary text-sm">Ativos</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="archived" id="filter-archived" />
+                      <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary text-sm">Arquivados</Label>
+                    </div>
+                  </RadioGroup>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="active" id="filter-active" />
-                  <Label htmlFor="filter-active" className="cursor-pointer hover:text-primary">Somente Ativos</Label>
+
+                <div>
+                  <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger id="category-filter" className="w-full">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Selecione uma categoria..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as Categorias</SelectItem>
+                      {rewardCategories.map(cat => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="archived" id="filter-archived" />
-                  <Label htmlFor="filter-archived" className="cursor-pointer hover:text-primary">Somente Arquivados</Label>
+                
+                <div>
+                  <Label htmlFor="stars-cost-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Custo (Estrelas):</Label>
+                  <Select value={starsCostFilter} onValueChange={setStarsCostFilter}>
+                    <SelectTrigger id="stars-cost-filter" className="w-full">
+                     <div className="flex items-center gap-2">
+                        <Coins className="h-4 w-4 text-muted-foreground" />
+                        <SelectValue placeholder="Selecione o custo..." />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {starCostFilterOptions.map(opt => (
+                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              </RadioGroup>
+
+                <div>
+                  <Label htmlFor="search-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Buscar por Texto:</Label>
+                  <div className="relative">
+                    <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      id="search-filter"
+                      type="search"
+                      placeholder="Título, descrição..."
+                      value={searchFilter}
+                      onChange={(e) => setSearchFilter(e.target.value)}
+                      className="w-full pl-8"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
 
             {isLoading ? (
@@ -283,21 +383,16 @@ export default function RewardTemplatesHubPage() {
             ) : error ? (
               <p className="text-destructive text-center py-10">{error}</p>
             ) : filteredTemplates.length === 0 ? (
-              <div className="text-center py-10">
+              <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg mt-6">
                 <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                <p className="text-lg text-muted-foreground">
-                  {statusFilter === 'all' 
-                    ? "Nenhum modelo de recompensa encontrado neste catálogo." 
-                    : `Nenhum modelo ${statusFilter === 'active' ? 'ativo' : 'arquivado'} encontrado.`}
-                </p>
+                <p className="text-lg text-muted-foreground">Nenhum modelo encontrado com os filtros atuais.</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {statusFilter === 'all' 
-                    ? "Crie seu primeiro modelo ou use uma das ideias acima!" 
-                    : "Tente um filtro diferente ou crie um novo modelo."}
+                  Tente ajustar os filtros ou{" "}
+                  <Link href="/dashboard/rewards/new" className="text-primary hover:underline">crie um novo modelo de recompensa</Link>.
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                 {filteredTemplates.map((template) => {
                   const categoryDetails = getCategoryDetails(template.category);
                   const CategoryIconComponent = categoryDetails?.icon;
