@@ -13,15 +13,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { addRewardTemplate } from '@/lib/firebase/firestore';
+import { getRewardTemplateById, updateRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, PackagePlus, ArrowLeft } from 'lucide-react';
+import { Loader2, Package, Save, ArrowLeft } from 'lucide-react';
 
-// Schema for RewardTemplate
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional(),
@@ -30,16 +28,22 @@ const rewardTemplateFormSchema = z.object({
   }),
   starsCost: z.coerce.number().min(1, { message: "O custo deve ser de pelo menos 1 estrela." }).max(10000, {message: "O custo não pode ser superior a 10.000 estrelas."}),
   isMaterial: z.boolean().default(false),
+  status: z.enum(['active', 'archived']).default('active'),
 });
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-export default function CreateRewardTemplatePage() {
+export default function EditRewardTemplatePage() {
   const { toast } = useToast();
   const router = useRouter();
+  const params = useParams();
+  const templateId = params.templateId as string;
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  
   const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingData, setIsFetchingData] = useState(true);
+  const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
+
 
   const form = useForm<RewardTemplateFormValues>({
     resolver: zodResolver(rewardTemplateFormSchema),
@@ -49,9 +53,47 @@ export default function CreateRewardTemplatePage() {
       category: undefined, 
       starsCost: 10,
       isMaterial: false,
+      status: 'active',
     },
   });
-  
+
+  useEffect(() => {
+    if (!templateId || !user) {
+      setIsFetchingData(false);
+      if(!user) router.push('/auth/login');
+      else router.push('/dashboard/rewards');
+      return;
+    }
+
+    const fetchRewardTemplateData = async () => {
+      setIsFetchingData(true);
+      try {
+        const fetchedTemplate = await getRewardTemplateById(templateId);
+        if (fetchedTemplate) {
+          setRewardTemplate(fetchedTemplate);
+          form.reset({
+            title: fetchedTemplate.title,
+            description: fetchedTemplate.description || '',
+            category: fetchedTemplate.category,
+            starsCost: fetchedTemplate.starsCost,
+            isMaterial: fetchedTemplate.isMaterial,
+            status: fetchedTemplate.status,
+          });
+        } else {
+          toast({ title: "Modelo de recompensa não encontrado", variant: "destructive" });
+          router.push('/dashboard/rewards');
+        }
+      } catch (error) {
+        console.error("Error fetching reward template:", error);
+        toast({ title: "Erro ao carregar modelo", variant: "destructive" });
+        router.push('/dashboard/rewards');
+      } finally {
+        setIsFetchingData(false);
+      }
+    };
+    fetchRewardTemplateData();
+  }, [templateId, user, router, toast, form]);
+
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
@@ -63,39 +105,59 @@ export default function CreateRewardTemplatePage() {
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
-    if (!user) {
-      toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
+    if (!user || !rewardTemplate) {
+      toast({ title: "Erro de Autenticação ou Dados", description: "Não foi possível salvar.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
-      const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-        ownerId: user.uid,
+      // Aqui você pode adicionar a lógica de perguntar ao usuário se deseja propagar as alterações.
+      // Por enquanto, apenas atualizaremos o modelo.
+      const updatePayload: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
         title: values.title,
         description: values.description,
         category: values.category,
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
-        familyId: currentContext === 'my-space' ? null : currentContext,
+        status: values.status,
+        // updatedAt é tratado pela função updateRewardTemplate
       };
       
-      await addRewardTemplate(templateDataPayload);
+      await updateRewardTemplate(rewardTemplate.id, updatePayload);
       toast({
-        title: 'Modelo de Recompensa Criado!',
-        description: `O modelo "${values.title}" foi adicionado ao catálogo com sucesso.`,
+        title: 'Modelo de Recompensa Atualizado!',
+        description: `O modelo "${values.title}" foi salvo com sucesso.`,
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
-      console.error('Error creating reward template:', error);
+      console.error('Error updating reward template:', error);
       toast({
-        title: 'Erro ao Criar Modelo',
-        description: 'Não foi possível criar o modelo de recompensa. Tente novamente.',
+        title: 'Erro ao Atualizar Modelo',
+        description: 'Não foi possível salvar as alterações. Tente novamente.',
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (isFetchingData) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="ml-3">Carregando dados do modelo...</p>
+      </div>
+    );
+  }
+
+  if (!rewardTemplate) {
+     return (
+      <div className="flex flex-col justify-center items-center min-h-screen">
+        <p className="text-lg text-destructive mb-4">Modelo de recompensa não encontrado.</p>
+        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar para o Catálogo</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
@@ -105,11 +167,11 @@ export default function CreateRewardTemplatePage() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <PackagePlus className="h-10 w-10 text-primary" />
+            <Package className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Criar Novo Modelo de Recompensa</CardTitle>
+              <CardTitle className="text-3xl font-headline">Editar Modelo de Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Defina um novo item ou experiência para o catálogo de recompensas. Depois você poderá atribuí-lo aos Mini Herois.
+                Modifique os detalhes deste modelo de recompensa.
               </CardDescription>
             </div>
           </div>
@@ -139,7 +201,7 @@ export default function CreateRewardTemplatePage() {
                     <FormLabel>Descrição (Opcional)</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Detalhes sobre o modelo da recompensa."
+                        placeholder="Detalhes sobre o modelo."
                         className="resize-none"
                         {...field}
                       />
@@ -155,7 +217,7 @@ export default function CreateRewardTemplatePage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione uma categoria..." />
@@ -193,10 +255,10 @@ export default function CreateRewardTemplatePage() {
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>
-                        Este modelo de recompensa é para um item material?
+                        Este modelo é para um item material?
                       </FormLabel>
                       <FormDescription>
-                        Marque se é um objeto físico (ex: brinquedo, livro).
+                        Marque se a recompensa é um objeto físico.
                       </FormDescription>
                     </div>
                   </FormItem>
@@ -213,27 +275,51 @@ export default function CreateRewardTemplatePage() {
                       <Input type="number" placeholder="Ex: 50" {...field} />
                     </FormControl>
                     <FormDescription>
-                      Quantas estrelas serão necessárias para resgatar esta recompensa.
+                      Quantas estrelas o Mini Heroi precisa para resgatar.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status do Modelo</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione o status do modelo..." />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="active">Ativo (pode ser atribuído)</SelectItem>
+                        <SelectItem value="archived">Arquivado (não pode ser atribuído)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                     <FormDescription>
+                      Modelos ativos podem ser atribuídos a crianças. Modelos arquivados não aparecerão para novas atribuições.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               
-              <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
+              <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isFetchingData}>
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <PackagePlus className="mr-2 h-4 w-4" />
+                  <Save className="mr-2 h-4 w-4" />
                 )}
-                Criar Modelo de Recompensa
+                Salvar Alterações no Modelo
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter>
             <p className="text-xs text-muted-foreground">
-                Modelos são a base para as recompensas que seus Mini Herois poderão ganhar!
+                Alterações aqui afetam o modelo base da recompensa. A lógica para propagar alterações para recompensas já atribuídas será implementada futuramente.
             </p>
         </CardFooter>
       </Card>

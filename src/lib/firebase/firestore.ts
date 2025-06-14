@@ -15,7 +15,7 @@ import {
   setDoc
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, Task, Reward, Dream, UserProfile, RewardCategory } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, Task, RewardTemplate, ChildRewardInstance, Dream, UserProfile } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -25,9 +25,9 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level'>): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId'>): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
-  const newChildRef = doc(collection(db, 'children')); // Auto-generate ID
+  const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
   const newChild: ChildProfile = {
     id: newChildRef.id,
@@ -41,6 +41,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     accessCode,
     createdAt: now,
     updatedAt: now,
+    familyId: childData.familyId || null, // Ensure familyId is null if not provided
   };
   await setDoc(newChildRef, newChild);
   return newChild;
@@ -88,7 +89,6 @@ export const regenerateChildAccessCode = async (childId: string): Promise<string
 export const deleteChildProfile = async (childId: string): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   await deleteDoc(childRef);
-  // TODO: Consider deleting associated tasks, rewards, dreams etc. if necessary (cascade delete).
 };
 
 // --- Family ---
@@ -114,11 +114,12 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   };
   await setDoc(newMembershipRef, ownerMembership);
 
-  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
+  // Associate existing children of this owner (not already in a family) to this new family
+  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   const childrenSnapshot = await getDocs(childrenToUpdateQuery);
   const batch = writeBatch(db);
   childrenSnapshot.forEach(childDoc => {
-    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id });
+    batch.update(doc(db, 'children', childDoc.id), { familyId: newFamily.id, updatedAt: serverTimestamp() });
   });
   await batch.commit();
 
@@ -151,24 +152,24 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
     id: newMembershipRef.id,
     familyId: family.id,
     userId,
-    role: 'Collaborator',
+    role: 'Collaborator', // Default role for joining
     joinedAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newMembershipRef, newMembership);
-
+  
+  // Associate children of this user (not already in a family) to this family
   const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
   const childrenSnapshot = await getDocs(childrenToUpdateQuery);
   const batch = writeBatch(db);
   childrenSnapshot.forEach(childDoc => {
-    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id });
+    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id, updatedAt: serverTimestamp() });
   });
   await batch.commit();
-
 
   return newMembership;
 };
 
-export const getFamilyMembers = async (userId: string): Promise<UserProfile[]> => {
+export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]> => {
   const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
   const membershipsSnapshot = await getDocs(membershipsQuery);
   const memberUserIds = membershipsSnapshot.docs.map(doc => (doc.data() as FamilyMembership).userId);
@@ -194,68 +195,97 @@ export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompl
   return newTask;
 };
 
-// --- Rewards ---
-export const addReward = async (rewardData: Omit<Reward, 'id' | 'createdAt' | 'isRedeemed' | 'redeemedAt' | 'status' | 'updatedAt'>): Promise<Reward> => {
-  const newRewardRef = doc(collection(db, 'rewards'));
+// --- Reward Templates (Catálogo de Recompensas) ---
+export const addRewardTemplate = async (templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
+  const newTemplateRef = doc(collection(db, 'rewardTemplates'));
   const now = serverTimestamp() as Timestamp;
-  const newReward: Reward = {
-    id: newRewardRef.id,
-    childId: rewardData.childId,
-    ownerId: rewardData.ownerId,
-    title: rewardData.title,
-    description: rewardData.description,
-    category: rewardData.category,
-    starsCost: rewardData.starsCost,
-    isMaterial: rewardData.isMaterial,
-    familyId: rewardData.familyId === undefined ? null : rewardData.familyId,
-    isRedeemed: false,
-    status: 'active', // Default status
+  const newTemplate: RewardTemplate = {
+    id: newTemplateRef.id,
+    ...templateData,
+    status: 'active', // Default status for a new template
     createdAt: now,
-    updatedAt: now, // Initialize updatedAt
+    updatedAt: now,
   };
-  await setDoc(newRewardRef, newReward);
-  return newReward;
+  await setDoc(newTemplateRef, newTemplate);
+  return newTemplate;
 };
 
-export const updateReward = async (rewardId: string, updates: Partial<Omit<Reward, 'id' | 'createdAt' | 'childId' | 'ownerId' | 'familyId'>>): Promise<void> => {
-  const rewardRef = doc(db, 'rewards', rewardId);
-  await updateDoc(rewardRef, {
+export const getRewardTemplateById = async (templateId: string): Promise<RewardTemplate | null> => {
+  const docRef = doc(db, 'rewardTemplates', templateId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as RewardTemplate;
+  }
+  return null;
+};
+
+export const updateRewardTemplate = async (templateId: string, updates: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
+  const templateRef = doc(db, 'rewardTemplates', templateId);
+  await updateDoc(templateRef, {
     ...updates,
     updatedAt: serverTimestamp() as Timestamp,
   });
 };
 
-export const deleteReward = async (rewardId: string): Promise<void> => {
-  const rewardRef = doc(db, 'rewards', rewardId);
-  await deleteDoc(rewardRef);
+export const deleteRewardTemplate = async (templateId: string): Promise<void> => {
+  // Consider checking for active ChildRewardInstances before deleting
+  const templateRef = doc(db, 'rewardTemplates', templateId);
+  await deleteDoc(templateRef);
 };
 
-export const getRewardById = async (rewardId: string): Promise<Reward | null> => {
-  const docRef = doc(db, 'rewards', rewardId);
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as Reward;
+export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyId?: string | null): Promise<RewardTemplate[]> => {
+  let q;
+  if (familyId && familyId !== 'my-space') {
+    // Templates belonging to the specific family
+    q = query(collection(db, 'rewardTemplates'), where('familyId', '==', familyId));
+  } else {
+    // Templates belonging to the owner's personal space (no family or familyId is null)
+    q = query(collection(db, 'rewardTemplates'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   }
-  return null;
-};
-
-
-export const getRewardsByChild = async (childId: string): Promise<Reward[]> => {
-  const q = query(collection(db, 'rewards'), where('childId', '==', childId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RewardTemplate));
 };
 
-export const getRewardsByOwner = async (ownerId: string): Promise<Reward[]> => {
-  const q = query(collection(db, 'rewards'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+
+// --- Child Reward Instances (Recompensas Atribuídas) ---
+export const addChildRewardInstance = async (instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt'>): Promise<ChildRewardInstance> => {
+  const newInstanceRef = doc(collection(db, 'childRewardInstances'));
+  const now = serverTimestamp() as Timestamp;
+  const newInstance: ChildRewardInstance = {
+    id: newInstanceRef.id,
+    ...instanceData,
+    status: 'active',
+    isRedeemed: false,
+    assignedAt: now,
+    updatedAt: now,
+  };
+  await setDoc(newInstanceRef, newInstance);
+  return newInstance;
+};
+
+export const getChildRewardInstanceById = async (instanceId: string): Promise<ChildRewardInstance | null> => {
+  const docRef = doc(db, 'childRewardInstances', instanceId);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as ChildRewardInstance : null;
+};
+
+export const getChildRewardInstancesByChild = async (childId: string): Promise<ChildRewardInstance[]> => {
+  const q = query(collection(db, 'childRewardInstances'), where('childId', '==', childId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
 };
 
-export const getRewardsByFamily = async (familyId: string): Promise<Reward[]> => {
-    const q = query(collection(db, 'rewards'), where('familyId', '==', familyId));
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Reward));
+export const updateChildRewardInstance = async (instanceId: string, updates: Partial<Omit<ChildRewardInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt'>>): Promise<void> => {
+  const instanceRef = doc(db, 'childRewardInstances', instanceId);
+  await updateDoc(instanceRef, {
+    ...updates,
+    updatedAt: serverTimestamp() as Timestamp,
+  });
+};
+
+export const deleteChildRewardInstance = async (instanceId: string): Promise<void> => {
+  const instanceRef = doc(db, 'childRewardInstances', instanceId);
+  await deleteDoc(instanceRef);
 };
 
 

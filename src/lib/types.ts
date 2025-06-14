@@ -1,7 +1,8 @@
 
 import type { Timestamp } from 'firebase/firestore';
-import type { Icon as LucideIconType } from 'lucide-react';
-import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag } from 'lucide-react';
+import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
+import { PartyPopper, Clock, Crown, GraduationCap, Award, HeartHandshake, ShoppingBag, Package } from 'lucide-react';
+import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 
 export interface UserProfile {
   uid: string;
@@ -13,7 +14,7 @@ export interface UserProfile {
 export interface ChildProfile {
   id: string; // Document ID
   ownerId: string; // UID of the Admin Master
-  familyId?: string; // Optional, ID of the family if shared
+  familyId?: string | null; // Optional, ID of the family if shared
   name: string;
   age: number;
   gender?: 'boy' | 'girl' | 'not-informed';
@@ -43,7 +44,7 @@ export interface FamilyMembership {
 }
 
 export interface Task {
-  id: string; // Document ID
+  id:string; // Document ID
   childId: string;
   ownerId: string; // UID of the Admin Master (for security rules)
   title: string;
@@ -58,13 +59,13 @@ export interface Task {
 }
 
 export const rewardCategories = [
-  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as LucideIconType },
-  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as LucideIconType },
-  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as LucideIconType },
-  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as LucideIconType },
-  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as LucideIconType },
-  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as LucideIconType },
-  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as LucideIconType },
+  { id: 'experience', label: 'Experiências', colorClasses: 'bg-primary/10 text-primary border-primary/30', icon: PartyPopper as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'extra-time', label: 'Tempo Extra', colorClasses: 'bg-accent/10 text-accent border-accent/30', icon: Clock as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'privilege', label: 'Privilégios', colorClasses: 'bg-secondary/20 text-secondary-foreground border-secondary/30', icon: Crown as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'learning', label: 'Aprendizado', colorClasses: 'bg-yellow-400/10 text-yellow-600 border-yellow-400/30', icon: GraduationCap as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'recognition', label: 'Reconhecimento', colorClasses: 'bg-pink-400/10 text-pink-600 border-pink-400/30', icon: Award as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'social-impact', label: 'Impacto Social', colorClasses: 'bg-cyan-400/10 text-cyan-600 border-cyan-400/30', icon: HeartHandshake as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
+  { id: 'material', label: 'Material', colorClasses: 'bg-muted text-muted-foreground border-border', icon: ShoppingBag as ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>> },
 ] as const;
 
 
@@ -72,22 +73,39 @@ export type RewardCategory = typeof rewardCategories[number]['id'];
 export type RewardCategoryDetails = typeof rewardCategories[number];
 
 
-export interface Reward {
+// Novo: Modelo de Recompensa (Catálogo de Recompensas)
+export interface RewardTemplate {
   id: string; // Document ID
-  childId: string;
-  ownerId: string;
+  ownerId: string; // UID do Admin Master que criou/possui este modelo
+  familyId?: string | null; // Se este modelo pertence a uma família específica ou é pessoal do ownerId
   title: string;
   description?: string;
   category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
+  // Potencialmente: iconUrl, defaultFrequency, etc.
   createdAt: Timestamp;
-  familyId?: string | null;
+  updatedAt: Timestamp;
+  status: 'active' | 'archived'; // Status do modelo no catálogo
+}
 
-  status: 'active' | 'redeemed' | 'disabled'; // Estado principal gerenciado pelo admin/sistema
-  isRedeemed: boolean; // Indica se o ato de resgate ocorreu
-  redeemedAt?: Timestamp; // Data do resgate
-  updatedAt: Timestamp; // Última atualização de dados ou status
+// Renomeado e ajustado: Recompensa Atribuída à Criança (Instância da Recompensa)
+export interface ChildRewardInstance {
+  id: string; // Document ID da instância
+  templateId: string; // ID do RewardTemplate original
+  childId: string; // ID da criança a quem esta instância pertence
+  ownerId: string; // UID do Admin Master (para regras de segurança, pode ser redundante se o template tem)
+  familyId?: string | null; // ID da Família (para regras de segurança, pode ser redundante se o template tem)
+
+  // Detalhes podem ser herdados do template, mas podem ser sobrescritos se necessário no futuro
+  // title: string; // Herdado do template
+  // starsCost: number; // Herdado do template
+
+  status: 'active' | 'redeemed' | 'disabled'; // Status desta instância específica para esta criança
+  isRedeemed: boolean;
+  redeemedAt?: Timestamp;
+  assignedAt: Timestamp; // Quando foi atribuída à criança
+  updatedAt: Timestamp; // Última atualização de status desta instância
 }
 
 
@@ -144,5 +162,4 @@ export type AuthContextType = {
   setChildAuthenticatedState: (profile: ChildProfile) => void;
 };
 
-// Alteração para usar IconType de lucide-react se LucideIcon não for o tipo correto para elementos de ícone
 export type IconType = LucideIconType;
