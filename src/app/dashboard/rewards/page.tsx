@@ -240,64 +240,71 @@ export default function RewardTemplatesHubPage() {
         </CardContent>
       </Card>
 
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline flex items-center">
-            <Sparkles className="mr-3 h-7 w-7 text-accent" />
-            Inspire-se: Ideias de Recompensas
-          </CardTitle>
-          <CardDescription>
-            Não sabe por onde começar? Use estas ideias como base para criar suas recompensas!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Accordion type="single" collapsible className="w-full">
-            {predefinedRewardGroups.map((group) => {
-              const groupedIdeas = groupIdeasBySubCategory(group.items);
-              return (
-                <AccordionItem value={group.userCategory} key={group.userCategory}>
-                  <AccordionTrigger className="text-lg hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <group.icon className="h-5 w-5 text-primary" />
-                      {group.userCategory}
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="space-y-4">
-                    {group.description && (
-                      <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
-                    )}
-                    {Object.entries(groupedIdeas).map(([subCategory, ideas]) => (
-                      <Fragment key={subCategory}>
-                        {subCategory !== 'Outras Ideias' && <h4 className="font-semibold text-md text-primary/80 mt-3 mb-1">{subCategory}</h4>}
-                        <ul className="space-y-3 pt-1">
-                          {ideas.map((idea) => (
-                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
-                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                <div>
-                                  <h5 className="font-semibold text-md">{idea.title}</h5>
-                                  {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
+      <Accordion type="single" collapsible className="w-full" defaultValue="predefined-rewards-accordion">
+        <AccordionItem value="predefined-rewards-accordion" className="rounded-lg border bg-card text-card-foreground shadow-lg">
+          <AccordionTrigger className="p-6 hover:no-underline w-full">
+            <div className="flex flex-1 items-center justify-between">
+                <div className="text-left">
+                    <CardTitle className="text-2xl font-headline flex items-center">
+                        <Sparkles className="mr-3 h-7 w-7 text-accent" />
+                        Inspire-se: Ideias de Recompensas
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                        Não sabe por onde começar? Use estas ideias como base para criar suas recompensas!
+                    </CardDescription>
+                </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="p-6 pt-0">
+            <Accordion type="single" collapsible className="w-full">
+              {predefinedRewardGroups.map((group) => {
+                const groupedIdeas = groupIdeasBySubCategory(group.items);
+                return (
+                  <AccordionItem value={group.userCategory} key={group.userCategory}>
+                    <AccordionTrigger className="text-lg hover:no-underline">
+                      <div className="flex items-center gap-2">
+                        <group.icon className="h-5 w-5 text-primary" />
+                        {group.userCategory}
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="space-y-4">
+                      {group.description && (
+                        <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                      )}
+                      {Object.entries(groupedIdeas).map(([subCategory, ideas]) => (
+                        <Fragment key={subCategory}>
+                          {subCategory !== 'Outras Ideias' && <h4 className="font-semibold text-md text-primary/80 mt-3 mb-1">{subCategory}</h4>}
+                          <ul className="space-y-3 pt-1">
+                            {ideas.map((idea) => (
+                              <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
+                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                  <div>
+                                    <h5 className="font-semibold text-md">{idea.title}</h5>
+                                    {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
+                                  </div>
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    onClick={() => handleUseIdea(idea)}
+                                    className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                                  >
+                                    Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  onClick={() => handleUseIdea(idea)}
-                                  className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
-                                >
-                                  Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                              </div>
-                            </li>
-                          ))}
-                        </ul>
-                      </Fragment>
-                    ))}
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
-        </CardContent>
-      </Card>
+                              </li>
+                            ))}
+                          </ul>
+                        </Fragment>
+                      ))}
+                    </AccordionContent>
+                  </AccordionItem>
+                );
+              })}
+            </Accordion>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
 
       <Accordion type="single" collapsible className="w-full" defaultValue="user-rewards-accordion">
         <AccordionItem value="user-rewards-accordion" className="rounded-lg border bg-card text-card-foreground shadow-md">
@@ -305,7 +312,7 @@ export default function RewardTemplatesHubPage() {
             <div className="flex flex-1 items-center justify-between">
               <div className="text-left">
                 <CardTitle className="text-2xl font-headline">Recompensas do Catálogo</CardTitle>
-                <CardDescription>Abaixo estão as recompensas que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
+                <CardDescription className="mt-1">Abaixo estão as recompensas que você já adicionou ao catálogo de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
               </div>
             </div>
           </AccordionTrigger>
