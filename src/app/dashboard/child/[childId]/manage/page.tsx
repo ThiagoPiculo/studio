@@ -4,15 +4,17 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildProfile } from '@/lib/firebase/firestore';
-import type { ChildProfile } from '@/lib/types';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails } from '@/lib/types';
+import { rewardCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
+import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +26,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+
 
 export default function ManageChildPage() {
   const params = useParams();
@@ -35,6 +46,15 @@ export default function ManageChildPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
+
+  const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
+  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+  const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
+  const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
+  const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
+  const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
+
 
   useEffect(() => {
     if (childId) {
@@ -59,6 +79,23 @@ export default function ManageChildPage() {
         router.push('/dashboard');
     }
   }, [childId, router, toast]);
+
+  useEffect(() => {
+    if (activeTab === 'rewards' && childId) {
+      setIsLoadingRewards(true);
+      getChildRewardInstancesByChild(childId)
+        .then(rewards => {
+          setChildRewards(rewards);
+        })
+        .catch(error => {
+          console.error("Error fetching child rewards:", error);
+          toast({ title: "Erro ao Carregar Recompensas", description: "Não foi possível buscar as recompensas atribuídas.", variant: "destructive" });
+        })
+        .finally(() => {
+          setIsLoadingRewards(false);
+        });
+    }
+  }, [activeTab, childId, toast]);
   
   const handleProfileUpdate = (updatedProfile: Partial<ChildProfile>) => {
     setChild(prev => prev ? { ...prev, ...updatedProfile } : null);
@@ -98,11 +135,94 @@ export default function ManageChildPage() {
     }
   };
 
-
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+
+  const getCategoryDetails = (categoryId: ChildRewardInstance['category']): RewardCategoryDetails | undefined => {
+    return rewardCategories.find(cat => cat.id === categoryId);
+  };
+
+  const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
+    switch (status) {
+      case 'active': return 'default'; // Primary color (e.g. green or blue)
+      case 'redeemed': return 'secondary'; // Success color (e.g. lighter green or gray)
+      case 'disabled': return 'outline'; // Muted color (e.g. gray)
+      default: return 'outline';
+    }
+  };
+  
+  const getRewardStatusText = (status: ChildRewardInstance['status']): string => {
+    switch (status) {
+      case 'active': return 'Ativa';
+      case 'redeemed': return 'Resgatada';
+      case 'disabled': return `Desativada para ${child?.name || 'esta criança'}`;
+      default: return 'Desconhecido';
+    }
+  };
+
+  const handleMarkAsRedeemed = async () => {
+    if (!instanceToManage || !child) return;
+    setIsProcessingRewardAction(true);
+    try {
+      const currentChildProfile = await getChildProfileById(child.id); // Fetch latest profile
+      if (!currentChildProfile) throw new Error("Child profile not found for star check.");
+
+      if (currentChildProfile.stars < instanceToManage.starsCost) {
+        toast({ title: "Estrelas Insuficientes", description: `${child.name} não possui estrelas suficientes para resgatar "${instanceToManage.title}".`, variant: "destructive", duration: 7000 });
+        setIsProcessingRewardAction(false);
+        setIsRedeemConfirmOpen(false);
+        return;
+      }
+
+      await updateChildProfile(child.id, { stars: currentChildProfile.stars - instanceToManage.starsCost });
+      await updateChildRewardInstance(instanceToManage.id, { status: 'redeemed', isRedeemed: true, redeemedAt: serverTimestamp() as any });
+      
+      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? {...r, status: 'redeemed', isRedeemed: true, redeemedAt: new Date() as any } : r));
+      setChild(prev => prev ? { ...prev, stars: currentChildProfile.stars - instanceToManage.starsCost } : null);
+      toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi marcada como resgatada por ${child.name}.` });
+    } catch (error) {
+      console.error("Error marking reward as redeemed:", error);
+      toast({ title: "Erro ao Resgatar", description: "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
+    } finally {
+      setIsProcessingRewardAction(false);
+      setIsRedeemConfirmOpen(false);
+      setInstanceToManage(null);
+    }
+  };
+
+  const handleToggleInstanceStatus = async (instance: ChildRewardInstance, newStatus: 'active' | 'disabled') => {
+    setIsProcessingRewardAction(true);
+    try {
+      await updateChildRewardInstance(instance.id, { status: newStatus });
+      setChildRewards(prev => prev.map(r => r.id === instance.id ? {...r, status: newStatus } : r));
+      toast({ title: "Status da Recompensa Atualizado", description: `A recompensa "${instance.title}" foi ${newStatus === 'active' ? 'reativada' : 'desativada'} para ${child?.name}.` });
+    } catch (error) {
+      console.error(`Error ${newStatus === 'active' ? 'activating' : 'deactivating'} reward instance:`, error);
+      toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
+    } finally {
+      setIsProcessingRewardAction(false);
+    }
+  };
+  
+  const handleDeleteInstance = async () => {
+    if (!instanceToManage) return;
+    setIsProcessingRewardAction(true);
+    try {
+      await deleteChildRewardInstance(instanceToManage.id);
+      setChildRewards(prev => prev.filter(r => r.id !== instanceToManage.id));
+      toast({ title: "Atribuição Removida", description: `A recompensa "${instanceToManage.title}" foi removida de ${child?.name}.` });
+    } catch (error) {
+      console.error("Error deleting reward instance:", error);
+      toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });
+    } finally {
+      setIsProcessingRewardAction(false);
+      setIsDeleteInstanceConfirmOpen(false);
+      setInstanceToManage(null);
+    }
+  };
+
 
   if (isLoading) {
     return (
@@ -164,7 +284,7 @@ export default function ManageChildPage() {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue="overview" className="w-full">
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="tasks" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Tarefas</TabsTrigger>
@@ -193,7 +313,7 @@ export default function ManageChildPage() {
                   </Card>
                   <Card className="bg-card border-border hover:shadow-lg transition-shadow">
                     <CardHeader>
-                      <CardTitle className="text-lg">Recompensas Resgatadas</CardTitle>
+                      <CardTitle className="text-lg">Recompensas Resgatadas Recentemente</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <p className="text-muted-foreground">Nenhuma recompensa resgatada recentemente. (Funcionalidade a ser implementada)</p>
@@ -220,14 +340,113 @@ export default function ManageChildPage() {
           <TabsContent value="rewards">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Recompensas para {child.name}</CardTitle>
-                <CardDescription>Crie e gerencie recompensas para motivar {child.name}.</CardDescription>
+                <CardTitle>Recompensas Atribuídas a {child.name}</CardTitle>
+                <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">A funcionalidade de gerenciamento de recompensas está em desenvolvimento.</p>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                   <StarIcon className="mr-2 h-4 w-4" /> Criar Nova Recompensa
+                <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4">
+                  <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Catálogo (Atribuir Novas)
                 </Button>
+                {isLoadingRewards ? (
+                  <div className="flex justify-center items-center py-10">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="ml-3 text-muted-foreground">Carregando recompensas...</p>
+                  </div>
+                ) : childRewards.length === 0 ? (
+                  <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <p className="text-lg text-muted-foreground">{child.name} ainda não tem recompensas atribuídas.</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Vá ao catálogo para atribuir algumas!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {childRewards.map((instance) => {
+                      const categoryDetails = getCategoryDetails(instance.category);
+                      const CategoryIconComponent = categoryDetails?.icon;
+                      return (
+                        <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                          <CardHeader>
+                            <div className="flex justify-between items-start">
+                              <CardTitle className="text-lg">{instance.title}</CardTitle>
+                              <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                                {getRewardStatusText(instance.status)}
+                              </Badge>
+                            </div>
+                            {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+                          </CardHeader>
+                          <CardContent className="space-y-2 flex-grow text-sm">
+                            {categoryDetails && (
+                              <div className="flex items-center">
+                                 <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                                  {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                                 </span>
+                                <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
+                                  {categoryDetails.label}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex items-center text-muted-foreground">
+                              <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
+                              Custo: {instance.starsCost} estrelas
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                            </p>
+                            {instance.status === 'redeemed' && instance.redeemedAt && (
+                              <p className="text-xs text-green-600 font-medium">
+                                Resgatada em: {new Date((instance.redeemedAt as any).seconds * 1000).toLocaleDateString()}
+                              </p>
+                            )}
+                          </CardContent>
+                          <CardFooter>
+                            {instance.status !== 'redeemed' ? (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" className="w-full" disabled={isProcessingRewardAction}>
+                                    <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-56">
+                                  <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  {instance.status === 'active' && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isProcessingRewardAction}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isProcessingRewardAction}>
+                                        <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Desativar para {child.name}
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  {instance.status === 'disabled' && (
+                                    <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isProcessingRewardAction}>
+                                      <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem 
+                                    onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }} 
+                                    className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                                    disabled={isProcessingRewardAction}
+                                  >
+                                    <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            ) : (
+                              <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
+                                <CheckCircle className="mr-2 h-4 w-4" /> Recompensa Já Resgatada
+                              </Button>
+                            )}
+                          </CardFooter>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -280,6 +499,51 @@ export default function ManageChildPage() {
           </TabsContent>
         </div>
       </Tabs>
+
+      {/* Redeem Confirmation Dialog */}
+      {instanceToManage && isRedeemConfirmOpen && (
+        <AlertDialog open={isRedeemConfirmOpen} onOpenChange={setIsRedeemConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Resgate de Recompensa</AlertDialogTitle>
+              <AlertDialogDescription>
+                Você tem certeza que deseja marcar a recompensa "{instanceToManage.title}" ({instanceToManage.starsCost} estrelas) como resgatada por {child.name}? Isso deduzirá as estrelas do saldo de {child.name}.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isProcessingRewardAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleMarkAsRedeemed} className="bg-green-600 hover:bg-green-700" disabled={isProcessingRewardAction}>
+                {isProcessingRewardAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                Sim, Marcar como Resgatada
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+      
+      {/* Delete Instance Confirmation Dialog */}
+      {instanceToManage && isDeleteInstanceConfirmOpen && (
+         <AlertDialog open={isDeleteInstanceConfirmOpen} onOpenChange={setIsDeleteInstanceConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar Remoção da Atribuição</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover a atribuição da recompensa "{instanceToManage.title}" para {child.name}? Esta ação não pode ser desfeita para esta criança específica.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setIsDeleteInstanceConfirmOpen(false)} disabled={isProcessingRewardAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteInstance} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingRewardAction}>
+                {isProcessingRewardAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                Sim, Remover Atribuição
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
     </div>
   );
 }
+
+```
