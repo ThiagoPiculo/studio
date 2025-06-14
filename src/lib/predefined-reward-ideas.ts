@@ -14,6 +14,7 @@ export interface PredefinedRewardIdea {
 
 export interface PredefinedRewardGroup {
   userCategory: string;
+  description: string; // Descrição para o grupo principal
   icon: LucideIcon;
   items: PredefinedRewardIdea[];
 }
@@ -21,8 +22,10 @@ export interface PredefinedRewardGroup {
 export const predefinedRewardGroups: PredefinedRewardGroup[] = [
   {
     userCategory: "Privilégios",
+    description: "Recompensas que dão à criança um senso de autonomia, controle e confiança, ensinando sobre tomada de decisão e responsabilidade de uma forma leve e divertida.",
     icon: Crown,
     items: [
+      // Controle
       {
         title: "Escolher o filme da família",
         description: "A criança escolhe o filme que a família assistirá na noite de cinema.",
@@ -71,6 +74,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         suggestedAppCategory: "privilege",
         isMaterialSuggestion: false,
       },
+      // Flexibilidade
       {
         title: "30 Minutos Extras de Tela",
         description: "Tempo extra de videogame, tablet ou TV.",
@@ -89,14 +93,14 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
       },
       {
         title: "Vale-Pular-Tarefa",
-        description: "Direito a pular uma tarefa doméstica de baixo impacto por um dia.",
+        description: "Direito a pular uma tarefa doméstica de baixo impacto por um dia (deve ser usado com sabedoria!).",
         userCategory: "Privilégios",
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privilege",
         isMaterialSuggestion: false,
       },
       {
-        title: "15 Minutos Livres Extras",
+        title: "Ter 15 minutos livres extras",
         description: "Ter 15 minutos de 'tempo livre' extra antes de começar a lição de casa.",
         userCategory: "Privilégios",
         userSubCategory: "Flexibilidade",
@@ -104,31 +108,32 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Dia da Roupa Especial",
-        description: "Escolher usar uma roupa 'especial' (fantasia, capa) em um dia normal em casa.",
+        title: "Escolher usar uma roupa especial",
+        description: "Escolher usar uma roupa 'especial' (fantasia, capa de herói) em um dia normal em casa.",
         userCategory: "Privilégios",
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privilege",
         isMaterialSuggestion: false,
       },
+      // Exclusividade
       {
-        title: "Encontro Exclusivo 1-para-1",
-        description: "Um 'encontro exclusivo' com o pai ou a mãe para uma atividade especial.",
+        title: "Encontro exclusivo 1-para-1",
+        description: "Um 'encontro exclusivo' com o pai ou a mãe para uma atividade 1-para-1.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "experience",
         isMaterialSuggestion: false,
       },
       {
-        title: "Dia do Sim (com Regras)",
-        description: "Dentro de regras pré-definidas, os pais dizem 'sim' aos pedidos por um período.",
+        title: "O Dia do Sim (com Regras)",
+        description: "Dentro de regras pré-definidas, os pais se comprometem a dizer 'sim' aos pedidos da criança por um período.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privilege",
         isMaterialSuggestion: false,
       },
       {
-        title: "Contar a Primeira História",
+        title: "Direito a contar a primeira história",
         description: "Direito a contar a primeira história na hora de dormir.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
@@ -136,7 +141,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Café da Manhã na Cama",
+        title: "Café da manhã ou lanche especial na cama",
         description: "Ter um café da manhã ou lanche especial servido na cama.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
@@ -144,7 +149,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Ser o Primeiro a Experimentar Algo Novo",
+        title: "Ser o primeiro a experimentar algo novo",
         description: "Ser o primeiro a experimentar algo novo que a família comprou.",
         userCategory: "Privilégios",
         userSubCategory: "Exclusividade",
@@ -155,10 +160,12 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
   },
   {
     userCategory: "Experiências",
+    description: "O foco aqui é criar memórias afetivas e fortalecer laços, que são as recompensas mais duradouras e alinhadas ao propósito do MiniHeróis de conectar a família.",
     icon: PartyPopper,
     items: [
+      // Em Família
       {
-        title: "Piquenique Temático",
+        title: "Piquenique temático",
         description: "Piquenique no parque ou na praia com um tema divertido.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -166,7 +173,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Acampamento na Sala",
+        title: "Acampamento na sala",
         description: "Acampamento na sala de estar, com cabana de lençóis e lanternas.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -174,7 +181,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Caça ao Tesouro em Casa",
+        title: "Caça ao tesouro em casa",
         description: "Caça ao tesouro com pistas e um pequeno prêmio no final.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -182,7 +189,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Noite de Culinária Divertida",
+        title: "Noite de culinária divertida",
         description: "Fazer pizzas, cookies ou um bolo divertido em família.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -190,7 +197,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Sessão de Fotos Temáticas",
+        title: "Sessão de fotos temáticas",
         description: "Sessão de fotos em casa, com fantasias e cenários improvisados.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -198,7 +205,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Cápsula do Tempo Familiar",
+        title: "Cápsula do tempo familiar",
         description: "Fazer uma 'cápsula do tempo' em família para ser aberta no futuro.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
@@ -206,15 +213,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Noite de Karaokê em Família",
+        title: "Noite de Karaokê em família",
         description: "Noite de Karaokê com as músicas favoritas de todos.",
         userCategory: "Experiências",
         userSubCategory: "Em Família",
         suggestedAppCategory: "experience",
         isMaterialSuggestion: false,
       },
+      // Social
       {
-        title: "Festa do Pijama com Amigos",
+        title: "Festa do pijama com amigos",
         description: "Convidar um ou dois amigos para uma festa do pijama.",
         userCategory: "Experiências",
         userSubCategory: "Social",
@@ -222,7 +230,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Levar Amigo para Passeio",
+        title: "Levar amigo para passeio",
         description: "Direito de levar um amigo para um passeio em família (cinema, parque).",
         userCategory: "Experiências",
         userSubCategory: "Social",
@@ -230,7 +238,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Olimpíada no Quintal",
+        title: "Olimpíada no quintal",
         description: "Organizar uma pequena 'olimpíada' no quintal ou parque com os amigos.",
         userCategory: "Experiências",
         userSubCategory: "Social",
@@ -238,15 +246,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Chamada de Vídeo Estendida",
+        title: "Chamada de vídeo estendida",
         description: "Uma chamada de vídeo mais longa com um primo ou amigo que mora longe.",
         userCategory: "Experiências",
         userSubCategory: "Social",
         suggestedAppCategory: "experience",
         isMaterialSuggestion: false,
       },
+      // Cultural
       {
-        title: "Passeio Cultural Interativo",
+        title: "Passeio cultural interativo",
         description: "Passeio a um museu interativo, zoológico ou planetário.",
         userCategory: "Experiências",
         userSubCategory: "Cultural",
@@ -254,7 +263,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Estreia no Cinema",
+        title: "Estreia no cinema",
         description: "Ir ao cinema para assistir a um filme de estreia.",
         userCategory: "Experiências",
         userSubCategory: "Cultural",
@@ -262,7 +271,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Visita a Jardim Botânico ou Feira",
+        title: "Visita a jardim botânico ou feira",
         description: "Visitar um jardim botânico ou uma feira de ciências.",
         userCategory: "Experiências",
         userSubCategory: "Cultural",
@@ -270,7 +279,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Peça de Teatro Infantil",
+        title: "Peça de teatro infantil",
         description: "Ir a uma peça de teatro infantil.",
         userCategory: "Experiências",
         userSubCategory: "Cultural",
@@ -280,11 +289,13 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
     ],
   },
   {
-    userCategory: "Itens Materiais (com Propósito)",
+    userCategory: "Itens Materiais (com Ressalvas)",
+    description: "Recompensas tangíveis, mas sempre conectadas a um propósito, como um hobby ou o desenvolvimento de uma habilidade, para evitar o consumismo puro. Lembre-se de evitar condicionar itens essenciais.",
     icon: ShoppingBag,
     items: [
+      // Relacionados a Hobbies
       {
-        title: "Livro Novo Escolhido",
+        title: "Livro novo escolhido",
         description: "Um livro novo escolhido pela criança na livraria.",
         userCategory: "Itens Materiais",
         userSubCategory: "Relacionados a Hobbies",
@@ -292,7 +303,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Kit de Arte Específico",
+        title: "Kit de arte específico",
         description: "Um kit de arte ou material específico (aquarelas, argila, canetas especiais).",
         userCategory: "Itens Materiais",
         userSubCategory: "Relacionados a Hobbies",
@@ -300,7 +311,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Acessório para Esporte",
+        title: "Acessório para esporte",
         description: "Um acessório para um esporte que pratica (meião de futebol, munhequeira).",
         userCategory: "Itens Materiais",
         userSubCategory: "Relacionados a Hobbies",
@@ -308,7 +319,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Partitura Nova",
+        title: "Partitura nova",
         description: "Partitura de uma música nova para o instrumento que estuda.",
         userCategory: "Itens Materiais",
         userSubCategory: "Relacionados a Hobbies",
@@ -316,15 +327,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Adesivos Decorativos",
+        title: "Adesivos decorativos",
         description: "Adesivos novos para decorar o skate, bicicleta ou caderno.",
         userCategory: "Itens Materiais",
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material",
         isMaterialSuggestion: true,
       },
+      // Necessidades Planejadas
       {
-        title: "Escolher Modelo/Cor de Item Planejado",
+        title: "Escolher modelo/cor de item planejado",
         description: "O direito de escolher o modelo/cor de um tênis ou roupa que já seria comprado.",
         userCategory: "Itens Materiais",
         userSubCategory: "Necessidades Planejadas",
@@ -332,15 +344,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Escolher Estampa de Material Escolar",
+        title: "Escolher estampa de material escolar",
         description: "Escolher a estampa da mochila ou do estojo para o próximo ano letivo.",
         userCategory: "Itens Materiais",
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material",
         isMaterialSuggestion: true,
       },
+      // Pequenos Mimos
       {
-        title: "Pacote de Figurinhas",
+        title: "Pacote de figurinhas",
         description: "Pacote de figurinhas para um álbum.",
         userCategory: "Itens Materiais",
         userSubCategory: "Pequenos Mimos",
@@ -348,7 +361,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Gibi ou Revista em Quadrinhos",
+        title: "Gibi ou revista em quadrinhos",
         description: "Um gibi ou revista em quadrinhos.",
         userCategory: "Itens Materiais",
         userSubCategory: "Pequenos Mimos",
@@ -356,7 +369,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Chaveiro de Personagem",
+        title: "Chaveiro de personagem",
         description: "Um chaveiro do seu personagem favorito.",
         userCategory: "Itens Materiais",
         userSubCategory: "Pequenos Mimos",
@@ -364,7 +377,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Massinha de Modelar Nova Cor",
+        title: "Massinha de modelar nova cor",
         description: "Massinha de modelar de uma cor diferente.",
         userCategory: "Itens Materiais",
         userSubCategory: "Pequenos Mimos",
@@ -375,10 +388,12 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
   },
   {
     userCategory: "Desenvolvimento Pessoal",
+    description: "Recompensas que incentivam diretamente o aprendizado e a exploração de novos talentos, alinhadas à Teoria das Múltiplas Inteligências.",
     icon: GraduationCap,
     items: [
+      // Aprendizado
       {
-        title: "Aula Experimental",
+        title: "Aula experimental",
         description: "Uma aula experimental (música, esporte, programação, artes marciais).",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
@@ -386,7 +401,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Kit de Ciências",
+        title: "Kit de ciências",
         description: "Um kit de ciências (química, vulcões, fósseis).",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
@@ -394,7 +409,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Curso Online Rápido",
+        title: "Curso online rápido",
         description: "Inscrição em um curso online rápido sobre um tema de interesse.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
@@ -402,7 +417,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "App ou Jogo Educativo Premium",
+        title: "App ou jogo educativo premium",
         description: "Um aplicativo ou jogo educativo premium.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
@@ -410,13 +425,14 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Assinatura de Revista Infantil Educativa",
+        title: "Assinatura de revista infantil educativa",
         description: "Assinatura de uma revista infantil educativa.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "learning",
         isMaterialSuggestion: true,
       },
+      // Criatividade
       {
         title: "Kit Faça Você Mesmo (DIY)",
         description: "Kit de 'faça você mesmo' (construção de robô, criação de bijuterias).",
@@ -426,7 +442,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Diário ou Caderno de Desenho de Qualidade",
+        title: "Diário ou caderno de desenho de qualidade",
         description: "Um diário ou caderno de desenho de alta qualidade.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Criatividade",
@@ -434,7 +450,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Ingressos para Oficina Criativa",
+        title: "Ingressos para oficina criativa",
         description: "Ingressos para uma oficina de arte ou teatro.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Criatividade",
@@ -442,15 +458,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Microfone de Brinquedo",
+        title: "Microfone de brinquedo",
         description: "Um microfone de brinquedo para cantar e gravar a própria voz.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Criatividade",
         suggestedAppCategory: "material",
         isMaterialSuggestion: true,
       },
+      // Saúde e Bem-estar
       {
-        title: "Dia em Parque de Aventuras",
+        title: "Dia em parque de aventuras",
         description: "Um dia em um parque de trampolins ou de arvorismo.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Saúde e Bem-estar",
@@ -458,7 +475,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Item para Atividade Física",
+        title: "Item para atividade física",
         description: "Um item que incentive atividade física (corda, bambolê, patins).",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Saúde e Bem-estar",
@@ -466,7 +483,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: true,
       },
       {
-        title: "Dia de Spa em Casa",
+        title: "Dia de spa em casa",
         description: "Um 'dia de spa' em casa, com massagem nos pés e cuidados divertidos.",
         userCategory: "Desenvolvimento Pessoal",
         userSubCategory: "Saúde e Bem-estar",
@@ -477,18 +494,20 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
   },
   {
     userCategory: "Impacto e Generosidade",
+    description: "Recompensas que ensinam sobre empatia, cidadania e o prazer de ajudar, transformando o Mini Herói em um herói também para o mundo.",
     icon: HeartHandshake,
     items: [
+      // Doação
       {
-        title: "Doar Brinquedo/Livro Novo",
+        title: "Doar brinquedo/livro novo",
         description: "Escolher um brinquedo ou livro novo para ser doado em seu nome.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Doação",
         suggestedAppCategory: "social-impact",
-        isMaterialSuggestion: false, // A ação é doar, não receber
+        isMaterialSuggestion: false, 
       },
       {
-        title: "Doação Familiar para ONG",
+        title: "Doação familiar para ONG",
         description: "A família faz uma doação para uma ONG escolhida pelo Mini Herói.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Doação",
@@ -496,15 +515,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Apadrinhar uma Árvore",
+        title: "Apadrinhar uma árvore",
         description: "A família 'apadrinha' uma árvore em um projeto de reflorestamento.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Doação",
         suggestedAppCategory: "social-impact",
         isMaterialSuggestion: false,
       },
+      // Voluntariado
       {
-        title: "Ajudar em Abrigo de Animais",
+        title: "Ajudar em abrigo de animais",
         description: "Passar uma tarde em família ajudando em um abrigo de animais.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Voluntariado",
@@ -512,7 +532,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Mutirão de Limpeza",
+        title: "Mutirão de limpeza",
         description: "Participar de um mutirão de limpeza de uma praça ou praia local.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Voluntariado",
@@ -520,15 +540,16 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Ajudar em Campanha de Agasalho",
+        title: "Ajudar em campanha de agasalho",
         description: "Ajudar a organizar os donativos em uma campanha de agasalho.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "social-impact",
         isMaterialSuggestion: false,
       },
+      // Atos de Gentileza
       {
-        title: "Preparar Lanches para Doar",
+        title: "Preparar lanches para doar",
         description: "Preparar e entregar lanches para pessoas em situação de rua.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Atos de Gentileza",
@@ -536,7 +557,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Desenho/Cartão para Vizinho",
+        title: "Desenho/cartão para vizinho",
         description: "Fazer um desenho ou cartão e entregar a um vizinho idoso.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Atos de Gentileza",
@@ -544,7 +565,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         isMaterialSuggestion: false,
       },
       {
-        title: "Comprar Flores para Presentear",
+        title: "Comprar flores para presentear",
         description: "Comprar flores com os pais para dar de presente surpresa a um parente.",
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Atos de Gentileza",

@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, Fragment } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -28,7 +28,7 @@ import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizon
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, RewardCategory } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, RewardCategory, PredefinedRewardGroup } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -112,7 +112,7 @@ export default function RewardTemplatesHubPage() {
   const getStatusBadgeVariant = (status: RewardTemplate['status']): "default" | "secondary" | "outline" => {
     switch (status) {
       case 'active': return 'default';
-      case 'archived': return 'secondary'; // Using secondary for archived to differentiate
+      case 'archived': return 'secondary'; 
       default: return 'outline';
     }
   };
@@ -134,6 +134,19 @@ export default function RewardTemplatesHubPage() {
     setTemplateToAssign(template);
     setIsAssignDialogOpen(true);
   };
+
+  // Helper to group ideas by subCategory for rendering
+  const groupIdeasBySubCategory = (items: PredefinedRewardIdea[]) => {
+    return items.reduce((acc, idea) => {
+      const subCategory = idea.userSubCategory || 'Outras Ideias'; // Default if no subcategory
+      if (!acc[subCategory]) {
+        acc[subCategory] = [];
+      }
+      acc[subCategory].push(idea);
+      return acc;
+    }, {} as Record<string, PredefinedRewardIdea[]>);
+  };
+
 
   return (
     <div className="space-y-8 pb-10">
@@ -168,38 +181,49 @@ export default function RewardTemplatesHubPage() {
         </CardHeader>
         <CardContent>
           <Accordion type="single" collapsible className="w-full">
-            {predefinedRewardGroups.map((group) => (
-              <AccordionItem value={group.userCategory} key={group.userCategory}>
-                <AccordionTrigger className="text-lg hover:no-underline">
-                  <div className="flex items-center gap-2">
-                    <group.icon className="h-5 w-5 text-primary" />
-                    {group.userCategory}
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent>
-                  <ul className="space-y-3 pt-2">
-                    {group.items.map((idea) => (
-                      <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                          <div>
-                            <h4 className="font-semibold text-md">{idea.title}</h4>
-                            {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
-                          </div>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={() => handleUseIdea(idea)}
-                            className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
-                          >
-                            Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
-                          </Button>
-                        </div>
-                      </li>
+            {predefinedRewardGroups.map((group) => {
+              const groupedIdeas = groupIdeasBySubCategory(group.items);
+              return (
+                <AccordionItem value={group.userCategory} key={group.userCategory}>
+                  <AccordionTrigger className="text-lg hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <group.icon className="h-5 w-5 text-primary" />
+                      {group.userCategory}
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-4">
+                    {group.description && (
+                      <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                    )}
+                    {Object.entries(groupedIdeas).map(([subCategory, ideas]) => (
+                      <Fragment key={subCategory}>
+                        {subCategory !== 'Outras Ideias' && <h4 className="font-semibold text-md text-primary/80 mt-3 mb-1">{subCategory}</h4>}
+                        <ul className="space-y-3 pt-1">
+                          {ideas.map((idea) => (
+                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
+                              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <div>
+                                  <h5 className="font-semibold text-md">{idea.title}</h5>
+                                  {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  onClick={() => handleUseIdea(idea)}
+                                  className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                                >
+                                  Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </Fragment>
                     ))}
-                  </ul>
-                </AccordionContent>
-              </AccordionItem>
-            ))}
+                  </AccordionContent>
+                </AccordionItem>
+              );
+            })}
           </Accordion>
         </CardContent>
       </Card>
@@ -338,3 +362,4 @@ export default function RewardTemplatesHubPage() {
     </div>
   );
 }
+
