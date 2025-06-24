@@ -83,7 +83,7 @@ export function ChildLoginForm() {
           name="accessCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-lg font-semibold text-center block mb-2">Digite seu código de acesso (sua Chave Secreta de 6 números)</FormLabel>
+              <FormLabel className="text-lg font-semibold text-center block mb-2">Digite sua Chave Secreta de Herói</FormLabel>
               <FormControl>
                 <Input
                   placeholder="□ □ □ □ □ □"
@@ -108,7 +108,7 @@ export function ChildLoginForm() {
           )}
           Entrar com Código
         </Button>
-        <Button type="button" variant="outline" onClick={handleHelpClick} className="w-full" disabled={isLoading}>
+        <Button type="button" variant="outline" onClick={handleHelpClick} className="w-full">
           <HelpCircle className="mr-2 h-5 w-5" />
           Não sei meu código de acesso
         </Button>
