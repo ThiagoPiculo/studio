@@ -15,7 +15,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, Task, RewardTemplate, ChildRewardInstance, Dream, UserProfile } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, Task, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -30,7 +30,11 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
   if (querySnapshot.empty) {
     return null;
   }
-  return querySnapshot.docs[0].data() as UserProfile;
+  const userData = querySnapshot.docs[0].data();
+  return {
+    uid: querySnapshot.docs[0].id,
+    ...userData
+  } as UserProfile;
 };
 
 // --- Child Profile ---
@@ -154,51 +158,53 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   return newFamily;
 };
 
-export const addFamilyMemberByEmail = async (familyId: string, memberEmail: string): Promise<UserProfile | null> => {
+export const createFamilyInvitation = async (familyId: string, inviterId: string, inviterName: string, inviteeEmail: string): Promise<void> => {
   const family = await getFamilyById(familyId);
   if (!family) {
     throw new Error("Família não encontrada.");
   }
 
-  const userToAdd = await findUserByEmail(memberEmail);
-  if (!userToAdd) {
+  const invitee = await findUserByEmail(inviteeEmail);
+  if (!invitee) {
     throw new Error("Nenhum usuário encontrado com este e-mail.");
   }
   
-  if (userToAdd.uid === family.ownerId) {
-    throw new Error("O proprietário da família não pode ser adicionado como colaborador.");
+  if (invitee.uid === family.ownerId || invitee.uid === inviterId) {
+    throw new Error("Você não pode convidar a si mesmo ou o proprietário da família.");
   }
 
   const existingMembershipQuery = query(collection(db, 'familyMemberships'),
     where('familyId', '==', family.id),
-    where('userId', '==', userToAdd.uid)
+    where('userId', '==', invitee.uid)
   );
   const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
   if (!existingMembershipSnapshot.empty) {
     throw new Error("Este usuário já é um membro da família.");
   }
-
-  const batch = writeBatch(db);
-
-  const newMembershipRef = doc(collection(db, 'familyMemberships'));
-  const newMembership: FamilyMembership = {
-    id: newMembershipRef.id,
-    familyId: family.id,
-    userId: userToAdd.uid,
-    role: 'Collaborator',
-    joinedAt: serverTimestamp() as Timestamp,
-  };
-  batch.set(newMembershipRef, newMembership);
-
-  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userToAdd.uid), where('familyId', '==', null));
-  const childrenSnapshot = await getDocs(childrenToUpdateQuery);
-  childrenSnapshot.forEach(childDoc => {
-    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id, updatedAt: serverTimestamp() });
-  });
-
-  await batch.commit();
   
-  return userToAdd;
+  const pendingInvitationQuery = query(collection(db, 'familyInvitations'),
+    where('familyId', '==', familyId),
+    where('inviteeId', '==', invitee.uid),
+    where('status', '==', 'pending')
+  );
+  const pendingInvitationSnapshot = await getDocs(pendingInvitationQuery);
+  if (!pendingInvitationSnapshot.empty) {
+    throw new Error("Já existe um convite pendente para este usuário.");
+  }
+
+  const newInvitationRef = doc(collection(db, 'familyInvitations'));
+  const newInvitation: FamilyInvitation = {
+    id: newInvitationRef.id,
+    familyId: family.id,
+    familyName: family.name,
+    inviterId: inviterId,
+    inviterName: inviterName,
+    inviteeId: invitee.uid,
+    inviteeEmail: invitee.email!,
+    status: 'pending',
+    createdAt: serverTimestamp() as Timestamp,
+  };
+  await setDoc(newInvitationRef, newInvitation);
 };
 
 export const joinFamilyByInviteCode = async (userId: string, inviteCode: string): Promise<FamilyMembership | null> => {
@@ -306,8 +312,70 @@ export const deleteFamily = async (familyId: string): Promise<void> => {
     batch.update(childDoc.ref, { familyId: null, updatedAt: serverTimestamp() });
   });
   
-  // Commit all batched writes
   await batch.commit();
+};
+
+// --- Family Invitations ---
+
+export const getPendingInvitationsForUser = async (userId: string): Promise<FamilyInvitation[]> => {
+  const q = query(
+    collection(db, 'familyInvitations'),
+    where('inviteeId', '==', userId),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+};
+
+export const acceptFamilyInvitation = async (invitationId: string, userId: string): Promise<Family> => {
+  const invitationRef = doc(db, 'familyInvitations', invitationId);
+  const invitationSnap = await getDoc(invitationRef);
+  if (!invitationSnap.exists() || invitationSnap.data().inviteeId !== userId || invitationSnap.data().status !== 'pending') {
+    throw new Error("Convite inválido ou já processado.");
+  }
+  
+  const invitation = invitationSnap.data() as FamilyInvitation;
+  const familyId = invitation.familyId;
+  const family = await getFamilyById(familyId);
+  if (!family) {
+    throw new Error("Família associada ao convite não encontrada.");
+  }
+
+  const batch = writeBatch(db);
+  
+  // 1. Update invitation status
+  batch.update(invitationRef, { status: 'accepted' });
+
+  // 2. Create new membership
+  const newMembershipRef = doc(collection(db, 'familyMemberships'));
+  const newMembership: FamilyMembership = {
+    id: newMembershipRef.id,
+    familyId: familyId,
+    userId: userId,
+    role: 'Collaborator',
+    joinedAt: serverTimestamp() as Timestamp,
+  };
+  batch.set(newMembershipRef, newMembership);
+
+  // 3. Update children's familyId
+  const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
+  const childrenSnapshot = await getDocs(childrenQuery);
+  childrenSnapshot.forEach(childDoc => {
+    batch.update(childDoc.ref, { familyId: familyId, updatedAt: serverTimestamp() });
+  });
+  
+  await batch.commit();
+  return family;
+};
+
+export const declineFamilyInvitation = async (invitationId: string): Promise<void> => {
+  const invitationRef = doc(db, 'familyInvitations', invitationId);
+  const invitationSnap = await getDoc(invitationRef);
+  if (!invitationSnap.exists() || invitationSnap.data().status !== 'pending') {
+    throw new Error("Convite inválido ou já processado.");
+  }
+  await updateDoc(invitationRef, { status: 'declined' });
 };
 
 

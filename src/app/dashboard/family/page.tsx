@@ -9,9 +9,20 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { createFamily, joinFamilyByInviteCode, getFamilyById, getFamilyMembers, leaveFamily, deleteFamily, addFamilyMemberByEmail } from '@/lib/firebase/firestore';
-import type { Family, UserProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon } from 'lucide-react';
+import { 
+  createFamily, 
+  joinFamilyByInviteCode, 
+  getFamilyById, 
+  getFamilyMembers, 
+  leaveFamily, 
+  deleteFamily, 
+  createFamilyInvitation,
+  getPendingInvitationsForUser,
+  acceptFamilyInvitation,
+  declineFamilyInvitation
+} from '@/lib/firebase/firestore';
+import type { Family, UserProfile, FamilyInvitation } from '@/lib/types';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -36,6 +47,11 @@ function FamilyPageContent() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [isProcessingEmailInvite, setIsProcessingEmailInvite] = useState(false);
 
+  // States for invitations
+  const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
+  const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
+  const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null); // Stores ID of invitation being processed
+
   useEffect(() => {
     setIsClient(true); // Component has mounted
   }, []);
@@ -47,8 +63,20 @@ function FamilyPageContent() {
       setIsLoading(false);
       setFamilyDetails(null);
       setFamilyMembers([]);
+      
+      // Fetch pending invitations if in personal space
+      setIsLoadingInvitations(true);
+      getPendingInvitationsForUser(user.uid)
+        .then(invites => setInvitations(invites))
+        .catch(error => {
+          console.error("Error fetching invitations:", error);
+          toast({ title: "Erro ao buscar convites", description: "Não foi possível carregar convites pendentes.", variant: "destructive" });
+        })
+        .finally(() => setIsLoadingInvitations(false));
+        
     } else {
       setIsLoading(true);
+      setInvitations([]); // Clear invitations when in a family context
       const fetchFamilyData = async () => {
         try {
           const [details, members] = await Promise.all([
@@ -94,7 +122,7 @@ function FamilyPageContent() {
   const handleJoinFamily = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || inviteCode.trim().length !== 6) {
-      toast({ title: "Código de Convite Inválido", description: "O código deve ter exatamente 6 dígitos.", variant: "destructive" });
+      toast({ title: "Código de Convite Inválido", description: "O código deve ter exatamente 6 caracteres.", variant: "destructive" });
       return;
     }
     setIsProcessing(true);
@@ -104,7 +132,6 @@ function FamilyPageContent() {
         const family = await getFamilyById(membership.familyId);
         if(family) {
             const newContext = { id: family.id, name: family.name };
-            // Avoid adding duplicate context
             if(!availableContexts.find(c => c.id === newContext.id)){
               setAvailableContexts([...availableContexts, newContext]);
             }
@@ -123,30 +150,58 @@ function FamilyPageContent() {
     }
   };
 
-  const handleInviteByEmail = async (e: React.FormEvent) => {
+  const handleSendInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || currentContext === 'my-space' || !inviteEmail.trim()) {
-      toast({ title: "E-mail inválido", description: "Por favor, insira um e-mail válido.", variant: "destructive" });
+      toast({ title: "Dados inválidos", description: "Por favor, insira um e-mail válido para convidar.", variant: "destructive" });
       return;
     }
     setIsProcessingEmailInvite(true);
     try {
-      const newMember = await addFamilyMemberByEmail(currentContext, inviteEmail.trim());
-      if (newMember) {
-        // Prevent adding duplicate member to the view
-        if (!familyMembers.some(member => member.uid === newMember.uid)) {
-          setFamilyMembers(prev => [...prev, newMember]);
-        }
-        toast({ title: "Membro Adicionado!", description: `${newMember.name} foi adicionado(a) à família.` });
-        setInviteEmail(''); // Clear input on success
-      }
+      await createFamilyInvitation(currentContext, user.uid, user.name || 'Um amigo', inviteEmail.trim());
+      toast({ title: "Convite Enviado!", description: `Um convite foi enviado para ${inviteEmail.trim()}. Ele aparecerá para o usuário aceitar.` });
+      setInviteEmail('');
     } catch (error: any) {
-      console.error("Error inviting member by email:", error);
+      console.error("Error sending invitation:", error);
       toast({ title: "Erro ao Convidar", description: error.message, variant: "destructive" });
     } finally {
       setIsProcessingEmailInvite(false);
     }
   };
+
+  const handleAcceptInvitation = async (invitation: FamilyInvitation) => {
+    if(!user) return;
+    setIsProcessingInvitationAction(invitation.id);
+    try {
+      const family = await acceptFamilyInvitation(invitation.id, user.uid);
+      const newContext = { id: family.id, name: family.name };
+      if(!availableContexts.find(c => c.id === newContext.id)){
+        setAvailableContexts([...availableContexts, newContext]);
+      }
+      setCurrentContext(family.id);
+      toast({ title: "Bem-vindo à Família!", description: `Você agora faz parte da Família ${family.name}!` });
+      router.push('/dashboard/family');
+    } catch (error: any) {
+       console.error("Error accepting invitation:", error);
+       toast({ title: "Erro ao Aceitar Convite", description: error.message, variant: "destructive" });
+       setIsProcessingInvitationAction(null);
+    }
+  };
+
+  const handleDeclineInvitation = async (invitationId: string) => {
+    setIsProcessingInvitationAction(invitationId);
+    try {
+      await declineFamilyInvitation(invitationId);
+      setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+      toast({ title: "Convite Recusado", description: "O convite foi recusado com sucesso." });
+    } catch (error: any) {
+      console.error("Error declining invitation:", error);
+      toast({ title: "Erro ao Recusar Convite", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessingInvitationAction(null);
+    }
+  };
+
 
   const handleCopyCode = () => {
     if (!familyDetails?.inviteCode) return;
@@ -165,7 +220,6 @@ function FamilyPageContent() {
         await deleteFamily(currentContext);
         toast({ title: "Família Excluída", description: "A família foi desfeita com sucesso." });
       }
-      // Reset context after leaving/deleting
       setAvailableContexts(availableContexts.filter(c => c.id !== currentContext));
       setCurrentContext('my-space');
       router.push('/dashboard');
@@ -233,9 +287,9 @@ function FamilyPageContent() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><UserPlus className="h-6 w-6 text-primary"/>Convidar por E-mail</CardTitle>
-            <CardDescription>Adicione um membro diretamente pelo e-mail cadastrado no Mini Herois. O usuário precisa ter uma conta existente.</CardDescription>
+            <CardDescription>Envie um convite para um responsável com conta no Mini Herois se juntar à sua família.</CardDescription>
           </CardHeader>
-          <form onSubmit={handleInviteByEmail}>
+          <form onSubmit={handleSendInvitation}>
             <CardContent>
                 <Input
                     type="email"
@@ -249,7 +303,7 @@ function FamilyPageContent() {
             <CardFooter>
                 <Button type="submit" disabled={isProcessingEmailInvite}>
                     {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                    Convidar Membro
+                    Enviar Convite
                 </Button>
             </CardFooter>
           </form>
@@ -309,6 +363,48 @@ function FamilyPageContent() {
         </CardHeader>
       </Card>
       
+      {isLoadingInvitations ? (
+        <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando convites...</CardContent></Card>
+      ) : invitations.length > 0 && (
+        <Card className="border-accent bg-accent/5">
+          <CardHeader>
+            <CardTitle>Convites Pendentes</CardTitle>
+            <CardDescription>Você foi convidado para se juntar a estas famílias. Escolha uma para começar a colaborar!</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {invitations.map(invite => (
+              <div key={invite.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                <div>
+                  <p className="font-semibold">Família {invite.familyName}</p>
+                  <p className="text-sm text-muted-foreground">Convidado por: {invite.inviterName}</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button 
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => handleDeclineInvitation(invite.id)}
+                    disabled={isProcessingInvitationAction === invite.id}
+                  >
+                    {isProcessingInvitationAction === invite.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
+                    Recusar
+                  </Button>
+                  <Button 
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700"
+                    onClick={() => handleAcceptInvitation(invite)}
+                    disabled={isProcessingInvitationAction === invite.id}
+                  >
+                    {isProcessingInvitationAction === invite.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <MailCheck className="mr-1 h-4 w-4" />}
+                    Aceitar
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue={searchParams.get('action') || 'create'} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="create"><UserPlus className="mr-2 h-4 w-4" />Criar uma Família</TabsTrigger>

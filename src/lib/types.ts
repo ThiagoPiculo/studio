@@ -42,6 +42,19 @@ export interface FamilyMembership {
   joinedAt: Timestamp;
 }
 
+export interface FamilyInvitation {
+  id: string; // Document ID
+  familyId: string;
+  familyName: string;
+  inviterId: string;
+  inviterName: string;
+  inviteeId: string;
+  inviteeEmail: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: Timestamp;
+}
+
+
 export interface Task {
   id:string; // Document ID
   childId: string;
