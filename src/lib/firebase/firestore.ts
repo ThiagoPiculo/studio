@@ -110,6 +110,14 @@ export const assignChildrenToFamily = async (childIds: string[], familyId: strin
   await batch.commit();
 };
 
+export const removeChildFromFamily = async (childId: string): Promise<void> => {
+  const childRef = doc(db, 'children', childId);
+  await updateDoc(childRef, {
+    familyId: null,
+    updatedAt: serverTimestamp()
+  });
+};
+
 
 export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'familyId' | 'updatedAt'>>) => {
   const childRef = doc(db, 'children', childId);
@@ -572,5 +580,7 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
 //   await setDoc(newTaskRef, newTask);
 //   return newTask;
 // };
+
+    
 
     

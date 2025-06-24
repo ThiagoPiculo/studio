@@ -27,9 +27,10 @@ import {
   getChildProfilesByFamily,
   getUnassignedChildProfilesByOwner,
   assignChildrenToFamily,
+  removeChildFromFamily,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight, PlusCircle } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -71,6 +72,9 @@ function FamilyPageContent() {
 
   const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
   const [isRemovingMember, setIsRemovingMember] = useState(false);
+
+  const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
+  const [isRemovingChild, setIsRemovingChild] = useState(false);
   
   // State for adding child to family dialog
   const [isAddChildDialogOpen, setIsAddChildDialogOpen] = useState(false);
@@ -345,6 +349,22 @@ function FamilyPageContent() {
       }
   };
 
+  const handleConfirmRemoveChild = async () => {
+    if (!childToRemove) return;
+    setIsRemovingChild(true);
+    try {
+        await removeChildFromFamily(childToRemove.id);
+        setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
+        toast({ title: "Herói em Missão Solo", description: `${childToRemove.name} agora está no espaço pessoal e não faz mais parte da família.` });
+    } catch (error: any) {
+        console.error("Error removing child from family:", error);
+        toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
+    } finally {
+        setIsRemovingChild(false);
+        setChildToRemove(null);
+    }
+  };
+
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
   const sortedMembers = useMemo(() => {
@@ -472,7 +492,7 @@ function FamilyPageContent() {
           <CardHeader>
               <CardTitle className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                      <Shield className="h-6 w-6 text-primary"/>Mini Herois da Família
+                      <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Família
                   </div>
                   <Button variant="outline" size="sm" onClick={handleOpenAddChildDialog}>
                     <Users className="mr-2 h-4 w-4" />
@@ -502,6 +522,11 @@ function FamilyPageContent() {
                                         Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 </Link>
+                                {isOwner && (
+                                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToRemove(child)}>
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
                               </div>
                           </div>
                       ))}
@@ -565,6 +590,26 @@ function FamilyPageContent() {
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
+          </AlertDialog>
+        )}
+
+        {childToRemove && (
+          <AlertDialog open={!!childToRemove} onOpenChange={() => setChildToRemove(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remover {childToRemove.name} da Família?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza? {childToRemove.name} será movido(a) de volta para o "Meu Espaço" do responsável que o cadastrou e não será mais gerenciado por esta família. Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isRemovingChild}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmRemoveChild} className="bg-destructive hover:bg-destructive/90" disabled={isRemovingChild}>
+                {isRemovingChild && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Sim, Remover
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
           </AlertDialog>
         )}
         
@@ -764,3 +809,5 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
+    
