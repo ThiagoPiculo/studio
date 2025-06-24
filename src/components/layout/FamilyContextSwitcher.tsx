@@ -1,4 +1,3 @@
-
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
 import {
@@ -28,10 +27,12 @@ export function FamilyContextSwitcher() {
   return (
     <Select value={currentContext} onValueChange={(value) => setCurrentContext(value)}>
       <SelectTrigger className="w-auto min-w-[180px] h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
-        <div className="flex items-center gap-2">
-          {currentContext === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-          <SelectValue placeholder="Selecionar contexto..." />
-        </div>
+        <SelectValue>
+           <div className="flex items-center gap-2">
+            {currentContext === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+            <span>{availableContexts.find(c => c.id === currentContext)?.name ?? "Selecionar contexto..."}</span>
+          </div>
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {availableContexts.map((context) => (
