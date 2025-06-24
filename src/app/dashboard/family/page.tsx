@@ -29,7 +29,7 @@ import {
   assignChildrenToFamily,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight, PlusCircle, Edit3 } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight, PlusCircle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -41,7 +41,6 @@ import {
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Loading from './loading';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
@@ -72,7 +71,6 @@ function FamilyPageContent() {
 
   const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
   const [isRemovingMember, setIsRemovingMember] = useState(false);
-  const [editingChild, setEditingChild] = useState<ChildProfile | null>(null);
   
   // State for adding child to family dialog
   const [isAddChildDialogOpen, setIsAddChildDialogOpen] = useState(false);
@@ -460,9 +458,6 @@ function FamilyPageContent() {
                                   </div>
                               </div>
                               <div className="flex items-center gap-2">
-                                <Button variant="ghost" size="sm" onClick={() => setEditingChild(child)}>
-                                  <Edit3 className="h-4 w-4 mr-1" /> Editar
-                                </Button>
                                 <Link href={`/dashboard/child/${child.id}/manage`}>
                                     <Button variant="outline" size="sm">
                                         Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
@@ -559,30 +554,6 @@ function FamilyPageContent() {
           </AlertDialog>
         )}
         
-        {editingChild && (
-            <Dialog open={!!editingChild} onOpenChange={(isOpen) => { if (!isOpen) setEditingChild(null) }}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Editar o perfil de {editingChild.name}</DialogTitle>
-                        <DialogDescription>
-                            Atualize as informações do seu Mini Herói. As alterações serão salvas para toda a família.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <EditChildProfileForm
-                        child={editingChild}
-                        onProfileUpdate={(updatedProfile) => {
-                            setChildrenInFamily(prev => 
-                                prev.map(c => 
-                                    c.id === editingChild.id ? { ...c, ...updatedProfile } : c
-                                )
-                            );
-                            setEditingChild(null);
-                        }}
-                    />
-                </DialogContent>
-            </Dialog>
-        )}
-
         <Dialog open={isAddChildDialogOpen} onOpenChange={setIsAddChildDialogOpen}>
             <DialogContent>
                 <DialogHeader>
@@ -779,5 +750,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
-    
