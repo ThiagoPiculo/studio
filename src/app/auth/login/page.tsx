@@ -5,16 +5,16 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-md shadow-xl">
-        <CardHeader className="text-center">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 selection:bg-accent selection:text-accent-foreground">
+      <Card className="w-full max-w-md shadow-xl overflow-hidden">
+        <CardHeader className="bg-gradient-to-br from-primary via-purple-600 to-accent text-center text-primary-foreground p-6">
           <div className="mb-4 flex justify-center">
-            <Rocket className="h-16 w-16 text-primary animate-pulse" />
+            <Rocket className="h-16 w-16 text-primary-foreground animate-pulse" />
           </div>
           <CardTitle className="font-headline text-3xl">Que bom te ver de novo!</CardTitle>
-          <CardDescription>Seus Mini Herois aguardam por novas missões!</CardDescription>
+          <CardDescription className="text-primary-foreground/90">Seus Mini Herois aguardam por novas missões!</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-6">
           <MasterUserAuthForm mode="login" />
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Primeira vez por aqui?{' '}
