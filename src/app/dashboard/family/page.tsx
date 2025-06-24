@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -347,6 +347,15 @@ function FamilyPageContent() {
 
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
+  const sortedMembers = useMemo(() => {
+    if (!familyDetails) return familyMembers;
+    return [...familyMembers].sort((a, b) => {
+      if (a.uid === familyDetails.ownerId) return -1;
+      if (b.uid === familyDetails.ownerId) return 1;
+      return (a.name || '').localeCompare(b.name || '');
+    });
+  }, [familyMembers, familyDetails]);
+
   if (!isClient || isLoading) {
     return <Loading />;
   }
@@ -373,7 +382,7 @@ function FamilyPageContent() {
               <CardTitle>Membros Responsáveis</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
-              {familyMembers.map(member => (
+              {sortedMembers.map(member => (
                 <div key={member.uid} className="flex flex-col items-center gap-2 p-2 rounded-lg relative group">
                   <Avatar className="h-16 w-16 text-2xl border-2 border-primary">
                     <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
