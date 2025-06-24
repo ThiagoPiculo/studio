@@ -69,9 +69,9 @@ export function ChildLoginForm() {
 
   const handleHelpClick = () => {
     toast({
-      title: "Em Busca da Chave Secreta!",
-      description: "Todo herói precisa de um guia! Peça para um adulto te mostrar a sua Chave Secreta, aquele código de 6 números que abre o portal para suas aventuras.",
-      duration: 8000,
+      title: "Precisa de Ajuda, Herói?",
+      description: "Sua Chave Secreta tem 6 números. Peça para um adulto te mostrar qual é o seu código para entrar na aventura!",
+      duration: 10000,
     });
   };
 

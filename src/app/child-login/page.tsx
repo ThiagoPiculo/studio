@@ -39,10 +39,6 @@ export default function ChildLoginPage() {
               Login Usuário Master
             </Link>
           </p>
-           <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">
-            <HelpCircle className="mr-2 h-4 w-4 text-primary" />
-            <span>Não sabe seu <strong>código de acesso</strong> (sua Chave Secreta)? Peça ajuda a um adulto!</span>
-          </div>
         </CardContent>
       </Card>
       <Link href="/" className="mt-8 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
