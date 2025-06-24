@@ -11,7 +11,7 @@ export default function LoginPage() {
           <div className="mb-4 flex justify-center">
             <Rocket className="h-16 w-16 text-primary animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-3xl">Que bom te ver de novo, Mestre!</CardTitle>
+          <CardTitle className="font-headline text-3xl">Que bom te ver de novo!</CardTitle>
           <CardDescription>Seus Mini Herois aguardam por novas missões!</CardDescription>
         </CardHeader>
         <CardContent>
