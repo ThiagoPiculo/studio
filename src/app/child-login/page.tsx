@@ -6,14 +6,14 @@ import Link from 'next/link';
 
 export default function ChildLoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-primary selection:text-primary-foreground">
-      <Card className="w-full max-w-sm shadow-xl overflow-hidden">
-         <CardHeader className="bg-primary text-primary-foreground text-center p-6">
-          <div className="mb-3 flex justify-center">
-            <Sparkles className="h-16 w-16 text-accent-foreground animate-pulse" />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-accent selection:text-accent-foreground">
+      <Card className="w-full max-w-sm shadow-xl">
+         <CardHeader className="text-center p-6">
+          <div className="mb-4 flex justify-center">
+            <Sparkles className="h-16 w-16 text-primary animate-pulse" />
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
-          <CardDescription className="text-primary-foreground/90 text-base mt-1">
+          <CardDescription>
             Sua próxima missão está pronta! Use sua <strong>Chave Secreta de Herói</strong> para começar a aventura.
           </CardDescription>
         </CardHeader>
