@@ -1,24 +1,29 @@
-
 "use client";
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { UserNav } from './UserNav';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
-import { Rocket, Users, ListChecks, ShieldCheck, LogIn, Gift } from 'lucide-react';
+import { Rocket, Users, ListChecks, ShieldCheck, LogIn, Gift, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useState } from 'react';
 
 export function Header() {
   const { user, loading, isChildAuthenticated } = useAuth();
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  const closeSheet = () => setIsSheetOpen(false);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 max-w-screen-2xl items-center justify-between">
-        <Link href="/" className="flex items-center space-x-2">
+        <Link href="/" className="flex items-center space-x-2" onClick={closeSheet}>
           <Rocket className="h-8 w-8 text-primary" />
           <span className="font-headline text-2xl font-bold text-foreground">Mini Herois</span>
         </Link>
         
-        <nav className="flex items-center space-x-2 md:space-x-4">
+        {/* Desktop Navigation */}
+        <nav className="hidden md:flex items-center space-x-2 md:space-x-4">
           {loading ? null : user ? (
             <>
               <Link href="/dashboard" passHref>
@@ -44,8 +49,7 @@ export function Header() {
             </>
           ) : isChildAuthenticated ? (
             <>
-              {/* Child specific nav items if any */}
-              <UserNav /> {/* UserNav can be adapted for child logout */}
+              <UserNav />
             </>
           ) : (
             <>
@@ -62,6 +66,69 @@ export function Header() {
             </>
           )}
         </nav>
+
+        {/* Mobile Navigation */}
+        <div className="md:hidden">
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="icon">
+                        <Menu className="h-6 w-6" />
+                        <span className="sr-only">Abrir menu</span>
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-[300px] sm:w-[340px] flex flex-col p-0">
+                    <div className="p-4 border-b">
+                         <Link href="/" className="flex items-center space-x-2" onClick={closeSheet}>
+                            <Rocket className="h-8 w-8 text-primary" />
+                            <span className="font-headline text-2xl font-bold text-foreground">Mini Herois</span>
+                        </Link>
+                    </div>
+                    <nav className="flex-grow p-4">
+                      <div className="flex flex-col space-y-2">
+                        {loading ? null : user ? (
+                          <>
+                             <div className="pb-2">
+                                <FamilyContextSwitcher />
+                             </div>
+                            <Link href="/dashboard" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start text-base p-4">Painel</Button>
+                            </Link>
+                            <Link href="/dashboard/family" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><Users className="h-5 w-5" /> Família</Button>
+                            </Link>
+                            <Link href="/dashboard/tasks" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><ListChecks className="h-5 w-5" /> Tarefas</Button>
+                            </Link>
+                            <Link href="/dashboard/rewards" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><Gift className="h-5 w-5" /> Recompensas</Button>
+                            </Link>
+                          </>
+                        ) : isChildAuthenticated ? (
+                          <>
+                            {/* Child-specific links can go here if needed */}
+                          </>
+                        ) : (
+                          <>
+                            <Link href="/auth/login" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><LogIn className="h-5 w-5" /> Login Admin</Button>
+                            </Link>
+                            <Link href="/child-login" passHref onClick={closeSheet}>
+                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                                <ShieldCheck className="h-5 w-5" /> Acesso Infantil
+                              </Button>
+                            </Link>
+                          </>
+                        )}
+                      </div>
+                    </nav>
+                    {!loading && (user || isChildAuthenticated) && (
+                      <div className="mt-auto border-t p-4">
+                        <UserNav />
+                      </div>
+                    )}
+                </SheetContent>
+            </Sheet>
+        </div>
       </div>
     </header>
   );
