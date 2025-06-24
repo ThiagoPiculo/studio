@@ -1,4 +1,3 @@
-
 import {
   collection,
   doc,
@@ -130,7 +129,7 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
     id: newMembershipRef.id,
     familyId: newFamily.id,
     userId: ownerId,
-    role: 'AdminMaster',
+    role: 'MasterUser',
     joinedAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newMembershipRef, ownerMembership);

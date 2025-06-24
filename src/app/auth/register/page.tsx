@@ -1,5 +1,4 @@
-
-import { AdminAuthForm } from '@/components/auth/AdminAuthForm';
+import { MasterUserAuthForm } from '@/components/auth/AdminAuthForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserPlus } from 'lucide-react';
 import Link from 'next/link';
@@ -12,13 +11,13 @@ export default function RegisterPage() {
           <div className="mb-4 flex justify-center">
             <UserPlus className="h-16 w-16 text-primary" />
           </div>
-          <CardTitle className="font-headline text-3xl">Torne-se um Admin Master</CardTitle>
+          <CardTitle className="font-headline text-3xl">Torne-se um Usuário Master</CardTitle>
           <CardDescription>Crie sua conta para iniciar a jornada Mini Herois.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AdminAuthForm mode="register" />
+          <MasterUserAuthForm mode="register" />
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Já é um Admin Master?{' '}
+            Já é um Usuário Master?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
               Faça login
             </Link>

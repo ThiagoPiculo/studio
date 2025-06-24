@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -62,7 +61,7 @@ export default function DashboardPage() {
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Admin Master"}!</CardTitle>
+          <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Usuário Master"}!</CardTitle>
           <CardDescription>Aqui está uma visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>

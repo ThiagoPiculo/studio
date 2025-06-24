@@ -1,5 +1,4 @@
-
-import { AdminAuthForm } from '@/components/auth/AdminAuthForm';
+import { MasterUserAuthForm } from '@/components/auth/AdminAuthForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Rocket } from 'lucide-react';
 import Link from 'next/link';
@@ -12,13 +11,13 @@ export default function LoginPage() {
           <div className="mb-4 flex justify-center">
             <Rocket className="h-16 w-16 text-primary animate-pulse" />
           </div>
-          <CardTitle className="font-headline text-3xl">Bem-vindo(a) de volta, Admin Master!</CardTitle>
+          <CardTitle className="font-headline text-3xl">Bem-vindo(a) de volta, Usuário Master!</CardTitle>
           <CardDescription>Faça login para gerenciar seus Mini Herois.</CardDescription>
         </CardHeader>
         <CardContent>
-          <AdminAuthForm mode="login" />
+          <MasterUserAuthForm mode="login" />
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Novo(a) Admin Master?{' '}
+            Novo(a) Usuário Master?{' '}
             <Link href="/auth/register" className="font-medium text-primary hover:underline">
               Crie uma conta
             </Link>

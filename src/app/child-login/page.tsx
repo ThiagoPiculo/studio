@@ -1,4 +1,3 @@
-
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, ListChecks, Star as StarIcon, Trophy, HelpCircle, Camera } from 'lucide-react';
@@ -38,9 +37,9 @@ export default function ChildLoginPage() {
             </div>
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            Você é um Admin Master?{' '}
+            É um pai/responsável?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Login Admin
+              Login Usuário Master
             </Link>
           </p>
           <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">

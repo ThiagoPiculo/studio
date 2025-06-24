@@ -1,4 +1,3 @@
-
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -35,11 +34,11 @@ const registerSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type AdminAuthFormProps = {
+type MasterUserAuthFormProps = {
   mode: "login" | "register";
 };
 
-export function AdminAuthForm({ mode }: AdminAuthFormProps) {
+export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -64,7 +63,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         await signUpAdmin(name, email, password);
-        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao Mini Heroi! Por favor, faça login." });
+        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao Mini Herois! Por favor, faça login." });
         router.push("/auth/login");
       }
     } catch (error: any) {
@@ -139,7 +138,7 @@ export function AdminAuthForm({ mode }: AdminAuthFormProps) {
             <FormItem>
               <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="admin@example.com" {...field} />
+                <Input type="email" placeholder="usuario.master@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

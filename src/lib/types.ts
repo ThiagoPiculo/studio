@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag } from 'lucide-react';
@@ -13,7 +12,7 @@ export interface UserProfile {
 
 export interface ChildProfile {
   id: string; // Document ID
-  ownerId: string; // UID of the Admin Master
+  ownerId: string; // UID of the Usuário Master
   familyId?: string | null; // Optional, ID of the family if shared
   name: string;
   age: number;
@@ -30,7 +29,7 @@ export interface ChildProfile {
 export interface Family {
   id: string; // Document ID
   name: string;
-  ownerId: string; // UID of the Admin Master who created it
+  ownerId: string; // UID of the Usuário Master who created it
   inviteCode: string; // 6-digit code for invitation
   createdAt: Timestamp;
 }
@@ -39,14 +38,14 @@ export interface FamilyMembership {
   id: string; // Document ID
   familyId: string;
   userId: string; // UID of the Collaborator
-  role: 'Collaborator' | 'AdminMaster'; // Role in the family
+  role: 'Collaborator' | 'MasterUser'; // Role in the family
   joinedAt: Timestamp;
 }
 
 export interface Task {
   id:string; // Document ID
   childId: string;
-  ownerId: string; // UID of the Admin Master (for security rules)
+  ownerId: string; // UID of the Usuário Master (for security rules)
   title: string;
   description?: string;
   starsReward: number;
@@ -114,7 +113,7 @@ export interface ChildRewardInstance {
   id: string; // Document ID da instância
   templateId: string; // ID do RewardTemplate original
   childId: string; // ID da criança a quem esta instância pertence
-  ownerId: string; // UID do Admin Master do perfil da criança ou do contexto familiar
+  ownerId: string; // UID do Usuário Master do perfil da criança ou do contexto familiar
   familyId?: string | null; // ID da Família, se aplicável
 
   // Snapshot dos detalhes do template no momento da atribuição
@@ -186,4 +185,3 @@ export type AuthContextType = {
 };
 
 export type IconType = LucideIconType;
-
