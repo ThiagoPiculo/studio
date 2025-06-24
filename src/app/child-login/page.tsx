@@ -34,9 +34,9 @@ export default function ChildLoginPage() {
             </div>
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
-            É um pai/responsável?{' '}
+            É um pai/mãe/responsável?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Login Usuário Master
+              Acesse sua central
             </Link>
           </p>
         </CardContent>
