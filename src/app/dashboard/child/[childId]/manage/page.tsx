@@ -34,10 +34,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 export default function ManageChildPage() {
@@ -337,22 +337,23 @@ export default function ManageChildPage() {
           <TabsContent value="overview">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Visão Geral de {child.name}</CardTitle>
+                <div className="flex items-center gap-2">
+                  <CardTitle>Visão Geral de {child.name}</CardTitle>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                              <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
+                              <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
+                          </TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <CardDescription>Resumo das atividades e progresso.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <Accordion type="single" collapsible className="w-full -mt-4">
-                  <AccordionItem value="info" className="border-b-0">
-                    <AccordionTrigger className="text-sm font-normal text-muted-foreground hover:text-primary hover:no-underline justify-start gap-2 py-0">
-                      <Info className="h-4 w-4" />
-                      Entenda a Visão Geral
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-2 text-sm text-muted-foreground">
-                      <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
-                      <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
-                    </AccordionContent>
-                  </AccordionItem>
-                </Accordion>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <Card className="bg-card border-border hover:shadow-lg transition-shadow">
                     <CardHeader>
