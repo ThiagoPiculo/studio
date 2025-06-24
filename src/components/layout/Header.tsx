@@ -90,18 +90,18 @@ export function Header() {
                              <div className="pb-2">
                                 <FamilyContextSwitcher />
                              </div>
-                            <Link href="/dashboard" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start text-base p-4">Painel</Button>
-                            </Link>
-                            <Link href="/dashboard/family" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><Users className="h-5 w-5" /> Família</Button>
-                            </Link>
-                            <Link href="/dashboard/tasks" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><ListChecks className="h-5 w-5" /> Tarefas</Button>
-                            </Link>
-                            <Link href="/dashboard/rewards" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><Gift className="h-5 w-5" /> Recompensas</Button>
-                            </Link>
+                            <Button asChild variant="ghost" className="w-full justify-start text-base p-4">
+                                <Link href="/dashboard" onClick={closeSheet}>Painel</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                                <Link href="/dashboard/family" onClick={closeSheet}><Users className="h-5 w-5" /> Família</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                                <Link href="/dashboard/tasks" onClick={closeSheet}><ListChecks className="h-5 w-5" /> Tarefas</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                                <Link href="/dashboard/rewards" onClick={closeSheet}><Gift className="h-5 w-5" /> Recompensas</Link>
+                            </Button>
                           </>
                         ) : isChildAuthenticated ? (
                           <>
@@ -109,14 +109,14 @@ export function Header() {
                           </>
                         ) : (
                           <>
-                            <Link href="/auth/login" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4"><LogIn className="h-5 w-5" /> Login Admin</Button>
-                            </Link>
-                            <Link href="/child-login" passHref onClick={closeSheet}>
-                              <Button variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                              <Link href="/auth/login" onClick={closeSheet}><LogIn className="h-5 w-5" /> Login Admin</Link>
+                            </Button>
+                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                              <Link href="/child-login" onClick={closeSheet}>
                                 <ShieldCheck className="h-5 w-5" /> Acesso Infantil
-                              </Button>
-                            </Link>
+                              </Link>
+                            </Button>
                           </>
                         )}
                       </div>

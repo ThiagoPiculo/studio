@@ -1,4 +1,3 @@
-
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -58,27 +57,27 @@ export function UserNav() {
         <DropdownMenuGroup>
           {!isChildAuthenticated && user && (
             <>
-              <Link href="/dashboard/profile">
-                <DropdownMenuItem className="cursor-pointer">
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/dashboard/profile">
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Perfil</span>
-                </DropdownMenuItem>
-              </Link>
-              <Link href="/dashboard/settings">
-                <DropdownMenuItem className="cursor-pointer">
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="cursor-pointer">
+                <Link href="/dashboard/settings">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Configurações</span>
-                </DropdownMenuItem>
-              </Link>
+                </Link>
+              </DropdownMenuItem>
             </>
           )}
            {isChildAuthenticated && childProfile && (
-             <Link href={`/dashboard/child/${childProfile.id}`}>
-              <DropdownMenuItem className="cursor-pointer">
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href={`/dashboard/child/${childProfile.id}`}>
                 <Rocket className="mr-2 h-4 w-4" />
                 <span>Minha Página de Herói</span>
-              </DropdownMenuItem>
-            </Link>
+              </Link>
+            </DropdownMenuItem>
            )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
