@@ -407,7 +407,7 @@ function FamilyPageContent() {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Convidar para a Equipe</CardTitle>
+              <CardTitle>Convidar para a família</CardTitle>
               <CardDescription>Adicione outros responsáveis à sua família para gerenciarem os Mini Herois juntos.</CardDescription>
             </CardHeader>
             <CardContent>
