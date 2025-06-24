@@ -86,7 +86,7 @@ export function ChildLoginForm() {
               <FormLabel className="text-lg font-semibold text-center block mb-2">Digite seu código de acesso (sua Chave Secreta de 6 números)</FormLabel>
               <FormControl>
                 <Input
-                  placeholder="1 2 3 4 5 6"
+                  placeholder="□ □ □ □ □ □"
                   {...field}
                   className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-inner bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary text-primary"
                   maxLength={6}
