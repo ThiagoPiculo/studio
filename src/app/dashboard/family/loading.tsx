@@ -17,15 +17,6 @@ export default function Loading() {
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-4 w-full mt-2" />
           </CardHeader>
-          <CardContent className="flex items-center gap-4">
-            <Skeleton className="h-10 flex-grow" />
-            <Skeleton className="h-10 w-10" />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-1/3" />
-          </CardHeader>
           <CardContent className="flex flex-wrap gap-4">
             <div className="flex flex-col items-center gap-2">
               <Skeleton className="h-16 w-16 rounded-full" />
@@ -37,14 +28,36 @@ export default function Loading() {
             </div>
           </CardContent>
         </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-1/3" />
+          </CardHeader>
+          <CardContent className="flex items-center gap-4">
+            <Skeleton className="h-10 flex-grow" />
+            <Skeleton className="h-10 w-10" />
+          </CardContent>
+        </Card>
       </div>
 
        <Card>
           <CardHeader>
              <Skeleton className="h-6 w-1/4" />
           </CardHeader>
-          <CardContent>
-             <Skeleton className="h-10 w-40" />
+          <CardContent className="flex flex-col gap-4">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="h-5 w-24" />
+                </div>
+                <Skeleton className="h-9 w-28" />
+             </div>
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-full" />
+                    <Skeleton className="h-5 w-24" />
+                </div>
+                <Skeleton className="h-9 w-28" />
+             </div>
           </CardContent>
         </Card>
     </div>

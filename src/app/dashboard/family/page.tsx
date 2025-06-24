@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
+import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -23,9 +24,10 @@ import {
   declineFamilyInvitation,
   regenerateFamilyInviteCode,
   removeFamilyMember,
+  getChildProfilesByFamily,
 } from '@/lib/firebase/firestore';
-import type { Family, UserProfile, FamilyInvitation } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX } from 'lucide-react';
+import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -47,6 +49,7 @@ function FamilyPageContent() {
   const [isClient, setIsClient] = useState(false);
   const [familyDetails, setFamilyDetails] = useState<Family | null>(null);
   const [familyMembers, setFamilyMembers] = useState<UserProfile[]>([]);
+  const [childrenInFamily, setChildrenInFamily] = useState<ChildProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -75,6 +78,7 @@ function FamilyPageContent() {
       setIsLoading(false);
       setFamilyDetails(null);
       setFamilyMembers([]);
+      setChildrenInFamily([]);
       
       setIsLoadingInvitations(true);
       getPendingInvitationsForUser(user.uid)
@@ -90,12 +94,14 @@ function FamilyPageContent() {
       setInvitations([]);
       const fetchFamilyData = async () => {
         try {
-          const [details, members] = await Promise.all([
+          const [details, members, children] = await Promise.all([
             getFamilyById(currentContext),
-            getFamilyMembers(currentContext)
+            getFamilyMembers(currentContext),
+            getChildProfilesByFamily(currentContext)
           ]);
           setFamilyDetails(details);
           setFamilyMembers(members);
+          setChildrenInFamily(children);
         } catch (error) {
           console.error("Error fetching family data:", error);
           toast({ title: "Erro ao Carregar Família", description: "Não foi possível buscar os dados da família. Voltando para seu espaço pessoal.", variant: "destructive" });
@@ -301,10 +307,10 @@ function FamilyPageContent() {
           </CardHeader>
         </Card>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Membros da Família</CardTitle>
+              <CardTitle>Membros Responsáveis</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
               {familyMembers.map(member => (
@@ -362,6 +368,37 @@ function FamilyPageContent() {
             </CardFooter>
           </Card>
         </div>
+
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Shield className="h-6 w-6 text-primary"/>Mini Herois da Família</CardTitle>
+                <CardDescription>Gerencie o perfil de cada Mini Herói da sua família.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {childrenInFamily.length > 0 ? (
+                    <div className="space-y-4">
+                        {childrenInFamily.map(child => (
+                            <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-12 w-12 text-xl border-2 border-primary/50">
+                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                        <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-semibold">{child.name}</span>
+                                </div>
+                                <Link href={`/dashboard/child/${child.id}/manage`}>
+                                    <Button variant="outline" size="sm">
+                                        Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </Link>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta família. Adicione um no painel principal!</p>
+                )}
+            </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>
