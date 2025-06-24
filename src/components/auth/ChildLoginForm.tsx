@@ -70,7 +70,7 @@ export function ChildLoginForm() {
   const handleHelpClick = () => {
     toast({
       title: "Precisa de Ajuda, Herói?",
-      description: "Sua Chave Secreta tem 6 números. Peça para um adulto te mostrar qual é o seu código para entrar na aventura!",
+      description: "Sua Chave Secreta é um código de 6 números. Peça para um adulto te mostrar qual é o seu, para você poder entrar na aventura!",
       duration: 10000,
     });
   };
@@ -110,7 +110,7 @@ export function ChildLoginForm() {
         </Button>
         <Button type="button" variant="outline" onClick={handleHelpClick} className="w-full">
           <HelpCircle className="mr-2 h-5 w-5" />
-          Não sei meu código de acesso
+          Não sei a chave secreta
         </Button>
       </form>
     </Form>
