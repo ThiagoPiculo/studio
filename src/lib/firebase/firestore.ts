@@ -24,6 +24,15 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
   return docSnap.exists() ? (docSnap.data() as UserProfile) : null;
 };
 
+export const findUserByEmail = async (email: string): Promise<UserProfile | null> => {
+  const usersQuery = query(collection(db, 'users'), where('email', '==', email));
+  const querySnapshot = await getDocs(usersQuery);
+  if (querySnapshot.empty) {
+    return null;
+  }
+  return querySnapshot.docs[0].data() as UserProfile;
+};
+
 // --- Child Profile ---
 export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId'>): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
@@ -143,6 +152,53 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   await batch.commit();
 
   return newFamily;
+};
+
+export const addFamilyMemberByEmail = async (familyId: string, memberEmail: string): Promise<UserProfile | null> => {
+  const family = await getFamilyById(familyId);
+  if (!family) {
+    throw new Error("Família não encontrada.");
+  }
+
+  const userToAdd = await findUserByEmail(memberEmail);
+  if (!userToAdd) {
+    throw new Error("Nenhum usuário encontrado com este e-mail.");
+  }
+  
+  if (userToAdd.uid === family.ownerId) {
+    throw new Error("O proprietário da família não pode ser adicionado como colaborador.");
+  }
+
+  const existingMembershipQuery = query(collection(db, 'familyMemberships'),
+    where('familyId', '==', family.id),
+    where('userId', '==', userToAdd.uid)
+  );
+  const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
+  if (!existingMembershipSnapshot.empty) {
+    throw new Error("Este usuário já é um membro da família.");
+  }
+
+  const batch = writeBatch(db);
+
+  const newMembershipRef = doc(collection(db, 'familyMemberships'));
+  const newMembership: FamilyMembership = {
+    id: newMembershipRef.id,
+    familyId: family.id,
+    userId: userToAdd.uid,
+    role: 'Collaborator',
+    joinedAt: serverTimestamp() as Timestamp,
+  };
+  batch.set(newMembershipRef, newMembership);
+
+  const childrenToUpdateQuery = query(collection(db, 'children'), where('ownerId', '==', userToAdd.uid), where('familyId', '==', null));
+  const childrenSnapshot = await getDocs(childrenToUpdateQuery);
+  childrenSnapshot.forEach(childDoc => {
+    batch.update(doc(db, 'children', childDoc.id), { familyId: family.id, updatedAt: serverTimestamp() });
+  });
+
+  await batch.commit();
+  
+  return userToAdd;
 };
 
 export const joinFamilyByInviteCode = async (userId: string, inviteCode: string): Promise<FamilyMembership | null> => {

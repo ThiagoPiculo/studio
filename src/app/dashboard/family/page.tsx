@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
@@ -8,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { createFamily, joinFamilyByInviteCode, getFamilyById, getFamilyMembers, leaveFamily, deleteFamily } from '@/lib/firebase/firestore';
+import { createFamily, joinFamilyByInviteCode, getFamilyById, getFamilyMembers, leaveFamily, deleteFamily, addFamilyMemberByEmail } from '@/lib/firebase/firestore';
 import type { Family, UserProfile } from '@/lib/types';
 import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +33,9 @@ function FamilyPageContent() {
   // States for the forms
   const [familyName, setFamilyName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
-  
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [isProcessingEmailInvite, setIsProcessingEmailInvite] = useState(false);
+
   useEffect(() => {
     setIsClient(true); // Component has mounted
   }, []);
@@ -120,6 +123,31 @@ function FamilyPageContent() {
     }
   };
 
+  const handleInviteByEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || currentContext === 'my-space' || !inviteEmail.trim()) {
+      toast({ title: "E-mail inválido", description: "Por favor, insira um e-mail válido.", variant: "destructive" });
+      return;
+    }
+    setIsProcessingEmailInvite(true);
+    try {
+      const newMember = await addFamilyMemberByEmail(currentContext, inviteEmail.trim());
+      if (newMember) {
+        // Prevent adding duplicate member to the view
+        if (!familyMembers.some(member => member.uid === newMember.uid)) {
+          setFamilyMembers(prev => [...prev, newMember]);
+        }
+        toast({ title: "Membro Adicionado!", description: `${newMember.name} foi adicionado(a) à família.` });
+        setInviteEmail(''); // Clear input on success
+      }
+    } catch (error: any) {
+      console.error("Error inviting member by email:", error);
+      toast({ title: "Erro ao Convidar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessingEmailInvite(false);
+    }
+  };
+
   const handleCopyCode = () => {
     if (!familyDetails?.inviteCode) return;
     navigator.clipboard.writeText(familyDetails.inviteCode);
@@ -175,18 +203,6 @@ function FamilyPageContent() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
-              <CardTitle>Convidar para Família</CardTitle>
-              <CardDescription>Compartilhe este código com outro responsável para que ele se junte à sua família.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center gap-4">
-              <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-              <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código de convite">
-                <Copy className="h-5 w-5" />
-              </Button>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
               <CardTitle>Membros da Família</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
@@ -200,7 +216,44 @@ function FamilyPageContent() {
               ))}
             </CardContent>
           </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Convidar com Código</CardTitle>
+              <CardDescription>Compartilhe este código com outro responsável para que ele se junte à sua família.</CardDescription>
+            </CardHeader>
+            <CardContent className="flex items-center gap-4">
+              <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
+              <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código de convite">
+                <Copy className="h-5 w-5" />
+              </Button>
+            </CardContent>
+          </Card>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><UserPlus className="h-6 w-6 text-primary"/>Convidar por E-mail</CardTitle>
+            <CardDescription>Adicione um membro diretamente pelo e-mail cadastrado no Mini Herois. O usuário precisa ter uma conta existente.</CardDescription>
+          </CardHeader>
+          <form onSubmit={handleInviteByEmail}>
+            <CardContent>
+                <Input
+                    type="email"
+                    placeholder="email.do.responsavel@exemplo.com"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    required
+                    disabled={isProcessingEmailInvite}
+                />
+            </CardContent>
+            <CardFooter>
+                <Button type="submit" disabled={isProcessingEmailInvite}>
+                    {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                    Convidar Membro
+                </Button>
+            </CardFooter>
+          </form>
+        </Card>
 
         <Card className="border-destructive bg-destructive/5">
           <CardHeader>
