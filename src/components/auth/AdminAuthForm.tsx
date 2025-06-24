@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -190,7 +191,7 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          {mode === "login" ? "Acessar o Comando" : "Criar Conta"}
+          {mode === "login" ? "Acessar o Comando" : "Montar Central de Missões"}
         </Button>
       </form>
       <div className="relative my-6">
