@@ -19,6 +19,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { signInAdmin, signUpAdmin, signInWithGoogle } from "@/lib/firebase/auth";
+import { joinFamilyByInviteCode } from "@/lib/firebase/firestore";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -37,9 +38,10 @@ const registerSchema = z.object({
 
 type MasterUserAuthFormProps = {
   mode: "login" | "register";
+  inviteCode?: string | null;
 };
 
-export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
+export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -63,9 +65,15 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
-        await signUpAdmin(name, email, password);
-        toast({ title: "Cadastro Efetuado com Sucesso", description: "Bem-vindo(a) ao Mini Herois! Por favor, faça login." });
-        router.push("/auth/login");
+        const userProfile = await signUpAdmin(name, email, password);
+        
+        if (inviteCode) {
+          await joinFamilyByInviteCode(userProfile.uid, inviteCode);
+          toast({ title: "Bem-vindo(a)!", description: "Sua conta foi criada e você já faz parte da família." });
+        } else {
+          toast({ title: "Cadastro Efetuado com Sucesso", description: "Sua conta foi criada. Bem-vindo(a) ao Mini Herois!" });
+        }
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);

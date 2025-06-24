@@ -256,7 +256,7 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 
   if (memberUserIds.length === 0) return [];
 
-  const usersQuery = query(collection(db, 'users'), where('uid', 'in', memberUserIds));
+  const usersQuery = query(collection(db, 'users'), where('__name__', 'in', memberUserIds));
   const usersSnapshot = await getDocs(usersQuery);
   return usersSnapshot.docs.map(doc => doc.data() as UserProfile);
 };
@@ -314,6 +314,31 @@ export const deleteFamily = async (familyId: string): Promise<void> => {
   
   await batch.commit();
 };
+
+export const removeFamilyMember = async (familyId: string, userIdToRemove: string, currentUserId: string): Promise<void> => {
+    const familyRef = doc(db, 'families', familyId);
+    const familySnap = await getDoc(familyRef);
+    if (!familySnap.exists() || familySnap.data().ownerId !== currentUserId) {
+        throw new Error("Apenas o proprietário pode remover membros.");
+    }
+    if (userIdToRemove === currentUserId) {
+        throw new Error("O proprietário não pode remover a si mesmo.");
+    }
+
+    await leaveFamily(userIdToRemove, familyId);
+};
+
+export const regenerateFamilyInviteCode = async (familyId: string, currentUserId: string): Promise<string> => {
+    const familyRef = doc(db, 'families', familyId);
+    const familySnap = await getDoc(familyRef);
+    if (!familySnap.exists() || familySnap.data().ownerId !== currentUserId) {
+        throw new Error("Apenas o proprietário pode regenerar o código.");
+    }
+    const newInviteCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await updateDoc(familyRef, { inviteCode: newInviteCode });
+    return newInviteCode;
+};
+
 
 // --- Family Invitations ---
 

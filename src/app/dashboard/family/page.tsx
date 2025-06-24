@@ -8,6 +8,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { 
   createFamily, 
@@ -19,12 +20,20 @@ import {
   createFamilyInvitation,
   getPendingInvitationsForUser,
   acceptFamilyInvitation,
-  declineFamilyInvitation
+  declineFamilyInvitation,
+  regenerateFamilyInviteCode,
+  removeFamilyMember,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Loading from './loading';
 
@@ -41,19 +50,22 @@ function FamilyPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // States for the forms
   const [familyName, setFamilyName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
   const [inviteEmail, setInviteEmail] = useState('');
   const [isProcessingEmailInvite, setIsProcessingEmailInvite] = useState(false);
+  const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
-  // States for invitations
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
-  const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null); // Stores ID of invitation being processed
+  const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null);
+
+  const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
+  const [isRemovingMember, setIsRemovingMember] = useState(false);
+
 
   useEffect(() => {
-    setIsClient(true); // Component has mounted
+    setIsClient(true);
   }, []);
 
   useEffect(() => {
@@ -64,7 +76,6 @@ function FamilyPageContent() {
       setFamilyDetails(null);
       setFamilyMembers([]);
       
-      // Fetch pending invitations if in personal space
       setIsLoadingInvitations(true);
       getPendingInvitationsForUser(user.uid)
         .then(invites => setInvitations(invites))
@@ -76,7 +87,7 @@ function FamilyPageContent() {
         
     } else {
       setIsLoading(true);
-      setInvitations([]); // Clear invitations when in a family context
+      setInvitations([]);
       const fetchFamilyData = async () => {
         try {
           const [details, members] = await Promise.all([
@@ -202,11 +213,48 @@ function FamilyPageContent() {
     }
   };
 
-
   const handleCopyCode = () => {
     if (!familyDetails?.inviteCode) return;
     navigator.clipboard.writeText(familyDetails.inviteCode);
     toast({ title: "Código Copiado!", description: "O código de convite foi copiado para sua área de transferência." });
+  };
+  
+  const handleCopyInviteLink = () => {
+    if (!familyDetails?.inviteCode || !isClient) return;
+    const inviteLink = `${window.location.origin}/auth/register?invite_code=${familyDetails.inviteCode}`;
+    navigator.clipboard.writeText(inviteLink);
+    toast({ title: "Link de Convite Copiado!", description: "O link para cadastro na família foi copiado." });
+  };
+  
+  const handleRegenerateCode = async () => {
+    if (!user || !familyDetails) return;
+    setIsRegeneratingCode(true);
+    try {
+      const newCode = await regenerateFamilyInviteCode(familyDetails.id, user.uid);
+      setFamilyDetails(prev => prev ? { ...prev, inviteCode: newCode } : null);
+      toast({ title: "Código Regenerado!", description: `O novo código de convite é ${newCode}.` });
+    } catch (error: any) {
+      console.error("Error regenerating code:", error);
+      toast({ title: "Erro ao Regenerar Código", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRegeneratingCode(false);
+    }
+  };
+
+  const handleConfirmRemoveMember = async () => {
+    if (!user || !familyDetails || !memberToRemove) return;
+    setIsRemovingMember(true);
+    try {
+      await removeFamilyMember(familyDetails.id, memberToRemove.uid, user.uid);
+      setFamilyMembers(prev => prev.filter(m => m.uid !== memberToRemove.uid));
+      toast({ title: "Membro Removido", description: `${memberToRemove.name} não faz mais parte da família.` });
+    } catch (error: any) {
+      console.error("Error removing member:", error);
+      toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRemovingMember(false);
+      setMemberToRemove(null);
+    }
   };
   
   const handleAction = async (action: 'leave' | 'delete') => {
@@ -237,7 +285,6 @@ function FamilyPageContent() {
     return <Loading />;
   }
 
-  // View when user is in a Family
   if (currentContext !== 'my-space' && familyDetails) {
     const isOwner = user?.uid === familyDetails.ownerId;
     return (
@@ -261,26 +308,58 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
               {familyMembers.map(member => (
-                <div key={member.uid} className="flex flex-col items-center gap-2">
+                <div key={member.uid} className="flex flex-col items-center gap-2 p-2 rounded-lg relative group">
                   <Avatar className="h-16 w-16 text-2xl border-2 border-primary">
+                    <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                   </Avatar>
                   <span className="text-sm font-medium text-center">{member.name}</span>
+                  {member.uid === familyDetails.ownerId ? (
+                      <Badge variant="secondary" className="text-xs">Proprietário</Badge>
+                  ) : (
+                      <Badge variant="outline" className="text-xs">Colaborador</Badge>
+                  )}
+                  {isOwner && member.uid !== user?.uid && (
+                    <div className="absolute top-0 right-0">
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity">
+                                  <MoreVertical className="h-4 w-4" />
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                              <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
+                                  <UserX className="mr-2 h-4 w-4" /> Remover Membro
+                              </DropdownMenuItem>
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  )}
                 </div>
               ))}
             </CardContent>
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Convidar com Código</CardTitle>
-              <CardDescription>Compartilhe este código com outro responsável para que ele se junte à sua família.</CardDescription>
+              <CardTitle>Convidar para a Equipe</CardTitle>
+              <CardDescription>Compartilhe este código ou link para que outro responsável se junte à sua família.</CardDescription>
             </CardHeader>
-            <CardContent className="flex items-center gap-4">
+            <CardContent className="flex items-center gap-2">
               <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-              <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código de convite">
+              <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
                 <Copy className="h-5 w-5" />
               </Button>
+               {isOwner && (
+                <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
+                    {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                </Button>
+               )}
             </CardContent>
+            <CardFooter>
+                 <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm">
+                    <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
+                </Button>
+            </CardFooter>
           </Card>
         </div>
 
@@ -344,6 +423,26 @@ function FamilyPageContent() {
             </p>
           </CardContent>
         </Card>
+
+        {memberToRemove && (
+          <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Remover {memberToRemove.name}?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja remover {memberToRemove.name} da família? Ele(a) perderá o acesso compartilhado às crianças. As crianças que ele(a) criou voltarão para o seu "Meu Espaço" pessoal.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isRemovingMember}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmRemoveMember} className="bg-destructive hover:bg-destructive/90" disabled={isRemovingMember}>
+                  {isRemovingMember && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Sim, Remover
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
       </div>
     );
   }
