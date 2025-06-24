@@ -96,7 +96,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
       .map(([childId, _]) => childId);
 
     if (childrenToAssign.length === 0) {
-      toast({ title: "Nenhuma Criança Selecionada", description: "Por favor, selecione pelo menos um Mini Heroi.", variant: "default" });
+      toast({ title: "Nenhum Herói Selecionado", description: "Por favor, escolha pelo menos um Mini Herói para a missão.", variant: "default" });
       return;
     }
 
@@ -118,8 +118,8 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
       await Promise.all(assignmentPromises);
       assignedCount = assignmentPromises.length;
       toast({
-        title: "Recompensas Atribuídas!",
-        description: `${assignedCount} ${assignedCount === 1 ? "recompensa foi atribuída" : "recompensas foram atribuídas"} com sucesso.`,
+        title: "Missões de Recompensa Lançadas!",
+        description: `A recompensa foi atribuída para ${assignedCount} ${assignedCount === 1 ? "Mini Herói" : "Mini Herois"}.`,
       });
       onAssigned?.();
       onOpenChange(false);
@@ -153,7 +153,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
         ) : eligibleChildren.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <AlertCircle className="h-10 w-10 mx-auto mb-2 text-primary" />
-            Nenhum Mini Heroi encontrado neste contexto para atribuição. 
+            Nenhum Mini Herói encontrado neste contexto para atribuição. 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (

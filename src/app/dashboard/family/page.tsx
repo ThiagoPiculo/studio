@@ -120,11 +120,11 @@ function FamilyPageContent() {
       const newContext = { id: newFamily.id, name: newFamily.name };
       setAvailableContexts([...availableContexts, newContext]);
       setCurrentContext(newFamily.id);
-      toast({ title: "Família Criada com Sucesso!", description: `Bem-vindo à Família ${newFamily.name}!` });
+      toast({ title: "Sua Aventura em Família Começou!", description: `Bem-vindo à Família ${newFamily.name}!` });
       router.push('/dashboard/family');
     } catch (error) {
       console.error("Error creating family:", error);
-      toast({ title: "Erro ao Criar Família", description: "Ocorreu um erro. Tente novamente.", variant: "destructive" });
+      toast({ title: "Ops! Algo deu errado...", description: "Não foi possível criar a família. Tente novamente.", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -147,7 +147,7 @@ function FamilyPageContent() {
               setAvailableContexts([...availableContexts, newContext]);
             }
             setCurrentContext(family.id);
-            toast({ title: "Você Entrou na Família!", description: `Agora você faz parte da Família ${family.name}!` });
+            toast({ title: "Bem-vindo(a) à Equipe!", description: `Agora você faz parte da Família ${family.name}!` });
             router.push('/dashboard/family');
         }
       } else {
@@ -155,7 +155,7 @@ function FamilyPageContent() {
       }
     } catch (error) {
       console.error("Error joining family:", error);
-      toast({ title: "Erro ao Entrar na Família", description: "Ocorreu um erro. Tente novamente.", variant: "destructive" });
+      toast({ title: "Ops! Algo deu errado...", description: "Não conseguimos te adicionar à família. Verifique o código e tente de novo.", variant: "destructive" });
     } finally {
       setIsProcessing(false);
     }
@@ -170,7 +170,7 @@ function FamilyPageContent() {
     setIsProcessingEmailInvite(true);
     try {
       await createFamilyInvitation(currentContext, user.uid, user.name || 'Um amigo', inviteEmail.trim());
-      toast({ title: "Convite Enviado!", description: `Um convite foi enviado para ${inviteEmail.trim()}. Ele aparecerá para o usuário aceitar.` });
+      toast({ title: "Convite Enviado!", description: `Um convite para a aventura foi enviado para ${inviteEmail.trim()}.` });
       setInviteEmail('');
     } catch (error: any) {
       console.error("Error sending invitation:", error);
@@ -190,7 +190,7 @@ function FamilyPageContent() {
         setAvailableContexts([...availableContexts, newContext]);
       }
       setCurrentContext(family.id);
-      toast({ title: "Bem-vindo à Família!", description: `Você agora faz parte da Família ${family.name}!` });
+      toast({ title: "Bem-vindo(a) à Equipe!", description: `Você agora faz parte da aventura da Família ${family.name}!` });
       router.push('/dashboard/family');
     } catch (error: any) {
        console.error("Error accepting invitation:", error);
@@ -204,7 +204,7 @@ function FamilyPageContent() {
     try {
       await declineFamilyInvitation(invitationId);
       setInvitations(prev => prev.filter(inv => inv.id !== invitationId));
-      toast({ title: "Convite Recusado", description: "O convite foi recusado com sucesso." });
+      toast({ title: "Convite Recusado", description: "Você escolheu não participar desta aventura por enquanto." });
     } catch (error: any) {
       console.error("Error declining invitation:", error);
       toast({ title: "Erro ao Recusar Convite", description: error.message, variant: "destructive" });
@@ -216,14 +216,14 @@ function FamilyPageContent() {
   const handleCopyCode = () => {
     if (!familyDetails?.inviteCode) return;
     navigator.clipboard.writeText(familyDetails.inviteCode);
-    toast({ title: "Código Copiado!", description: "O código de convite foi copiado para sua área de transferência." });
+    toast({ title: "Código Copiado!", description: "Pronto para chamar reforços! O código de convite está na sua área de transferência." });
   };
   
   const handleCopyInviteLink = () => {
     if (!familyDetails?.inviteCode || !isClient) return;
     const inviteLink = `${window.location.origin}/auth/register?invite_code=${familyDetails.inviteCode}`;
     navigator.clipboard.writeText(inviteLink);
-    toast({ title: "Link de Convite Copiado!", description: "O link para cadastro na família foi copiado." });
+    toast({ title: "Link de Convite Copiado!", description: "O link de aventura foi copiado. Compartilhe para aumentar a equipe!" });
   };
   
   const handleRegenerateCode = async () => {
@@ -232,7 +232,7 @@ function FamilyPageContent() {
     try {
       const newCode = await regenerateFamilyInviteCode(familyDetails.id, user.uid);
       setFamilyDetails(prev => prev ? { ...prev, inviteCode: newCode } : null);
-      toast({ title: "Código Regenerado!", description: `O novo código de convite é ${newCode}.` });
+      toast({ title: "Novo Código Secreto Gerado!", description: `O novo código de convite da família é ${newCode}.` });
     } catch (error: any) {
       console.error("Error regenerating code:", error);
       toast({ title: "Erro ao Regenerar Código", description: error.message, variant: "destructive" });
@@ -247,7 +247,7 @@ function FamilyPageContent() {
     try {
       await removeFamilyMember(familyDetails.id, memberToRemove.uid, user.uid);
       setFamilyMembers(prev => prev.filter(m => m.uid !== memberToRemove.uid));
-      toast({ title: "Membro Removido", description: `${memberToRemove.name} não faz mais parte da família.` });
+      toast({ title: "Membro Iniciou Nova Jornada", description: `${memberToRemove.name} não faz mais parte da equipe e seguiu para uma aventura solo.` });
     } catch (error: any) {
       console.error("Error removing member:", error);
       toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
@@ -263,10 +263,10 @@ function FamilyPageContent() {
     try {
       if (action === 'leave') {
         await leaveFamily(user.uid, currentContext);
-        toast({ title: "Você Saiu da Família", description: "Seu espaço voltou a ser pessoal." });
+        toast({ title: "Nova Jornada Solo", description: "Você saiu da família e sua aventura continua no seu espaço pessoal." });
       } else if (action === 'delete') {
         await deleteFamily(currentContext);
-        toast({ title: "Família Excluída", description: "A família foi desfeita com sucesso." });
+        toast({ title: "Aventura em Família Encerrada", description: "A família foi desfeita. Novas jornadas aguardam cada membro." });
       }
       setAvailableContexts(availableContexts.filter(c => c.id !== currentContext));
       setCurrentContext('my-space');

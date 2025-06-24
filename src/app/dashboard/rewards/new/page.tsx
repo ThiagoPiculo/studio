@@ -98,8 +98,8 @@ function CreateRewardTemplatePageContent() {
         // Mostra o toast de aviso para recompensas materiais, se aplicável
         if (isCategoryMaterial) {
             toast({
-                title: "Atenção: Recompensas Materiais",
-                description: "Lembre-se de não condicionar itens essenciais (como roupas básicas, material escolar obrigatório ou comida) ao cumprimento de tarefas. A recompensa deve ser sempre um 'extra'.",
+                title: "Dica de Mestre Herói",
+                description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
                 variant: "default", 
                 duration: 10000,
             });
@@ -109,8 +109,8 @@ function CreateRewardTemplatePageContent() {
     // Disparar a lógica do toast se a categoria inicial for material
     if (form.getValues('category') === 'material_items') {
         toast({
-            title: "Atenção: Recompensas Materiais",
-            description: "Lembre-se de não condicionar itens essenciais ao cumprimento de tarefas. A recompensa deve ser um 'extra'.",
+            title: "Dica de Mestre Herói",
+            description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
             variant: "default",
             duration: 10000,
         });
@@ -138,8 +138,8 @@ function CreateRewardTemplatePageContent() {
       
       const createdTemplate = await addRewardTemplate(templateDataPayload);
       toast({
-        title: 'Recompensa Criada!',
-        description: `A recompensa "${createdTemplate.title}" foi adicionada ao catálogo. Agora você pode atribuí-la.`,
+        title: 'Tesouro Adicionado!',
+        description: `A recompensa "${createdTemplate.title}" foi adicionada ao catálogo de prêmios.`,
       });
       setNewlyCreatedTemplate(createdTemplate);
       setIsAssignDialogOpen(true);
@@ -311,11 +311,11 @@ function CreateRewardTemplatePageContent() {
           template={newlyCreatedTemplate}
           isOpen={isAssignDialogOpen}
           onOpenChange={(isOpen) => {
-            setIsAssignDialogOpen(isOpen);
             if (!isOpen) { // Se o diálogo for fechado
               setNewlyCreatedTemplate(null); // Limpar o template
               router.push('/dashboard/rewards'); // Navegar para o catálogo
             }
+            setIsAssignDialogOpen(isOpen);
           }}
           onAssigned={() => {
             toast({ title: "Recompensa Atribuída!", description: "A nova recompensa foi atribuída às crianças selecionadas."});
@@ -333,4 +333,3 @@ export default function CreateRewardPage() {
     </Suspense>
   )
 }
-

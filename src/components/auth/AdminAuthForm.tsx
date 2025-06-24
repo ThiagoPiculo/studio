@@ -61,7 +61,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
       if (mode === "login") {
         const { email, password } = values as z.infer<typeof loginSchema>;
         await signInAdmin(email, password);
-        toast({ title: "Login Efetuado com Sucesso", description: "Bem-vindo(a) de volta!" });
+        toast({ title: "Que bom te ver de novo!", description: "Sua central de missões está pronta para novas aventuras." });
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
@@ -69,9 +69,9 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         
         if (inviteCode) {
           await joinFamilyByInviteCode(userProfile.uid, inviteCode);
-          toast({ title: "Bem-vindo(a)!", description: "Sua conta foi criada e você já faz parte da família." });
+          toast({ title: "Boas-vindas à Equipe!", description: "Sua conta foi criada e você já se juntou à aventura em família." });
         } else {
-          toast({ title: "Cadastro Efetuado com Sucesso", description: "Sua conta foi criada. Bem-vindo(a) ao Mini Herois!" });
+          toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
         router.push("/dashboard");
       }
@@ -106,7 +106,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     setIsLoading(true);
     try {
       await signInWithGoogle();
-      toast({ title: "Login com Google Efetuado com Sucesso", description: "Bem-vindo(a)!" });
+      toast({ title: "Boas-vindas!", description: "Login com Google efetuado. Sua aventura está prestes a começar." });
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);

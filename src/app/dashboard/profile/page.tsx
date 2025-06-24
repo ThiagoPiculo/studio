@@ -52,7 +52,7 @@ export default function ProfilePage() {
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, { name: displayName.trim() });
 
-      toast({ title: "Sucesso!", description: "Seu nome foi atualizado." });
+      toast({ title: "Identidade de Herói Atualizada!", description: "Seu nome foi atualizado com sucesso." });
       setIsEditingName(false);
       // O AuthContext deve atualizar o nome automaticamente devido ao listener do Firestore
     } catch (error) {
@@ -71,7 +71,7 @@ export default function ProfilePage() {
     setIsSendingResetEmail(true);
     try {
       await resetPassword(user.email);
-      toast({ title: "E-mail Enviado", description: "Um link para redefinição de senha foi enviado para seu e-mail." });
+      toast({ title: "Mapa Secreto Enviado!", description: "Enviamos um link para seu e-mail para você criar uma nova senha." });
     } catch (error) {
       console.error("Error sending password reset email:", error);
       toast({ title: "Erro ao Enviar E-mail", description: "Não foi possível enviar o e-mail de redefinição. Tente novamente.", variant: "destructive" });

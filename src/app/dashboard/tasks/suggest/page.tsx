@@ -54,8 +54,8 @@ export default function SuggestTasksPage() {
       if (result.tasks && result.tasks.length > 0) {
         setSuggestedTasks(result.tasks);
         toast({
-          title: 'Sugestões Geradas!',
-          description: 'Aqui estão algumas ideias de tarefas para você.',
+          title: 'Missões Sugeridas!',
+          description: 'Nossa IA preparou algumas ideias de tarefas para inspirar seus heróis.',
         });
       } else {
         setSuggestedTasks([]);

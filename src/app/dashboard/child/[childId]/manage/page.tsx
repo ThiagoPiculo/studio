@@ -109,7 +109,7 @@ export default function ManageChildPage() {
   
   const handleProfileUpdate = (updatedProfile: Partial<ChildProfile>) => {
     setChild(prev => prev ? { ...prev, ...updatedProfile } : null);
-    toast({ title: "Perfil Atualizado!", description: "As informações da criança foram atualizadas com sucesso." });
+    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${updatedProfile.name || child?.name} foram salvas.` });
   };
 
   const handleRegenerateAccessCode = async () => {
@@ -119,8 +119,8 @@ export default function ManageChildPage() {
       const newAccessCode = await regenerateChildAccessCode(child.id);
       setChild(prev => prev ? { ...prev, accessCode: newAccessCode } : null);
       toast({
-        title: "Código de Acesso Regenerado!",
-        description: `O novo código de acesso para ${child.name} é: ${newAccessCode}. Guarde bem este código!`,
+        title: "Nova Chave Secreta Gerada!",
+        description: `A nova chave para ${child.name} é ${newAccessCode}. Guarde em um local seguro!`,
         duration: 10000, 
       });
     } catch (error) {
@@ -136,7 +136,7 @@ export default function ManageChildPage() {
     setIsDeleting(true);
     try {
       await deleteChildProfile(child.id);
-      toast({ title: "Perfil Excluído", description: `O perfil de ${child.name} foi removido(a) do sistema com sucesso.` });
+      toast({ title: "Missão Arquivada", description: `O perfil de ${child.name} foi arquivado. Novas aventuras o(a) aguardam!` });
       router.push('/dashboard');
     } catch (error) {
       console.error("Error deleting child profile:", error);
@@ -180,7 +180,7 @@ export default function ManageChildPage() {
       if (!currentChildProfile) throw new Error("Perfil da criança não encontrado para verificação de estrelas.");
 
       if (currentChildProfile.stars < instanceToManage.starsCost) {
-        toast({ title: "Estrelas Insuficientes", description: `${child.name} não possui estrelas suficientes para resgatar "${instanceToManage.title}".`, variant: "destructive", duration: 7000 });
+        toast({ title: "Quase lá!", description: `${child.name} precisa de mais estrelas para resgatar "${instanceToManage.title}". Continue as missões!`, variant: "destructive", duration: 7000 });
         setIsProcessingRewardAction(false);
         setIsRedeemConfirmOpen(false);
         return;
@@ -197,7 +197,7 @@ export default function ManageChildPage() {
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
       setChild(prev => prev ? { ...prev, stars: currentChildProfile.stars - instanceToManage.starsCost } : null);
-      toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi marcada como resgatada por ${child.name}.` });
+      toast({ title: "Conquista Desbloqueada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error) {
       console.error("Error marking reward as redeemed:", error);
       toast({ title: "Erro ao Resgatar", description: "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
@@ -221,7 +221,7 @@ export default function ManageChildPage() {
           }));
       toast({ 
         title: "Status da Recompensa Atualizado", 
-        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'ativa' : 'inativa'} para ${child?.name}.` 
+        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.` 
       });
     } catch (error) {
       console.error(`Error toggling reward instance status:`, error);
@@ -237,7 +237,7 @@ export default function ManageChildPage() {
     try {
       await deleteChildRewardInstance(instanceToManage.id);
       setChildRewards(prev => prev.filter(r => r.id !== instanceToManage.id));
-      toast({ title: "Atribuição Removida", description: `A recompensa "${instanceToManage.title}" foi removida de ${child?.name}.` });
+      toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
       console.error("Error deleting reward instance:", error);
       toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });

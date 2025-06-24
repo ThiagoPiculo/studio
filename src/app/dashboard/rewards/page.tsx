@@ -133,7 +133,7 @@ export default function RewardTemplatesHubPage() {
     try {
       await deleteRewardTemplate(templateToDelete.id);
       setRewardTemplates(prev => prev.filter(rt => rt.id !== templateToDelete.id));
-      toast({ title: "Recompensa Excluída do Catálogo!", description: `A recompensa "${templateToDelete.title}" foi removida do catálogo.` });
+      toast({ title: "Tesouro Arquivado!", description: `A recompensa "${templateToDelete.title}" foi removida do catálogo de prêmios.` });
     } catch (error)
     {
       console.error("Error deleting reward template:", error);
@@ -561,4 +561,3 @@ export default function RewardTemplatesHubPage() {
     </div>
   );
 }
-
