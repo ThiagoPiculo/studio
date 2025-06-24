@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { UserNav } from './UserNav';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { Rocket, Users, ListChecks, ShieldCheck, LogIn, Gift, Menu } from 'lucide-react';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useState } from 'react';
 
 export function Header() {
@@ -77,6 +77,10 @@ export function Header() {
                     </Button>
                 </SheetTrigger>
                 <SheetContent side="right" className="w-[300px] sm:w-[340px] flex flex-col p-0">
+                    <SheetHeader className="sr-only">
+                        <SheetTitle>Menu Principal</SheetTitle>
+                        <SheetDescription>Navegação principal do site para dispositivos móveis.</SheetDescription>
+                    </SheetHeader>
                     <div className="p-4 border-b">
                          <Link href="/" className="flex items-center space-x-2" onClick={closeSheet}>
                             <Rocket className="h-8 w-8 text-primary" />
@@ -90,18 +94,18 @@ export function Header() {
                              <div className="pb-2">
                                 <FamilyContextSwitcher />
                              </div>
-                            <Button asChild variant="ghost" className="w-full justify-start text-base p-4">
+                             <Button asChild variant="ghost" className="w-full justify-start text-base p-4">
                                 <Link href="/dashboard" onClick={closeSheet}>Painel</Link>
-                            </Button>
-                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                             </Button>
+                             <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
                                 <Link href="/dashboard/family" onClick={closeSheet}><Users className="h-5 w-5" /> Família</Link>
-                            </Button>
-                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                             </Button>
+                             <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
                                 <Link href="/dashboard/tasks" onClick={closeSheet}><ListChecks className="h-5 w-5" /> Tarefas</Link>
-                            </Button>
-                            <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
+                             </Button>
+                             <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
                                 <Link href="/dashboard/rewards" onClick={closeSheet}><Gift className="h-5 w-5" /> Recompensas</Link>
-                            </Button>
+                             </Button>
                           </>
                         ) : isChildAuthenticated ? (
                           <>
