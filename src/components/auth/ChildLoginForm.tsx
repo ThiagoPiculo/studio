@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -68,8 +69,8 @@ export function ChildLoginForm() {
 
   const handleHelpClick = () => {
     toast({
-      title: "Precisa de Ajuda?",
-      description: "Sua Chave Secreta é o código de 6 números que um adulto configurou para você. Peça para ele te ajudar a encontrar!",
+      title: "Em Busca da Chave Secreta!",
+      description: "Todo herói precisa de um guia! Peça para um adulto te mostrar a sua Chave Secreta, aquele código de 6 números que abre o portal para suas aventuras.",
       duration: 8000,
     });
   };
