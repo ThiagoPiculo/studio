@@ -14,14 +14,14 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
 // Define o schema de entrada para o flow
-export const FacialLoginInputSchema = z.object({
+const FacialLoginInputSchema = z.object({
   imageDataUri: z.string().describe("A imagem capturada pela webcam, como uma data URI (JPEG). Expected format: 'data:image/jpeg;base64,<encoded_data>'."),
   accessCode: z.string().length(6).describe("O código de acesso de 6 dígitos da criança."),
 });
 export type FacialLoginInput = z.infer<typeof FacialLoginInputSchema>;
 
 // Define o schema de saída para o flow
-export const FacialLoginOutputSchema = z.object({
+const FacialLoginOutputSchema = z.object({
   success: z.boolean().describe("Indica se um rosto foi detectado com sucesso."),
   message: z.string().describe("Uma mensagem descrevendo o resultado da verificação."),
 });
