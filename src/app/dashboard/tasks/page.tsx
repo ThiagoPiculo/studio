@@ -15,29 +15,11 @@ export default function TasksHubPage() {
             Gerenciamento de Tarefas
           </CardTitle>
           <CardDescription>
-            Crie, atribua e acompanhe as tarefas dos seus Mini Herois. Use a IA para obter inspiração!
+            Crie, atribua e acompanhe as tarefas dos seus Mini Herois.
           </CardDescription>
         </CardHeader>
-        <CardContent className="grid md:grid-cols-2 gap-6">
-          <Card className="hover:shadow-md transition-shadow">
-            <CardHeader>
-              <CardTitle className="text-xl flex items-center">
-                <Lightbulb className="mr-2 h-5 w-5 text-accent" />
-                Sugerir Tarefas com IA
-              </CardTitle>
-              <CardDescription>
-                Não sabe por onde começar? Deixe nossa IA ajudar a criar tarefas personalizadas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Link href="/dashboard/tasks/suggest">
-                <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-                  Obter Sugestões
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-          <Card className="hover:shadow-md transition-shadow">
+        <CardContent>
+          <Card className="hover:shadow-md transition-shadow max-w-md mx-auto">
             <CardHeader>
               <CardTitle className="text-xl">
                 Criar Nova Tarefa (Em Breve)
