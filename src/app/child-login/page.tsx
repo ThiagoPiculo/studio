@@ -7,13 +7,13 @@ import Link from 'next/link';
 export default function ChildLoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-sm shadow-xl">
-         <CardHeader className="text-center p-6">
+      <Card className="w-full max-w-sm overflow-hidden shadow-xl">
+        <CardHeader className="bg-gradient-to-br from-primary via-purple-600 to-accent text-center text-primary-foreground p-6">
           <div className="mb-4 flex justify-center">
-            <Sparkles className="h-16 w-16 text-primary animate-pulse" />
+            <Sparkles className="h-16 w-16 animate-pulse" />
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
-          <CardDescription>
+          <CardDescription className="text-primary-foreground/90">
             Sua próxima missão está pronta! Use sua <strong>Chave Secreta de Herói</strong> para começar a aventura.
           </CardDescription>
         </CardHeader>
@@ -39,7 +39,7 @@ export default function ChildLoginPage() {
               Login Usuário Master
             </Link>
           </p>
-          <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">
+           <div className="mt-6 flex items-center justify-center text-xs text-muted-foreground/90">
             <HelpCircle className="mr-2 h-4 w-4 text-primary" />
             <span>Não sabe seu <strong>código de acesso</strong> (sua Chave Secreta)? Peça ajuda a um adulto!</span>
           </div>
