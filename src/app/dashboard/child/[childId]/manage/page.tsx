@@ -10,7 +10,7 @@ import { rewardCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -37,6 +37,7 @@ import {
 import { serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 export default function ManageChildPage() {
@@ -340,9 +341,19 @@ export default function ManageChildPage() {
                 <CardDescription>Resumo das atividades e progresso.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p>Aqui você verá um resumo das atividades recentes, tarefas pendentes e recompensas disponíveis para {child.name}.</p>
-                <p>Mais gráficos e estatísticas de progresso aparecerão aqui em breve!</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Accordion type="single" collapsible className="w-full -mt-4">
+                  <AccordionItem value="info" className="border-b-0">
+                    <AccordionTrigger className="text-sm font-normal text-muted-foreground hover:text-primary hover:no-underline justify-start gap-2 py-0">
+                      <Info className="h-4 w-4" />
+                      Entenda a Visão Geral
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2 text-sm text-muted-foreground">
+                      <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
+                      <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
+                    </AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <Card className="bg-card border-border hover:shadow-lg transition-shadow">
                     <CardHeader>
                       <CardTitle className="text-lg">Tarefas Recentes</CardTitle>
