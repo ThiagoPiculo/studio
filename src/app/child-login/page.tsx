@@ -1,3 +1,4 @@
+
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, ListChecks, Star as StarIcon, Trophy, HelpCircle, Camera } from 'lucide-react';
@@ -13,7 +14,7 @@ export default function ChildLoginPage() {
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
           <CardDescription className="text-primary-foreground/90 text-base mt-1">
-            Sua <strong>Chave Secreta de Herói</strong> são 6 números mágicos! Use-os para entrar ou experimente a verificação facial!
+            Sua próxima missão está pronta! Use sua <strong>Chave Secreta de Herói</strong> ou a verificação facial para começar a aventura.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6">
