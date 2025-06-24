@@ -199,6 +199,61 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
   return usersSnapshot.docs.map(doc => doc.data() as UserProfile);
 };
 
+export const getFamilyById = async (familyId: string): Promise<Family | null> => {
+  const docRef = doc(db, 'families', familyId);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as Family) : null;
+};
+
+export const leaveFamily = async (userId: string, familyId: string): Promise<void> => {
+  const batch = writeBatch(db);
+
+  // 1. Find and delete the user's membership document
+  const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userId), where('familyId', '==', familyId));
+  const membershipSnapshot = await getDocs(membershipQuery);
+  if (!membershipSnapshot.empty) {
+    const membershipDocRef = membershipSnapshot.docs[0].ref;
+    batch.delete(membershipDocRef);
+  } else {
+    throw new Error("Membership not found.");
+  }
+
+  // 2. Find all children owned by this user within this family and reset their familyId
+  const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', familyId));
+  const childrenSnapshot = await getDocs(childrenQuery);
+  childrenSnapshot.forEach(childDoc => {
+    batch.update(childDoc.ref, { familyId: null, updatedAt: serverTimestamp() });
+  });
+
+  // Commit all batched writes
+  await batch.commit();
+};
+
+export const deleteFamily = async (familyId: string): Promise<void> => {
+  const batch = writeBatch(db);
+
+  // 1. Delete the family document itself
+  const familyRef = doc(db, 'families', familyId);
+  batch.delete(familyRef);
+
+  // 2. Find and delete all memberships for this family
+  const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
+  const membershipsSnapshot = await getDocs(membershipsQuery);
+  membershipsSnapshot.forEach(membershipDoc => {
+    batch.delete(membershipDoc.ref);
+  });
+
+  // 3. Find all children in this family and reset their familyId
+  const childrenQuery = query(collection(db, 'children'), where('familyId', '==', familyId));
+  const childrenSnapshot = await getDocs(childrenQuery);
+  childrenSnapshot.forEach(childDoc => {
+    batch.update(childDoc.ref, { familyId: null, updatedAt: serverTimestamp() });
+  });
+  
+  // Commit all batched writes
+  await batch.commit();
+};
+
 
 // --- Reward Templates (Catálogo de Recompensas) ---
 export const addRewardTemplate = async (templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
@@ -312,7 +367,7 @@ export const getChildRewardInstancesForContext = async (ownerId: string, familyI
     q = query(collection(db, 'childRewardInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('assignedAt', 'desc'));
   }
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
 };
 
 
