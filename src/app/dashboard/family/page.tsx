@@ -367,8 +367,7 @@ function FamilyPageContent() {
           </CardHeader>
         </Card>
 
-        <div className="grid lg:grid-cols-2 gap-6">
-          <Card>
+        <Card>
             <CardHeader>
               <CardTitle>Membros Responsáveis</CardTitle>
             </CardHeader>
@@ -405,29 +404,6 @@ function FamilyPageContent() {
               ))}
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Convidar para a Equipe</CardTitle>
-              <CardDescription>Compartilhe este código ou link para que outro responsável se junte à sua família.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex items-center gap-2">
-              <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-              <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
-                <Copy className="h-5 w-5" />
-              </Button>
-               {isOwner && (
-                <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
-                    {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-                </Button>
-               )}
-            </CardContent>
-            <CardFooter>
-                 <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm">
-                    <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
-                </Button>
-            </CardFooter>
-          </Card>
-        </div>
 
         <Card>
           <CardHeader>
@@ -475,27 +451,55 @@ function FamilyPageContent() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2"><UserPlus className="h-6 w-6 text-primary"/>Convidar por E-mail</CardTitle>
-            <CardDescription>Envie um convite para um responsável com conta no Mini Herois se juntar à sua família.</CardDescription>
+            <CardTitle>Convidar para a Equipe</CardTitle>
+            <CardDescription>Adicione outros responsáveis à sua família para gerenciarem os Mini Herois juntos.</CardDescription>
           </CardHeader>
-          <form onSubmit={handleSendInvitation}>
-            <CardContent>
-                <Input
-                    type="email"
-                    placeholder="email.do.responsavel@exemplo.com"
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    required
-                    disabled={isProcessingEmailInvite}
-                />
-            </CardContent>
-            <CardFooter>
-                <Button type="submit" disabled={isProcessingEmailInvite}>
-                    {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                    Enviar Convite
+          <CardContent>
+            <Tabs defaultValue="link" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="link">Por Link ou Código</TabsTrigger>
+                <TabsTrigger value="email">Por E-mail</TabsTrigger>
+              </TabsList>
+              <TabsContent value="link" className="pt-6">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Qualquer pessoa com este link ou código pode entrar na sua família como colaborador.
+                </p>
+                <div className="flex items-center gap-2">
+                    <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
+                    <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
+                        <Copy className="h-5 w-5" />
+                    </Button>
+                    {isOwner && (
+                    <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
+                        {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                    </Button>
+                    )}
+                </div>
+                <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
+                    <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
                 </Button>
-            </CardFooter>
-          </form>
+              </TabsContent>
+              <TabsContent value="email" className="pt-6">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Envie um convite para um responsável com conta no Mini Herois se juntar à sua família.
+                </p>
+                <form onSubmit={handleSendInvitation} className="space-y-4">
+                    <Input
+                        type="email"
+                        placeholder="email.do.responsavel@exemplo.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        required
+                        disabled={isProcessingEmailInvite}
+                    />
+                    <Button type="submit" disabled={isProcessingEmailInvite}>
+                        {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                        Enviar Convite
+                    </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
         </Card>
 
         <Card className="border-destructive bg-destructive/5">
