@@ -27,7 +27,7 @@ import {
   getChildProfilesByFamily,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight, PlusCircle, Edit3 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,6 +38,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Loading from './loading';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -65,6 +67,7 @@ function FamilyPageContent() {
 
   const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
   const [isRemovingMember, setIsRemovingMember] = useState(false);
+  const [editingChild, setEditingChild] = useState<ChildProfile | null>(null);
 
 
   useEffect(() => {
@@ -370,34 +373,52 @@ function FamilyPageContent() {
         </div>
 
         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><Shield className="h-6 w-6 text-primary"/>Mini Herois da Família</CardTitle>
-                <CardDescription>Gerencie o perfil de cada Mini Herói da sua família.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {childrenInFamily.length > 0 ? (
-                    <div className="space-y-4">
-                        {childrenInFamily.map(child => (
-                            <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="h-12 w-12 text-xl border-2 border-primary/50">
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
+          <CardHeader>
+              <CardTitle className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                      <Shield className="h-6 w-6 text-primary"/>Mini Herois da Família
+                  </div>
+                  <Link href="/dashboard/onboarding">
+                      <Button variant="outline" size="sm">
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Adicionar
+                      </Button>
+                  </Link>
+              </CardTitle>
+              <CardDescription>Gerencie o perfil de cada Mini Herói da sua família.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              {childrenInFamily.length > 0 ? (
+                  <div className="space-y-4">
+                      {childrenInFamily.map(child => (
+                          <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                              <div className="flex items-center gap-4">
+                                  <Avatar className="h-12 w-12 text-xl border-2 border-primary/50">
+                                      <AvatarImage src={child.avatar} alt={child.name} />
+                                      <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
                                     <span className="font-semibold">{child.name}</span>
-                                </div>
+                                    <p className="text-sm text-muted-foreground">Nível: {child.level} - {child.stars} Estrelas</p>
+                                  </div>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Button variant="ghost" size="sm" onClick={() => setEditingChild(child)}>
+                                  <Edit3 className="h-4 w-4 mr-1" /> Editar
+                                </Button>
                                 <Link href={`/dashboard/child/${child.id}/manage`}>
                                     <Button variant="outline" size="sm">
                                         Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
                                     </Button>
                                 </Link>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta família. Adicione um no painel principal!</p>
-                )}
-            </CardContent>
+                              </div>
+                          </div>
+                      ))}
+                  </div>
+              ) : (
+                  <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta família. Clique em "Adicionar" acima para começar.</p>
+              )}
+          </CardContent>
         </Card>
 
         <Card>
@@ -479,6 +500,30 @@ function FamilyPageContent() {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+        )}
+        
+        {editingChild && (
+            <Dialog open={!!editingChild} onOpenChange={(isOpen) => { if (!isOpen) setEditingChild(null) }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar o perfil de {editingChild.name}</DialogTitle>
+                        <DialogDescription>
+                            Atualize as informações do seu Mini Herói. As alterações serão salvas para toda a família.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <EditChildProfileForm
+                        child={editingChild}
+                        onProfileUpdate={(updatedProfile) => {
+                            setChildrenInFamily(prev => 
+                                prev.map(c => 
+                                    c.id === editingChild.id ? { ...c, ...updatedProfile } : c
+                                )
+                            );
+                            setEditingChild(null);
+                        }}
+                    />
+                </DialogContent>
+            </Dialog>
         )}
       </div>
     );
