@@ -25,6 +25,8 @@ import {
   regenerateFamilyInviteCode,
   removeFamilyMember,
   getChildProfilesByFamily,
+  getUnassignedChildProfilesByOwner,
+  assignChildrenToFamily,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
 import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Shield, ArrowRight, PlusCircle, Edit3 } from 'lucide-react';
@@ -38,8 +40,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import Loading from './loading';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -68,6 +73,13 @@ function FamilyPageContent() {
   const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
   const [isRemovingMember, setIsRemovingMember] = useState(false);
   const [editingChild, setEditingChild] = useState<ChildProfile | null>(null);
+  
+  // State for adding child to family dialog
+  const [isAddChildDialogOpen, setIsAddChildDialogOpen] = useState(false);
+  const [unassignedChildren, setUnassignedChildren] = useState<ChildProfile[]>([]);
+  const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false);
+  const [selectedChildrenToAdd, setSelectedChildrenToAdd] = useState<Record<string, boolean>>({});
+  const [isAssigningChildren, setIsAssigningChildren] = useState(false);
 
 
   useEffect(() => {
@@ -288,6 +300,53 @@ function FamilyPageContent() {
     }
   };
 
+  const handleOpenAddChildDialog = async () => {
+    if (!user) return;
+    setIsAddChildDialogOpen(true);
+    setIsLoadingUnassigned(true);
+    setSelectedChildrenToAdd({});
+    try {
+        const children = await getUnassignedChildProfilesByOwner(user.uid);
+        setUnassignedChildren(children);
+    } catch (error) {
+        console.error("Error fetching unassigned children:", error);
+        toast({ title: "Erro ao buscar Mini Herois", description: "Não foi possível carregar seus heróis disponíveis.", variant: "destructive" });
+    } finally {
+        setIsLoadingUnassigned(false);
+    }
+  };
+
+  const handleChildSelectionChange = (childId: string, isSelected: boolean) => {
+    setSelectedChildrenToAdd(prev => ({ ...prev, [childId]: isSelected }));
+  };
+
+  const handleAssignChildrenToFamily = async () => {
+      if (!user || currentContext === 'my-space') return;
+      const childrenIdsToAssign = Object.entries(selectedChildrenToAdd)
+        .filter(([, isSelected]) => isSelected)
+        .map(([childId]) => childId);
+
+      if (childrenIdsToAssign.length === 0) {
+          toast({ title: "Nenhum Herói Selecionado", description: "Selecione pelo menos um Mini Herói para adicionar à família." });
+          return;
+      }
+      
+      setIsAssigningChildren(true);
+      try {
+          await assignChildrenToFamily(childrenIdsToAssign, currentContext);
+          toast({ title: "Equipe Reforçada!", description: `${childrenIdsToAssign.length} ${childrenIdsToAssign.length === 1 ? 'Mini Herói foi adicionado' : 'Mini Herois foram adicionados'} à família!` });
+          
+          getChildProfilesByFamily(currentContext).then(setChildrenInFamily);
+
+          setIsAddChildDialogOpen(false);
+      } catch (error) {
+          console.error("Error assigning children to family:", error);
+          toast({ title: "Erro ao Adicionar", description: "Não foi possível adicionar os Mini Herois à família.", variant: "destructive" });
+      } finally {
+          setIsAssigningChildren(false);
+      }
+  };
+
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
   if (!isClient || isLoading) {
@@ -378,12 +437,10 @@ function FamilyPageContent() {
                   <div className="flex items-center gap-2">
                       <Shield className="h-6 w-6 text-primary"/>Mini Herois da Família
                   </div>
-                  <Link href="/dashboard/onboarding">
-                      <Button variant="outline" size="sm">
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Adicionar
-                      </Button>
-                  </Link>
+                  <Button variant="outline" size="sm" onClick={handleOpenAddChildDialog}>
+                    <Users className="mr-2 h-4 w-4" />
+                    Adicionar Membro Infantil
+                  </Button>
               </CardTitle>
               <CardDescription>Gerencie o perfil de cada Mini Herói da sua família.</CardDescription>
           </CardHeader>
@@ -525,6 +582,64 @@ function FamilyPageContent() {
                 </DialogContent>
             </Dialog>
         )}
+
+        <Dialog open={isAddChildDialogOpen} onOpenChange={setIsAddChildDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Adicionar Mini Heróis à Família</DialogTitle>
+                    <DialogDescription>
+                        Selecione os Mini Heróis do seu espaço pessoal que você deseja adicionar à família "{familyDetails?.name}".
+                    </DialogDescription>
+                </DialogHeader>
+                {isLoadingUnassigned ? (
+                    <div className="flex items-center justify-center h-40">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    </div>
+                ) : unassignedChildren.length === 0 ? (
+                    <div className="py-6 text-center">
+                        <p className="text-muted-foreground mb-4">Todos os seus Mini Heróis já fazem parte de uma família.</p>
+                        <Link href="/dashboard/onboarding">
+                            <Button>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Cadastrar Novo Mini Herói
+                            </Button>
+                        </Link>
+                    </div>
+                ) : (
+                    <>
+                        <ScrollArea className="max-h-[40vh] my-4 pr-3">
+                            <div className="space-y-3">
+                                {unassignedChildren.map(child => (
+                                    <div key={child.id} className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20">
+                                        <div className="flex items-center space-x-3">
+                                            <Avatar className="h-10 w-10 border-2 border-primary/50">
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <Label htmlFor={`add-child-${child.id}`} className="font-medium cursor-pointer">
+                                                {child.name}
+                                            </Label>
+                                        </div>
+                                        <Checkbox
+                                            id={`add-child-${child.id}`}
+                                            checked={!!selectedChildrenToAdd[child.id]}
+                                            onCheckedChange={(checked) => handleChildSelectionChange(child.id, !!checked)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        </ScrollArea>
+                        <DialogFooter>
+                            <Button variant="ghost" onClick={() => setIsAddChildDialogOpen(false)}>Cancelar</Button>
+                            <Button onClick={handleAssignChildrenToFamily} disabled={isAssigningChildren}>
+                                {isAssigningChildren ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
+                                Adicionar Selecionados
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
       </div>
     );
   }
@@ -664,3 +779,5 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
+    

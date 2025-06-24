@@ -95,6 +95,21 @@ export const getChildProfilesForAttribution = async (currentUserId: string, curr
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
 
+export const getUnassignedChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
+  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+};
+
+export const assignChildrenToFamily = async (childIds: string[], familyId: string): Promise<void> => {
+  const batch = writeBatch(db);
+  childIds.forEach(childId => {
+    const childRef = doc(db, 'children', childId);
+    batch.update(childRef, { familyId: familyId, updatedAt: serverTimestamp() });
+  });
+  await batch.commit();
+};
+
 
 export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'familyId' | 'updatedAt'>>) => {
   const childRef = doc(db, 'children', childId);
@@ -557,3 +572,5 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
 //   await setDoc(newTaskRef, newTask);
 //   return newTask;
 // };
+
+    
