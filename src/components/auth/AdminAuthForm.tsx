@@ -138,7 +138,7 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
             <FormItem>
               <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="usuario.master@example.com" {...field} />
+                <Input type="email" placeholder="mestre@miniherois.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -152,7 +152,7 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
               <FormLabel>Senha</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                  <Input type={showPassword ? "text" : "password"} placeholder="Sua senha super-secreta" {...field} />
                   <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={toggleShowPassword}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -190,7 +190,7 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          {mode === "login" ? "Entrar" : "Criar Conta"}
+          {mode === "login" ? "Acessar o Comando" : "Criar Conta"}
         </Button>
       </form>
       <div className="relative my-6">
@@ -199,7 +199,7 @@ export function MasterUserAuthForm({ mode }: MasterUserAuthFormProps) {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            Ou continue com
+            Ou entre com um clique
           </span>
         </div>
       </div>
