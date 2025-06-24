@@ -34,7 +34,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
@@ -339,17 +339,15 @@ export default function ManageChildPage() {
               <CardHeader>
                 <div className="flex items-center gap-2">
                   <CardTitle>Visão Geral de {child.name}</CardTitle>
-                  <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                              <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                              <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
-                              <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
-                          </TooltipContent>
-                      </Tooltip>
-                  </TooltipProvider>
+                  <Popover>
+                      <PopoverTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80 text-sm text-muted-foreground">
+                          <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
+                          <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
+                      </PopoverContent>
+                  </Popover>
                 </div>
                 <CardDescription>Resumo das atividades e progresso.</CardDescription>
               </CardHeader>
