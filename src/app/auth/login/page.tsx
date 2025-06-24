@@ -19,7 +19,7 @@ export default function LoginPage() {
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Primeira vez por aqui?{' '}
             <Link href="/auth/register" className="font-medium text-primary hover:underline">
-              Crie sua base de operações
+              Crie sua central de missões
             </Link>
           </p>
           <p className="mt-2 text-center text-sm text-muted-foreground">
