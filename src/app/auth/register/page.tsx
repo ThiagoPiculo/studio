@@ -18,7 +18,7 @@ export default function RegisterPage() {
         <CardContent>
           <MasterUserAuthForm mode="register" />
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            Já é um Usuário Master?{' '}
+            Já possui uma conta?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
               Acesse sua central
             </Link>
