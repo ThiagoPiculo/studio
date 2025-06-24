@@ -1,7 +1,8 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Shield, Sparkles, Star, Trophy, HeartHandshake } from 'lucide-react';
+import { Users, Sparkles, Star, Trophy, HeartHandshake } from 'lucide-react';
 
 export default function WelcomePage() {
   return (
@@ -23,7 +24,7 @@ export default function WelcomePage() {
             <Link href="/auth/login" className="flex-1">
               <Button variant="outline" size="lg" className="w-full h-20 text-lg border-2 border-primary/30 text-foreground group transition-colors hover:bg-accent hover:text-accent-foreground hover:border-accent">
                 <div className="flex flex-col items-center">
-                  <Shield className="h-8 w-8 mb-1 text-primary group-hover:scale-110 transition-transform" />
+                  <Users className="h-8 w-8 mb-1 text-primary group-hover:scale-110 transition-transform" />
                   Pai/Mãe/Responsável
                 </div>
               </Button>
