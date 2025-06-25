@@ -16,7 +16,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, Mission, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -558,6 +558,55 @@ export const deleteChildRewardInstance = async (instanceId: string): Promise<voi
 };
 
 
+// --- Mission Templates (Catálogo de Missões) ---
+export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
+  const newTemplateRef = doc(collection(db, 'missionTemplates'));
+  const now = serverTimestamp() as Timestamp;
+  const newTemplate: MissionTemplate = {
+    id: newTemplateRef.id,
+    ...templateData,
+    status: 'active',
+    createdAt: now,
+    updatedAt: now,
+  };
+  await setDoc(newTemplateRef, newTemplate);
+  return newTemplate;
+};
+
+export const getMissionTemplateById = async (templateId: string): Promise<MissionTemplate | null> => {
+  const docRef = doc(db, 'missionTemplates', templateId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return { id: docSnap.id, ...docSnap.data() } as MissionTemplate;
+  }
+  return null;
+};
+
+export const updateMissionTemplate = async (templateId: string, updates: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
+  const templateRef = doc(db, 'missionTemplates', templateId);
+  await updateDoc(templateRef, {
+    ...updates,
+    updatedAt: serverTimestamp() as Timestamp,
+  });
+};
+
+export const deleteMissionTemplate = async (templateId: string): Promise<void> => {
+  const templateRef = doc(db, 'missionTemplates', templateId);
+  await deleteDoc(templateRef);
+};
+
+export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, familyId?: string | null): Promise<MissionTemplate[]> => {
+  let q;
+  if (familyId && familyId !== 'my-space') {
+    q = query(collection(db, 'missionTemplates'), where('familyId', '==', familyId), orderBy('createdAt', 'desc'));
+  } else {
+    q = query(collection(db, 'missionTemplates'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('createdAt', 'desc'));
+  }
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionTemplate));
+};
+
+
 // --- Child Login ---
 export const findChildByAccessCode = async (accessCode: string): Promise<ChildProfile | null> => {
   const q = query(collection(db, 'children'), where('accessCode', '==', accessCode));
@@ -568,16 +617,3 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
-
-// --- Missions (Stubs for now) ---
-// export const addMission = async (missionData: Omit<Mission, 'id' | 'createdAt' | 'isCompleted'>): Promise<Mission> => {
-//   const newMissionRef = doc(collection(db, 'missions'));
-//   const newMission: Mission = {
-//     id: newMissionRef.id,
-//     ...missionData,
-//     isCompleted: false,
-//     createdAt: serverTimestamp() as Timestamp,
-//   };
-//   await setDoc(newMissionRef, newMission);
-//   return newMission;
-// };

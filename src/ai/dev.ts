@@ -2,4 +2,4 @@
 import { config } from 'dotenv';
 config();
 
-import '@/ai/flows/suggest-missions.ts';
+// Flows are imported here to be registered with Genkit

@@ -1,7 +1,8 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, School, HeartPulse, Smile, Users, Banknote, Leaf } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 
 export interface UserProfile {
@@ -55,20 +56,49 @@ export interface FamilyInvitation {
   createdAt: Timestamp;
 }
 
+export const missionCategories = [
+  { id: 'home', label: 'Casa', icon: Home, colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
+  { id: 'school', label: 'Escola', icon: School, colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
+  { id: 'health', label: 'Saúde e Bem-Estar', icon: HeartPulse, colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
+  { id: 'behavior', label: 'Comportamento', icon: Smile, colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
+  { id: 'social', label: 'Social', icon: Users, colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30' },
+  { id: 'financial', label: 'Financeiro', icon: Banknote, colorClasses: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30' },
+  { id: 'environmental', label: 'Ambiental', icon: Leaf, colorClasses: 'bg-teal-500/10 text-teal-700 border-teal-500/30' },
+] as const;
 
-export interface Mission {
-  id:string; // Document ID
-  childId: string;
-  ownerId: string; // UID of the Usuário Master (for security rules)
+export type MissionCategory = typeof missionCategories[number]['id'];
+export type MissionCategoryDetails = typeof missionCategories[number];
+
+export interface MissionTemplate {
+  id: string;
+  ownerId: string;
+  familyId?: string | null;
   title: string;
   description?: string;
+  category: MissionCategory;
   starsReward: number;
   xpReward: number;
-  isCompleted: boolean;
-  dueDate?: Timestamp;
   createdAt: Timestamp;
+  updatedAt: Timestamp;
+  status: 'active' | 'archived';
+}
+
+export interface MissionInstance {
+  id: string;
+  templateId: string;
+  childId: string;
+  ownerId: string;
+  familyId?: string | null;
+  title: string;
+  description?: string;
+  category: MissionCategory;
+  starsReward: number;
+  xpReward: number;
+  status: 'pending' | 'completed' | 'expired';
+  assignedAt: Timestamp;
   completedAt?: Timestamp;
-  category?: string; // e.g., Chores, Learning, Creative, Health
+  dueDate?: Timestamp;
+  updatedAt: Timestamp;
 }
 
 export const rewardCategories = [
