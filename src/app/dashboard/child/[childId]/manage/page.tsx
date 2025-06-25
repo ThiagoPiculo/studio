@@ -326,7 +326,7 @@ export default function ManageChildPage() {
       </Card>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="tasks" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Tarefas</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><StarIcon className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
@@ -341,7 +341,9 @@ export default function ManageChildPage() {
                   <CardTitle>Visão Geral de {child.name}</CardTitle>
                   <Popover>
                       <PopoverTrigger asChild>
-                          <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                          <button aria-label="Mais informações">
+                              <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
+                          </button>
                       </PopoverTrigger>
                       <PopoverContent className="w-80 text-sm text-muted-foreground">
                           <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
