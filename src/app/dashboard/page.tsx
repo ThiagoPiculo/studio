@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -65,7 +66,7 @@ export default function DashboardPage() {
           <CardDescription>Aqui está uma visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
-          <p>Gerencie tarefas, recompensas e veja seus Mini Herois crescerem!</p>
+          <p>Gerencie missões, recompensas e veja seus Mini Herois crescerem!</p>
         </CardContent>
       </Card>
 
@@ -140,20 +141,20 @@ export default function DashboardPage() {
             <CardTitle className="flex items-center gap-2 text-xl"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            <Link href="/dashboard/tasks/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Atribuir Nova Tarefa</Button></Link>
+            <Link href="/dashboard/missions/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Atribuir Nova Missão</Button></Link>
             <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Criar Recompensa</Button></Link>
             <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Gerenciar Família e Colaboradores</Button></Link>
           </CardContent>
         </Card>
         <Card className="shadow-md bg-gradient-to-br from-accent/10 to-card">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl"><Brain className="text-accent"/> Ideias de Tarefas IA</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-xl"><Brain className="text-accent"/> Ideias de Missões com IA</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground mb-4">Precisa de inspiração? Use nosso Sugestor de Tarefas inteligente!</p>
-            <Link href="/dashboard/tasks/suggest">
+            <p className="text-muted-foreground mb-4">Precisa de inspiração? Use nosso Sugestor de Missões inteligente!</p>
+            <Link href="/dashboard/missions/suggest">
               <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg">
-                <Sun className="mr-2 h-4 w-4"/> Obter Sugestões de Tarefas
+                <Sun className="mr-2 h-4 w-4"/> Obter Sugestões de Missões
               </Button>
             </Link>
           </CardContent>

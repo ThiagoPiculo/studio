@@ -1,3 +1,4 @@
+
 "use client";
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -34,9 +35,9 @@ export function Header() {
                   <Users className="h-4 w-4" /> Família
                 </Button>
               </Link>
-              <Link href="/dashboard/tasks" passHref>
+              <Link href="/dashboard/missions" passHref>
                 <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
-                  <ListChecks className="h-4 w-4" /> Tarefas
+                  <ListChecks className="h-4 w-4" /> Missões
                 </Button>
               </Link>
               <Link href="/dashboard/rewards" passHref>
@@ -101,7 +102,7 @@ export function Header() {
                                 <Link href="/dashboard/family" onClick={closeSheet}><Users className="h-5 w-5" /> Família</Link>
                              </Button>
                              <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
-                                <Link href="/dashboard/tasks" onClick={closeSheet}><ListChecks className="h-5 w-5" /> Tarefas</Link>
+                                <Link href="/dashboard/missions" onClick={closeSheet}><ListChecks className="h-5 w-5" /> Missões</Link>
                              </Button>
                              <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
                                 <Link href="/dashboard/rewards" onClick={closeSheet}><Gift className="h-5 w-5" /> Recompensas</Link>

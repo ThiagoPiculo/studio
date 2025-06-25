@@ -1,3 +1,4 @@
+
 import {
   collection,
   doc,
@@ -15,7 +16,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, Task, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, Mission, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -568,19 +569,15 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
 
-// --- Tasks (Stubs for now) ---
-// export const addTask = async (taskData: Omit<Task, 'id' | 'createdAt' | 'isCompleted'>): Promise<Task> => {
-//   const newTaskRef = doc(collection(db, 'tasks'));
-//   const newTask: Task = {
-//     id: newTaskRef.id,
-//     ...taskData,
+// --- Missions (Stubs for now) ---
+// export const addMission = async (missionData: Omit<Mission, 'id' | 'createdAt' | 'isCompleted'>): Promise<Mission> => {
+//   const newMissionRef = doc(collection(db, 'missions'));
+//   const newMission: Mission = {
+//     id: newMissionRef.id,
+//     ...missionData,
 //     isCompleted: false,
 //     createdAt: serverTimestamp() as Timestamp,
 //   };
-//   await setDoc(newTaskRef, newTask);
-//   return newTask;
+//   await setDoc(newMissionRef, newMission);
+//   return newMission;
 // };
-
-    
-
-    

@@ -328,7 +328,7 @@ export default function ManageChildPage() {
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-1 gap-1 h-auto sm:grid-cols-2 lg:grid-cols-4 sm:h-10 sm:gap-2 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
-          <TabsTrigger value="tasks" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Tarefas</TabsTrigger>
+          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><StarIcon className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4" />Editar Perfil</TabsTrigger>
         </TabsList>
@@ -357,10 +357,10 @@ export default function ManageChildPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                   <Card className="bg-card border-border hover:shadow-lg transition-shadow">
                     <CardHeader>
-                      <CardTitle className="text-lg">Tarefas Recentes</CardTitle>
+                      <CardTitle className="text-lg">Missões Recentes</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-muted-foreground">Nenhuma tarefa recente. (Funcionalidade a ser implementada)</p>
+                      <p className="text-muted-foreground">Nenhuma missão recente. (Funcionalidade a ser implementada)</p>
                     </CardContent>
                   </Card>
                   <Card className="bg-card border-border hover:shadow-lg transition-shadow">
@@ -375,16 +375,16 @@ export default function ManageChildPage() {
               </CardContent>
             </Card>
           </TabsContent>
-          <TabsContent value="tasks">
+          <TabsContent value="missions">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Tarefas de {child.name}</CardTitle>
-                <CardDescription>Gerencie e atribua novas tarefas para ajudar {child.name} a crescer.</CardDescription>
+                <CardTitle>Missões de {child.name}</CardTitle>
+                <CardDescription>Gerencie e atribua novas missões para ajudar {child.name} a crescer.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-muted-foreground">A funcionalidade de gerenciamento detalhado de tarefas está em desenvolvimento.</p>
+                <p className="text-muted-foreground">A funcionalidade de gerenciamento detalhado de missões está em desenvolvimento.</p>
                 <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  <ListChecks className="mr-2 h-4 w-4" /> Adicionar Nova Tarefa
+                  <ListChecks className="mr-2 h-4 w-4" /> Adicionar Nova Missão
                 </Button>
               </CardContent>
             </Card>
@@ -566,7 +566,7 @@ export default function ManageChildPage() {
                       <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (tarefas, recompensas, progresso).
+                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso).
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -636,5 +636,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-
-    

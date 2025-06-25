@@ -1,3 +1,4 @@
+
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag } from 'lucide-react';
@@ -55,7 +56,7 @@ export interface FamilyInvitation {
 }
 
 
-export interface Task {
+export interface Mission {
   id:string; // Document ID
   childId: string;
   ownerId: string; // UID of the Usuário Master (for security rules)
