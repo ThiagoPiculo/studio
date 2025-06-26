@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useState } from 'react';
@@ -17,7 +18,8 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
+import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
+import Link from 'next/link';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -94,9 +96,16 @@ function CreateMissionTemplatePageContent() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
-      <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-      </Button>
+      <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+        <Link href="/dashboard/missions/ideas">
+          <Button variant="outline">
+            <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
+          </Button>
+        </Link>
+      </div>
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
