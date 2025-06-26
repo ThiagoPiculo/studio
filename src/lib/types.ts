@@ -17,7 +17,7 @@ export interface ChildProfile {
   ownerId: string; // UID of the Usuário Master
   familyId?: string | null; // Optional, ID of the family if shared
   name: string;
-  age: number;
+  birthDate: Timestamp;
   gender?: 'boy' | 'girl' | 'not-informed';
   stars: number;
   xp: number;

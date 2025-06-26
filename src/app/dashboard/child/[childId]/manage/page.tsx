@@ -60,6 +60,15 @@ export default function ManageChildPage() {
   const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
 
+  const calculateAge = (birthDate: Date): number => {
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   useEffect(() => {
     if (childId) {
@@ -285,6 +294,8 @@ export default function ManageChildPage() {
     );
   }
 
+  const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
+
   return (
     <div className="space-y-6 pb-8">
       <div className="flex items-center justify-between">
@@ -297,7 +308,7 @@ export default function ManageChildPage() {
         <CardHeader className="bg-gradient-to-r from-primary/20 via-background to-accent/10 p-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <Avatar className="h-28 w-28 border-4 border-primary text-5xl shadow-md">
-              {child.avatar ? <AvatarImage src={child.avatar} alt={child.name} /> : null}
+              <AvatarImage src={child.avatar} alt={child.name} />
               <AvatarFallback className="bg-accent text-accent-foreground font-bold">
                 {getInitials(child.name)}
               </AvatarFallback>
@@ -305,7 +316,7 @@ export default function ManageChildPage() {
             <div className="text-center sm:text-left flex-grow">
               <CardTitle className="text-4xl font-headline text-primary">{child.name}</CardTitle>
               <CardDescription className="text-base mt-1">
-                Idade: {child.age} Anos
+                {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
               </CardDescription>
                <div className="mt-2 flex items-center justify-center sm:justify-start space-x-4 text-sm">
                 <span className="font-semibold">Nível: {child.level}</span>

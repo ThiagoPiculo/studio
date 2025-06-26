@@ -10,6 +10,7 @@ import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2 } from
 import { useEffect, useState } from "react";
 import type { ChildProfile } from "@/lib/types";
 import { getChildProfilesByOwner, getChildProfilesByFamily } from "@/lib/firebase/firestore";
+import type { Timestamp } from "firebase/firestore";
 
 export default function DashboardPage() {
   const { user } = useAuth();
@@ -43,6 +44,18 @@ export default function DashboardPage() {
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+  
+  const calculateAge = (birthDate: Timestamp): number => {
+    if (!birthDate) return 0;
+    const today = new Date();
+    const birthDateObj = birthDate.toDate();
+    let age = today.getFullYear() - birthDateObj.getFullYear();
+    const m = today.getMonth() - birthDateObj.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   if (!user) {
@@ -97,26 +110,23 @@ export default function DashboardPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {children.map((child) => (
+            {children.map((child) => {
+              const age = calculateAge(child.birthDate);
+              return (
               <Card key={child.id} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-primary/10 via-card to-accent/5 p-4">
                   <CardTitle className="text-xl font-semibold">{child.name}</CardTitle>
-                  {/* <Star className="h-6 w-6 text-accent fill-accent" /> */}
                 </CardHeader>
                 <CardContent className="pt-4 p-4">
                   <div className="flex items-center justify-center mb-4">
                     <Avatar className="h-24 w-24 border-4 border-primary text-4xl shadow-sm">
-                      {child.avatar ? (
-                        <AvatarImage src={child.avatar} alt={child.name} data-ai-hint="child avatar image" />
-                      ) : (
-                         <AvatarImage src={`https://placehold.co/120x120.png?text=${child.name[0]}`} alt={child.name} data-ai-hint="child avatar placeholder" />
-                      )}
+                      <AvatarImage src={child.avatar} alt={child.name} />
                       <AvatarFallback className="bg-accent text-accent-foreground font-bold">
                         {getInitials(child.name)}
                       </AvatarFallback>
                     </Avatar>
                   </div>
-                  <p className="text-sm text-muted-foreground text-center mb-1">Idade: {child.age} Anos</p>
+                  <p className="text-sm text-muted-foreground text-center mb-1">Idade: {age} Anos</p>
                   <p className="text-sm text-muted-foreground text-center mb-2">Nível: {child.level}</p>
                   <div className="text-center mb-3">
                     <span className="text-xl font-bold text-accent">{child.stars} Estrelas </span>
@@ -130,7 +140,7 @@ export default function DashboardPage() {
                   </Link>
                 </CardContent>
               </Card>
-            ))}
+            )})}
           </div>
         )}
       </section>

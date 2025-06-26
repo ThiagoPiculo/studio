@@ -19,14 +19,24 @@ import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus } from "lucide-react";
+import { Loader2, UserPlus, Calendar as CalendarIcon } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { Calendar } from "../ui/calendar";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Timestamp } from "firebase/firestore";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
-  childAge: z.coerce.number().min(1, { message: "A idade deve ser pelo menos 1." }).max(18, { message: "A idade deve ser 18 ou menos." }),
+  childBirthDate: z.date({
+    required_error: "A data de nascimento é obrigatória.",
+  }),
   childGender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
   }),
+  childAvatar: z.string().url({ message: "Por favor, insira uma URL válida para o avatar." }).optional().or(z.literal("")),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -41,10 +51,13 @@ export function OnboardingForm() {
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       childName: "",
-      childAge: '' as unknown as number, 
+      childBirthDate: undefined,
       childGender: undefined,
+      childAvatar: "",
     },
   });
+
+  const avatarUrl = form.watch("childAvatar");
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
@@ -53,7 +66,12 @@ export function OnboardingForm() {
     }
     setIsLoading(true);
     try {
-      await addChildProfile(user.uid, { name: values.childName, age: values.childAge, gender: values.childGender });
+      await addChildProfile(user.uid, { 
+        name: values.childName, 
+        birthDate: Timestamp.fromDate(values.childBirthDate), 
+        gender: values.childGender,
+        avatar: values.childAvatar, 
+      });
       toast({ title: "Mini Herói Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard"); 
     } catch (error: any) {
@@ -84,19 +102,49 @@ export function OnboardingForm() {
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
-          name="childAge"
+          name="childBirthDate"
           render={({ field }) => (
-            <FormItem>
-              <FormLabel>Idade da Criança</FormLabel>
-              <FormControl>
-                <Input type="number" placeholder="Ex: 7" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
-              </FormControl>
+            <FormItem className="flex flex-col">
+              <FormLabel>Data de Nascimento</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <FormControl>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full pl-3 text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, "PPP", { locale: ptBR })
+                      ) : (
+                        <span>Escolha uma data</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
+                  </FormControl>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value}
+                    onSelect={field.onChange}
+                    disabled={(date) =>
+                      date > new Date() || date < new Date("1900-01-01")
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <FormField
           control={form.control}
           name="childGender"
@@ -133,6 +181,28 @@ export function OnboardingForm() {
             </FormItem>
           )}
         />
+        
+        <FormField
+          control={form.control}
+          name="childAvatar"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL do Avatar (Opcional)</FormLabel>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16 text-2xl">
+                    <AvatarImage src={avatarUrl} alt="Avatar" />
+                    <AvatarFallback>MH</AvatarFallback>
+                </Avatar>
+                <FormControl className="flex-1">
+                    <Input placeholder="https://exemplo.com/avatar.png" {...field} />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />

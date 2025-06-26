@@ -47,15 +47,16 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     id: newChildRef.id,
     ownerId,
     name: childData.name,
-    age: childData.age,
+    birthDate: childData.birthDate,
     gender: childData.gender,
+    avatar: childData.avatar || '',
     stars: 0,
     xp: 0,
     level: 1,
     accessCode,
     createdAt: now,
     updatedAt: now,
-    familyId: childData.familyId || null,
+    familyId: null,
   };
   await setDoc(newChildRef, newChild);
   return newChild;
@@ -138,7 +139,7 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 };
 
 
-export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'familyId' | 'updatedAt'>>) => {
+export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'familyId' | 'updatedAt' | 'stars' | 'xp' | 'level'>>) => {
   const childRef = doc(db, 'children', childId);
   await updateDoc(childRef, {
     ...updates,
