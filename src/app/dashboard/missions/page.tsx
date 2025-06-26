@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Xp } from 'lucide-react';
+import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getMissionTemplatesByOwnerOrFamily, deleteMissionTemplate } from '@/lib/firebase/firestore';
@@ -32,6 +32,7 @@ import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -42,8 +43,12 @@ export default function MissionsHubPage() {
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
+  
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -95,6 +100,11 @@ export default function MissionsHubPage() {
       case 'archived': return 'secondary'; 
       default: return 'outline';
     }
+  };
+
+  const handleOpenAssignDialog = (template: MissionTemplate) => {
+    setTemplateToAssign(template);
+    setIsAssignDialogOpen(true);
   };
 
   return (
@@ -187,7 +197,7 @@ export default function MissionsHubPage() {
                         variant="default" 
                         className="w-full" 
                         disabled={isProcessingAction || template.status === 'archived'}
-                        onClick={() => toast({ title: "Em breve!", description: "A funcionalidade de atribuir missões está em desenvolvimento."})}
+                        onClick={() => handleOpenAssignDialog(template)}
                       >
                          <BadgeCheck className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
                       </Button>
@@ -236,6 +246,17 @@ export default function MissionsHubPage() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+      )}
+
+      {templateToAssign && (
+        <AssignMissionDialog
+          template={templateToAssign}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={() => {
+            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+          }}
+        />
       )}
     </div>
   );

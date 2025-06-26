@@ -16,7 +16,7 @@ import {
   orderBy
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -616,6 +616,59 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
   }
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionTemplate));
+};
+
+// --- Mission Instances (Missões Atribuídas) ---
+
+export const addMissionInstance = async (
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'>,
+  templateSnapshot: MissionTemplate
+): Promise<MissionInstance> => {
+  const newInstanceRef = doc(collection(db, 'missionInstances'));
+  const now = serverTimestamp() as Timestamp;
+
+  const newInstance: MissionInstance = {
+    id: newInstanceRef.id,
+    templateId: instanceData.templateId,
+    childId: instanceData.childId,
+    ownerId: instanceData.ownerId,
+    familyId: instanceData.familyId || null,
+    title: templateSnapshot.title,
+    description: templateSnapshot.description || '',
+    category: templateSnapshot.category,
+    starsReward: templateSnapshot.starsReward,
+    xpReward: templateSnapshot.xpReward,
+    status: 'pending',
+    assignedAt: now,
+    updatedAt: now,
+  };
+  await setDoc(newInstanceRef, newInstance);
+  return newInstance;
+};
+
+export const getActiveChildMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<MissionInstance[]> => {
+  const q = query(
+    collection(db, 'missionInstances'),
+    where('templateId', '==', templateId),
+    where('childId', '==', childId),
+    where('status', '==', 'pending')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MissionInstance);
+};
+
+export const getMissionInstancesByChild = async (childId: string): Promise<MissionInstance[]> => {
+  const q = query(collection(db, 'missionInstances'), where('childId', '==', childId), orderBy('assignedAt', 'desc'));
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+};
+
+export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'>>): Promise<void> => {
+  const instanceRef = doc(db, 'missionInstances', instanceId);
+  await updateDoc(instanceRef, {
+    ...updates,
+    updatedAt: serverTimestamp() as Timestamp,
+  });
 };
 
 
