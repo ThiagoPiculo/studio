@@ -55,27 +55,24 @@ export function Breadcrumbs() {
           return;
       }
       
-      const newCrumbs: Breadcrumb[] = [{ label: 'Painel', href: '/dashboard' }];
-      let pathSoFar = '/dashboard';
-      let crumbsToUpdate: Breadcrumb[] = [];
-
       const promises = pathSegments.map(async (segment, index) => {
         if (index === 0) return null; // Skip 'dashboard' segment
 
-        pathSoFar += `/${segment}`;
+        const currentCrumbPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
 
         if (structuralSegmentsToSkip.includes(segment)) {
           return null;
         }
 
         let label = pathTranslations[segment] || titleCase(segment);
-        const currentPath = pathSoFar;
-        const crumb: Breadcrumb = { label, href: currentPath, isLoading: false };
+        const crumb: Breadcrumb = { label, href: currentCrumbPath, isLoading: false };
 
         if (params.childId && segment === params.childId) {
           crumb.isLoading = true;
           const child = await getChildProfileById(segment);
           crumb.label = child?.name || 'Herói';
+          // FIX: A breadcrumb for a child should point to their 'manage' page, not a directory.
+          crumb.href = `/dashboard/child/${segment}/manage`;
           crumb.isLoading = false;
         } else if (params.missionId && segment === params.missionId) {
           crumb.isLoading = true;
