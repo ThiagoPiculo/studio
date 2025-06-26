@@ -28,9 +28,10 @@ import {
   getUnassignedChildProfilesByOwner,
   assignChildrenToFamily,
   removeChildFromFamily,
+  updateFamilyName,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -76,17 +77,26 @@ function FamilyPageContent() {
   const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
   const [isRemovingChild, setIsRemovingChild] = useState(false);
   
-  // State for adding child to family dialog
   const [isAddChildDialogOpen, setIsAddChildDialogOpen] = useState(false);
   const [unassignedChildren, setUnassignedChildren] = useState<ChildProfile[]>([]);
   const [isLoadingUnassigned, setIsLoadingUnassigned] = useState(false);
   const [selectedChildrenToAdd, setSelectedChildrenToAdd] = useState<Record<string, boolean>>({});
   const [isAssigningChildren, setIsAssigningChildren] = useState(false);
+  
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [familyNameInput, setFamilyNameInput] = useState('');
+  const [isUpdatingName, setIsUpdatingName] = useState(false);
 
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+  
+  useEffect(() => {
+    if (familyDetails) {
+        setFamilyNameInput(familyDetails.name);
+    }
+  }, [familyDetails]);
 
   useEffect(() => {
     if (!user || !isClient) return;
@@ -130,6 +140,28 @@ function FamilyPageContent() {
       fetchFamilyData();
     }
   }, [currentContext, user, toast, setCurrentContext, isClient]);
+
+  const handleUpdateFamilyName = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !familyDetails || !familyNameInput.trim() || familyNameInput.trim() === familyDetails.name) {
+      setIsEditingName(false);
+      return;
+    }
+    setIsUpdatingName(true);
+    try {
+      await updateFamilyName(familyDetails.id, user.uid, familyNameInput.trim());
+      toast({ title: "Nome da Família Atualizado!", description: "O novo nome da sua aventura em família foi salvo." });
+      
+      setFamilyDetails(prev => prev ? { ...prev, name: familyNameInput.trim() } : null);
+      setAvailableContexts(contexts => contexts.map(c => c.id === familyDetails.id ? { ...c, name: familyNameInput.trim() } : c));
+      
+      setIsEditingName(false);
+    } catch (error: any) {
+      toast({ title: "Erro ao Atualizar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsUpdatingName(false);
+    }
+  };
 
   const handleCreateFamily = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -386,10 +418,35 @@ function FamilyPageContent() {
       <div className="space-y-8">
         <Card className="shadow-lg">
           <CardHeader>
-            <div className="flex items-center gap-3">
-              <Users className="h-8 w-8 text-primary" />
-              <div>
-                <CardTitle className="text-3xl font-headline">Família: {familyDetails.name}</CardTitle>
+            <div className="flex items-start gap-4">
+              <Users className="h-8 w-8 text-primary mt-1" />
+              <div className='flex-grow'>
+                {isOwner && isEditingName ? (
+                  <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
+                    <Input
+                      value={familyNameInput}
+                      onChange={(e) => setFamilyNameInput(e.target.value)}
+                      className="h-auto text-3xl font-headline p-0 border-0 border-b-2 border-primary/50 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
+                      autoFocus
+                      onKeyDown={(e) => { if (e.key === 'Escape') { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}}
+                    />
+                    <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isUpdatingName || !familyNameInput.trim() || familyNameInput.trim() === familyDetails.name}>
+                      {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-5 w-5" />}
+                    </Button>
+                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}>
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </form>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-3xl font-headline">Família: {familyDetails.name}</CardTitle>
+                    {isOwner && (
+                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
+                        <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                      </Button>
+                    )}
+                  </div>
+                )}
                 <CardDescription>Gerencie os membros e as configurações da sua família.</CardDescription>
               </div>
             </div>
@@ -809,5 +866,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
-    

@@ -339,6 +339,18 @@ export const deleteFamily = async (familyId: string): Promise<void> => {
   await batch.commit();
 };
 
+export const updateFamilyName = async (familyId: string, ownerId: string, newName: string): Promise<void> => {
+  const familyRef = doc(db, 'families', familyId);
+  const familySnap = await getDoc(familyRef);
+  if (!familySnap.exists() || familySnap.data().ownerId !== ownerId) {
+    throw new Error("Apenas o proprietário pode editar o nome da família.");
+  }
+  await updateDoc(familyRef, {
+    name: newName,
+    updatedAt: serverTimestamp(),
+  });
+};
+
 export const removeFamilyMember = async (familyId: string, userIdToRemove: string, currentUserId: string): Promise<void> => {
     const familyRef = doc(db, 'families', familyId);
     const familySnap = await getDoc(familyRef);

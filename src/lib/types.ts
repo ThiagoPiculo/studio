@@ -34,6 +34,7 @@ export interface Family {
   ownerId: string; // UID of the Usuário Master who created it
   inviteCode: string; // 6-digit code for invitation
   createdAt: Timestamp;
+  updatedAt?: Timestamp;
 }
 
 export interface FamilyMembership {
