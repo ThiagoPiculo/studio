@@ -3,18 +3,18 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, uploadAvatar } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance } from '@/lib/types';
-import { rewardCategories } from '@/lib/types';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
+import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, Camera } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
 import { Badge } from '@/components/ui/badge';
+import { AddMissionDialog } from '@/components/dashboard/missions/AddMissionDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,7 +43,6 @@ import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -67,10 +66,16 @@ export default function ManageChildPage() {
   const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
   
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [isLoadingMissions, setIsLoadingMissions] = useState(false);
+  const [missionStatusFilter, setMissionStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [missionToComplete, setMissionToComplete] = useState<MissionInstance | null>(null);
+  const [isProcessingMissionAction, setIsProcessingMissionAction] = useState<string | null>(null);
+  const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
+
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
   const [stats, setStats] = useState({ completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0 });
-
 
   const calculateXpDetails = (level: number, currentXp: number) => {
     let xpForCurrentLevel = 0;
@@ -107,7 +112,7 @@ export default function ManageChildPage() {
       if (profile) {
         setChild(profile);
       } else {
-        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herois. Verifique o link ou volte ao painel.", variant: "destructive" });
+        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herói. Verifique o link ou volte ao painel.", variant: "destructive" });
         router.push('/dashboard');
       }
     } catch (error) {
@@ -125,6 +130,20 @@ export default function ManageChildPage() {
         router.push('/dashboard');
     }
   }, [childId, router, fetchChildData]);
+  
+  const fetchMissionData = useCallback(async () => {
+      if (!childId) return;
+      setIsLoadingMissions(true);
+      try {
+          const missions = await getMissionInstancesByChild(childId);
+          setMissionInstances(missions);
+      } catch (error) {
+          console.error("Error fetching mission instances:", error);
+          toast({ title: "Erro ao Carregar Missões", description: "Não foi possível buscar as missões atribuídas.", variant: "destructive" });
+      } finally {
+          setIsLoadingMissions(false);
+      }
+  }, [childId, toast]);
 
   useEffect(() => {
     if (activeTab === 'rewards' && childId) {
@@ -146,6 +165,10 @@ export default function ManageChildPage() {
         .finally(() => {
           setIsLoadingRewards(false);
         });
+    }
+    
+    if (activeTab === 'missions' && childId) {
+        fetchMissionData();
     }
     
     if (activeTab === 'overview' && childId) {
@@ -184,7 +207,7 @@ export default function ManageChildPage() {
         setIsLoadingActivities(false);
       });
     }
-  }, [activeTab, childId, toast]);
+  }, [activeTab, childId, toast, fetchMissionData]);
   
   const handleProfileUpdate = useCallback(() => {
     fetchChildData().then(() => {
@@ -224,6 +247,37 @@ export default function ManageChildPage() {
       setIsDeleting(false);
     }
   };
+  
+  const handleCompleteMission = async (mission: MissionInstance) => {
+    if (!child) return;
+    setIsProcessingMissionAction(mission.id);
+    try {
+      const originalLevel = child.level;
+      const updatedChildProfile = await completeMissionInstance(mission.id);
+      setChild(updatedChildProfile);
+      setMissionInstances(prev => 
+        prev.map(m => m.id === mission.id ? { ...m, status: 'completed', completedAt: new Date() as any } : m)
+          .sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds)
+      );
+
+      let toastDescription = `A missão "${mission.title}" foi concluída.`;
+      if (updatedChildProfile.level > originalLevel) {
+        toastDescription += ` E ${child.name} subiu para o Nível ${updatedChildProfile.level}! Incrível!`;
+      }
+      
+      toast({
+        title: "Missão Cumprida!",
+        description: toastDescription,
+      });
+
+    } catch(error) {
+      console.error("Error completing mission:", error);
+      toast({ title: "Erro ao Concluir Missão", description: "Não foi possível marcar a missão como concluída.", variant: "destructive" });
+    } finally {
+      setIsProcessingMissionAction(null);
+    }
+  };
+
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -233,6 +287,11 @@ export default function ManageChildPage() {
   const getCategoryDetails = (categoryId: ChildRewardInstance['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
+  
+  const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
+    return missionCategories.find(cat => cat.id === categoryId);
+  };
+
 
   const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
@@ -251,6 +310,25 @@ export default function ManageChildPage() {
       default: return 'Desconhecido';
     }
   };
+  
+  const getMissionStatusBadgeVariant = (status: MissionInstance['status']): "default" | "secondary" | "destructive" => {
+    switch (status) {
+        case 'pending': return 'default';
+        case 'completed': return 'secondary';
+        case 'expired': return 'destructive';
+        default: return 'secondary';
+    }
+  };
+
+  const getMissionStatusText = (status: MissionInstance['status']): string => {
+      switch (status) {
+          case 'pending': return 'Pendente';
+          case 'completed': return 'Concluída';
+          case 'expired': return 'Expirada';
+          default: return 'Desconhecido';
+      }
+  };
+
 
   const handleMarkAsRedeemed = async () => {
     if (!instanceToManage || !child) return;
@@ -335,6 +413,12 @@ export default function ManageChildPage() {
     }
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
+  
+  const filteredMissions = useMemo(() => {
+    if (missionStatusFilter === 'all') return missionInstances;
+    return missionInstances.filter(mission => mission.status === missionStatusFilter);
+  }, [missionInstances, missionStatusFilter]);
+
 
   const getStatusFilterDisplayName = (filterValue: typeof instanceStatusFilter) => {
     switch (filterValue) {
@@ -345,6 +429,15 @@ export default function ManageChildPage() {
     }
   };
   
+  const getMissionStatusFilterDisplayName = (filterValue: typeof missionStatusFilter) => {
+    switch (filterValue) {
+        case 'pending': return 'Pendentes';
+        case 'completed': return 'Concluídas';
+        default: return 'Todas';
+    }
+  };
+
+  
   const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
     child ? calculateXpDetails(child.level, child.xp) : { progressPercentage: 0, xpRemaining: 0, xpForNextLevel: 0 },
     [child]
@@ -354,7 +447,7 @@ export default function ManageChildPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando dados do Mini Herois...</p>
+        <p className="text-lg text-muted-foreground">Carregando dados do Mini Herói...</p>
       </div>
     );
   }
@@ -362,7 +455,7 @@ export default function ManageChildPage() {
   if (!child) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
-        <p className="text-lg text-destructive">Mini Herois não encontrado.</p>
+        <p className="text-lg text-destructive">Mini Herói não encontrado.</p>
         <Button onClick={() => router.push('/dashboard')} className="mt-4">
             Voltar ao Painel
         </Button>
@@ -442,7 +535,7 @@ export default function ManageChildPage() {
       </Card>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto lg:grid-cols-4 lg:h-10 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-4 lg:grid-cols-4 lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><BarChart className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
@@ -589,18 +682,125 @@ export default function ManageChildPage() {
           </TabsContent>
           <TabsContent value="missions">
             <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Missões de {child.name}</CardTitle>
-                <CardDescription>Gerencie e atribua novas missões para ajudar {child.name} a crescer.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-muted-foreground">A funcionalidade de gerenciamento detalhado de missões está em desenvolvimento.</p>
-                <Button className="bg-accent text-accent-foreground hover:bg-accent/90">
-                  <ListChecks className="mr-2 h-4 w-4" /> Adicionar Nova Missão
-                </Button>
-              </CardContent>
+                <CardHeader>
+                    <CardTitle>Missões de {child.name}</CardTitle>
+                    <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
+                    <div className="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status:</Label>
+                            <RadioGroup
+                                value={missionStatusFilter}
+                                onValueChange={(value) => setMissionStatusFilter(value as 'all' | 'pending' | 'completed')}
+                                className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="all" id={`mission-filter-all-${childId}`} />
+                                    <Label htmlFor={`mission-filter-all-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="pending" id={`mission-filter-pending-${childId}`} />
+                                    <Label htmlFor={`mission-filter-pending-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Pendentes</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="completed" id={`mission-filter-completed-${childId}`} />
+                                    <Label htmlFor={`mission-filter-completed-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Concluídas</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
+                        </Button>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {isLoadingMissions ? (
+                        <div className="flex justify-center items-center py-10">
+                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                            <p className="ml-3 text-muted-foreground">Carregando missões...</p>
+                        </div>
+                    ) : filteredMissions.length === 0 ? (
+                        <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                            <p className="text-lg text-muted-foreground">
+                                {missionInstances.length === 0
+                                    ? `${child.name} ainda não tem missões atribuídas.`
+                                    : `Nenhuma missão encontrada com o status "${getMissionStatusFilterDisplayName(missionStatusFilter)}".`}
+                            </p>
+                            <p className="text-sm text-muted-foreground mt-1">
+                                {missionInstances.length === 0
+                                    ? 'Clique em "Adicionar Nova Missão" para começar a jornada!'
+                                    : 'Tente um filtro diferente ou adicione uma nova missão.'}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {filteredMissions.map((instance) => {
+                                const categoryDetails = getMissionCategoryDetails(instance.category);
+                                const CategoryIconComponent = categoryDetails?.icon;
+                                return (
+                                    <Card key={instance.id} className={`shadow-sm flex flex-col transition-all ${isProcessingMissionAction === instance.id ? 'opacity-50' : 'hover:shadow-md'}`}>
+                                        <CardHeader>
+                                            <div className="flex justify-between items-start">
+                                                <CardTitle className="text-lg">{instance.title}</CardTitle>
+                                                <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                                                    {getMissionStatusText(instance.status)}
+                                                </Badge>
+                                            </div>
+                                            {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+                                        </CardHeader>
+                                        <CardContent className="space-y-3 flex-grow text-sm">
+                                            {categoryDetails && (
+                                                <div className="flex items-center">
+                                                    <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                                                        {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                                                    </span>
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
+                                                        {categoryDetails.label}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center text-muted-foreground font-medium">
+                                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
+                                                Recompensa: {instance.starsReward} Estrelas
+                                            </div>
+                                            <div className="flex items-center text-muted-foreground font-medium">
+                                                <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
+                                                Experiência: {instance.xpReward} XP
+                                            </div>
+                                            <p className="text-xs text-muted-foreground pt-2">
+                                                Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                                            </p>
+                                            {instance.status === 'completed' && instance.completedAt && (
+                                                <p className="text-xs text-green-600 font-medium">
+                                                    Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
+                                                </p>
+                                            )}
+                                        </CardContent>
+                                        <CardFooter>
+                                            {instance.status === 'pending' ? (
+                                                <Button 
+                                                    className="w-full bg-green-600 hover:bg-green-700" 
+                                                    onClick={() => handleCompleteMission(instance)}
+                                                    disabled={!!isProcessingMissionAction}
+                                                >
+                                                    {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                                    Marcar como Concluída
+                                                </Button>
+                                            ) : (
+                                                <Button variant="outline" className="w-full" disabled>
+                                                    <CheckCircle className="mr-2 h-4 w-4" /> Missão Finalizada
+                                                </Button>
+                                            )}
+                                        </CardFooter>
+                                    </Card>
+                                );
+                            })}
+                        </div>
+                    )}
+                </CardContent>
             </Card>
           </TabsContent>
+
           <TabsContent value="rewards">
             <Card className="shadow-md">
               <CardHeader>
@@ -757,6 +957,7 @@ export default function ManageChildPage() {
                 <EditChildProfileForm 
                   child={child} 
                   onProfileUpdate={handleProfileUpdate}
+                  onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
                 />
               </CardContent>
@@ -764,6 +965,15 @@ export default function ManageChildPage() {
           </TabsContent>
         </div>
       </Tabs>
+      
+      {child && (
+        <AddMissionDialog 
+            child={child} 
+            isOpen={isAddMissionDialogOpen}
+            onOpenChange={setIsAddMissionDialogOpen}
+            onMissionAdded={fetchMissionData}
+        />
+      )}
 
       {/* Redeem Confirmation Dialog */}
       {instanceToManage && isRedeemConfirmOpen && child && (
@@ -812,9 +1022,6 @@ export default function ManageChildPage() {
           </AlertDialogContent>
         </AlertDialog>
       )}
-
     </div>
   );
 }
-
-    

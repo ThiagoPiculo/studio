@@ -13,7 +13,8 @@ import {
   Timestamp,
   writeBatch,
   setDoc,
-  orderBy
+  orderBy,
+  runTransaction
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
@@ -159,11 +160,22 @@ export const regenerateChildAccessCode = async (childId: string): Promise<string
 
 export const deleteChildProfile = async (childId: string): Promise<void> => {
   const childRef = doc(db, 'children', childId);
+  
+  const batch = writeBatch(db);
+
+  // Delete associated reward instances
   const rewardInstancesQuery = query(collection(db, "childRewardInstances"), where("childId", "==", childId));
   const rewardInstancesSnapshot = await getDocs(rewardInstancesQuery);
-  const batch = writeBatch(db);
   rewardInstancesSnapshot.forEach(doc => batch.delete(doc.ref));
+
+  // Delete associated mission instances
+  const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
+  const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
+  missionInstancesSnapshot.forEach(doc => batch.delete(doc.ref));
+  
+  // Delete the child profile itself
   batch.delete(childRef);
+
   await batch.commit();
 };
 
@@ -686,9 +698,66 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
   const instanceRef = doc(db, 'missionInstances', instanceId);
   await updateDoc(instanceRef, {
     ...updates,
-    updatedAt: serverTimestamp() as Timestamp,
+    updatedAt: serverTimestamp(),
   });
 };
+
+export const completeMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {
+    const missionRef = doc(db, 'missionInstances', missionInstanceId);
+    
+    const calculateXpForNextLevel = (level: number): number => {
+        let xpForCurrentLevel = 0;
+        for (let i = 1; i < level; i++) {
+            xpForCurrentLevel += 100 + (i - 1) * 50;
+        }
+        return xpForCurrentLevel + (100 + (level - 1) * 50);
+    };
+
+    return await runTransaction(db, async (transaction) => {
+        const missionSnap = await transaction.get(missionRef);
+        if (!missionSnap.exists() || missionSnap.data().status !== 'pending') {
+            throw new Error("Missão não encontrada ou já foi concluída.");
+        }
+        
+        const missionData = missionSnap.data() as MissionInstance;
+        const childRef = doc(db, 'children', missionData.childId);
+        const childSnap = await transaction.get(childRef);
+        
+        if (!childSnap.exists()) {
+            throw new Error("Perfil da criança associado à missão não foi encontrado.");
+        }
+        
+        const childData = childSnap.data() as ChildProfile;
+        
+        const newStars = childData.stars + missionData.starsReward;
+        const newXp = childData.xp + missionData.xpReward;
+        let newLevel = childData.level;
+
+        let xpForNextLevel = calculateXpForNextLevel(childData.level);
+        while (newXp >= xpForNextLevel) {
+            newLevel++;
+            xpForNextLevel = calculateXpForNextLevel(newLevel);
+        }
+        
+        const updatedChildData = {
+            stars: newStars,
+            xp: newXp,
+            level: newLevel,
+            updatedAt: serverTimestamp(),
+        };
+        transaction.update(childRef, updatedChildData);
+        
+        transaction.update(missionRef, {
+            status: 'completed',
+            completedAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+        });
+        
+        const fullChildData = { ...childData, ...updatedChildData, id: childSnap.id, birthDate: childData.birthDate, createdAt: childData.createdAt, updatedAt: serverTimestamp() as Timestamp } as ChildProfile;
+        return fullChildData;
+    });
+};
+
 
 
 // --- Child Login ---
