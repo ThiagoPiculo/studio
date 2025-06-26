@@ -4,13 +4,13 @@
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails } from '@/lib/types';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -38,7 +38,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Progress } from '@/components/ui/progress';
+import { Separator } from '@/components/ui/separator';
+import { formatDistanceToNow } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
+type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
 export default function ManageChildPage() {
   const params = useParams();
@@ -59,6 +64,34 @@ export default function ManageChildPage() {
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
   const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
+  
+  const [activities, setActivities] = useState<Activity[]>([]);
+  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
+  const [stats, setStats] = useState({ completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0 });
+
+
+  const calculateXpDetails = (level: number, currentXp: number) => {
+    let xpForCurrentLevel = 0;
+    let xpToLevelUp = 0;
+
+    for (let i = 1; i < level; i++) {
+      xpToLevelUp = 100 + (i - 1) * 50;
+      xpForCurrentLevel += xpToLevelUp;
+    }
+    
+    const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
+    const xpInCurrentLevel = currentXp - xpForCurrentLevel;
+    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
+    
+    const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
+    const xpRemaining = xpForNextLevel - currentXp;
+
+    return {
+      progressPercentage,
+      xpRemaining,
+      xpForNextLevel
+    };
+  };
 
   const calculateAge = (birthDate: Date): number => {
     const today = new Date();
@@ -105,8 +138,8 @@ export default function ManageChildPage() {
           setChildRewards(rewards.sort((a, b) => {
             if (a.status === 'active' && b.status !== 'active') return -1;
             if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1; // Inativas antes de resgatadas
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1; // Resgatadas depois de inativas
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1; 
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1; 
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
         })
@@ -118,11 +151,48 @@ export default function ManageChildPage() {
           setIsLoadingRewards(false);
         });
     }
+    
+    if (activeTab === 'overview' && childId) {
+      setIsLoadingActivities(true);
+      Promise.all([
+        getMissionInstancesByChild(childId),
+        getChildRewardInstancesByChild(childId),
+      ]).then(([missions, rewards]) => {
+        const completedMissions = missions.filter(m => m.status === 'completed');
+        const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
+        
+        const totalStarsEarned = completedMissions.reduce((sum, m) => sum + m.starsReward, 0);
+
+        setStats({
+          completedMissions: completedMissions.length,
+          starsEarned: totalStarsEarned,
+          rewardsRedeemed: redeemedRewards.length,
+        });
+
+        const allActivities: Activity[] = [
+          ...completedMissions.map(m => ({ ...m, type: 'mission' as const })),
+          ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const })),
+        ].sort((a, b) => {
+          const dateA = a.type === 'mission' ? a.completedAt : a.redeemedAt;
+          const dateB = b.type === 'mission' ? b.completedAt : b.redeemedAt;
+          
+          if (!dateA || !dateB) return 0;
+          
+          return (dateB as any).seconds - (dateA as any).seconds;
+        });
+        setActivities(allActivities.slice(0, 10)); // Limit to 10 recent activities
+      }).catch(error => {
+        console.error("Error fetching activities:", error);
+        toast({ title: "Erro ao Carregar Atividades", description: "Não foi possível buscar o histórico de atividades.", variant: "destructive" });
+      }).finally(() => {
+        setIsLoadingActivities(false);
+      });
+    }
   }, [activeTab, childId, toast]);
   
   const handleProfileUpdate = () => {
     toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
-    fetchChildData(); // Re-fetch data from Firestore to guarantee freshness
+    fetchChildData(); 
   };
 
   const handleRegenerateAccessCode = async () => {
@@ -277,6 +347,11 @@ export default function ManageChildPage() {
       default: return 'Todas';
     }
   };
+  
+  const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
+    child ? calculateXpDetails(child.level, child.xp) : { progressPercentage: 0, xpRemaining: 0, xpForNextLevel: 0 },
+    [child]
+  );
 
   if (isLoading) {
     return (
@@ -354,51 +429,114 @@ export default function ManageChildPage() {
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-1 gap-1 h-auto sm:grid-cols-2 lg:grid-cols-4 sm:h-10 sm:gap-2 bg-muted/50 p-1 rounded-lg">
-          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
+          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><BarChart className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4" />Editar Perfil</TabsTrigger>
         </TabsList>
         
         <div className="mt-4">
-          <TabsContent value="overview">
+          <TabsContent value="overview" className="space-y-6">
+             <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle className="text-lg">Progresso para o Próximo Nível</CardTitle>
+                <CardDescription>
+                  {child.xp} / {xpForNextLevel} XP
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Progress value={progressPercentage} className="h-4" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                <p className="text-right text-sm text-muted-foreground mt-2">
+                  Faltam {xpRemaining > 0 ? xpRemaining : 0} XP para o próximo nível!
+                </p>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
+                  <CheckSquare className="h-5 w-5 text-green-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.completedMissions}</div>
+                  <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
+                  <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.starsEarned}</div>
+                  <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
+                </CardContent>
+              </Card>
+              <Card className="shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
+                  <Trophy className="h-5 w-5 text-orange-500" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.rewardsRedeemed}</div>
+                  <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
+                </CardContent>
+              </Card>
+            </div>
+            
             <Card className="shadow-md">
               <CardHeader>
-                <div className="flex items-center gap-2">
-                  <CardTitle>Visão Geral de {child.name}</CardTitle>
-                  <Popover>
-                      <PopoverTrigger asChild>
-                          <button aria-label="Mais informações">
-                              <Info className="h-4 w-4 text-muted-foreground cursor-pointer hover:text-primary transition-colors" />
-                          </button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-80 text-sm text-muted-foreground">
-                          <p>Este painel oferece um resumo do progresso de {child.name}, incluindo atividades recentes e recompensas.</p>
-                          <p className="mt-2">Em breve, você verá gráficos detalhados e estatísticas de evolução aqui.</p>
-                      </PopoverContent>
-                  </Popover>
-                </div>
-                <CardDescription>Resumo das atividades e progresso.</CardDescription>
+                <CardTitle>Atividades Recentes</CardTitle>
+                <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                  <Card className="bg-card border-border hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Missões Recentes</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">Nenhuma missão recente. (Funcionalidade a ser implementada)</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-card border-border hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Recompensas Resgatadas Recentemente</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-muted-foreground">Nenhuma recompensa resgatada recentemente. (Funcionalidade a ser implementada)</p>
-                    </CardContent>
-                  </Card>
-                </div>
+              <CardContent>
+                {isLoadingActivities ? (
+                  <div className="flex items-center justify-center p-6">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <p className="ml-2 text-muted-foreground">Buscando histórico...</p>
+                  </div>
+                ) : activities.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <Clock className="h-10 w-10 mx-auto mb-2" />
+                    Nenhuma atividade recente registrada.
+                  </div>
+                ) : (
+                  <ul className="space-y-4">
+                    {activities.map((activity, index) => {
+                      const date = activity.type === 'mission' ? activity.completedAt?.toDate() : activity.redeemedAt?.toDate();
+                      const timeAgo = date ? formatDistanceToNow(date, { addSuffix: true, locale: ptBR }) : '';
+
+                      return (
+                        <Fragment key={activity.id}>
+                          <li className="flex items-center gap-4">
+                            {activity.type === 'mission' ? (
+                               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
+                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                              </div>
+                            ) : (
+                              <div className="p-2 bg-yellow-100 dark:bg-yellow-800/30 rounded-full">
+                                <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                              </div>
+                            )}
+                            <div className="flex-grow">
+                              <p className="font-semibold">{activity.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {activity.type === 'mission'
+                                  ? `+${activity.xpReward} XP, +${activity.starsReward} Estrelas`
+                                  : `-${activity.starsCost} Estrelas`}
+                              </p>
+                            </div>
+                            <div className="text-right flex-shrink-0">
+                              <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                            </div>
+                          </li>
+                          {index < activities.length - 1 && <Separator />}
+                        </Fragment>
+                      );
+                    })}
+                  </ul>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
