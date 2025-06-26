@@ -57,7 +57,7 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 interface EditChildProfileFormProps {
   child: ChildProfile;
-  onProfileUpdate: (updatedProfile: Partial<ChildProfile>) => void;
+  onProfileUpdate: () => void;
   onDeleteProfile: () => void;
   isDeleting: boolean;
 }
@@ -123,11 +123,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         avatar: avatarUrlToSave,
       };
       await updateChildProfile(child.id, updates);
-      onProfileUpdate(updates); 
-      toast({
-        title: "Perfil Atualizado!",
-        description: `As informações de ${data.name} foram salvas com sucesso.`,
-      });
+      onProfileUpdate();
     } catch (error) {
       console.error("Error updating child profile:", error);
       toast({

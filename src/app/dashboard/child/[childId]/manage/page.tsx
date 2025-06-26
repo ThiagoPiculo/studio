@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile } from '@/lib/firebase/firestore';
@@ -70,29 +70,32 @@ export default function ManageChildPage() {
     return age;
   };
 
+  const fetchChildData = useCallback(async () => {
+    if (!childId) return;
+    setIsLoading(true);
+    try {
+      const profile = await getChildProfileById(childId);
+      if (profile) {
+        setChild(profile);
+      } else {
+        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herois. Verifique o link ou volte ao painel.", variant: "destructive" });
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error("Error fetching child profile:", error);
+      toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados da criança. Verifique sua conexão ou tente recarregar a página.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [childId, router, toast]);
+
   useEffect(() => {
     if (childId) {
-      setIsLoading(true);
-      getChildProfileById(childId)
-        .then((profile) => {
-          if (profile) {
-            setChild(profile);
-          } else {
-            toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herois. Verifique o link ou volte ao painel.", variant: "destructive" });
-            router.push('/dashboard');
-          }
-        })
-        .catch((error) => {
-          console.error("Error fetching child profile:", error);
-          toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados da criança. Verifique sua conexão ou tente recarregar a página.", variant: "destructive" });
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
+      fetchChildData();
     } else {
         router.push('/dashboard');
     }
-  }, [childId, router, toast]);
+  }, [childId, router, fetchChildData]);
 
   useEffect(() => {
     if (activeTab === 'rewards' && childId) {
@@ -117,9 +120,9 @@ export default function ManageChildPage() {
     }
   }, [activeTab, childId, toast]);
   
-  const handleProfileUpdate = (updatedProfile: Partial<ChildProfile>) => {
-    setChild(prev => prev ? { ...prev, ...updatedProfile } : null);
-    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${updatedProfile.name || child?.name} foram salvas.` });
+  const handleProfileUpdate = () => {
+    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
+    fetchChildData(); // Re-fetch data from Firestore to guarantee freshness
   };
 
   const handleRegenerateAccessCode = async () => {
@@ -629,5 +632,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-
-    
