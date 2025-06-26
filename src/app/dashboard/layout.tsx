@@ -7,6 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
 import { Loader2 } from 'lucide-react';
+import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading, isChildAuthenticated } = useAuth();
@@ -49,6 +50,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     <div className="flex min-h-screen flex-col">
       <Header />
       <main className="flex-1 container mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <Breadcrumbs />
         {children}
       </main>
       <Footer />
