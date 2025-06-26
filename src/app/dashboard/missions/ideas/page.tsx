@@ -3,15 +3,46 @@
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { Lightbulb, ArrowRight, ArrowLeft } from "lucide-react";
+import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PredefinedMissionIdea } from "@/lib/predefined-missions";
-import Link from "next/link";
+import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import type { MissionTemplate } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function MissionIdeasPage() {
     const router = useRouter();
+    const { user } = useAuth();
+    const { currentContext } = useFamily();
+
+    const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!user) {
+            setIsLoading(false);
+            return;
+        }
+        setIsLoading(true);
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+            .then(setUserTemplates)
+            .catch((err) => {
+                console.error("Error fetching user mission templates:", err);
+            })
+            .finally(() => setIsLoading(false));
+    }, [user, currentContext]);
+
+    const existingTitles = useMemo(() => {
+        // Normalize titles for comparison: lowercase and trim whitespace
+        return new Set(userTemplates.map(t => t.title.trim().toLowerCase()));
+    }, [userTemplates]);
 
     const handleUseIdea = (idea: PredefinedMissionIdea) => {
         const queryParams = new URLSearchParams();
@@ -19,6 +50,29 @@ export default function MissionIdeasPage() {
         queryParams.append('category', idea.suggestedAppCategory);
         router.push(`/dashboard/missions/new?${queryParams.toString()}`);
     };
+    
+    const handleGoToCatalog = () => {
+        router.push('/dashboard/missions');
+    }
+
+    if (isLoading) {
+        return (
+            <div className="space-y-8 pb-10">
+                <Skeleton className="h-10 w-64" />
+                <Card className="shadow-lg">
+                    <CardHeader>
+                        <Skeleton className="h-8 w-1/2" />
+                        <Skeleton className="h-4 w-3/4 mt-2" />
+                    </CardHeader>
+                </Card>
+                <div className="space-y-4">
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="space-y-8 pb-10">
@@ -32,7 +86,7 @@ export default function MissionIdeasPage() {
                         Inspire-se: Ideias de Missões
                     </CardTitle>
                     <CardDescription>
-                        Não sabe por onde começar? Use estas ideias como base para criar suas próprias missões personalizadas!
+                        Use estas ideias como base para criar missões! Se uma ideia já existe no seu catálogo, você pode gerenciá-la diretamente.
                     </CardDescription>
                 </CardHeader>
             </Card>
@@ -51,21 +105,43 @@ export default function MissionIdeasPage() {
                         </AccordionTrigger>
                         <AccordionContent className="p-6 pt-0">
                             <ul className="space-y-3 pt-1">
-                                {group.items.map((idea) => (
-                                    <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
+                                {group.items.map((idea) => {
+                                    const alreadyExists = existingTitles.has(idea.title.trim().toLowerCase());
+                                    return (
+                                     <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
                                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                            <h4 className="font-semibold text-md flex-grow">{idea.title}</h4>
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
-                                                onClick={() => handleUseIdea(idea)}
-                                                className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
-                                            >
-                                                Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Button>
+                                            <div className="flex items-center gap-2 flex-grow flex-wrap">
+                                                <h4 className="font-semibold text-md">{idea.title}</h4>
+                                                {alreadyExists && (
+                                                    <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
+                                                        <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
+                                                        No Catálogo
+                                                    </Badge>
+                                                )}
+                                            </div>
+                                            {alreadyExists ? (
+                                                 <Button 
+                                                    size="sm" 
+                                                    variant="secondary" 
+                                                    onClick={handleGoToCatalog}
+                                                    className="mt-2 sm:mt-0 flex-shrink-0"
+                                                >
+                                                    Gerenciar no Catálogo <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Button>
+                                            ) : (
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline" 
+                                                    onClick={() => handleUseIdea(idea)}
+                                                    className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                                                >
+                                                    Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                     </li>
-                                ))}
+                                    )
+                                })}
                             </ul>
                         </AccordionContent>
                     </AccordionItem>
