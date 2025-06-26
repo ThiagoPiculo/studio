@@ -145,7 +145,7 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="grid md:grid-cols-2 gap-6">
+      <section className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
         <Card className="shadow-md">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-xl"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
@@ -154,19 +154,6 @@ export default function DashboardPage() {
             <Link href="/dashboard/missions/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Atribuir Nova Missão</Button></Link>
             <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Criar Recompensa</Button></Link>
             <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Gerenciar Família e Colaboradores</Button></Link>
-          </CardContent>
-        </Card>
-        <Card className="shadow-md bg-gradient-to-br from-accent/10 to-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl"><Brain className="text-accent"/> Ideias de Missões com IA</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground mb-4">Precisa de inspiração? Use nosso Sugestor de Missões inteligente!</p>
-            <Link href="/dashboard/missions/suggest">
-              <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg">
-                <Sun className="mr-2 h-4 w-4"/> Obter Sugestões de Missões
-              </Button>
-            </Link>
           </CardContent>
         </Card>
       </section>
