@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
@@ -19,8 +18,9 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, PackagePlus, ArrowLeft, AlertTriangle } from 'lucide-react';
+import { Loader2, PackagePlus, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
+import Link from 'next/link';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -159,9 +159,16 @@ function CreateRewardTemplatePageContent() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
-      <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-      </Button>
+      <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
+        <Button variant="outline" onClick={() => router.back()}>
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+        </Button>
+        <Link href="/dashboard/rewards/ideas">
+          <Button variant="outline">
+            <Sparkles className="mr-2 h-4 w-4" /> Ver Ideias de Recompensas
+          </Button>
+        </Link>
+      </div>
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
