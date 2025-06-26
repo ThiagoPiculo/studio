@@ -1,4 +1,3 @@
-
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -46,6 +45,7 @@ export function OnboardingForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
+  const [month, setMonth] = useState<Date>(new Date());
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -150,6 +150,13 @@ export function OnboardingForm() {
                         onChange={(e) => {
                           const maskedValue = handleDateMask(e.target.value);
                           setDateInput(maskedValue);
+                          if (maskedValue.length === 10) {
+                            const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                            if (isValid(parsedDate)) {
+                              field.onChange(parsedDate);
+                              setMonth(parsedDate);
+                            }
+                          }
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
@@ -157,6 +164,7 @@ export function OnboardingForm() {
                             const date = parse(dateInput, 'dd/MM/yyyy', new Date());
                             if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
                               field.onChange(date);
+                              setMonth(date);
                               setIsCalendarOpen(false);
                             } else {
                               toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
@@ -168,11 +176,14 @@ export function OnboardingForm() {
                   <Calendar
                     locale={ptBR}
                     mode="single"
+                    month={month}
+                    onMonthChange={setMonth}
                     selected={field.value}
                     onSelect={(date) => {
                       field.onChange(date);
                       if (date) {
                         setDateInput(format(date, 'dd/MM/yyyy'));
+                        setMonth(date);
                       }
                       setIsCalendarOpen(false);
                     }}

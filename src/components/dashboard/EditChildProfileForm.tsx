@@ -61,6 +61,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
+  const [month, setMonth] = useState<Date>(child.birthDate?.toDate() || new Date());
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -77,6 +78,9 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
     });
+    if (child.birthDate) {
+      setMonth(child.birthDate.toDate());
+    }
   }, [child, form]);
 
   const onSubmit = async (data: ProfileFormValues) => {
@@ -176,9 +180,16 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                       <Input
                           placeholder="Digite: dd/mm/aaaa"
                           value={dateInput}
-                          onChange={(e) => {
+                           onChange={(e) => {
                             const maskedValue = handleDateMask(e.target.value);
                             setDateInput(maskedValue);
+                            if (maskedValue.length === 10) {
+                              const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                              if (isValid(parsedDate)) {
+                                field.onChange(parsedDate);
+                                setMonth(parsedDate);
+                              }
+                            }
                           }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter') {
@@ -186,6 +197,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                               const date = parse(dateInput, 'dd/MM/yyyy', new Date());
                               if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
                                 field.onChange(date);
+                                setMonth(date);
                                 setIsCalendarOpen(false);
                               } else {
                                 toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
@@ -197,11 +209,14 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                     <Calendar
                       locale={ptBR}
                       mode="single"
+                      month={month}
+                      onMonthChange={setMonth}
                       selected={field.value}
                       onSelect={(date) => {
                         field.onChange(date);
                         if (date) {
                           setDateInput(format(date, 'dd/MM/yyyy'));
+                          setMonth(date);
                         }
                         setIsCalendarOpen(false);
                       }}
