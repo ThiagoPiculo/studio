@@ -45,6 +45,7 @@ export function OnboardingForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [dateInput, setDateInput] = useState<string>("");
 
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -104,7 +105,12 @@ export function OnboardingForm() {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Nascimento</FormLabel>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+              <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                  if (open) {
+                    setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                  }
+                  setIsCalendarOpen(open);
+                }}>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -127,21 +133,31 @@ export function OnboardingForm() {
                    <div className="p-2 border-b">
                      <Input
                         placeholder="Digite a data: dd/mm/aaaa"
-                        onChange={(e) => {
-                          const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                          if (isValid(date) && e.target.value.length >= 8) {
-                             if (date.getFullYear() > 1900 && date < new Date()) {
-                                field.onChange(date);
+                        value={dateInput}
+                        onChange={(e) => setDateInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                            if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                              field.onChange(date);
+                              setIsCalendarOpen(false);
+                            } else {
+                              toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
                             }
                           }
                         }}
                       />
                    </div>
                   <Calendar
+                    locale={ptBR}
                     mode="single"
                     selected={field.value}
                     onSelect={(date) => {
                       field.onChange(date);
+                      if (date) {
+                        setDateInput(format(date, 'dd/MM/yyyy'));
+                      }
                       setIsCalendarOpen(false);
                     }}
                     disabled={(date) =>
