@@ -4,13 +4,13 @@
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, uploadAvatar } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -40,9 +40,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -95,13 +96,7 @@ export default function ManageChildPage() {
   };
 
   const calculateAge = (birthDate: Date): number => {
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
+    return differenceInYears(new Date(), birthDate);
   };
 
   const fetchChildData = useCallback(async () => {
@@ -191,11 +186,11 @@ export default function ManageChildPage() {
     }
   }, [activeTab, childId, toast]);
   
-  const handleProfileUpdate = () => {
+  const handleProfileUpdate = useCallback(() => {
     fetchChildData().then(() => {
       toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
     });
-  };
+  }, [fetchChildData, toast, child?.name]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child) return;
@@ -472,35 +467,68 @@ export default function ManageChildPage() {
             </Card>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <Card className="shadow-sm">
+              <Card className="shadow-sm flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
                   <CheckSquare className="h-5 w-5 text-green-500" />
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.completedMissions}</div>
                   <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
                 </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveTab('missions')}
+                  >
+                    Explorar Missões
+                  </Button>
+                </CardFooter>
               </Card>
-              <Card className="shadow-sm">
+              <Card className="shadow-sm flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
                   <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.starsEarned}</div>
                   <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
                 </CardContent>
+                 <CardFooter>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveTab('missions')}
+                  >
+                    Ver Histórico de Ganhos
+                  </Button>
+                </CardFooter>
               </Card>
-              <Card className="shadow-sm">
+              <Card className="shadow-sm flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
                   <Trophy className="h-5 w-5 text-orange-500" />
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex-grow">
                   <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.rewardsRedeemed}</div>
                   <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
                 </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => {
+                      setActiveTab('rewards');
+                      setInstanceStatusFilter('redeemed');
+                    }}
+                  >
+                    Explorar Recompensas
+                  </Button>
+                </CardFooter>
               </Card>
             </div>
             
@@ -729,7 +757,6 @@ export default function ManageChildPage() {
                 <EditChildProfileForm 
                   child={child} 
                   onProfileUpdate={handleProfileUpdate}
-                  onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
                 />
               </CardContent>
@@ -789,3 +816,5 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+    
