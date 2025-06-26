@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -36,7 +36,7 @@ interface AssignRewardDialogProps {
 
 export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned }: AssignRewardDialogProps) {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const { toast } = useToast();
 
   const [eligibleChildren, setEligibleChildren] = useState<ChildProfile[]>([]);
@@ -44,6 +44,14 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
   const [existingAssignments, setExistingAssignments] = useState<Record<string, boolean>>({}); // childId -> true if active assignment exists
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+
+  const contextDisplayName = useMemo(() => {
+    if (currentContext === 'my-space') {
+      return "Mini Herois em Seu Espaço";
+    }
+    const family = availableContexts.find(f => f.id === currentContext);
+    return family ? `Mini Herois na Família "${family.name}"` : "Mini Herois";
+  }, [currentContext, availableContexts]);
 
   useEffect(() => {
     if (isOpen && template && user) {
@@ -157,40 +165,43 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (
-          <ScrollArea className="max-h-[40vh] my-4 pr-3">
-            <div className="space-y-3">
-              {eligibleChildren.map(child => (
-                <div 
-                  key={child.id} 
-                  className={`flex items-center justify-between p-3 rounded-md border ${existingAssignments[child.id] ? 'bg-muted/30 opacity-70' : 'bg-card hover:bg-muted/20'}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10 border-2 border-primary/50">
-                       {child.avatar ? <AvatarImage src={child.avatar} alt={child.name} /> : null}
-                       <AvatarFallback className="bg-accent text-accent-foreground text-sm">
-                         {getInitials(child.name)}
-                       </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <Label htmlFor={`child-${child.id}`} className={`font-medium ${existingAssignments[child.id] ? 'text-muted-foreground' : ''}`}>
-                        {child.name}
-                      </Label>
-                      {existingAssignments[child.id] && (
-                        <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
-                      )}
+          <div className="my-4">
+            <Label className="text-sm font-semibold text-muted-foreground">{contextDisplayName}</Label>
+            <ScrollArea className="max-h-[40vh] mt-2 pr-3 border-t pt-4">
+              <div className="space-y-3">
+                {eligibleChildren.map(child => (
+                  <div 
+                    key={child.id} 
+                    className={`flex items-center justify-between p-3 rounded-md border ${existingAssignments[child.id] ? 'bg-muted/30 opacity-70' : 'bg-card hover:bg-muted/20'}`}
+                  >
+                    <div className="flex items-center space-x-3">
+                      <Avatar className="h-10 w-10 border-2 border-primary/50">
+                         {child.avatar ? <AvatarImage src={child.avatar} alt={child.name} /> : null}
+                         <AvatarFallback className="bg-accent text-accent-foreground text-sm">
+                           {getInitials(child.name)}
+                         </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <Label htmlFor={`child-${child.id}`} className={`font-medium ${existingAssignments[child.id] ? 'text-muted-foreground' : ''}`}>
+                          {child.name}
+                        </Label>
+                        {existingAssignments[child.id] && (
+                          <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
+                        )}
+                      </div>
                     </div>
+                    {!existingAssignments[child.id] && (
+                      <Checkbox
+                        id={`child-${child.id}`}
+                        checked={!!selectedChildren[child.id]}
+                        onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
+                      />
+                    )}
                   </div>
-                  {!existingAssignments[child.id] && (
-                    <Checkbox
-                      id={`child-${child.id}`}
-                      checked={!!selectedChildren[child.id]}
-                      onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
         )}
 
         <DialogFooter className="mt-6">
