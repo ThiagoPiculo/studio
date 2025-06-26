@@ -8,6 +8,7 @@ import { ChevronRight } from 'lucide-react';
 import { getChildProfileById, getMissionTemplateById, getRewardTemplateById } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { useFamily } from '@/contexts/FamilyContext';
 
 interface Breadcrumb {
   label: string;
@@ -44,26 +45,22 @@ const titleCase = (str: string) => {
 export function Breadcrumbs() {
   const pathname = usePathname();
   const params = useParams();
+  const { currentContext, availableContexts, isLoading: isFamilyLoading } = useFamily();
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
 
   useEffect(() => {
     const generateBreadcrumbs = async () => {
       const pathSegments = pathname.split('/').filter(Boolean);
 
-      if (pathSegments.length <= 1) {
-          setBreadcrumbs([]);
-          return;
+      if (pathSegments.length === 0) {
+        setBreadcrumbs([]);
+        return;
       }
       
-      const promises = pathSegments.map(async (segment, index) => {
-        if (index === 0) return null; // Skip 'dashboard' segment
+      const promises = pathSegments.slice(1).map(async (segment, index) => {
+        if (structuralSegmentsToSkip.includes(segment)) return null;
 
-        const currentCrumbPath = `/${pathSegments.slice(0, index + 1).join('/')}`;
-
-        if (structuralSegmentsToSkip.includes(segment)) {
-          return null;
-        }
-
+        const currentCrumbPath = `/${pathSegments.slice(0, index + 2).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
         const crumb: Breadcrumb = { label, href: currentCrumbPath, isLoading: false };
 
@@ -71,7 +68,6 @@ export function Breadcrumbs() {
           crumb.isLoading = true;
           const child = await getChildProfileById(segment);
           crumb.label = child?.name || 'Herói';
-          // FIX: A breadcrumb for a child should point to their 'manage' page, not a directory.
           crumb.href = `/dashboard/child/${segment}/manage`;
           crumb.isLoading = false;
         } else if (params.missionId && segment === params.missionId) {
@@ -84,7 +80,7 @@ export function Breadcrumbs() {
           const template = await getRewardTemplateById(segment);
           crumb.label = template?.title || 'Recompensa';
           crumb.isLoading = false;
-        } else if (params.rewardId && segment === params.rewardId) { // Fallback for old route
+        } else if (params.rewardId && segment === params.rewardId) { 
           crumb.isLoading = true;
           const template = await getRewardTemplateById(segment);
           crumb.label = template?.title || 'Recompensa';
@@ -95,22 +91,34 @@ export function Breadcrumbs() {
       });
 
       // Set initial loading state
-      const initialCrumbs = [
-        { label: 'Painel', href: '/dashboard' },
-        ...pathSegments.slice(1)
+      const loadingCrumbs = pathSegments.slice(1)
           .filter(seg => !structuralSegmentsToSkip.includes(seg))
-          .map(seg => ({ label: '...', href: '#', isLoading: true }))
-      ];
-      setBreadcrumbs(initialCrumbs);
+          .map((seg, index) => ({ label: '...', href: `/#${index}`, isLoading: true }));
+
+      setBreadcrumbs([{ label: 'Painel', href: '/dashboard' }, ...loadingCrumbs]);
       
       const resolvedCrumbs = (await Promise.all(promises)).filter(Boolean) as Breadcrumb[];
-      setBreadcrumbs([{ label: 'Painel', href: '/dashboard' }, ...resolvedCrumbs]);
+      let finalCrumbs = [{ label: 'Painel', href: '/dashboard' }, ...resolvedCrumbs];
+      
+      // Inject family context if needed
+      if (currentContext !== 'my-space' && !isFamilyLoading) {
+          const isFamilyPageAlreadyInCrumb = finalCrumbs.some(c => c.href === '/dashboard/family');
+          if (!isFamilyPageAlreadyInCrumb) {
+              const familyContext = availableContexts.find(c => c.id === currentContext);
+              if (familyContext) {
+                  const familyCrumb = { label: familyContext.name, href: '/dashboard/family', isLoading: false };
+                  finalCrumbs.splice(1, 0, familyCrumb); // Inject after 'Painel'
+              }
+          }
+      }
+
+      setBreadcrumbs(finalCrumbs);
     };
 
     generateBreadcrumbs();
-  }, [pathname, params]);
+  }, [pathname, params, currentContext, availableContexts, isFamilyLoading]);
 
-  if (breadcrumbs.length === 0) {
+  if (breadcrumbs.length <= 1 && pathname === '/dashboard') {
     return null;
   }
 
