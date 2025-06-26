@@ -23,7 +23,7 @@ import { Loader2, Save, Calendar as CalendarIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
@@ -49,6 +49,7 @@ interface EditChildProfileFormProps {
 export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -121,7 +122,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Nascimento</FormLabel>
-              <Popover>
+              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                 <PopoverTrigger asChild>
                   <FormControl>
                     <Button
@@ -141,14 +142,30 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
+                   <div className="p-2 border-b">
+                     <Input
+                        placeholder="Digite a data: dd/mm/aaaa"
+                        onChange={(e) => {
+                          const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                          if (isValid(date) && e.target.value.length >= 8) {
+                            if (date.getFullYear() > 1900 && date < new Date()) {
+                                field.onChange(date);
+                            }
+                          }
+                        }}
+                      />
+                   </div>
                   <Calendar
                     mode="single"
                     selected={field.value}
-                    onSelect={field.onChange}
+                    onSelect={(date) => {
+                      field.onChange(date);
+                      setIsCalendarOpen(false);
+                    }}
                     disabled={(date) =>
                       date > new Date() || date < new Date("1900-01-01")
                     }
-                    initialFocus
+                    initialFocus={!field.value}
                   />
                 </PopoverContent>
               </Popover>
