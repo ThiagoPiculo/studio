@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback } from 'react';
+import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild } from '@/lib/firebase/firestore';
@@ -191,8 +191,9 @@ export default function ManageChildPage() {
   }, [activeTab, childId, toast]);
   
   const handleProfileUpdate = () => {
-    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
-    fetchChildData(); 
+    fetchChildData().then(() => {
+      toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
+    });
   };
 
   const handleRegenerateAccessCode = async () => {
@@ -428,7 +429,7 @@ export default function ManageChildPage() {
       </Card>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-1 gap-1 h-auto sm:grid-cols-2 lg:grid-cols-4 sm:h-10 sm:gap-2 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto lg:grid-cols-4 lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><BarChart className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
