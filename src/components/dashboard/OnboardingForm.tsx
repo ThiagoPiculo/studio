@@ -82,6 +82,19 @@ export function OnboardingForm() {
     }
   };
 
+  const handleDateMask = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.length > 8) {
+      digits = digits.slice(0, 8);
+    }
+    if (digits.length > 4) {
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else if (digits.length > 2) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return digits;
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -134,7 +147,10 @@ export function OnboardingForm() {
                      <Input
                         placeholder="Digite a data: dd/mm/aaaa"
                         value={dateInput}
-                        onChange={(e) => setDateInput(e.target.value)}
+                        onChange={(e) => {
+                          const maskedValue = handleDateMask(e.target.value);
+                          setDateInput(maskedValue);
+                        }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
