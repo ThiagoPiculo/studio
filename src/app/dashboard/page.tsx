@@ -76,11 +76,8 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Usuário Master"}!</CardTitle>
-          <CardDescription>Aqui está uma visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
+          <CardDescription>Visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <p>Gerencie missões, recompensas e veja seus Mini Herois crescerem!</p>
-        </CardContent>
       </Card>
 
       <section>
