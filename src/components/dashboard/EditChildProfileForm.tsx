@@ -15,18 +15,32 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Upload, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
-import { format, parse, isValid } from "date-fns";
+import { format, parse, isValid, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { uploadAvatar } from "@/lib/firebase/storage";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+const MAX_AVATAR_SIZE_MB = 2;
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -36,7 +50,7 @@ const profileFormSchema = z.object({
   gender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
   }),
-  avatar: z.string().url({ message: "Por favor, insira uma URL válida para o avatar." }).optional().or(z.literal("")),
+  // Avatar is handled separately now
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -44,12 +58,19 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 interface EditChildProfileFormProps {
   child: ChildProfile;
   onProfileUpdate: (updatedProfile: Partial<ChildProfile>) => void;
+  onDeleteProfile: () => void;
+  isDeleting: boolean;
 }
 
-export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfileFormProps) {
+export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, isDeleting }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(child.avatar || null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -57,7 +78,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
-      avatar: child.avatar || "",
     },
   });
   
@@ -66,20 +86,40 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
-      avatar: child.avatar || "",
     });
+    setAvatarPreview(child.avatar || null);
+    setAvatarFile(null);
   }, [child, form]);
-
-  const avatarUrl = form.watch("avatar");
 
   const onSubmit = async (data: ProfileFormValues) => {
     setIsLoading(true);
+    let avatarUrlToSave = child.avatar || "";
+
+    if (avatarFile) {
+        setIsUploading(true);
+        try {
+            avatarUrlToSave = await uploadAvatar(avatarFile, child.id);
+            setAvatarPreview(avatarUrlToSave);
+        } catch (uploadError) {
+            console.error("Error uploading avatar:", uploadError);
+            toast({
+                title: "Erro no Upload",
+                description: "Não foi possível enviar a imagem do avatar. Tente novamente.",
+                variant: "destructive",
+            });
+            setIsLoading(false);
+            setIsUploading(false);
+            return;
+        }
+        setIsUploading(false);
+    }
+    
     try {
-      const updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'updatedAt'>> = {
+      const updates: Partial<ChildProfile> = {
         name: data.name,
         birthDate: Timestamp.fromDate(data.birthDate),
         gender: data.gender,
-        avatar: data.avatar,
+        avatar: avatarUrlToSave,
       };
       await updateChildProfile(child.id, updates);
       onProfileUpdate(updates); 
@@ -91,7 +131,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       console.error("Error updating child profile:", error);
       toast({
         title: "Erro ao Atualizar",
-        description: "Não foi possível salvar as alterações. Verifique os dados e tente novamente. Se o erro persistir, atualize a página.",
+        description: "Não foi possível salvar as alterações. Verifique os dados e tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -99,9 +139,58 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     }
   };
 
+  const calculateAge = (birthDate: Date | undefined): number | null => {
+    if (!birthDate) return null;
+    return differenceInYears(new Date(), birthDate);
+  };
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "MH"; 
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > MAX_AVATAR_SIZE_MB * 1024 * 1024) {
+        toast({
+          title: "Imagem Muito Grande",
+          description: `O arquivo deve ter no máximo ${MAX_AVATAR_SIZE_MB}MB.`,
+          variant: "destructive"
+        });
+        return;
+      }
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const watchedBirthDate = form.watch("birthDate");
+  const calculatedAge = calculateAge(watchedBirthDate);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <FormItem>
+          <FormLabel>Avatar</FormLabel>
+          <div className="flex items-center gap-4">
+            <Avatar className="h-20 w-20 text-3xl border-2 border-primary/50">
+              <AvatarImage src={avatarPreview || undefined} alt={child.name} />
+              <AvatarFallback className="bg-accent text-accent-foreground font-bold">{getInitials(child.name)}</AvatarFallback>
+            </Avatar>
+            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+              {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
+              {avatarPreview ? 'Alterar Imagem' : 'Enviar Imagem'}
+            </Button>
+            <Input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/png, image/jpeg, image/gif"
+              onChange={handleFileChange}
+            />
+          </div>
+        </FormItem>
         <FormField
           control={form.control}
           name="name"
@@ -122,53 +211,60 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de Nascimento</FormLabel>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: ptBR })
-                      ) : (
-                        <span>Escolha uma data</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                   <div className="p-2 border-b">
-                     <Input
-                        placeholder="Digite a data: dd/mm/aaaa"
-                        onChange={(e) => {
-                          const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
-                          if (isValid(date) && e.target.value.length >= 8) {
-                            if (date.getFullYear() > 1900 && date < new Date()) {
-                                field.onChange(date);
+              <div className="flex items-center gap-4">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !field.value && "text-muted-foreground"
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, "PPP", { locale: ptBR })
+                        ) : (
+                          <span>Escolha uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-2 border-b">
+                      <Input
+                          placeholder="Digite: dd/mm/aaaa"
+                          onChange={(e) => {
+                            const date = parse(e.target.value, 'dd/MM/yyyy', new Date());
+                            if (isValid(date) && e.target.value.length >= 8) {
+                              if (date.getFullYear() > 1900 && date < new Date()) {
+                                  field.onChange(date);
+                              }
                             }
-                          }
-                        }}
-                      />
-                   </div>
-                  <Calendar
-                    mode="single"
-                    selected={field.value}
-                    onSelect={(date) => {
-                      field.onChange(date);
-                      setIsCalendarOpen(false);
-                    }}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus={!field.value}
-                  />
-                </PopoverContent>
-              </Popover>
+                          }}
+                        />
+                    </div>
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={(date) => {
+                        field.onChange(date);
+                        setIsCalendarOpen(false);
+                      }}
+                      disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus={!field.value}
+                    />
+                  </PopoverContent>
+                </Popover>
+                {calculatedAge !== null && (
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    ({calculatedAge} anos)
+                  </div>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}
@@ -211,35 +307,42 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="avatar"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL do Avatar (Opcional)</FormLabel>
-               <div className="flex items-center gap-4">
-                 <Avatar className="h-16 w-16 text-2xl">
-                    <AvatarImage src={avatarUrl} alt="Avatar" />
-                    <AvatarFallback>MH</AvatarFallback>
-                </Avatar>
-                <FormControl className="flex-1">
-                  <Input placeholder="https://example.com/avatar.png" {...field} />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Button type="submit" className="w-full shadow-sm" disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Save className="mr-2 h-4 w-4" />
-          )}
-          Salvar Alterações
-        </Button>
+        <div className="flex flex-col sm:flex-row-reverse gap-2 mt-8">
+            <Button type="submit" className="sm:w-auto flex-grow" disabled={isLoading || isDeleting}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="mr-2 h-4 w-4" />
+              )}
+              Salvar Alterações
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" className="sm:w-auto flex-grow" disabled={isDeleting || isLoading}>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Excluir Perfil
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso).
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Sim, Excluir Perfil
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+        </div>
       </form>
     </Form>
   );
 }
+
+    

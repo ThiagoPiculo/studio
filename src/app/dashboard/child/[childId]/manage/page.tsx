@@ -1,9 +1,10 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -195,7 +196,8 @@ export default function ManageChildPage() {
         return;
       }
 
-      await updateChildProfile(child.id, { stars: currentChildProfile.stars - instanceToManage.starsCost });
+      const newStars = currentChildProfile.stars - instanceToManage.starsCost;
+      await updateChildProfile(child.id, { stars: newStars });
       await updateChildRewardInstance(instanceToManage.id, { status: 'redeemed', isRedeemed: true, redeemedAt: serverTimestamp() as any });
       
       setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? {...r, status: 'redeemed', isRedeemed: true, redeemedAt: new Date() as any } : r).sort((a, b) => {
@@ -205,7 +207,7 @@ export default function ManageChildPage() {
             if (a.status === 'redeemed' && b.status === 'disabled') return 1;
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
           }));
-      setChild(prev => prev ? { ...prev, stars: currentChildProfile.stars - instanceToManage.starsCost } : null);
+      setChild(prev => prev ? { ...prev, stars: newStars } : null);
       toast({ title: "Conquista Desbloqueada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error) {
       console.error("Error marking reward as redeemed:", error);
@@ -322,13 +324,25 @@ export default function ManageChildPage() {
                 <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
                 <span className="font-semibold">XP: {child.xp}</span>
               </div>
-              <div className="mt-3 text-center sm:text-left">
-                <span className="text-sm text-muted-foreground align-middle">
-                  <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código de Acesso:
-                </span>
-                <span className="ml-2 text-xl font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                  {child.accessCode}
-                </span>
+              <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground align-middle">
+                    <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código:
+                  </span>
+                  <span className="text-xl font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                    {child.accessCode}
+                  </span>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={handleRegenerateAccessCode} 
+                  disabled={isRegeneratingCode}
+                  className="shadow-sm"
+                >
+                  {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  Regenerar
+                </Button>
               </div>
             </div>
           </div>
@@ -552,43 +566,12 @@ export default function ManageChildPage() {
                 <CardDescription>Atualize as informações da criança e configurações.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <EditChildProfileForm child={child} onProfileUpdate={handleProfileUpdate} />
-                
-                <div className="space-y-3">
-                  <Button 
-                    variant="outline" 
-                    onClick={handleRegenerateAccessCode} 
-                    disabled={isRegeneratingCode}
-                    className="w-full shadow-sm"
-                  >
-                    {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Regenerar Código de Acesso
-                  </Button>
-
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" className="w-full shadow-sm" disabled={isDeleting}>
-                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                        Excluir Perfil de {child.name}
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso).
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90">
-                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                          Sim, Excluir Perfil
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
+                <EditChildProfileForm 
+                  child={child} 
+                  onProfileUpdate={handleProfileUpdate}
+                  onDeleteProfile={handleDeleteProfile}
+                  isDeleting={isDeleting}
+                />
               </CardContent>
             </Card>
           </TabsContent>
@@ -646,3 +629,5 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+    
