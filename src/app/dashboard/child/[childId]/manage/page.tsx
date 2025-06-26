@@ -42,6 +42,7 @@ import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -402,6 +403,23 @@ export default function ManageChildPage() {
                 <span className="font-semibold">Nível: {child.level}</span>
                 <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
                 <span className="font-semibold">XP: {child.xp}</span>
+              </div>
+              <div className="mt-4 border-t border-border/20 pt-4 flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium" title="Missões Concluídas">
+                  <CheckSquare className="h-4 w-4 text-green-500" />
+                  {isLoadingActivities ? <Skeleton className="h-4 w-6" /> : <span>{stats.completedMissions}</span>}
+                  <span className="text-xs text-muted-foreground font-normal">Missões</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm font-medium" title="Total de Estrelas Ganhas em Missões">
+                  <StarIcon className="h-4 w-4 text-yellow-400 fill-yellow-400" />
+                  {isLoadingActivities ? <Skeleton className="h-4 w-8" /> : <span>{stats.starsEarned}</span>}
+                  <span className="text-xs text-muted-foreground font-normal">Estrelas Ganhas</span>
+                </div>
+                <div className="flex items-center gap-1.5 text-sm font-medium" title="Recompensas Resgatadas">
+                  <Trophy className="h-4 w-4 text-orange-500" />
+                  {isLoadingActivities ? <Skeleton className="h-4 w-6" /> : <span>{stats.rewardsRedeemed}</span>}
+                  <span className="text-xs text-muted-foreground font-normal">Recompensas</span>
+                </div>
               </div>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
