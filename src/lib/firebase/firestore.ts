@@ -139,7 +139,7 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 };
 
 
-export const updateChildProfile = async (childId: string, updates: Partial<Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'accessCode' | 'familyId' | 'updatedAt' | 'stars' | 'xp' | 'level'>>) => {
+export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>) => {
   const childRef = doc(db, 'children', childId);
   await updateDoc(childRef, {
     ...updates,
