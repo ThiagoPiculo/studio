@@ -1,8 +1,8 @@
 
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { auth } from "./config";
+import { app, auth } from "./config";
 
-const storage = getStorage();
+const storage = getStorage(app);
 
 export const uploadAvatar = async (file: File, childId: string): Promise<string> => {
     if (!auth.currentUser) {

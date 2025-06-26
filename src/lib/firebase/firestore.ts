@@ -39,7 +39,7 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId'>): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar'>): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
@@ -49,7 +49,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     name: childData.name,
     birthDate: childData.birthDate,
     gender: childData.gender,
-    avatar: childData.avatar || '',
+    avatar: '',
     stars: 0,
     xp: 0,
     level: 1,

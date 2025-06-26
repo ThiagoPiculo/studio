@@ -26,7 +26,6 @@ import { cn } from "@/lib/utils";
 import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
@@ -36,7 +35,6 @@ const onboardingSchema = z.object({
   childGender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
   }),
-  childAvatar: z.string().url({ message: "Por favor, insira uma URL válida para o avatar." }).optional().or(z.literal("")),
 });
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
@@ -54,11 +52,8 @@ export function OnboardingForm() {
       childName: "",
       childBirthDate: undefined,
       childGender: undefined,
-      childAvatar: "",
     },
   });
-
-  const avatarUrl = form.watch("childAvatar");
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
@@ -71,7 +66,6 @@ export function OnboardingForm() {
         name: values.childName, 
         birthDate: Timestamp.fromDate(values.childBirthDate), 
         gender: values.childGender,
-        avatar: values.childAvatar, 
       });
       toast({ title: "Mini Herói Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard"); 
@@ -199,26 +193,6 @@ export function OnboardingForm() {
           )}
         />
         
-        <FormField
-          control={form.control}
-          name="childAvatar"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>URL do Avatar (Opcional)</FormLabel>
-              <div className="flex items-center gap-4">
-                <Avatar className="h-16 w-16 text-2xl">
-                    <AvatarImage src={avatarUrl} alt="Avatar" />
-                    <AvatarFallback>MH</AvatarFallback>
-                </Avatar>
-                <FormControl className="flex-1">
-                    <Input placeholder="https://exemplo.com/avatar.png" {...field} />
-                </FormControl>
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
