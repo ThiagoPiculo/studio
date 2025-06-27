@@ -42,6 +42,7 @@ const missionTemplateFormSchema = z.object({
   
   isRecurring: z.boolean().default(false),
   startDate: z.date().optional().nullable(),
+  dueDate: z.date().optional().nullable(),
   recurrenceRule: recurrenceRuleSchema,
 }).refine(data => {
     if (data.isRecurring && data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
@@ -77,6 +78,7 @@ export default function EditMissionTemplatePage() {
       status: 'active',
       isRecurring: false,
       startDate: null,
+      dueDate: null,
       recurrenceRule: null,
     },
   });
@@ -113,6 +115,7 @@ export default function EditMissionTemplatePage() {
             status: fetchedTemplate.status,
             isRecurring: !!fetchedTemplate.isRecurring,
             startDate: fetchedTemplate.startDate?.toDate() || null,
+            dueDate: fetchedTemplate.dueDate?.toDate() || null,
             recurrenceRule: initialRecurrenceRule,
           });
         } else {
@@ -137,8 +140,6 @@ export default function EditMissionTemplatePage() {
     }
     setIsLoading(true);
 
-    const recurrenceRule = values.isRecurring ? values.recurrenceRule : null;
-
     try {
       const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId'>> = {
           title: values.title,
@@ -147,14 +148,18 @@ export default function EditMissionTemplatePage() {
           starsReward: values.starsReward,
           xpReward: values.xpReward,
           status: values.status,
-          startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
           isRecurring: values.isRecurring,
-          recurrenceRule: recurrenceRule ? {
-            ...recurrenceRule,
-            endDate: recurrenceRule.endDate ? Timestamp.fromDate(recurrenceRule.endDate) : null
+          // Se for recorrente, salve startDate e a regra. Senão, salve dueDate.
+          startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
+          dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
+          recurrenceRule: values.isRecurring && values.recurrenceRule ? {
+            ...values.recurrenceRule,
+            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
           } : null,
-      }
+      };
+
       await updateMissionTemplate(missionTemplate.id, updatePayload);
+
       toast({
         title: 'Missão Atualizada!',
         description: `A missão "${values.title}" foi atualizada com sucesso.`,

@@ -44,6 +44,7 @@ const missionTemplateFormSchema = z.object({
   
   isRecurring: z.boolean().default(false),
   startDate: z.date().optional().nullable(),
+  dueDate: z.date().optional().nullable(),
   recurrenceRule: recurrenceRuleSchema,
 }).refine(data => {
     if (data.isRecurring && data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
@@ -84,6 +85,7 @@ function CreateMissionTemplatePageContent() {
       xpReward: 10,
       isRecurring: false,
       startDate: null,
+      dueDate: null,
       recurrenceRule: null,
     },
   });
@@ -95,8 +97,6 @@ function CreateMissionTemplatePageContent() {
     }
     setIsLoading(true);
 
-    const recurrenceRule = values.isRecurring ? values.recurrenceRule : null;
-    
     try {
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
@@ -106,11 +106,13 @@ function CreateMissionTemplatePageContent() {
         category: values.category,
         starsReward: values.starsReward,
         xpReward: values.xpReward,
-        startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
         isRecurring: values.isRecurring,
-        recurrenceRule: recurrenceRule ? {
-            ...recurrenceRule,
-            endDate: recurrenceRule.endDate ? Timestamp.fromDate(recurrenceRule.endDate) : null,
+        // Se for recorrente, salve startDate e a regra. Senão, salve dueDate.
+        startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
+        dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
+        recurrenceRule: values.isRecurring && values.recurrenceRule ? {
+            ...values.recurrenceRule,
+            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
         } : null
       };
       

@@ -18,6 +18,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { Input } from "@/components/ui/input"
 import { RecurrenceDialog } from './RecurrenceDialog';
 import { Timestamp } from "firebase/firestore"
+import { formatRecurrenceSummary } from "@/lib/calendar-utils";
 
 interface DateTimePickerProps {
   value: Date | null | undefined;
@@ -97,47 +98,6 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
   );
 }
 
-function formatRecurrenceSummary(rule: RecurrenceRule | null | undefined): string {
-    if (!rule) return "Personalizar repetição...";
-    
-    const getFrequencyText = () => {
-        if (rule.interval === 1) {
-            switch(rule.freq) {
-                case 'DAILY': return 'Diariamente';
-                case 'WEEKLY': return 'Semanalmente';
-                case 'MONTHLY': return 'Mensalmente';
-                case 'YEARLY': return 'Anualmente';
-            }
-        }
-
-        const unit = {
-            DAILY: 'dia',
-            WEEKLY: 'semana',
-            MONTHLY: 'mês',
-            YEARLY: 'ano'
-        }[rule.freq];
-        
-        const plural = rule.freq === 'MONTHLY' ? 'meses' : `${unit}s`;
-        return `A cada ${rule.interval} ${plural}`;
-    };
-
-    let summary = getFrequencyText();
-
-    if (rule.byDay && rule.byDay.length > 0 && rule.freq === 'WEEKLY') {
-        const translatedDays = rule.byDay.map(day => weekdayLabels[day].short).join(', ');
-        summary += ` em ${translatedDays}`;
-    }
-    
-    if (rule.endDate) {
-        const date = (rule.endDate as Timestamp).toDate();
-        summary += `, até ${format(date, 'dd/MM/yyyy')}`;
-    } else if (rule.count) {
-        summary += `, ${rule.count} ${rule.count > 1 ? 'vezes' : 'vez'}`;
-    }
-
-    return summary;
-}
-
 export function RecurrenceControl() {
   const { control, watch, setValue } = useFormContext();
   const isRecurring = watch('isRecurring');
@@ -164,8 +124,12 @@ export function RecurrenceControl() {
                   field.onChange(checked);
                   if (!checked) {
                     setValue('recurrenceRule', null, { shouldValidate: true });
-                  } else if (!recurrenceRule) {
-                    setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1 }, { shouldValidate: true });
+                    setValue('startDate', null, { shouldValidate: true });
+                  } else {
+                    setValue('dueDate', null, { shouldValidate: true });
+                    if (!recurrenceRule) {
+                      setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1 }, { shouldValidate: true });
+                    }
                   }
                 }}
               />
@@ -190,7 +154,7 @@ export function RecurrenceControl() {
           <div className="space-y-2">
             <Label>Regra de Repetição</Label>
             <Button variant="outline" type="button" className="w-full justify-between" onClick={() => setIsDialogOpen(true)}>
-              <span className="truncate pr-2">{formatRecurrenceSummary(recurrenceRule)}</span>
+              <span className="truncate pr-2">{formatRecurrenceSummary({ isRecurring, recurrenceRule })}</span>
               <Settings2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             </Button>
             <RecurrenceDialog 
@@ -206,11 +170,14 @@ export function RecurrenceControl() {
         <div className="space-y-4 animate-in fade-in duration-300">
             <FormField
               control={control}
-              name="startDate"
+              name="dueDate"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Data e Hora da Missão</FormLabel>
-                  <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora" />
+                  <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
+                  <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
+                   <FormDescription className="text-xs">
+                    Para missões únicas. Esta é a data de vencimento.
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
