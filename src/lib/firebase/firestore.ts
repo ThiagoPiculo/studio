@@ -689,7 +689,7 @@ export const addMissionInstance = async (
     status: 'pending',
     assignedAt: now,
     updatedAt: now,
-    dueDate: !!templateSnapshot.isRecurring ? null : (templateSnapshot.startDate || null),
+    dueDate: templateSnapshot.dueDate || null,
     isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
   };
@@ -720,6 +720,11 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
     ...updates,
     updatedAt: serverTimestamp(),
   });
+};
+
+export const deleteMissionInstance = async (instanceId: string): Promise<void> => {
+    const instanceRef = doc(db, 'missionInstances', instanceId);
+    await deleteDoc(instanceRef);
 };
 
 export const completeMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {

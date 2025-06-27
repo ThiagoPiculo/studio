@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,7 @@ import { formatDistanceToNow, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary } from '@/lib/calendar-utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -70,9 +71,10 @@ export default function ManageChildPage() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoadingMissions, setIsLoadingMissions] = useState(false);
   const [missionStatusFilter, setMissionStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [missionToComplete, setMissionToComplete] = useState<MissionInstance | null>(null);
   const [isProcessingMissionAction, setIsProcessingMissionAction] = useState<string | null>(null);
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
+  const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
+  const [isDeletingMission, setIsDeletingMission] = useState(false);
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
@@ -276,6 +278,25 @@ export default function ManageChildPage() {
       toast({ title: "Erro ao Concluir Missão", description: "Não foi possível marcar a missão como concluída.", variant: "destructive" });
     } finally {
       setIsProcessingMissionAction(null);
+    }
+  };
+  
+  const handleDeleteMissionInstance = async () => {
+    if (!missionToDelete) return;
+    setIsDeletingMission(true);
+    try {
+      await deleteMissionInstance(missionToDelete.id);
+      setMissionInstances(prev => prev.filter(m => m.id !== missionToDelete.id));
+      toast({
+        title: "Missão Removida",
+        description: `A missão "${missionToDelete.title}" foi removida da lista de ${child?.name}.`
+      });
+    } catch (error) {
+      console.error("Error deleting mission instance:", error);
+      toast({ title: "Erro ao Remover Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
+    } finally {
+      setIsDeletingMission(false);
+      setMissionToDelete(null);
     }
   };
 
@@ -801,14 +822,50 @@ export default function ManageChildPage() {
                                         </CardContent>
                                         <CardFooter>
                                             {instance.status === 'pending' ? (
-                                                <Button 
-                                                    className="w-full bg-green-600 hover:bg-green-700" 
-                                                    onClick={() => handleCompleteMission(instance)}
-                                                    disabled={!!isProcessingMissionAction}
-                                                >
-                                                    {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                                    Marcar como Concluída
-                                                </Button>
+                                                <div className="flex w-full items-center gap-2">
+                                                    <Button 
+                                                        className="flex-grow bg-green-600 hover:bg-green-700"
+                                                        onClick={() => handleCompleteMission(instance)}
+                                                        disabled={!!isProcessingMissionAction || isDeletingMission}
+                                                    >
+                                                        {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                                        Marcar como Concluída
+                                                    </Button>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button 
+                                                                    size="icon" 
+                                                                    variant="outline" 
+                                                                    onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
+                                                                    disabled={!!isProcessingMissionAction || isDeletingMission}
+                                                                >
+                                                                    <Edit3 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Editar no Catálogo</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                    <TooltipProvider>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Button 
+                                                                    size="icon" 
+                                                                    variant="destructive"
+                                                                    onClick={() => setMissionToDelete(instance)}
+                                                                    disabled={!!isProcessingMissionAction || isDeletingMission}
+                                                                >
+                                                                    <Trash2 className="h-4 w-4" />
+                                                                </Button>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Remover Missão</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                </div>
                                             ) : (
                                                 <Button variant="outline" className="w-full" disabled>
                                                     <CheckCircle className="mr-2 h-4 w-4" /> Missão Finalizada
@@ -997,6 +1054,24 @@ export default function ManageChildPage() {
             onMissionAdded={fetchMissionData}
         />
       )}
+
+      <AlertDialog open={!!missionToDelete} onOpenChange={(isOpen) => !isOpen && setMissionToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Remover Missão?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Tem certeza que deseja remover a missão "{missionToDelete?.title}" da lista de {child.name}? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isDeletingMission}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteMissionInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingMission}>
+                    {isDeletingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Sim, Remover
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Redeem Confirmation Dialog */}
       {instanceToManage && isRedeemConfirmOpen && child && (
