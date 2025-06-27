@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -478,12 +478,12 @@ export default function ManageChildPage() {
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <Avatar
               className="h-28 w-28 text-5xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
-              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+              style={{ '--ring-color': child.color } as React.CSSProperties}
             >
               <AvatarImage src={child.avatar} alt={child.name} />
               <AvatarFallback
                 className="font-bold"
-                style={child.color ? { backgroundColor: child.color } : {}}
+                style={{ backgroundColor: child.color }}
               >
                 {getInitials(child.name)}
               </AvatarFallback>
@@ -773,14 +773,24 @@ export default function ManageChildPage() {
                                                 <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
                                                 Experiência: {instance.xpReward} XP
                                             </div>
-                                            <p className="text-xs text-muted-foreground pt-2">
-                                                Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
-                                            </p>
-                                            {instance.status === 'completed' && instance.completedAt && (
-                                                <p className="text-xs text-green-600 font-medium">
-                                                    Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
-                                                </p>
-                                            )}
+                                            <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
+                                                <div className="flex items-center">
+                                                    <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                                                    Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                                                </div>
+                                                {instance.dueDate && (
+                                                    <div className="flex items-center font-medium text-destructive/80">
+                                                        <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                                        Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                                {instance.status === 'completed' && instance.completedAt && (
+                                                    <div className="flex items-center font-medium text-green-600">
+                                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                                        Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </CardContent>
                                         <CardFooter>
                                             {instance.status === 'pending' ? (

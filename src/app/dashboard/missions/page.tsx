@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck } from 'lucide-react';
+import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -40,6 +40,7 @@ import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { formatRecurrenceSummary } from '@/lib/calendar-utils';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -238,6 +239,10 @@ export default function MissionsHubPage() {
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
                         </div>
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <Repeat className="h-5 w-5 mr-1.5 text-purple-500" />
+                          <span className="truncate">{formatRecurrenceSummary(template)}</span>
+                        </div>
                         <div className="border-t pt-3 mt-3">
                             <h4 className="text-xs font-semibold text-muted-foreground mb-2">Atribuído a:</h4>
                             {assignedChildren.length > 0 ? (
@@ -249,12 +254,12 @@ export default function MissionsHubPage() {
                                                     <TooltipTrigger asChild>
                                                         <Avatar
                                                           className="h-8 w-8 border-2 border-background ring-2 ring-offset-background ring-[var(--ring-color)]"
-                                                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                          style={{ '--ring-color': child.color } as React.CSSProperties}
                                                         >
                                                             <AvatarImage src={child.avatar} alt={child.name} />
                                                             <AvatarFallback
                                                               className="text-xs"
-                                                              style={child.color ? { backgroundColor: child.color } : {}}
+                                                              style={{ backgroundColor: child.color }}
                                                             >
                                                                 {getInitials(child.name)}
                                                             </AvatarFallback>

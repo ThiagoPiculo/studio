@@ -1,6 +1,6 @@
 
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
-import { missionCategories } from '@/lib/types';
+import { missionCategories, weekdayLabels } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import {
   addDays,
@@ -13,7 +13,9 @@ import {
   isBefore,
   isSameDay,
   startOfDay,
+  format as formatDateFns
 } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export interface CalendarEvent {
   date: Date;
@@ -31,10 +33,10 @@ export function generateRecurringEvents(
   viewEnd: Date
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
-  const categoryColorMap = new Map(missionCategories.map(cat => [cat.id, cat.color]));
+  const categoryColorMap = new Map(missionCategories.map(cat => [cat.color, cat.color]));
 
   templates.forEach(template => {
-    if (!template.recurrenceRule || template.status === 'archived' || !template.startDate) return;
+    if (!template.isRecurring || !template.recurrenceRule || template.status === 'archived' || !template.startDate) return;
 
     const rule = template.recurrenceRule;
     const startDate = template.startDate.toDate();
@@ -126,4 +128,46 @@ function formatToYyyyMmDd(date: Date): string {
     const month = (date.getMonth() + 1).toString().padStart(2, '0');
     const day = date.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+
+export function formatRecurrenceSummary(template: MissionTemplate): string {
+  if (!template.isRecurring || !template.recurrenceRule) {
+    if (template.startDate) {
+      const date = (template.startDate as Timestamp).toDate();
+      return `Missão única em ${formatDateFns(date, 'PPP', { locale: ptBR })}`;
+    }
+    return "Missão única";
+  }
+
+  const rule = template.recurrenceRule;
+
+  const getFrequencyText = () => {
+    if (rule.interval === 1) {
+      switch (rule.freq) {
+        case 'DAILY': return 'Diariamente';
+        case 'WEEKLY': return 'Semanalmente';
+        case 'MONTHLY': return 'Mensalmente';
+        case 'YEARLY': return 'Anualmente';
+      }
+    }
+    const unit = {
+      DAILY: 'dia',
+      WEEKLY: 'semana',
+      MONTHLY: 'mês',
+      YEARLY: 'ano'
+    }[rule.freq];
+
+    const plural = rule.freq === 'MONTHLY' ? 'meses' : `${unit}s`;
+    return `A cada ${rule.interval} ${plural}`;
+  };
+
+  let summary = getFrequencyText();
+
+  if (rule.byDay && rule.byDay.length > 0 && rule.byDay.length < 7 && rule.freq === 'WEEKLY') {
+    const translatedDays = rule.byDay.map(day => weekdayLabels[day].short).join(', ');
+    summary += ` em ${translatedDays}`;
+  }
+
+  return summary;
 }
