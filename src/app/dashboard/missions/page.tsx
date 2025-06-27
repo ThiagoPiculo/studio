@@ -26,13 +26,20 @@ import {
 import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getMissionTemplatesByOwnerOrFamily, deleteMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionTemplate, MissionCategoryDetails } from '@/lib/types';
+import { 
+  getMissionTemplatesByOwnerOrFamily, 
+  deleteMissionTemplate,
+  getChildProfilesForAttribution,
+  getMissionInstancesForContext,
+} from '@/lib/firebase/firestore';
+import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -41,6 +48,8 @@ export default function MissionsHubPage() {
   const router = useRouter();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
@@ -58,14 +67,43 @@ export default function MissionsHubPage() {
     setIsLoading(true);
     setError(null);
     const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-      .then(setMissionTemplates)
-      .catch((err) => {
-        console.error("Error fetching mission templates:", err);
-        setError("Não foi possível carregar as missões. Tente atualizar a página.");
-      })
-      .finally(() => setIsLoading(false));
+
+    Promise.all([
+      getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+      getChildProfilesForAttribution(user.uid, currentContext),
+      getMissionInstancesForContext(user.uid, familyIdToQuery)
+    ]).then(([templates, children, instances]) => {
+      setMissionTemplates(templates);
+      setChildren(children);
+      setMissionInstances(instances.filter(i => i.status === 'pending')); // Only care about active assignments
+    }).catch((err) => {
+      console.error("Error fetching missions data:", err);
+      setError("Não foi possível carregar as missões. Tente atualizar a página.");
+    }).finally(() => setIsLoading(false));
   }, [user, currentContext]);
+
+  const childrenMap = useMemo(() => {
+    return new Map(children.map(child => [child.id, child]));
+  }, [children]);
+
+  const assignmentsByTemplate = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    missionInstances.forEach(instance => {
+      const child = childrenMap.get(instance.childId);
+      if (child) {
+        const existing = assignments.get(instance.templateId) || [];
+        if (!existing.find(c => c.id === child.id)) {
+          assignments.set(instance.templateId, [...existing, child]);
+        }
+      }
+    });
+    return assignments;
+  }, [missionInstances, childrenMap]);
+  
+  const getInitials = (name?: string | null) => {
+    if (!name) return "MH"; 
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
 
   const getCategoryDetails = (categoryId: MissionTemplate['category']): MissionCategoryDetails | undefined => {
     return missionCategories.find(cat => cat.id === categoryId);
@@ -105,6 +143,14 @@ export default function MissionsHubPage() {
   const handleOpenAssignDialog = (template: MissionTemplate) => {
     setTemplateToAssign(template);
     setIsAssignDialogOpen(true);
+  };
+
+  const refetchInstances = () => {
+    if (user) {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      getMissionInstancesForContext(user.uid, familyIdToQuery)
+        .then(instances => setMissionInstances(instances.filter(i => i.status === 'pending')));
+    }
   };
 
   return (
@@ -159,6 +205,7 @@ export default function MissionsHubPage() {
               {missionTemplates.map((template) => {
                 const categoryDetails = getCategoryDetails(template.category);
                 const CategoryIconComponent = categoryDetails?.icon;
+                const assignedChildren = assignmentsByTemplate.get(template.id) || [];
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
@@ -190,6 +237,37 @@ export default function MissionsHubPage() {
                        <div className="flex items-center text-sm text-muted-foreground">
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
+                        </div>
+                        <div className="border-t pt-3 mt-3">
+                            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Atribuído a:</h4>
+                            {assignedChildren.length > 0 ? (
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex -space-x-2">
+                                        {assignedChildren.slice(0, 4).map(child => (
+                                            <TooltipProvider key={child.id}>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Avatar className="h-8 w-8 border-2 border-background">
+                                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                                            <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{child.name}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ))}
+                                    </div>
+                                    {assignedChildren.length > 4 && (
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            + {assignedChildren.length - 4}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Nenhum herói com esta missão ativa.</p>
+                            )}
                         </div>
                     </CardContent>
                     <CardFooter className="flex-col space-y-2 pt-4">
@@ -255,6 +333,7 @@ export default function MissionsHubPage() {
           onOpenChange={setIsAssignDialogOpen}
           onAssigned={() => {
             toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+            refetchInstances();
           }}
         />
       )}
