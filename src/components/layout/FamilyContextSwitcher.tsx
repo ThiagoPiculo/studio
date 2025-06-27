@@ -1,3 +1,4 @@
+
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -67,12 +68,21 @@ export function FamilyContextSwitcher() {
         
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem asChild className="cursor-pointer">
+        {currentContext === 'my-space' ? (
+          <DropdownMenuItem asChild className="cursor-pointer">
             <Link href="/dashboard/family">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Gerenciar Famílias</span>
+              <Users className="mr-2 h-4 w-4" />
+              <span>Criar ou Gerenciar Famílias</span>
             </Link>
-        </DropdownMenuItem>
+          </DropdownMenuItem>
+        ) : (
+           <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/dashboard/family">
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Gerenciar Família Atual</span>
+            </Link>
+          </DropdownMenuItem>
+        )}
 
       </DropdownMenuContent>
     </DropdownMenu>
