@@ -247,9 +247,17 @@ export default function MissionsHubPage() {
                                             <TooltipProvider key={child.id}>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
-                                                        <Avatar className="h-8 w-8 border-2 border-background">
+                                                        <Avatar
+                                                          className="h-8 w-8 border-2 border-background ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                        >
                                                             <AvatarImage src={child.avatar} alt={child.name} />
-                                                            <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                                            <AvatarFallback
+                                                              className="text-xs"
+                                                              style={child.color ? { backgroundColor: child.color } : {}}
+                                                            >
+                                                                {getInitials(child.name)}
+                                                            </AvatarFallback>
                                                         </Avatar>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
