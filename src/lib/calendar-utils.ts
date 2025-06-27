@@ -145,16 +145,23 @@ function formatToYyyyMmDd(date: Date): string {
 }
 
 
-export function formatRecurrenceSummary(template: MissionTemplate): string {
-  if (!template.isRecurring || !template.recurrenceRule) {
-    if (template.startDate) {
-      const date = (template.startDate as Timestamp).toDate();
-      return `Missão única em ${formatDateFns(date, 'PPP', { locale: ptBR })}`;
+type RecurrenceSummarySource = {
+  isRecurring?: boolean;
+  recurrenceRule?: RecurrenceRule | null;
+  startDate?: Timestamp | null;
+  dueDate?: Timestamp;
+};
+
+export function formatRecurrenceSummary(mission: RecurrenceSummarySource): string {
+  if (!mission.isRecurring || !mission.recurrenceRule) {
+    const date = (mission.dueDate || mission.startDate) as Timestamp | undefined | null;
+    if (date) {
+      return `Missão única em ${formatDateFns(date.toDate(), 'PPP', { locale: ptBR })}`;
     }
     return "Missão única";
   }
 
-  const rule = template.recurrenceRule;
+  const rule = mission.recurrenceRule;
 
   const getFrequencyText = () => {
     if (rule.interval === 1) {

@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -43,6 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow, differenceInYears } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatRecurrenceSummary } from '@/lib/calendar-utils';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -773,6 +774,12 @@ export default function ManageChildPage() {
                                                 <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
                                                 Experiência: {instance.xpReward} XP
                                             </div>
+                                            {instance.isRecurring && (
+                                                <div className="flex items-center text-muted-foreground font-medium">
+                                                    <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
+                                                    <span className="truncate">{formatRecurrenceSummary(instance)}</span>
+                                                </div>
+                                            )}
                                             <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
                                                 <div className="flex items-center">
                                                     <CalendarDays className="h-3.5 w-3.5 mr-1.5" />

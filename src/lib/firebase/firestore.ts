@@ -668,7 +668,7 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'>,
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule'>,
   templateSnapshot: MissionTemplate
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -689,6 +689,8 @@ export const addMissionInstance = async (
     assignedAt: now,
     updatedAt: now,
     dueDate: templateSnapshot.isRecurring ? undefined : templateSnapshot.startDate,
+    isRecurring: templateSnapshot.isRecurring,
+    recurrenceRule: templateSnapshot.recurrenceRule || null,
   };
   await setDoc(newInstanceRef, newInstance);
   return newInstance;

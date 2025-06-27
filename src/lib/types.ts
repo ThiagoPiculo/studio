@@ -127,6 +127,8 @@ export interface MissionInstance {
   completedAt?: Timestamp;
   dueDate?: Timestamp;
   updatedAt: Timestamp;
+  isRecurring?: boolean;
+  recurrenceRule?: RecurrenceRule | null;
 }
 
 export const rewardCategories = [
