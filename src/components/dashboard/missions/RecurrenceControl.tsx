@@ -13,9 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import type { RecurrenceRule } from "@/lib/types"
+import { weekdayLabels } from "@/lib/types";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
-import { RecurrenceDialog } from './RecurrenceDialog'; // Import the new dialog
+import { RecurrenceDialog } from './RecurrenceDialog';
 import { Timestamp } from "firebase/firestore"
 
 interface DateTimePickerProps {
@@ -25,7 +26,7 @@ interface DateTimePickerProps {
 }
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
-  const [date, setDate] = React.useState<Date | undefined>(value ?? undefined);
+  const [date, setDate] = React.useState<Date | undefined>(value && isValid(value) ? value : undefined);
   const [time, setTime] = React.useState(value && isValid(value) ? format(value, "HH:mm") : "09:00");
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
@@ -82,6 +83,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
           onSelect={handleDateSelect}
           initialFocus
           locale={ptBR}
+          weekStartsOn={1}
         />
         <div className="p-3 border-t border-border">
           <div className="flex items-center gap-2">
@@ -98,24 +100,39 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
 function formatRecurrenceSummary(rule: RecurrenceRule | null | undefined): string {
     if (!rule) return "Personalizar repetição...";
     
-    let summary = "";
-    switch (rule.freq) {
-        case 'DAILY': summary = `A cada ${rule.interval} dia(s)`; break;
-        case 'WEEKLY': summary = `A cada ${rule.interval} semana(s)`; break;
-        case 'MONTHLY': summary = `A cada ${rule.interval} mês(es)`; break;
-        case 'YEARLY': summary = `A cada ${rule.interval} ano(s)`; break;
-        default: summary = "Regra personalizada";
-    }
+    const getFrequencyText = () => {
+        if (rule.interval === 1) {
+            switch(rule.freq) {
+                case 'DAILY': return 'Diariamente';
+                case 'WEEKLY': return 'Semanalmente';
+                case 'MONTHLY': return 'Mensalmente';
+                case 'YEARLY': return 'Anualmente';
+            }
+        }
+
+        const unit = {
+            DAILY: 'dia',
+            WEEKLY: 'semana',
+            MONTHLY: 'mês',
+            YEARLY: 'ano'
+        }[rule.freq];
+        
+        const plural = rule.freq === 'MONTHLY' ? 'meses' : `${unit}s`;
+        return `A cada ${rule.interval} ${plural}`;
+    };
+
+    let summary = getFrequencyText();
 
     if (rule.byDay && rule.byDay.length > 0 && rule.freq === 'WEEKLY') {
-        summary += ` em ${rule.byDay.join(', ')}`;
+        const translatedDays = rule.byDay.map(day => weekdayLabels[day].short).join(', ');
+        summary += ` em ${translatedDays}`;
     }
     
     if (rule.endDate) {
         const date = (rule.endDate as Timestamp).toDate();
-        summary += `, até ${format(date, 'dd/MM/yy')}`;
+        summary += `, até ${format(date, 'dd/MM/yyyy')}`;
     } else if (rule.count) {
-        summary += `, ${rule.count} vezes`;
+        summary += `, ${rule.count} ${rule.count > 1 ? 'vezes' : 'vez'}`;
     }
 
     return summary;
@@ -134,7 +151,12 @@ export function RecurrenceControl() {
         name="isRecurring"
         render={({ field }) => (
           <FormItem className="flex flex-row items-center justify-between">
-            <FormLabel>Repetir Missão</FormLabel>
+            <div className='space-y-1'>
+                <FormLabel>Repetir Missão</FormLabel>
+                <FormDescription className="text-xs">
+                    Defina se a missão ocorre uma única vez ou se repete.
+                </FormDescription>
+            </div>
             <FormControl>
               <Switch
                 checked={field.value}
@@ -143,7 +165,6 @@ export function RecurrenceControl() {
                   if (!checked) {
                     setValue('recurrenceRule', null, { shouldValidate: true });
                   } else if (!recurrenceRule) {
-                    // Set a default recurrence rule when switched on for the first time
                     setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1 }, { shouldValidate: true });
                   }
                 }}
@@ -153,19 +174,19 @@ export function RecurrenceControl() {
         )}
       />
 
+    {isRecurring && (
       <div className="space-y-4 animate-in fade-in duration-300">
         <FormField
           control={control}
           name="startDate"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{isRecurring ? 'Data de Início da Recorrência' : 'Data e Hora da Missão'}</FormLabel>
-              <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora" />
+              <FormLabel>Data de Início da Recorrência</FormLabel>
+              <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
               <FormMessage />
             </FormItem>
           )}
         />
-        {isRecurring && (
           <div className="space-y-2">
             <Label>Regra de Repetição</Label>
             <Button variant="outline" type="button" className="w-full justify-between" onClick={() => setIsDialogOpen(true)}>
@@ -179,8 +200,23 @@ export function RecurrenceControl() {
                 onSave={(newRule) => setValue('recurrenceRule', newRule, { shouldValidate: true })}
             />
           </div>
-        )}
       </div>
+    )}
+    {!isRecurring && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+            <FormField
+              control={control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Data e Hora da Missão</FormLabel>
+                  <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora" />
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+        </div>
+    )}
     </div>
   )
 }

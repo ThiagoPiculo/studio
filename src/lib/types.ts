@@ -74,13 +74,13 @@ export type MissionCategoryDetails = typeof missionCategories[number];
 export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
-  MO: { long: 'Segunda-feira', short: 'S' },
-  TU: { long: 'Terça-feira', short: 'T' },
-  WE: { long: 'Quarta-feira', short: 'Q' },
-  TH: { long: 'Quinta-feira', short: 'Q' },
-  FR: { long: 'Sexta-feira', short: 'S' },
-  SA: { long: 'Sábado', short: 'S' },
-  SU: { long: 'Domingo', short: 'D' },
+  MO: { long: 'Segunda-feira', short: 'Seg' },
+  TU: { long: 'Terça-feira', short: 'Ter' },
+  WE: { long: 'Quarta-feira', short: 'Qua' },
+  TH: { long: 'Quinta-feira', short: 'Qui' },
+  FR: { long: 'Sexta-feira', short: 'Sex' },
+  SA: { long: 'Sábado', short: 'Sáb' },
+  SU: { long: 'Domingo', short: 'Dom' },
 };
 
 export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -107,6 +107,7 @@ export interface MissionTemplate {
   status: 'active' | 'archived';
   // Scheduling fields
   startDate?: Timestamp | null;
+  isRecurring: boolean;
   recurrenceRule?: RecurrenceRule | null;
 }
 
