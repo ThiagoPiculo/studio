@@ -1,5 +1,5 @@
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
-import { missionCategories } from '@/lib/types';
+import { missionCategories, weekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import {
   addDays,
@@ -23,8 +23,6 @@ export interface CalendarEvent {
 
 const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
 
-// This is a simplified recurrence generator for client-side display.
-// It does not handle `count` and only handles interval=1 for weekly recurrence.
 export function generateRecurringEvents(
   templates: MissionTemplate[],
   viewStart: Date,
@@ -38,30 +36,41 @@ export function generateRecurringEvents(
     if (!template.recurrenceRule || template.status === 'archived') return;
 
     const rule = template.recurrenceRule;
-    const templateStartDate = (template.createdAt as Timestamp).toDate();
+    const templateStartDate = template.startDate ? template.startDate.toDate() : (template.createdAt as Timestamp).toDate();
+    const templateEndDate = template.endDate ? template.endDate.toDate() : null;
+    
+    // Set time to start of day for accurate date comparison
+    const normalizedTemplateStartDate = startOfDay(templateStartDate);
 
     daysInView.forEach(day => {
-      // Basic checks to see if the event can occur on this day
-      if (isBefore(day, templateStartDate)) return;
-      if (rule.endDate && isAfter(day, rule.endDate.toDate())) return;
+      if (isBefore(day, normalizedTemplateStartDate)) return;
+      if (templateEndDate && isAfter(day, templateEndDate)) return;
 
       let shouldOccur = false;
+      const dayOfWeek = getDayToWeekday[getDay(day)];
+
       if (rule.freq === 'DAILY') {
-        const diff = Math.round(Math.abs(day.getTime() - templateStartDate.getTime()) / (1000 * 60 * 60 * 24));
-        if (diff % rule.interval === 0) {
-          shouldOccur = true;
-        }
+        shouldOccur = true; // Simplified for now, interval logic can be complex
       } else if (rule.freq === 'WEEKLY') {
-        const dayOfWeek = getDayToWeekday[getDay(day)];
-        if (rule.interval === 1 && rule.byDay?.includes(dayOfWeek)) {
-          // Note: This simplified logic only works correctly for interval=1
-          shouldOccur = true;
+        if (rule.byDay && rule.byDay.length > 0) {
+            if (rule.byDay.includes(dayOfWeek)) {
+                shouldOccur = true;
+            }
+        } else {
+            // If no specific days are set, assume it repeats on the same day of the week as the start date
+            if (getDay(day) === getDay(normalizedTemplateStartDate)) {
+                shouldOccur = true;
+            }
         }
       }
-
+      
       if (shouldOccur) {
+        // Create a date object for the event that includes the time from the start date
+        const eventDate = new Date(day);
+        eventDate.setHours(templateStartDate.getHours(), templateStartDate.getMinutes(), templateStartDate.getSeconds());
+        
         events.push({
-          date: day,
+          date: eventDate,
           title: template.title,
           color: categoryColorMap.get(template.category) || 'hsl(var(--foreground))',
           type: 'template',

@@ -22,6 +22,7 @@ import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb
 import Link from 'next/link';
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { Timestamp } from 'firebase/firestore';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -31,7 +32,22 @@ const missionTemplateFormSchema = z.object({
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
-  recurrenceRule: z.custom<RecurrenceRule>().nullable().optional(),
+  
+  isRecurring: z.boolean().default(false),
+  startDate: z.date().optional().nullable(),
+  endDate: z.date().optional().nullable(),
+  recurrenceRule: z.object({
+    freq: z.enum(['DAILY', 'WEEKLY']).default('WEEKLY'),
+    byDay: z.array(z.enum(weekdays)).optional(),
+  }).optional().nullable(),
+}).refine(data => {
+    if (data.isRecurring && data.endDate && data.startDate && data.endDate < data.startDate) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A data de fim não pode ser anterior à data de início.",
+    path: ['endDate'],
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -61,7 +77,13 @@ function CreateMissionTemplatePageContent() {
       category: resolvedInitialCategory, 
       starsReward: 5,
       xpReward: 10,
-      recurrenceRule: null,
+      isRecurring: false,
+      startDate: null,
+      endDate: null,
+      recurrenceRule: {
+        freq: 'WEEKLY',
+        byDay: [],
+      },
     },
   });
 
@@ -71,6 +93,17 @@ function CreateMissionTemplatePageContent() {
       return;
     }
     setIsLoading(true);
+
+    // Build the final recurrence rule based on form values
+    let finalRecurrenceRule: MissionTemplate['recurrenceRule'] = null;
+    if (values.isRecurring && values.recurrenceRule) {
+      finalRecurrenceRule = {
+        freq: values.recurrenceRule.freq,
+        interval: 1, // Interval is fixed at 1 for now
+        byDay: values.recurrenceRule.byDay,
+      };
+    }
+    
     try {
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
@@ -80,7 +113,9 @@ function CreateMissionTemplatePageContent() {
         category: values.category,
         starsReward: values.starsReward,
         xpReward: values.xpReward,
-        recurrenceRule: values.recurrenceRule || null,
+        startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
+        endDate: values.endDate ? Timestamp.fromDate(values.endDate) : null,
+        recurrenceRule: finalRecurrenceRule,
       };
       
       const createdTemplate = await addMissionTemplate(templateDataPayload);
@@ -162,9 +197,8 @@ function CreateMissionTemplatePageContent() {
                   </FormItem>
                 )}
               />
-
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <RecurrenceControl />
                 <FormField
                   control={form.control}
                   name="category"
@@ -193,6 +227,8 @@ function CreateMissionTemplatePageContent() {
                   )}
                 />
               </div>
+
+               <RecurrenceControl />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField

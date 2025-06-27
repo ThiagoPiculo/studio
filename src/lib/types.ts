@@ -1,4 +1,3 @@
-
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, School, HeartPulse, Smile, Users, Banknote, Leaf } from 'lucide-react';
@@ -71,16 +70,16 @@ export const missionCategories = [
 export type MissionCategory = typeof missionCategories[number]['id'];
 export type MissionCategoryDetails = typeof missionCategories[number];
 
-export const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
-  SU: { long: 'Domingo', short: 'D' },
   MO: { long: 'Segunda-feira', short: 'S' },
   TU: { long: 'Terça-feira', short: 'T' },
   WE: { long: 'Quarta-feira', short: 'Q' },
   TH: { long: 'Quinta-feira', short: 'Q' },
   FR: { long: 'Sexta-feira', short: 'S' },
   SA: { long: 'Sábado', short: 'S' },
+  SU: { long: 'Domingo', short: 'D' },
 };
 
 export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -89,8 +88,6 @@ export interface RecurrenceRule {
   freq: RecurrenceFrequency;
   interval: number;
   byDay?: Weekday[];
-  endDate?: Timestamp;
-  count?: number;
 }
 
 export interface MissionTemplate {
@@ -105,6 +102,9 @@ export interface MissionTemplate {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: 'active' | 'archived';
+  // Scheduling fields
+  startDate?: Timestamp | null;
+  endDate?: Timestamp | null;
   recurrenceRule?: RecurrenceRule | null;
 }
 

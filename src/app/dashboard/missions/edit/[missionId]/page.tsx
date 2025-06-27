@@ -18,6 +18,7 @@ import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/typ
 import { missionCategories, weekdays } from '@/lib/types'; 
 import { Loader2, ListChecks, Save, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
+import { Timestamp } from 'firebase/firestore';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -28,7 +29,22 @@ const missionTemplateFormSchema = z.object({
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
   status: z.enum(['active', 'archived']).default('active'),
-  recurrenceRule: z.custom<RecurrenceRule>().nullable().optional(),
+  
+  isRecurring: z.boolean().default(false),
+  startDate: z.date().optional().nullable(),
+  endDate: z.date().optional().nullable(),
+  recurrenceRule: z.object({
+    freq: z.enum(['DAILY', 'WEEKLY']).default('WEEKLY'),
+    byDay: z.array(z.enum(weekdays)).optional(),
+  }).optional().nullable(),
+}).refine(data => {
+    if (data.isRecurring && data.endDate && data.startDate && data.endDate < data.startDate) {
+        return false;
+    }
+    return true;
+}, {
+    message: "A data de fim não pode ser anterior à data de início.",
+    path: ['endDate'],
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -53,6 +69,9 @@ export default function EditMissionTemplatePage() {
       starsReward: 5,
       xpReward: 10,
       status: 'active',
+      isRecurring: false,
+      startDate: null,
+      endDate: null,
       recurrenceRule: null,
     },
   });
@@ -78,7 +97,13 @@ export default function EditMissionTemplatePage() {
             starsReward: fetchedTemplate.starsReward,
             xpReward: fetchedTemplate.xpReward,
             status: fetchedTemplate.status,
-            recurrenceRule: fetchedTemplate.recurrenceRule || null,
+            isRecurring: !!fetchedTemplate.recurrenceRule,
+            startDate: fetchedTemplate.startDate?.toDate() || null,
+            endDate: fetchedTemplate.endDate?.toDate() || null,
+            recurrenceRule: fetchedTemplate.recurrenceRule ? {
+                freq: fetchedTemplate.recurrenceRule.freq,
+                byDay: fetchedTemplate.recurrenceRule.byDay
+            } : null,
           });
         } else {
           toast({ title: "Missão não encontrada", variant: "destructive" });
@@ -101,8 +126,29 @@ export default function EditMissionTemplatePage() {
       return;
     }
     setIsLoading(true);
+
+    let finalRecurrenceRule: MissionTemplate['recurrenceRule'] = null;
+    if (values.isRecurring && values.recurrenceRule) {
+      finalRecurrenceRule = {
+        freq: values.recurrenceRule.freq,
+        interval: 1,
+        byDay: values.recurrenceRule.byDay,
+      };
+    }
+
     try {
-      await updateMissionTemplate(missionTemplate.id, values);
+      const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId'>> = {
+          title: values.title,
+          description: values.description,
+          category: values.category,
+          starsReward: values.starsReward,
+          xpReward: values.xpReward,
+          status: values.status,
+          startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
+          endDate: values.endDate ? Timestamp.fromDate(values.endDate) : null,
+          recurrenceRule: finalRecurrenceRule,
+      }
+      await updateMissionTemplate(missionTemplate.id, updatePayload);
       toast({
         title: 'Missão Atualizada!',
         description: `A missão "${values.title}" foi atualizada com sucesso.`,
@@ -191,7 +237,6 @@ export default function EditMissionTemplatePage() {
               />
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <RecurrenceControl />
                 <FormField
                   control={form.control}
                   name="category"
@@ -220,6 +265,8 @@ export default function EditMissionTemplatePage() {
                   )}
                 />
               </div>
+
+              <RecurrenceControl />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
