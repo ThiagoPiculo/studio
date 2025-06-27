@@ -37,7 +37,7 @@ const missionTemplateFormSchema = z.object({
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   recurrenceRule: z.object({
-    freq: z.enum(['DAILY', 'WEEKLY']).default('WEEKLY'),
+    freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']).default('WEEKLY'),
     byDay: z.array(z.enum(weekdays)).optional(),
   }).optional().nullable(),
 }).refine(data => {

@@ -152,6 +152,8 @@ export function RecurrenceControl() {
                                 <SelectContent>
                                     <SelectItem value="DAILY">Diariamente</SelectItem>
                                     <SelectItem value="WEEKLY">Semanalmente</SelectItem>
+                                    <SelectItem value="MONTHLY">Mensalmente</SelectItem>
+                                    <SelectItem value="YEARLY">Anualmente</SelectItem>
                                 </SelectContent>
                             </Select>
                             <FormMessage />

@@ -1,3 +1,4 @@
+
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
 import { missionCategories, weekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -50,7 +51,7 @@ export function generateRecurringEvents(
       const dayOfWeek = getDayToWeekday[getDay(day)];
 
       if (rule.freq === 'DAILY') {
-        shouldOccur = true; // Simplified for now, interval logic can be complex
+        shouldOccur = true;
       } else if (rule.freq === 'WEEKLY') {
         if (rule.byDay && rule.byDay.length > 0) {
             if (rule.byDay.includes(dayOfWeek)) {
@@ -62,6 +63,16 @@ export function generateRecurringEvents(
                 shouldOccur = true;
             }
         }
+      } else if (rule.freq === 'MONTHLY') {
+          // Repeats on the same day of the month as the start date
+          if (day.getDate() === normalizedTemplateStartDate.getDate()) {
+              shouldOccur = true;
+          }
+      } else if (rule.freq === 'YEARLY') {
+          // Repeats on the same month and day of the year as the start date
+          if (day.getDate() === normalizedTemplateStartDate.getDate() && day.getMonth() === normalizedTemplateStartDate.getMonth()) {
+              shouldOccur = true;
+          }
       }
       
       if (shouldOccur) {
