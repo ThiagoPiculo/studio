@@ -476,9 +476,15 @@ export default function ManageChildPage() {
       <Card className="shadow-xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/20 via-background to-accent/10 p-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Avatar className="h-28 w-28 border-4 border-primary text-5xl shadow-md">
+            <Avatar
+              className="h-28 w-28 text-5xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
+              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+            >
               <AvatarImage src={child.avatar} alt={child.name} />
-              <AvatarFallback className="bg-accent text-accent-foreground font-bold">
+              <AvatarFallback
+                className="font-bold"
+                style={child.color ? { backgroundColor: child.color } : {}}
+              >
                 {getInitials(child.name)}
               </AvatarFallback>
             </Avatar>

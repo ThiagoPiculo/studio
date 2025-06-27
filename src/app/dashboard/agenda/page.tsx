@@ -371,9 +371,14 @@ export default function AgendaPage() {
                         {children.map(child => (
                             <SelectItem key={child.id} value={child.id}>
                                 <div className="flex items-center gap-2">
-                                    <Avatar className="h-6 w-6">
+                                    <Avatar
+                                      className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                      style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                    >
                                         <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                        <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                            {getInitials(child.name)}
+                                        </AvatarFallback>
                                     </Avatar>
                                     <div>
                                         <p>{child.name}</p>
@@ -423,9 +428,14 @@ export default function AgendaPage() {
                      return (
                          <div key={childId}>
                              <div className="flex items-center gap-2 mb-2">
-                                <Avatar className="h-8 w-8">
+                                <Avatar
+                                  className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                  style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                >
                                     <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                    <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                        {getInitials(child.name)}
+                                    </AvatarFallback>
                                  </Avatar>
                                  <h3 className="font-semibold">{child.name}</h3>
                              </div>

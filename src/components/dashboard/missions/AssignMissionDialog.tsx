@@ -160,9 +160,12 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         className={`flex items-center justify-between p-3 rounded-md border ${existingAssignments[child.id] ? 'bg-muted/30 opacity-70' : 'bg-card hover:bg-muted/20'}`}
       >
         <div className="flex items-center space-x-3">
-          <Avatar className="h-10 w-10 border-2 border-primary/50">
-              {child.avatar ? <AvatarImage src={child.avatar} alt={child.name} /> : null}
-              <AvatarFallback className="bg-accent text-accent-foreground text-sm">
+          <Avatar
+            className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+          >
+              <AvatarImage src={child.avatar} alt={child.name} />
+              <AvatarFallback className="text-sm" style={child.color ? { backgroundColor: child.color } : {}}>
                 {getInitials(child.name)}
               </AvatarFallback>
           </Avatar>

@@ -116,9 +116,15 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent className="pt-4 p-4">
                   <div className="flex items-center justify-center mb-4">
-                    <Avatar className="h-24 w-24 border-4 border-primary text-4xl shadow-sm">
+                    <Avatar
+                      className="h-24 w-24 text-4xl shadow-sm ring-2 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
+                      style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                    >
                       <AvatarImage src={child.avatar} alt={child.name} />
-                      <AvatarFallback className="bg-accent text-accent-foreground font-bold">
+                      <AvatarFallback
+                        className="font-bold"
+                        style={child.color ? { backgroundColor: child.color } : {}}
+                      >
                         {getInitials(child.name)}
                       </AvatarFallback>
                     </Avatar>

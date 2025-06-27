@@ -564,9 +564,14 @@ function FamilyPageContent() {
                       {childrenInFamily.map(child => (
                           <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                               <div className="flex items-center gap-4">
-                                  <Avatar className="h-12 w-12 text-xl border-2 border-primary/50">
+                                  <Avatar
+                                    className="h-12 w-12 text-xl ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                  >
                                       <AvatarImage src={child.avatar} alt={child.name} />
-                                      <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                      <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                          {getInitials(child.name)}
+                                      </AvatarFallback>
                                   </Avatar>
                                   <div>
                                     <span className="font-semibold">{child.name}</span>
@@ -699,9 +704,14 @@ function FamilyPageContent() {
                                 {unassignedChildren.map(child => (
                                     <div key={child.id} className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20">
                                         <div className="flex items-center space-x-3">
-                                            <Avatar className="h-10 w-10 border-2 border-primary/50">
+                                            <Avatar
+                                              className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                            >
                                                 <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback>{getInitials(child.name)}</AvatarFallback>
+                                                <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                                    {getInitials(child.name)}
+                                                </AvatarFallback>
                                             </Avatar>
                                             <Label htmlFor={`add-child-${child.id}`} className="font-medium cursor-pointer">
                                                 {child.name}

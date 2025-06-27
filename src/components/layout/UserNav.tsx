@@ -1,3 +1,4 @@
+
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { LogOut, UserCircle, Rocket, Settings } from "lucide-react";
 import Link from "next/link";
+import React from 'react';
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
@@ -24,6 +26,7 @@ export function UserNav() {
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
   const displayEmail = isChildAuthenticated ? `Código de Acesso: ${childProfile?.accessCode}` : user?.email;
   const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; 
+  const avatarColor = isChildAuthenticated ? childProfile?.color : undefined;
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -38,9 +41,15 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-          <Avatar className="h-10 w-10 border-2 border-primary">
-            {avatarSrc ? <AvatarImage src={avatarSrc} alt={displayName || "User"} /> : null}
-            <AvatarFallback className="bg-accent text-accent-foreground font-bold">
+          <Avatar
+            className="h-10 w-10 ring-2 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
+            style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
+          >
+            {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
+            <AvatarFallback
+              className="font-bold"
+              style={avatarColor ? { backgroundColor: avatarColor } : {}}
+            >
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
