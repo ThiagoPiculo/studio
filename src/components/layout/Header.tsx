@@ -1,11 +1,10 @@
-
 "use client";
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { UserNav } from './UserNav';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
-import { Rocket, Users, ListChecks, ShieldCheck, LogIn, Gift, Menu, CalendarDays } from 'lucide-react';
+import { Rocket, ListChecks, ShieldCheck, LogIn, Gift, Menu, CalendarDays } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { useState } from 'react';
 
@@ -43,11 +42,6 @@ export function Header() {
               <Link href="/dashboard/rewards" passHref>
                 <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
                   <Gift className="h-4 w-4" /> Recompensas
-                </Button>
-              </Link>
-              <Link href="/dashboard/family" passHref>
-                <Button variant="ghost" className="flex items-center gap-1 md:gap-2 text-foreground hover:bg-accent hover:text-accent-foreground px-2 md:px-3">
-                  <Users className="h-4 w-4" /> Família
                 </Button>
               </Link>
               <FamilyContextSwitcher />
@@ -111,9 +105,6 @@ export function Header() {
                              </Button>
                              <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
                                 <Link href="/dashboard/rewards" onClick={closeSheet}><Gift className="h-5 w-5" /> Recompensas</Link>
-                             </Button>
-                             <Button asChild variant="ghost" className="w-full justify-start gap-2 text-base p-4">
-                                <Link href="/dashboard/family" onClick={closeSheet}><Users className="h-5 w-5" /> Família</Link>
                              </Button>
                           </>
                         ) : isChildAuthenticated ? (

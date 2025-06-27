@@ -1,49 +1,80 @@
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Home, Users } from 'lucide-react';
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
+import { Button } from '@/components/ui/button';
+import { Home, Users, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading } = useFamily();
+  const { user } = useAuth();
+  const router = useRouter();
 
+  const handleContextChange = (value: string) => {
+    setCurrentContext(value);
+    router.push('/dashboard');
+  };
+  
+  const currentContextData = availableContexts.find(c => c.id === currentContext);
+
+  if (!user) return null;
+  
   if (isLoading) {
     return (
-      <div className="flex items-center space-x-2 px-3 py-2 rounded-md border border-input bg-background text-sm text-muted-foreground">
-        Carregando contextos...
-      </div>
+      <Button variant="outline" className="w-auto min-w-[180px] justify-between h-10 gap-2" disabled>
+        <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Carregando...</span>
+        </div>
+      </Button>
     );
-  }
-  
-  if (!availableContexts || availableContexts.length <= 1) { 
-    return null;
   }
 
   return (
-    <Select value={currentContext} onValueChange={(value) => setCurrentContext(value)}>
-      <SelectTrigger className="w-auto min-w-[180px] h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
-        <SelectValue>
-           <div className="flex items-center gap-2">
-            {currentContext === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-            <span>{availableContexts.find(c => c.id === currentContext)?.name ?? "Selecionar contexto..."}</span>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" className="w-auto min-w-[180px] justify-between h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
+          <div className="flex items-center gap-2 truncate">
+            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <Users className="h-4 w-4 shrink-0" />}
+            <span className="truncate">{currentContextData?.name ?? "Carregando..."}</span>
           </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {availableContexts.map((context) => (
-          <SelectItem key={context.id} value={context.id}>
-            <div className="flex items-center gap-2">
-              {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
-              <span>{context.name}</span>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent className="w-64" align="end">
+        <DropdownMenuLabel>Alternar Contexto</DropdownMenuLabel>
+        <DropdownMenuRadioGroup value={currentContext} onValueChange={handleContextChange}>
+          {availableContexts.map((context) => (
+            <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer">
+              <div className="flex items-center gap-2">
+                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                <span>{context.name}</span>
+              </div>
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+        
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem asChild className="cursor-pointer">
+            <Link href="/dashboard/family">
+                <Settings className="mr-2 h-4 w-4" />
+                <span>Gerenciar Famílias</span>
+            </Link>
+        </DropdownMenuItem>
+
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
