@@ -58,13 +58,13 @@ export interface FamilyInvitation {
 }
 
 export const missionCategories = [
-  { id: 'home', label: 'Casa', icon: Home, colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
-  { id: 'school', label: 'Escola', icon: School, colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
-  { id: 'health', label: 'Saúde e Bem-Estar', icon: HeartPulse, colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
-  { id: 'behavior', label: 'Comportamento', icon: Smile, colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
-  { id: 'social', label: 'Social', icon: Users, colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30' },
-  { id: 'financial', label: 'Financeiro', icon: Banknote, colorClasses: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30' },
-  { id: 'environmental', label: 'Ambiental', icon: Leaf, colorClasses: 'bg-teal-500/10 text-teal-700 border-teal-500/30' },
+  { id: 'home', label: 'Casa', icon: Home, color: 'hsl(217 91% 60%)', colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
+  { id: 'school', label: 'Escola', icon: School, color: 'hsl(142 71% 45%)', colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
+  { id: 'health', label: 'Saúde', icon: HeartPulse, color: 'hsl(0 84% 60%)', colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
+  { id: 'behavior', label: 'Comportamento', icon: Smile, color: 'hsl(48 96% 53%)', colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
+  { id: 'social', label: 'Social', icon: Users, color: 'hsl(322 84% 60%)', colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30' },
+  { id: 'financial', label: 'Financeiro', icon: Banknote, color: 'hsl(262 88% 65%)', colorClasses: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30' },
+  { id: 'environmental', label: 'Ambiental', icon: Leaf, color: 'hsl(160 84% 39%)', colorClasses: 'bg-teal-500/10 text-teal-700 border-teal-500/30' },
 ] as const;
 
 export type MissionCategory = typeof missionCategories[number]['id'];

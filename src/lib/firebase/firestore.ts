@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   doc,
@@ -651,6 +652,17 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
 };
 
 // --- Mission Instances (Missões Atribuídas) ---
+
+export const getMissionInstancesForContext = async (ownerId: string, familyId: string | null): Promise<MissionInstance[]> => {
+  let q;
+  if (familyId && familyId !== 'my-space') {
+    q = query(collection(db, 'missionInstances'), where('familyId', '==', familyId));
+  } else {
+    q = query(collection(db, 'missionInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+  }
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+};
 
 export const addMissionInstance = async (
   instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'>,
