@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
 import { updateChildProfile } from "@/lib/firebase/firestore";
-import type { ChildProfile } from "@/lib/types";
+import type { ChildProfile, HeroColor } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -36,6 +37,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { heroColors } from "@/lib/hero-colors";
+import { ColorSelector } from "./ColorSelector";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -44,6 +47,9 @@ const profileFormSchema = z.object({
   }),
   gender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
+  }),
+  color: z.string().refine((val) => heroColors.includes(val as HeroColor), {
+    message: "Por favor, selecione uma cor válida."
   }),
 });
 
@@ -69,6 +75,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
+      color: child.color || heroColors[0], // Fallback to first color if undefined
     },
   });
   
@@ -77,6 +84,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
+      color: child.color || heroColors[0],
     });
     if (child.birthDate) {
       setMonth(child.birthDate.toDate());
@@ -91,6 +99,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         name: data.name,
         birthDate: Timestamp.fromDate(data.birthDate),
         gender: data.gender,
+        color: data.color,
       };
       await updateChildProfile(child.id, updates);
       onProfileUpdate();
@@ -129,7 +138,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
           name="name"
@@ -274,8 +283,22 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
             </FormItem>
           )}
         />
+
+        <FormField
+          control={form.control}
+          name="color"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cor do Herói</FormLabel>
+              <FormControl>
+                <ColorSelector value={field.value as HeroColor} onChange={field.onChange} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         
-        <div className="flex flex-col sm:flex-row-reverse gap-2 mt-8">
+        <div className="flex flex-col sm:flex-row-reverse gap-2 mt-8 border-t pt-6">
             <Button type="submit" className="sm:w-auto flex-grow" disabled={isLoading || isDeleting}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

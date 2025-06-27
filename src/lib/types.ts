@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, School, HeartPulse, Smile, Users, Banknote, Leaf } from 'lucide-react';
@@ -25,7 +24,7 @@ export interface ChildProfile {
   level: number;
   accessCode: string; // 6-digit code for child login
   avatar?: string; // URL to avatar image
-  color?: HeroColor;
+  color: HeroColor;
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
