@@ -612,6 +612,7 @@ export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id
   const newTemplate: MissionTemplate = {
     id: newTemplateRef.id,
     ...templateData,
+    isRecurring: !!templateData.isRecurring,
     recurrenceRule: templateData.recurrenceRule || null,
     status: 'active',
     createdAt: now,
@@ -688,8 +689,8 @@ export const addMissionInstance = async (
     status: 'pending',
     assignedAt: now,
     updatedAt: now,
-    dueDate: templateSnapshot.isRecurring ? undefined : templateSnapshot.startDate,
-    isRecurring: templateSnapshot.isRecurring,
+    dueDate: !!templateSnapshot.isRecurring ? null : (templateSnapshot.startDate || null),
+    isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
   };
   await setDoc(newInstanceRef, newInstance);
@@ -789,3 +790,4 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
+
