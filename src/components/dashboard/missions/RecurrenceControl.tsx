@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useFormContext, Controller } from "react-hook-form"
-import { format, setHours, setMinutes, setSeconds, parse } from "date-fns"
+import { format, setHours, setMinutes, setSeconds, parse, isValid } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -27,7 +27,7 @@ interface DateTimePickerProps {
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
   const [date, setDate] = React.useState<Date | undefined>(value ?? undefined);
-  const [time, setTime] = React.useState(value ? format(value, "HH:mm") : "09:00");
+  const [time, setTime] = React.useState(value && isValid(value) ? format(value, "HH:mm") : "09:00");
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) return;
@@ -52,6 +52,20 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
     }
   }
 
+  // This effect synchronizes the internal state with the external `value` prop.
+  // This is important for when the form is reset or the value is changed externally.
+  React.useEffect(() => {
+    if (value && isValid(value)) {
+      setDate(value);
+      setTime(format(value, "HH:mm"));
+    } else if (value === null || value === undefined) {
+      // If the external value is cleared, clear internal state.
+      setDate(undefined);
+      setTime("09:00"); // Reset to default time
+    }
+    // We only want to run this when the external `value` prop changes.
+  }, [value]);
+
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -59,11 +73,11 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground"
+            !date && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP, HH:mm", { locale: ptBR }) : <span>{label}</span>}
+          {date && isValid(date) ? format(date, "PPP, HH:mm", { locale: ptBR }) : <span>{label}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
@@ -101,7 +115,20 @@ export function RecurrenceControl() {
                     <FormControl>
                         <Switch
                             checked={field.value}
-                            onCheckedChange={field.onChange}
+                            onCheckedChange={(checked) => {
+                                field.onChange(checked);
+                                // When turning off recurrence, clear end date but keep start date
+                                if (!checked) {
+                                    setValue('endDate', null, { shouldValidate: true });
+                                    setValue('recurrenceRule', null, { shouldValidate: true });
+                                } else {
+                                    // When turning on, set a default recurrence if none exists
+                                    const currentRule = watch('recurrenceRule');
+                                    if (!currentRule) {
+                                        setValue('recurrenceRule', { freq: 'WEEKLY', byDay: [] }, { shouldValidate: true });
+                                    }
+                                }
+                            }}
                         />
                     </FormControl>
                 </FormItem>
@@ -170,7 +197,7 @@ export function RecurrenceControl() {
                     name="startDate"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Data de Início</FormLabel>
+                            <FormLabel>Data de Início da Recorrência</FormLabel>
                             <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha a data de início" />
                             <FormMessage />
                         </FormItem>
