@@ -89,6 +89,8 @@ export interface RecurrenceRule {
   freq: RecurrenceFrequency;
   interval: number;
   byDay?: Weekday[];
+  endDate?: Timestamp | null;
+  count?: number | null;
 }
 
 export interface MissionTemplate {
@@ -105,7 +107,6 @@ export interface MissionTemplate {
   status: 'active' | 'archived';
   // Scheduling fields
   startDate?: Timestamp | null;
-  endDate?: Timestamp | null;
   recurrenceRule?: RecurrenceRule | null;
 }
 

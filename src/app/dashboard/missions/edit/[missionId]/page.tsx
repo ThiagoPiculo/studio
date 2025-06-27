@@ -21,6 +21,15 @@ import { Loader2, ListChecks, Save, ArrowLeft, Star as StarIcon, BadgeCheck } fr
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 import { Timestamp } from 'firebase/firestore';
 
+const recurrenceRuleSchema = z.object({
+  freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+  interval: z.coerce.number().min(1),
+  byDay: z.array(z.enum(weekdays)).optional(),
+  endDate: z.date().optional().nullable(),
+  count: z.coerce.number().min(1).optional().nullable(),
+}).nullable();
+
+
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional().default(''),
@@ -33,19 +42,15 @@ const missionTemplateFormSchema = z.object({
   
   isRecurring: z.boolean().default(false),
   startDate: z.date().optional().nullable(),
-  endDate: z.date().optional().nullable(),
-  recurrenceRule: z.object({
-    freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']).default('WEEKLY'),
-    byDay: z.array(z.enum(weekdays)).optional(),
-  }).optional().nullable(),
+  recurrenceRule: recurrenceRuleSchema,
 }).refine(data => {
-    if (data.isRecurring && data.endDate && data.startDate && data.endDate < data.startDate) {
+    if (data.isRecurring && data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
         return false;
     }
     return true;
 }, {
-    message: "A data de fim não pode ser anterior à data de início.",
-    path: ['endDate'],
+    message: "A data de fim da recorrência não pode ser anterior à data de início.",
+    path: ['recurrenceRule.endDate'],
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -72,7 +77,6 @@ export default function EditMissionTemplatePage() {
       status: 'active',
       isRecurring: false,
       startDate: null,
-      endDate: null,
       recurrenceRule: null,
     },
   });
@@ -91,6 +95,15 @@ export default function EditMissionTemplatePage() {
         const fetchedTemplate = await getMissionTemplateById(missionId);
         if (fetchedTemplate) {
           setMissionTemplate(fetchedTemplate);
+          
+          let initialRecurrenceRule = null;
+          if (fetchedTemplate.recurrenceRule) {
+            initialRecurrenceRule = {
+              ...fetchedTemplate.recurrenceRule,
+              endDate: fetchedTemplate.recurrenceRule.endDate?.toDate() ?? null
+            }
+          }
+
           form.reset({
             title: fetchedTemplate.title,
             description: fetchedTemplate.description || '',
@@ -100,11 +113,7 @@ export default function EditMissionTemplatePage() {
             status: fetchedTemplate.status,
             isRecurring: !!fetchedTemplate.recurrenceRule,
             startDate: fetchedTemplate.startDate?.toDate() || null,
-            endDate: fetchedTemplate.endDate?.toDate() || null,
-            recurrenceRule: fetchedTemplate.recurrenceRule ? {
-                freq: fetchedTemplate.recurrenceRule.freq,
-                byDay: fetchedTemplate.recurrenceRule.byDay
-            } : null,
+            recurrenceRule: initialRecurrenceRule,
           });
         } else {
           toast({ title: "Missão não encontrada", variant: "destructive" });
@@ -128,14 +137,7 @@ export default function EditMissionTemplatePage() {
     }
     setIsLoading(true);
 
-    let finalRecurrenceRule: MissionTemplate['recurrenceRule'] = null;
-    if (values.isRecurring && values.recurrenceRule) {
-      finalRecurrenceRule = {
-        freq: values.recurrenceRule.freq,
-        interval: 1,
-        byDay: values.recurrenceRule.byDay,
-      };
-    }
+    const recurrenceRule = values.isRecurring ? values.recurrenceRule : null;
 
     try {
       const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId'>> = {
@@ -146,8 +148,10 @@ export default function EditMissionTemplatePage() {
           xpReward: values.xpReward,
           status: values.status,
           startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
-          endDate: values.endDate ? Timestamp.fromDate(values.endDate) : null,
-          recurrenceRule: finalRecurrenceRule,
+          recurrenceRule: recurrenceRule ? {
+            ...recurrenceRule,
+            endDate: recurrenceRule.endDate ? Timestamp.fromDate(recurrenceRule.endDate) : null
+          } : null,
       }
       await updateMissionTemplate(missionTemplate.id, updatePayload);
       toast({
