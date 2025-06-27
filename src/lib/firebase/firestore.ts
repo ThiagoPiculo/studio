@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
+import { heroColors } from '../hero-colors';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -41,8 +42,9 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar'>): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
+  const randomColor = heroColors[Math.floor(Math.random() * heroColors.length)];
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
   const newChild: ChildProfile = {
@@ -56,6 +58,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     xp: 0,
     level: 1,
     accessCode,
+    color: randomColor,
     createdAt: now,
     updatedAt: now,
     familyId: null,
