@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -190,37 +189,38 @@ export default function EditMissionTemplatePage() {
                   </FormItem>
                 )}
               />
-
-              <RecurrenceControl />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {missionCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                             <div className="flex items-center">
-                               {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
-                               <span>{category.label}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <RecurrenceControl />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {missionCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              <div className="flex items-center">
+                                {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
+                                <span>{category.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}

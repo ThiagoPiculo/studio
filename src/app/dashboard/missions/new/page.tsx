@@ -21,6 +21,7 @@ import { missionCategories, weekdays } from '@/lib/types';
 import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -42,6 +43,8 @@ function CreateMissionTemplatePageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
 
   const initialTitle = searchParams.get('title') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
@@ -80,12 +83,15 @@ function CreateMissionTemplatePageContent() {
         recurrenceRule: values.recurrenceRule || null,
       };
       
-      await addMissionTemplate(templateDataPayload);
+      const createdTemplate = await addMissionTemplate(templateDataPayload);
       toast({
         title: 'Missão Adicionada ao Catálogo!',
-        description: `A missão "${values.title}" está pronta para ser atribuída.`,
+        description: `A missão "${createdTemplate.title}" está pronta para ser atribuída.`,
       });
-      router.push('/dashboard/missions');
+      setNewlyCreatedTemplate(createdTemplate);
+      setIsAssignDialogOpen(true);
+      form.reset();
+
     } catch (error) {
       console.error('Error creating mission template:', error);
       toast({
@@ -157,35 +163,36 @@ function CreateMissionTemplatePageContent() {
                 )}
               />
 
-              <RecurrenceControl />
-
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {missionCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                             <div className="flex items-center">
-                               <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />
-                               <span>{category.label}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <RecurrenceControl />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {missionCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                              <div className="flex items-center">
+                                <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />
+                                <span>{category.label}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
@@ -228,12 +235,28 @@ function CreateMissionTemplatePageContent() {
                 ) : (
                   <ListChecks className="mr-2 h-4 w-4" />
                 )}
-                Criar Missão
+                Criar e Atribuir Missão
               </Button>
             </form>
           </Form>
         </CardContent>
       </Card>
+      {newlyCreatedTemplate && (
+        <AssignMissionDialog
+          template={newlyCreatedTemplate}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) { 
+              setNewlyCreatedTemplate(null);
+              router.push('/dashboard/missions');
+            }
+            setIsAssignDialogOpen(isOpen);
+          }}
+          onAssigned={() => {
+            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+          }}
+        />
+      )}
     </div>
   );
 }
