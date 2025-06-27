@@ -207,19 +207,25 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
     const weekendsArr: Weekday[] = ['SA', 'SU'];
     
     if (haveSameElements(rule.byDay, allWeekdays)) {
-        return rule.interval === 1 ? 'Diariamente' : summary;
+        if (rule.interval === 1) {
+          summary = 'Diariamente';
+        }
+    } else if (haveSameElements(rule.byDay, weekdaysArr)) {
+        summary = `${summary} nos dias de semana`;
+    } else if (haveSameElements(rule.byDay, weekendsArr)) {
+        summary = `${summary} nos fins de semana`;
+    } else {
+      const orderedSelectedDays = allWeekdays.filter(day => rule.byDay!.includes(day));
+      const translatedDays = orderedSelectedDays.map(day => weekdayLabels[day].short).join(', ');
+      summary += ` em ${translatedDays}`;
     }
-    if (haveSameElements(rule.byDay, weekdaysArr)) {
-        return `${summary} nos dias de semana`;
-    }
-    if (haveSameElements(rule.byDay, weekendsArr)) {
-        return `${summary} nos fins de semana`;
-    }
+  }
 
-    // Default case: list the days, ordered by week (allWeekdays is already ordered)
-    const orderedSelectedDays = allWeekdays.filter(day => rule.byDay!.includes(day));
-    const translatedDays = orderedSelectedDays.map(day => weekdayLabels[day].short).join(', ');
-    summary += ` em ${translatedDays}`;
+  if (rule.endDate) {
+    const date = (rule.endDate as Timestamp).toDate();
+    summary += `, até ${formatDateFns(date, 'dd/MM/yyyy')}`;
+  } else if (rule.count) {
+    summary += `, ${rule.count} ${rule.count > 1 ? 'vezes' : 'vez'}`;
   }
 
   return summary;
