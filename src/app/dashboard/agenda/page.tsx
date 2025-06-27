@@ -2,9 +2,9 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isToday, getDay } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isToday, getDay, addDays, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, X, ChevronDown, CalendarDays, Rows3 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -16,6 +16,7 @@ import { missionCategories } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
@@ -26,10 +27,13 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
+type ViewMode = 'month' | 'week';
+
 export default function AgendaPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<ViewMode>('month');
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
@@ -70,11 +74,18 @@ export default function AgendaPage() {
 
   const categoryDetailsMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
 
+  const viewInterval = useMemo(() => {
+    if (viewMode === 'month') {
+        return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
+    }
+    // week view
+    return { start: startOfWeek(currentDate, { weekStartsOn: 0 }), end: endOfWeek(currentDate, { weekStartsOn: 0 }) };
+  }, [currentDate, viewMode]);
+
   const events = useMemo(() => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
+    const { start: viewStart, end: viewEnd } = viewInterval;
     
-    const recurringEvents = generateRecurringEvents(missionTemplates, monthStart, monthEnd);
+    const recurringEvents = generateRecurringEvents(missionTemplates, viewStart, viewEnd);
 
     const instanceEvents: CalendarEvent[] = missionInstances.map(instance => {
       const date = (instance.dueDate || instance.assignedAt) as Timestamp;
@@ -85,7 +96,7 @@ export default function AgendaPage() {
         type: 'instance',
         data: instance,
       };
-    }).filter(event => event.date >= monthStart && event.date <= monthEnd);
+    }).filter(event => event.date >= viewStart && event.date <= viewEnd);
     
     let allEvents = [...recurringEvents, ...instanceEvents];
 
@@ -97,7 +108,7 @@ export default function AgendaPage() {
     }
 
     return allEvents;
-  }, [currentMonth, missionTemplates, missionInstances, selectedChildId, categoryDetailsMap]);
+  }, [viewInterval, missionTemplates, missionInstances, selectedChildId, categoryDetailsMap]);
 
   const eventsByDate = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -111,18 +122,17 @@ export default function AgendaPage() {
   }, [events]);
 
   const missionCountsByChild = useMemo(() => {
+    const { start: viewStart, end: viewEnd } = viewInterval;
     const counts: Record<string, number> = {};
     children.forEach(c => counts[c.id] = 0);
     missionInstances.forEach(instance => {
-        const monthStart = startOfMonth(currentMonth);
-        const monthEnd = endOfMonth(currentMonth);
         const instanceDate = (instance.dueDate || instance.assignedAt).toDate();
-        if (instance.childId && counts[instance.childId] !== undefined && instanceDate >= monthStart && instanceDate <= monthEnd) {
+        if (instance.childId && counts[instance.childId] !== undefined && instanceDate >= viewStart && instanceDate <= viewEnd) {
             counts[instance.childId]++;
         }
     });
     return counts;
-  }, [missionInstances, children, currentMonth]);
+  }, [missionInstances, children, viewInterval]);
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
@@ -150,17 +160,46 @@ export default function AgendaPage() {
     return { instancesByChild, templates };
   }, [eventsForSelectedDate]);
 
+  const handlePrev = () => {
+    if (viewMode === 'month') {
+        setCurrentDate(subMonths(currentDate, 1));
+    } else {
+        setCurrentDate(subDays(currentDate, 7));
+    }
+  };
 
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
+  const handleNext = () => {
+      if (viewMode === 'month') {
+          setCurrentDate(addMonths(currentDate, 1));
+      } else {
+          setCurrentDate(addDays(currentDate, 7));
+      }
+  };
+  
+  const formatHeaderDate = (date: Date, view: 'month' | 'week') => {
+    if (view === 'month') {
+        return format(date, 'MMMM yyyy', { locale: ptBR });
+    }
+    const start = startOfWeek(date, { weekStartsOn: 0 });
+    const end = endOfWeek(date, { weekStartsOn: 0 });
+    
+    const startMonth = format(start, 'MMMM', { locale: ptBR });
+    const endMonth = format(end, 'MMMM', { locale: ptBR });
+
+    if (startMonth === endMonth) {
+        return `${format(start, 'd')} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+    } else {
+        return `${format(start, "d 'de' MMMM", { locale: ptBR })} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+    }
+  };
 
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
-  const renderCalendar = () => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const startDate = startOfWeek(monthStart);
-    const endDate = endOfWeek(monthEnd);
+  const renderMonthView = () => {
+    const monthStart = startOfMonth(currentDate);
+    const monthEnd = endOfMonth(currentDate);
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
     
     const days = [];
     let day = startDate;
@@ -192,7 +231,7 @@ export default function AgendaPage() {
                         disabled={dayEvents.length === 0 || isDisabledByFilter}
                         className={cn(
                             "h-28 md:h-36 border-b border-r p-1.5 flex flex-col relative text-left",
-                            !isSameMonth(d, currentMonth) && "bg-muted/30 text-muted-foreground opacity-50",
+                            !isSameMonth(d, currentDate) && "bg-muted/30 text-muted-foreground opacity-50",
                             dayEvents.length > 0 && "cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary z-10",
                             isDisabledByFilter && "opacity-30 pointer-events-none"
                         )}
@@ -220,6 +259,50 @@ export default function AgendaPage() {
     );
   };
   
+  const renderWeekView = () => {
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
+
+    return (
+        <div className="border-t border-l rounded-lg shadow-sm grid grid-cols-7">
+            {/* Header */}
+            {days.map(day => (
+                 <div key={day.toString()} className={cn("text-center font-semibold p-2 border-b border-r bg-muted/50", isToday(day) && 'bg-primary/10')}>
+                    <span className="text-sm text-muted-foreground uppercase hidden md:inline">{format(day, 'cccc', { locale: ptBR })}</span>
+                     <span className="text-sm text-muted-foreground uppercase md:hidden">{format(day, 'ccc', { locale: ptBR })}</span>
+                    <p className={cn("font-bold text-2xl mt-1", isToday(day) ? 'text-primary' : 'text-foreground')}>{format(day, 'd')}</p>
+                </div>
+            ))}
+            {/* Body */}
+            {days.map(day => {
+                const dayEvents = eventsByDate[format(day, 'yyyy-MM-dd')] || [];
+                const dayOfWeek = getDay(day);
+                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                let isDisabledByFilter = false;
+                if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
+                if (dayFilter === 'weekends' && !isWeekend) isDisabledByFilter = true;
+
+                return (
+                    <div key={day.toString()} className={cn("h-[60vh] border-r p-1 flex flex-col relative overflow-y-auto space-y-2", isDisabledByFilter && 'opacity-30')}>
+                        {dayEvents.map((event, eventIndex) => (
+                             <button 
+                                key={eventIndex} 
+                                onClick={() => setSelectedDate(day)}
+                                disabled={isDisabledByFilter}
+                                className="w-full p-1.5 rounded-md flex items-center gap-2 text-left hover:shadow-md transition-shadow"
+                                style={{ backgroundColor: `${event.color}20` }}
+                             >
+                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }}></div>
+                                <p className="truncate text-sm font-medium" style={{ color: event.color }}>{event.title}</p>
+                            </button>
+                        ))}
+                    </div>
+                )
+            })}
+        </div>
+    )
+  }
+
   if (isLoading) return <Loading />;
 
   return (
@@ -236,16 +319,35 @@ export default function AgendaPage() {
                         Planeje e visualize as missões da sua equipe.
                     </CardDescription>
                 </div>
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={prevMonth} aria-label="Mês anterior">
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <h2 className="text-xl font-semibold text-center w-48 capitalize">
-                        {format(currentMonth, 'MMMM yyyy', { locale: ptBR })}
-                    </h2>
-                    <Button variant="outline" size="icon" onClick={nextMonth} aria-label="Próximo mês">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
+                <div className="flex items-center gap-4">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-32">
+                          {viewMode === 'month' ? 'Mês' : 'Semana'}
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => setViewMode('month')}>
+                            <CalendarDays className="mr-2 h-4 w-4" /> Mês
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => setViewMode('week')}>
+                            <Rows3 className="mr-2 h-4 w-4" /> Semana
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+
+                    <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize">
+                            {formatHeaderDate(currentDate, viewMode)}
+                        </h2>
+                        <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
             </div>
         </CardHeader>
@@ -297,7 +399,8 @@ export default function AgendaPage() {
         </CardContent>
       </Card>
       
-      {renderCalendar()}
+      {viewMode === 'month' && renderMonthView()}
+      {viewMode === 'week' && renderWeekView()}
 
       <Dialog open={!!selectedDate} onOpenChange={(isOpen) => !isOpen && setSelectedDate(null)}>
         <DialogContent className="max-w-lg">
@@ -370,4 +473,3 @@ export default function AgendaPage() {
     </div>
   );
 }
-
