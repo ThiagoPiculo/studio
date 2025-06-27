@@ -688,6 +688,7 @@ export const addMissionInstance = async (
     status: 'pending',
     assignedAt: now,
     updatedAt: now,
+    dueDate: templateSnapshot.isRecurring ? undefined : templateSnapshot.startDate,
   };
   await setDoc(newInstanceRef, newInstance);
   return newInstance;

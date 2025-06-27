@@ -111,7 +111,7 @@ export default function EditMissionTemplatePage() {
             starsReward: fetchedTemplate.starsReward,
             xpReward: fetchedTemplate.xpReward,
             status: fetchedTemplate.status,
-            isRecurring: !!fetchedTemplate.recurrenceRule,
+            isRecurring: !!fetchedTemplate.isRecurring,
             startDate: fetchedTemplate.startDate?.toDate() || null,
             recurrenceRule: initialRecurrenceRule,
           });
@@ -148,6 +148,7 @@ export default function EditMissionTemplatePage() {
           xpReward: values.xpReward,
           status: values.status,
           startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
+          isRecurring: values.isRecurring,
           recurrenceRule: recurrenceRule ? {
             ...recurrenceRule,
             endDate: recurrenceRule.endDate ? Timestamp.fromDate(recurrenceRule.endDate) : null

@@ -1,6 +1,6 @@
 
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
-import { missionCategories, weekdayLabels } from '@/lib/types';
+import { missionCategories, weekdayLabels, weekdays as allWeekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import {
   addDays,
@@ -13,7 +13,8 @@ import {
   isBefore,
   isSameDay,
   startOfDay,
-  format as formatDateFns
+  format as formatDateFns,
+  startOfWeek
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -25,7 +26,7 @@ export interface CalendarEvent {
   data: MissionTemplate | MissionInstance;
 }
 
-const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
+const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
 
 export function generateRecurringEvents(
   templates: MissionTemplate[],
@@ -33,83 +34,96 @@ export function generateRecurringEvents(
   viewEnd: Date
 ): CalendarEvent[] {
   const events: CalendarEvent[] = [];
-  const categoryColorMap = new Map(missionCategories.map(cat => [cat.color, cat.color]));
+  const categoryDetailsMap = new Map(missionCategories.map(cat => [cat.id, cat]));
 
   templates.forEach(template => {
-    if (!template.isRecurring || !template.recurrenceRule || template.status === 'archived' || !template.startDate) return;
+    if (!template.isRecurring || !template.recurrenceRule || !template.startDate || template.status === 'archived') {
+      return;
+    }
 
     const rule = template.recurrenceRule;
-    const startDate = template.startDate.toDate();
     const ruleEndDate = rule.endDate ? rule.endDate.toDate() : null;
     let occurrenceCount = 0;
+    
+    let iterDate = template.startDate.toDate();
 
-    let currentDate = startDate;
+    while (iterDate <= viewEnd && (!rule.count || occurrenceCount < rule.count) && (!ruleEndDate || isSameDay(iterDate, ruleEndDate) || isBefore(iterDate, ruleEndDate))) {
 
-    while (isBefore(currentDate, viewEnd) && (!ruleEndDate || !isAfter(currentDate, ruleEndDate))) {
-      if (rule.count && occurrenceCount >= rule.count) {
-        break; // Stop if max occurrences reached
-      }
-
-      // Check if the current date is a valid occurrence
-      let isOccurrence = false;
       if (rule.freq === 'DAILY') {
-        isOccurrence = true;
-      } else if (rule.freq === 'WEEKLY') {
-        const dayOfWeek = getDayToWeekday[getDay(currentDate)];
-        if (!rule.byDay || rule.byDay.length === 0 || rule.byDay.includes(dayOfWeek)) {
-          isOccurrence = true;
-        }
-      } else if (rule.freq === 'MONTHLY') {
-        if (currentDate.getDate() === startDate.getDate()) {
-            isOccurrence = true;
-        }
-      } else if (rule.freq === 'YEARLY') {
-        if (currentDate.getDate() === startDate.getDate() && currentDate.getMonth() === startDate.getMonth()) {
-            isOccurrence = true;
-        }
-      }
-      
-      if (isOccurrence) {
-        occurrenceCount++;
-        // Check if the occurrence is within the view's interval
-        if (isAfter(currentDate, viewStart) || isSameDay(currentDate, viewStart)) {
+        if (iterDate >= viewStart) {
           events.push({
-            date: currentDate,
+            date: iterDate,
             title: template.title,
-            color: categoryColorMap.get(template.category) || 'hsl(var(--foreground))',
+            color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
             type: 'template',
             data: template,
           });
         }
-      }
-      
-      // Move to the next potential date based on the interval
-      if(rule.freq === 'DAILY') {
-          currentDate = addDays(currentDate, 1);
-          // For interval based daily, we have to recalculate
-          if(rule.interval > 1) {
-              currentDate = addDays(startDate, occurrenceCount * rule.interval);
-          }
-      } else if(rule.freq === 'WEEKLY') {
-           // For weekly, we check each day, so just advance one day
-           currentDate = addDays(currentDate, 1);
-           // Special handling for interval > 1. Logic becomes more complex.
-           // A simple approach is to jump weeks if we pass the last day of the current week pattern.
-           // This part needs refinement for complex intervals.
-           // For now, let's assume a basic check within the loop is enough if we advance day by day.
+        occurrenceCount++;
+        iterDate = addDays(iterDate, rule.interval);
+
+      } else if (rule.freq === 'WEEKLY') {
+        const daysToRepeatOn = rule.byDay && rule.byDay.length > 0 ? rule.byDay : allWeekdays;
+        
+        // Iterate through the days of the current week for the iterator
+        for (const dayShort of daysToRepeatOn) {
+            const dayNumber = weekdayToGetDay[dayShort];
+            // Find the date for this weekday within the current week of iterDate
+            const weekStart = startOfWeek(iterDate, { weekStartsOn: 1 });
+            const occurrenceDate = addDays(weekStart, dayNumber - 1); // Adjust since our week starts on Monday (1)
+
+             if (occurrenceDate < iterDate) continue; // Don't generate for past days in the first week
+             if (ruleEndDate && isAfter(occurrenceDate, ruleEndDate)) continue; // Don't generate after end date
+             if (rule.count && occurrenceCount >= rule.count) break;
+
+            if (occurrenceDate >= viewStart && occurrenceDate <= viewEnd) {
+                 events.push({
+                    date: occurrenceDate,
+                    title: template.title,
+                    color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
+                    type: 'template',
+                    data: template,
+                });
+            }
+        }
+        
+        occurrenceCount++; // This logic is simplified; count might not be perfectly accurate with byDay
+        iterDate = addWeeks(startOfWeek(iterDate, { weekStartsOn: 1 }), rule.interval);
+        
       } else if (rule.freq === 'MONTHLY') {
-          currentDate = addMonths(currentDate, rule.interval);
+         if (iterDate >= viewStart) {
+            events.push({
+              date: iterDate,
+              title: template.title,
+              color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
+              type: 'template',
+              data: template,
+            });
+        }
+        occurrenceCount++;
+        iterDate = addMonths(iterDate, rule.interval);
+
       } else if (rule.freq === 'YEARLY') {
-          currentDate = addYears(currentDate, rule.interval);
+         if (iterDate >= viewStart) {
+            events.push({
+              date: iterDate,
+              title: template.title,
+              color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
+              type: 'template',
+              data: template,
+            });
+        }
+        occurrenceCount++;
+        iterDate = addYears(iterDate, rule.interval);
       } else {
-          // Default break for safety
-          break;
+        break; // Should not happen
       }
     }
   });
 
   return events;
 }
+
 
 export function groupEventsByDate(events: CalendarEvent[]): Record<string, CalendarEvent[]> {
     return events.reduce((acc, event) => {

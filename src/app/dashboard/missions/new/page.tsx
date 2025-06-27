@@ -107,6 +107,7 @@ function CreateMissionTemplatePageContent() {
         starsReward: values.starsReward,
         xpReward: values.xpReward,
         startDate: values.startDate ? Timestamp.fromDate(values.startDate) : null,
+        isRecurring: values.isRecurring,
         recurrenceRule: recurrenceRule ? {
             ...recurrenceRule,
             endDate: recurrenceRule.endDate ? Timestamp.fromDate(recurrenceRule.endDate) : null,
