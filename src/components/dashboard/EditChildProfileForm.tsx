@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
-import { updateChildProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, Trash2 } from "lucide-react";
@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { heroColors } from "@/lib/hero-colors";
 import { ColorSelector } from "./ColorSelector";
+import { Skeleton } from "../ui/skeleton";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -68,6 +69,9 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
   const [month, setMonth] = useState<Date>(child.birthDate?.toDate() || new Date());
+  
+  const [usedColors, setUsedColors] = useState<HeroColor[]>([]);
+  const [isLoadingColors, setIsLoadingColors] = useState(true);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -75,7 +79,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
-      color: child.color || heroColors[0], // Fallback to first color if undefined
+      color: child.color || heroColors[0], 
     },
   });
   
@@ -90,6 +94,36 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       setMonth(child.birthDate.toDate());
     }
   }, [child, form]);
+
+  useEffect(() => {
+    const fetchUsedColors = async () => {
+        if (!child) {
+            setIsLoadingColors(false);
+            return;
+        };
+        setIsLoadingColors(true);
+        try {
+            let otherChildren: ChildProfile[] = [];
+            if (child.familyId) {
+                otherChildren = await getChildProfilesByFamily(child.familyId);
+            } else {
+                otherChildren = await getChildProfilesByOwner(child.ownerId);
+            }
+            
+            const colors = otherChildren
+                .filter(c => c.id !== child.id) 
+                .map(c => c.color);
+                
+            setUsedColors(colors as HeroColor[]);
+        } catch(error) {
+            console.error("Error fetching used colors:", error);
+        } finally {
+            setIsLoadingColors(false);
+        }
+    };
+    fetchUsedColors();
+  }, [child]);
+
 
   const onSubmit = async (data: ProfileFormValues) => {
     setIsLoading(true);
@@ -291,7 +325,19 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
             <FormItem>
               <FormLabel>Cor do Herói</FormLabel>
               <FormControl>
-                <ColorSelector value={field.value as HeroColor} onChange={field.onChange} />
+                 {isLoadingColors ? (
+                    <div className="grid grid-cols-8 gap-2">
+                        {Array.from({ length: 16 }).map((_, i) => (
+                          <Skeleton key={i} className="h-10 w-10 rounded-full" />
+                        ))}
+                    </div>
+                ) : (
+                    <ColorSelector
+                      value={field.value as HeroColor}
+                      onChange={field.onChange}
+                      disabledColors={usedColors}
+                    />
+                )}
               </FormControl>
               <FormMessage />
             </FormItem>
