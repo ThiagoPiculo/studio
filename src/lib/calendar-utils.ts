@@ -45,7 +45,7 @@ export function generateRecurringEvents(
     const ruleEndDate = rule.endDate ? rule.endDate.toDate() : null;
     let occurrenceCount = 0;
     
-    let iterDate = template.startDate.toDate();
+    let iterDate = startOfDay(template.startDate.toDate());
 
     while (iterDate <= viewEnd && (!rule.count || occurrenceCount < rule.count) && (!ruleEndDate || isSameDay(iterDate, ruleEndDate) || isBefore(iterDate, ruleEndDate))) {
 
@@ -65,30 +65,35 @@ export function generateRecurringEvents(
       } else if (rule.freq === 'WEEKLY') {
         const daysToRepeatOn = rule.byDay && rule.byDay.length > 0 ? rule.byDay : allWeekdays;
         
-        // Iterate through the days of the current week for the iterator
-        for (const dayShort of daysToRepeatOn) {
-            const dayNumber = weekdayToGetDay[dayShort];
-            // Find the date for this weekday within the current week of iterDate
-            const weekStart = startOfWeek(iterDate, { weekStartsOn: 1 });
-            const occurrenceDate = addDays(weekStart, dayNumber - 1); // Adjust since our week starts on Monday (1)
+        let weekStartForLoop = startOfWeek(iterDate, { weekStartsOn: 1 });
+        if (isAfter(weekStartForLoop, iterDate)) {
+            weekStartForLoop = addWeeks(weekStartForLoop, -1);
+        }
 
-             if (occurrenceDate < iterDate) continue; // Don't generate for past days in the first week
-             if (ruleEndDate && isAfter(occurrenceDate, ruleEndDate)) continue; // Don't generate after end date
-             if (rule.count && occurrenceCount >= rule.count) break;
+        for (let i = 0; i < 7; i++) {
+            const currentDayInWeek = addDays(weekStartForLoop, i);
+            
+            if (isBefore(currentDayInWeek, iterDate)) continue;
 
-            if (occurrenceDate >= viewStart && occurrenceDate <= viewEnd) {
-                 events.push({
-                    date: occurrenceDate,
-                    title: template.title,
-                    color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
-                    type: 'template',
-                    data: template,
-                });
+            const dayShort = allWeekdays[getDay(currentDayInWeek)];
+
+            if (daysToRepeatOn.includes(dayShort)) {
+                 if (ruleEndDate && isAfter(currentDayInWeek, ruleEndDate)) continue;
+                 if (rule.count && occurrenceCount >= rule.count) break;
+
+                 if (currentDayInWeek >= viewStart && currentDayInWeek <= viewEnd) {
+                     events.push({
+                        date: currentDayInWeek,
+                        title: template.title,
+                        color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
+                        type: 'template',
+                        data: template,
+                    });
+                 }
+                 occurrenceCount++;
             }
         }
-        
-        occurrenceCount++; // This logic is simplified; count might not be perfectly accurate with byDay
-        iterDate = addWeeks(startOfWeek(iterDate, { weekStartsOn: 1 }), rule.interval);
+        iterDate = addWeeks(iterDate, rule.interval);
         
       } else if (rule.freq === 'MONTHLY') {
          if (iterDate >= viewStart) {
@@ -152,6 +157,16 @@ type RecurrenceSummarySource = {
   dueDate?: Timestamp;
 };
 
+// Helper function to check if two arrays of strings have the same elements, regardless of order.
+const haveSameElements = (arr1: string[], arr2: string[]): boolean => {
+  if (arr1.length !== arr2.length) {
+    return false;
+  }
+  const sorted1 = [...arr1].sort();
+  const sorted2 = [...arr2].sort();
+  return sorted1.every((value, index) => value === sorted2[index]);
+};
+
 export function formatRecurrenceSummary(mission: RecurrenceSummarySource): string {
   if (!mission.isRecurring || !mission.recurrenceRule) {
     const date = (mission.dueDate || mission.startDate) as Timestamp | undefined | null;
@@ -172,21 +187,38 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
         case 'YEARLY': return 'Anualmente';
       }
     }
-    const unit = {
-      DAILY: 'dia',
-      WEEKLY: 'semana',
-      MONTHLY: 'mês',
-      YEARLY: 'ano'
-    }[rule.freq];
-
-    const plural = rule.freq === 'MONTHLY' ? 'meses' : `${unit}s`;
+    
+    let unit: string;
+    let plural: string;
+    switch (rule.freq) {
+        case 'DAILY': unit = 'dia'; plural = 'dias'; break;
+        case 'WEEKLY': unit = 'semana'; plural = 'semanas'; break;
+        case 'MONTHLY': unit = 'mês'; plural = 'meses'; break;
+        case 'YEARLY': unit = 'ano'; plural = 'anos'; break;
+    }
+    
     return `A cada ${rule.interval} ${plural}`;
   };
-
+  
   let summary = getFrequencyText();
+  
+  if (rule.freq === 'WEEKLY' && rule.byDay && rule.byDay.length > 0) {
+    const weekdaysArr: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+    const weekendsArr: Weekday[] = ['SA', 'SU'];
+    
+    if (haveSameElements(rule.byDay, allWeekdays)) {
+        return rule.interval === 1 ? 'Diariamente' : summary;
+    }
+    if (haveSameElements(rule.byDay, weekdaysArr)) {
+        return `${summary} nos dias de semana`;
+    }
+    if (haveSameElements(rule.byDay, weekendsArr)) {
+        return `${summary} nos fins de semana`;
+    }
 
-  if (rule.byDay && rule.byDay.length > 0 && rule.byDay.length < 7 && rule.freq === 'WEEKLY') {
-    const translatedDays = rule.byDay.map(day => weekdayLabels[day].short).join(', ');
+    // Default case: list the days, ordered by week (allWeekdays is already ordered)
+    const orderedSelectedDays = allWeekdays.filter(day => rule.byDay!.includes(day));
+    const translatedDays = orderedSelectedDays.map(day => weekdayLabels[day].short).join(', ');
     summary += ` em ${translatedDays}`;
   }
 
