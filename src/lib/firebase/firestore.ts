@@ -15,7 +15,10 @@ import {
   writeBatch,
   setDoc,
   orderBy,
-  runTransaction
+  runTransaction,
+  arrayUnion,
+  arrayRemove,
+  increment,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
@@ -669,7 +672,7 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule'>,
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates'>,
   templateSnapshot: MissionTemplate
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -692,6 +695,8 @@ export const addMissionInstance = async (
     dueDate: templateSnapshot.dueDate || null,
     isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
+    completionCount: 0,
+    completedDates: [],
   };
   await setDoc(newInstanceRef, newInstance);
   return newInstance;
@@ -754,8 +759,11 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
         
         const childData = childSnap.data() as ChildProfile;
         
-        const newStars = childData.stars + missionData.starsReward;
-        const newXp = childData.xp + missionData.xpReward;
+        // --- Child Stats Update ---
+        const currentStars = childData.stars;
+        const currentXp = childData.xp;
+        const newStars = currentStars + missionData.starsReward;
+        const newXp = currentXp + missionData.xpReward;
         let newLevel = childData.level;
 
         let xpForNextLevel = calculateXpForNextLevel(childData.level);
@@ -763,26 +771,109 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
             newLevel++;
             xpForNextLevel = calculateXpForNextLevel(newLevel);
         }
-        
-        const updatedChildData = {
+
+        const finalChildUpdates: any = {
             stars: newStars,
             xp: newXp,
             level: newLevel,
             updatedAt: serverTimestamp(),
         };
-        transaction.update(childRef, updatedChildData);
+        transaction.update(childRef, finalChildUpdates);
+
+        // --- Mission Instance Update ---
+        const completionTimestamp = serverTimestamp();
+        if (!missionData.isRecurring) {
+            transaction.update(missionRef, {
+                status: 'completed',
+                completedAt: completionTimestamp,
+                updatedAt: completionTimestamp,
+                completionCount: 1,
+                completedDates: arrayUnion(completionTimestamp)
+            });
+        } else {
+            const newCompletionCount = (missionData.completionCount || 0) + 1;
+            const isFullyCompleted = missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count;
+
+            const missionUpdates: any = {
+                completionCount: newCompletionCount,
+                completedDates: arrayUnion(completionTimestamp),
+                updatedAt: completionTimestamp,
+            };
+
+            if (isFullyCompleted) {
+                missionUpdates.status = 'completed';
+                missionUpdates.completedAt = completionTimestamp;
+            }
+            transaction.update(missionRef, missionUpdates);
+        }
         
-        transaction.update(missionRef, {
-            status: 'completed',
-            completedAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
-        });
-        
-        const fullChildData = { ...childData, ...updatedChildData, id: childSnap.id, birthDate: childData.birthDate, createdAt: childData.createdAt, updatedAt: serverTimestamp() as Timestamp } as ChildProfile;
-        return fullChildData;
+        return {
+            ...childData,
+            ...{ stars: newStars, xp: newXp, level: newLevel },
+            id: childSnap.id
+        } as ChildProfile;
     });
 };
 
+export const reactivateMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {
+    const missionRef = doc(db, 'missionInstances', missionInstanceId);
+
+    return await runTransaction(db, async (transaction) => {
+        const missionSnap = await transaction.get(missionRef);
+        if (!missionSnap.exists()) {
+            throw new Error("Missão não encontrada.");
+        }
+        
+        const missionData = missionSnap.data() as MissionInstance;
+        if ((missionData.completionCount || 0) === 0) {
+            throw new Error("A missão não foi concluída nenhuma vez e não pode ser reativada.");
+        }
+
+        const childRef = doc(db, 'children', missionData.childId);
+        const childSnap = await transaction.get(childRef);
+        
+        if (!childSnap.exists()) {
+            throw new Error("Perfil da criança associado à missão não foi encontrado.");
+        }
+        
+        const childData = childSnap.data() as ChildProfile;
+
+        // Revert rewards for one completion
+        const newStars = Math.max(0, childData.stars - missionData.starsReward);
+        const newXp = Math.max(0, childData.xp - missionData.xpReward);
+        
+        // We will not de-level the child for simplicity.
+        const finalChildUpdates = {
+            stars: newStars,
+            xp: newXp,
+            updatedAt: serverTimestamp(),
+        };
+        transaction.update(childRef, finalChildUpdates);
+        
+        // Revert mission status
+        const lastCompletionDate = missionData.completedDates && missionData.completedDates.length > 0
+            ? missionData.completedDates[missionData.completedDates.length - 1]
+            : null;
+
+        const missionUpdates: any = {
+            status: 'pending',
+            completedAt: null,
+            updatedAt: serverTimestamp(),
+            completionCount: increment(-1),
+        };
+        if (lastCompletionDate) {
+            missionUpdates.completedDates = arrayRemove(lastCompletionDate);
+        }
+        
+        transaction.update(missionRef, missionUpdates);
+
+        return {
+            ...childData,
+            ...{ stars: newStars, xp: newXp },
+            id: childSnap.id
+        } as ChildProfile;
+    });
+};
 
 
 // --- Child Login ---
@@ -795,4 +886,3 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
-

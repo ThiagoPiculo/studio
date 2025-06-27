@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance, deleteMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -75,6 +75,8 @@ export default function ManageChildPage() {
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
   const [isDeletingMission, setIsDeletingMission] = useState(false);
+  const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
+  const [isReactivatingMission, setIsReactivatingMission] = useState(false);
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
@@ -183,7 +185,9 @@ export default function ManageChildPage() {
         const completedMissions = missions.filter(m => m.status === 'completed');
         const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
         
-        const totalStarsEarned = completedMissions.reduce((sum, m) => sum + m.starsReward, 0);
+        const totalStarsEarned = missions
+          .flatMap(m => m.completedDates ? Array(m.completedDates.length).fill(m.starsReward) : [])
+          .reduce((sum, stars) => sum + stars, 0);
 
         setStats({
           completedMissions: completedMissions.length,
@@ -192,7 +196,9 @@ export default function ManageChildPage() {
         });
 
         const allActivities: Activity[] = [
-          ...completedMissions.map(m => ({ ...m, type: 'mission' as const })),
+          ...missions
+            .filter(m => m.completedDates && m.completedDates.length > 0)
+            .flatMap(m => m.completedDates!.map(date => ({ ...m, type: 'mission' as const, completedAt: date }))),
           ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const })),
         ].sort((a, b) => {
           const dateA = a.type === 'mission' ? a.completedAt : a.redeemedAt;
@@ -258,10 +264,25 @@ export default function ManageChildPage() {
       const originalLevel = child.level;
       const updatedChildProfile = await completeMissionInstance(mission.id);
       setChild(updatedChildProfile);
-      setMissionInstances(prev => 
-        prev.map(m => m.id === mission.id ? { ...m, status: 'completed', completedAt: new Date() as any } : m)
-          .sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds)
-      );
+      
+      setMissionInstances(prev => {
+        const updatedInstances = prev.map(m => {
+          if (m.id === mission.id) {
+            const newCompletionCount = (m.completionCount || 0) + 1;
+            const isFullyCompleted = m.isRecurring && m.recurrenceRule?.count ? newCompletionCount >= m.recurrenceRule.count : !m.isRecurring;
+            
+            return { 
+                ...m, 
+                status: isFullyCompleted ? 'completed' : 'pending',
+                completedAt: isFullyCompleted ? new Date() : undefined,
+                completionCount: newCompletionCount,
+                completedDates: [...(m.completedDates || []), new Date()]
+            } as MissionInstance;
+          }
+          return m;
+        });
+        return updatedInstances.sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds);
+      });
 
       let toastDescription = `A missão "${mission.title}" foi concluída.`;
       if (updatedChildProfile.level > originalLevel) {
@@ -278,6 +299,42 @@ export default function ManageChildPage() {
       toast({ title: "Erro ao Concluir Missão", description: "Não foi possível marcar a missão como concluída.", variant: "destructive" });
     } finally {
       setIsProcessingMissionAction(null);
+    }
+  };
+
+  const handleReactivateMission = async () => {
+    if (!missionToReactivate || !child) return;
+    setIsReactivatingMission(true);
+    try {
+      const updatedChildProfile = await reactivateMissionInstance(missionToReactivate.id);
+      setChild(updatedChildProfile);
+
+      setMissionInstances(prev => {
+        const updatedInstances = prev.map(m => {
+          if (m.id === missionToReactivate.id) {
+            return {
+              ...m,
+              status: 'pending',
+              completionCount: Math.max(0, (m.completionCount || 0) - 1),
+              completedAt: undefined,
+              // We just remove one completion, no need to manage the dates array on the client
+            } as MissionInstance;
+          }
+          return m;
+        });
+        return updatedInstances.sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds);
+      });
+
+      toast({
+        title: "Missão Reativada!",
+        description: `A missão "${missionToReactivate.title}" está pendente novamente.`,
+      });
+    } catch (error: any) {
+      console.error("Error reactivating mission:", error);
+      toast({ title: "Erro ao Reativar", description: error.message || "Não foi possível reativar a missão.", variant: "destructive" });
+    } finally {
+      setIsReactivatingMission(false);
+      setMissionToReactivate(null);
     }
   };
   
@@ -676,7 +733,7 @@ export default function ManageChildPage() {
                       const timeAgo = date ? formatDistanceToNow(date, { addSuffix: true, locale: ptBR }) : '';
 
                       return (
-                        <Fragment key={activity.id}>
+                        <Fragment key={activity.id + date?.getTime()}>
                           <li className="flex items-center gap-4">
                             {activity.type === 'mission' ? (
                                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -795,10 +852,14 @@ export default function ManageChildPage() {
                                                 <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
                                                 Experiência: {instance.xpReward} XP
                                             </div>
-                                            {instance.isRecurring && (
+                                            <div className="flex items-center text-muted-foreground font-medium">
+                                                <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
+                                                <span className="truncate">{formatRecurrenceSummary(instance)}</span>
+                                            </div>
+                                            {instance.isRecurring && instance.recurrenceRule?.count && (
                                                 <div className="flex items-center text-muted-foreground font-medium">
-                                                    <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
-                                                    <span className="truncate">{formatRecurrenceSummary(instance)}</span>
+                                                    <CheckSquare className="h-4 w-4 mr-1.5 text-green-600" />
+                                                    Progresso: {instance.completionCount || 0} / {instance.recurrenceRule.count}
                                                 </div>
                                             )}
                                             <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
@@ -867,8 +928,13 @@ export default function ManageChildPage() {
                                                     </TooltipProvider>
                                                 </div>
                                             ) : (
-                                                <Button variant="outline" className="w-full" disabled>
-                                                    <CheckCircle className="mr-2 h-4 w-4" /> Missão Finalizada
+                                                <Button 
+                                                  variant="outline" 
+                                                  className="w-full"
+                                                  onClick={() => setMissionToReactivate(instance)}
+                                                  disabled={isReactivatingMission}
+                                                >
+                                                  <RefreshCw className="mr-2 h-4 w-4" /> Reativar Missão
                                                 </Button>
                                             )}
                                         </CardFooter>
@@ -1072,6 +1138,26 @@ export default function ManageChildPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {missionToReactivate && (
+        <AlertDialog open={!!missionToReactivate} onOpenChange={(isOpen) => !isOpen && setMissionToReactivate(null)}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle>Reativar Missão "{missionToReactivate.title}"?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                      Isso reverterá a última conclusão desta missão e devolverá as estrelas e XP ganhos. Deseja continuar?
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogCancel disabled={isReactivatingMission}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReactivateMission} disabled={isReactivatingMission}>
+                      {isReactivatingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                      Sim, Reativar
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
       {/* Redeem Confirmation Dialog */}
       {instanceToManage && isRedeemConfirmOpen && child && (

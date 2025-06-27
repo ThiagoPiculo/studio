@@ -107,6 +107,7 @@ export interface MissionTemplate {
   status: 'active' | 'archived';
   // Scheduling fields
   startDate?: Timestamp | null;
+  dueDate?: Timestamp | null;
   isRecurring: boolean;
   recurrenceRule?: RecurrenceRule | null;
 }
@@ -124,12 +125,15 @@ export interface MissionInstance {
   xpReward: number;
   status: 'pending' | 'completed' | 'expired';
   assignedAt: Timestamp;
-  completedAt?: Timestamp;
+  completedAt?: Timestamp; // Now marks the FINAL completion time
   dueDate?: Timestamp;
   updatedAt: Timestamp;
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
+  completionCount?: number; // How many times it has been completed
+  completedDates?: Timestamp[]; // Array of completion timestamps
 }
+
 
 export const rewardCategories = [
   {
