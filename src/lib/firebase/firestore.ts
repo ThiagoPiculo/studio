@@ -825,10 +825,13 @@ export const reactivateMissionInstance = async (missionInstanceId: string): Prom
         }
         
         const missionData = missionSnap.data() as MissionInstance;
-        if ((missionData.completionCount || 0) === 0) {
-            throw new Error("A missão não foi concluída nenhuma vez e não pode ser reativada.");
-        }
 
+        // A mission can only be reactivated if it's 'completed' or if it's 'pending' but has been completed at least once.
+        const currentCompletionCount = missionData.completionCount || 0;
+        if (missionData.status === 'pending' && currentCompletionCount === 0) {
+            throw new Error("A missão já está pendente e não pode ser reativada.");
+        }
+        
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
@@ -838,16 +841,16 @@ export const reactivateMissionInstance = async (missionInstanceId: string): Prom
         
         const childData = childSnap.data() as ChildProfile;
 
-        // Revert rewards for one completion
-        const newStars = Math.max(0, childData.stars - missionData.starsReward);
-        const newXp = Math.max(0, childData.xp - missionData.xpReward);
-        
-        // We will not de-level the child for simplicity.
-        const finalChildUpdates = {
-            stars: newStars,
-            xp: newXp,
-            updatedAt: serverTimestamp(),
-        };
+        // Revert rewards, but only if it was actually completed at least once.
+        // This handles old data where completionCount might be undefined for a completed mission.
+        const wasEverCompleted = missionData.status === 'completed' || currentCompletionCount > 0;
+        const finalChildUpdates: any = { updatedAt: serverTimestamp() };
+
+        if (wasEverCompleted) {
+             finalChildUpdates.stars = Math.max(0, childData.stars - missionData.starsReward);
+             finalChildUpdates.xp = Math.max(0, childData.xp - missionData.xpReward);
+             // We will not de-level the child for simplicity.
+        }
         transaction.update(childRef, finalChildUpdates);
         
         // Revert mission status
@@ -859,7 +862,8 @@ export const reactivateMissionInstance = async (missionInstanceId: string): Prom
             status: 'pending',
             completedAt: null,
             updatedAt: serverTimestamp(),
-            completionCount: increment(-1),
+            // Use a direct set instead of increment(-1) for safety with legacy data
+            completionCount: Math.max(0, currentCompletionCount - 1),
         };
         if (lastCompletionDate) {
             missionUpdates.completedDates = arrayRemove(lastCompletionDate);
@@ -869,7 +873,7 @@ export const reactivateMissionInstance = async (missionInstanceId: string): Prom
 
         return {
             ...childData,
-            ...{ stars: newStars, xp: newXp },
+            ...{ stars: finalChildUpdates.stars ?? childData.stars, xp: finalChildUpdates.xp ?? childData.xp },
             id: childSnap.id
         } as ChildProfile;
     });
