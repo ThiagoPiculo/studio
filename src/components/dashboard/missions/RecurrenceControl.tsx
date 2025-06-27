@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -33,7 +34,7 @@ import { Label } from "@/components/ui/label"
 import type { RecurrenceRule, RecurrenceFrequency, Weekday } from "@/lib/types"
 import { weekdays, weekdayLabels } from "@/lib/types"
 import { Timestamp } from "firebase/firestore"
-import { FormField, FormItem, FormControl, FormMessage } from "@/components/ui/form"
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 
 type CustomRecurrenceState = {
   freq: RecurrenceFrequency
