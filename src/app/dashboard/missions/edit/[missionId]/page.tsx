@@ -15,9 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getMissionTemplateById, updateMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate } from '@/lib/types';
-import { missionCategories } from '@/lib/types'; 
+import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
+import { missionCategories, weekdays } from '@/lib/types'; 
 import { Loader2, ListChecks, Save, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
+import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -28,6 +29,7 @@ const missionTemplateFormSchema = z.object({
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
   status: z.enum(['active', 'archived']).default('active'),
+  recurrenceRule: z.custom<RecurrenceRule>().nullable().optional(),
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -52,6 +54,7 @@ export default function EditMissionTemplatePage() {
       starsReward: 5,
       xpReward: 10,
       status: 'active',
+      recurrenceRule: null,
     },
   });
 
@@ -76,6 +79,7 @@ export default function EditMissionTemplatePage() {
             starsReward: fetchedTemplate.starsReward,
             xpReward: fetchedTemplate.xpReward,
             status: fetchedTemplate.status,
+            recurrenceRule: fetchedTemplate.recurrenceRule || null,
           });
         } else {
           toast({ title: "Missão não encontrada", variant: "destructive" });
@@ -186,6 +190,8 @@ export default function EditMissionTemplatePage() {
                   </FormItem>
                 )}
               />
+
+              <RecurrenceControl />
 
               <FormField
                 control={form.control}

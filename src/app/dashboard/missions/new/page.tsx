@@ -16,10 +16,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate } from '@/lib/types';
-import { missionCategories } from '@/lib/types'; 
+import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
+import { missionCategories, weekdays } from '@/lib/types'; 
 import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
+import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -29,6 +30,7 @@ const missionTemplateFormSchema = z.object({
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
+  recurrenceRule: z.custom<RecurrenceRule>().nullable().optional(),
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -56,6 +58,7 @@ function CreateMissionTemplatePageContent() {
       category: resolvedInitialCategory, 
       starsReward: 5,
       xpReward: 10,
+      recurrenceRule: null,
     },
   });
 
@@ -74,6 +77,7 @@ function CreateMissionTemplatePageContent() {
         category: values.category,
         starsReward: values.starsReward,
         xpReward: values.xpReward,
+        recurrenceRule: values.recurrenceRule || null,
       };
       
       await addMissionTemplate(templateDataPayload);
@@ -152,6 +156,8 @@ function CreateMissionTemplatePageContent() {
                   </FormItem>
                 )}
               />
+
+              <RecurrenceControl />
 
               <FormField
                 control={form.control}

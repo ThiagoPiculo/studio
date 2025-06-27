@@ -608,6 +608,7 @@ export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id
   const newTemplate: MissionTemplate = {
     id: newTemplateRef.id,
     ...templateData,
+    recurrenceRule: templateData.recurrenceRule || null,
     status: 'active',
     createdAt: now,
     updatedAt: now,
