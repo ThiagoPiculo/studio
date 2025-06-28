@@ -23,126 +23,15 @@ import {
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
-export interface CalendarEvent {
-  date: Date;
-  title: string;
-  color: string;
-  type: 'template' | 'instance';
-  data: MissionTemplate | MissionInstance;
-}
-
 const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
 const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
 
-
-export function generateRecurringEvents(
-  templates: MissionTemplate[],
-  viewStart: Date,
-  viewEnd: Date
-): CalendarEvent[] {
-  const events: CalendarEvent[] = [];
-  const categoryDetailsMap = new Map(missionCategories.map(cat => [cat.id, cat]));
-
-  templates.forEach(template => {
-    if (!template.isRecurring || !template.recurrenceRule || !template.startDate || template.status === 'archived') {
-      return;
-    }
-
-    const rule = template.recurrenceRule;
-    const ruleEndDate = rule.endDate ? rule.endDate.toDate() : null;
-    let occurrenceCount = 0;
-    
-    let iterDate = startOfDay(template.startDate.toDate());
-
-    while (iterDate <= viewEnd && (!rule.count || occurrenceCount < rule.count) && (!ruleEndDate || isSameDay(iterDate, ruleEndDate) || isBefore(iterDate, ruleEndDate))) {
-
-      if (rule.freq === 'DAILY') {
-        if (iterDate >= viewStart) {
-          events.push({
-            date: iterDate,
-            title: template.title,
-            color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
-            type: 'template',
-            data: template,
-          });
-        }
-        occurrenceCount++;
-        iterDate = addDays(iterDate, rule.interval);
-
-      } else if (rule.freq === 'WEEKLY') {
-        const daysToRepeatOn = rule.byDay && rule.byDay.length > 0 ? rule.byDay : allWeekdays;
-        
-        let weekStartForLoop = startOfWeek(iterDate, { weekStartsOn: 1 });
-        if (isAfter(weekStartForLoop, iterDate)) {
-            weekStartForLoop = addWeeks(weekStartForLoop, -1);
-        }
-
-        for (let i = 0; i < 7; i++) {
-            const currentDayInWeek = addDays(weekStartForLoop, i);
-            
-            if (isBefore(currentDayInWeek, iterDate)) continue;
-
-            // Day of week mapping for ptBR (Sunday is 0)
-            const dayOfWeekIndex = getDay(currentDayInWeek);
-            // Our weekdays array is MO-SU, so we need to adjust
-            const dayShort = allWeekdays[(dayOfWeekIndex + 6) % 7];
-
-            if (daysToRepeatOn.includes(dayShort)) {
-                 if (ruleEndDate && isAfter(currentDayInWeek, ruleEndDate)) continue;
-                 if (rule.count && occurrenceCount >= rule.count) break;
-
-                 if (currentDayInWeek >= viewStart && currentDayInWeek <= viewEnd) {
-                     events.push({
-                        date: currentDayInWeek,
-                        title: template.title,
-                        color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
-                        type: 'template',
-                        data: template,
-                    });
-                 }
-                 occurrenceCount++;
-            }
-        }
-        iterDate = addWeeks(iterDate, rule.interval);
-        
-      } else if (rule.freq === 'MONTHLY') {
-         if (iterDate >= viewStart) {
-            events.push({
-              date: iterDate,
-              title: template.title,
-              color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
-              type: 'template',
-              data: template,
-            });
-        }
-        occurrenceCount++;
-        iterDate = addMonths(iterDate, rule.interval);
-
-      } else if (rule.freq === 'YEARLY') {
-         if (iterDate >= viewStart) {
-            events.push({
-              date: iterDate,
-              title: template.title,
-              color: categoryDetailsMap.get(template.category)?.color || 'hsl(var(--foreground))',
-              type: 'template',
-              data: template,
-            });
-        }
-        occurrenceCount++;
-        iterDate = addYears(iterDate, rule.interval);
-      } else {
-        break; // Should not happen
-      }
-    }
-  });
-
-  return events;
-}
-
-function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
+export function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
     const checkDate = startOfDay(date);
+    const weekStartsOn = 1; // Monday
 
     if (!mission.isRecurring) {
+        // For non-recurring missions, it's scheduled if the checkDate is the same as the dueDate.
         return !!mission.dueDate && isSameDay(mission.dueDate.toDate(), checkDate);
     }
 
@@ -153,6 +42,7 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
 
     const sDate = startOfDay(startDate);
 
+    // Basic checks: before start date, after end date, or count exceeded.
     if (isBefore(checkDate, sDate)) return false;
     if (rule.endDate && isAfter(checkDate, startOfDay(rule.endDate.toDate()))) return false;
     if (rule.count && (mission.completionCount || 0) >= rule.count) return false;
@@ -165,21 +55,20 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
         case 'WEEKLY': {
             const daysToRepeatOn = rule.byDay?.length ? rule.byDay : allWeekdays;
             // date-fns: getDay() returns 0 for Sunday, 1 for Monday...
-            // Our weekdays array is MO, TU... so we map it.
-            const dayOfWeek = allWeekdays[getDay(checkDate)]; 
+            // Our weekdays array is MO, TU... SU. getDay() needs to be mapped.
+            const dayOfWeek = getDayToWeekday[getDay(checkDate)]; 
             
             if (!daysToRepeatOn.includes(dayOfWeek)) {
                 return false;
             }
             
-            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn: 1 });
-            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn: 1 });
+            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn });
+            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn });
             
-            const daysDifference = differenceInDays(startOfWeekForCheckDate, startOfWeekForStartDate);
-            if (daysDifference < 0) return false;
+            const weeksDifference = differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate, { weekStartsOn });
 
-            const weeksDifference = Math.floor(daysDifference / 7);
-
+            if (weeksDifference < 0) return false;
+            
             return weeksDifference % rule.interval === 0;
         }
         case 'MONTHLY': {
@@ -216,18 +105,6 @@ export function getTodaysMissions(
     }
 
     return { todaysMissions, otherPendingMissions };
-}
-
-
-export function groupEventsByDate(events: CalendarEvent[]): Record<string, CalendarEvent[]> {
-    return events.reduce((acc, event) => {
-        const dateKey = formatToYyyyMmDd(event.date);
-        if (!acc[dateKey]) {
-            acc[dateKey] = [];
-        }
-        acc[dateKey].push(event);
-        return acc;
-    }, {} as Record<string, CalendarEvent[]>);
 }
 
 // Helper to format date in a consistent way for keys
@@ -319,3 +196,5 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
 
   return summary;
 }
+
+    

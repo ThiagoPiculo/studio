@@ -2,16 +2,15 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isToday, getDay, addDays, subDays } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isToday, getDay, addDays, subDays, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, X, ChevronDown, CalendarDays, Rows3 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getMissionTemplatesByOwnerOrFamily, getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
-import { generateRecurringEvents } from '@/lib/calendar-utils';
-import type { CalendarEvent } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionTemplate, MissionInstance, MissionCategoryDetails } from '@/lib/types';
+import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
+import { isMissionScheduledForDate } from '@/lib/calendar-utils';
+import type { ChildProfile, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,13 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 type ViewMode = 'month' | 'week';
 
+interface CalendarEvent {
+  date: Date;
+  title: string;
+  color: string;
+  data: MissionInstance;
+}
+
 export default function AgendaPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
@@ -37,7 +43,6 @@ export default function AgendaPage() {
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -54,14 +59,12 @@ export default function AgendaPage() {
         try {
             const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
-            const [fetchedChildren, fetchedTemplates, fetchedInstances] = await Promise.all([
+            const [fetchedChildren, fetchedInstances] = await Promise.all([
                 getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
                 getMissionInstancesForContext(user.uid, familyIdToQuery)
             ]);
             
             setChildren(fetchedChildren);
-            setMissionTemplates(fetchedTemplates.filter(t => t.recurrenceRule));
             setMissionInstances(fetchedInstances);
         } catch (error) {
             console.error("Error fetching agenda data:", error);
@@ -78,37 +81,34 @@ export default function AgendaPage() {
     if (viewMode === 'month') {
         return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
     }
-    // week view
-    return { start: startOfWeek(currentDate, { weekStartsOn: 1 }), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
+    const weekStartsOn = 1; // Monday
+    return { start: startOfWeek(currentDate, { weekStartsOn }), end: endOfWeek(currentDate, { weekStartsOn }) };
   }, [currentDate, viewMode]);
 
   const events = useMemo(() => {
-    const { start: viewStart, end: viewEnd } = viewInterval;
-    
-    const recurringEvents = generateRecurringEvents(missionTemplates, viewStart, viewEnd);
+    const { start, end } = viewInterval;
+    const allEvents: CalendarEvent[] = [];
+    const daysInView = eachDayOfInterval({ start, end });
 
-    const instanceEvents: CalendarEvent[] = missionInstances.map(instance => {
-      const date = (instance.dueDate || instance.assignedAt) as Timestamp;
-      return {
-        date: date.toDate(),
-        title: instance.title,
-        color: categoryDetailsMap.get(instance.category)?.color || 'hsl(var(--foreground))',
-        type: 'instance',
-        data: instance,
-      };
-    }).filter(event => event.date >= viewStart && event.date <= viewEnd);
-    
-    let allEvents = [...recurringEvents, ...instanceEvents];
-
-    if (selectedChildId !== 'all') {
-      allEvents = allEvents.filter(event => {
-        if (event.type === 'instance') return (event.data as MissionInstance).childId === selectedChildId;
-        return true; 
+    missionInstances.forEach(instance => {
+      daysInView.forEach(day => {
+        if (isMissionScheduledForDate(instance, day)) {
+          allEvents.push({
+            date: day,
+            title: instance.title,
+            color: categoryDetailsMap.get(instance.category)?.color || 'hsl(var(--foreground))',
+            data: instance,
+          });
+        }
       });
+    });
+    
+    if (selectedChildId !== 'all') {
+      return allEvents.filter(event => event.data.childId === selectedChildId);
     }
-
+    
     return allEvents;
-  }, [viewInterval, missionTemplates, missionInstances, selectedChildId, categoryDetailsMap]);
+  }, [viewInterval, missionInstances, selectedChildId, categoryDetailsMap]);
 
   const eventsByDate = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -143,21 +143,16 @@ export default function AgendaPage() {
   }, [selectedDate, eventsByDate]);
 
   const groupedEventsForDialog = useMemo(() => {
-    if (!eventsForSelectedDate.length) return { instancesByChild: new Map(), templates: [] };
+    if (!eventsForSelectedDate.length) return { instancesByChild: new Map() };
     const instancesByChild = new Map<string, MissionInstance[]>();
-    const templates: MissionTemplate[] = [];
     eventsForSelectedDate.forEach(event => {
-      if (event.type === 'instance') {
-        const instance = event.data as MissionInstance;
-        if (!instancesByChild.has(instance.childId)) {
-            instancesByChild.set(instance.childId, []);
-        }
-        instancesByChild.get(instance.childId)!.push(instance);
-      } else {
-        templates.push(event.data as MissionTemplate);
+      const instance = event.data;
+      if (!instancesByChild.has(instance.childId)) {
+          instancesByChild.set(instance.childId, []);
       }
+      instancesByChild.get(instance.childId)!.push(instance);
     });
-    return { instancesByChild, templates };
+    return { instancesByChild };
   }, [eventsForSelectedDate]);
 
   const handlePrev = () => {
@@ -198,8 +193,9 @@ export default function AgendaPage() {
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
+    const weekStartsOn = 1; // Monday
+    const startDate = startOfWeek(monthStart, { weekStartsOn });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn });
     
     const days = [];
     let day = startDate;
@@ -219,7 +215,10 @@ export default function AgendaPage() {
             {days.map((d, i) => {
                 const dayEvents = eventsByDate[format(d, 'yyyy-MM-dd')] || [];
                 const dayOfWeek = getDay(d); // Sunday = 0, Saturday = 6
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                // Adjust for week starting on Monday (0=Mon, 6=Sun)
+                const adjustedDayOfWeek = (dayOfWeek + 6) % 7;
+                const isWeekend = adjustedDayOfWeek === 5 || adjustedDayOfWeek === 6;
+
                 let isDisabledByFilter = false;
                 if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
                 if (dayFilter === 'weekends' && !isWeekend) isDisabledByFilter = true;
@@ -277,7 +276,8 @@ export default function AgendaPage() {
             {days.map(day => {
                 const dayEvents = eventsByDate[format(day, 'yyyy-MM-dd')] || [];
                 const dayOfWeek = getDay(day);
-                const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+                const adjustedDayOfWeek = (dayOfWeek + 6) % 7;
+                const isWeekend = adjustedDayOfWeek === 5 || adjustedDayOfWeek === 6;
                 let isDisabledByFilter = false;
                 if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
                 if (dayFilter === 'weekends' && !isWeekend) isDisabledByFilter = true;
@@ -418,11 +418,10 @@ export default function AgendaPage() {
                 </DialogDescription>
             </DialogHeader>
             <div className="max-h-[60vh] overflow-y-auto p-1 space-y-4">
-               {groupedEventsForDialog.instancesByChild.size === 0 && groupedEventsForDialog.templates.length === 0 ? (
+               {groupedEventsForDialog.instancesByChild.size === 0 ? (
                     <p className="text-center text-muted-foreground py-4">Nenhuma missão para este dia.</p>
                ) : (
-                <>
-                 {Array.from(groupedEventsForDialog.instancesByChild.entries()).map(([childId, instances]) => {
+                 Array.from(groupedEventsForDialog.instancesByChild.entries()).map(([childId, instances]) => {
                      const child = childrenMap.get(childId);
                      if (!child) return null;
                      return (
@@ -452,27 +451,7 @@ export default function AgendaPage() {
                              </ul>
                          </div>
                      )
-                 })}
-                 
-                 {groupedEventsForDialog.instancesByChild.size > 0 && groupedEventsForDialog.templates.length > 0 && <Separator className="my-4"/>}
-
-                 {groupedEventsForDialog.templates.length > 0 && (
-                     <div>
-                        <h3 className="font-semibold mb-2 text-muted-foreground">Do Catálogo (Recorrentes)</h3>
-                        <ul className="space-y-2">
-                             {groupedEventsForDialog.templates.map(template => {
-                                const details = categoryDetailsMap.get(template.category);
-                                return (
-                                    <li key={template.id} className="p-2 rounded-md flex items-center gap-2" style={{ backgroundColor: `${details?.color}20` }}>
-                                        <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: details?.color }}></div>
-                                        <span className="truncate" style={{ color: details?.color }}>{template.title}</span>
-                                    </li>
-                                )
-                            })}
-                        </ul>
-                     </div>
-                 )}
-                </>
+                 })
                )}
             </div>
             <DialogClose asChild>
@@ -483,3 +462,5 @@ export default function AgendaPage() {
     </div>
   );
 }
+
+    
