@@ -79,7 +79,7 @@ export default function AgendaPage() {
         return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
     }
     // week view
-    return { start: startOfWeek(currentDate, { weekStartsOn: 0 }), end: endOfWeek(currentDate, { weekStartsOn: 0 }) };
+    return { start: startOfWeek(currentDate, { weekStartsOn: 1 }), end: endOfWeek(currentDate, { weekStartsOn: 1 }) };
   }, [currentDate, viewMode]);
 
   const events = useMemo(() => {
@@ -180,8 +180,8 @@ export default function AgendaPage() {
     if (view === 'month') {
         return format(date, 'MMMM yyyy', { locale: ptBR });
     }
-    const start = startOfWeek(date, { weekStartsOn: 0 });
-    const end = endOfWeek(date, { weekStartsOn: 0 });
+    const start = startOfWeek(date, { weekStartsOn: 1 });
+    const end = endOfWeek(date, { weekStartsOn: 1 });
     
     const startMonth = format(start, 'MMMM', { locale: ptBR });
     const endMonth = format(end, 'MMMM', { locale: ptBR });
@@ -198,8 +198,8 @@ export default function AgendaPage() {
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 0 });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn: 0 });
+    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
+    const endDate = endOfWeek(monthEnd, { weekStartsOn: 1 });
     
     const days = [];
     let day = startDate;
@@ -210,7 +210,7 @@ export default function AgendaPage() {
     
     return (
         <div className="grid grid-cols-7 border-t border-l rounded-lg overflow-hidden shadow-sm">
-            {['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'].map(dayName => (
+            {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(dayName => (
                 <div key={dayName} className="text-center font-semibold text-sm text-muted-foreground p-2 border-b border-r bg-muted/50">
                     <span className="hidden md:inline">{dayName}</span>
                     <span className="md:hidden">{dayName.substring(0,3)}</span>
@@ -218,7 +218,7 @@ export default function AgendaPage() {
             ))}
             {days.map((d, i) => {
                 const dayEvents = eventsByDate[format(d, 'yyyy-MM-dd')] || [];
-                const dayOfWeek = getDay(d);
+                const dayOfWeek = getDay(d); // Sunday = 0, Saturday = 6
                 const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
                 let isDisabledByFilter = false;
                 if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
@@ -260,7 +260,7 @@ export default function AgendaPage() {
   };
   
   const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 });
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
     const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
 
     return (

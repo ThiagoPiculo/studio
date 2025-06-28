@@ -168,11 +168,10 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
                 return false;
             }
             
-            // Use the default week start (Sunday) for consistency with the Agenda view.
-            const startOfWeekForCheckDate = startOfWeek(checkDate);
-            const startOfWeekForStartDate = startOfWeek(sDate);
+            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn: 1 });
+            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn: 1 });
             
-            const weeksDifference = differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate);
+            const weeksDifference = differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate, { weekStartsOn: 1 });
 
             return weeksDifference % rule.interval === 0;
         }

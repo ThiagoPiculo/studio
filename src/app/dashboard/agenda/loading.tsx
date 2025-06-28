@@ -18,7 +18,7 @@ export default function Loading() {
       
       <div className="border rounded-lg shadow-sm">
         <div className="grid grid-cols-7 text-center font-semibold text-sm text-muted-foreground p-2 border-b">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+          {['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'].map(day => (
             <div key={day}>{day}</div>
           ))}
         </div>
