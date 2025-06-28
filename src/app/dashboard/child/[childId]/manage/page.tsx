@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -40,10 +40,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { formatDistanceToNow, differenceInYears } from 'date-fns';
+import { formatDistanceToNow, differenceInYears, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRecurrenceSummary } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, getTodaysMissions } from '@/lib/calendar-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
@@ -77,6 +77,9 @@ export default function ManageChildPage() {
   const [isDeletingMission, setIsDeletingMission] = useState(false);
   const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
   const [isReactivatingMission, setIsReactivatingMission] = useState(false);
+  
+  const [missionToUndo, setMissionToUndo] = useState<MissionInstance | null>(null);
+  const [isUndoing, setIsUndoing] = useState(false);
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
@@ -265,24 +268,7 @@ export default function ManageChildPage() {
       const updatedChildProfile = await completeMissionInstance(mission.id);
       setChild(updatedChildProfile);
       
-      setMissionInstances(prev => {
-        const updatedInstances = prev.map(m => {
-          if (m.id === mission.id) {
-            const newCompletionCount = (m.completionCount || 0) + 1;
-            const isFullyCompleted = m.isRecurring && m.recurrenceRule?.count ? newCompletionCount >= m.recurrenceRule.count : !m.isRecurring;
-            
-            return { 
-                ...m, 
-                status: isFullyCompleted ? 'completed' : 'pending',
-                completedAt: isFullyCompleted ? new Date() : undefined,
-                completionCount: newCompletionCount,
-                completedDates: [...(m.completedDates || []), new Date()]
-            } as MissionInstance;
-          }
-          return m;
-        });
-        return updatedInstances.sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds);
-      });
+      fetchMissionData(); // Refetch all missions to get the latest state
 
       let toastDescription = `A missão "${mission.title}" foi concluída.`;
       if (updatedChildProfile.level > originalLevel) {
@@ -301,6 +287,28 @@ export default function ManageChildPage() {
       setIsProcessingMissionAction(null);
     }
   };
+
+  const handleUndoCompletion = async () => {
+      if (!missionToUndo || !child) return;
+      setIsUndoing(true);
+      try {
+        const updatedChildProfile = await reactivateMissionInstance(missionToUndo.id);
+        setChild(updatedChildProfile);
+        fetchMissionData();
+
+        toast({
+          title: "Ação Desfeita!",
+          description: `A última conclusão da missão "${missionToUndo.title}" foi revertida.`,
+        });
+      } catch (error: any) {
+        console.error("Error undoing mission completion:", error);
+        toast({ title: "Erro ao Desfazer", description: error.message || "Não foi possível desfazer a conclusão.", variant: "destructive" });
+      } finally {
+        setIsUndoing(false);
+        setMissionToUndo(null);
+      }
+  };
+
 
   const handleReactivateMission = async () => {
     if (!missionToReactivate || !child) return;
@@ -493,30 +501,25 @@ export default function ManageChildPage() {
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
   
-  const filteredMissions = useMemo(() => {
-    if (missionStatusFilter === 'all') return missionInstances;
-    return missionInstances.filter(mission => mission.status === missionStatusFilter);
-  }, [missionInstances, missionStatusFilter]);
+  const { todaysMissions, otherPendingMissions } = useMemo(() => {
+      if (isLoadingMissions || !missionInstances) {
+          return { todaysMissions: [], otherPendingMissions: [] };
+      }
+      const pending = missionInstances.filter(m => m.status === 'pending');
+      return getTodaysMissions(pending, new Date());
+  }, [missionInstances, isLoadingMissions]);
 
+  const completedTodayIds = useMemo(() => {
+      const today = new Date();
+      const ids = new Set<string>();
+      missionInstances.forEach(mission => {
+          if (mission.completedDates?.some(ts => isSameDay(ts.toDate(), today))) {
+              ids.add(mission.id);
+          }
+      });
+      return ids;
+  }, [missionInstances]);
 
-  const getStatusFilterDisplayName = (filterValue: typeof instanceStatusFilter) => {
-    switch (filterValue) {
-      case 'active': return 'Ativas';
-      case 'redeemed': return 'Resgatadas';
-      case 'disabled': return 'Inativas';
-      default: return 'Todas';
-    }
-  };
-  
-  const getMissionStatusFilterDisplayName = (filterValue: typeof missionStatusFilter) => {
-    switch (filterValue) {
-        case 'pending': return 'Pendentes';
-        case 'completed': return 'Concluídas';
-        default: return 'Todas';
-    }
-  };
-
-  
   const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
     child ? calculateXpDetails(child.level, child.xp) : { progressPercentage: 0, xpRemaining: 0, xpForNextLevel: 0 },
     [child]
@@ -543,6 +546,152 @@ export default function ManageChildPage() {
   }
 
   const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
+
+  const renderMissionCard = (instance: MissionInstance, isForToday: boolean) => {
+      const categoryDetails = getMissionCategoryDetails(instance.category);
+      const CategoryIconComponent = categoryDetails?.icon;
+      const isCompletedToday = completedTodayIds.has(instance.id);
+
+      return (
+          <Card key={instance.id} className={`shadow-sm flex flex-col transition-all ${isProcessingMissionAction === instance.id ? 'opacity-50' : 'hover:shadow-md'}`}>
+              <CardHeader>
+                  <div className="flex justify-between items-start">
+                      <CardTitle className="text-lg">{instance.title}</CardTitle>
+                      <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                          {getMissionStatusText(instance.status)}
+                      </Badge>
+                  </div>
+                  {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+              </CardHeader>
+              <CardContent className="space-y-3 flex-grow text-sm">
+                  {categoryDetails && (
+                      <div className="flex items-center">
+                          <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                              {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
+                              {categoryDetails.label}
+                          </span>
+                      </div>
+                  )}
+                  <div className="flex items-center text-muted-foreground font-medium">
+                      <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
+                      Recompensa: {instance.starsReward} Estrelas
+                  </div>
+                  <div className="flex items-center text-muted-foreground font-medium">
+                      <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
+                      Experiência: {instance.xpReward} XP
+                  </div>
+                  <div className="flex items-center text-muted-foreground font-medium">
+                      <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
+                      <span className="truncate">{formatRecurrenceSummary(instance)}</span>
+                  </div>
+                  {instance.isRecurring && instance.recurrenceRule?.count && (
+                      <div className="flex items-center text-muted-foreground font-medium">
+                          <CheckSquare className="h-4 w-4 mr-1.5 text-green-600" />
+                          Progresso: {instance.completionCount || 0} / {instance.recurrenceRule.count}
+                      </div>
+                  )}
+                  <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
+                      <div className="flex items-center">
+                          <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                          Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                      </div>
+                      {instance.dueDate && (
+                          <div className="flex items-center font-medium text-destructive/80">
+                              <Clock className="h-3.5 w-3.5 mr-1.5" />
+                              Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
+                          </div>
+                      )}
+                      {instance.status === 'completed' && instance.completedAt && (
+                          <div className="flex items-center font-medium text-green-600">
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                              Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
+                          </div>
+                      )}
+                  </div>
+              </CardContent>
+              <CardFooter>
+                  {instance.status === 'pending' ? (
+                      isCompletedToday && isForToday ? (
+                          <div className="flex w-full items-center gap-2">
+                              <Button variant="secondary" className="flex-grow bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" disabled>
+                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Concluído Hoje
+                              </Button>
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo(instance)} disabled={isUndoing}>
+                                              <Undo2 className="h-4 w-4" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>Desfazer conclusão de hoje</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                          </div>
+                      ) : (
+                          <div className="flex w-full items-center gap-2">
+                              <Button
+                                  className="flex-grow bg-green-600 hover:bg-green-700"
+                                  onClick={() => handleCompleteMission(instance)}
+                                  disabled={!!isProcessingMissionAction || isDeletingMission}
+                              >
+                                  {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                  Marcar como Concluída
+                              </Button>
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button
+                                              size="icon"
+                                              variant="outline"
+                                              onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
+                                              disabled={!!isProcessingMissionAction || isDeletingMission}
+                                          >
+                                              <Edit3 className="h-4 w-4" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>Editar no Catálogo</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button
+                                              size="icon"
+                                              variant="destructive"
+                                              onClick={() => setMissionToDelete(instance)}
+                                              disabled={!!isProcessingMissionAction || isDeletingMission}
+                                          >
+                                              <Trash2 className="h-4 w-4" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>Remover Missão</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                              </TooltipProvider>
+                          </div>
+                      )
+                  ) : ( // Status is 'completed'
+                      <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setMissionToReactivate(instance)}
+                          disabled={isReactivatingMission}
+                      >
+                          <RefreshCw className="mr-2 h-4 w-4" /> Reativar Missão
+                      </Button>
+                  )}
+              </CardFooter>
+          </Card>
+      );
+  };
+
 
   return (
     <div className="space-y-6 pb-8">
@@ -768,182 +917,53 @@ export default function ManageChildPage() {
           <TabsContent value="missions">
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Missões de {child.name}</CardTitle>
-                    <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
-                    <div className="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div className="flex items-center justify-between">
                         <div>
-                            <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status:</Label>
-                            <RadioGroup
-                                value={missionStatusFilter}
-                                onValueChange={(value) => setMissionStatusFilter(value as 'all' | 'pending' | 'completed')}
-                                className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="all" id={`mission-filter-all-${childId}`} />
-                                    <Label htmlFor={`mission-filter-all-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="pending" id={`mission-filter-pending-${childId}`} />
-                                    <Label htmlFor={`mission-filter-pending-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Pendentes</Label>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <RadioGroupItem value="completed" id={`mission-filter-completed-${childId}`} />
-                                    <Label htmlFor={`mission-filter-completed-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Concluídas</Label>
-                                </div>
-                            </RadioGroup>
+                            <CardTitle>Missões de {child.name}</CardTitle>
+                            <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
                         </div>
                         <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {isLoadingMissions ? (
-                        <div className="flex justify-center items-center py-10">
-                            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                            <p className="ml-3 text-muted-foreground">Carregando missões...</p>
-                        </div>
-                    ) : filteredMissions.length === 0 ? (
-                        <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                            <p className="text-lg text-muted-foreground">
-                                {missionInstances.length === 0
-                                    ? `${child.name} ainda não tem missões atribuídas.`
-                                    : `Nenhuma missão encontrada com o status "${getMissionStatusFilterDisplayName(missionStatusFilter)}".`}
-                            </p>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                {missionInstances.length === 0
-                                    ? 'Clique em "Adicionar Nova Missão" para começar a jornada!'
-                                    : 'Tente um filtro diferente ou adicione uma nova missão.'}
-                            </p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {filteredMissions.map((instance) => {
-                                const categoryDetails = getMissionCategoryDetails(instance.category);
-                                const CategoryIconComponent = categoryDetails?.icon;
-                                return (
-                                    <Card key={instance.id} className={`shadow-sm flex flex-col transition-all ${isProcessingMissionAction === instance.id ? 'opacity-50' : 'hover:shadow-md'}`}>
-                                        <CardHeader>
-                                            <div className="flex justify-between items-start">
-                                                <CardTitle className="text-lg">{instance.title}</CardTitle>
-                                                <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
-                                                    {getMissionStatusText(instance.status)}
-                                                </Badge>
-                                            </div>
-                                            {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
-                                        </CardHeader>
-                                        <CardContent className="space-y-3 flex-grow text-sm">
-                                            {categoryDetails && (
-                                                <div className="flex items-center">
-                                                    <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                                                        {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                                                    </span>
-                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                                                        {categoryDetails.label}
-                                                    </span>
-                                                </div>
-                                            )}
-                                            <div className="flex items-center text-muted-foreground font-medium">
-                                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                                                Recompensa: {instance.starsReward} Estrelas
-                                            </div>
-                                            <div className="flex items-center text-muted-foreground font-medium">
-                                                <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
-                                                Experiência: {instance.xpReward} XP
-                                            </div>
-                                            <div className="flex items-center text-muted-foreground font-medium">
-                                                <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
-                                                <span className="truncate">{formatRecurrenceSummary(instance)}</span>
-                                            </div>
-                                            {instance.isRecurring && instance.recurrenceRule?.count && (
-                                                <div className="flex items-center text-muted-foreground font-medium">
-                                                    <CheckSquare className="h-4 w-4 mr-1.5 text-green-600" />
-                                                    Progresso: {instance.completionCount || 0} / {instance.recurrenceRule.count}
-                                                </div>
-                                            )}
-                                            <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
-                                                <div className="flex items-center">
-                                                    <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                                                    Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
-                                                </div>
-                                                {instance.dueDate && (
-                                                    <div className="flex items-center font-medium text-destructive/80">
-                                                        <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                                        Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
-                                                    </div>
-                                                )}
-                                                {instance.status === 'completed' && instance.completedAt && (
-                                                    <div className="flex items-center font-medium text-green-600">
-                                                        <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                                                        Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
-                                                    </div>
-                                                )}
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter>
-                                            {instance.status === 'pending' ? (
-                                                <div className="flex w-full items-center gap-2">
-                                                    <Button 
-                                                        className="flex-grow bg-green-600 hover:bg-green-700"
-                                                        onClick={() => handleCompleteMission(instance)}
-                                                        disabled={!!isProcessingMissionAction || isDeletingMission}
-                                                    >
-                                                        {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                                        Marcar como Concluída
-                                                    </Button>
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button 
-                                                                    size="icon" 
-                                                                    variant="outline" 
-                                                                    onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
-                                                                    disabled={!!isProcessingMissionAction || isDeletingMission}
-                                                                >
-                                                                    <Edit3 className="h-4 w-4" />
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>Editar no Catálogo</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                    <TooltipProvider>
-                                                        <Tooltip>
-                                                            <TooltipTrigger asChild>
-                                                                <Button 
-                                                                    size="icon" 
-                                                                    variant="destructive"
-                                                                    onClick={() => setMissionToDelete(instance)}
-                                                                    disabled={!!isProcessingMissionAction || isDeletingMission}
-                                                                >
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </TooltipTrigger>
-                                                            <TooltipContent>
-                                                                <p>Remover Missão</p>
-                                                            </TooltipContent>
-                                                        </Tooltip>
-                                                    </TooltipProvider>
-                                                </div>
-                                            ) : (
-                                                <Button 
-                                                  variant="outline" 
-                                                  className="w-full"
-                                                  onClick={() => setMissionToReactivate(instance)}
-                                                  disabled={isReactivatingMission}
-                                                >
-                                                  <RefreshCw className="mr-2 h-4 w-4" /> Reativar Missão
-                                                </Button>
-                                            )}
-                                        </CardFooter>
-                                    </Card>
-                                );
-                            })}
-                        </div>
-                    )}
-                </CardContent>
+                {isLoadingMissions ? (
+                  <CardContent><div className="flex justify-center items-center py-10">
+                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                      <p className="ml-3 text-muted-foreground">Carregando missões...</p>
+                  </div></CardContent>
+                ) : missionInstances.filter(m => m.status === 'pending').length === 0 ? (
+                  <CardContent><div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                      <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                      <p className="text-lg text-muted-foreground">Nenhuma missão pendente para {child.name}.</p>
+                      <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Nova Missão" para começar a jornada!</p>
+                  </div></CardContent>
+                ) : (
+                  <CardContent className="space-y-6">
+                      <div>
+                          <h3 className="text-xl font-headline mb-4">Missões para Hoje</h3>
+                          {todaysMissions.length > 0 ? (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {todaysMissions.map(instance => renderMissionCard(instance, true))}
+                              </div>
+                          ) : (
+                              <p className="text-muted-foreground text-sm text-center py-4 border border-dashed rounded-md">
+                                  Nenhuma missão agendada para hoje. Hora de relaxar!
+                              </p>
+                          )}
+                      </div>
+
+                      {otherPendingMissions.length > 0 && (
+                          <div>
+                              <Separator className="my-6" />
+                              <h3 className="text-xl font-headline mb-4">Próximas Missões</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {otherPendingMissions.map(instance => renderMissionCard(instance, false))}
+                              </div>
+                          </div>
+                      )}
+                  </CardContent>
+                )}
             </Card>
           </TabsContent>
 
@@ -993,7 +1013,7 @@ export default function ManageChildPage() {
                     <p className="text-lg text-muted-foreground">
                       {childRewards.length === 0 
                         ? `${child.name} ainda não tem recompensas atribuídas.`
-                        : `Nenhuma recompensa encontrada com o status "${getStatusFilterDisplayName(instanceStatusFilter)}".`
+                        : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
                       }
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
@@ -1134,6 +1154,24 @@ export default function ManageChildPage() {
                 <AlertDialogAction onClick={handleDeleteMissionInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingMission}>
                     {isDeletingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Sim, Remover
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!missionToUndo} onOpenChange={(isOpen) => !isOpen && setMissionToUndo(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Desfazer Conclusão?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Isso irá reverter a última conclusão da missão "{missionToUndo?.title}", incluindo as estrelas e XP ganhos. Deseja continuar?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isUndoing}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleUndoCompletion} disabled={isUndoing}>
+                    {isUndoing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                    Sim, Desfazer
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

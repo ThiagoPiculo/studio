@@ -13,6 +13,7 @@ import {
   isBefore,
   isSameDay,
   startOfDay,
+  endOfDay,
   format as formatDateFns,
   startOfWeek
 } from 'date-fns';
@@ -127,6 +128,52 @@ export function generateRecurringEvents(
   });
 
   return events;
+}
+
+
+export function getTodaysMissions(
+  instances: MissionInstance[],
+  today: Date
+): { todaysMissions: MissionInstance[]; otherPendingMissions: MissionInstance[] } {
+  const startOfToday = startOfDay(today);
+  const endOfToday = endOfDay(today);
+  const todaysMissionIds = new Set<string>();
+
+  // 1. Process recurring missions by treating them as templates for generation
+  const recurringTemplates = instances
+    .filter(inst => inst.isRecurring && inst.recurrenceRule && inst.startDate)
+    .map(inst => ({
+      ...inst,
+      id: inst.id,
+    })) as unknown as MissionTemplate[];
+
+  if (recurringTemplates.length > 0) {
+    const todaysGeneratedEvents = generateRecurringEvents(recurringTemplates, startOfToday, endOfToday);
+    todaysGeneratedEvents.forEach(event => todaysMissionIds.add(event.data.id));
+  }
+  
+  // 2. Process non-recurring missions with a due date today
+  instances.forEach(inst => {
+    if (!inst.isRecurring && inst.dueDate && isSameDay(inst.dueDate.toDate(), today)) {
+      todaysMissionIds.add(inst.id);
+    }
+  });
+
+  // Now, partition the pending instances array
+  const todaysMissions: MissionInstance[] = [];
+  const otherPendingMissions: MissionInstance[] = [];
+
+  instances.forEach(inst => {
+    if (inst.status !== 'pending') return;
+
+    if (todaysMissionIds.has(inst.id)) {
+      todaysMissions.push(inst);
+    } else {
+      otherPendingMissions.push(inst);
+    }
+  });
+
+  return { todaysMissions, otherPendingMissions };
 }
 
 
