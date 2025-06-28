@@ -82,7 +82,10 @@ export function generateRecurringEvents(
             
             if (isBefore(currentDayInWeek, iterDate)) continue;
 
-            const dayShort = allWeekdays[getDay(currentDayInWeek)];
+            // Day of week mapping for ptBR (Sunday is 0)
+            const dayOfWeekIndex = getDay(currentDayInWeek);
+            // Our weekdays array is MO-SU, so we need to adjust
+            const dayShort = allWeekdays[(dayOfWeekIndex + 6) % 7];
 
             if (daysToRepeatOn.includes(dayShort)) {
                  if (ruleEndDate && isAfter(currentDayInWeek, ruleEndDate)) continue;
@@ -139,12 +142,10 @@ export function generateRecurringEvents(
 function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
     const checkDate = startOfDay(date);
 
-    // Handle non-recurring missions
     if (!mission.isRecurring) {
         return !!mission.dueDate && isSameDay(mission.dueDate.toDate(), checkDate);
     }
 
-    // Handle recurring missions
     const rule = mission.recurrenceRule;
     const startDate = mission.startDate?.toDate();
 
@@ -158,11 +159,14 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
 
     switch (rule.freq) {
         case 'DAILY': {
-            return differenceInDays(checkDate, sDate) % rule.interval === 0;
+            const daysDifference = differenceInDays(checkDate, sDate);
+            return daysDifference % rule.interval === 0;
         }
         case 'WEEKLY': {
             const daysToRepeatOn = rule.byDay?.length ? rule.byDay : allWeekdays;
-            const dayOfWeek = getDayToWeekday[getDay(checkDate)];
+            // date-fns: getDay() returns 0 for Sunday, 1 for Monday...
+            // Our weekdays array is MO, TU... so we map it.
+            const dayOfWeek = allWeekdays[getDay(checkDate)]; 
             
             if (!daysToRepeatOn.includes(dayOfWeek)) {
                 return false;
@@ -171,17 +175,22 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
             const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn: 1 });
             const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn: 1 });
             
-            const weeksDifference = differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate, { weekStartsOn: 1 });
+            const daysDifference = differenceInDays(startOfWeekForCheckDate, startOfWeekForStartDate);
+            if (daysDifference < 0) return false;
+
+            const weeksDifference = Math.floor(daysDifference / 7);
 
             return weeksDifference % rule.interval === 0;
         }
         case 'MONTHLY': {
             if (sDate.getDate() !== checkDate.getDate()) return false;
-            return differenceInMonths(checkDate, sDate) % rule.interval === 0;
+            const monthsDifference = differenceInMonths(checkDate, sDate);
+            return monthsDifference % rule.interval === 0;
         }
         case 'YEARLY': {
             if (sDate.getDate() !== checkDate.getDate() || sDate.getMonth() !== checkDate.getMonth()) return false;
-            return differenceInYears(checkDate, sDate) % rule.interval === 0;
+            const yearsDifference = differenceInYears(checkDate, sDate);
+            return yearsDifference % rule.interval === 0;
         }
         default:
             return false;
