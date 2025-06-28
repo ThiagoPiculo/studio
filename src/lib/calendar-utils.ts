@@ -15,7 +15,11 @@ import {
   startOfDay,
   endOfDay,
   format as formatDateFns,
-  startOfWeek
+  startOfWeek,
+  differenceInDays,
+  differenceInWeeks,
+  differenceInMonths,
+  differenceInYears,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -28,6 +32,8 @@ export interface CalendarEvent {
 }
 
 const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
+const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
+
 
 export function generateRecurringEvents(
   templates: MissionTemplate[],
@@ -130,50 +136,75 @@ export function generateRecurringEvents(
   return events;
 }
 
+function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
+    const checkDate = startOfDay(date);
+
+    // Handle non-recurring missions
+    if (!mission.isRecurring) {
+        return !!mission.dueDate && isSameDay(mission.dueDate.toDate(), checkDate);
+    }
+
+    // Handle recurring missions
+    const rule = mission.recurrenceRule;
+    const startDate = mission.startDate?.toDate();
+
+    if (!rule || !startDate) return false;
+
+    const sDate = startOfDay(startDate);
+
+    if (isBefore(checkDate, sDate)) return false;
+    if (rule.endDate && isAfter(checkDate, startOfDay(rule.endDate.toDate()))) return false;
+    if (rule.count && (mission.completionCount || 0) >= rule.count) return false;
+
+    switch (rule.freq) {
+        case 'DAILY': {
+            return differenceInDays(checkDate, sDate) % rule.interval === 0;
+        }
+        case 'WEEKLY': {
+            const daysToRepeatOn = rule.byDay?.length ? rule.byDay : allWeekdays;
+            const dayOfWeek = getDayToWeekday[getDay(checkDate)];
+            
+            if (!daysToRepeatOn.includes(dayOfWeek)) {
+                return false;
+            }
+            
+            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn: 0 });
+            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn: 0 });
+            
+            return differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate) % rule.interval === 0;
+        }
+        case 'MONTHLY': {
+            if (sDate.getDate() !== checkDate.getDate()) return false;
+            return differenceInMonths(checkDate, sDate) % rule.interval === 0;
+        }
+        case 'YEARLY': {
+            if (sDate.getDate() !== checkDate.getDate() || sDate.getMonth() !== checkDate.getMonth()) return false;
+            return differenceInYears(checkDate, sDate) % rule.interval === 0;
+        }
+        default:
+            return false;
+    }
+}
+
 
 export function getTodaysMissions(
   instances: MissionInstance[],
   today: Date
 ): { todaysMissions: MissionInstance[]; otherPendingMissions: MissionInstance[] } {
-  const startOfToday = startOfDay(today);
-  const endOfToday = endOfDay(today);
-  const todaysMissionIds = new Set<string>();
+    const todaysMissions: MissionInstance[] = [];
+    const otherPendingMissions: MissionInstance[] = [];
 
-  // 1. Process recurring missions by treating them as templates for generation
-  const recurringTemplates = instances
-    .filter(inst => inst.isRecurring && inst.recurrenceRule && inst.startDate)
-    .map(inst => ({
-      ...inst,
-      id: inst.id,
-    })) as unknown as MissionTemplate[];
+    const pendingInstances = instances.filter(m => m.status === 'pending');
 
-  if (recurringTemplates.length > 0) {
-    const todaysGeneratedEvents = generateRecurringEvents(recurringTemplates, startOfToday, endOfToday);
-    todaysGeneratedEvents.forEach(event => todaysMissionIds.add(event.data.id));
-  }
-  
-  // 2. Process non-recurring missions with a due date today
-  instances.forEach(inst => {
-    if (!inst.isRecurring && inst.dueDate && isSameDay(inst.dueDate.toDate(), today)) {
-      todaysMissionIds.add(inst.id);
+    for (const inst of pendingInstances) {
+        if (isMissionScheduledForDate(inst, today)) {
+            todaysMissions.push(inst);
+        } else {
+            otherPendingMissions.push(inst);
+        }
     }
-  });
 
-  // Now, partition the pending instances array
-  const todaysMissions: MissionInstance[] = [];
-  const otherPendingMissions: MissionInstance[] = [];
-
-  instances.forEach(inst => {
-    if (inst.status !== 'pending') return;
-
-    if (todaysMissionIds.has(inst.id)) {
-      todaysMissions.push(inst);
-    } else {
-      otherPendingMissions.push(inst);
-    }
-  });
-
-  return { todaysMissions, otherPendingMissions };
+    return { todaysMissions, otherPendingMissions };
 }
 
 
