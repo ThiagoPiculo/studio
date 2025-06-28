@@ -168,8 +168,9 @@ function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolea
                 return false;
             }
             
-            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn: 0 });
-            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn: 0 });
+            const weekOptions = { weekStartsOn: 1 as const };
+            const startOfWeekForCheckDate = startOfWeek(checkDate, weekOptions);
+            const startOfWeekForStartDate = startOfWeek(sDate, weekOptions);
             
             return differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate) % rule.interval === 0;
         }
