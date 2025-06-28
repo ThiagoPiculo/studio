@@ -45,6 +45,7 @@ import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions } from '@/lib/calendar-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import type { Timestamp } from 'firebase/firestore';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -70,7 +71,7 @@ export default function ManageChildPage() {
   
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoadingMissions, setIsLoadingMissions] = useState(false);
-  const [missionStatusFilter, setMissionStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
+  const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
   const [isProcessingMissionAction, setIsProcessingMissionAction] = useState<string | null>(null);
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
@@ -509,6 +510,16 @@ export default function ManageChildPage() {
       return getTodaysMissions(pending, new Date());
   }, [missionInstances, isLoadingMissions]);
 
+  const completedMissions = useMemo(() => {
+    return missionInstances
+        .filter(m => m.status === 'completed')
+        .sort((a, b) => {
+            const dateA = (a.completedAt as Timestamp)?.toDate() || new Date(0);
+            const dateB = (b.completedAt as Timestamp)?.toDate() || new Date(0);
+            return dateB.getTime() - dateA.getTime();
+        });
+  }, [missionInstances]);
+
   const completedTodayIds = useMemo(() => {
       const today = new Date();
       const ids = new Set<string>();
@@ -684,7 +695,8 @@ export default function ManageChildPage() {
                           onClick={() => setMissionToReactivate(instance)}
                           disabled={isReactivatingMission}
                       >
-                          <RefreshCw className="mr-2 h-4 w-4" /> Reativar Missão
+                          {isReactivatingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                          Reativar Missão
                       </Button>
                   )}
               </CardFooter>
@@ -926,42 +938,84 @@ export default function ManageChildPage() {
                             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
                         </Button>
                     </div>
+                     <div className="pt-4">
+                        <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status</Label>
+                        <RadioGroup
+                            value={missionStatusFilter}
+                            onValueChange={(v) => setMissionStatusFilter(v as 'pending' | 'completed')}
+                            className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
+                        >
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="pending" id="filter-pending-missions" />
+                                <Label htmlFor="filter-pending-missions" className="cursor-pointer font-normal">Pendentes</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="completed" id="filter-completed-missions" />
+                                <Label htmlFor="filter-completed-missions" className="cursor-pointer font-normal">Concluídas</Label>
+                            </div>
+                        </RadioGroup>
+                    </div>
                 </CardHeader>
                 {isLoadingMissions ? (
                   <CardContent><div className="flex justify-center items-center py-10">
                       <Loader2 className="h-10 w-10 animate-spin text-primary" />
                       <p className="ml-3 text-muted-foreground">Carregando missões...</p>
                   </div></CardContent>
-                ) : missionInstances.filter(m => m.status === 'pending').length === 0 ? (
-                  <CardContent><div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                      <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                      <p className="text-lg text-muted-foreground">Nenhuma missão pendente para {child.name}.</p>
-                      <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Nova Missão" para começar a jornada!</p>
-                  </div></CardContent>
                 ) : (
                   <CardContent className="space-y-6">
-                      <div>
-                          <h3 className="text-xl font-headline mb-4">Missões para Hoje</h3>
-                          {todaysMissions.length > 0 ? (
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  {todaysMissions.map(instance => renderMissionCard(instance, true))}
-                              </div>
+                    {missionStatusFilter === 'pending' && (
+                        <>
+                          {missionInstances.filter(m => m.status === 'pending').length === 0 ? (
+                            <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                                <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                                <p className="text-lg text-muted-foreground">Nenhuma missão pendente para {child.name}.</p>
+                                <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Nova Missão" para começar a jornada!</p>
+                            </div>
                           ) : (
-                              <p className="text-muted-foreground text-sm text-center py-4 border border-dashed rounded-md">
-                                  Nenhuma missão agendada para hoje. Hora de relaxar!
-                              </p>
-                          )}
-                      </div>
-
-                      {otherPendingMissions.length > 0 && (
-                          <div>
-                              <Separator className="my-6" />
-                              <h3 className="text-xl font-headline mb-4">Próximas Missões</h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  {otherPendingMissions.map(instance => renderMissionCard(instance, false))}
+                            <>
+                              <div>
+                                  <h3 className="text-xl font-headline mb-4">Missões para Hoje</h3>
+                                  {todaysMissions.length > 0 ? (
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                          {todaysMissions.map(instance => renderMissionCard(instance, true))}
+                                      </div>
+                                  ) : (
+                                      <p className="text-muted-foreground text-sm text-center py-4 border border-dashed rounded-md">
+                                          Nenhuma missão agendada para hoje. Hora de relaxar!
+                                      </p>
+                                  )}
                               </div>
-                          </div>
-                      )}
+                              {otherPendingMissions.length > 0 && (
+                                  <div>
+                                      <Separator className="my-6" />
+                                      <h3 className="text-xl font-headline mb-4">Próximas Missões</h3>
+                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                          {otherPendingMissions.map(instance => renderMissionCard(instance, false))}
+                                      </div>
+                                  </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                    )}
+                    {missionStatusFilter === 'completed' && (
+                        <>
+                          {completedMissions.length === 0 ? (
+                             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                                <Trophy className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                                <p className="text-lg text-muted-foreground">{child.name} ainda não concluiu nenhuma missão.</p>
+                                <p className="text-sm text-muted-foreground mt-1">Volte para a aba "Pendentes" para ver o que falta!</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <h3 className="text-xl font-headline mb-4">Missões Concluídas</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                  {completedMissions.map(instance => renderMissionCard(instance, false))}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                    )}
                   </CardContent>
                 )}
             </Card>
