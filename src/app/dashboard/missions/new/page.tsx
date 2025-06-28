@@ -46,14 +46,31 @@ const missionTemplateFormSchema = z.object({
   startDate: z.date().optional().nullable(),
   dueDate: z.date().optional().nullable(),
   recurrenceRule: recurrenceRuleSchema,
-}).refine(data => {
-    if (data.isRecurring && data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
-        return false;
+}).superRefine((data, ctx) => {
+    if (data.isRecurring) {
+        if (!data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de início é obrigatória para missões recorrentes.",
+                path: ["startDate"],
+            });
+        }
+        if (data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de fim da recorrência não pode ser anterior à data de início.",
+                path: ['recurrenceRule.endDate'],
+            });
+        }
+    } else {
+        if (!data.dueDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de prazo é obrigatória para missões únicas.",
+                path: ["dueDate"],
+            });
+        }
     }
-    return true;
-}, {
-    message: "A data de fim da recorrência não pode ser anterior à data de início.",
-    path: ['recurrenceRule.endDate'],
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
