@@ -53,20 +53,16 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
             return daysDifference % rule.interval === 0;
         }
         case 'WEEKLY': {
-            const daysToRepeatOn = rule.byDay?.length ? rule.byDay : allWeekdays;
-            // date-fns: getDay() returns 0 for Sunday, 1 for Monday...
-            // Our weekdays array is MO, TU... SU. getDay() needs to be mapped.
-            const dayOfWeek = getDayToWeekday[getDay(checkDate)]; 
+            // If byDay is not specified, it should repeat on the same day of the week as the start date.
+            const daysToRepeatOn = rule.byDay?.length ? rule.byDay : [getDayToWeekday[getDay(sDate)]];
+            
+            const dayOfWeek = getDayToWeekday[getDay(checkDate)];
             
             if (!daysToRepeatOn.includes(dayOfWeek)) {
                 return false;
             }
             
-            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn });
-            const startOfWeekForStartDate = startOfWeek(sDate, { weekStartsOn });
-            
-            const weeksDifference = differenceInWeeks(startOfWeekForCheckDate, startOfWeekForStartDate, { weekStartsOn });
-
+            const weeksDifference = differenceInWeeks(checkDate, sDate, { weekStartsOn });
             if (weeksDifference < 0) return false;
             
             return weeksDifference % rule.interval === 0;
@@ -74,11 +70,13 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
         case 'MONTHLY': {
             if (sDate.getDate() !== checkDate.getDate()) return false;
             const monthsDifference = differenceInMonths(checkDate, sDate);
+            if (monthsDifference < 0) return false;
             return monthsDifference % rule.interval === 0;
         }
         case 'YEARLY': {
             if (sDate.getDate() !== checkDate.getDate() || sDate.getMonth() !== checkDate.getMonth()) return false;
             const yearsDifference = differenceInYears(checkDate, sDate);
+            if (yearsDifference < 0) return false;
             return yearsDifference % rule.interval === 0;
         }
         default:
@@ -196,5 +194,3 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
 
   return summary;
 }
-
-    
