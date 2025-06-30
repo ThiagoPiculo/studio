@@ -4,13 +4,13 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionInstance } from '@/lib/types';
+import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -23,6 +23,8 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
@@ -48,37 +50,54 @@ export default function AgendaPage() {
   const [sortBy, setSortBy] = useState<SortByType>('child');
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
 
-  useEffect(() => {
+  // New states for the add mission flow
+  const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
+  const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+
+  const fetchAgendaData = useCallback(async () => {
     if (!user) {
         setIsLoading(false);
         return;
     };
     
-    const fetchAgendaData = async () => {
-        setIsLoading(true);
-        try {
-            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    setIsLoading(true);
+    try {
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
-            const [fetchedChildren, fetchedInstances] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, familyIdToQuery)
-            ]);
-            
-            setChildren(fetchedChildren);
-            setMissionInstances(fetchedInstances);
+        const [fetchedChildren, fetchedInstances] = await Promise.all([
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, familyIdToQuery)
+        ]);
+        
+        setChildren(fetchedChildren);
+        setMissionInstances(fetchedInstances);
+        if (Object.keys(selectedChildrenIds).length === 0) {
             const initialSelection: Record<string, boolean> = {};
             fetchedChildren.forEach(c => initialSelection[c.id] = true);
             setSelectedChildrenIds(initialSelection);
-
-        } catch (error) {
-            console.error("Error fetching agenda data:", error);
-        } finally {
-            setIsLoading(false);
         }
-    };
+
+    } catch (error) {
+        console.error("Error fetching agenda data:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, [user, currentContext, selectedChildrenIds]);
+
+  useEffect(() => {
     fetchAgendaData();
-  }, [user, currentContext]);
+  }, [fetchAgendaData]);
   
+  const handleMissionSelected = (template: MissionTemplate) => {
+    setTemplateToAssign(template);
+    setIsAssignDialogOpen(true);
+  };
+  
+  const handleAssignmentComplete = () => {
+    fetchAgendaData(); // Refetch data after assignment
+  };
+
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const viewInterval = useMemo(() => {
@@ -380,114 +399,122 @@ export default function AgendaPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-         <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                <div>
-                    <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                        <CalendarIcon className="h-8 w-8 text-primary" />
-                        Agenda dos Heróis
-                    </CardTitle>
-                    <CardDescription>
-                        Planeje e visualize as missões da sua equipe.
-                    </CardDescription>
-                </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize">
-                           {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                        </h2>
-                        <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Separator/>
-           <div className="flex flex-col md:flex-row gap-6 pt-2">
-            <div className="w-full md:w-auto md:max-w-xs space-y-2 md:border-r md:pr-6">
-                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" />Filtrar por Herói</Label>
-                <div className="flex items-center space-x-2 pb-2 border-b">
-                    <Checkbox id="select-all" checked={allChildrenSelected} onCheckedChange={handleSelectAllChange} />
-                    <Label htmlFor="select-all" className="font-medium">Todos os Heróis</Label>
-                </div>
-                <ScrollArea className="h-32">
-                    <div className="space-y-2 py-1 pr-2">
-                        {children.map(child => (
-                            <div key={child.id} className="flex items-center space-x-3">
-                                <Checkbox id={`child-filter-${child.id}`} checked={!!selectedChildrenIds[child.id]} onCheckedChange={(checked) => handleChildSelectionChange(child.id, !!checked)} />
-                                <Label htmlFor={`child-filter-${child.id}`} className="font-normal flex items-center gap-2 cursor-pointer">
-                                    <Avatar className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                    {child.name}
-                                </Label>
-                            </div>
-                        ))}
-                    </div>
-                </ScrollArea>
-            </div>
-            <div className="flex-1 space-y-4">
-                <div>
-                  <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
-                  <div className="flex flex-wrap items-center gap-2 mt-1">
-                    <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
-                        <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
-                        <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
-                        <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
-                        <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
-                    </ToggleGroup>
-                    <Button variant="outline" onClick={handleToday}>Hoje</Button>
+    <>
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                      <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                          <CalendarIcon className="h-8 w-8 text-primary" />
+                          Agenda dos Heróis
+                      </CardTitle>
+                      <CardDescription>
+                          Planeje e visualize as missões da sua equipe.
+                      </CardDescription>
                   </div>
-                </div>
-                <div>
-                  <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
-                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortByType)}>
-                      <SelectTrigger id="sort-by" className="w-full sm:w-48 mt-1">
-                          <SelectValue placeholder="Organizar por..." />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="child">
-                            <div className="flex items-center gap-2">
-                              <User className="h-4 w-4" />
-                              <span>Herói</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="missionName">
-                             <div className="flex items-center gap-2">
-                              <ListOrdered className="h-4 w-4" />
-                              <span>Missão do heroi</span>
-                            </div>
-                          </SelectItem>
-                      </SelectContent>
-                  </Select>
-                </div>
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                          <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize">
+                        {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                      </h2>
+                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                          <ChevronRight className="h-4 w-4" />
+                      </Button>
+                      <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                      </Button>
+                  </div>
+              </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Separator/>
+            <div className="flex flex-col md:flex-row gap-6 pt-2">
+              <div className="w-full md:w-auto md:max-w-xs space-y-2 md:border-r md:pr-6">
+                  <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" />Filtrar por Herói</Label>
+                  <div className="flex items-center space-x-2 pb-2 border-b">
+                      <Checkbox id="select-all" checked={allChildrenSelected} onCheckedChange={handleSelectAllChange} />
+                      <Label htmlFor="select-all" className="font-medium">Todos os Heróis</Label>
+                  </div>
+                  <ScrollArea className="h-32">
+                      <div className="space-y-2 py-1 pr-2">
+                          {children.map(child => (
+                              <div key={child.id} className="flex items-center space-x-3">
+                                  <Checkbox id={`child-filter-${child.id}`} checked={!!selectedChildrenIds[child.id]} onCheckedChange={(checked) => handleChildSelectionChange(child.id, !!checked)} />
+                                  <Label htmlFor={`child-filter-${child.id}`} className="font-normal flex items-center gap-2 cursor-pointer">
+                                      <Avatar className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                                          <AvatarImage src={child.avatar} alt={child.name} />
+                                          <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                      </Avatar>
+                                      {child.name}
+                                  </Label>
+                              </div>
+                          ))}
+                      </div>
+                  </ScrollArea>
+              </div>
+              <div className="flex-1 space-y-4">
+                  <div>
+                    <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
+                    <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
+                          <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
+                          <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
+                          <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
+                          <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
+                      </ToggleGroup>
+                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
+                    </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
+                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortByType)}>
+                        <SelectTrigger id="sort-by" className="w-full sm:w-48 mt-1">
+                            <SelectValue placeholder="Organizar por..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="child">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <span>Herói</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="missionName">
+                              <div className="flex items-center gap-2">
+                                <ListOrdered className="h-4 w-4" />
+                                <span>Missão do heroi</span>
+                              </div>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+              </div>
             </div>
-           </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+        
+        {renderContent()}
+      </div>
+
+      <SelectMissionTemplateDialog
+        isOpen={isSelectMissionDialogOpen}
+        onOpenChange={setIsSelectMissionDialogOpen}
+        onMissionSelected={handleMissionSelected}
+      />
       
-      {renderContent()}
-    </div>
+      {templateToAssign && (
+        <AssignMissionDialog
+          template={templateToAssign}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setTemplateToAssign(null);
+            setIsAssignDialogOpen(isOpen);
+          }}
+          onAssigned={handleAssignmentComplete}
+        />
+      )}
+    </>
   );
 }
-
-    
-
-    
-
-
-
-
-    
-
-    
-
-    
