@@ -1,37 +1,34 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback, Fragment } from 'react';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameMonth, isToday, getDay, addDays, subDays, eachDayOfInterval } from 'date-fns';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, X, ChevronDown, CalendarDays, Rows3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionInstance, MissionCategoryDetails } from '@/lib/types';
-import { missionCategories } from '@/lib/types';
+import type { ChildProfile, MissionInstance } from '@/lib/types';
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
-import { Timestamp } from 'firebase/firestore';
 import Loading from './loading';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Checkbox } from '@/components/ui/checkbox';
 
-type ViewMode = 'month' | 'week';
+type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
+type SortByType = 'child' | 'missionName';
 
 interface CalendarEvent {
   date: Date;
   title: string;
-  color: string;
   data: MissionInstance;
 }
 
@@ -39,14 +36,15 @@ export default function AgendaPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [viewMode, setViewMode] = useState<ViewMode>('month');
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<string>('all');
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [dayFilter, setDayFilter] = useState<'all' | 'weekdays' | 'weekends'>('all');
+
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('week');
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
+  const [sortBy, setSortBy] = useState<SortByType>('child');
+  const [allChildrenSelected, setAllChildrenSelected] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -66,6 +64,10 @@ export default function AgendaPage() {
             
             setChildren(fetchedChildren);
             setMissionInstances(fetchedInstances);
+            const initialSelection: Record<string, boolean> = {};
+            fetchedChildren.forEach(c => initialSelection[c.id] = true);
+            setSelectedChildrenIds(initialSelection);
+
         } catch (error) {
             console.error("Error fetching agenda data:", error);
         } finally {
@@ -78,37 +80,42 @@ export default function AgendaPage() {
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const viewInterval = useMemo(() => {
-    if (viewMode === 'month') {
+    const weekStartsOn = 1; // Monday
+    switch (dateRangeFilter) {
+      case 'day':
+        return { start: startOfDay(currentDate), end: startOfDay(currentDate) };
+      case '3days':
+        return { start: startOfDay(currentDate), end: startOfDay(addDays(currentDate, 2)) };
+      case 'week':
+        return { start: startOfWeek(currentDate, { weekStartsOn }), end: endOfWeek(currentDate, { weekStartsOn }) };
+      case 'month':
         return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
     }
-    const weekStartsOn = 1; // Monday
-    return { start: startOfWeek(currentDate, { weekStartsOn }), end: endOfWeek(currentDate, { weekStartsOn }) };
-  }, [currentDate, viewMode]);
+  }, [currentDate, dateRangeFilter]);
 
   const events = useMemo(() => {
     const { start, end } = viewInterval;
     const allEvents: CalendarEvent[] = [];
     const daysInView = eachDayOfInterval({ start, end });
+    const activeChildFilters = Object.entries(selectedChildrenIds).filter(([,v]) => v).map(([k]) => k);
+    
+    const instancesToProcess = allChildrenSelected 
+      ? missionInstances 
+      : missionInstances.filter(inst => activeChildFilters.includes(inst.childId));
 
-    missionInstances.forEach(instance => {
+    instancesToProcess.forEach(instance => {
       daysInView.forEach(day => {
         if (isMissionScheduledForDate(instance, day)) {
           allEvents.push({
             date: day,
             title: instance.title,
-            color: childrenMap.get(instance.childId)?.color || 'hsl(var(--foreground))',
             data: instance,
           });
         }
       });
     });
-    
-    if (selectedChildId !== 'all') {
-      return allEvents.filter(event => event.data.childId === selectedChildId);
-    }
-    
     return allEvents;
-  }, [viewInterval, missionInstances, selectedChildId, childrenMap]);
+  }, [viewInterval, missionInstances, selectedChildrenIds, allChildrenSelected]);
 
   const eventsByDate = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -121,62 +128,31 @@ export default function AgendaPage() {
     }, {} as Record<string, CalendarEvent[]>);
   }, [events]);
 
-  const missionCountsByChild = useMemo(() => {
-    const { start: viewStart, end: viewEnd } = viewInterval;
-    const counts: Record<string, number> = {};
-    children.forEach(c => counts[c.id] = 0);
-    missionInstances.forEach(instance => {
-        const instanceDate = (instance.dueDate || instance.assignedAt).toDate();
-        if (instance.childId && counts[instance.childId] !== undefined && instanceDate >= viewStart && instanceDate <= viewEnd) {
-            counts[instance.childId]++;
-        }
-    });
-    return counts;
-  }, [missionInstances, children, viewInterval]);
-
-
-  const eventsForSelectedDate = useMemo(() => {
-    if (!selectedDate) return [];
-    const dateKey = format(selectedDate, 'yyyy-MM-dd');
-    return eventsByDate[dateKey] || [];
-  }, [selectedDate, eventsByDate]);
-
-  const groupedEventsForDialog = useMemo(() => {
-    if (!eventsForSelectedDate.length) return { instancesByChild: new Map() };
-    const instancesByChild = new Map<string, MissionInstance[]>();
-    eventsForSelectedDate.forEach(event => {
-      const instance = event.data;
-      if (!instancesByChild.has(instance.childId)) {
-          instancesByChild.set(instance.childId, []);
-      }
-      instancesByChild.get(instance.childId)!.push(instance);
-    });
-    return { instancesByChild };
-  }, [eventsForSelectedDate]);
-
   const handlePrev = () => {
-    if (viewMode === 'month') {
+    const dateChanges = { day: 1, '3days': 3, week: 7, month: 0 };
+    if (dateRangeFilter === 'month') {
         setCurrentDate(subMonths(currentDate, 1));
     } else {
-        setCurrentDate(subDays(currentDate, 7));
+        setCurrentDate(subDays(currentDate, dateChanges[dateRangeFilter]));
     }
   };
 
   const handleNext = () => {
-      if (viewMode === 'month') {
-          setCurrentDate(addMonths(currentDate, 1));
-      } else {
-          setCurrentDate(addDays(currentDate, 7));
-      }
+    const dateChanges = { day: 1, '3days': 3, week: 7, month: 0 };
+    if (dateRangeFilter === 'month') {
+        setCurrentDate(addMonths(currentDate, 1));
+    } else {
+        setCurrentDate(addDays(currentDate, dateChanges[dateRangeFilter]));
+    }
   };
   
-  const formatHeaderDate = (date: Date, view: 'month' | 'week') => {
-    if (view === 'month') {
-        return format(date, 'MMMM yyyy', { locale: ptBR });
-    }
-    const start = startOfWeek(date, { weekStartsOn: 1 });
-    const end = endOfWeek(date, { weekStartsOn: 1 });
+  const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
+    if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
+    if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
     
+    const start = interval.start;
+    const end = interval.end;
+
     const startMonth = format(start, 'MMMM', { locale: ptBR });
     const endMonth = format(end, 'MMMM', { locale: ptBR });
 
@@ -186,121 +162,133 @@ export default function AgendaPage() {
         return `${format(start, "d 'de' MMMM", { locale: ptBR })} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
     }
   };
+  
+  const handleChildSelectionChange = useCallback((childId: string, isSelected: boolean) => {
+    setSelectedChildrenIds(prev => {
+        const newSelection = { ...prev, [childId]: isSelected };
+        const allSelected = children.every(c => newSelection[c.id]);
+        setAllChildrenSelected(allSelected);
+        return newSelection;
+    });
+  }, [children]);
+
+  const handleSelectAllChange = useCallback((isSelected: boolean) => {
+    setAllChildrenSelected(isSelected);
+    const newSelection: Record<string, boolean> = {};
+    children.forEach(c => newSelection[c.id] = isSelected);
+    setSelectedChildrenIds(newSelection);
+  }, [children]);
 
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
 
-  const renderMonthView = () => {
-    const monthStart = startOfMonth(currentDate);
-    const monthEnd = endOfMonth(currentDate);
-    const weekStartsOn = 1; // Monday
-    const startDate = startOfWeek(monthStart, { weekStartsOn });
-    const endDate = endOfWeek(monthEnd, { weekStartsOn });
-    
-    const days = [];
-    let day = startDate;
-    while (day <= endDate) {
-      days.push(new Date(day));
-      day.setDate(day.getDate() + 1);
+  const renderTimelineView = () => {
+    const days = eachDayOfInterval(viewInterval);
+    const hasAnyEvents = Object.keys(eventsByDate).length > 0;
+  
+    if (!hasAnyEvents) {
+      return (
+        <Card className="text-center py-10 shadow-sm">
+          <CardContent>
+            <CalendarIcon className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <p className="text-lg text-muted-foreground">Nenhuma missão agendada neste período.</p>
+            <p className="text-sm text-muted-foreground mt-1">Tente ajustar os filtros ou atribua novas missões.</p>
+          </CardContent>
+        </Card>
+      );
     }
-    
+  
     return (
-        <div className="grid grid-cols-7 border-t border-l rounded-lg overflow-hidden shadow-sm">
-            {['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'].map(dayName => (
-                <div key={dayName} className="text-center font-semibold text-sm text-muted-foreground p-2 border-b border-r bg-muted/50">
-                    <span className="hidden md:inline">{dayName}</span>
-                    <span className="md:hidden">{dayName.substring(0,3)}</span>
-                </div>
-            ))}
-            {days.map((d, i) => {
-                const dayEvents = eventsByDate[format(d, 'yyyy-MM-dd')] || [];
-                const dayOfWeek = getDay(d); // Sunday = 0, Saturday = 6
-                // Adjust for week starting on Monday (0=Mon, 6=Sun)
-                const adjustedDayOfWeek = (dayOfWeek + 6) % 7;
-                const isWeekend = adjustedDayOfWeek === 5 || adjustedDayOfWeek === 6;
-
-                let isDisabledByFilter = false;
-                if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
-                if (dayFilter === 'weekends' && !isWeekend) isDisabledByFilter = true;
-
-                return (
-                    <button 
-                        key={i} 
-                        onClick={() => setSelectedDate(d)}
-                        disabled={dayEvents.length === 0 || isDisabledByFilter}
-                        className={cn(
-                            "h-28 md:h-36 border-b border-r p-1.5 flex flex-col relative text-left",
-                            !isSameMonth(d, currentDate) && "bg-muted/30 text-muted-foreground opacity-50",
-                            dayEvents.length > 0 && "cursor-pointer hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary z-10",
-                            isDisabledByFilter && "opacity-30 pointer-events-none"
-                        )}
-                    >
-                        <span className={cn("font-semibold text-sm w-7 h-7 flex items-center justify-center rounded-full", isToday(d) && "bg-primary text-primary-foreground")}>
-                            {format(d, 'd')}
-                        </span>
-                        <div className="mt-1 overflow-y-auto space-y-1 text-xs">
-                            {dayEvents.slice(0, 3).map((event, eventIndex) => (
-                                <div key={eventIndex} className="p-1 rounded-sm flex items-center gap-1.5 bg-muted/30">
-                                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }}></div>
-                                    <p className="truncate text-foreground/90">{event.title}</p>
-                                </div>
-                            ))}
-                            {dayEvents.length > 3 && (
-                                <p className="text-center text-muted-foreground font-medium mt-1">
-                                    + {dayEvents.length - 3} mais
-                                </p>
-                            )}
+      <div className="space-y-8">
+        {days.map(day => {
+          const dateKey = format(day, 'yyyy-MM-dd');
+          const dayEvents = eventsByDate[dateKey] || [];
+  
+          if (dayEvents.length === 0) {
+            return null; // Don't render empty days for a cleaner view
+          }
+  
+          const groupedByChild = dayEvents.reduce((acc, event) => {
+            const childId = event.data.childId;
+            if (!acc[childId]) {
+              acc[childId] = [];
+            }
+            acc[childId].push(event.data);
+            return acc;
+          }, {} as Record<string, MissionInstance[]>);
+  
+          const sortedByName = [...dayEvents].sort((a, b) => a.title.localeCompare(b.title));
+  
+          return (
+            <div key={dateKey}>
+              <h2 className={cn("text-xl font-headline mb-2 capitalize flex items-center gap-2", isToday(day) && "text-primary")}>
+                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+                {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
+              </h2>
+              <Card className="shadow-sm">
+                <CardContent className="p-4 space-y-4">
+                  {sortBy === 'child' ? (
+                    Object.entries(groupedByChild).map(([childId, missions]) => {
+                      const child = childrenMap.get(childId);
+                      if (!child) return null;
+                      return (
+                        <div key={childId} className="flex items-start gap-4">
+                           <Avatar
+                              className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)] mt-1"
+                              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                            >
+                              <AvatarImage src={child.avatar} alt={child.name} />
+                              <AvatarFallback style={{ backgroundColor: child.color }}>
+                                  {getInitials(child.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <h3 className="font-semibold text-md">{child.name}</h3>
+                                <ul className="mt-1 space-y-1">
+                                    {missions.map(mission => (
+                                        <li key={mission.id} className="text-sm text-muted-foreground flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: child.color }}></div>
+                                            <span>{mission.title}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
-                    </button>
-                )
-            })}
-        </div>
+                      )
+                    })
+                  ) : (
+                    <ul className="space-y-2">
+                      {sortedByName.map(event => {
+                        const child = childrenMap.get(event.data.childId);
+                        if (!child) return null;
+                        return (
+                          <li key={event.data.id} className="flex items-center gap-3">
+                              <Avatar
+                                className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                              >
+                                <AvatarImage src={child.avatar} alt={child.name} />
+                                <AvatarFallback style={{ backgroundColor: child.color }}>
+                                    {getInitials(child.name)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="text-sm font-medium">{event.title}</p>
+                                <p className="text-xs text-muted-foreground">{child.name}</p>
+                              </div>
+                          </li>
+                        )
+                      })}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          );
+        })}
+      </div>
     );
   };
   
-  const renderWeekView = () => {
-    const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
-    const days = Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
-
-    return (
-        <div className="border-t border-l rounded-lg shadow-sm grid grid-cols-7">
-            {/* Header */}
-            {days.map(day => (
-                 <div key={day.toString()} className={cn("text-center font-semibold p-2 border-b border-r bg-muted/50", isToday(day) && 'bg-primary/10')}>
-                    <span className="text-sm text-muted-foreground uppercase hidden md:inline">{format(day, 'cccc', { locale: ptBR })}</span>
-                     <span className="text-sm text-muted-foreground uppercase md:hidden">{format(day, 'ccc', { locale: ptBR })}</span>
-                    <p className={cn("font-bold text-2xl mt-1", isToday(day) ? 'text-primary' : 'text-foreground')}>{format(day, 'd')}</p>
-                </div>
-            ))}
-            {/* Body */}
-            {days.map(day => {
-                const dayEvents = eventsByDate[format(day, 'yyyy-MM-dd')] || [];
-                const dayOfWeek = getDay(day);
-                const adjustedDayOfWeek = (dayOfWeek + 6) % 7;
-                const isWeekend = adjustedDayOfWeek === 5 || adjustedDayOfWeek === 6;
-                let isDisabledByFilter = false;
-                if (dayFilter === 'weekdays' && isWeekend) isDisabledByFilter = true;
-                if (dayFilter === 'weekends' && !isWeekend) isDisabledByFilter = true;
-
-                return (
-                    <div key={day.toString()} className={cn("h-[60vh] border-r p-1 flex flex-col relative overflow-y-auto space-y-2", isDisabledByFilter && 'opacity-30')}>
-                        {dayEvents.map((event, eventIndex) => (
-                             <button 
-                                key={eventIndex} 
-                                onClick={() => setSelectedDate(day)}
-                                disabled={isDisabledByFilter}
-                                className="w-full p-1.5 rounded-md flex items-center gap-2 text-left hover:bg-muted/50 transition-colors"
-                             >
-                                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }}></div>
-                                <p className="truncate text-sm font-medium text-foreground/90">{event.title}</p>
-                            </button>
-                        ))}
-                    </div>
-                )
-            })}
-        </div>
-    )
-  }
-
   if (isLoading) return <Loading />;
 
   return (
@@ -318,29 +306,12 @@ export default function AgendaPage() {
                     </CardDescription>
                 </div>
                 <div className="flex items-center gap-4">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="w-32">
-                          {viewMode === 'month' ? 'Mês' : 'Semana'}
-                          <ChevronDown className="ml-2 h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onSelect={() => setViewMode('month')}>
-                            <CalendarDays className="mr-2 h-4 w-4" /> Mês
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => setViewMode('week')}>
-                            <Rows3 className="mr-2 h-4 w-4" /> Semana
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-
                     <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize">
-                            {formatHeaderDate(currentDate, viewMode)}
+                           {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                         </h2>
                         <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
                             <ChevronRight className="h-4 w-4" />
@@ -349,113 +320,65 @@ export default function AgendaPage() {
                 </div>
             </div>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
-            <div className="w-full max-w-xs">
-                <Label className="text-sm font-medium">Filtrar por Herói</Label>
-                <Select value={selectedChildId} onValueChange={setSelectedChildId}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrar por Herói..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">
-                             <div className="flex items-center gap-2">
-                                <Users className="h-6 w-6" />
-                                <div>
-                                    <p>Todos os Heróis</p>
-                                    <p className="text-xs text-muted-foreground">{missionInstances.length} missões no total</p>
-                                </div>
-                            </div>
-                        </SelectItem>
-                        {children.map(child => (
-                            <SelectItem key={child.id} value={child.id}>
-                                <div className="flex items-center gap-2">
-                                    <Avatar
-                                      className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                      style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                    >
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
-                                            {getInitials(child.name)}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p>{child.name}</p>
-                                        <p className="text-xs text-muted-foreground">{missionCountsByChild[child.id] || 0} missões</p>
-                                    </div>
-                                </div>
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+        <CardContent className="space-y-4">
+          <Separator/>
+           <div className="flex flex-col md:flex-row gap-6 pt-2">
+            {/* Child Filters */}
+            <div className="w-full md:w-auto md:max-w-xs space-y-2 md:border-r md:pr-6">
+                <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" />Filtrar por Herói</Label>
+                <div className="flex items-center space-x-2 pb-2 border-b">
+                    <Checkbox id="select-all" checked={allChildrenSelected} onCheckedChange={handleSelectAllChange} />
+                    <Label htmlFor="select-all" className="font-medium">Todos os Heróis</Label>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {children.map(child => (
+                        <div key={child.id} className="flex items-center space-x-3">
+                            <Checkbox id={`child-filter-${child.id}`} checked={!!selectedChildrenIds[child.id]} onCheckedChange={(checked) => handleChildSelectionChange(child.id, !!checked)} />
+                            <Label htmlFor={`child-filter-${child.id}`} className="font-normal flex items-center gap-2 cursor-pointer">
+                                <Avatar
+                                    className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                >
+                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                    <AvatarFallback style={{ backgroundColor: child.color }}>
+                                        {getInitials(child.name)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                {child.name}
+                            </Label>
+                        </div>
+                    ))}
+                </div>
             </div>
-            <div className="space-y-2">
-                <Label className="text-sm font-medium">Filtrar Dias</Label>
-                 <RadioGroup value={dayFilter} onValueChange={(v) => setDayFilter(v as any)} className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="filter-all"/>
-                    <Label htmlFor="filter-all" className="font-normal cursor-pointer">Todos</Label>
-                    <RadioGroupItem value="weekdays" id="filter-weekdays"/>
-                    <Label htmlFor="filter-weekdays" className="font-normal cursor-pointer">Dias de Semana</Label>
-                    <RadioGroupItem value="weekends" id="filter-weekends"/>
-                    <Label htmlFor="filter-weekends" className="font-normal cursor-pointer">Fins de Semana</Label>
-                </RadioGroup>
+             {/* View and Sort Filters */}
+            <div className="flex-1 space-y-4">
+                <div>
+                  <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
+                  <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="mt-1">
+                      <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
+                      <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
+                      <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
+                      <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+                <div>
+                  <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
+                  <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortByType)}>
+                      <SelectTrigger id="sort-by" className="w-full sm:w-48 mt-1">
+                          <SelectValue placeholder="Organizar por..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="child"><User className="h-4 w-4 mr-2"/>Herói</SelectItem>
+                          <SelectItem value="missionName"><ListOrdered className="h-4 w-4 mr-2"/>Nome da Missão</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
             </div>
+           </div>
         </CardContent>
       </Card>
       
-      {viewMode === 'month' && renderMonthView()}
-      {viewMode === 'week' && renderWeekView()}
-
-      <Dialog open={!!selectedDate} onOpenChange={(isOpen) => !isOpen && setSelectedDate(null)}>
-        <DialogContent className="max-w-lg">
-            <DialogHeader>
-                <DialogTitle className="text-2xl">
-                    Missões para {selectedDate ? format(selectedDate, "dd 'de' MMMM", { locale: ptBR }) : ''}
-                </DialogTitle>
-                <DialogDescription>
-                    Resumo de todas as atividades programadas para este dia.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto p-1 space-y-4">
-               {groupedEventsForDialog.instancesByChild.size === 0 ? (
-                    <p className="text-center text-muted-foreground py-4">Nenhuma missão para este dia.</p>
-               ) : (
-                 Array.from(groupedEventsForDialog.instancesByChild.entries()).map(([childId, instances]) => {
-                     const child = childrenMap.get(childId);
-                     if (!child) return null;
-                     return (
-                         <div key={childId}>
-                             <div className="flex items-center gap-2 mb-2">
-                                <Avatar
-                                  className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                  style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                >
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
-                                        {getInitials(child.name)}
-                                    </AvatarFallback>
-                                 </Avatar>
-                                 <h3 className="font-semibold">{child.name}</h3>
-                             </div>
-                             <ul className="space-y-2 pl-4">
-                                {instances.map(instance => {
-                                    return (
-                                        <li key={instance.id} className="p-2 rounded-md flex items-center gap-2 bg-muted/50">
-                                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                                             <span className="text-foreground/90">{instance.title}</span>
-                                        </li>
-                                    )
-                                })}
-                             </ul>
-                         </div>
-                     )
-                 })
-               )}
-            </div>
-            <DialogClose asChild>
-                <Button variant="outline" className="mt-4 w-full">Fechar</Button>
-            </DialogClose>
-        </DialogContent>
-      </Dialog>
+      {renderTimelineView()}
     </div>
   );
 }
