@@ -43,7 +43,7 @@ export default function AgendaPage() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
 
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('month');
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('week');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<SortByType>('child');
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
@@ -186,10 +186,10 @@ export default function AgendaPage() {
   
   const hasAnyEvents = Object.keys(eventsByDate).length > 0;
   
-  const renderTimelineView = () => {
+  const renderGridView = () => {
     const days = eachDayOfInterval(viewInterval);
   
-    if (!hasAnyEvents) {
+    if (!hasAnyEvents && dateRangeFilter !== 'month') {
       return (
         <Card className="text-center py-10 shadow-sm">
           <CardContent>
@@ -200,14 +200,18 @@ export default function AgendaPage() {
         </Card>
       );
     }
+    
+    const gridClasses = {
+        day: 'grid-cols-1',
+        '3days': 'grid-cols-1 lg:grid-cols-3',
+        week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7',
+    };
   
     return (
-      <div className="space-y-8">
+      <div className={cn("grid gap-6", gridClasses[dateRangeFilter])}>
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = eventsByDate[dateKey] || [];
-  
-          if (dayEvents.length === 0) return null;
   
           const groupedByChild = dayEvents.reduce((acc, event) => {
             const childId = event.data.childId;
@@ -219,59 +223,70 @@ export default function AgendaPage() {
           const sortedByName = [...dayEvents].sort((a, b) => a.title.localeCompare(b.title));
   
           return (
-            <div key={dateKey}>
-              <h2 className={cn("text-xl font-headline mb-2 capitalize flex items-center gap-2", isToday(day) && "text-primary")}>
-                {format(day, "EEEE, dd 'de' MMMM", { locale: ptBR })}
+            <div key={dateKey} className="flex flex-col space-y-2">
+              <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2", isToday(day) && "text-primary")}>
+                {format(day, "EEEE, dd", { locale: ptBR })}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
-              <Card className="shadow-sm">
-                <CardContent className="p-4 space-y-4">
-                  {sortBy === 'child' ? (
-                    Object.entries(groupedByChild).map(([childId, missions]) => {
-                      const child = childrenMap.get(childId);
-                      if (!child) return null;
-                      return (
-                        <div key={childId} className="flex items-start gap-4">
-                          <Avatar className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)] mt-1" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                            <AvatarImage src={child.avatar} alt={child.name} />
-                            <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-md">{child.name}</h3>
-                            <ul className="mt-1 space-y-1">
-                              {missions.map(mission => (
-                                <li key={mission.id} className="text-sm text-muted-foreground flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: child.color }}></div>
-                                  <span>{mission.title}</span>
+              
+              <div className="flex-1">
+                {dayEvents.length === 0 ? (
+                    <Card className="shadow-sm h-full">
+                        <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
+                            Nenhuma missão.
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <Card className="shadow-sm h-full">
+                        <CardContent className="p-4 space-y-4">
+                        {sortBy === 'child' ? (
+                            Object.entries(groupedByChild).map(([childId, missions]) => {
+                            const child = childrenMap.get(childId);
+                            if (!child) return null;
+                            return (
+                                <div key={childId} className="flex items-start gap-4">
+                                <Avatar className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)] mt-1" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                    <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                    <h3 className="font-semibold text-md">{child.name}</h3>
+                                    <ul className="mt-1 space-y-1">
+                                    {missions.map(mission => (
+                                        <li key={mission.id} className="text-sm text-muted-foreground flex items-start gap-2">
+                                            <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+                                            <span>{mission.title}</span>
+                                        </li>
+                                    ))}
+                                    </ul>
+                                </div>
+                                </div>
+                            )
+                            })
+                        ) : (
+                            <ul className="space-y-2">
+                            {sortedByName.map(event => {
+                                const child = childrenMap.get(event.data.childId);
+                                if (!child) return null;
+                                return (
+                                <li key={event.data.id} className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                    <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                    <p className="text-sm font-medium">{event.title}</p>
+                                    <p className="text-xs text-muted-foreground">{child.name}</p>
+                                    </div>
                                 </li>
-                              ))}
+                                )
+                            })}
                             </ul>
-                          </div>
-                        </div>
-                      )
-                    })
-                  ) : (
-                    <ul className="space-y-2">
-                      {sortedByName.map(event => {
-                        const child = childrenMap.get(event.data.childId);
-                        if (!child) return null;
-                        return (
-                          <li key={event.data.id} className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                              <AvatarImage src={child.avatar} alt={child.name} />
-                              <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <p className="text-sm font-medium">{event.title}</p>
-                              <p className="text-xs text-muted-foreground">{child.name}</p>
-                            </div>
-                          </li>
-                        )
-                      })}
-                    </ul>
-                  )}
-                </CardContent>
-              </Card>
+                        )}
+                        </CardContent>
+                    </Card>
+                )}
+              </div>
             </div>
           );
         })}
@@ -433,7 +448,7 @@ export default function AgendaPage() {
         </CardContent>
       </Card>
       
-      {dateRangeFilter === 'month' ? renderCalendarView() : renderTimelineView()}
+      {dateRangeFilter === 'month' ? renderCalendarView() : renderGridView()}
     </div>
   );
 }
