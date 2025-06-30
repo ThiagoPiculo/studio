@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat } from 'lucide-react';
+import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -244,17 +244,17 @@ export default function MissionsHubPage() {
                           <span className="truncate">{formatRecurrenceSummary(template)}</span>
                         </div>
                         <div className="border-t pt-3 mt-3">
-                            <h4 className="text-xs font-semibold text-muted-foreground mb-2">Atribuído a:</h4>
+                            <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
                             {assignedChildren.length > 0 ? (
                                 <div className="flex items-center space-x-2">
                                     <div className="flex -space-x-2">
-                                        {assignedChildren.slice(0, 4).map(child => (
-                                            <TooltipProvider key={child.id}>
+                                        {assignedChildren.slice(0, 5).map(child => (
+                                            <TooltipProvider key={child.id} delayDuration={100}>
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <Avatar
-                                                          className="h-8 w-8 border-2 border-background ring-2 ring-offset-background ring-[var(--ring-color)]"
-                                                          style={{ '--ring-color': child.color } as React.CSSProperties}
+                                                          className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
                                                         >
                                                             <AvatarImage src={child.avatar} alt={child.name} />
                                                             <AvatarFallback
@@ -272,9 +272,9 @@ export default function MissionsHubPage() {
                                             </TooltipProvider>
                                         ))}
                                     </div>
-                                    {assignedChildren.length > 4 && (
+                                    {assignedChildren.length > 5 && (
                                         <span className="text-xs font-medium text-muted-foreground">
-                                            + {assignedChildren.length - 4}
+                                            + {assignedChildren.length - 5}
                                         </span>
                                     )}
                                 </div>

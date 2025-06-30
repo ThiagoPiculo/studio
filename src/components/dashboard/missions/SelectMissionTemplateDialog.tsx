@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,11 +15,17 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { MissionTemplate, MissionCategoryDetails } from '@/lib/types';
+import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
-import { getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
-import { Loader2, PackageSearch, PlusCircle } from 'lucide-react';
+import { 
+  getMissionTemplatesByOwnerOrFamily,
+  getChildProfilesForAttribution,
+  getMissionInstancesForContext
+} from '@/lib/firebase/firestore';
+import { Loader2, PackageSearch, PlusCircle, Users } from 'lucide-react';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SelectMissionTemplateDialogProps {
   isOpen: boolean;
@@ -33,27 +39,53 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
   const { toast } = useToast();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     if (isOpen && user) {
       setIsLoading(true);
-      const fetchTemplates = async () => {
+      const fetchAllData = async () => {
         try {
           const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-          const templates = await getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+          const [templates, children, instances] = await Promise.all([
+            getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, familyIdToQuery)
+          ]);
           const activeTemplates = templates.filter(t => t.status === 'active');
           setMissionTemplates(activeTemplates);
+          setChildren(children);
+          setMissionInstances(instances.filter(i => i.status === 'pending'));
         } catch (error) {
-          console.error("Error fetching mission templates:", error);
-          toast({ title: "Erro ao Carregar Catálogo", description: "Não foi possível buscar as missões disponíveis.", variant: "destructive" });
+          console.error("Error fetching data for mission selection:", error);
+          toast({ title: "Erro ao Carregar Catálogo", description: "Não foi possível buscar os dados de missões.", variant: "destructive" });
         } finally {
           setIsLoading(false);
         }
       };
-      fetchTemplates();
+      fetchAllData();
     }
   }, [isOpen, user, currentContext, toast]);
+
+  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
+
+  const assignmentsByTemplate = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    missionInstances.forEach(instance => {
+      const child = childrenMap.get(instance.childId);
+      if (child) {
+        const existing = assignments.get(instance.templateId) || [];
+        if (!existing.find(c => c.id === child.id)) {
+          assignments.set(instance.templateId, [...existing, child]);
+        }
+      }
+    });
+    return assignments;
+  }, [missionInstances, childrenMap]);
+  
+  const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
   
   const getCategoryDetails = (categoryId: MissionTemplate['category']): MissionCategoryDetails | undefined => {
     return missionCategories.find(cat => cat.id === categoryId);
@@ -89,6 +121,7 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
               {missionTemplates.map(template => {
                  const categoryDetails = getCategoryDetails(template.category);
                  const CategoryIconComponent = categoryDetails?.icon;
+                 const assignedChildren = assignmentsByTemplate.get(template.id) || [];
                 return (
                     <button
                         key={template.id}
@@ -111,6 +144,41 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
                                 {template.starsReward} ★ / {template.xpReward} XP
                             </p>
                         </div>
+                        {assignedChildren.length > 0 && (
+                          <div className="border-t pt-2 mt-2 flex items-center gap-2">
+                              <span className="text-xs text-muted-foreground">Ativo para:</span>
+                              <div className="flex -space-x-2">
+                              {assignedChildren.slice(0, 5).map(child => (
+                                  <TooltipProvider key={child.id} delayDuration={100}>
+                                      <Tooltip>
+                                          <TooltipTrigger asChild>
+                                          <Avatar
+                                              className="h-6 w-6 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                              style={{ '--ring-color': child.color } as React.CSSProperties}
+                                          >
+                                              <AvatarImage src={child.avatar} alt={child.name} />
+                                              <AvatarFallback
+                                                  className="text-xs"
+                                                  style={{ backgroundColor: child.color }}
+                                              >
+                                                  {getInitials(child.name)}
+                                              </AvatarFallback>
+                                          </Avatar>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                          <p>{child.name}</p>
+                                          </TooltipContent>
+                                      </Tooltip>
+                                  </TooltipProvider>
+                              ))}
+                              </div>
+                              {assignedChildren.length > 5 && (
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                      + {assignedChildren.length - 5}
+                                  </span>
+                              )}
+                          </div>
+                        )}
                     </button>
                 )
               })}
