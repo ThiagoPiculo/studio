@@ -328,9 +328,11 @@ export default function AgendaPage() {
                     isToday(day) && "bg-accent/10"
                 )}>
                   <div className={cn(
-                      "font-semibold text-sm",
-                      isToday(day) && "flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground"
-                  )}>{format(day, 'd')}</div>
+                      "font-semibold text-sm capitalize mb-1 text-center",
+                      isToday(day) && "bg-primary text-primary-foreground rounded-md py-1 px-2"
+                  )}>
+                    {format(day, "EEEE, dd", { locale: ptBR })}
+                  </div>
                   <ScrollArea className="flex-1 mt-1">
                     <ul className="space-y-1">
                       {sortedEvents.length > 0 ? sortedEvents.map(event => {
