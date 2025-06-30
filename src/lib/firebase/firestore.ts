@@ -82,13 +82,15 @@ export const getChildProfileById = async (childId: string): Promise<ChildProfile
 export const getChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
   const q = query(collection(db, 'children'), where('ownerId', '==', ownerId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  const children = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return children.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 export const getChildProfilesByFamily = async (familyId: string): Promise<ChildProfile[]> => {
   const q = query(collection(db, 'children'), where('familyId', '==', familyId));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  const children = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return children.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 // Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
@@ -97,7 +99,8 @@ export const getChildProfilesForAttribution = async (currentUserId: string, curr
   if (currentContextId === 'my-space') {
     const personalQuery = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
     const personalSnapshot = await getDocs(personalQuery);
-    return personalSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+    const children = personalSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+    return children.sort((a, b) => a.name.localeCompare(b.name));
   }
 
   // If we are in a family context, we see BOTH family children AND the user's personal, unassigned children.
@@ -320,7 +323,8 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 
   const usersQuery = query(collection(db, 'users'), where('__name__', 'in', memberUserIds));
   const usersSnapshot = await getDocs(usersQuery);
-  return usersSnapshot.docs.map(doc => doc.data() as UserProfile);
+  const users = usersSnapshot.docs.map(doc => doc.data() as UserProfile);
+  return users.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
 };
 
 export const getFamilyById = async (familyId: string): Promise<Family | null> => {
