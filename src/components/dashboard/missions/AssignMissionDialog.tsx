@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types';
+import type { MissionTemplate, ChildProfile, MissionInstance, RecurrenceRule } from '@/lib/types';
 import { 
   getChildProfilesForAttribution, 
   addMissionInstance,
@@ -28,6 +28,13 @@ import { Loader2, Users, AlertCircle, ListChecks } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+import { Form } from '@/components/ui/form';
+import { weekdays } from '@/lib/types';
+import { Timestamp } from 'firebase/firestore';
+import { RecurrenceControl } from './RecurrenceControl';
 
 interface AssignMissionDialogProps {
   template: MissionTemplate | null;
@@ -35,6 +42,48 @@ interface AssignMissionDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
 }
+
+const recurrenceRuleSchema = z.object({
+  freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
+  interval: z.coerce.number().min(1),
+  byDay: z.array(z.enum(weekdays)).optional(),
+  endDate: z.date().optional().nullable(),
+  count: z.coerce.number().min(1).optional().nullable(),
+}).nullable();
+
+const assignmentFormSchema = z.object({
+  isRecurring: z.boolean().default(false),
+  startDate: z.date().optional().nullable(),
+  dueDate: z.date().optional().nullable(),
+  recurrenceRule: recurrenceRuleSchema,
+}).superRefine((data, ctx) => {
+    if (data.isRecurring) {
+        if (!data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de início é obrigatória para missões recorrentes.",
+                path: ["startDate"],
+            });
+        }
+        if (data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de fim da recorrência não pode ser anterior à data de início.",
+                path: ['recurrenceRule.endDate'],
+            });
+        }
+    } else {
+        if (!data.dueDate) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "A data de prazo é obrigatória para missões únicas.",
+                path: ["dueDate"],
+            });
+        }
+    }
+});
+type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
+
 
 export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
@@ -46,6 +95,16 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   const [existingAssignments, setExistingAssignments] = useState<Record<string, boolean>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
+
+  const form = useForm<AssignmentFormValues>({
+    resolver: zodResolver(assignmentFormSchema),
+    defaultValues: {
+        isRecurring: false,
+        startDate: null,
+        dueDate: null,
+        recurrenceRule: null,
+    },
+  });
 
   useEffect(() => {
     if (isOpen && template && user) {
@@ -77,9 +136,24 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
           setIsLoadingChildren(false);
         }
       };
+
+      let initialRecurrenceRule = null;
+      if (template.recurrenceRule) {
+          initialRecurrenceRule = {
+              ...template.recurrenceRule,
+              endDate: template.recurrenceRule.endDate?.toDate() ?? null
+          }
+      }
+      form.reset({
+          isRecurring: !!template.isRecurring,
+          startDate: template.startDate?.toDate() || null,
+          dueDate: template.dueDate?.toDate() || null,
+          recurrenceRule: initialRecurrenceRule,
+      });
+
       fetchChildrenAndAssignments();
     }
-  }, [isOpen, template, user, currentContext, toast]);
+  }, [isOpen, template, user, currentContext, toast, form]);
 
   const { familyChildren, personalChildren } = useMemo(() => {
     const family: ChildProfile[] = [];
@@ -109,7 +183,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  const handleAssign = async () => {
+  const handleAssign = async (values: AssignmentFormValues) => {
     if (!template || !user) return;
 
     const childrenToAssign = Object.entries(selectedChildren)
@@ -124,6 +198,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     setIsAssigning(true);
     let assignedCount = 0;
     try {
+      const modifiedTemplate = {
+        ...template,
+        isRecurring: values.isRecurring,
+        startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
+        dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
+        recurrenceRule: values.isRecurring && values.recurrenceRule ? {
+            ...values.recurrenceRule,
+            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
+        } : null,
+      }
+
       const assignmentPromises = childrenToAssign.map(childId => {
         const child = eligibleChildren.find(c => c.id === childId);
         if (!child) return Promise.reject(`Child with id ${childId} not found`);
@@ -134,7 +219,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
           ownerId: child.ownerId,
           familyId: child.familyId || null,
         };
-        return addMissionInstance(instanceData, template);
+        return addMissionInstance(instanceData, modifiedTemplate);
       });
 
       await Promise.all(assignmentPromises);
@@ -193,61 +278,74 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[480px]">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             <ListChecks className="h-6 w-6 text-primary" /> Atribuir Missão
           </DialogTitle>
           <DialogDescription>
-            Atribua a missão "<span className="font-semibold text-primary">{template.title}</span>" aos Mini Herois abaixo.
+            Atribua a missão "<span className="font-semibold text-primary">{template.title}</span>" aos Mini Herois.
           </DialogDescription>
         </DialogHeader>
 
-        {isLoadingChildren ? (
-          <div className="flex items-center justify-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-            <p>Carregando Mini Herois...</p>
-          </div>
-        ) : eligibleChildren.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <AlertCircle className="h-10 w-10 mx-auto mb-2 text-primary" />
-            Nenhum Mini Herói encontrado para atribuição. 
-            <br/>Adicione crianças ou verifique o contexto familiar.
-          </div>
-        ) : (
-          <ScrollArea className="max-h-[50vh] mt-2 pr-3">
-              <div className="space-y-4">
-                  {familyChildren.length > 0 && (
-                      <div className="space-y-2">
-                          <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
-                          {renderChildList(familyChildren)}
-                      </div>
-                  )}
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleAssign)} className="space-y-4">
+                <div className="space-y-2">
+                    <Label className="font-semibold">Selecione os Heróis</Label>
+                    {isLoadingChildren ? (
+                        <div className="flex items-center justify-center h-24">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                            <p>Carregando...</p>
+                        </div>
+                        ) : eligibleChildren.length === 0 ? (
+                        <div className="text-center py-4 text-muted-foreground text-sm">
+                            <AlertCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
+                            Nenhum Mini Herói encontrado para atribuição.
+                        </div>
+                        ) : (
+                        <ScrollArea className="max-h-40 border rounded-md p-2">
+                            <div className="space-y-2">
+                                {familyChildren.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold text-muted-foreground px-1">Na Família "{familyName}"</Label>
+                                        {renderChildList(familyChildren)}
+                                    </div>
+                                )}
+                                {personalChildren.length > 0 && (
+                                    <div className="space-y-2">
+                                        <Label className="text-xs font-semibold text-muted-foreground px-1">No Seu Espaço Pessoal</Label>
+                                        {renderChildList(personalChildren)}
+                                    </div>
+                                )}
+                            </div>
+                        </ScrollArea>
+                    )}
+                </div>
 
-                  {personalChildren.length > 0 && familyChildren.length > 0 && <Separator className="my-4" />}
+                <Separator />
 
-                  {personalChildren.length > 0 && (
-                      <div className="space-y-2">
-                           <Label className="text-sm font-semibold text-muted-foreground">No Seu Espaço Pessoal</Label>
-                           {renderChildList(personalChildren)}
-                      </div>
-                  )}
-              </div>
-          </ScrollArea>
-        )}
-
-        <DialogFooter className="mt-6">
-          <DialogClose asChild>
-            <Button variant="outline" disabled={isAssigning}>Cancelar</Button>
-          </DialogClose>
-          <Button 
-            onClick={handleAssign} 
-            disabled={isAssigning || isLoadingChildren || eligibleChildren.length === 0 || Object.values(selectedChildren).every(v => !v)}
-          >
-            {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-            Confirmar Atribuição
-          </Button>
-        </DialogFooter>
+                <div className="space-y-2">
+                    <Label className="font-semibold">Opções de Agendamento</Label>
+                     <p className="text-xs text-muted-foreground">
+                        Ajuste as datas para esta atribuição específica. As configurações do catálogo serão usadas como padrão.
+                    </p>
+                    <RecurrenceControl />
+                </div>
+                
+                <DialogFooter className="pt-4">
+                    <DialogClose asChild>
+                        <Button type="button" variant="outline" disabled={isAssigning}>Cancelar</Button>
+                    </DialogClose>
+                    <Button 
+                        type="submit"
+                        disabled={isAssigning || isLoadingChildren || eligibleChildren.length === 0 || Object.values(selectedChildren).every(v => !v)}
+                    >
+                        {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
+                        Confirmar Atribuição
+                    </Button>
+                </DialogFooter>
+            </form>
+        </Form>
       </DialogContent>
     </Dialog>
   );
