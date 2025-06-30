@@ -413,8 +413,18 @@ export default function AgendaPage() {
                           <SelectValue placeholder="Organizar por..." />
                       </SelectTrigger>
                       <SelectContent>
-                          <SelectItem value="child"><User className="h-4 w-4 mr-2"/>Herói</SelectItem>
-                          <SelectItem value="missionName"><ListOrdered className="h-4 w-4 mr-2"/>Nome da Missão</SelectItem>
+                          <SelectItem value="child">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4" />
+                              <span>Herói</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="missionName">
+                             <div className="flex items-center gap-2">
+                              <ListOrdered className="h-4 w-4" />
+                              <span>Nome da Missão</span>
+                            </div>
+                          </SelectItem>
                       </SelectContent>
                   </Select>
                 </div>
@@ -427,4 +437,3 @@ export default function AgendaPage() {
     </div>
   );
 }
-
