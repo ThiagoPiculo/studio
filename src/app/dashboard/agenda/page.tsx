@@ -149,6 +149,10 @@ export default function AgendaPage() {
     }
   };
   
+  const handleToday = () => {
+    setCurrentDate(new Date());
+  };
+
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
@@ -452,6 +456,7 @@ export default function AgendaPage() {
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
+                    <Button variant="outline" onClick={handleToday}>Hoje</Button>
                 </div>
             </div>
         </CardHeader>
@@ -507,7 +512,7 @@ export default function AgendaPage() {
                           <SelectItem value="missionName">
                              <div className="flex items-center gap-2">
                               <ListOrdered className="h-4 w-4" />
-                              <span>Nome da Missão</span>
+                              <span>Missão do heroi</span>
                             </div>
                           </SelectItem>
                       </SelectContent>
@@ -522,5 +527,7 @@ export default function AgendaPage() {
     </div>
   );
 }
+
+    
 
     
