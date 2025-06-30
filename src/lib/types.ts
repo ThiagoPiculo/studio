@@ -128,6 +128,7 @@ export interface MissionInstance {
   completedAt?: Timestamp; // Now marks the FINAL completion time
   dueDate?: Timestamp;
   updatedAt: Timestamp;
+  startDate?: Timestamp | null;
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
