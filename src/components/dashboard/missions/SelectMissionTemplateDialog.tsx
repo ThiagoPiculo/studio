@@ -80,10 +80,10 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
           <div className="text-center py-6 text-muted-foreground">
             <PackageSearch className="h-10 w-10 mx-auto mb-2 text-primary" />
             <p className='font-semibold'>Nenhuma missão ativa no catálogo.</p>
-            <p className="text-sm">Vá para a Central de Missões para criar uma.</p>
+            <p className="text-sm mb-4">Adicione uma nova missão ao seu catálogo para poder atribuí-la.</p>
             <Link href="/dashboard/missions/new">
-                <Button variant="link" className="p-0 h-auto mt-2" onClick={() => onOpenChange(false)}>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Criar nova missão
+                <Button onClick={() => onOpenChange(false)}>
+                  <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Missão
                 </Button>
             </Link>
           </div>
