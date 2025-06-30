@@ -217,16 +217,6 @@ export default function AgendaPage() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = eventsByDate[dateKey] || [];
   
-          const sortedEvents = [...dayEvents].sort((a, b) => {
-            if (sortBy === 'child') {
-                const childA = childrenMap.get(a.data.childId)?.name || '';
-                const childB = childrenMap.get(b.data.childId)?.name || '';
-                const nameComparison = childA.localeCompare(childB);
-                if (nameComparison !== 0) return nameComparison;
-            }
-            return a.title.localeCompare(b.title);
-          });
-  
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
               <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2", isToday(day) && "text-primary")}>
@@ -245,32 +235,67 @@ export default function AgendaPage() {
                     <Card className="shadow-sm h-full">
                       <CardContent className="p-4">
                         <ul className="space-y-4">
-                          {sortedEvents.map(event => {
-                              const child = childrenMap.get(event.data.childId);
-                              if (!child) return null;
+                          {(() => {
+                            if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
+                                const eventsByChild = dayEvents.reduce((acc, event) => {
+                                    const childId = event.data.childId;
+                                    if (!acc[childId]) acc[childId] = [];
+                                    acc[childId].push(event);
+                                    return acc;
+                                }, {} as Record<string, CalendarEvent[]>);
 
-                              if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
-                                  return (
-                                      <li key={event.data.id} className="flex items-start gap-3">
-                                          <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                              <AvatarImage src={child.avatar} alt={child.name} />
-                                              <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                          </Avatar>
-                                          <div className="flex-grow pt-0.5">
-                                              <p className="font-semibold text-sm leading-tight">{child.name}</p>
-                                              <p className="text-sm text-muted-foreground leading-snug">{event.title}</p>
-                                          </div>
-                                      </li>
-                                  );
-                              } else { // This is for 'week' view
-                                  return (
-                                      <li key={event.data.id} className="text-sm flex items-start gap-2">
-                                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
-                                          <span className="text-foreground leading-snug">{event.title}</span>
-                                      </li>
-                                  );
-                              }
-                          })}
+                                const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
+                                    const childA = childrenMap.get(a)?.name || '';
+                                    const childB = childrenMap.get(b)?.name || '';
+                                    return childA.localeCompare(childB);
+                                });
+
+                                return sortedChildIds.map(childId => {
+                                    const child = childrenMap.get(childId);
+                                    if (!child) return null;
+                                    const childEvents = eventsByChild[childId].sort((a,b) => a.title.localeCompare(b.title));
+
+                                    return (
+                                        <li key={childId} className="flex items-start gap-3">
+                                            <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                            <div className="flex-grow pt-0.5">
+                                                <p className="font-semibold text-sm leading-tight">{child.name}</p>
+                                                <ul className="mt-1 space-y-1">
+                                                    {childEvents.map(event => (
+                                                        <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
+                                                            {event.title}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </li>
+                                    );
+                                });
+                            } else { // This is for 'week' view
+                                const sortedEvents = [...dayEvents].sort((a, b) => {
+                                  if (sortBy === 'child') {
+                                      const childA = childrenMap.get(a.data.childId)?.name || '';
+                                      const childB = childrenMap.get(b.data.childId)?.name || '';
+                                      const nameComparison = childA.localeCompare(childB);
+                                      if (nameComparison !== 0) return nameComparison;
+                                  }
+                                  return a.title.localeCompare(b.title);
+                                });
+                                return sortedEvents.map(event => {
+                                    const child = childrenMap.get(event.data.childId);
+                                    if (!child) return null;
+                                    return (
+                                        <li key={event.data.id} className="text-sm flex items-start gap-2">
+                                            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
+                                            <span className="text-foreground leading-snug">{event.title}</span>
+                                        </li>
+                                    );
+                                });
+                            }
+                          })()}
                         </ul>
                       </CardContent>
                     </Card>
@@ -380,7 +405,6 @@ export default function AgendaPage() {
                             <ChevronRight className="h-4 w-4" />
                         </Button>
                     </div>
-                    <Button variant="outline" onClick={handleToday}>Hoje</Button>
                 </div>
             </div>
         </CardHeader>
@@ -461,6 +485,8 @@ export default function AgendaPage() {
 
 
 
+
+    
 
     
 
