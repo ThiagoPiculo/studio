@@ -204,7 +204,7 @@ export default function AgendaPage() {
     const gridClasses = {
         day: 'grid-cols-1',
         '3days': 'grid-cols-1 lg:grid-cols-3',
-        week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7',
+        week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7', // Not used for week view anymore
     };
   
     return (
@@ -294,6 +294,65 @@ export default function AgendaPage() {
     );
   };
   
+  const renderWeekGridView = () => {
+    const days = eachDayOfInterval(viewInterval);
+    const dayHeaders = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+    return (
+      <Card className="shadow-lg mt-6">
+        <CardContent className="p-2 md:p-4">
+          <div className="grid grid-cols-7 text-center font-bold text-muted-foreground text-sm">
+            {dayHeaders.map(day => <div key={day} className="py-2">{day}</div>)}
+          </div>
+          <div className="grid grid-cols-7 border-t border-l">
+            {days.map(day => {
+              const dateKey = format(day, 'yyyy-MM-dd');
+              const dayEvents = eventsByDate[dateKey] || [];
+
+              const sortedEvents = [...dayEvents].sort((a, b) => {
+                if (sortBy === 'child') {
+                  const childA = childrenMap.get(a.data.childId)?.name || '';
+                  const childB = childrenMap.get(b.data.childId)?.name || '';
+                  return childA.localeCompare(childB);
+                }
+                return a.title.localeCompare(b.title);
+              });
+              
+              return (
+                <div key={dateKey} className={cn(
+                    "h-auto min-h-48 border-r border-b p-2 flex flex-col",
+                    isToday(day) && "bg-accent/10"
+                )}>
+                  <div className={cn(
+                      "font-semibold text-sm",
+                      isToday(day) && "flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground"
+                  )}>{format(day, 'd')}</div>
+                  <ScrollArea className="flex-1 mt-1">
+                    <ul className="space-y-1">
+                      {sortedEvents.length > 0 ? sortedEvents.map(event => {
+                        const child = childrenMap.get(event.data.childId);
+                        if (!child) return null;
+                        return (
+                          <li key={event.data.id} className="text-xs flex items-start gap-1.5">
+                              <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+                              <span className="leading-tight">{event.title} ({child.name})</span>
+                          </li>
+                        )
+                      }) : (
+                        <li className="text-xs text-muted-foreground italic text-center pt-4">Nenhuma missão.</li>
+                      )}
+                    </ul>
+                  </ScrollArea>
+                </div>
+              )
+            })}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+
   const renderCalendarView = () => {
     const monthStart = startOfMonth(currentDate);
     const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
@@ -355,6 +414,17 @@ export default function AgendaPage() {
   };
   
   if (isLoading) return <Loading />;
+
+  const renderContent = () => {
+    switch(dateRangeFilter) {
+      case 'month':
+        return renderCalendarView();
+      case 'week':
+        return renderWeekGridView();
+      default:
+        return renderGridView();
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -448,7 +518,7 @@ export default function AgendaPage() {
         </CardContent>
       </Card>
       
-      {dateRangeFilter === 'month' ? renderCalendarView() : renderGridView()}
+      {renderContent()}
     </div>
   );
 }
