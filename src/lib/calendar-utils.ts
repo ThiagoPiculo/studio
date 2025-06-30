@@ -36,9 +36,11 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
     }
 
     const rule = mission.recurrenceRule;
-    const startDate = mission.startDate?.toDate();
+    // Fallback to assignedAt for older mission instances that don't have startDate
+    const sDateRaw = mission.startDate || mission.assignedAt;
+    const startDate = sDateRaw.toDate();
 
-    if (!rule || !startDate) return false;
+    if (!rule) return false;
 
     const sDate = startOfDay(startDate);
 
@@ -61,8 +63,11 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
             if (!daysToRepeatOn.includes(dayOfWeek)) {
                 return false;
             }
-            
-            const weeksDifference = differenceInWeeks(checkDate, sDate, { weekStartsOn });
+
+            const startOfWeekForSDate = startOfWeek(sDate, { weekStartsOn });
+            const startOfWeekForCheckDate = startOfWeek(checkDate, { weekStartsOn });
+            const weeksDifference = differenceInDays(startOfWeekForCheckDate, startOfWeekForSDate) / 7;
+
             if (weeksDifference < 0) return false;
             
             return weeksDifference % rule.interval === 0;
