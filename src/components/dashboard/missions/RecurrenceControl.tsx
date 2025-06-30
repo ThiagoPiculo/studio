@@ -26,6 +26,7 @@ interface DateTimePickerProps {
   label: string;
 }
 
+// Moved the DateTimePicker component to the top level of the file to prevent re-render issues.
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
   const [date, setDate] = React.useState<Date | undefined>(value && isValid(value) ? value : undefined);
   const [time, setTime] = React.useState(value && isValid(value) ? format(value, "HH:mm") : "09:00");
