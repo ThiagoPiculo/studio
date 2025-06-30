@@ -244,18 +244,34 @@ export default function AgendaPage() {
                 ) : (
                     <Card className="shadow-sm h-full">
                       <CardContent className="p-4">
-                          <ul className="space-y-2">
+                        <ul className="space-y-4">
                           {sortedEvents.map(event => {
                               const child = childrenMap.get(event.data.childId);
                               if (!child) return null;
-                              return (
-                                  <li key={event.data.id} className="text-sm flex items-start gap-2">
-                                      <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
-                                      <span className="text-foreground leading-snug">{event.title}</span>
-                                  </li>
-                              )
+
+                              if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
+                                  return (
+                                      <li key={event.data.id} className="flex items-start gap-3">
+                                          <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                                              <AvatarImage src={child.avatar} alt={child.name} />
+                                              <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                          </Avatar>
+                                          <div className="flex-grow pt-0.5">
+                                              <p className="font-semibold text-sm leading-tight">{child.name}</p>
+                                              <p className="text-sm text-muted-foreground leading-snug">{event.title}</p>
+                                          </div>
+                                      </li>
+                                  );
+                              } else { // This is for 'week' view
+                                  return (
+                                      <li key={event.data.id} className="text-sm flex items-start gap-2">
+                                          <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
+                                          <span className="text-foreground leading-snug">{event.title}</span>
+                                      </li>
+                                  );
+                              }
                           })}
-                          </ul>
+                        </ul>
                       </CardContent>
                     </Card>
                 )}
@@ -445,5 +461,7 @@ export default function AgendaPage() {
 
 
 
+
+    
 
     
