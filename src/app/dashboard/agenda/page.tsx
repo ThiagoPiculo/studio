@@ -74,8 +74,8 @@ export default function AgendaPage() {
     };
     fetchAgendaData();
   }, [user, currentContext]);
-
-  const categoryDetailsMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
+  
+  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const viewInterval = useMemo(() => {
     if (viewMode === 'month') {
@@ -96,7 +96,7 @@ export default function AgendaPage() {
           allEvents.push({
             date: day,
             title: instance.title,
-            color: categoryDetailsMap.get(instance.category)?.color || 'hsl(var(--foreground))',
+            color: childrenMap.get(instance.childId)?.color || 'hsl(var(--foreground))',
             data: instance,
           });
         }
@@ -108,7 +108,7 @@ export default function AgendaPage() {
     }
     
     return allEvents;
-  }, [viewInterval, missionInstances, selectedChildId, categoryDetailsMap]);
+  }, [viewInterval, missionInstances, selectedChildId, childrenMap]);
 
   const eventsByDate = useMemo(() => {
     return events.reduce((acc, event) => {
@@ -134,7 +134,6 @@ export default function AgendaPage() {
     return counts;
   }, [missionInstances, children, viewInterval]);
 
-  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
   const eventsForSelectedDate = useMemo(() => {
     if (!selectedDate) return [];
@@ -440,11 +439,10 @@ export default function AgendaPage() {
                              </div>
                              <ul className="space-y-2 pl-4">
                                 {instances.map(instance => {
-                                    const details = categoryDetailsMap.get(instance.category);
                                     return (
-                                        <li key={instance.id} className="p-2 rounded-md flex items-center gap-2" style={{ backgroundColor: `${details?.color}20` }}>
-                                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: details?.color }}></div>
-                                             <span style={{ color: details?.color }}>{instance.title}</span>
+                                        <li key={instance.id} className="p-2 rounded-md flex items-center gap-2" style={{ backgroundColor: `${child.color}20` }}>
+                                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+                                             <span style={{ color: child.color }}>{instance.title}</span>
                                         </li>
                                     )
                                 })}
