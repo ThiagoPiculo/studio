@@ -397,12 +397,15 @@ export default function AgendaPage() {
             <div className="flex-1 space-y-4">
                 <div>
                   <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
-                  <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="mt-1 flex-wrap justify-start">
-                      <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
-                      <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
-                      <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
-                      <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
-                  </ToggleGroup>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
+                        <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
+                        <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
+                        <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
+                        <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
+                    </ToggleGroup>
+                    <Button variant="outline" onClick={handleToday}>Hoje</Button>
+                  </div>
                 </div>
                 <div>
                   <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
@@ -441,3 +444,6 @@ export default function AgendaPage() {
     
 
 
+
+
+    
