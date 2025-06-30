@@ -239,9 +239,9 @@ export default function AgendaPage() {
                         </span>
                         <div className="mt-1 overflow-y-auto space-y-1 text-xs">
                             {dayEvents.slice(0, 3).map((event, eventIndex) => (
-                                <div key={eventIndex} className="p-1 rounded-sm flex items-center gap-1.5" style={{ backgroundColor: `${event.color}20` }}>
-                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: event.color }}></div>
-                                    <p className="truncate" style={{ color: event.color }}>{event.title}</p>
+                                <div key={eventIndex} className="p-1 rounded-sm flex items-center gap-1.5 bg-muted/30">
+                                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }}></div>
+                                    <p className="truncate text-foreground/90">{event.title}</p>
                                 </div>
                             ))}
                             {dayEvents.length > 3 && (
@@ -288,11 +288,10 @@ export default function AgendaPage() {
                                 key={eventIndex} 
                                 onClick={() => setSelectedDate(day)}
                                 disabled={isDisabledByFilter}
-                                className="w-full p-1.5 rounded-md flex items-center gap-2 text-left hover:shadow-md transition-shadow"
-                                style={{ backgroundColor: `${event.color}20` }}
+                                className="w-full p-1.5 rounded-md flex items-center gap-2 text-left hover:bg-muted/50 transition-colors"
                              >
                                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ backgroundColor: event.color }}></div>
-                                <p className="truncate text-sm font-medium" style={{ color: event.color }}>{event.title}</p>
+                                <p className="truncate text-sm font-medium text-foreground/90">{event.title}</p>
                             </button>
                         ))}
                     </div>
@@ -440,9 +439,9 @@ export default function AgendaPage() {
                              <ul className="space-y-2 pl-4">
                                 {instances.map(instance => {
                                     return (
-                                        <li key={instance.id} className="p-2 rounded-md flex items-center gap-2" style={{ backgroundColor: `${child.color}20` }}>
+                                        <li key={instance.id} className="p-2 rounded-md flex items-center gap-2 bg-muted/50">
                                              <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                                             <span style={{ color: child.color }}>{instance.title}</span>
+                                             <span className="text-foreground/90">{instance.title}</span>
                                         </li>
                                     )
                                 })}
@@ -460,5 +459,3 @@ export default function AgendaPage() {
     </div>
   );
 }
-
-    
