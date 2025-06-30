@@ -335,7 +335,7 @@ export default function AgendaPage() {
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <span className="leading-tight">{event.title} ({child.name})</span>
+                              <span className="leading-tight">{event.title}</span>
                           </li>
                         )
                       }) : (
@@ -398,7 +398,7 @@ export default function AgendaPage() {
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <span className="leading-tight">{event.title} ({child.name})</span>
+                              <span className="leading-tight">{event.title}</span>
                           </li>
                         )
                       })}
@@ -522,3 +522,5 @@ export default function AgendaPage() {
     </div>
   );
 }
+
+    
