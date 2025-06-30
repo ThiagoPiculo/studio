@@ -303,17 +303,20 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                             Nenhum Mini Herói encontrado para atribuição.
                         </div>
                         ) : (
-                        <ScrollArea className="max-h-40 border rounded-md p-2">
-                            <div className="space-y-2">
+                        <ScrollArea className="max-h-[50vh] mt-2 pr-3">
+                            <div className="space-y-4">
                                 {familyChildren.length > 0 && (
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground px-1">Na Família "{familyName}"</Label>
+                                        <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
                                         {renderChildList(familyChildren)}
                                     </div>
                                 )}
+
+                                {familyChildren.length > 0 && personalChildren.length > 0 && <Separator className="my-2" />}
+                                
                                 {personalChildren.length > 0 && (
                                     <div className="space-y-2">
-                                        <Label className="text-xs font-semibold text-muted-foreground px-1">No Seu Espaço Pessoal</Label>
+                                        <Label className="text-sm font-semibold text-muted-foreground">No Seu Espaço Pessoal</Label>
                                         {renderChildList(personalChildren)}
                                     </div>
                                 )}
