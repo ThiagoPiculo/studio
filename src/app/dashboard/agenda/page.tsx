@@ -217,14 +217,15 @@ export default function AgendaPage() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = eventsByDate[dateKey] || [];
   
-          const groupedByChild = dayEvents.reduce((acc, event) => {
-            const childId = event.data.childId;
-            if (!acc[childId]) acc[childId] = [];
-            acc[childId].push(event.data);
-            return acc;
-          }, {} as Record<string, MissionInstance[]>);
-  
-          const sortedByName = [...dayEvents].sort((a, b) => a.title.localeCompare(b.title));
+          const sortedEvents = [...dayEvents].sort((a, b) => {
+            if (sortBy === 'child') {
+                const childA = childrenMap.get(a.data.childId)?.name || '';
+                const childB = childrenMap.get(b.data.childId)?.name || '';
+                const nameComparison = childA.localeCompare(childB);
+                if (nameComparison !== 0) return nameComparison;
+            }
+            return a.title.localeCompare(b.title);
+          });
   
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -242,52 +243,20 @@ export default function AgendaPage() {
                     </Card>
                 ) : (
                     <Card className="shadow-sm h-full">
-                        <CardContent className="p-4 space-y-4">
-                        {sortBy === 'child' ? (
-                            Object.entries(groupedByChild).map(([childId, missions]) => {
-                            const child = childrenMap.get(childId);
-                            if (!child) return null;
-                            return (
-                                <div key={childId} className="flex items-start gap-4">
-                                <Avatar className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)] mt-1" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                </Avatar>
-                                <div className="flex-1">
-                                    <h3 className="font-semibold text-md">{child.name}</h3>
-                                    <ul className="mt-1 space-y-1">
-                                    {missions.map(mission => (
-                                        <li key={mission.id} className="text-sm text-muted-foreground flex items-start gap-2">
-                                            <div className="w-2 h-2 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                                            <span>{mission.title}</span>
-                                        </li>
-                                    ))}
-                                    </ul>
-                                </div>
-                                </div>
-                            )
-                            })
-                        ) : (
-                            <ul className="space-y-2">
-                            {sortedByName.map(event => {
-                                const child = childrenMap.get(event.data.childId);
-                                if (!child) return null;
-                                return (
-                                <li key={event.data.id} className="flex items-center gap-3">
-                                    <Avatar className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                    <p className="text-sm font-medium">{event.title}</p>
-                                    <p className="text-xs text-muted-foreground">{child.name}</p>
-                                    </div>
-                                </li>
-                                )
-                            })}
-                            </ul>
-                        )}
-                        </CardContent>
+                      <CardContent className="p-4">
+                          <ul className="space-y-2">
+                          {sortedEvents.map(event => {
+                              const child = childrenMap.get(event.data.childId);
+                              if (!child) return null;
+                              return (
+                                  <li key={event.data.id} className="text-sm flex items-start gap-2">
+                                      <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
+                                      <span className="text-foreground leading-snug">{event.title}</span>
+                                  </li>
+                              )
+                          })}
+                          </ul>
+                      </CardContent>
                     </Card>
                 )}
               </div>
@@ -470,4 +439,5 @@ export default function AgendaPage() {
     
 
     
+
 
