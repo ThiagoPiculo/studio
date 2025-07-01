@@ -59,7 +59,7 @@ export default function AgendaPage() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('workweek');
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('3days');
   const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>('all');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
@@ -120,17 +120,8 @@ export default function AgendaPage() {
 
   const handleEditClick = async (instance: MissionInstance, date: Date) => {
       setActivePopover(null);
-      if (instance.isRecurring) {
-          setInstanceToEdit(instance);
-          setOccurrenceDate(date);
-          setIsEditRecurrenceDialogOpen(true);
-      } else {
-          // For non-recurring missions, we just edit this single instance.
-          setInstanceToEdit(instance);
-          setOccurrenceDate(date);
-          setEditMode('single'); // Or 'all', as it's the only one
-          setIsAssignDialogOpen(true);
-      }
+      setInstanceToEdit(instance);
+      setIsAssignDialogOpen(true);
   };
 
   const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
@@ -244,7 +235,7 @@ export default function AgendaPage() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await completeMissionInstance(missionInstance.id, date);
+        await completeMissionInstance(missionInstance, date);
         toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
         fetchAgendaData();
     } catch (error) {
@@ -357,140 +348,88 @@ export default function AgendaPage() {
   });
 
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
-      if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
-        const eventsByChild = events.reduce((acc, event) => {
-            const childId = event.data.childId;
-            if (!acc[childId]) acc[childId] = [];
-            acc[childId].push(event);
-            return acc;
-        }, {} as Record<string, CalendarEvent[]>);
+      const eventsByChild = events.reduce((acc, event) => {
+          const childId = event.data.childId;
+          if (!acc[childId]) acc[childId] = [];
+          acc[childId].push(event);
+          return acc;
+      }, {} as Record<string, CalendarEvent[]>);
 
-        const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
-            const childA = childrenMap.get(a)?.name || '';
-            const childB = childrenMap.get(b)?.name || '';
-            return childA.localeCompare(childB);
-        });
+      const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
+          const childA = childrenMap.get(a)?.name || '';
+          const childB = childrenMap.get(b)?.name || '';
+          return childA.localeCompare(childB);
+      });
 
-        return (
-          <ul className="space-y-4">
-            {sortedChildIds.map(childId => {
-              const child = childrenMap.get(childId);
-              if (!child) return null;
-              const childEvents = eventsByChild[childId].sort((a,b) => {
-                  const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-                  const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-                  return timeA.getTime() - timeB.getTime();
-              });
+      return (
+        <ul className="space-y-4">
+          {sortedChildIds.map(childId => {
+            const child = childrenMap.get(childId);
+            if (!child) return null;
+            const childEvents = eventsByChild[childId].sort((a,b) => {
+                const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+                const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+                return timeA.getTime() - timeB.getTime();
+            });
 
-              return (
-                <li key={childId} className="flex items-start gap-3">
-                    <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                        <AvatarImage src={child.avatar} alt={child.name} />
-                        <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                    </Avatar>
-                    <div className="flex-grow pt-0.5">
-                        <p className="font-semibold text-sm leading-tight">{child.name}</p>
-                        <ul className="mt-1 space-y-2">
-                            {childEvents.map(event => {
-                                const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-                                const isCompleted = isMissionCompletedForDate(event.data, day);
-                                const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
-                                const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                                return(
-                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
-                                    <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                                      <PopoverTrigger asChild>
-                                          <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
-                                              {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
-                                              <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
-                                              <span>{event.title}</span>
-                                          </button>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-2">
-                                          <div className="flex flex-col gap-1">
-                                            {isCompleted ? (
-                                              <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                            ) : (
-                                              <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                            )}
-                                            <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                            <Separator />
-                                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
-                                          </div>
-                                      </PopoverContent>
-                                    </Popover>
-                                    <div className="flex-shrink-0 flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                                        <span className="flex items-center gap-1">
-                                            <StarIcon className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                                            {event.data.starsReward}
-                                        </span>
-                                        <span className="flex items-center gap-1">
-                                            <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />
-                                            {event.data.xpReward}
-                                        </span>
-                                    </div>
-                                </li>
-                                )
-                            })}
-                        </ul>
-                    </div>
-                </li>
-              );
-            })}
-          </ul>
-        );
-      } else { // This is for 'week' or 'workweek' view
-        const sortedEvents = [...events].sort((a, b) => {
-            const childA = childrenMap.get(a.data.childId)?.name || '';
-            const childB = childrenMap.get(b.data.childId)?.name || '';
-            const nameComparison = childA.localeCompare(childB);
-            if (nameComparison !== 0) return nameComparison;
-
-            const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-            const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-            return timeA.getTime() - timeB.getTime();
-        });
-        return (
-          <ul className="space-y-1">
-            {sortedEvents.map(event => {
-              const child = childrenMap.get(event.data.childId);
-              if (!child) return null;
-              const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-              const isCompleted = isMissionCompletedForDate(event.data, day);
-              const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
-              const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-              return (
-                  <li key={event.data.id} className="text-xs flex items-start gap-1.5">
-                      <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ backgroundColor: child.color }}></div>
-                      <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                          <PopoverTrigger asChild>
-                              <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
-                                  {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                  <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
-                                  <span className="flex-1">{event.title}</span>
-                              </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-2">
-                              <div className="flex flex-col gap-1">
-                                {isCompleted ? (
-                                  <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                ) : (
-                                  <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                )}
-                                <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                <Separator/>
-                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
-                              </div>
-                          </PopoverContent>
-                      </Popover>
-                  </li>
-              );
-            })}
-          </ul>
-        );
-      }
+            return (
+              <li key={childId} className="flex items-start gap-3">
+                  <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                      <AvatarImage src={child.avatar} alt={child.name} />
+                      <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow pt-0.5">
+                      <p className="font-semibold text-sm leading-tight">{child.name}</p>
+                      <ul className="mt-1 space-y-2">
+                          {childEvents.map(event => {
+                              const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+                              const isCompleted = isMissionCompletedForDate(event.data, day);
+                              const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                              const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                              return(
+                              <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
+                                  <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                    <PopoverTrigger asChild>
+                                        <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                            {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
+                                            <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
+                                            <span>{event.title}</span>
+                                        </button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-2">
+                                        <div className="flex flex-col gap-1">
+                                          {isCompleted ? (
+                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                          ) : (
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                          )}
+                                          <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Separator />
+                                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                        </div>
+                                    </PopoverContent>
+                                  </Popover>
+                                  <div className="flex-shrink-0 flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                                      <span className="flex items-center gap-1">
+                                          <StarIcon className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                                          {event.data.starsReward}
+                                      </span>
+                                      <span className="flex items-center gap-1">
+                                          <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />
+                                          {event.data.xpReward}
+                                      </span>
+                                  </div>
+                              </li>
+                              )
+                          })}
+                      </ul>
+                  </div>
+              </li>
+            );
+          })}
+        </ul>
+      );
   };
   
   const renderGridView = () => {
@@ -722,22 +661,22 @@ export default function AgendaPage() {
                       </div>
                   </ScrollArea>
               </div>
-              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="flex-1 flex flex-col gap-4">
                   <div>
                     <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
+                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
                       <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
-                          <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
+                          <ToggleGroupItem value="day" aria-label="Ver 1 Dia">1 Dia</ToggleGroupItem>
                           <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
                           <ToggleGroupItem value="workweek" aria-label="Ver semana útil">Semana Útil</ToggleGroupItem>
                           <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
                           <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
                       </ToggleGroup>
-                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
                     </div>
                   </div>
                   <div>
-                    <Label className="text-sm font-semibold text-muted-foreground">Filtrar Período do Dia</Label>
+                    <Label className="text-sm font-semibold text-muted-foreground">Período do Dia</Label>
                     <ToggleGroup type="single" value={timePeriodFilter} onValueChange={(v) => v && setTimePeriodFilter(v as TimePeriod)} className="justify-start mt-1">
                         <ToggleGroupItem value="all" aria-label="Ver todos">Todos</ToggleGroupItem>
                         <ToggleGroupItem value="morning" aria-label="Ver manhã" className="gap-1.5"><Sun className="h-4 w-4" />Manhã</ToggleGroupItem>
