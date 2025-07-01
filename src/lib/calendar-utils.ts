@@ -20,6 +20,7 @@ import {
   differenceInWeeks,
   differenceInMonths,
   differenceInYears,
+  isValid,
 } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -51,7 +52,12 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
 
     // Basic checks: before start date, after end date, or count exceeded.
     if (isBefore(checkDate, sDate)) return false;
-    if (rule.endDate && isAfter(checkDate, startOfDay(rule.endDate.toDate()))) return false;
+    
+    if (rule.endDate) {
+        const endDateObj = (rule.endDate as any).toDate ? (rule.endDate as Timestamp).toDate() : rule.endDate as Date;
+        if (isValid(endDateObj) && isAfter(checkDate, startOfDay(endDateObj))) return false;
+    }
+
     if (rule.count && (mission.completionCount || 0) >= rule.count) return false;
 
     switch (rule.freq) {
@@ -138,7 +144,7 @@ type RecurrenceSummarySource = {
   dueDate?: Timestamp | null;
 };
 
-// Helper function to check if two arrays of strings have the same elements, regardless of order.
+// Helper to check if two arrays of strings have the same elements, regardless of order.
 const haveSameElements = (arr1: string[], arr2: string[]): boolean => {
   if (arr1.length !== arr2.length) {
     return false;
@@ -203,8 +209,11 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
   }
 
   if (rule.endDate) {
-    const date = (rule.endDate as Timestamp).toDate();
-    summary += `, até ${formatDateFns(date, 'dd/MM/yyyy')}`;
+    // This can be a Firestore Timestamp or a JS Date object from a form.
+    const date = (rule.endDate as any).toDate ? (rule.endDate as Timestamp).toDate() : rule.endDate as Date;
+    if (isValid(date)) {
+        summary += `, até ${formatDateFns(date, 'dd/MM/yyyy')}`;
+    }
   } else if (rule.count) {
     summary += `, ${rule.count} ${rule.count > 1 ? 'vezes' : 'vez'}`;
   }
