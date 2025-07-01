@@ -236,7 +236,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (
-          <ScrollArea className="max-h-[15.5rem] mt-2 pr-3">
+          <ScrollArea className="max-h-[16.25rem] mt-2 pr-3">
               <div className="space-y-3">
                   {familyChildren.length > 0 && (
                       <div className="space-y-2">
