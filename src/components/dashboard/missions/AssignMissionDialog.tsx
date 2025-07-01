@@ -120,7 +120,7 @@ function CustomizeScheduleDialog({
                 <DialogHeader>
                     <DialogTitle>Personalizar Agendamento</DialogTitle>
                     <DialogDescription>
-                        Ajuste o agendamento da missão "{child.name}".
+                        Ajuste o agendamento da missão para "{child.name}".
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -206,6 +206,9 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       setCurrentTemplate(finalTemplate);
       
       if (isEditInstanceMode && instanceToEdit) {
+        const children = await getChildProfilesForAttribution(user.uid, currentContext);
+        setEligibleChildren(children);
+
         let initialRecurrenceRule = null;
         if (instanceToEdit.recurrenceRule) {
             const rule = instanceToEdit.recurrenceRule as any;
@@ -236,11 +239,11 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
 
             assignmentsResults.forEach(res => {
               newExistingAssignments[res.childId] = res.hasActiveInstance;
-              // Don't pre-select anyone
+              initialSelection[res.childId] = res.hasActiveInstance;
             });
             
             setExistingAssignments(newExistingAssignments);
-            setSelectedChildren({});
+            setSelectedChildren(initialSelection);
 
           } catch (error) {
             console.error("Error fetching children or assignments:", error);
@@ -293,35 +296,59 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const handleAssignSubmit = async () => {
     if (!currentTemplate) return;
     setIsProcessing(true);
-    
-    const assignmentPromises: Promise<any>[] = [];
-    let addedCount = 0;
-    
-    const childrenToAssign = eligibleChildren.filter(c => selectedChildren[c.id] && !existingAssignments[c.id]);
-    
-    if (childrenToAssign.length === 0) {
-        toast({ title: "Nenhuma nova atribuição", description: "Selecione uma criança que ainda não tenha esta missão ativa."});
-        setIsProcessing(false);
-        return;
-    }
 
-    for (const child of childrenToAssign) {
+    const promises: Promise<any>[] = [];
+    let addedCount = 0;
+    let removedCount = 0;
+
+    for (const child of eligibleChildren) {
+      const childId = child.id;
+      const hadAssignmentInitially = !!existingAssignments[childId];
+      const hasAssignmentNow = !!selectedChildren[childId];
+
+      if (hadAssignmentInitially && !hasAssignmentNow) {
+        // Remove assignment
+        promises.push(deleteMissionInstancesByTemplateAndChild(currentTemplate.id, childId));
+        removedCount++;
+      } else if (!hadAssignmentInitially && hasAssignmentNow) {
+        // Add assignment
         const schedule = getScheduleForChild(child.id);
         const finalTemplatePayload = { ...currentTemplate, ...schedule };
-        const instanceData = { templateId: currentTemplate.id, childId: child.id, ownerId: child.ownerId, familyId: child.familyId || null };
-        assignmentPromises.push(addMissionInstance(instanceData, finalTemplatePayload));
+        const instanceData = {
+          templateId: currentTemplate.id,
+          childId: child.id,
+          ownerId: child.ownerId,
+          familyId: child.familyId || null,
+        };
+        promises.push(addMissionInstance(instanceData, finalTemplatePayload));
         addedCount++;
+      }
     }
-    
+
+    if (promises.length === 0) {
+      toast({ title: "Nenhuma alteração detectada", description: "Nenhuma missão foi adicionada ou removida." });
+      onOpenChange(false);
+      setIsProcessing(false);
+      return;
+    }
+
     try {
-        await Promise.all(assignmentPromises);
-        toast({ title: "Missões Atribuídas!", description: `${addedCount} ${addedCount === 1 ? 'missão foi adicionada' : 'missões foram adicionadas'}.` });
-        onAssigned?.();
-        onOpenChange(false);
-    } catch(error) {
-        toast({ title: "Erro ao atribuir missões", variant: "destructive" });
+      await Promise.all(promises);
+
+      let toastDescription = "";
+      if (addedCount > 0) toastDescription += `${addedCount} ${addedCount === 1 ? 'missão foi atribuída' : 'missões foram atribuídas'}. `;
+      if (removedCount > 0) toastDescription += `${removedCount} ${removedCount === 1 ? 'atribuição foi removida' : 'atribuições foram removidas'}.`;
+
+      toast({
+        title: "Atribuições Atualizadas!",
+        description: toastDescription.trim(),
+      });
+      onAssigned?.();
+      onOpenChange(false);
+    } catch (error) {
+      toast({ title: "Erro ao atualizar atribuições", variant: "destructive" });
     } finally {
-        setIsProcessing(false);
+      setIsProcessing(false);
     }
   };
 
@@ -331,19 +358,26 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       const scheduleSummary = formatRecurrenceSummary(getScheduleForChild(child.id));
       const hasCustomSchedule = !!customSchedules[child.id];
       const isAlreadyAssigned = existingAssignments[child.id];
+      const isSelected = selectedChildren[child.id];
+
+      const getStatusText = () => {
+        if (isAlreadyAssigned) {
+          return isSelected ? "Atribuição mantida." : "Atribuição será removida.";
+        }
+        return isSelected ? scheduleSummary : "Não atribuído.";
+      }
 
       return (
         <div
           key={child.id}
-          className={`flex flex-col p-3 rounded-md border ${isAlreadyAssigned ? 'bg-muted/30 opacity-70' : 'bg-card'}`}
+          className="flex flex-col p-3 rounded-md border bg-card"
         >
             <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                      <Checkbox
                         id={childId}
-                        checked={isAlreadyAssigned || !!selectedChildren[child.id]}
+                        checked={!!selectedChildren[child.id]}
                         onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
-                        disabled={isAlreadyAssigned}
                     />
                     <Label htmlFor={childId} className="flex items-center gap-2 cursor-pointer">
                         <Avatar
@@ -361,20 +395,20 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                     </Label>
                 </div>
                 {!isAlreadyAssigned && (
-                    <Button
-                        type="button"
-                        variant={hasCustomSchedule ? "secondary" : "ghost"}
-                        size="sm"
-                        onClick={() => setChildToCustomize(child)}
-                        className="h-8"
-                    >
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        {hasCustomSchedule ? 'Editar Agenda' : 'Personalizar'}
-                    </Button>
+                  <Button
+                      type="button"
+                      variant={hasCustomSchedule ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setChildToCustomize(child)}
+                      className="h-8"
+                  >
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      {hasCustomSchedule ? 'Editar Agenda' : 'Personalizar'}
+                  </Button>
                 )}
             </div>
             <p className="text-xs text-muted-foreground pl-10 pt-1">
-                {isAlreadyAssigned ? "Já possui esta missão ativa." : scheduleSummary}
+                {getStatusText()}
             </p>
         </div>
       )
