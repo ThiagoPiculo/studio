@@ -262,7 +262,6 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   
   const renderChildList = (children: ChildProfile[]) => (
     children.map(child => {
-      const isCurrentlyAssigned = existingAssignments[child.id];
       const childId = `child-mission-${child.id}`;
 
       return (
@@ -285,9 +284,6 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
               <span className="font-medium">
                 {child.name}
               </span>
-              {isCurrentlyAssigned && (
-                <p className="text-xs text-accent">Já possui esta missão ativa.</p>
-              )}
             </div>
           </div>
           <Checkbox
@@ -329,8 +325,8 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                             Nenhum Mini Herói encontrado para atribuição.
                         </div>
                         ) : (
-                        <ScrollArea className="max-h-64 mt-2 pr-3">
-                            <div className="space-y-3">
+                        <ScrollArea className="max-h-40 mt-2 pr-3">
+                            <div className="space-y-2">
                                 {familyChildren.length > 0 && (
                                     <div className="space-y-2">
                                         <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
