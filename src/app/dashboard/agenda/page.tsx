@@ -8,9 +8,10 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
+import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,6 +40,7 @@ interface CalendarEvent {
 export default function AgendaPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
+  const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isLoading, setIsLoading] = useState(true);
@@ -54,6 +56,7 @@ export default function AgendaPage() {
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isFetchingTemplate, setIsFetchingTemplate] = useState(false);
 
   const fetchAgendaData = useCallback(async () => {
     if (!user) {
@@ -92,6 +95,35 @@ export default function AgendaPage() {
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
     setIsAssignDialogOpen(true);
+  };
+
+  const handleMissionClick = async (instance: MissionInstance) => {
+    if (!instance.templateId) {
+        toast({
+            title: "Missão Antiga",
+            description: "Esta missão não pode ser editada diretamente daqui. Gerencie-a pela página do herói.",
+            variant: "default"
+        });
+        return;
+    }
+    setIsFetchingTemplate(true);
+    try {
+        const template = await getMissionTemplateById(instance.templateId);
+        if (template) {
+            handleMissionSelected(template);
+        } else {
+            toast({
+                title: "Erro",
+                description: "Não foi possível encontrar o modelo desta missão para edição.",
+                variant: "destructive",
+            });
+        }
+    } catch (error) {
+        console.error("Error fetching template for edit:", error);
+        toast({ title: "Erro ao carregar", variant: "destructive" });
+    } finally {
+        setIsFetchingTemplate(false);
+    }
   };
   
   const handleAssignmentComplete = () => {
@@ -285,7 +317,13 @@ export default function AgendaPage() {
                                                 <ul className="mt-1 space-y-1">
                                                     {childEvents.map(event => (
                                                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
-                                                            {event.title}
+                                                           <button
+                                                                onClick={() => handleMissionClick(event.data)}
+                                                                className="text-left hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
+                                                                disabled={isFetchingTemplate}
+                                                            >
+                                                                {event.title}
+                                                            </button>
                                                         </li>
                                                     ))}
                                                 </ul>
@@ -309,7 +347,13 @@ export default function AgendaPage() {
                                     return (
                                         <li key={event.data.id} className="text-sm flex items-start gap-2">
                                             <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
-                                            <span className="text-foreground leading-snug">{event.title}</span>
+                                            <button
+                                                onClick={() => handleMissionClick(event.data)}
+                                                className="text-left text-foreground leading-snug hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
+                                                disabled={isFetchingTemplate}
+                                            >
+                                                {event.title}
+                                            </button>
                                         </li>
                                     );
                                 });
@@ -372,7 +416,13 @@ export default function AgendaPage() {
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <span className="leading-tight">{event.title}</span>
+                              <button
+                                onClick={() => handleMissionClick(event.data)}
+                                className="text-left leading-tight hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
+                                disabled={isFetchingTemplate}
+                              >
+                                {event.title}
+                              </button>
                           </li>
                         )
                       })}
