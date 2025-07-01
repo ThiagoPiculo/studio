@@ -851,14 +851,16 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
         transaction.update(childRef, finalChildUpdates);
 
         // --- Mission Instance Update ---
-        const completionTimestamp = serverTimestamp();
+        const clientCompletionTimestamp = Timestamp.now();
+        const serverUpdateTime = serverTimestamp();
+
         if (!missionData.isRecurring) {
             transaction.update(missionRef, {
                 status: 'completed',
-                completedAt: completionTimestamp,
-                updatedAt: completionTimestamp,
+                completedAt: clientCompletionTimestamp,
+                updatedAt: serverUpdateTime,
                 completionCount: 1,
-                completedDates: arrayUnion(completionTimestamp)
+                completedDates: arrayUnion(clientCompletionTimestamp)
             });
         } else {
             const newCompletionCount = (missionData.completionCount || 0) + 1;
@@ -866,13 +868,13 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
 
             const missionUpdates: any = {
                 completionCount: newCompletionCount,
-                completedDates: arrayUnion(completionTimestamp),
-                updatedAt: completionTimestamp,
+                completedDates: arrayUnion(clientCompletionTimestamp),
+                updatedAt: serverUpdateTime,
             };
 
             if (isFullyCompleted) {
                 missionUpdates.status = 'completed';
-                missionUpdates.completedAt = completionTimestamp;
+                missionUpdates.completedAt = clientCompletionTimestamp;
             }
             transaction.update(missionRef, missionUpdates);
         }
