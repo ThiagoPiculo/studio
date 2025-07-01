@@ -87,7 +87,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
           locale={ptBR}
           weekStartsOn={1}
         />
-        <div className="p-3 border-t border-border">
+        <div className="flex items-center justify-between p-3 border-t border-border">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <Label htmlFor="time-input">Horário</Label>
@@ -99,9 +99,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
               className="w-auto"
             />
           </div>
-        </div>
-        <div className="flex justify-end p-3 border-t border-border">
-            <Button size="sm" onClick={handleConfirm}>OK</Button>
+          <Button size="sm" onClick={handleConfirm}>OK</Button>
         </div>
       </PopoverContent>
     </Popover>
