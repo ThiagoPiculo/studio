@@ -84,7 +84,13 @@ export default function ManageChildPage() {
 
   const [activities, setActivities] = useState<Activity[]>([]);
   const [isLoadingActivities, setIsLoadingActivities] = useState(false);
-  const [stats, setStats] = useState({ completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0 });
+  const [stats, setStats] = useState({
+    completedMissions: 0,
+    starsEarned: 0,
+    rewardsRedeemed: 0,
+    pendingMissions: 0,
+    availableRewards: 0,
+  });
 
   const calculateXpDetails = (level: number, currentXp: number) => {
     let xpForCurrentLevel = 0;
@@ -187,7 +193,9 @@ export default function ManageChildPage() {
         getChildRewardInstancesByChild(childId),
       ]).then(([missions, rewards]) => {
         const completedMissions = missions.filter(m => m.status === 'completed');
+        const pendingMissions = missions.filter(m => m.status === 'pending');
         const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
+        const availableRewards = rewards.filter(r => r.status === 'active');
         
         const totalStarsEarned = missions
           .flatMap(m => m.completedDates ? Array(m.completedDates.length).fill(m.starsReward) : [])
@@ -197,6 +205,8 @@ export default function ManageChildPage() {
           completedMissions: completedMissions.length,
           starsEarned: totalStarsEarned,
           rewardsRedeemed: redeemedRewards.length,
+          pendingMissions: pendingMissions.length,
+          availableRewards: availableRewards.length,
         });
 
         const allActivities: Activity[] = [
@@ -738,21 +748,30 @@ export default function ManageChildPage() {
                 <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
                 <span className="font-semibold">XP: {child.xp}</span>
               </div>
-              <div className="mt-4 border-t border-border/20 pt-4 flex flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2">
-                <div className="flex items-center gap-1.5 text-sm font-medium" title="Missões Concluídas">
-                  <CheckSquare className="h-4 w-4 text-green-500" />
-                  {isLoadingActivities ? <Skeleton className="h-4 w-6" /> : <span>{stats.completedMissions}</span>}
-                  <span className="text-xs text-muted-foreground font-normal">Missões</span>
+              <div className="mt-4 border-t border-border/20 pt-4 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2">
+                <div className="flex items-center gap-1.5 text-sm font-medium" title="Missões">
+                    <CheckSquare className="h-4 w-4 text-green-500" />
+                    {isLoadingActivities ? <Skeleton className="h-4 w-48" /> : (
+                        <span>
+                            <span className="font-bold text-foreground">{stats.completedMissions}</span>
+                            <span className="text-muted-foreground"> Completas</span>
+                            <span className="mx-2 text-muted-foreground">|</span>
+                            <span className="font-bold text-foreground">{stats.pendingMissions}</span>
+                            <span className="text-muted-foreground"> Pendentes</span>
+                        </span>
+                    )}
                 </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium" title="Total de Estrelas Ganhas em Missões">
-                  <StarIcon className="h-4 w-4 text-yellow-400 fill-yellow-400" />
-                  {isLoadingActivities ? <Skeleton className="h-4 w-8" /> : <span>{stats.starsEarned}</span>}
-                  <span className="text-xs text-muted-foreground font-normal">Estrelas Ganhas</span>
-                </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium" title="Recompensas Resgatadas">
-                  <Trophy className="h-4 w-4 text-orange-500" />
-                  {isLoadingActivities ? <Skeleton className="h-4 w-6" /> : <span>{stats.rewardsRedeemed}</span>}
-                  <span className="text-xs text-muted-foreground font-normal">Recompensas</span>
+                <div className="flex items-center gap-1.5 text-sm font-medium" title="Recompensas">
+                    <Trophy className="h-4 w-4 text-orange-500" />
+                    {isLoadingActivities ? <Skeleton className="h-4 w-48" /> : (
+                        <span>
+                            <span className="font-bold text-foreground">{stats.availableRewards}</span>
+                            <span className="text-muted-foreground"> Disponíveis</span>
+                            <span className="mx-2 text-muted-foreground">|</span>
+                            <span className="font-bold text-foreground">{stats.rewardsRedeemed}</span>
+                            <span className="text-muted-foreground"> Resgatadas</span>
+                        </span>
+                    )}
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
