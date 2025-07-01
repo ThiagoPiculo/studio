@@ -1,6 +1,6 @@
 
 import type { MissionCategory } from '@/lib/types';
-import { Home, School, HeartPulse, Smile, Users, Banknote, Leaf, type LucideIcon } from 'lucide-react';
+import { Home, School, HeartPulse, Smile, Users, Banknote, Leaf, Bike, type LucideIcon } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
   title: string;
@@ -94,6 +94,22 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
         { title: 'Tentar dormir a noite toda na própria cama.', suggestedAppCategory: 'health' },
         { title: 'Usar fio dental.', suggestedAppCategory: 'health' },
         { title: 'Manter as unhas limpas e cortadas (com ajuda, se necessário).', suggestedAppCategory: 'health' },
+    ],
+  },
+  {
+    userCategory: 'Esportes e Atividades Físicas',
+    icon: Bike,
+    description: 'Missões para incentivar a prática de esportes e atividades físicas, promovendo um estilo de vida ativo e saudável.',
+    items: [
+        { title: 'Fazer aula de Natação.', suggestedAppCategory: 'health' },
+        { title: 'Ir ao treino de Futebol.', suggestedAppCategory: 'health' },
+        { title: 'Participar da aula de Judô/Karatê.', suggestedAppCategory: 'health' },
+        { title: 'Participar da aula de Jiu-Jitsu.', suggestedAppCategory: 'health' },
+        { title: 'Andar de bicicleta por 30 minutos.', suggestedAppCategory: 'health' },
+        { title: 'Andar de patins por 30 minutos.', suggestedAppCategory: 'health' },
+        { title: 'Andar de patinete por 30 minutos.', suggestedAppCategory: 'health' },
+        { title: 'Ir à aula de Basquete.', suggestedAppCategory: 'health' },
+        { title: 'Praticar a coreografia da aula de Dança/Balé.', suggestedAppCategory: 'health' },
     ],
   },
   {
