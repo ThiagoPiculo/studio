@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -338,12 +338,12 @@ export default function AgendaPage() {
                     </Avatar>
                     <div className="flex-grow pt-0.5">
                         <p className="font-semibold text-sm leading-tight">{child.name}</p>
-                        <ul className="mt-1 space-y-1">
+                        <ul className="mt-1 space-y-2">
                             {childEvents.map(event => {
                                 const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                                 const isCompleted = isMissionCompletedForDate(event.data, day);
                                 return(
-                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
+                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
                                     <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                       <PopoverTrigger asChild>
                                           <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
@@ -361,7 +361,17 @@ export default function AgendaPage() {
                                             <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           </div>
                                       </PopoverContent>
-                                  </Popover>
+                                    </Popover>
+                                    <div className="flex-shrink-0 flex items-center gap-3 text-xs font-medium text-muted-foreground">
+                                        <span className="flex items-center gap-1">
+                                            <StarIcon className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
+                                            {event.data.starsReward}
+                                        </span>
+                                        <span className="flex items-center gap-1">
+                                            <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />
+                                            {event.data.xpReward}
+                                        </span>
+                                    </div>
                                 </li>
                                 )
                             })}
@@ -723,3 +733,5 @@ export default function AgendaPage() {
     </>
   );
 }
+
+    
