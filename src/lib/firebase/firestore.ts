@@ -80,17 +80,15 @@ export const getChildProfileById = async (childId: string): Promise<ChildProfile
 };
 
 export const getChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
-  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId));
+  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
-  const children = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
-  return children.sort((a, b) => a.name.localeCompare(b.name));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
 
 export const getChildProfilesByFamily = async (familyId: string): Promise<ChildProfile[]> => {
-  const q = query(collection(db, 'children'), where('familyId', '==', familyId));
+  const q = query(collection(db, 'children'), where('familyId', '==', familyId), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
-  const children = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
-  return children.sort((a, b) => a.name.localeCompare(b.name));
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
 
 // Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
@@ -127,7 +125,7 @@ export const getChildProfilesForAttribution = async (currentUserId: string, curr
 
 
 export const getUnassignedChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
-  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
@@ -748,6 +746,39 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
     updatedAt: serverTimestamp(),
   });
 };
+
+export const updateMissionInstancesByTemplateAndChild = async (
+  templateId: string,
+  childId: string,
+  templateWithUpdates: MissionTemplate
+): Promise<void> => {
+    const q = query(
+        collection(db, 'missionInstances'),
+        where('templateId', '==', templateId),
+        where('childId', '==', childId),
+        where('status', '==', 'pending')
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return; // Nothing to update
+    }
+    
+    const batch = writeBatch(db);
+    const updates = {
+        isRecurring: templateWithUpdates.isRecurring,
+        startDate: templateWithUpdates.startDate,
+        dueDate: templateWithUpdates.dueDate,
+        recurrenceRule: templateWithUpdates.recurrenceRule,
+        updatedAt: serverTimestamp(),
+    };
+
+    querySnapshot.forEach(doc => {
+        batch.update(doc.ref, updates);
+    });
+
+    await batch.commit();
+};
+
 
 export const deleteMissionInstance = async (instanceId: string): Promise<void> => {
     const instanceRef = doc(db, 'missionInstances', instanceId);

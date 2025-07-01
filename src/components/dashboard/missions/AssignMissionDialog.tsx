@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -23,6 +24,7 @@ import {
   addMissionInstance,
   getActiveChildMissionInstancesByTemplateAndChild,
   deleteMissionInstancesByTemplateAndChild,
+  updateMissionInstancesByTemplateAndChild,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, ListChecks } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -85,6 +87,34 @@ const assignmentFormSchema = z.object({
 });
 type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
+// Helper function to compare two RecurrenceRule objects.
+function areRecurrenceRulesEqual(formRule: RecurrenceRule | null | undefined, templateRule: RecurrenceRule | null | undefined): boolean {
+    if (formRule === null && templateRule === null) return true;
+    if (formRule === undefined && templateRule === undefined) return true;
+    if (formRule === undefined && templateRule === null) return true;
+    if (formRule === null && templateRule === undefined) return true;
+    if (!formRule || !templateRule) return false;
+
+    // Compare byDay arrays (order-insensitive)
+    const byDay1 = formRule.byDay?.slice().sort() || [];
+    const byDay2 = templateRule.byDay?.slice().sort() || [];
+    if (byDay1.length !== byDay2.length || !byDay1.every((val, index) => val === byDay2[index])) {
+        return false;
+    }
+
+    // Compare end dates. formRule.endDate is a Date, templateRule.endDate is a Timestamp
+    const formEndDateMs = formRule.endDate ? new Date(formRule.endDate as any).getTime() : null;
+    const templateEndDateMs = templateRule.endDate ? templateRule.endDate.toMillis() : null;
+
+    if(formEndDateMs !== templateEndDateMs) return false;
+
+    // Compare other properties
+    return (
+        formRule.freq === templateRule.freq &&
+        formRule.interval === templateRule.interval &&
+        formRule.count === templateRule.count
+    );
+}
 
 export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
@@ -193,10 +223,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   const handleAssign = async (values: AssignmentFormValues) => {
     if (!template || !user) return;
     
+    const hasSchedulingChanged =
+        values.isRecurring !== !!template.isRecurring ||
+        (values.isRecurring && values.startDate?.getTime() !== template.startDate?.toDate().getTime()) ||
+        (!values.isRecurring && values.dueDate?.getTime() !== template.dueDate?.toDate().getTime()) ||
+        !areRecurrenceRulesEqual(values.recurrenceRule, template.recurrenceRule);
+
     setIsAssigning(true);
     const promises: Promise<any>[] = [];
     let addedCount = 0;
     let removedCount = 0;
+    let updatedCount = 0;
 
     const modifiedTemplate = {
         ...template,
@@ -205,7 +242,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
         recurrenceRule: values.isRecurring && values.recurrenceRule ? {
             ...values.recurrenceRule,
-            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
+            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate as Date) : null,
         } : null,
     };
 
@@ -215,11 +252,9 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         const hasAssignmentNow = !!selectedChildren[childId];
 
         if (hadAssignmentInitially && !hasAssignmentNow) {
-            // Remove assignment
             promises.push(deleteMissionInstancesByTemplateAndChild(template.id, childId));
             removedCount++;
         } else if (!hadAssignmentInitially && hasAssignmentNow) {
-            // Add assignment
             const instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates' | 'startDate'> = {
                 templateId: template.id,
                 childId: child.id,
@@ -228,11 +263,14 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
             };
             promises.push(addMissionInstance(instanceData, modifiedTemplate));
             addedCount++;
+        } else if (hadAssignmentInitially && hasAssignmentNow && hasSchedulingChanged) {
+            promises.push(updateMissionInstancesByTemplateAndChild(template.id, childId, modifiedTemplate));
+            updatedCount++;
         }
     }
     
-    if (promises.length === 0) {
-        toast({ title: "Nenhuma alteração detectada", description: "Nenhuma atribuição foi adicionada ou removida." });
+    if (addedCount === 0 && removedCount === 0 && updatedCount === 0) {
+        toast({ title: "Nenhuma alteração detectada", description: "Nenhuma atribuição ou agendamento foi modificado." });
         onOpenChange(false);
         setIsAssigning(false);
         return;
@@ -242,9 +280,10 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         await Promise.all(promises);
 
         let toastDescription = "";
-        if (addedCount > 0) toastDescription += `${addedCount} ${addedCount === 1 ? 'missão foi atribuída' : 'missões foram atribuídas'}. `;
-        if (removedCount > 0) toastDescription += `${removedCount} ${removedCount === 1 ? 'atribuição foi removida' : 'atribuições foram removidas'}.`;
-
+        if (addedCount > 0) toastDescription += `${addedCount} ${addedCount === 1 ? 'atribuição foi adicionada' : 'atribuições foram adicionadas'}. `;
+        if (removedCount > 0) toastDescription += `${removedCount} ${removedCount === 1 ? 'atribuição foi removida' : 'atribuições foram removidas'}. `;
+        if (updatedCount > 0) toastDescription += `${updatedCount} ${updatedCount === 1 ? 'agendamento foi atualizado' : 'agendamentos foram atualizados'}.`;
+        
         toast({
             title: "Atribuições Atualizadas!",
             description: toastDescription.trim(),
