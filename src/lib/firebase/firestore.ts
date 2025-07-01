@@ -749,6 +749,14 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
   });
 };
 
+export const excludeMissionInstanceOccurrence = async (instanceId: string, dateToExclude: Date): Promise<void> => {
+  const instanceRef = doc(db, 'missionInstances', instanceId);
+  await updateDoc(instanceRef, {
+    exceptionDates: arrayUnion(Timestamp.fromDate(startOfDay(dateToExclude))),
+    updatedAt: serverTimestamp()
+  });
+};
+
 export const updateMissionInstancesByTemplateAndChild = async (
   templateId: string,
   childId: string,

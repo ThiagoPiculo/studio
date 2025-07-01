@@ -31,7 +31,7 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
     const checkDate = startOfDay(date);
     const weekStartsOn = 1; // Monday
 
-    if (mission.isRecurring && mission.exceptionDates?.some(ts => isSameDay(ts.toDate(), checkDate))) {
+    if (mission.exceptionDates?.some(ts => isSameDay(ts.toDate(), checkDate))) {
         return false;
     }
 

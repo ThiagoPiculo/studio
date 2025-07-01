@@ -4,11 +4,11 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -29,6 +29,7 @@ import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/Sel
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -76,6 +77,7 @@ export default function AgendaPage() {
   const [isEditRecurrenceDialogOpen, setIsEditRecurrenceDialogOpen] = useState(false);
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
+  const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
   const fetchAgendaData = useCallback(async () => {
     if (!user) {
@@ -269,7 +271,27 @@ export default function AgendaPage() {
         setIsProcessingAction(null);
     }
   };
-
+  
+  const handleExcludeClick = (instance: MissionInstance, date: Date) => {
+    setActivePopover(null);
+    setInstanceToExclude({ instance, date });
+  };
+  
+  const handleConfirmExclusion = async () => {
+    if (!instanceToExclude) return;
+    setIsProcessingAction(instanceToExclude.instance.id);
+    try {
+      await excludeMissionInstanceOccurrence(instanceToExclude.instance.id, instanceToExclude.date);
+      toast({ title: 'Ocorrência Removida!', description: `A missão não aparecerá mais neste dia.` });
+      fetchAgendaData(); // Refetch data
+    } catch (error) {
+      console.error("Error excluding mission occurrence:", error);
+      toast({ title: 'Erro ao remover', variant: 'destructive' });
+    } finally {
+      setIsProcessingAction(null);
+      setInstanceToExclude(null);
+    }
+  };
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
@@ -363,6 +385,8 @@ export default function AgendaPage() {
                                               <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                             )}
                                             <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                            <Separator />
+                                            <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                           </div>
                                       </PopoverContent>
                                     </Popover>
@@ -421,6 +445,8 @@ export default function AgendaPage() {
                                   <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                 )}
                                 <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                <Separator/>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                               </div>
                           </PopoverContent>
                       </Popover>
@@ -481,18 +507,21 @@ export default function AgendaPage() {
                         {dayEvents.morning.length > 0 && (
                           <div className="space-y-2 bg-yellow-500/5 p-3 rounded-lg">
                             <h4 className="flex items-center gap-2 text-base font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
+                            <Separator />
                             {renderEventListForPeriod(dayEvents.morning, day)}
                           </div>
                         )}
                         {dayEvents.afternoon.length > 0 && (
                           <div className="space-y-2 bg-orange-500/5 p-3 rounded-lg">
                             <h4 className="flex items-center gap-2 text-base font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
+                            <Separator />
                             {renderEventListForPeriod(dayEvents.afternoon, day)}
                           </div>
                         )}
                         {dayEvents.night.length > 0 && (
                           <div className="space-y-2 bg-indigo-500/5 p-3 rounded-lg">
                             <h4 className="flex items-center gap-2 text-base font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
+                            <Separator />
                             {renderEventListForPeriod(dayEvents.night, day)}
                           </div>
                         )}
@@ -568,6 +597,8 @@ export default function AgendaPage() {
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Separator/>
+                                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
                                   </PopoverContent>
                               </Popover>
@@ -736,6 +767,26 @@ export default function AgendaPage() {
         missionInstance={instanceToEdit}
         occurrenceDate={occurrenceDate}
       />
+
+      <AlertDialog open={!!instanceToExclude} onOpenChange={(isOpen) => !isOpen && setInstanceToExclude(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta ocorrência?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
+                    <br />
+                    As outras repetições não serão afetadas.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingAction === instanceToExclude?.instance.id}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmExclusion} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToExclude?.instance.id}>
+                    {isProcessingAction === instanceToExclude?.instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Sim, Excluir
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
