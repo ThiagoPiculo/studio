@@ -72,7 +72,7 @@ export const missionCategories = [
 export type MissionCategory = typeof missionCategories[number]['id'];
 export type MissionCategoryDetails = typeof missionCategories[number];
 
-export const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
   SU: { long: 'Domingo', short: 'Dom' },

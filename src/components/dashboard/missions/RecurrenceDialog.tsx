@@ -48,7 +48,8 @@ const getInitialEndDate = (rule: RecurrenceRule | null | undefined): Date | unde
     }
     // Firestore Timestamp
     if (typeof endDateValue.toDate === 'function') {
-        return endDateValue.toDate();
+        const date = endDateValue.toDate();
+        if (isValid(date)) return date;
     }
     // Plain object from form state that mimics a Timestamp
     if (typeof endDateValue === 'object' && 'seconds' in endDateValue && 'nanoseconds' in endDateValue) {
@@ -194,6 +195,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
                             onSelect={setEndDate}
                             initialFocus
                             locale={ptBR}
+                            weekStartsOn={1}
                         />
                     </PopoverContent>
                 </Popover>

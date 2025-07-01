@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -191,6 +192,7 @@ export function OnboardingForm() {
                       date > new Date() || date < new Date("1900-01-01")
                     }
                     initialFocus
+                    weekStartsOn={1}
                   />
                 </PopoverContent>
               </Popover>
