@@ -41,6 +41,7 @@ import { RecurrenceControl } from './RecurrenceControl';
 
 interface AssignMissionDialogProps {
   template: MissionTemplate | null;
+  instanceToEdit?: MissionInstance | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
@@ -87,36 +88,7 @@ const assignmentFormSchema = z.object({
 });
 type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
-// Helper function to compare two RecurrenceRule objects.
-function areRecurrenceRulesEqual(formRule: RecurrenceRule | null | undefined, templateRule: RecurrenceRule | null | undefined): boolean {
-    if (formRule === null && templateRule === null) return true;
-    if (formRule === undefined && templateRule === undefined) return true;
-    if (formRule === undefined && templateRule === null) return true;
-    if (formRule === null && templateRule === undefined) return true;
-    if (!formRule || !templateRule) return false;
-
-    // Compare byDay arrays (order-insensitive)
-    const byDay1 = formRule.byDay?.slice().sort() || [];
-    const byDay2 = templateRule.byDay?.slice().sort() || [];
-    if (byDay1.length !== byDay2.length || !byDay1.every((val, index) => val === byDay2[index])) {
-        return false;
-    }
-
-    // Compare end dates. formRule.endDate is a Date, templateRule.endDate is a Timestamp
-    const formEndDateMs = formRule.endDate ? new Date(formRule.endDate as any).getTime() : null;
-    const templateEndDateMs = templateRule.endDate ? templateRule.endDate.toMillis() : null;
-
-    if(formEndDateMs !== templateEndDateMs) return false;
-
-    // Compare other properties
-    return (
-        formRule.freq === templateRule.freq &&
-        formRule.interval === templateRule.interval &&
-        formRule.count === templateRule.count
-    );
-}
-
-export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
   const { toast } = useToast();
@@ -143,6 +115,23 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
       setEligibleChildren([]);
       setSelectedChildren({});
       setExistingAssignments({});
+
+      const sourceForScheduling = instanceToEdit || template;
+
+      let initialRecurrenceRule = null;
+      if (sourceForScheduling.recurrenceRule) {
+          const rule = sourceForScheduling.recurrenceRule as any;
+          initialRecurrenceRule = {
+              ...rule,
+              endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null)
+          }
+      }
+      form.reset({
+          isRecurring: !!sourceForScheduling.isRecurring,
+          startDate: sourceForScheduling.startDate?.toDate() || null,
+          dueDate: sourceForScheduling.dueDate?.toDate() || null,
+          recurrenceRule: initialRecurrenceRule,
+      });
 
       const fetchChildrenAndAssignments = async () => {
         try {
@@ -173,36 +162,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
           setIsLoadingChildren(false);
         }
       };
-
-      let initialRecurrenceRule = null;
-      if (template.recurrenceRule) {
-          initialRecurrenceRule = {
-              ...template.recurrenceRule,
-              endDate: template.recurrenceRule.endDate?.toDate() ?? null
-          }
-      }
-      form.reset({
-          isRecurring: !!template.isRecurring,
-          startDate: template.startDate?.toDate() || null,
-          dueDate: template.dueDate?.toDate() || null,
-          recurrenceRule: initialRecurrenceRule,
-      });
-
+      
       fetchChildrenAndAssignments();
     }
-  }, [isOpen, template, user, currentContext, toast, form]);
+  }, [isOpen, template, instanceToEdit, user, currentContext, toast, form]);
 
-  const { familyChildren, personalChildren } = useMemo(() => {
-    const family: ChildProfile[] = [];
-    const personal: ChildProfile[] = [];
-    eligibleChildren.forEach(child => {
-        if (child.familyId) {
-            family.push(child);
-        } else {
-            personal.push(child);
-        }
-    });
-    return { familyChildren: family.sort((a, b) => a.name.localeCompare(b.name)), personalChildren: personal.sort((a, b) => a.name.localeCompare(b.name)) };
+  const familyChildren = useMemo(() => {
+    return eligibleChildren.filter(child => child.familyId).sort((a,b) => a.name.localeCompare(b.name));
+  }, [eligibleChildren]);
+  
+  const personalChildren = useMemo(() => {
+    return eligibleChildren.filter(child => !child.familyId).sort((a,b) => a.name.localeCompare(b.name));
   }, [eligibleChildren]);
 
   const familyName = useMemo(() => {
@@ -219,15 +189,43 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     if (!name) return "MH"; 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
+  
+  const areRecurrenceRulesEqual = (formRule: RecurrenceRule | null | undefined, dataSourceRule: RecurrenceRule | null | undefined): boolean => {
+      if (formRule === null && dataSourceRule === null) return true;
+      if (formRule === undefined && dataSourceRule === undefined) return true;
+      if (formRule === undefined && dataSourceRule === null) return true;
+      if (formRule === null && dataSourceRule === undefined) return true;
+      if (!formRule || !dataSourceRule) return false;
+  
+      const byDay1 = formRule.byDay?.slice().sort() || [];
+      const byDay2 = dataSourceRule.byDay?.slice().sort() || [];
+      if (byDay1.length !== byDay2.length || !byDay1.every((val, index) => val === byDay2[index])) {
+          return false;
+      }
+  
+      const formEndDateMs = formRule.endDate ? new Date(formRule.endDate as any).getTime() : null;
+      const dataSourceEndDate = (dataSourceRule.endDate as any)?.toDate ? (dataSourceRule.endDate as any).toDate() : dataSourceRule.endDate;
+      const dataSourceEndDateMs = dataSourceEndDate ? new Date(dataSourceEndDate).getTime() : null;
+      
+      if(formEndDateMs !== dataSourceEndDateMs) return false;
+  
+      return (
+          formRule.freq === dataSourceRule.freq &&
+          formRule.interval === dataSourceRule.interval &&
+          formRule.count === dataSourceRule.count
+      );
+  }
 
   const handleAssign = async (values: AssignmentFormValues) => {
     if (!template || !user) return;
     
+    const baseSchedulingSource = instanceToEdit || template;
+
     const hasSchedulingChanged =
-        values.isRecurring !== !!template.isRecurring ||
-        (values.isRecurring && values.startDate?.getTime() !== template.startDate?.toDate().getTime()) ||
-        (!values.isRecurring && values.dueDate?.getTime() !== template.dueDate?.toDate().getTime()) ||
-        !areRecurrenceRulesEqual(values.recurrenceRule, template.recurrenceRule);
+        values.isRecurring !== !!baseSchedulingSource.isRecurring ||
+        (values.isRecurring && values.startDate?.getTime() !== baseSchedulingSource.startDate?.toDate().getTime()) ||
+        (!values.isRecurring && values.dueDate?.getTime() !== baseSchedulingSource.dueDate?.toDate().getTime()) ||
+        !areRecurrenceRulesEqual(values.recurrenceRule, baseSchedulingSource.recurrenceRule as RecurrenceRule | null | undefined);
 
     setIsAssigning(true);
     const promises: Promise<any>[] = [];
@@ -235,7 +233,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     let removedCount = 0;
     let updatedCount = 0;
 
-    const modifiedTemplate = {
+    const modifiedTemplateWithNewScheduling = {
         ...template,
         isRecurring: values.isRecurring,
         startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
@@ -261,10 +259,10 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                 ownerId: child.ownerId,
                 familyId: child.familyId || null,
             };
-            promises.push(addMissionInstance(instanceData, modifiedTemplate));
+            promises.push(addMissionInstance(instanceData, modifiedTemplateWithNewScheduling));
             addedCount++;
         } else if (hadAssignmentInitially && hasAssignmentNow && hasSchedulingChanged) {
-            promises.push(updateMissionInstancesByTemplateAndChild(template.id, childId, modifiedTemplate));
+            promises.push(updateMissionInstancesByTemplateAndChild(template.id, childId, modifiedTemplateWithNewScheduling));
             updatedCount++;
         }
     }

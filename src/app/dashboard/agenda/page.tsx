@@ -55,6 +55,7 @@ export default function AgendaPage() {
   // New states for the add mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
+  const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isFetchingTemplate, setIsFetchingTemplate] = useState(false);
 
@@ -94,6 +95,7 @@ export default function AgendaPage() {
   
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
+    setInstanceToEdit(null); // Clear any instance being edited
     setIsAssignDialogOpen(true);
   };
 
@@ -110,7 +112,9 @@ export default function AgendaPage() {
     try {
         const template = await getMissionTemplateById(instance.templateId);
         if (template) {
-            handleMissionSelected(template);
+            setTemplateToAssign(template);
+            setInstanceToEdit(instance);
+            setIsAssignDialogOpen(true);
         } else {
             toast({
                 title: "Erro",
@@ -557,9 +561,13 @@ export default function AgendaPage() {
       {templateToAssign && (
         <AssignMissionDialog
           template={templateToAssign}
+          instanceToEdit={instanceToEdit}
           isOpen={isAssignDialogOpen}
           onOpenChange={(isOpen) => {
-            if (!isOpen) setTemplateToAssign(null);
+            if (!isOpen) {
+              setTemplateToAssign(null);
+              setInstanceToEdit(null);
+            }
             setIsAssignDialogOpen(isOpen);
           }}
           onAssigned={handleAssignmentComplete}
