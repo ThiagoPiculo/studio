@@ -25,62 +25,63 @@ interface DateTimePickerProps {
   label: string;
 }
 
-// Moved the DateTimePicker component to the top level of the file to prevent re-render issues.
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
-  const [date, setDate] = React.useState<Date | undefined>(value && isValid(value) ? value : undefined);
-  const [time, setTime] = React.useState(value && isValid(value) ? format(value, "HH:mm") : "09:00");
-
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (!selectedDate) return;
-    const [hours, minutes] = time.split(':').map(Number);
-    let newDate = setHours(selectedDate, hours);
-    newDate = setMinutes(newDate, minutes);
-    newDate = setSeconds(newDate, 0);
-    setDate(newDate);
-    onChange(newDate);
-  }
-
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newTime = e.target.value;
-    setTime(newTime);
-    if (!date) return;
-    const [hours, minutes] = newTime.split(':').map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      let newDate = setHours(date, hours);
-      newDate = setMinutes(newDate, minutes);
-      setDate(newDate);
-      onChange(newDate);
-    }
-  }
+  const [isOpen, setIsOpen] = React.useState(false);
+  const [tempDate, setTempDate] = React.useState<Date | undefined>(value && isValid(value) ? value : undefined);
 
   React.useEffect(() => {
-    if (value && isValid(value)) {
-      setDate(value);
-      setTime(format(value, "HH:mm"));
-    } else if (value === null || value === undefined) {
-      setDate(undefined);
-      setTime("09:00");
+    if (isOpen) {
+      setTempDate(value && isValid(value) ? value : undefined);
     }
-  }, [value]);
+  }, [isOpen, value]);
+
+  const handleConfirm = () => {
+    onChange(tempDate);
+    setIsOpen(false);
+  };
+
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (!selectedDate) {
+      setTempDate(undefined);
+      return;
+    }
+    const currentHours = tempDate ? tempDate.getHours() : 9;
+    const currentMinutes = tempDate ? tempDate.getMinutes() : 0;
+    let newDate = setHours(selectedDate, currentHours);
+    newDate = setMinutes(newDate, currentMinutes);
+    newDate = setSeconds(newDate, 0);
+    setTempDate(newDate);
+  };
+
+  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = e.target.value;
+    const [hours, minutes] = time.split(':').map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+      const baseDate = tempDate || new Date();
+      let newDate = setHours(baseDate, hours);
+      newDate = setMinutes(newDate, minutes);
+      setTempDate(newDate);
+    }
+  };
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
+            !value && "text-muted-foreground"
           )}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {date && isValid(date) ? format(date, "PPP, HH:mm", { locale: ptBR }) : <span>{label}</span>}
+          {value && isValid(value) ? format(value, "PPP, HH:mm", { locale: ptBR }) : <span>{label}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
-          selected={date}
+          selected={tempDate}
           onSelect={handleDateSelect}
           initialFocus
           locale={ptBR}
@@ -90,13 +91,23 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
             <Label htmlFor="time-input">Horário</Label>
-            <Input id="time-input" type="time" value={time} onChange={handleTimeChange} className="w-auto" />
+            <Input
+              id="time-input"
+              type="time"
+              value={tempDate ? format(tempDate, "HH:mm") : ""}
+              onChange={handleTimeChange}
+              className="w-auto"
+            />
           </div>
+        </div>
+        <div className="flex justify-end p-3 border-t border-border">
+            <Button size="sm" onClick={handleConfirm}>OK</Button>
         </div>
       </PopoverContent>
     </Popover>
   );
 }
+
 
 export function RecurrenceControl() {
   const { control, watch, setValue } = useFormContext();
