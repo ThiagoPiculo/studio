@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -31,12 +31,20 @@ import { Loader2 } from 'lucide-react';
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
 type SortByType = 'child' | 'missionName';
+type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
 
 interface CalendarEvent {
   date: Date;
   title: string;
   data: MissionInstance;
 }
+
+const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
+  const hour = date.getHours();
+  if (hour >= 6 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 18) return 'afternoon';
+  return 'night';
+};
 
 export default function AgendaPage() {
   const { user } = useAuth();
@@ -50,6 +58,7 @@ export default function AgendaPage() {
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('week');
+  const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>('all');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<SortByType>('child');
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
@@ -167,40 +176,48 @@ export default function AgendaPage() {
     return { start, end };
   }, [currentDate, dateRangeFilter]);
 
-  const events = useMemo(() => {
+  const eventsByDate = useMemo(() => {
     const activeChildFilters = Object.entries(selectedChildrenIds).filter(([,v]) => v).map(([k]) => k);
     
     const instancesToProcess = allChildrenSelected 
       ? missionInstances 
       : missionInstances.filter(inst => activeChildFilters.includes(inst.childId));
 
-    const allEvents: CalendarEvent[] = [];
+    const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }> = {};
     const daysInView = eachDayOfInterval(viewInterval);
+    
+    daysInView.forEach(day => {
+        const dateKey = format(day, 'yyyy-MM-dd');
+        acc[dateKey] = { morning: [], afternoon: [], night: [] };
+    });
 
     instancesToProcess.forEach(instance => {
+      const eventTimeSource = instance.isRecurring ? instance.startDate?.toDate() : instance.dueDate?.toDate();
+      if (!eventTimeSource) return;
+
+      const period = getPeriodForDate(eventTimeSource);
+      
+      if (timePeriodFilter !== 'all' && period !== timePeriodFilter) {
+        return;
+      }
+      
       daysInView.forEach(day => {
         if (isMissionScheduledForDate(instance, day)) {
-          allEvents.push({
+          const dateKey = format(day, 'yyyy-MM-dd');
+          
+          const event: CalendarEvent = {
             date: day,
             title: instance.title,
             data: instance,
-          });
+          };
+          
+          acc[dateKey][period].push(event);
         }
       });
     });
-    return allEvents;
-  }, [viewInterval, missionInstances, selectedChildrenIds, allChildrenSelected]);
 
-  const eventsByDate = useMemo(() => {
-    return events.reduce((acc, event) => {
-      const dateKey = format(event.date, 'yyyy-MM-dd');
-      if (!acc[dateKey]) {
-        acc[dateKey] = [];
-      }
-      acc[dateKey].push(event);
-      return acc;
-    }, {} as Record<string, CalendarEvent[]>);
-  }, [events]);
+    return acc;
+  }, [viewInterval, missionInstances, selectedChildrenIds, allChildrenSelected, timePeriodFilter]);
 
   const handlePrev = () => {
     const dateChanges = { day: 1, '3days': 3, week: 7, month: 0 };
@@ -290,7 +307,121 @@ export default function AgendaPage() {
 
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
   
-  const hasAnyEvents = Object.keys(eventsByDate).length > 0;
+  const hasAnyEvents = Object.values(eventsByDate).some(day => {
+    const events = day as { morning: any[], afternoon: any[], night: any[] };
+    if (!events) return false;
+    return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
+  });
+
+  const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
+      if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
+        const eventsByChild = events.reduce((acc, event) => {
+            const childId = event.data.childId;
+            if (!acc[childId]) acc[childId] = [];
+            acc[childId].push(event);
+            return acc;
+        }, {} as Record<string, CalendarEvent[]>);
+
+        const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
+            const childA = childrenMap.get(a)?.name || '';
+            const childB = childrenMap.get(b)?.name || '';
+            return childA.localeCompare(childB);
+        });
+
+        return (
+          <ul className="space-y-4">
+            {sortedChildIds.map(childId => {
+              const child = childrenMap.get(childId);
+              if (!child) return null;
+              const childEvents = eventsByChild[childId].sort((a,b) => a.title.localeCompare(b.title));
+
+              return (
+                <li key={childId} className="flex items-start gap-3">
+                    <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                        <AvatarImage src={child.avatar} alt={child.name} />
+                        <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-grow pt-0.5">
+                        <p className="font-semibold text-sm leading-tight">{child.name}</p>
+                        <ul className="mt-1 space-y-1">
+                            {childEvents.map(event => {
+                                const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+                                const isCompleted = isMissionCompletedForDate(event.data, day);
+                                return(
+                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
+                                    <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                      <PopoverTrigger asChild>
+                                          <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                              {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
+                                              {event.title}
+                                          </button>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-2">
+                                          <div className="flex flex-col gap-1">
+                                            {isCompleted ? (
+                                              <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                            ) : (
+                                              <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            )}
+                                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          </div>
+                                      </PopoverContent>
+                                  </Popover>
+                                </li>
+                                )
+                            })}
+                        </ul>
+                    </div>
+                </li>
+              );
+            })}
+          </ul>
+        );
+      } else { // This is for 'week' view
+        const sortedEvents = [...events].sort((a, b) => {
+            if (sortBy === 'child') {
+                const childA = childrenMap.get(a.data.childId)?.name || '';
+                const childB = childrenMap.get(b.data.childId)?.name || '';
+                const nameComparison = childA.localeCompare(childB);
+                if (nameComparison !== 0) return nameComparison;
+            }
+            return a.title.localeCompare(b.title);
+        });
+        return (
+          <ul className="space-y-2">
+            {sortedEvents.map(event => {
+              const child = childrenMap.get(event.data.childId);
+              if (!child) return null;
+              const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+              const isCompleted = isMissionCompletedForDate(event.data, day);
+              return (
+                  <li key={event.data.id} className="text-sm flex items-start gap-2">
+                      <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
+                      <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                          <PopoverTrigger asChild>
+                              <button disabled={isProcessingAction === event.data.id} className={cn("text-left text-foreground leading-snug hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                  {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
+                                  {event.title}
+                              </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-2">
+                              <div className="flex flex-col gap-1">
+                                {isCompleted ? (
+                                  <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                ) : (
+                                  <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                )}
+                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                              </div>
+                          </PopoverContent>
+                      </Popover>
+                  </li>
+              );
+            })}
+          </ul>
+        );
+      }
+  };
   
   const renderGridView = () => {
     const days = eachDayOfInterval(viewInterval);
@@ -317,7 +448,8 @@ export default function AgendaPage() {
       <div className={cn("grid gap-6", gridClasses[dateRangeFilter])}>
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
-          const dayEvents = eventsByDate[dateKey] || [];
+          const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
+          const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
   
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -327,7 +459,7 @@ export default function AgendaPage() {
               </h2>
               
               <div className="flex-1">
-                {dayEvents.length === 0 ? (
+                {!hasEventsForDay ? (
                     <Card className="shadow-sm h-full">
                         <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
                             Nenhuma missão.
@@ -335,110 +467,25 @@ export default function AgendaPage() {
                     </Card>
                 ) : (
                     <Card className="shadow-sm h-full">
-                      <CardContent className="p-4">
-                        <ul className="space-y-4">
-                          {(() => {
-                            if (dateRangeFilter === 'day' || dateRangeFilter === '3days') {
-                                const eventsByChild = dayEvents.reduce((acc, event) => {
-                                    const childId = event.data.childId;
-                                    if (!acc[childId]) acc[childId] = [];
-                                    acc[childId].push(event);
-                                    return acc;
-                                }, {} as Record<string, CalendarEvent[]>);
-
-                                const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
-                                    const childA = childrenMap.get(a)?.name || '';
-                                    const childB = childrenMap.get(b)?.name || '';
-                                    return childA.localeCompare(childB);
-                                });
-
-                                return sortedChildIds.map(childId => {
-                                    const child = childrenMap.get(childId);
-                                    if (!child) return null;
-                                    const childEvents = eventsByChild[childId].sort((a,b) => a.title.localeCompare(b.title));
-
-                                    return (
-                                        <li key={childId} className="flex items-start gap-3">
-                                            <Avatar className="h-9 w-9 shrink-0 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-grow pt-0.5">
-                                                <p className="font-semibold text-sm leading-tight">{child.name}</p>
-                                                <ul className="mt-1 space-y-1">
-                                                    {childEvents.map(event => {
-                                                      const popoverId = `${event.data.id}-${dateKey}`;
-                                                      const isCompleted = isMissionCompletedForDate(event.data, day);
-                                                      return(
-                                                        <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
-                                                           <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                                                              <PopoverTrigger asChild>
-                                                                  <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
-                                                                      {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
-                                                                      {event.title}
-                                                                  </button>
-                                                              </PopoverTrigger>
-                                                              <PopoverContent className="w-auto p-2">
-                                                                  <div className="flex flex-col gap-1">
-                                                                     {isCompleted ? (
-                                                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                                                      ) : (
-                                                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                                                      )}
-                                                                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                                                  </div>
-                                                              </PopoverContent>
-                                                          </Popover>
-                                                        </li>
-                                                      )
-                                                    })}
-                                                </ul>
-                                            </div>
-                                        </li>
-                                    );
-                                });
-                            } else { // This is for 'week' view
-                                const sortedEvents = [...dayEvents].sort((a, b) => {
-                                  if (sortBy === 'child') {
-                                      const childA = childrenMap.get(a.data.childId)?.name || '';
-                                      const childB = childrenMap.get(b.data.childId)?.name || '';
-                                      const nameComparison = childA.localeCompare(childB);
-                                      if (nameComparison !== 0) return nameComparison;
-                                  }
-                                  return a.title.localeCompare(b.title);
-                                });
-                                return sortedEvents.map(event => {
-                                    const child = childrenMap.get(event.data.childId);
-                                    if (!child) return null;
-                                    const popoverId = `${event.data.id}-${dateKey}`;
-                                    const isCompleted = isMissionCompletedForDate(event.data, day);
-                                    return (
-                                        <li key={event.data.id} className="text-sm flex items-start gap-2">
-                                            <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
-                                             <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                                                <PopoverTrigger asChild>
-                                                    <button disabled={isProcessingAction === event.data.id} className={cn("text-left text-foreground leading-snug hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
-                                                        {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                                        {event.title}
-                                                    </button>
-                                                </PopoverTrigger>
-                                                 <PopoverContent className="w-auto p-2">
-                                                      <div className="flex flex-col gap-1">
-                                                         {isCompleted ? (
-                                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                                          ) : (
-                                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                                          )}
-                                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                                      </div>
-                                                  </PopoverContent>
-                                            </Popover>
-                                        </li>
-                                    );
-                                });
-                            }
-                          })()}
-                        </ul>
+                      <CardContent className="p-4 space-y-4">
+                        {dayEvents.morning.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
+                            {renderEventListForPeriod(dayEvents.morning, day)}
+                          </div>
+                        )}
+                        {dayEvents.afternoon.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
+                            {renderEventListForPeriod(dayEvents.afternoon, day)}
+                          </div>
+                        )}
+                        {dayEvents.night.length > 0 && (
+                          <div className="space-y-2">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
+                            {renderEventListForPeriod(dayEvents.night, day)}
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
                 )}
@@ -464,8 +511,9 @@ export default function AgendaPage() {
           <div className="grid grid-cols-7 border-t border-l">
             {days.map(day => {
               const dateKey = format(day, 'yyyy-MM-dd');
-              const dayEvents = eventsByDate[dateKey] || [];
-
+              const dayEventsByPeriod = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
+              const dayEvents = [...dayEventsByPeriod.morning, ...dayEventsByPeriod.afternoon, ...dayEventsByPeriod.night];
+              
               const sortedEvents = [...dayEvents].sort((a, b) => {
                 if (sortBy === 'child') {
                   const childA = childrenMap.get(a.data.childId)?.name || '';
@@ -595,7 +643,7 @@ export default function AgendaPage() {
                       </div>
                   </ScrollArea>
               </div>
-              <div className="flex-1 space-y-4">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
                     <div className="flex flex-wrap items-center gap-2 mt-1">
@@ -609,6 +657,15 @@ export default function AgendaPage() {
                     </div>
                   </div>
                   <div>
+                    <Label className="text-sm font-semibold text-muted-foreground">Filtrar Período do Dia</Label>
+                    <ToggleGroup type="single" value={timePeriodFilter} onValueChange={(v) => v && setTimePeriodFilter(v as TimePeriod)} className="justify-start mt-1">
+                        <ToggleGroupItem value="all" aria-label="Ver todos">Todos</ToggleGroupItem>
+                        <ToggleGroupItem value="morning" aria-label="Ver manhã" className="gap-1.5"><Sun className="h-4 w-4" />Manhã</ToggleGroupItem>
+                        <ToggleGroupItem value="afternoon" aria-label="Ver tarde" className="gap-1.5"><CloudSun className="h-4 w-4" />Tarde</ToggleGroupItem>
+                        <ToggleGroupItem value="night" aria-label="Ver noite" className="gap-1.5"><Moon className="h-4 w-4" />Noite</ToggleGroupItem>
+                    </ToggleGroup>
+                  </div>
+                  <div className="sm:col-span-2">
                     <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
                     <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortByType)}>
                         <SelectTrigger id="sort-by" className="w-full sm:w-48 mt-1">
@@ -663,4 +720,3 @@ export default function AgendaPage() {
   );
 }
 
-    
