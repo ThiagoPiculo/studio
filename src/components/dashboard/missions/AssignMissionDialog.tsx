@@ -19,26 +19,26 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { MissionTemplate, ChildProfile, MissionInstance, RecurrenceRule } from '@/lib/types';
-import { 
-  getChildProfilesForAttribution, 
+import {
+  getChildProfilesForAttribution,
   addMissionInstance,
   getActiveChildMissionInstancesByTemplateAndChild,
   deleteMissionInstancesByTemplateAndChild,
   updateRecurringMissionInstance,
   getMissionTemplateById,
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, ListChecks, Edit } from 'lucide-react';
+import { Loader2, Users, AlertCircle, ListChecks, Edit, CalendarDays } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, FormProvider } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { weekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import { RecurrenceControl } from './RecurrenceControl';
+import { formatRecurrenceSummary } from '@/lib/calendar-utils';
 
 export type EditRecurrenceMode = 'single' | 'forward' | 'all';
 
@@ -91,7 +91,51 @@ const assignmentFormSchema = z.object({
         }
     }
 });
-type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
+export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
+
+
+function CustomizeScheduleDialog({
+    child,
+    initialSchedule,
+    onSave,
+    onCancel,
+}: {
+    child: ChildProfile,
+    initialSchedule: AssignmentFormValues,
+    onSave: (schedule: AssignmentFormValues) => void,
+    onCancel: () => void,
+}) {
+    const form = useForm<AssignmentFormValues>({
+        resolver: zodResolver(assignmentFormSchema),
+        defaultValues: initialSchedule,
+    });
+    
+    const onSubmit = (data: AssignmentFormValues) => {
+        onSave(data);
+    };
+
+    return (
+        <Dialog open={true} onOpenChange={onCancel}>
+            <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle>Personalizar Agendamento</DialogTitle>
+                    <DialogDescription>
+                        Ajuste o agendamento da missão "{child.name}".
+                    </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+                        <RecurrenceControl />
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
+                            <Button type="submit">Salvar Agendamento</Button>
+                        </DialogFooter>
+                    </form>
+                </Form>
+            </DialogContent>
+        </Dialog>
+    )
+}
 
 export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, editMode = 'all', isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
@@ -104,64 +148,79 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const [isLoading, setIsLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<MissionTemplate | null>(template);
+  const [childToCustomize, setChildToCustomize] = useState<ChildProfile | null>(null);
+  const [customSchedules, setCustomSchedules] = useState<Record<string, AssignmentFormValues>>({});
 
   const isEditInstanceMode = !!instanceToEdit;
-  
-  const form = useForm<AssignmentFormValues>({
+
+  const editForm = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
-    defaultValues: {
-        isRecurring: false,
-        startDate: null,
-        dueDate: null,
-        recurrenceRule: null,
-    },
+    defaultValues: {},
   });
+  
+  const getInitials = (name?: string | null) => {
+    if (!name) return "MH"; 
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
+  
+  const getScheduleForChild = (childId: string): AssignmentFormValues => {
+    if (customSchedules[childId]) {
+      return customSchedules[childId];
+    }
+    if (!currentTemplate) {
+        return { isRecurring: false, startDate: null, dueDate: new Date(), recurrenceRule: null };
+    }
+    return {
+        isRecurring: !!currentTemplate.isRecurring,
+        startDate: currentTemplate.startDate?.toDate() ?? null,
+        dueDate: currentTemplate.dueDate?.toDate() ?? null,
+        recurrenceRule: currentTemplate.recurrenceRule ? {
+            ...currentTemplate.recurrenceRule,
+            endDate: currentTemplate.recurrenceRule.endDate?.toDate() ?? null,
+        } : null,
+    };
+  };
+
+  const handleSaveCustomization = (childId: string, schedule: AssignmentFormValues) => {
+    setCustomSchedules(prev => ({ ...prev, [childId]: schedule }));
+    setChildToCustomize(null);
+  };
 
   useEffect(() => {
     const initializeDialog = async () => {
       if (!isOpen || !user) return;
 
       setIsLoading(true);
+      setCustomSchedules({}); // Reset customizations on open
       
       let finalTemplate = template;
-      // If we are editing an instance, we might not have the template. Fetch it.
       if (instanceToEdit && !template) {
         const fetchedTemplate = await getMissionTemplateById(instanceToEdit.templateId);
-        if (fetchedTemplate) {
-          finalTemplate = fetchedTemplate;
-          setCurrentTemplate(fetchedTemplate);
-        } else {
+        if (!fetchedTemplate) {
           toast({ title: "Erro", description: "Modelo da missão não encontrado.", variant: "destructive"});
           onOpenChange(false);
           return;
         }
-      } else {
-        setCurrentTemplate(template);
+        finalTemplate = fetchedTemplate;
       }
-
-      if (!finalTemplate) {
-          toast({ title: "Erro", description: "Nenhuma missão selecionada para atribuição ou edição.", variant: "destructive" });
-          onOpenChange(false);
-          return;
-      }
+      setCurrentTemplate(finalTemplate);
       
-      const sourceForScheduling = instanceToEdit || finalTemplate;
-      let initialRecurrenceRule = null;
-      if (sourceForScheduling.recurrenceRule) {
-          const rule = sourceForScheduling.recurrenceRule as any;
-          initialRecurrenceRule = {
-              ...rule,
-              endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null)
-          }
-      }
-      form.reset({
-          isRecurring: !!sourceForScheduling.isRecurring,
-          startDate: sourceForScheduling.startDate?.toDate() || null,
-          dueDate: sourceForScheduling.dueDate?.toDate() || null,
-          recurrenceRule: initialRecurrenceRule,
-      });
-
-      if (!isEditInstanceMode) {
+      if (isEditInstanceMode && instanceToEdit) {
+        let initialRecurrenceRule = null;
+        if (instanceToEdit.recurrenceRule) {
+            const rule = instanceToEdit.recurrenceRule as any;
+            initialRecurrenceRule = {
+                ...rule,
+                endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null)
+            }
+        }
+        editForm.reset({
+            isRecurring: !!instanceToEdit.isRecurring,
+            startDate: instanceToEdit.startDate?.toDate() || null,
+            dueDate: instanceToEdit.dueDate?.toDate() || null,
+            recurrenceRule: initialRecurrenceRule,
+        });
+      } else if (!isEditInstanceMode && finalTemplate) {
           try {
             const children = await getChildProfilesForAttribution(user.uid, currentContext);
             setEligibleChildren(children);
@@ -177,11 +236,11 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
 
             assignmentsResults.forEach(res => {
               newExistingAssignments[res.childId] = res.hasActiveInstance;
-              initialSelection[res.childId] = res.hasActiveInstance;
+              // Don't pre-select anyone
             });
             
             setExistingAssignments(newExistingAssignments);
-            setSelectedChildren(initialSelection);
+            setSelectedChildren({});
 
           } catch (error) {
             console.error("Error fetching children or assignments:", error);
@@ -192,7 +251,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       setIsLoading(false);
     }
     initializeDialog();
-  }, [isOpen, template, instanceToEdit, user, currentContext, toast, form, isEditInstanceMode, onOpenChange]);
+  }, [isOpen, template, instanceToEdit, user, currentContext, toast, editForm, isEditInstanceMode, onOpenChange]);
 
   const familyChildren = useMemo(() => {
     return eligibleChildren.filter(child => child.familyId).sort((a,b) => a.name.localeCompare(b.name));
@@ -212,20 +271,12 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     setSelectedChildren(prev => ({ ...prev, [childId]: isSelected }));
   };
 
-  const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; 
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
-  const onSubmit = async (values: AssignmentFormValues) => {
-    setIsProcessing(true);
-    if (isEditInstanceMode) {
-      // Handle editing a single instance's schedule
-      if (!instanceToEdit || !occurrenceDate) {
+  const onEditSubmit = async (values: AssignmentFormValues) => {
+     if (!instanceToEdit || !occurrenceDate) {
         toast({ title: "Erro", description: "Dados insuficientes para editar a missão.", variant: "destructive"});
-        setIsProcessing(false);
         return;
       }
+      setIsProcessing(true);
       try {
         await updateRecurringMissionInstance(instanceToEdit.id, editMode, values, occurrenceDate);
         toast({ title: "Agendamento Atualizado!", description: "A missão foi reagendada com sucesso."});
@@ -234,81 +285,98 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       } catch (error: any) {
         console.error("Error updating recurring mission instance:", error);
         toast({ title: "Erro ao Editar", description: error.message, variant: "destructive" });
+      } finally {
+        setIsProcessing(false);
       }
-
-    } else {
-      // Handle assigning to multiple children (original logic)
-      if (!currentTemplate) return;
-      const modifiedTemplatePayload = { ...currentTemplate, ...values };
-
-      const assignmentPromises: Promise<any>[] = [];
-      let addedCount = 0;
-      let removedCount = 0;
-
-      for (const child of eligibleChildren) {
-          const hadAssignment = !!existingAssignments[child.id];
-          const hasAssignment = !!selectedChildren[child.id];
-
-          if (hadAssignment && !hasAssignment) {
-              assignmentPromises.push(deleteMissionInstancesByTemplateAndChild(currentTemplate.id, child.id));
-              removedCount++;
-          } else if (!hadAssignment && hasAssignment) {
-              const instanceData = { templateId: currentTemplate.id, childId: child.id, ownerId: child.ownerId, familyId: child.familyId || null };
-              assignmentPromises.push(addMissionInstance(instanceData, modifiedTemplatePayload));
-              addedCount++;
-          }
-      }
-      
-      if (assignmentPromises.length === 0) {
-        toast({ title: "Nenhuma alteração detectada." });
-      } else {
-        try {
-          await Promise.all(assignmentPromises);
-          let toastDescription = "";
-          if (addedCount > 0) toastDescription += `${addedCount} atribuições adicionadas. `;
-          if (removedCount > 0) toastDescription += `${removedCount} atribuições removidas.`;
-          toast({ title: "Atribuições Atualizadas!", description: toastDescription.trim() });
-          onAssigned?.();
-          onOpenChange(false);
-        } catch(error) {
-           toast({ title: "Erro ao atualizar atribuições", variant: "destructive" });
-        }
-      }
-    }
-    setIsProcessing(false);
   };
-  
+
+  const handleAssignSubmit = async () => {
+    if (!currentTemplate) return;
+    setIsProcessing(true);
+    
+    const assignmentPromises: Promise<any>[] = [];
+    let addedCount = 0;
+    
+    const childrenToAssign = eligibleChildren.filter(c => selectedChildren[c.id] && !existingAssignments[c.id]);
+    
+    if (childrenToAssign.length === 0) {
+        toast({ title: "Nenhuma nova atribuição", description: "Selecione uma criança que ainda não tenha esta missão ativa."});
+        setIsProcessing(false);
+        return;
+    }
+
+    for (const child of childrenToAssign) {
+        const schedule = getScheduleForChild(child.id);
+        const finalTemplatePayload = { ...currentTemplate, ...schedule };
+        const instanceData = { templateId: currentTemplate.id, childId: child.id, ownerId: child.ownerId, familyId: child.familyId || null };
+        assignmentPromises.push(addMissionInstance(instanceData, finalTemplatePayload));
+        addedCount++;
+    }
+    
+    try {
+        await Promise.all(assignmentPromises);
+        toast({ title: "Missões Atribuídas!", description: `${addedCount} ${addedCount === 1 ? 'missão foi adicionada' : 'missões foram adicionadas'}.` });
+        onAssigned?.();
+        onOpenChange(false);
+    } catch(error) {
+        toast({ title: "Erro ao atribuir missões", variant: "destructive" });
+    } finally {
+        setIsProcessing(false);
+    }
+  };
+
   const renderChildList = (children: ChildProfile[]) => (
     children.map(child => {
-      const childId = `child-mission-${child.id}`;
+      const childId = `child-mission-assign-${child.id}`;
+      const scheduleSummary = formatRecurrenceSummary(getScheduleForChild(child.id));
+      const hasCustomSchedule = !!customSchedules[child.id];
+      const isAlreadyAssigned = existingAssignments[child.id];
+
       return (
-        <Label
+        <div
           key={child.id}
-          htmlFor={childId}
-          className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20 cursor-pointer"
+          className={`flex flex-col p-3 rounded-md border ${isAlreadyAssigned ? 'bg-muted/30 opacity-70' : 'bg-card'}`}
         >
-          <div className="flex items-center space-x-3">
-            <Avatar
-              className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
-              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-            >
-                <AvatarImage src={child.avatar} alt={child.name} />
-                <AvatarFallback className="text-sm" style={child.color ? { backgroundColor: child.color } : {}}>
-                  {getInitials(child.name)}
-                </AvatarFallback>
-            </Avatar>
-            <div>
-              <span className="font-medium">
-                {child.name}
-              </span>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                     <Checkbox
+                        id={childId}
+                        checked={isAlreadyAssigned || !!selectedChildren[child.id]}
+                        onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
+                        disabled={isAlreadyAssigned}
+                    />
+                    <Label htmlFor={childId} className="flex items-center gap-2 cursor-pointer">
+                        <Avatar
+                        className="h-8 w-8 ring-1 ring-offset-background ring-[var(--ring-color)]"
+                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                        >
+                            <AvatarImage src={child.avatar} alt={child.name} />
+                            <AvatarFallback className="text-xs" style={child.color ? { backgroundColor: child.color } : {}}>
+                            {getInitials(child.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                        <span className="font-medium">
+                            {child.name}
+                        </span>
+                    </Label>
+                </div>
+                {!isAlreadyAssigned && (
+                    <Button
+                        type="button"
+                        variant={hasCustomSchedule ? "secondary" : "ghost"}
+                        size="sm"
+                        onClick={() => setChildToCustomize(child)}
+                        className="h-8"
+                    >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        {hasCustomSchedule ? 'Editar Agenda' : 'Personalizar'}
+                    </Button>
+                )}
             </div>
-          </div>
-          <Checkbox
-              id={childId}
-              checked={!!selectedChildren[child.id]}
-              onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
-            />
-        </Label>
+            <p className="text-xs text-muted-foreground pl-10 pt-1">
+                {isAlreadyAssigned ? "Já possui esta missão ativa." : scheduleSummary}
+            </p>
+        </div>
       )
     })
   );
@@ -316,11 +384,10 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const renderAssignToChildren = () => (
     <>
       <div className="space-y-2">
-          <Label className="font-semibold">Selecione os Heróis</Label>
           {isLoading ? (
-              <div className="flex items-center justify-center h-24">
+              <div className="flex items-center justify-center h-40">
                   <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                  <p>Carregando...</p>
+                  <p>Carregando crianças...</p>
               </div>
               ) : eligibleChildren.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground text-sm">
@@ -328,7 +395,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                   Nenhum Mini Herói encontrado para atribuição.
               </div>
               ) : (
-              <ScrollArea className="h-[16.25rem] mt-2 pr-3">
+              <ScrollArea className="h-64 mt-2 pr-3">
                   <div className="space-y-3">
                       {familyChildren.length > 0 && (
                           <div className="space-y-2">
@@ -347,26 +414,31 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
               </ScrollArea>
           )}
       </div>
-      <Separator/>
     </>
   );
-
-  const getEditTitle = () => {
-    if (!instanceToEdit) return "Editar Agendamento";
-    const child = eligibleChildren.find(c => c.id === instanceToEdit.childId);
-    return `Editar Missão para ${child?.name || 'o Herói'}`;
-  }
 
   const getEditDescription = () => {
     switch(editMode) {
       case 'single': return 'Você está editando apenas esta ocorrência da missão. Todas as outras permanecerão inalteradas.';
       case 'forward': return 'Você está editando esta e todas as futuras ocorrências da missão.';
-      case 'all':
-      default:
-        return 'Você está editando todas as ocorrências (passadas e futuras) desta missão para este herói.';
+      case 'all': default: return 'Você está editando todas as ocorrências (passadas e futuras) desta missão para este herói.';
     }
-  }
+  };
 
+  const getDialogTitle = () => {
+    if (isEditInstanceMode) {
+        return `Editar Missão para ${eligibleChildren.find(c => c.id === instanceToEdit?.childId)?.name || 'o Herói'}`;
+    }
+    return 'Atribuir Missão';
+  };
+  
+  const getDialogDescription = () => {
+      if (isEditInstanceMode) {
+          return getEditDescription();
+      }
+      return `Selecione os heróis e personalize o agendamento para a missão "${currentTemplate?.title}".`;
+  }
+  
   if (!isOpen) return null;
 
   return (
@@ -375,42 +447,47 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
             {isEditInstanceMode ? <Edit className="h-6 w-6 text-primary" /> : <ListChecks className="h-6 w-6 text-primary" />}
-            {isEditInstanceMode ? getEditTitle() : "Atribuir Missão"}
+            {getDialogTitle()}
           </DialogTitle>
           <DialogDescription>
-            {isEditInstanceMode 
-              ? getEditDescription()
-              : `Selecione os heróis e configure o agendamento para a missão "${currentTemplate?.title}".`
-            }
+            {getDialogDescription()}
           </DialogDescription>
         </DialogHeader>
 
-        <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                {!isEditInstanceMode && renderAssignToChildren()}
-                
-                <div className="space-y-2">
-                    <Label className="font-semibold">Opções de Agendamento</Label>
-                     <p className="text-xs text-muted-foreground">
-                        Ajuste as datas para esta atribuição. As configurações do catálogo serão usadas como padrão.
-                    </p>
-                    <RecurrenceControl />
-                </div>
-                
-                <DialogFooter className="pt-4">
-                    <DialogClose asChild>
-                        <Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button>
-                    </DialogClose>
-                    <Button 
-                        type="submit"
-                        disabled={isProcessing || isLoading}
-                    >
+        {isEditInstanceMode ? (
+            <Form {...editForm}>
+                <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4 pt-4">
+                     <RecurrenceControl />
+                     <DialogFooter>
+                        <DialogClose asChild><Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button></DialogClose>
+                        <Button type="submit" disabled={isProcessing}>
+                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
+                            Salvar Agendamento
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </Form>
+        ) : (
+            <div className="space-y-4 pt-4">
+                {renderAssignToChildren()}
+                <DialogFooter>
+                    <DialogClose asChild><Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button></DialogClose>
+                    <Button onClick={handleAssignSubmit} disabled={isProcessing || isLoading}>
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-                        Salvar Alterações
+                        Confirmar Atribuições
                     </Button>
                 </DialogFooter>
-            </form>
-        </Form>
+            </div>
+        )}
+        
+        {childToCustomize && (
+            <CustomizeScheduleDialog 
+                child={childToCustomize}
+                initialSchedule={getScheduleForChild(childToCustomize.id)}
+                onSave={(schedule) => handleSaveCustomization(childToCustomize.id, schedule)}
+                onCancel={() => setChildToCustomize(null)}
+            />
+        )}
       </DialogContent>
     </Dialog>
   );
