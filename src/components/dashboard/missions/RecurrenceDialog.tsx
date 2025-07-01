@@ -36,6 +36,29 @@ interface RecurrenceDialogProps {
 
 type EndCondition = 'never' | 'on' | 'after';
 
+// Helper to safely get a JS Date object from various possible inputs
+const getInitialEndDate = (rule: RecurrenceRule | null | undefined): Date | undefined => {
+    if (!rule || !rule.endDate) return undefined;
+    
+    const endDateValue = rule.endDate as any;
+    
+    // Already a valid JS Date
+    if (endDateValue instanceof Date && isValid(endDateValue)) {
+        return endDateValue;
+    }
+    // Firestore Timestamp
+    if (typeof endDateValue.toDate === 'function') {
+        return endDateValue.toDate();
+    }
+    // Plain object from form state that mimics a Timestamp
+    if (typeof endDateValue === 'object' && 'seconds' in endDateValue && 'nanoseconds' in endDateValue) {
+      const date = new Timestamp(endDateValue.seconds, endDateValue.nanoseconds).toDate();
+      if (isValid(date)) return date;
+    }
+
+    return undefined;
+};
+
 export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: RecurrenceDialogProps) {
   const [freq, setFreq] = useState<RecurrenceFrequency>(initialRule?.freq || 'WEEKLY');
   const [interval, setInterval] = useState<number>(initialRule?.interval || 1);
@@ -45,7 +68,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
     if (initialRule?.count) return 'after';
     return 'never';
   });
-  const [endDate, setEndDate] = useState<Date | undefined>(initialRule?.endDate?.toDate() ?? (initialRule?.endDate instanceof Date ? initialRule.endDate : undefined));
+  const [endDate, setEndDate] = useState<Date | undefined>(getInitialEndDate(initialRule));
   const [count, setCount] = useState<number>(initialRule?.count || 1);
 
   useEffect(() => {
@@ -53,7 +76,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
       setFreq(initialRule?.freq || 'WEEKLY');
       setInterval(initialRule?.interval || 1);
       setByDay(initialRule?.byDay || []);
-      setEndDate(initialRule?.endDate?.toDate() ?? (initialRule?.endDate instanceof Date ? initialRule.endDate : undefined));
+      setEndDate(getInitialEndDate(initialRule));
       setCount(initialRule?.count || 1);
       if (initialRule?.endDate) setEndCondition('on');
       else if (initialRule?.count) setEndCondition('after');
