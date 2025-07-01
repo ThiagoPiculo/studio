@@ -31,7 +31,7 @@ import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 
 
-type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
+type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
 type SortByType = 'child' | 'missionName';
 type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
 
@@ -59,7 +59,7 @@ export default function AgendaPage() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('week');
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('workweek');
   const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>('all');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<SortByType>('child');
@@ -157,6 +157,10 @@ export default function AgendaPage() {
         start = startOfDay(currentDate);
         end = startOfDay(addDays(currentDate, 2));
         break;
+      case 'workweek':
+        start = startOfWeek(currentDate, { weekStartsOn });
+        end = addDays(start, 4); // Monday to Friday
+        break;
       case 'week':
         start = startOfWeek(currentDate, { weekStartsOn });
         end = endOfWeek(currentDate, { weekStartsOn });
@@ -215,7 +219,7 @@ export default function AgendaPage() {
   }, [viewInterval, missionInstances, selectedChildrenIds, allChildrenSelected, timePeriodFilter]);
 
   const handlePrev = () => {
-    const dateChanges = { day: 1, '3days': 3, week: 7, month: 0 };
+    const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
     if (dateRangeFilter === 'month') {
         setCurrentDate(subMonths(currentDate, 1));
     } else {
@@ -224,7 +228,7 @@ export default function AgendaPage() {
   };
 
   const handleNext = () => {
-    const dateChanges = { day: 1, '3days': 3, week: 7, month: 0 };
+    const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
     if (dateRangeFilter === 'month') {
         setCurrentDate(addMonths(currentDate, 1));
     } else {
@@ -382,7 +386,7 @@ export default function AgendaPage() {
             })}
           </ul>
         );
-      } else { // This is for 'week' view
+      } else { // This is for 'week' or 'workweek' view
         const sortedEvents = [...events].sort((a, b) => {
             if (sortBy === 'child') {
                 const childA = childrenMap.get(a.data.childId)?.name || '';
@@ -447,6 +451,7 @@ export default function AgendaPage() {
         day: 'grid-cols-1',
         '3days': 'grid-cols-1 lg:grid-cols-3',
         week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7',
+        workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
     };
   
     return (
@@ -655,6 +660,7 @@ export default function AgendaPage() {
                       <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
                           <ToggleGroupItem value="day" aria-label="Ver dia">Dia</ToggleGroupItem>
                           <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
+                          <ToggleGroupItem value="workweek" aria-label="Ver semana útil">Semana Útil</ToggleGroupItem>
                           <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
                           <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
                       </ToggleGroup>
