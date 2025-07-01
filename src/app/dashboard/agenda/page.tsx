@@ -368,13 +368,16 @@ export default function AgendaPage() {
                             {childEvents.map(event => {
                                 const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                                 const isCompleted = isMissionCompletedForDate(event.data, day);
+                                const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                                const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                                 return(
                                 <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
                                     <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                       <PopoverTrigger asChild>
-                                          <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                          <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
                                               {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
-                                              {event.title}
+                                              <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
+                                              <span>{event.title}</span>
                                           </button>
                                       </PopoverTrigger>
                                       <PopoverContent className="w-auto p-2">
@@ -427,14 +430,17 @@ export default function AgendaPage() {
               if (!child) return null;
               const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
               const isCompleted = isMissionCompletedForDate(event.data, day);
+              const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+              const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
               return (
                   <li key={event.data.id} className="text-sm flex items-start gap-2">
                       <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
                       <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                           <PopoverTrigger asChild>
-                              <button disabled={isProcessingAction === event.data.id} className={cn("text-left text-foreground leading-snug hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                              <button disabled={isProcessingAction === event.data.id} className={cn("text-left text-foreground leading-snug hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
                                   {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                  {event.title}
+                                  <span className="font-semibold text-foreground/80 mr-1.5">{formattedTime}</span>
+                                  <span>{event.title}</span>
                               </button>
                           </PopoverTrigger>
                           <PopoverContent className="w-auto p-2">
@@ -576,14 +582,17 @@ export default function AgendaPage() {
                         if (!child) return null;
                         const popoverId = `${event.data.id}-${dateKey}`;
                         const isCompleted = isMissionCompletedForDate(event.data, day);
+                        const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                        const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
                               <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                   <PopoverTrigger asChild>
-                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                          {event.title}
+                                          <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
+                                          <span className="flex-1">{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-2">
