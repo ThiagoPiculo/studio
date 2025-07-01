@@ -45,7 +45,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
     if (initialRule?.count) return 'after';
     return 'never';
   });
-  const [endDate, setEndDate] = useState<Date | undefined>(initialRule?.endDate?.toDate());
+  const [endDate, setEndDate] = useState<Date | undefined>(initialRule?.endDate?.toDate() ?? (initialRule?.endDate instanceof Date ? initialRule.endDate : undefined));
   const [count, setCount] = useState<number>(initialRule?.count || 1);
 
   useEffect(() => {
@@ -53,7 +53,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
       setFreq(initialRule?.freq || 'WEEKLY');
       setInterval(initialRule?.interval || 1);
       setByDay(initialRule?.byDay || []);
-      setEndDate(initialRule?.endDate?.toDate());
+      setEndDate(initialRule?.endDate?.toDate() ?? (initialRule?.endDate instanceof Date ? initialRule.endDate : undefined));
       setCount(initialRule?.count || 1);
       if (initialRule?.endDate) setEndCondition('on');
       else if (initialRule?.count) setEndCondition('after');
@@ -64,7 +64,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
   const handleSave = () => {
     const finalRule: RecurrenceRule = {
       freq,
-      interval: Math.max(1, interval),
+      interval: Math.max(1, interval || 1),
     };
 
     if (freq === 'WEEKLY') {
@@ -72,7 +72,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
     }
 
     if (endCondition === 'on' && endDate) {
-      finalRule.endDate = Timestamp.fromDate(endDate);
+      finalRule.endDate = endDate as any; // Keep as Date object for form context
       finalRule.count = null;
     } else if (endCondition === 'after' && count > 0) {
       finalRule.count = count;

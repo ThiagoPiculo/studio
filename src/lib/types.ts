@@ -72,16 +72,16 @@ export const missionCategories = [
 export type MissionCategory = typeof missionCategories[number]['id'];
 export type MissionCategoryDetails = typeof missionCategories[number];
 
-export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
+export const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
+  SU: { long: 'Domingo', short: 'Dom' },
   MO: { long: 'Segunda-feira', short: 'Seg' },
   TU: { long: 'Terça-feira', short: 'Ter' },
   WE: { long: 'Quarta-feira', short: 'Qua' },
   TH: { long: 'Quinta-feira', short: 'Qui' },
   FR: { long: 'Sexta-feira', short: 'Sex' },
   SA: { long: 'Sábado', short: 'Sáb' },
-  SU: { long: 'Domingo', short: 'Dom' },
 };
 
 export type RecurrenceFrequency = 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY';
@@ -127,13 +127,14 @@ export interface MissionInstance {
   status: 'pending' | 'completed' | 'expired';
   assignedAt: Timestamp;
   completedAt?: Timestamp; // Now marks the FINAL completion time
-  dueDate?: Timestamp;
+  dueDate?: Timestamp | null;
   updatedAt: Timestamp;
   startDate?: Timestamp | null;
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
   completedDates?: Timestamp[]; // Array of completion timestamps
+  exceptionDates?: Timestamp[]; // Dates this recurrence should be skipped
 }
 
 

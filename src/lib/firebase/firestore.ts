@@ -21,9 +21,9 @@ import {
   increment,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule } from '@/lib/types';
 import { heroColors } from '../hero-colors';
-import { startOfDay, isSameDay } from 'date-fns';
+import { startOfDay, isSameDay, subDays } from 'date-fns';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -692,8 +692,8 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates'>,
-  templateSnapshot: MissionTemplate
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates' | 'exceptionDates'>,
+  templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
   const now = serverTimestamp() as Timestamp;
@@ -718,6 +718,7 @@ export const addMissionInstance = async (
     recurrenceRule: templateSnapshot.recurrenceRule || null,
     completionCount: 0,
     completedDates: [],
+    exceptionDates: [],
   };
   await setDoc(newInstanceRef, newInstance);
   return newInstance;
@@ -969,4 +970,86 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
 
+export const updateRecurringMissionInstance = async (
+  originalInstanceId: string,
+  editMode: 'single' | 'forward' | 'all',
+  newSchedule: {
+    isRecurring: boolean;
+    startDate: Date | null;
+    dueDate: Date | null;
+    recurrenceRule: RecurrenceRule | null;
+  },
+  occurrenceDate: Date
+): Promise<void> => {
+  const originalInstanceRef = doc(db, 'missionInstances', originalInstanceId);
+
+  return runTransaction(db, async (transaction) => {
+    const originalInstanceSnap = await transaction.get(originalInstanceRef);
+    if (!originalInstanceSnap.exists()) {
+      throw new Error("Missão original não encontrada para edição.");
+    }
+    const originalInstance = { id: originalInstanceSnap.id, ...originalInstanceSnap.data() } as MissionInstance;
     
+    const scheduleUpdates = {
+      isRecurring: newSchedule.isRecurring,
+      startDate: newSchedule.startDate ? Timestamp.fromDate(newSchedule.startDate) : null,
+      dueDate: newSchedule.dueDate ? Timestamp.fromDate(newSchedule.dueDate) : null,
+      recurrenceRule: newSchedule.recurrenceRule ? {
+        ...newSchedule.recurrenceRule,
+        endDate: newSchedule.recurrenceRule.endDate ? Timestamp.fromMillis((newSchedule.recurrenceRule.endDate as any).getTime()) : null,
+      } : null,
+      updatedAt: serverTimestamp(),
+    };
+
+    if (editMode === 'all') {
+      transaction.update(originalInstanceRef, scheduleUpdates);
+    } 
+    else if (editMode === 'single') {
+      transaction.update(originalInstanceRef, {
+        exceptionDates: arrayUnion(Timestamp.fromDate(startOfDay(occurrenceDate)))
+      });
+      
+      const newInstanceRef = doc(collection(db, 'missionInstances'));
+      const newOneOffInstanceData = {
+          ...originalInstance,
+          isRecurring: false,
+          recurrenceRule: null,
+          startDate: null,
+          dueDate: scheduleUpdates.dueDate || Timestamp.fromDate(occurrenceDate),
+          assignedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          status: 'pending',
+          completionCount: 0,
+          completedDates: [],
+          exceptionDates: [],
+      };
+      delete newOneOffInstanceData.id; // Firestore generates ID
+      transaction.set(newInstanceRef, newOneOffInstanceData);
+
+    } 
+    else if (editMode === 'forward') {
+      const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
+      const newEndDate = subDays(startOfDay(occurrenceDate), 1);
+      transaction.update(originalInstanceRef, {
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+      });
+      
+      const newInstanceRef = doc(collection(db, 'missionInstances'));
+      const newForwardInstanceData = {
+          ...originalInstance,
+          startDate: Timestamp.fromDate(occurrenceDate),
+          assignedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          status: 'pending',
+          completionCount: 0,
+          completedDates: [],
+          exceptionDates: [],
+          isRecurring: scheduleUpdates.isRecurring,
+          dueDate: scheduleUpdates.dueDate,
+          recurrenceRule: scheduleUpdates.recurrenceRule,
+      };
+      delete newForwardInstanceData.id;
+      transaction.set(newInstanceRef, newForwardInstanceData);
+    }
+  });
+};

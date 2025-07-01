@@ -30,6 +30,10 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
     const checkDate = startOfDay(date);
     const weekStartsOn = 1; // Monday
 
+    if (mission.isRecurring && mission.exceptionDates?.some(ts => isSameDay(ts.toDate(), checkDate))) {
+        return false;
+    }
+
     if (!mission.isRecurring) {
         // For non-recurring missions, it's scheduled if the checkDate is the same as the dueDate.
         return !!mission.dueDate && isSameDay(mission.dueDate.toDate(), checkDate);
@@ -131,7 +135,7 @@ type RecurrenceSummarySource = {
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   startDate?: Timestamp | null;
-  dueDate?: Timestamp;
+  dueDate?: Timestamp | null;
 };
 
 // Helper function to check if two arrays of strings have the same elements, regardless of order.
@@ -207,5 +211,3 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
 
   return summary;
 }
-
-    

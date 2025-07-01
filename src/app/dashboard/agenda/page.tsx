@@ -24,10 +24,12 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Loader2 } from 'lucide-react';
+import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
+
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
 type SortByType = 'child' | 'missionName';
@@ -63,12 +65,15 @@ export default function AgendaPage() {
   const [sortBy, setSortBy] = useState<SortByType>('child');
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
 
-  // New states for the add mission flow
+  // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
-  const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
-  const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [isFetchingTemplate, setIsFetchingTemplate] = useState(false);
+  const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
+  
+  const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
+  const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
+  const [editMode, setEditMode] = useState<EditRecurrenceMode>('all');
+  const [isEditRecurrenceDialogOpen, setIsEditRecurrenceDialogOpen] = useState(false);
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
 
@@ -108,44 +113,34 @@ export default function AgendaPage() {
   
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
-    setInstanceToEdit(null); // Clear any instance being edited
+    setInstanceToEdit(null);
+    setEditMode('all');
     setIsAssignDialogOpen(true);
   };
 
-  const handleEditClick = async (instance: MissionInstance) => {
-    setActivePopover(null);
-    if (!instance.templateId) {
-        toast({
-            title: "Missão Antiga",
-            description: "Esta missão não pode ser editada diretamente daqui. Gerencie-a pela página do herói.",
-            variant: "default"
-        });
-        return;
-    }
-    setIsFetchingTemplate(true);
-    try {
-        const template = await getMissionTemplateById(instance.templateId);
-        if (template) {
-            setTemplateToAssign(template);
-            setInstanceToEdit(instance);
-            setIsAssignDialogOpen(true);
-        } else {
-            toast({
-                title: "Erro",
-                description: "Não foi possível encontrar o modelo desta missão para edição.",
-                variant: "destructive",
-            });
-        }
-    } catch (error) {
-        console.error("Error fetching template for edit:", error);
-        toast({ title: "Erro ao carregar", variant: "destructive" });
-    } finally {
-        setIsFetchingTemplate(false);
-    }
+  const handleEditClick = async (instance: MissionInstance, date: Date) => {
+      setActivePopover(null);
+      if (instance.isRecurring) {
+          setInstanceToEdit(instance);
+          setOccurrenceDate(date);
+          setIsEditRecurrenceDialogOpen(true);
+      } else {
+          // For non-recurring missions, we just edit this single instance.
+          setInstanceToEdit(instance);
+          setOccurrenceDate(date);
+          setEditMode('single'); // Or 'all', as it's the only one
+          setIsAssignDialogOpen(true);
+      }
   };
-  
+
+  const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
+      setEditMode(mode);
+      setIsEditRecurrenceDialogOpen(false);
+      setIsAssignDialogOpen(true);
+  };
+
   const handleAssignmentComplete = () => {
-    fetchAgendaData(); // Refetch data after assignment
+    fetchAgendaData(); // Refetch data after assignment/edit
   };
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
@@ -192,7 +187,7 @@ export default function AgendaPage() {
     });
 
     instancesToProcess.forEach(instance => {
-      const eventTimeSource = instance.isRecurring ? instance.startDate?.toDate() : instance.dueDate?.toDate();
+      const eventTimeSource = instance.startDate?.toDate() || instance.dueDate?.toDate();
       if (!eventTimeSource) return;
 
       const period = getPeriodForDate(eventTimeSource);
@@ -363,7 +358,7 @@ export default function AgendaPage() {
                                             ) : (
                                               <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                             )}
-                                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           </div>
                                       </PopoverContent>
                                   </Popover>
@@ -411,7 +406,7 @@ export default function AgendaPage() {
                                 ) : (
                                   <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                 )}
-                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                               </div>
                           </PopoverContent>
                       </Popover>
@@ -557,7 +552,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                       </div>
                                   </PopoverContent>
                               </Popover>
@@ -701,22 +696,30 @@ export default function AgendaPage() {
         onMissionSelected={handleMissionSelected}
       />
       
-      {templateToAssign && (
-        <AssignMissionDialog
-          template={templateToAssign}
-          instanceToEdit={instanceToEdit}
-          isOpen={isAssignDialogOpen}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) {
-              setTemplateToAssign(null);
-              setInstanceToEdit(null);
-            }
-            setIsAssignDialogOpen(isOpen);
-          }}
-          onAssigned={handleAssignmentComplete}
-        />
-      )}
+      <AssignMissionDialog
+        template={templateToAssign}
+        instanceToEdit={instanceToEdit}
+        occurrenceDate={occurrenceDate}
+        editMode={editMode}
+        isOpen={isAssignDialogOpen}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setTemplateToAssign(null);
+            setInstanceToEdit(null);
+            setOccurrenceDate(null);
+          }
+          setIsAssignDialogOpen(isOpen);
+        }}
+        onAssigned={handleAssignmentComplete}
+      />
+      
+      <EditRecurrenceDialog
+        isOpen={isEditRecurrenceDialogOpen}
+        onOpenChange={setIsEditRecurrenceDialogOpen}
+        onSelect={handleRecurrenceEditSelect}
+        missionInstance={instanceToEdit}
+        occurrenceDate={occurrenceDate}
+      />
     </>
   );
 }
-
