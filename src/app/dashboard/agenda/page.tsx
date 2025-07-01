@@ -224,13 +224,13 @@ export default function AgendaPage() {
     setCurrentDate(new Date());
   };
   
-  const handleCompleteMission = async (missionInstance: MissionInstance) => {
+  const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await completeMissionInstance(missionInstance.id);
+        await completeMissionInstance(missionInstance.id, date);
         toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
-        fetchAgendaData(); // Refetch to get updated XP/Level/Star data and mission state
+        fetchAgendaData();
     } catch (error) {
         console.error("Error completing mission:", error);
         toast({ title: 'Erro ao concluir', variant: 'destructive' });
@@ -239,11 +239,11 @@ export default function AgendaPage() {
     }
   };
 
-  const handleUndoCompletion = async (missionInstance: MissionInstance) => {
+  const handleUndoCompletion = async (missionInstance: MissionInstance, date: Date) => {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await reactivateMissionInstance(missionInstance.id);
+        await reactivateMissionInstance(missionInstance.id, date);
         toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
         fetchAgendaData();
     } catch (error: any) {
@@ -381,9 +381,9 @@ export default function AgendaPage() {
                                                               <PopoverContent className="w-auto p-2">
                                                                   <div className="flex flex-col gap-1">
                                                                      {isCompleted ? (
-                                                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                                                       ) : (
-                                                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                                                       )}
                                                                       <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                                                   </div>
@@ -425,9 +425,9 @@ export default function AgendaPage() {
                                                  <PopoverContent className="w-auto p-2">
                                                       <div className="flex flex-col gap-1">
                                                          {isCompleted ? (
-                                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                                           ) : (
-                                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                                           )}
                                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                                       </div>
@@ -505,9 +505,9 @@ export default function AgendaPage() {
                                   <PopoverContent className="w-auto p-2">
                                       <div className="flex flex-col gap-1">
                                           {isCompleted ? (
-                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                       </div>

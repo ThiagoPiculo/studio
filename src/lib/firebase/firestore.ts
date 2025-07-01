@@ -23,6 +23,7 @@ import {
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance } from '@/lib/types';
 import { heroColors } from '../hero-colors';
+import { startOfDay, isSameDay } from 'date-fns';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -802,7 +803,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     await batch.commit();
 };
 
-export const completeMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {
+export const completeMissionInstance = async (missionInstanceId: string, completionDate?: Date): Promise<ChildProfile> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
     const calculateXpForNextLevel = (level: number): number => {
@@ -815,11 +816,17 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
 
     return await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
-        if (!missionSnap.exists() || missionSnap.data().status !== 'pending') {
+        if (!missionSnap.exists()) {
             throw new Error("Missão não encontrada ou já foi concluída.");
         }
         
         const missionData = missionSnap.data() as MissionInstance;
+        
+        // Prevent re-completing for the same day
+        if (completionDate && (missionData.completedDates || []).some(ts => isSameDay(ts.toDate(), completionDate))) {
+            throw new Error("Esta missão já foi concluída para esta data.");
+        }
+
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
@@ -851,16 +858,16 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
         transaction.update(childRef, finalChildUpdates);
 
         // --- Mission Instance Update ---
-        const clientCompletionTimestamp = Timestamp.now();
+        const completionTimestamp = completionDate ? Timestamp.fromDate(completionDate) : Timestamp.now();
         const serverUpdateTime = serverTimestamp();
 
         if (!missionData.isRecurring) {
             transaction.update(missionRef, {
                 status: 'completed',
-                completedAt: clientCompletionTimestamp,
+                completedAt: completionTimestamp,
                 updatedAt: serverUpdateTime,
                 completionCount: 1,
-                completedDates: arrayUnion(clientCompletionTimestamp)
+                completedDates: arrayUnion(completionTimestamp)
             });
         } else {
             const newCompletionCount = (missionData.completionCount || 0) + 1;
@@ -868,13 +875,13 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
 
             const missionUpdates: any = {
                 completionCount: newCompletionCount,
-                completedDates: arrayUnion(clientCompletionTimestamp),
+                completedDates: arrayUnion(completionTimestamp),
                 updatedAt: serverUpdateTime,
             };
 
             if (isFullyCompleted) {
                 missionUpdates.status = 'completed';
-                missionUpdates.completedAt = clientCompletionTimestamp;
+                missionUpdates.completedAt = completionTimestamp;
             }
             transaction.update(missionRef, missionUpdates);
         }
@@ -887,7 +894,7 @@ export const completeMissionInstance = async (missionInstanceId: string): Promis
     });
 };
 
-export const reactivateMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {
+export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
 
     return await runTransaction(db, async (transaction) => {
@@ -897,55 +904,54 @@ export const reactivateMissionInstance = async (missionInstanceId: string): Prom
         }
         
         const missionData = missionSnap.data() as MissionInstance;
-
-        // A mission can only be reactivated if it's 'completed' or if it's 'pending' but has been completed at least once.
-        const currentCompletionCount = missionData.completionCount || 0;
-        if (missionData.status === 'pending' && currentCompletionCount === 0) {
-            throw new Error("A missão já está pendente e não pode ser reativada.");
+        const completionDates = missionData.completedDates || [];
+        
+        if (completionDates.length === 0) {
+            throw new Error("A missão não possui conclusões para serem desfeitas.");
         }
         
+        let completionToRemove: Timestamp | null = null;
+        if (dateToUndo) {
+            completionToRemove = completionDates.find(ts => isSameDay(ts.toDate(), dateToUndo)) || null;
+            if (!completionToRemove) {
+                throw new Error("Não há conclusão para esta data para ser desfeita.");
+            }
+        } else {
+            // If no date is given (from older flows like manage page), remove the most recent one.
+            completionToRemove = completionDates.sort((a, b) => b.toMillis() - a.toMillis())[0];
+        }
+
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
         if (!childSnap.exists()) {
             throw new Error("Perfil da criança associado à missão não foi encontrado.");
         }
-        
         const childData = childSnap.data() as ChildProfile;
 
-        // Revert rewards, but only if it was actually completed at least once.
-        // This handles old data where completionCount might be undefined for a completed mission.
-        const wasEverCompleted = missionData.status === 'completed' || currentCompletionCount > 0;
-        const finalChildUpdates: any = { updatedAt: serverTimestamp() };
-
-        if (wasEverCompleted) {
-             finalChildUpdates.stars = Math.max(0, childData.stars - missionData.starsReward);
-             finalChildUpdates.xp = Math.max(0, childData.xp - missionData.xpReward);
-             // We will not de-level the child for simplicity.
-        }
+        // Revert rewards for the child
+        const finalChildUpdates: any = { 
+            stars: Math.max(0, childData.stars - missionData.starsReward),
+            xp: Math.max(0, childData.xp - missionData.xpReward),
+            updatedAt: serverTimestamp() 
+        };
+        // We will not de-level the child for simplicity.
         transaction.update(childRef, finalChildUpdates);
         
         // Revert mission status
-        const lastCompletionDate = missionData.completedDates && missionData.completedDates.length > 0
-            ? missionData.completedDates[missionData.completedDates.length - 1]
-            : null;
-
         const missionUpdates: any = {
             status: 'pending',
-            completedAt: null,
+            completedAt: null, // Always reset final completion when undoing
             updatedAt: serverTimestamp(),
-            // Use a direct set instead of increment(-1) for safety with legacy data
-            completionCount: Math.max(0, currentCompletionCount - 1),
+            completionCount: Math.max(0, (missionData.completionCount || 0) - 1),
+            completedDates: arrayRemove(completionToRemove),
         };
-        if (lastCompletionDate) {
-            missionUpdates.completedDates = arrayRemove(lastCompletionDate);
-        }
         
         transaction.update(missionRef, missionUpdates);
 
         return {
             ...childData,
-            ...{ stars: finalChildUpdates.stars ?? childData.stars, xp: finalChildUpdates.xp ?? childData.xp },
+            ...{ stars: finalChildUpdates.stars, xp: finalChildUpdates.xp },
             id: childSnap.id
         } as ChildProfile;
     });
@@ -962,3 +968,5 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
   const childDoc = querySnapshot.docs[0];
   return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
 };
+
+    
