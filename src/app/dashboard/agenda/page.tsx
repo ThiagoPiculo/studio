@@ -33,7 +33,6 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
-type SortByType = 'child' | 'missionName';
 type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
 
 interface CalendarEvent {
@@ -63,7 +62,6 @@ export default function AgendaPage() {
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('workweek');
   const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>('all');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
-  const [sortBy, setSortBy] = useState<SortByType>('child');
   const [allChildrenSelected, setAllChildrenSelected] = useState(true);
 
   // States for the add/edit mission flow
@@ -354,7 +352,11 @@ export default function AgendaPage() {
             {sortedChildIds.map(childId => {
               const child = childrenMap.get(childId);
               if (!child) return null;
-              const childEvents = eventsByChild[childId].sort((a,b) => a.title.localeCompare(b.title));
+              const childEvents = eventsByChild[childId].sort((a,b) => {
+                  const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+                  const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+                  return timeA.getTime() - timeB.getTime();
+              });
 
               return (
                 <li key={childId} className="flex items-start gap-3">
@@ -415,13 +417,14 @@ export default function AgendaPage() {
         );
       } else { // This is for 'week' or 'workweek' view
         const sortedEvents = [...events].sort((a, b) => {
-            if (sortBy === 'child') {
-                const childA = childrenMap.get(a.data.childId)?.name || '';
-                const childB = childrenMap.get(b.data.childId)?.name || '';
-                const nameComparison = childA.localeCompare(childB);
-                if (nameComparison !== 0) return nameComparison;
-            }
-            return a.title.localeCompare(b.title);
+            const childA = childrenMap.get(a.data.childId)?.name || '';
+            const childB = childrenMap.get(b.data.childId)?.name || '';
+            const nameComparison = childA.localeCompare(childB);
+            if (nameComparison !== 0) return nameComparison;
+
+            const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+            const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+            return timeA.getTime() - timeB.getTime();
         });
         return (
           <ul className="space-y-1">
@@ -557,12 +560,14 @@ export default function AgendaPage() {
               const dayEvents = [...dayEventsByPeriod.morning, ...dayEventsByPeriod.afternoon, ...dayEventsByPeriod.night];
               
               const sortedEvents = [...dayEvents].sort((a, b) => {
-                if (sortBy === 'child') {
-                  const childA = childrenMap.get(a.data.childId)?.name || '';
-                  const childB = childrenMap.get(b.data.childId)?.name || '';
-                  return childA.localeCompare(childB);
-                }
-                return a.title.localeCompare(b.title);
+                const childA = childrenMap.get(a.data.childId)?.name || '';
+                const childB = childrenMap.get(b.data.childId)?.name || '';
+                const nameComparison = childA.localeCompare(childB);
+                if (nameComparison !== 0) return nameComparison;
+
+                const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+                const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+                return timeA.getTime() - timeB.getTime();
               });
               
               return (
@@ -712,28 +717,6 @@ export default function AgendaPage() {
                         <ToggleGroupItem value="afternoon" aria-label="Ver tarde" className="gap-1.5"><CloudSun className="h-4 w-4" />Tarde</ToggleGroupItem>
                         <ToggleGroupItem value="night" aria-label="Ver noite" className="gap-1.5"><Moon className="h-4 w-4" />Noite</ToggleGroupItem>
                     </ToggleGroup>
-                  </div>
-                  <div className="sm:col-span-2">
-                    <Label htmlFor="sort-by" className="text-sm font-semibold text-muted-foreground">Organizar por</Label>
-                    <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortByType)}>
-                        <SelectTrigger id="sort-by" className="w-full sm:w-48 mt-1">
-                            <SelectValue placeholder="Organizar por..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="child">
-                              <div className="flex items-center gap-2">
-                                <User className="h-4 w-4" />
-                                <span>Herói</span>
-                              </div>
-                            </SelectItem>
-                            <SelectItem value="missionName">
-                              <div className="flex items-center gap-2">
-                                <ListOrdered className="h-4 w-4" />
-                                <span>Missão do heroi</span>
-                              </div>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
                   </div>
               </div>
             </div>
