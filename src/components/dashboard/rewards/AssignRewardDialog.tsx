@@ -27,6 +27,7 @@ import {
 import { Loader2, Users, AlertCircle, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 interface AssignRewardDialogProps {
   template: RewardTemplate | null;
@@ -153,40 +154,51 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
   };
   
   const renderChildList = (children: ChildProfile[]) => (
-     children.map(child => (
-      <div 
-        key={child.id} 
-        className={`flex items-center justify-between p-3 rounded-md border ${existingAssignments[child.id] ? 'bg-muted/30 opacity-70' : 'bg-card hover:bg-muted/20'}`}
-      >
-        <div className="flex items-center space-x-3">
-          <Avatar
-            className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
-            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-          >
-              <AvatarImage src={child.avatar} alt={child.name} />
-              <AvatarFallback className="text-sm" style={child.color ? { backgroundColor: child.color } : {}}>
-                {getInitials(child.name)}
-              </AvatarFallback>
-          </Avatar>
-          <div>
-            <Label htmlFor={`child-reward-${child.id}`} className={`font-medium ${existingAssignments[child.id] ? 'text-muted-foreground' : 'cursor-pointer'}`}>
-              {child.name}
-            </Label>
-            {existingAssignments[child.id] && (
-              <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
+    children.map(child => {
+        const isExisting = existingAssignments[child.id];
+        const childId = `child-reward-${child.id}`;
+
+        return (
+            <Label
+            key={child.id}
+            htmlFor={isExisting ? undefined : childId}
+            className={cn(
+                "flex items-center justify-between p-3 rounded-md border",
+                isExisting
+                ? 'bg-muted/30 opacity-70 cursor-not-allowed'
+                : 'bg-card hover:bg-muted/20 cursor-pointer'
             )}
-          </div>
-        </div>
-        {!existingAssignments[child.id] && (
-          <Checkbox
-            id={`child-reward-${child.id}`}
-            checked={!!selectedChildren[child.id]}
-            onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
-          />
-        )}
-      </div>
-    ))
-  );
+            >
+            <div className="flex items-center space-x-3">
+                <Avatar
+                className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                >
+                    <AvatarImage src={child.avatar} alt={child.name} />
+                    <AvatarFallback className="text-sm" style={child.color ? { backgroundColor: child.color } : {}}>
+                    {getInitials(child.name)}
+                    </AvatarFallback>
+                </Avatar>
+                <div>
+                <span className={cn("font-medium", isExisting && 'text-muted-foreground')}>
+                    {child.name}
+                </span>
+                {isExisting && (
+                    <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
+                )}
+                </div>
+            </div>
+            {!isExisting && (
+                <Checkbox
+                id={childId}
+                checked={!!selectedChildren[child.id]}
+                onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
+                />
+            )}
+            </Label>
+        )
+    })
+);
 
   if (!template) return null;
 
@@ -214,8 +226,8 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (
-          <ScrollArea className="max-h-[50vh] mt-2 pr-3">
-              <div className="space-y-4">
+          <ScrollArea className="h-64 mt-2 pr-3">
+              <div className="space-y-3">
                   {familyChildren.length > 0 && (
                       <div className="space-y-2">
                           <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
