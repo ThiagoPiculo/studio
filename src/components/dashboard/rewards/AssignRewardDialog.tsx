@@ -98,7 +98,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             personal.push(child);
         }
     });
-    return { familyChildren: family, personalChildren: personal };
+    return { familyChildren: family.sort((a,b) => a.name.localeCompare(b.name)), personalChildren: personal.sort((a,b) => a.name.localeCompare(b.name)) };
   }, [eligibleChildren]);
 
   const familyName = useMemo(() => {
@@ -236,8 +236,8 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (
-          <ScrollArea className="max-h-40 mt-2 pr-3">
-              <div className="space-y-2">
+          <ScrollArea className="max-h-[248px] mt-2 pr-3">
+              <div className="space-y-3">
                   {familyChildren.length > 0 && (
                       <div className="space-y-2">
                           <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
