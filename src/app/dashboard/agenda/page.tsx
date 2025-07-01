@@ -4,12 +4,12 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById } from '@/lib/firebase/firestore';
-import { isMissionScheduledForDate } from '@/lib/calendar-utils';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
+import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +26,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Loader2 } from 'lucide-react';
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'month';
 type SortByType = 'child' | 'missionName';
@@ -46,6 +47,7 @@ export default function AgendaPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('week');
   const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
@@ -58,6 +60,8 @@ export default function AgendaPage() {
   const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isFetchingTemplate, setIsFetchingTemplate] = useState(false);
+  
+  const [activePopover, setActivePopover] = useState<string | null>(null);
 
   const fetchAgendaData = useCallback(async () => {
     if (!user) {
@@ -99,7 +103,8 @@ export default function AgendaPage() {
     setIsAssignDialogOpen(true);
   };
 
-  const handleMissionClick = async (instance: MissionInstance) => {
+  const handleEditClick = async (instance: MissionInstance) => {
+    setActivePopover(null);
     if (!instance.templateId) {
         toast({
             title: "Missão Antiga",
@@ -138,21 +143,28 @@ export default function AgendaPage() {
 
   const viewInterval = useMemo(() => {
     const weekStartsOn = 1; // Monday
+    let start, end;
     switch (dateRangeFilter) {
       case 'day':
-        return { start: startOfDay(currentDate), end: startOfDay(currentDate) };
+        start = startOfDay(currentDate);
+        end = startOfDay(currentDate);
+        break;
       case '3days':
-        return { start: startOfDay(currentDate), end: startOfDay(addDays(currentDate, 2)) };
+        start = startOfDay(currentDate);
+        end = startOfDay(addDays(currentDate, 2));
+        break;
       case 'week':
-        return { start: startOfWeek(currentDate, { weekStartsOn }), end: endOfWeek(currentDate, { weekStartsOn }) };
+        start = startOfWeek(currentDate, { weekStartsOn });
+        end = endOfWeek(currentDate, { weekStartsOn });
+        break;
       case 'month': {
         const monthStart = startOfMonth(currentDate);
-        return { 
-          start: startOfWeek(monthStart, { weekStartsOn }), 
-          end: endOfWeek(endOfMonth(currentDate), { weekStartsOn }) 
-        };
+        start = startOfWeek(monthStart, { weekStartsOn }); 
+        end = endOfWeek(endOfMonth(currentDate), { weekStartsOn });
+        break;
       }
     }
+    return { start, end };
   }, [currentDate, dateRangeFilter]);
 
   const events = useMemo(() => {
@@ -162,9 +174,8 @@ export default function AgendaPage() {
       ? missionInstances 
       : missionInstances.filter(inst => activeChildFilters.includes(inst.childId));
 
-    const { start, end } = viewInterval;
     const allEvents: CalendarEvent[] = [];
-    const daysInView = eachDayOfInterval({ start, end });
+    const daysInView = eachDayOfInterval(viewInterval);
 
     instancesToProcess.forEach(instance => {
       daysInView.forEach(day => {
@@ -212,6 +223,37 @@ export default function AgendaPage() {
   const handleToday = () => {
     setCurrentDate(new Date());
   };
+  
+  const handleCompleteMission = async (missionInstance: MissionInstance) => {
+    setIsProcessingAction(missionInstance.id);
+    setActivePopover(null);
+    try {
+        await completeMissionInstance(missionInstance.id);
+        toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
+        fetchAgendaData(); // Refetch to get updated XP/Level/Star data and mission state
+    } catch (error) {
+        console.error("Error completing mission:", error);
+        toast({ title: 'Erro ao concluir', variant: 'destructive' });
+    } finally {
+        setIsProcessingAction(null);
+    }
+  };
+
+  const handleUndoCompletion = async (missionInstance: MissionInstance) => {
+    setIsProcessingAction(missionInstance.id);
+    setActivePopover(null);
+    try {
+        await reactivateMissionInstance(missionInstance.id);
+        toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
+        fetchAgendaData();
+    } catch (error: any) {
+        console.error("Error undoing completion:", error);
+        toast({ title: 'Erro ao desfazer', description: error.message, variant: 'destructive' });
+    } finally {
+        setIsProcessingAction(null);
+    }
+  };
+
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
@@ -324,17 +366,32 @@ export default function AgendaPage() {
                                             <div className="flex-grow pt-0.5">
                                                 <p className="font-semibold text-sm leading-tight">{child.name}</p>
                                                 <ul className="mt-1 space-y-1">
-                                                    {childEvents.map(event => (
+                                                    {childEvents.map(event => {
+                                                      const popoverId = `${event.data.id}-${dateKey}`;
+                                                      const isCompleted = isMissionCompletedForDate(event.data, day);
+                                                      return(
                                                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug">
-                                                           <button
-                                                                onClick={() => handleMissionClick(event.data)}
-                                                                className="text-left hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
-                                                                disabled={isFetchingTemplate}
-                                                            >
-                                                                {event.title}
-                                                            </button>
+                                                           <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                                              <PopoverTrigger asChild>
+                                                                  <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                                                      {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
+                                                                      {event.title}
+                                                                  </button>
+                                                              </PopoverTrigger>
+                                                              <PopoverContent className="w-auto p-2">
+                                                                  <div className="flex flex-col gap-1">
+                                                                     {isCompleted ? (
+                                                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                                                      ) : (
+                                                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                                                      )}
+                                                                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                                                  </div>
+                                                              </PopoverContent>
+                                                          </Popover>
                                                         </li>
-                                                    ))}
+                                                      )
+                                                    })}
                                                 </ul>
                                             </div>
                                         </li>
@@ -353,16 +410,29 @@ export default function AgendaPage() {
                                 return sortedEvents.map(event => {
                                     const child = childrenMap.get(event.data.childId);
                                     if (!child) return null;
+                                    const popoverId = `${event.data.id}-${dateKey}`;
+                                    const isCompleted = isMissionCompletedForDate(event.data, day);
                                     return (
                                         <li key={event.data.id} className="text-sm flex items-start gap-2">
                                             <div className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ backgroundColor: child.color }}></div>
-                                            <button
-                                                onClick={() => handleMissionClick(event.data)}
-                                                className="text-left text-foreground leading-snug hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
-                                                disabled={isFetchingTemplate}
-                                            >
-                                                {event.title}
-                                            </button>
+                                             <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                                <PopoverTrigger asChild>
+                                                    <button disabled={isProcessingAction === event.data.id} className={cn("text-left text-foreground leading-snug hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                                        {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
+                                                        {event.title}
+                                                    </button>
+                                                </PopoverTrigger>
+                                                 <PopoverContent className="w-auto p-2">
+                                                      <div className="flex flex-col gap-1">
+                                                         {isCompleted ? (
+                                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                                          ) : (
+                                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                                          )}
+                                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                                      </div>
+                                                  </PopoverContent>
+                                            </Popover>
                                         </li>
                                     );
                                 });
@@ -420,16 +490,29 @@ export default function AgendaPage() {
                       {sortedEvents.map(event => {
                         const child = childrenMap.get(event.data.childId);
                         if (!child) return null;
+                        const popoverId = `${event.data.id}-${dateKey}`;
+                        const isCompleted = isMissionCompletedForDate(event.data, day);
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <button
-                                onClick={() => handleMissionClick(event.data)}
-                                className="text-left leading-tight hover:text-primary hover:underline disabled:opacity-50 disabled:no-underline disabled:cursor-wait"
-                                disabled={isFetchingTemplate}
-                              >
-                                {event.title}
-                              </button>
+                              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                  <PopoverTrigger asChild>
+                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait", isCompleted && "line-through text-muted-foreground/70")}>
+                                          {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
+                                          {event.title}
+                                      </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2">
+                                      <div className="flex flex-col gap-1">
+                                          {isCompleted ? (
+                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                          ) : (
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                          )}
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                      </div>
+                                  </PopoverContent>
+                              </Popover>
                           </li>
                         )
                       })}
@@ -579,3 +662,5 @@ export default function AgendaPage() {
     </>
   );
 }
+
+    

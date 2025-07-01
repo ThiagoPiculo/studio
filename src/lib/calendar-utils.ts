@@ -90,6 +90,13 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
     }
 }
 
+export function isMissionCompletedForDate(mission: MissionInstance, date: Date): boolean {
+    if (!mission.completedDates || mission.completedDates.length === 0) {
+        return false;
+    }
+    return mission.completedDates.some(ts => isSameDay(ts.toDate(), date));
+}
+
 
 export function getTodaysMissions(
   instances: MissionInstance[],
@@ -200,3 +207,5 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
 
   return summary;
 }
+
+    
