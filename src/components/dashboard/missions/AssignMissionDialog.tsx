@@ -22,7 +22,8 @@ import type { MissionTemplate, ChildProfile, MissionInstance, RecurrenceRule } f
 import { 
   getChildProfilesForAttribution, 
   addMissionInstance,
-  getActiveChildMissionInstancesByTemplateAndChild 
+  getActiveChildMissionInstancesByTemplateAndChild,
+  deleteMissionInstancesByTemplateAndChild,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, ListChecks } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -124,11 +125,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
             return { childId: child.id, hasActiveInstance: activeInstances.length > 0 };
           });
           const assignmentsResults = await Promise.all(assignmentsPromises);
+          
           const newExistingAssignments: Record<string, boolean> = {};
+          const initialSelection: Record<string, boolean> = {};
+
           assignmentsResults.forEach(res => {
             newExistingAssignments[res.childId] = res.hasActiveInstance;
+            initialSelection[res.childId] = res.hasActiveInstance;
           });
+          
           setExistingAssignments(newExistingAssignments);
+          setSelectedChildren(initialSelection);
 
         } catch (error) {
           console.error("Error fetching children or assignments:", error);
@@ -186,20 +193,13 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
 
   const handleAssign = async (values: AssignmentFormValues) => {
     if (!template || !user) return;
-
-    const childrenToAssign = Object.entries(selectedChildren)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([childId, _]) => childId);
-
-    if (childrenToAssign.length === 0) {
-      toast({ title: "Nenhum Herói Selecionado", description: "Por favor, escolha pelo menos um Mini Herói para a missão.", variant: "default" });
-      return;
-    }
-
+    
     setIsAssigning(true);
-    let assignedCount = 0;
-    try {
-      const modifiedTemplate = {
+    const promises: Promise<any>[] = [];
+    let addedCount = 0;
+    let removedCount = 0;
+
+    const modifiedTemplate = {
         ...template,
         isRecurring: values.isRecurring,
         startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
@@ -208,52 +208,68 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
             ...values.recurrenceRule,
             endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
         } : null,
-      }
+    };
 
-      const assignmentPromises = childrenToAssign.map(childId => {
-        const child = eligibleChildren.find(c => c.id === childId);
-        if (!child) return Promise.reject(`Child with id ${childId} not found`);
+    for (const child of eligibleChildren) {
+        const childId = child.id;
+        const hadAssignmentInitially = !!existingAssignments[childId];
+        const hasAssignmentNow = !!selectedChildren[childId];
 
-        const instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'> = {
-          templateId: template.id,
-          childId: child.id,
-          ownerId: child.ownerId,
-          familyId: child.familyId || null,
-        };
-        return addMissionInstance(instanceData, modifiedTemplate);
-      });
+        if (hadAssignmentInitially && !hasAssignmentNow) {
+            // Remove assignment
+            promises.push(deleteMissionInstancesByTemplateAndChild(template.id, childId));
+            removedCount++;
+        } else if (!hadAssignmentInitially && hasAssignmentNow) {
+            // Add assignment
+            const instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates' | 'startDate'> = {
+                templateId: template.id,
+                childId: child.id,
+                ownerId: child.ownerId,
+                familyId: child.familyId || null,
+            };
+            promises.push(addMissionInstance(instanceData, modifiedTemplate));
+            addedCount++;
+        }
+    }
+    
+    if (promises.length === 0) {
+        toast({ title: "Nenhuma alteração detectada", description: "Nenhuma atribuição foi adicionada ou removida." });
+        onOpenChange(false);
+        setIsAssigning(false);
+        return;
+    }
 
-      await Promise.all(assignmentPromises);
-      assignedCount = assignmentPromises.length;
-      toast({
-        title: "Missões Lançadas!",
-        description: `A missão foi atribuída para ${assignedCount} ${assignedCount === 1 ? "Mini Herói" : "Mini Herois"}.`,
-      });
-      onAssigned?.();
-      onOpenChange(false);
+    try {
+        await Promise.all(promises);
+
+        let toastDescription = "";
+        if (addedCount > 0) toastDescription += `${addedCount} ${addedCount === 1 ? 'missão foi atribuída' : 'missões foram atribuídas'}. `;
+        if (removedCount > 0) toastDescription += `${removedCount} ${removedCount === 1 ? 'atribuição foi removida' : 'atribuições foram removidas'}.`;
+
+        toast({
+            title: "Atribuições Atualizadas!",
+            description: toastDescription.trim(),
+        });
+        onAssigned?.();
+        onOpenChange(false);
     } catch (error) {
-      console.error("Error assigning missions:", error);
-      toast({ title: "Erro ao Atribuir", description: "Não foi possível atribuir as missões. Tente novamente.", variant: "destructive" });
+        console.error("Error updating assignments:", error);
+        toast({ title: "Erro ao Atualizar", description: "Não foi possível salvar as alterações. Tente novamente.", variant: "destructive" });
     } finally {
-      setIsAssigning(false);
+        setIsAssigning(false);
     }
   };
   
   const renderChildList = (children: ChildProfile[]) => (
     children.map(child => {
-      const isExisting = existingAssignments[child.id];
+      const isCurrentlyAssigned = existingAssignments[child.id];
       const childId = `child-mission-${child.id}`;
 
       return (
         <Label
           key={child.id}
-          htmlFor={isExisting ? undefined : childId}
-          className={cn(
-              "flex items-center justify-between p-3 rounded-md border",
-              isExisting 
-              ? 'bg-muted/30 opacity-70 cursor-not-allowed' 
-              : 'bg-card hover:bg-muted/20 cursor-pointer'
-          )}
+          htmlFor={childId}
+          className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20 cursor-pointer"
         >
           <div className="flex items-center space-x-3">
             <Avatar
@@ -266,21 +282,19 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                 </AvatarFallback>
             </Avatar>
             <div>
-              <span className={cn("font-medium", isExisting && 'text-muted-foreground')}>
+              <span className="font-medium">
                 {child.name}
               </span>
-              {isExisting && (
+              {isCurrentlyAssigned && (
                 <p className="text-xs text-accent">Já possui esta missão ativa.</p>
               )}
             </div>
           </div>
-          {!isExisting && (
-            <Checkbox
+          <Checkbox
               id={childId}
               checked={!!selectedChildren[child.id]}
               onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
             />
-          )}
         </Label>
       )
     })
@@ -293,10 +307,10 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            <ListChecks className="h-6 w-6 text-primary" /> Atribuir Missão
+            <ListChecks className="h-6 w-6 text-primary" /> Gerenciar Missão
           </DialogTitle>
           <DialogDescription>
-            Atribua a missão "<span className="font-semibold text-primary">{template.title}</span>" aos Mini Herois.
+            Atribua ou remova a missão "<span className="font-semibold text-primary">{template.title}</span>" para os Mini Herois.
           </DialogDescription>
         </DialogHeader>
 
@@ -315,7 +329,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                             Nenhum Mini Herói encontrado para atribuição.
                         </div>
                         ) : (
-                        <ScrollArea className="h-64 mt-2 pr-3">
+                        <ScrollArea className="max-h-64 mt-2 pr-3">
                             <div className="space-y-3">
                                 {familyChildren.length > 0 && (
                                     <div className="space-y-2">
@@ -353,10 +367,10 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
                     </DialogClose>
                     <Button 
                         type="submit"
-                        disabled={isAssigning || isLoadingChildren || eligibleChildren.length === 0 || Object.values(selectedChildren).every(v => !v)}
+                        disabled={isAssigning || isLoadingChildren}
                     >
                         {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-                        Confirmar Atribuição
+                        Confirmar Alterações
                     </Button>
                 </DialogFooter>
             </form>

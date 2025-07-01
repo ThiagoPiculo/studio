@@ -611,6 +611,23 @@ export const deleteChildRewardInstance = async (instanceId: string): Promise<voi
   await deleteDoc(instanceRef);
 };
 
+export const deleteChildRewardInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<void> => {
+    const q = query(
+        collection(db, 'childRewardInstances'),
+        where('templateId', '==', templateId),
+        where('childId', '==', childId)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return; // Nothing to delete
+    }
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
+};
+
 
 // --- Mission Templates (Catálogo de Missões) ---
 export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
@@ -735,6 +752,23 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
 export const deleteMissionInstance = async (instanceId: string): Promise<void> => {
     const instanceRef = doc(db, 'missionInstances', instanceId);
     await deleteDoc(instanceRef);
+};
+
+export const deleteMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<void> => {
+    const q = query(
+        collection(db, 'missionInstances'),
+        where('templateId', '==', templateId),
+        where('childId', '==', childId)
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return; // Nothing to delete
+    }
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+    await batch.commit();
 };
 
 export const completeMissionInstance = async (missionInstanceId: string): Promise<ChildProfile> => {

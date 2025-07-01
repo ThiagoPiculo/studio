@@ -22,7 +22,8 @@ import type { RewardTemplate, ChildProfile, ChildRewardInstance } from '@/lib/ty
 import { 
   getChildProfilesForAttribution, 
   addChildRewardInstance,
-  getActiveChildRewardInstancesByTemplateAndChild 
+  getActiveChildRewardInstancesByTemplateAndChild,
+  deleteChildRewardInstancesByTemplateAndChild,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -64,11 +65,17 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             return { childId: child.id, hasActiveInstance: activeInstances.length > 0 };
           });
           const assignmentsResults = await Promise.all(assignmentsPromises);
+          
           const newExistingAssignments: Record<string, boolean> = {};
+          const initialSelection: Record<string, boolean> = {};
+
           assignmentsResults.forEach(res => {
             newExistingAssignments[res.childId] = res.hasActiveInstance;
+            initialSelection[res.childId] = res.hasActiveInstance;
           });
+          
           setExistingAssignments(newExistingAssignments);
+          setSelectedChildren(initialSelection);
 
         } catch (error) {
           console.error("Error fetching children or assignments:", error);
@@ -112,62 +119,71 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
   const handleAssign = async () => {
     if (!template || !user) return;
 
-    const childrenToAssign = Object.entries(selectedChildren)
-      .filter(([_, isSelected]) => isSelected)
-      .map(([childId, _]) => childId);
+    setIsAssigning(true);
+    const promises: Promise<any>[] = [];
+    let addedCount = 0;
+    let removedCount = 0;
 
-    if (childrenToAssign.length === 0) {
-      toast({ title: "Nenhum Herói Selecionado", description: "Por favor, escolha pelo menos um Mini Herói para receber a recompensa.", variant: "default" });
-      return;
+    for (const child of eligibleChildren) {
+        const childId = child.id;
+        const hadAssignmentInitially = !!existingAssignments[childId];
+        const hasAssignmentNow = !!selectedChildren[childId];
+
+        if (hadAssignmentInitially && !hasAssignmentNow) {
+            // Remove assignment
+            promises.push(deleteChildRewardInstancesByTemplateAndChild(template.id, childId));
+            removedCount++;
+        } else if (!hadAssignmentInitially && hasAssignmentNow) {
+            // Add assignment
+            const instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'> = {
+              templateId: template.id,
+              childId: child.id,
+              ownerId: child.ownerId,
+              familyId: child.familyId || null,
+            };
+            promises.push(addChildRewardInstance(instanceData, template));
+            addedCount++;
+        }
     }
 
-    setIsAssigning(true);
-    let assignedCount = 0;
+    if (promises.length === 0) {
+        toast({ title: "Nenhuma alteração detectada", description: "Nenhuma recompensa foi adicionada ou removida." });
+        onOpenChange(false);
+        setIsAssigning(false);
+        return;
+    }
+
     try {
-      const assignmentPromises = childrenToAssign.map(childId => {
-        const child = eligibleChildren.find(c => c.id === childId);
-        if (!child) return Promise.reject(`Child with id ${childId} not found`);
+        await Promise.all(promises);
 
-        const instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'> = {
-          templateId: template.id,
-          childId: child.id,
-          ownerId: child.ownerId,
-          familyId: child.familyId || null,
-        };
-        return addChildRewardInstance(instanceData, template);
-      });
+        let toastDescription = "";
+        if (addedCount > 0) toastDescription += `${addedCount} ${addedCount === 1 ? 'recompensa foi atribuída' : 'recompensas foram atribuídas'}. `;
+        if (removedCount > 0) toastDescription += `${removedCount} ${removedCount === 1 ? 'atribuição foi removida' : 'atribuições foram removidas'}.`;
 
-      await Promise.all(assignmentPromises);
-      assignedCount = assignmentPromises.length;
-      toast({
-        title: "Recompensas Disponíveis!",
-        description: `A recompensa foi atribuída para ${assignedCount} ${assignedCount === 1 ? "Mini Herói" : "Mini Herois"}.`,
-      });
-      onAssigned?.();
-      onOpenChange(false);
+        toast({
+            title: "Recompensas Atualizadas!",
+            description: toastDescription.trim(),
+        });
+        onAssigned?.();
+        onOpenChange(false);
     } catch (error) {
-      console.error("Error assigning rewards:", error);
-      toast({ title: "Erro ao Atribuir", description: "Não foi possível atribuir as recompensas. Tente novamente.", variant: "destructive" });
+        console.error("Error updating reward assignments:", error);
+        toast({ title: "Erro ao Atualizar", description: "Não foi possível salvar as alterações. Tente novamente.", variant: "destructive" });
     } finally {
-      setIsAssigning(false);
+        setIsAssigning(false);
     }
   };
   
   const renderChildList = (children: ChildProfile[]) => (
     children.map(child => {
-        const isExisting = existingAssignments[child.id];
+        const isCurrentlyAssigned = existingAssignments[child.id];
         const childId = `child-reward-${child.id}`;
 
         return (
             <Label
-            key={child.id}
-            htmlFor={isExisting ? undefined : childId}
-            className={cn(
-                "flex items-center justify-between p-3 rounded-md border",
-                isExisting
-                ? 'bg-muted/30 opacity-70 cursor-not-allowed'
-                : 'bg-card hover:bg-muted/20 cursor-pointer'
-            )}
+              key={child.id}
+              htmlFor={childId}
+              className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20 cursor-pointer"
             >
             <div className="flex items-center space-x-3">
                 <Avatar
@@ -180,21 +196,19 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
                     </AvatarFallback>
                 </Avatar>
                 <div>
-                <span className={cn("font-medium", isExisting && 'text-muted-foreground')}>
-                    {child.name}
-                </span>
-                {isExisting && (
-                    <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
-                )}
+                  <span className="font-medium">
+                      {child.name}
+                  </span>
+                  {isCurrentlyAssigned && (
+                      <p className="text-xs text-accent">Já possui esta recompensa ativa.</p>
+                  )}
                 </div>
             </div>
-            {!isExisting && (
-                <Checkbox
-                id={childId}
-                checked={!!selectedChildren[child.id]}
-                onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
-                />
-            )}
+            <Checkbox
+              id={childId}
+              checked={!!selectedChildren[child.id]}
+              onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
+            />
             </Label>
         )
     })
@@ -207,10 +221,10 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
       <DialogContent className="sm:max-w-[480px]">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            <Gift className="h-6 w-6 text-primary" /> Atribuir Recompensa
+            <Gift className="h-6 w-6 text-primary" /> Gerenciar Recompensa
           </DialogTitle>
           <DialogDescription>
-            Atribua a recompensa "<span className="font-semibold text-primary">{template.title}</span>" ({template.starsCost} estrelas) aos Mini Herois abaixo.
+            Atribua ou remova a recompensa "<span className="font-semibold text-primary">{template.title}</span>" ({template.starsCost} estrelas).
           </DialogDescription>
         </DialogHeader>
 
@@ -226,7 +240,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <br/>Adicione crianças ou verifique o contexto familiar.
           </div>
         ) : (
-          <ScrollArea className="h-64 mt-2 pr-3">
+          <ScrollArea className="max-h-64 mt-2 pr-3">
               <div className="space-y-3">
                   {familyChildren.length > 0 && (
                       <div className="space-y-2">
@@ -253,10 +267,10 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
           </DialogClose>
           <Button 
             onClick={handleAssign} 
-            disabled={isAssigning || isLoadingChildren || eligibleChildren.length === 0 || Object.values(selectedChildren).every(v => !v)}
+            disabled={isAssigning || isLoadingChildren}
           >
             {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
-            Confirmar Atribuição
+            Confirmar Alterações
           </Button>
         </DialogFooter>
       </DialogContent>
