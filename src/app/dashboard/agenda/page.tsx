@@ -145,8 +145,13 @@ export default function AgendaPage() {
         return { start: startOfDay(currentDate), end: startOfDay(addDays(currentDate, 2)) };
       case 'week':
         return { start: startOfWeek(currentDate, { weekStartsOn }), end: endOfWeek(currentDate, { weekStartsOn }) };
-      case 'month':
-        return { start: startOfMonth(currentDate), end: endOfMonth(currentDate) };
+      case 'month': {
+        const monthStart = startOfMonth(currentDate);
+        return { 
+          start: startOfWeek(monthStart, { weekStartsOn }), 
+          end: endOfWeek(endOfMonth(currentDate), { weekStartsOn }) 
+        };
+      }
     }
   }, [currentDate, dateRangeFilter]);
 
@@ -376,9 +381,7 @@ export default function AgendaPage() {
   };
 
   const renderCalendarView = () => {
-    const monthStart = startOfMonth(currentDate);
-    const startDate = startOfWeek(monthStart, { weekStartsOn: 1 });
-    const endDate = endOfWeek(endOfMonth(currentDate), { weekStartsOn: 1 });
+    const { start: startDate, end: endDate } = viewInterval;
     const days = eachDayOfInterval({ start: startDate, end: endDate });
     const dayHeaders = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
 
