@@ -479,20 +479,20 @@ export default function AgendaPage() {
                     <Card className="shadow-sm h-full">
                       <CardContent className="p-4 space-y-4">
                         {dayEvents.morning.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
+                          <div className="space-y-2 bg-yellow-500/5 p-3 rounded-lg">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
                             {renderEventListForPeriod(dayEvents.morning, day)}
                           </div>
                         )}
                         {dayEvents.afternoon.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
+                          <div className="space-y-2 bg-orange-500/5 p-3 rounded-lg">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
                             {renderEventListForPeriod(dayEvents.afternoon, day)}
                           </div>
                         )}
                         {dayEvents.night.length > 0 && (
-                          <div className="space-y-2">
-                            <h4 className="flex items-center gap-2 text-base font-semibold text-muted-foreground"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
+                          <div className="space-y-2 bg-indigo-500/5 p-3 rounded-lg">
+                            <h4 className="flex items-center gap-2 text-base font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
                             {renderEventListForPeriod(dayEvents.night, day)}
                           </div>
                         )}
@@ -739,5 +739,3 @@ export default function AgendaPage() {
     </>
   );
 }
-
-    
