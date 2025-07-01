@@ -291,6 +291,30 @@ export default function AgendaPage() {
     }
   };
 
+  const handleAssignToOthersClick = async (instance: MissionInstance) => {
+    setActivePopover(null);
+    setIsProcessingAction(instance.id);
+    try {
+      const template = await getMissionTemplateById(instance.templateId);
+      if (template) {
+        setTemplateToAssign(template);
+        setInstanceToEdit(null); // Ensure we are not in instance edit mode
+        setIsAssignDialogOpen(true);
+      } else {
+        toast({
+          title: "Erro",
+          description: "Não foi possível encontrar o modelo desta missão para atribuir a outros.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching template for reassignment:", error);
+      toast({ title: "Erro ao buscar missão", variant: "destructive" });
+    } finally {
+      setIsProcessingAction(null);
+    }
+  };
+
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
@@ -389,6 +413,7 @@ export default function AgendaPage() {
                                             ) : (
                                               <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                             )}
+                                            <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
                                             <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                             <Separator />
                                             <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
@@ -453,6 +478,7 @@ export default function AgendaPage() {
                                 ) : (
                                   <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                 )}
+                                <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
                                 <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                 <Separator/>
                                 <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
@@ -607,6 +633,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
+                                          <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
                                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
