@@ -38,6 +38,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const starCostFilterOptions = [
   { value: 'all', label: 'Qualquer Custo' },
@@ -69,8 +71,8 @@ export default function RewardTemplatesHubPage() {
   const [starsCostFilter, setStarsCostFilter] = useState<string>('all'); 
   const [searchFilter, setSearchFilter] = useState<string>('');
   const [selectedChildIdForFilter, setSelectedChildIdForFilter] = useState<string>('all');
-  const [eligibleChildrenForFilter, setEligibleChildrenForFilter] = useState<ChildProfile[]>([]);
-  const [childRewardInstancesInContext, setChildRewardInstancesInContext] = useState<ChildRewardInstance[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoadingFilterData, setIsLoadingFilterData] = useState(false);
 
 
@@ -95,8 +97,8 @@ export default function RewardTemplatesHubPage() {
         ]);
 
         setRewardTemplates(fetchedTemplates);
-        setEligibleChildrenForFilter(fetchedChildren);
-        setChildRewardInstancesInContext(fetchedInstances);
+        setChildren(fetchedChildren);
+        setRewardInstances(fetchedInstances);
 
       } catch (err) {
         console.error("Error fetching data for rewards page:", err);
@@ -114,6 +116,30 @@ export default function RewardTemplatesHubPage() {
 
     fetchAllData();
   }, [user, currentContext, toast]);
+
+  const childrenMap = useMemo(() => {
+    return new Map(children.map(child => [child.id, child]));
+  }, [children]);
+
+  const assignmentsByTemplate = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    const activeInstances = rewardInstances.filter(i => i.status === 'active');
+    activeInstances.forEach(instance => {
+        const child = childrenMap.get(instance.childId);
+        if (child) {
+            const existing = assignments.get(instance.templateId) || [];
+            if (!existing.find(c => c.id === child.id)) {
+                assignments.set(instance.templateId, [...existing, child]);
+            }
+        }
+    });
+    return assignments;
+  }, [rewardInstances, childrenMap]);
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "MH"; 
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
 
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
@@ -183,7 +209,7 @@ export default function RewardTemplatesHubPage() {
       );
     }
     if (selectedChildIdForFilter !== 'all') {
-      const assignedTemplateIds = childRewardInstancesInContext
+      const assignedTemplateIds = rewardInstances
         .filter(instance => instance.childId === selectedChildIdForFilter)
         .map(instance => instance.templateId);
       const uniqueAssignedTemplateIds = [...new Set(assignedTemplateIds)];
@@ -191,7 +217,7 @@ export default function RewardTemplatesHubPage() {
     }
 
     return tempTemplates;
-  }, [rewardTemplates, statusFilter, categoryFilter, starsCostFilter, searchFilter, selectedChildIdForFilter, childRewardInstancesInContext]);
+  }, [rewardTemplates, statusFilter, categoryFilter, starsCostFilter, searchFilter, selectedChildIdForFilter, rewardInstances]);
 
 
   return (
@@ -241,7 +267,7 @@ export default function RewardTemplatesHubPage() {
                     <Select 
                       value={selectedChildIdForFilter} 
                       onValueChange={setSelectedChildIdForFilter}
-                      disabled={isLoadingFilterData || eligibleChildrenForFilter.length === 0}
+                      disabled={isLoadingFilterData || children.length === 0}
                     >
                       <SelectTrigger id="child-filter" className="w-full">
                         <div className="flex items-center gap-2">
@@ -251,13 +277,13 @@ export default function RewardTemplatesHubPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Qualquer Mini Heroi</SelectItem>
-                        {eligibleChildrenForFilter.map(child => (
+                        {children.map(child => (
                           <SelectItem key={child.id} value={child.id}>Atribuídas a {child.name}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                       {isLoadingFilterData && <p className="text-xs text-muted-foreground mt-1">Carregando lista de crianças...</p>}
-                      {!isLoadingFilterData && eligibleChildrenForFilter.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma criança no contexto atual.</p>}
+                      {!isLoadingFilterData && children.length === 0 && <p className="text-xs text-muted-foreground mt-1">Nenhuma criança no contexto atual.</p>}
                   </div>
                   <div>
                     <Label htmlFor="category-filter" className="text-sm font-medium text-muted-foreground mb-1 block">Por Categoria:</Label>
@@ -354,6 +380,7 @@ export default function RewardTemplatesHubPage() {
               {filteredTemplates.map((template) => {
                 const categoryDetails = getCategoryDetails(template.category);
                 const CategoryIconComponent = categoryDetails?.icon;
+                const assignedChildren = assignmentsByTemplate.get(template.id) || [];
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
@@ -386,11 +413,45 @@ export default function RewardTemplatesHubPage() {
                         <Gift className="h-5 w-5 mr-1.5 text-gray-500" />
                         Tipo: {template.isMaterial ? "Material" : "Não Material"}
                       </div>
-                      {template.updatedAt && (
-                        <p className="text-xs text-muted-foreground">
-                          Atualizado em: {new Date((template.updatedAt as any).seconds * 1000).toLocaleDateString()}
-                        </p>
-                      )}
+                      <div className="border-t pt-3 mt-3">
+                            <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
+                            {assignedChildren.length > 0 ? (
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex -space-x-2">
+                                        {assignedChildren.slice(0, 5).map(child => (
+                                            <TooltipProvider key={child.id} delayDuration={100}>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Avatar
+                                                          className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                        >
+                                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                                            <AvatarFallback
+                                                              className="text-xs"
+                                                              style={{ backgroundColor: child.color }}
+                                                            >
+                                                                {getInitials(child.name)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{child.name}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ))}
+                                    </div>
+                                    {assignedChildren.length > 5 && (
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            + {assignedChildren.length - 5}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Nenhum herói com esta recompensa ativa.</p>
+                            )}
+                        </div>
                     </CardContent>
                     <CardFooter className="flex-col space-y-2 pt-4">
                       <Button 
@@ -459,7 +520,7 @@ export default function RewardTemplatesHubPage() {
               const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
               setIsLoadingFilterData(true);
               getChildRewardInstancesForContext(user.uid, familyIdToQuery)
-                .then(setChildRewardInstancesInContext)
+                .then(setRewardInstances)
                 .catch(err => console.error("Error refetching instances after assignment:", err))
                 .finally(() => setIsLoadingFilterData(false));
             }
