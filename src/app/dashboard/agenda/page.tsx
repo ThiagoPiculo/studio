@@ -773,7 +773,7 @@ export default function AgendaPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Excluir esta ocorrência?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
+                    Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" para o Mini Herói <strong>{instanceToExclude ? childrenMap.get(instanceToExclude.instance.childId)?.name : ''}</strong> apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
                     <br />
                     As outras repetições não serão afetadas.
                 </AlertDialogDescription>
@@ -790,3 +790,5 @@ export default function AgendaPage() {
     </>
   );
 }
+
+    
