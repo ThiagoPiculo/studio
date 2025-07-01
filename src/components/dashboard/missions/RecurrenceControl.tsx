@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -148,6 +147,9 @@ export function RecurrenceControl() {
             <FormItem>
               <FormLabel>Data de Início da Recorrência</FormLabel>
               <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
+              <FormDescription className="text-xs">
+                A hora aqui define o período (Manhã, Tarde, Noite) na agenda.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -177,7 +179,7 @@ export function RecurrenceControl() {
                   <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
                   <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
                    <FormDescription className="text-xs">
-                    Para missões únicas. Esta é a data de vencimento.
+                    Para missões únicas, esta é a data de vencimento. A hora define o período (Manhã, Tarde, Noite) na agenda.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
