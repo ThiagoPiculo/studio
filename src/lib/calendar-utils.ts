@@ -139,10 +139,21 @@ function formatToYyyyMmDd(date: Date): string {
 
 type RecurrenceSummarySource = {
   isRecurring?: boolean;
-  recurrenceRule?: RecurrenceRule | null;
-  startDate?: Timestamp | null;
-  dueDate?: Timestamp | null;
+  recurrenceRule?: (Omit<RecurrenceRule, 'endDate'> & { endDate?: Timestamp | Date | null }) | null;
+  startDate?: Timestamp | Date | null;
+  dueDate?: Timestamp | Date | null;
 };
+
+// Helper to safely get a JS Date object from various possible inputs
+const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | null => {
+    if (!dateInput) return null;
+    if (dateInput instanceof Date && isValid(dateInput)) return dateInput;
+    if (typeof (dateInput as any).toDate === 'function') {
+        const d = (dateInput as Timestamp).toDate();
+        if (isValid(d)) return d;
+    }
+    return null;
+}
 
 // Helper to check if two arrays of strings have the same elements, regardless of order.
 const haveSameElements = (arr1: string[], arr2: string[]): boolean => {
@@ -156,9 +167,9 @@ const haveSameElements = (arr1: string[], arr2: string[]): boolean => {
 
 export function formatRecurrenceSummary(mission: RecurrenceSummarySource): string {
   if (!mission.isRecurring || !mission.recurrenceRule) {
-    const date = (mission.dueDate || mission.startDate) as Timestamp | undefined | null;
+    const date = getDateObject(mission.dueDate || mission.startDate);
     if (date) {
-      return `Missão única em ${formatDateFns(date.toDate(), 'PPP', { locale: ptBR })}`;
+      return `Missão única em ${formatDateFns(date, 'PPP', { locale: ptBR })}`;
     }
     return "Missão única";
   }
@@ -209,9 +220,8 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
   }
 
   if (rule.endDate) {
-    // This can be a Firestore Timestamp or a JS Date object from a form.
-    const date = (rule.endDate as any).toDate ? (rule.endDate as Timestamp).toDate() : rule.endDate as Date;
-    if (isValid(date)) {
+    const date = getDateObject(rule.endDate);
+    if (date) {
         summary += `, até ${formatDateFns(date, 'dd/MM/yyyy')}`;
     }
   } else if (rule.count) {
