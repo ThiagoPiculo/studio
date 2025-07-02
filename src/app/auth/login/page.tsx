@@ -7,10 +7,10 @@ import Link from 'next/link';
 export default function LoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-md shadow-xl overflow-hidden">
+      <Card className="w-full max-w-md shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
         <CardHeader className="bg-gradient-to-br from-primary via-purple-600 to-accent text-center text-primary-foreground p-6">
-          <div className="mb-4 flex justify-center">
-            <Rocket className="h-16 w-16 text-primary-foreground animate-pulse" />
+          <div className="mb-4 flex justify-center group">
+            <Rocket className="h-16 w-16 text-primary-foreground filter drop-shadow-lg group-hover:scale-110 transition-transform" />
           </div>
           <CardTitle className="font-headline text-3xl">Que bom te ver de novo!</CardTitle>
           <CardDescription className="text-primary-foreground/90">Seus Mini Herois aguardam por novas missões!</CardDescription>

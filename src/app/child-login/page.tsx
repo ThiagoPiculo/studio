@@ -7,10 +7,10 @@ import Link from 'next/link';
 export default function ChildLoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/30 via-background to-accent/30 p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-sm overflow-hidden shadow-xl">
+      <Card className="w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
         <CardHeader className="bg-gradient-to-br from-primary via-purple-600 to-accent text-center text-primary-foreground p-6">
-          <div className="mb-4 flex justify-center">
-            <Sparkles className="h-16 w-16 animate-pulse" />
+          <div className="mb-4 flex justify-center group">
+            <Sparkles className="h-16 w-16 filter drop-shadow-lg group-hover:scale-110 transition-transform" />
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
           <CardDescription className="text-primary-foreground/90">
