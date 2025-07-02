@@ -2,20 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Crown, Heart, Star, Zap, Award, Sparkles, Rocket } from 'lucide-react';
-import Image from 'next/image';
-
-const FeatureCard = ({ icon: Icon, title, description }: { icon: React.ElementType, title: string, description: string }) => (
-    <Card className="shadow-clay rounded-2xl w-full text-center p-4 h-full">
-        <CardContent className="p-2 flex flex-col items-center justify-center gap-2">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shadow-clay mb-2">
-                <Icon className="h-7 w-7 text-primary filter drop-shadow-lg" />
-            </div>
-            <p className="font-semibold text-foreground">{title}</p>
-            <p className="text-xs text-muted-foreground">{description}</p>
-        </CardContent>
-    </Card>
-);
+import { Crown, Heart, Star, Award, Sparkles, Rocket } from 'lucide-react';
 
 const CornerIcon = ({ icon: Icon, className }: { icon: React.ElementType, className: string }) => (
     <div className={`absolute w-10 h-10 bg-card rounded-xl shadow-clay flex items-center justify-center ${className}`}>
@@ -33,8 +20,8 @@ export default function WelcomePage() {
                 <span className="font-headline text-2xl font-bold text-foreground">Mini Herois</span>
             </div>
             <nav>
-                <Link href="#" passHref>
-                    <Button variant="ghost">Sobre</Button>
+                <Link href="/auth/login" passHref>
+                    <Button variant="ghost">Entrar</Button>
                 </Link>
             </nav>
         </header>
@@ -55,8 +42,8 @@ export default function WelcomePage() {
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                 <CardHeader className="p-0 items-center mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
-                        <Crown className="h-9 w-9 text-primary filter drop-shadow-lg" />
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
+                        <Crown className="h-9 w-9 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
                     </div>
                     <CardTitle className="text-2xl font-semibold">Sou Responsável</CardTitle>
                 </CardHeader>
@@ -71,8 +58,8 @@ export default function WelcomePage() {
             </Card>
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                  <CardHeader className="p-0 items-center mb-4">
-                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
-                        <Heart className="h-9 w-9 text-primary filter drop-shadow-lg" />
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
+                        <Heart className="h-9 w-9 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
                     </div>
                     <CardTitle className="text-2xl font-semibold">Sou um Mini Herói</CardTitle>
                 </CardHeader>
@@ -86,17 +73,6 @@ export default function WelcomePage() {
                 </Link>
             </Card>
         </div>
-
-        <section className="w-full max-w-5xl mx-auto p-8 mb-16">
-          <h2 className="text-3xl font-bold text-center mb-10 text-foreground">Sistema de Gamificação Completo</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-            <FeatureCard icon={Star} title="Estrelas" description="Moeda do app para resgatar recompensas." />
-            <FeatureCard icon={Zap} title="XP & Níveis" description="Progressão e títulos de herói." />
-            <FeatureCard icon={Award} title="Conquistas" description="+150 badges colecionáveis." />
-            <FeatureCard icon={Sparkles} title="Sonhos" description="Metas de longo prazo." />
-          </div>
-        </section>
-
       </main>
 
       <footer className="mt-16 text-center">

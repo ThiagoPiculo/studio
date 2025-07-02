@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -6,65 +7,67 @@
   :root {
     --background: 250 60% 97%;
     --foreground: 250 40% 25%;
-
     --card: 250 60% 99%;
     --card-foreground: 250 40% 25%;
-
     --popover: 250 60% 100%;
     --popover-foreground: 250 40% 25%;
-
     --primary: 250 65% 60%;
     --primary-foreground: 250 60% 98%;
-
     --secondary: 250 60% 90%;
     --secondary-foreground: 250 40% 25%;
-
     --muted: 250 50% 95%;
     --muted-foreground: 250 30% 45%;
-
     --accent: 270 70% 65%;
     --accent-foreground: 250 60% 98%;
-
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 250 50% 90%;
     --input: 250 50% 96%;
     --ring: 250 65% 60%;
-
     --radius: 1.25rem;
+
+    /* Sidebar Variables */
+    --sidebar-background: 250 60% 99%;
+    --sidebar-foreground: 250 40% 25%;
+    --sidebar-border: 250 50% 90%;
+    --sidebar-ring: 250 65% 60%;
+    --sidebar-accent: 250 60% 90%;
+    --sidebar-accent-foreground: 250 40% 25%;
+    --sidebar-primary: 250 65% 60%;
+    --sidebar-primary-foreground: 250 60% 98%;
   }
 
   .dark {
     --background: 250 20% 12%;
     --foreground: 250 60% 95%;
-
     --card: 250 20% 15%;
     --card-foreground: 250 60% 95%;
-
     --popover: 250 20% 15%;
     --popover-foreground: 250 60% 95%;
-
     --primary: 250 65% 65%;
     --primary-foreground: 250 20% 10%;
-    
     --secondary: 250 50% 45%;
     --secondary-foreground: 250 60% 95%;
-
     --muted: 250 25% 30%;
     --muted-foreground: 250 50% 80%;
-
     --accent: 270 70% 70%;
     --accent-foreground: 250 20% 10%;
-
     --destructive: 0 63% 45%;
     --destructive-foreground: 0 0% 98%;
-
     --border: 250 30% 35%;
     --input: 250 30% 28%;
     --ring: 250 65% 65%;
-    
     --radius: 1.25rem;
+    
+    /* Dark Sidebar Variables */
+    --sidebar-background: 250 20% 15%;
+    --sidebar-foreground: 250 60% 95%;
+    --sidebar-border: 250 30% 35%;
+    --sidebar-ring: 250 65% 65%;
+    --sidebar-accent: 250 25% 30%;
+    --sidebar-accent-foreground: 250 60% 95%;
+    --sidebar-primary: 250 65% 65%;
+    --sidebar-primary-foreground: 250 20% 10%;
   }
 }
 
