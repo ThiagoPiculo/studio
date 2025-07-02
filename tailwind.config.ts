@@ -75,8 +75,8 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 4px)",
-        sm: "calc(var(--radius) - 8px)",
+        md: "calc(var(--radius) - 6px)",
+        sm: "calc(var(--radius) - 12px)",
       },
       boxShadow: {
         clay: '6px 6px 12px hsl(var(--background) / 0.6), -6px -6px 12px hsl(var(--card) / 1), inset 1px 1px 0px hsl(var(--card) / 1), inset -1px -1px 0px hsl(var(--background) / 0.6)',

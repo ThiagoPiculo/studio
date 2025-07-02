@@ -88,7 +88,7 @@ export function ChildLoginForm() {
                 <Input
                   placeholder="□ □ □ □ □ □"
                   {...field}
-                  className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-inner bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary text-primary"
+                  className="h-16 text-3xl text-center tracking-[0.3em] font-mono shadow-clay-inset bg-muted/30 border-2 border-primary/30 focus:border-primary focus:ring-primary text-primary rounded-xl"
                   maxLength={6}
                   autoComplete="off"
                   type="tel" 
@@ -100,15 +100,15 @@ export function ChildLoginForm() {
             </FormItem>
           )}
         />
-        <Button type="submit" className="w-full h-14 text-xl rounded-lg shadow-lg transform hover:scale-105 transition-transform" disabled={isLoading}>
+        <Button type="submit" className="w-full h-14 text-xl rounded-xl shadow-clay hover:shadow-clay-hover active:shadow-clay-inset transition-all" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-6 w-6 animate-spin" />
           ) : (
             <KeyRound className="mr-2 h-6 w-6" />
           )}
-          Entrar com Código
+          Entrar no Portal
         </Button>
-        <Button type="button" variant="outline" onClick={handleHelpClick} className="w-full">
+        <Button type="button" variant="link" onClick={handleHelpClick} className="w-full">
           <HelpCircle className="mr-2 h-5 w-5" />
           Não sei a chave secreta
         </Button>

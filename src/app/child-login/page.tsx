@@ -6,11 +6,13 @@ import Link from 'next/link';
 
 export default function ChildLoginPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/20 p-4 selection:bg-accent selection:text-accent-foreground">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
       <Card className="w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
         <CardHeader className="text-center p-6">
           <div className="mb-4 flex justify-center group">
-            <Sparkles className="h-16 w-16 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
+              <Sparkles className="h-12 w-12 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
+            </div>
           </div>
           <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
           <CardDescription className="text-muted-foreground">
@@ -21,15 +23,15 @@ export default function ChildLoginPage() {
           <ChildLoginForm />
           <div className="mt-8 space-y-3">
             <div className="flex items-center justify-start text-sm text-muted-foreground">
-              <ListChecks className="h-5 w-5 mr-2 text-primary" />
+              <ListChecks className="h-5 w-5 mr-2 text-primary filter drop-shadow-sm" />
               <span>Complete suas missões diárias!</span>
             </div>
             <div className="flex items-center justify-start text-sm text-muted-foreground">
-              <StarIcon className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400" />
+              <StarIcon className="h-5 w-5 mr-2 text-yellow-400 fill-yellow-400 filter drop-shadow-sm" />
               <span>Ganhe estrelas brilhantes!</span>
             </div>
             <div className="flex items-center justify-start text-sm text-muted-foreground">
-              <Trophy className="h-5 w-5 mr-2 text-orange-500" />
+              <Trophy className="h-5 w-5 mr-2 text-orange-500 filter drop-shadow-sm" />
               <span>Conquiste recompensas incríveis!</span>
             </div>
           </div>

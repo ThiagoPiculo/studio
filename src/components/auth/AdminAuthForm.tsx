@@ -133,7 +133,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
               <FormItem>
                 <FormLabel>Nome Completo</FormLabel>
                 <FormControl>
-                  <Input placeholder="Seu Nome" {...field} />
+                  <Input className="rounded-xl" placeholder="Seu Nome" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -147,7 +147,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             <FormItem>
               <FormLabel>E-mail</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="mestre@miniherois.com" {...field} />
+                <Input className="rounded-xl" type="email" placeholder="mestre@miniherois.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -161,7 +161,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
               <FormLabel>Senha</FormLabel>
               <FormControl>
                 <div className="relative">
-                  <Input type={showPassword ? "text" : "password"} placeholder="Sua senha super-secreta" {...field} />
+                  <Input className="rounded-xl" type={showPassword ? "text" : "password"} placeholder="Sua senha super-secreta" {...field} />
                   <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={toggleShowPassword}>
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
@@ -180,7 +180,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
                 <FormLabel>Confirme a Senha</FormLabel>
                 <FormControl>
                  <div className="relative">
-                    <Input type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
+                    <Input className="rounded-xl" type={showPassword ? "text" : "password"} placeholder="••••••••" {...field} />
                      <Button type="button" variant="ghost" size="sm" className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent" onClick={toggleShowPassword}>
                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </Button>
@@ -191,7 +191,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             )}
           />
         )}
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full rounded-xl text-lg h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : mode === "login" ? (
@@ -207,12 +207,12 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
           <span className="w-full border-t" />
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
+          <span className="bg-card px-2 text-muted-foreground">
             Ou entre com um clique
           </span>
         </div>
       </div>
-      <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading}>
+      <Button variant="outline" className="w-full rounded-xl h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" onClick={handleGoogleSignIn} disabled={isLoading}>
         {isLoading ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         ) : (
