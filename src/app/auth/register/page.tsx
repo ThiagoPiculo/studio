@@ -16,14 +16,14 @@ function RegisterPageContent() {
   const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Crie sua conta para guiar seus heróis em jornadas inesquecíveis.";
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background p-4 selection:bg-accent selection:text-accent-foreground">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/20 p-4 selection:bg-accent selection:text-accent-foreground">
       <Card className="w-full max-w-md shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
-        <CardHeader className="bg-gradient-to-br from-primary via-purple-600 to-accent text-center text-primary-foreground p-6">
+        <CardHeader className="text-center p-6">
           <div className="mb-4 flex justify-center group">
-            <UserPlus className="h-16 w-16 text-primary-foreground filter drop-shadow-lg group-hover:scale-110 transition-transform" />
+            <UserPlus className="h-16 w-16 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
           </div>
           <CardTitle className="font-headline text-3xl">{title}</CardTitle>
-          <CardDescription className="text-primary-foreground/90">{description}</CardDescription>
+          <CardDescription className="text-muted-foreground">{description}</CardDescription>
         </CardHeader>
         <CardContent className="p-6">
           <MasterUserAuthForm mode="register" inviteCode={inviteCode} />
