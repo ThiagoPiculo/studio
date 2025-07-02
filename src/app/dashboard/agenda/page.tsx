@@ -401,7 +401,7 @@ function AgendaPageContent() {
                               <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
                                   <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                     <PopoverTrigger asChild>
-                                        <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                        <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
                                             {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
                                             <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
                                             <span>{event.title}</span>
@@ -412,7 +412,7 @@ function AgendaPageContent() {
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator />
@@ -485,7 +485,7 @@ function AgendaPageContent() {
                             <li key={event.data.id} className="text-xs text-muted-foreground leading-snug flex justify-between items-center gap-2">
                                 <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                   <PopoverTrigger asChild>
-                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                      <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3.5 w-3.5 animate-spin inline-block mr-1.5" /> : isCompleted && <CheckCircle className="h-3.5 w-3.5 inline-block mr-1.5 text-green-500" />}
                                           <span className="font-semibold text-foreground/80 mr-1.5 w-10 text-left">{formattedTime}</span>
                                           <span>{event.title}</span>
@@ -496,7 +496,7 @@ function AgendaPageContent() {
                                         {isCompleted ? (
                                           <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                         ) : (
-                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                         )}
                                         <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                         <Separator />
@@ -653,7 +653,7 @@ function AgendaPageContent() {
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
                               <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
                                   <PopoverTrigger asChild>
-                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
+                                      <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left leading-tight hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
                                           <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
                                           <span className="flex-1">{event.title}</span>
@@ -664,7 +664,7 @@ function AgendaPageContent() {
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
