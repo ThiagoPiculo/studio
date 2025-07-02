@@ -94,34 +94,18 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
 
 // Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
 export const getChildProfilesForAttribution = async (currentUserId: string, currentContextId: 'my-space' | string): Promise<ChildProfile[]> => {
+  let q;
   // If we are in "My Space", we ONLY see personal, unassigned children.
   if (currentContextId === 'my-space') {
-    const personalQuery = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
-    const personalSnapshot = await getDocs(personalQuery);
-    const children = personalSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
-    return children.sort((a, b) => a.name.localeCompare(b.name));
+    q = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
+  } else {
+  // If we are in a family context, we ONLY see children from that family.
+    q = query(collection(db, 'children'), where('familyId', '==', currentContextId));
   }
-
-  // If we are in a family context, we see BOTH family children AND the user's personal, unassigned children.
-  const allProfiles: { [id: string]: ChildProfile } = {};
-
-  // 1. Fetch children from the current family context
-  const familyQuery = query(collection(db, 'children'), where('familyId', '==', currentContextId));
-  const familySnapshot = await getDocs(familyQuery);
-  familySnapshot.forEach(doc => {
-    allProfiles[doc.id] = { id: doc.id, ...doc.data() } as ChildProfile;
-  });
-
-  // 2. Fetch children from the user's personal space (owned by them, no family)
-  const personalQuery = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
-  const personalSnapshot = await getDocs(personalQuery);
-  personalSnapshot.forEach(doc => {
-    // This will add personal children, and won't create duplicates since keys are unique.
-    allProfiles[doc.id] = { id: doc.id, ...doc.data() } as ChildProfile;
-  });
-
-  // Return a sorted array of profiles
-  return Object.values(allProfiles).sort((a, b) => a.name.localeCompare(b.name));
+  
+  const snapshot = await getDocs(q);
+  const children = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return children.sort((a, b) => a.name.localeCompare(b.name));
 };
 
 
