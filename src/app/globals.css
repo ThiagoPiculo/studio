@@ -4,41 +4,41 @@
 
 @layer base {
   :root {
-    --background: 250 60% 97%; /* Lilás Muito, Muito Claro (quase branco) */
-    --foreground: 250 40% 25%; /* Roxo Escuro Profundo */
+    --background: 240 20% 98%; /* Cinza Muito Claro */
+    --foreground: 250 40% 25%;
 
-    --card: 250 60% 100%; /* Branco */
+    --card: 240 20% 99%; /* Quase Branco */
     --card-foreground: 250 40% 25%;
 
-    --popover: 250 60% 100%;
+    --popover: 240 20% 100%;
     --popover-foreground: 250 40% 25%;
 
-    --primary: 250 65% 60%; /* Lilás Vibrante */
-    --primary-foreground: 250 60% 98%; /* Quase Branco para contraste */
+    --primary: 255 70% 65%; /* Lilás mais suave e pastel */
+    --primary-foreground: 250 60% 98%;
 
-    --secondary: 250 60% 85%; /* Lilás Mais Claro */
+    --secondary: 250 60% 90%; /* Lilás Mais Claro */
     --secondary-foreground: 250 40% 25%;
 
-    --muted: 250 50% 90%; /* Lilás Suave */
-    --muted-foreground: 250 30% 45%; /* Roxo Médio para texto silenciado */
+    --muted: 250 50% 92%; /* Lilás Suave */
+    --muted-foreground: 250 30% 45%;
 
-    --accent: 270 70% 65%; /* Roxo Levemente Azulado como destaque sutil */
-    --accent-foreground: 250 60% 98%; /* Quase Branco para contraste */
+    --accent: 270 70% 70%; /* Roxo mais suave como destaque */
+    --accent-foreground: 250 60% 98%;
 
-    --destructive: 0 72% 51%; /* Vermelho Padrão */
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 250 50% 88%; /* Borda Lilás Clara */
-    --input: 250 50% 92%; /* Fundo de Input Lilás Bem Claro */
-    --ring: 250 65% 60%; /* Lilás Vibrante para anéis de foco */
+    --border: 250 40% 90%; /* Borda Lilás/Cinza Clara */
+    --input: 250 50% 95%; /* Fundo de Input Lilás Bem Claro */
+    --ring: 255 70% 65%; /* Anel de foco lilás suave */
 
-    --radius: 0.5rem;
+    --radius: 0.8rem; /* Aumentando o raio para ser mais arredondado */
 
-    --chart-1: 250 65% 60%;
-    --chart-2: 270 70% 65%;
-    --chart-3: 300 60% 60%; /* Rosa/Magenta */
-    --chart-4: 45 100% 60%; /* Amarelo Dourado */
-    --chart-5: 180 50% 60%; /* Ciano Suave */
+    --chart-1: 255 70% 65%;
+    --chart-2: 270 70% 70%;
+    --chart-3: 300 60% 65%;
+    --chart-4: 45 100% 65%;
+    --chart-5: 180 50% 65%;
     
     --sidebar-background: 250 60% 94%;
     --sidebar-foreground: 250 40% 25%;
@@ -51,39 +51,41 @@
   }
 
   .dark {
-    --background: 250 20% 12%; /* Roxo Muito Escuro */
-    --foreground: 250 60% 95%; /* Lilás Muito Claro */
+    --background: 250 20% 12%;
+    --foreground: 250 60% 95%;
 
-    --card: 250 20% 15%; /* Roxo Escuro para Cards */
+    --card: 250 20% 15%;
     --card-foreground: 250 60% 95%;
 
     --popover: 250 20% 15%;
     --popover-foreground: 250 60% 95%;
 
-    --primary: 250 65% 65%; /* Lilás Vibrante (pode ser um pouco mais claro no dark) */
-    --primary-foreground: 250 20% 10%; /* Roxo Mais Escuro para contraste */
+    --primary: 255 70% 68%;
+    --primary-foreground: 250 20% 10%;
     
-    --secondary: 250 50% 45%; /* Roxo Médio Escuro */
+    --secondary: 250 50% 45%;
     --secondary-foreground: 250 60% 95%;
 
-    --muted: 250 25% 30%; /* Roxo Escuro Suave */
-    --muted-foreground: 250 50% 80%; /* Lilás Claro para texto silenciado */
+    --muted: 250 25% 30%;
+    --muted-foreground: 250 50% 80%;
 
-    --accent: 270 70% 70%; /* Roxo Levemente Azulado (mais claro no dark) */
+    --accent: 270 70% 70%;
     --accent-foreground: 250 20% 10%;
 
-    --destructive: 0 63% 45%; /* Vermelho Escuro */
+    --destructive: 0 63% 45%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 250 30% 35%; /* Borda Roxo Escuro */
-    --input: 250 30% 28%; /* Fundo de Input Roxo Escuro */
-    --ring: 250 65% 65%; 
+    --border: 250 30% 35%;
+    --input: 250 30% 28%;
+    --ring: 255 70% 68%;
     
-    --chart-1: 250 65% 65%;
+    --radius: 0.8rem;
+    
+    --chart-1: 255 70% 68%;
     --chart-2: 270 70% 70%;
-    --chart-3: 300 50% 55%;
-    --chart-4: 45 90% 55%;
-    --chart-5: 180 40% 55%;
+    --chart-3: 300 50% 60%;
+    --chart-4: 45 90% 60%;
+    --chart-5: 180 40% 60%;
 
     --sidebar-background: 250 20% 10%;
     --sidebar-foreground: 250 60% 95%;

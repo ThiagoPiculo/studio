@@ -75,8 +75,13 @@ export default {
       },
       borderRadius: {
         lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        md: "calc(var(--radius) - 4px)",
+        sm: "calc(var(--radius) - 8px)",
+      },
+      boxShadow: {
+        clay: '6px 6px 12px hsl(var(--background) / 0.6), -6px -6px 12px hsl(var(--card) / 1), inset 1px 1px 0px hsl(var(--card) / 1), inset -1px -1px 0px hsl(var(--background) / 0.6)',
+        'clay-hover': '8px 8px 16px hsl(var(--background) / 0.6), -8px -8px 16px hsl(var(--card) / 1), inset 1px 1px 0px hsl(var(--card) / 1), inset -1px -1px 0px hsl(var(--background) / 0.6)',
+        'clay-inset': 'inset 6px 6px 12px hsl(var(--background) / 0.6), inset -6px -6px 12px hsl(var(--card) / 1)',
       },
       keyframes: {
         "accordion-down": {
