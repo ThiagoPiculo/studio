@@ -375,7 +375,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator />
                                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                         </div>
@@ -459,7 +459,7 @@ export default function AgendaPage() {
                                         ) : (
                                           <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                         )}
-                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                         <Separator />
                                         <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
@@ -627,7 +627,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
                                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
