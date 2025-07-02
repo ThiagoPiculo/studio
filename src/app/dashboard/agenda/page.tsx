@@ -371,13 +371,13 @@ export default function AgendaPage() {
                                     <PopoverContent className="w-auto p-2">
                                         <div className="flex flex-col gap-1">
                                           {isCompleted ? (
-                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator />
-                                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                          <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                         </div>
                                     </PopoverContent>
                                   </Popover>
@@ -455,13 +455,13 @@ export default function AgendaPage() {
                                   <PopoverContent className="w-auto p-2">
                                       <div className="flex flex-col gap-1">
                                         {isCompleted ? (
-                                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                         ) : (
-                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                         )}
-                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                         <Separator />
-                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                        <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
                                   </PopoverContent>
                                 </Popover>
@@ -623,13 +623,13 @@ export default function AgendaPage() {
                                   <PopoverContent className="w-auto p-2">
                                       <div className="flex flex-col gap-1">
                                           {isCompleted ? (
-                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
-                                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                          <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
                                   </PopoverContent>
                               </Popover>
