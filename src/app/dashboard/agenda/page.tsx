@@ -228,7 +228,7 @@ export default function AgendaPage() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await completeMissionInstance(missionInstance, date);
+        await completeMissionInstance(missionInstance.id, date);
         toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
         fetchAgendaData();
     } catch (error) {
@@ -243,7 +243,7 @@ export default function AgendaPage() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await reactivateMissionInstance(missionInstance, date);
+        await reactivateMissionInstance(missionInstance.id, date);
         toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
         fetchAgendaData();
     } catch (error: any) {
@@ -338,7 +338,10 @@ export default function AgendaPage() {
             const childEvents = eventsByChild[childId].sort((a,b) => {
                 const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
                 const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-                return timeA.getTime() - timeB.getTime();
+                if (timeA.getTime() !== timeB.getTime()) {
+                    return timeA.getTime() - timeB.getTime();
+                }
+                return a.title.localeCompare(b.title);
             });
 
             return (
@@ -422,7 +425,10 @@ export default function AgendaPage() {
           const childEvents = eventsByChild[childId].sort((a, b) => {
               const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
               const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-              return timeA.getTime() - timeB.getTime();
+              if (timeA.getTime() !== timeB.getTime()) {
+                return timeA.getTime() - timeB.getTime();
+              }
+              return a.title.localeCompare(b.title);
           });
 
           return (
@@ -578,7 +584,10 @@ export default function AgendaPage() {
 
                 const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
                 const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-                return timeA.getTime() - timeB.getTime();
+                if (timeA.getTime() !== timeB.getTime()) {
+                  return timeA.getTime() - timeB.getTime();
+                }
+                return a.title.localeCompare(b.title);
               });
               
               return (
