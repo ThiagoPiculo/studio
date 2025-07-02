@@ -71,8 +71,6 @@ export default function AgendaPage() {
   
   const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
   const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
-  const [editMode, setEditMode] = useState<EditRecurrenceMode>('all');
-  const [isEditRecurrenceDialogOpen, setIsEditRecurrenceDialogOpen] = useState(false);
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
@@ -114,28 +112,14 @@ export default function AgendaPage() {
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
     setInstanceToEdit(null);
-    setEditMode('all');
     setIsAssignDialogOpen(true);
   };
 
-  const handleEditClick = (instance: MissionInstance, date: Date) => {
+  const handleEditClick = (instance: MissionInstance) => {
     setActivePopover(null);
-    if (instance.isRecurring) {
-        setInstanceToEdit(instance);
-        setOccurrenceDate(date);
-        setIsEditRecurrenceDialogOpen(true);
-    } else {
-        setInstanceToEdit(instance);
-        setOccurrenceDate(date);
-        setEditMode('all'); // For non-recurring, it's always 'all'
-        setIsAssignDialogOpen(true);
-    }
-  };
-
-  const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
-      setEditMode(mode);
-      setIsEditRecurrenceDialogOpen(false);
-      setIsAssignDialogOpen(true);
+    setInstanceToEdit(instance);
+    setTemplateToAssign(null);
+    setIsAssignDialogOpen(true);
   };
 
   const handleAssignmentComplete = () => {
@@ -290,30 +274,6 @@ export default function AgendaPage() {
     }
   };
 
-  const handleAssignToOthersClick = async (instance: MissionInstance) => {
-    setActivePopover(null);
-    setIsProcessingAction(instance.id);
-    try {
-      const template = await getMissionTemplateById(instance.templateId);
-      if (template) {
-        setTemplateToAssign(template);
-        setInstanceToEdit(null); // Ensure we are not in instance edit mode
-        setIsAssignDialogOpen(true);
-      } else {
-        toast({
-          title: "Erro",
-          description: "Não foi possível encontrar o modelo desta missão para atribuir a outros.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching template for reassignment:", error);
-      toast({ title: "Erro ao buscar missão", variant: "destructive" });
-    } finally {
-      setIsProcessingAction(null);
-    }
-  };
-
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
@@ -411,8 +371,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
                                           <Separator />
                                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                         </div>
@@ -438,6 +397,87 @@ export default function AgendaPage() {
           })}
         </ul>
       );
+  };
+  
+  const renderWeeklyPeriodList = (events: CalendarEvent[], day: Date) => {
+    const eventsByChild = events.reduce((acc, event) => {
+        const childId = event.data.childId;
+        if (!acc[childId]) acc[childId] = [];
+        acc[childId].push(event);
+        return acc;
+    }, {} as Record<string, CalendarEvent[]>);
+
+    const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
+        const childA = childrenMap.get(a)?.name || '';
+        const childB = childrenMap.get(b)?.name || '';
+        return childA.localeCompare(childB);
+    });
+
+    return (
+      <ul className="space-y-3">
+        {sortedChildIds.map(childId => {
+          const child = childrenMap.get(childId);
+          if (!child) return null;
+          const childEvents = eventsByChild[childId].sort((a, b) => {
+              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+              return timeA.getTime() - timeB.getTime();
+          });
+
+          return (
+            <li key={childId} className="flex items-start gap-2.5">
+                <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+                <div className="flex-grow">
+                    <p className="font-semibold text-sm leading-tight">{child.name}</p>
+                    <ul className="mt-1 space-y-1.5">
+                        {childEvents.map(event => {
+                            const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+                            const isCompleted = isMissionCompletedForDate(event.data, day);
+                            const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                            const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                            return (
+                            <li key={event.data.id} className="text-xs text-muted-foreground leading-snug flex justify-between items-center gap-2">
+                                <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                  <PopoverTrigger asChild>
+                                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left hover:text-primary transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                          {isProcessingAction === event.data.id ? <Loader2 className="h-3.5 w-3.5 animate-spin inline-block mr-1.5" /> : isCompleted && <CheckCircle className="h-3.5 w-3.5 inline-block mr-1.5 text-green-500" />}
+                                          <span className="font-semibold text-foreground/80 mr-1.5 w-10 text-left">{formattedTime}</span>
+                                          <span>{event.title}</span>
+                                      </button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-2">
+                                      <div className="flex flex-col gap-1">
+                                        {isCompleted ? (
+                                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                        ) : (
+                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                        )}
+                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
+                                        <Separator />
+                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                      </div>
+                                  </PopoverContent>
+                                </Popover>
+                                <div className="flex-shrink-0 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                                    <span className="flex items-center gap-1">
+                                        <StarIcon className="h-3 w-3 text-yellow-400 fill-yellow-400" />
+                                        {event.data.starsReward}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                        <BadgeCheck className="h-3 w-3 text-blue-500" />
+                                        {event.data.xpReward}
+                                    </span>
+                                </div>
+                            </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+            </li>
+          );
+        })}
+      </ul>
+    );
   };
   
   const renderGridView = () => {
@@ -468,7 +508,7 @@ export default function AgendaPage() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
           const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-          const isCompactView = dateRangeFilter === 'week' || dateRangeFilter === 'workweek';
+          const isWeeklyView = dateRangeFilter === 'week' || dateRangeFilter === 'workweek';
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -483,23 +523,23 @@ export default function AgendaPage() {
                         Nenhuma missão.
                     </CardContent>
                 ) : (
-                    <CardContent className={cn("space-y-4", isCompactView ? "p-2" : "p-4")}>
+                    <CardContent className="p-4 space-y-4">
                       {dayEvents.morning.length > 0 && (
-                        <div className={cn("space-y-2", !isCompactView && "bg-yellow-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", !isWeeklyView && "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
-                          {isCompactView ? renderCompactPeriod(dayEvents.morning, day) : renderEventListForPeriod(dayEvents.morning, day)}
+                          {isWeeklyView ? renderWeeklyPeriodList(dayEvents.morning, day) : renderEventListForPeriod(dayEvents.morning, day)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
-                        <div className={cn("space-y-2", !isCompactView && "bg-orange-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", !isWeeklyView && "bg-orange-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
-                           {isCompactView ? renderCompactPeriod(dayEvents.afternoon, day) : renderEventListForPeriod(dayEvents.afternoon, day)}
+                           {isWeeklyView ? renderWeeklyPeriodList(dayEvents.afternoon, day) : renderEventListForPeriod(dayEvents.afternoon, day)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
-                        <div className={cn("space-y-2", !isCompactView && "bg-indigo-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", !isWeeklyView && "bg-indigo-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
-                           {isCompactView ? renderCompactPeriod(dayEvents.night, day) : renderEventListForPeriod(dayEvents.night, day)}
+                           {isWeeklyView ? renderWeeklyPeriodList(dayEvents.night, day) : renderEventListForPeriod(dayEvents.night, day)}
                         </div>
                       )}
                     </CardContent>
@@ -509,61 +549,6 @@ export default function AgendaPage() {
           );
         })}
       </div>
-    );
-  };
-  
-  const renderCompactPeriod = (events: CalendarEvent[], day: Date) => {
-    const sortedEvents = [...events].sort((a,b) => {
-        const childA = childrenMap.get(a.data.childId)?.name || '';
-        const childB = childrenMap.get(b.data.childId)?.name || '';
-        const nameComparison = childA.localeCompare(childB);
-        if (nameComparison !== 0) return nameComparison;
-        
-        const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-        const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-        return timeA.getTime() - timeB.getTime();
-    });
-
-    return (
-      <ul className="space-y-1.5 pl-2 mt-1">
-        {sortedEvents.map(event => {
-          const child = childrenMap.get(event.data.childId);
-          if (!child) return null;
-          const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-          const isCompleted = isMissionCompletedForDate(event.data, day);
-          const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
-          const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-          
-          return (
-            <li key={`${event.data.id}-${event.data.childId}`} className="text-xs flex items-start gap-1.5">
-              <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                  <PopoverTrigger asChild>
-                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline gap-1.5", isCompleted && "line-through text-muted-foreground/70")}>
-                          {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block text-green-500" />}
-                          <span className="font-semibold text-foreground/80">{formattedTime}</span>
-                          <span className="font-medium text-foreground/90 truncate">{child.name}:</span>
-                          <span className="text-muted-foreground truncate">{event.title}</span>
-                      </button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-2">
-                     <div className="flex flex-col gap-1">
-                        {isCompleted ? (
-                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                        ) : (
-                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                        <Separator/>
-                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
-                    </div>
-                  </PopoverContent>
-              </Popover>
-            </li>
-          );
-        })}
-      </ul>
     );
   };
 
@@ -632,8 +617,7 @@ export default function AgendaPage() {
                                           ) : (
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir / Editar</Button>
                                           <Separator/>
                                           <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
                                       </div>
@@ -761,8 +745,6 @@ export default function AgendaPage() {
       <AssignMissionDialog
         template={templateToAssign}
         instanceToEdit={instanceToEdit}
-        occurrenceDate={occurrenceDate}
-        editMode={editMode}
         isOpen={isAssignDialogOpen}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
@@ -773,14 +755,6 @@ export default function AgendaPage() {
           setIsAssignDialogOpen(isOpen);
         }}
         onAssigned={handleAssignmentComplete}
-      />
-      
-      <EditRecurrenceDialog
-        isOpen={isEditRecurrenceDialogOpen}
-        onOpenChange={setIsEditRecurrenceDialogOpen}
-        onSelect={handleRecurrenceEditSelect}
-        missionInstance={instanceToEdit}
-        occurrenceDate={occurrenceDate}
       />
 
       <AlertDialog open={!!instanceToExclude} onOpenChange={(isOpen) => !isOpen && setInstanceToExclude(null)}>
