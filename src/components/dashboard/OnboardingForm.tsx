@@ -1,4 +1,3 @@
-
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -106,7 +105,7 @@ export function OnboardingForm() {
             <FormItem>
               <FormLabel>Nome da Criança</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: Alex" {...field} />
+                <Input placeholder="Flip Gato" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -238,7 +237,7 @@ export function OnboardingForm() {
           )}
         />
         
-        <Button type="submit" className="w-full" disabled={isLoading}>
+        <Button type="submit" className="w-full shadow-clay hover:shadow-clay-hover active:shadow-clay-inset rounded-xl h-12 text-lg" disabled={isLoading}>
           {isLoading ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (

@@ -1,15 +1,24 @@
-
 "use client";
 
 import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Rocket, Users, Loader2 } from 'lucide-react';
+import { Users, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { getChildProfilesByOwner } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
+
+// Custom Rocket Icon to match the screenshot
+const OnboardingIcon = () => (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 text-primary filter drop-shadow-lg">
+        <path d="M40 8.33331C40 8.33331 51.6667 8.33331 56.6667 15.8333C61.6667 23.3333 56.6667 36.6666 45.8333 44.1666C35 51.6666 21.6667 56.6666 14.1667 51.6666C6.66667 46.6666 6.66667 35 15.8333 28.3333C25 21.6666 40 8.33331 40 8.33331Z" fill="currentColor" fillOpacity="0.5"/>
+        <path d="M51.6667 25C51.6667 25 65.8333 25.8333 69.1667 33.3333C72.5 40.8333 65.8333 50.8333 55.8333 55.8333C45.8333 60.8333 34.1667 61.6666 28.3333 55.8333C22.5 50 25.8333 39.1666 35 34.1666C44.1667 29.1666 51.6667 25 51.6667 25Z" fill="currentColor"/>
+        <path d="M30 67.5C30 67.5 25.8333 70 25.8333 65C25.8333 60 30 57.5 30 57.5L42.5 47.5L52.5 57.5L40 67.5L30 67.5Z" fill="currentColor" fillOpacity="0.5"/>
+    </svg>
+);
+
 
 export default function OnboardingPage() {
   const { user } = useAuth();
@@ -51,41 +60,20 @@ export default function OnboardingPage() {
 
   return (
     <div className="container mx-auto max-w-2xl py-8">
-      <Card className="shadow-xl">
-        <CardHeader className="text-center">
-          <div className="mb-4 flex justify-center">
-            {isLoadingCount ? <Loader2 className="h-20 w-20 text-primary animate-spin" /> : <Rocket className="h-20 w-20 text-primary animate-pulse" />}
+      <Card className="shadow-clay rounded-2xl">
+        <CardHeader className="text-center p-6">
+          <div className="mb-4 flex justify-center group">
+             {isLoadingCount ? <Loader2 className="h-20 w-20 text-primary animate-spin" /> : <OnboardingIcon />}
           </div>
-          <CardTitle className="font-headline text-4xl">
+          <CardTitle className="font-headline text-3xl">
             {getTitle()}
           </CardTitle>
-          <CardDescription className="text-lg">
+          <CardDescription className="text-lg text-muted-foreground">
             {getDescription()}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-6 md:p-8">
           <OnboardingForm />
-           <div className="mt-8 border-t pt-6">
-            <h3 className="text-lg font-semibold mb-2 text-center">Colaboração Familiar (Opcional)</h3>
-            <p className="text-center text-sm text-muted-foreground mb-4">
-              Quer gerenciar hábitos com outro pai/mãe ou responsável? Você pode configurar ou entrar em um grupo familiar.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/dashboard/family?action=create">
-                    <Button variant="outline" className="w-full sm:w-auto">
-                        <Users className="mr-2 h-4 w-4" /> Criar uma Família
-                    </Button>
-                </Link>
-                <Link href="/dashboard/family?action=join">
-                    <Button variant="outline" className="w-full sm:w-auto">
-                        <Users className="mr-2 h-4 w-4" /> Entrar em uma Família
-                    </Button>
-                </Link>
-            </div>
-            <p className="mt-4 text-center text-xs text-muted-foreground">
-                Você sempre pode fazer isso mais tarde no menu 'Família'.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
