@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { formatDistanceToNow, differenceInYears, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRecurrenceSummary, getTodaysMissions } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Timestamp } from 'firebase/firestore';
 
@@ -72,7 +72,6 @@ export default function ManageChildPage() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoadingMissions, setIsLoadingMissions] = useState(false);
   const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
-  const [isProcessingMissionAction, setIsProcessingMissionAction] = useState<string | null>(null);
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
   const [isDeletingMission, setIsDeletingMission] = useState(false);
@@ -271,32 +270,22 @@ export default function ManageChildPage() {
     }
   };
   
-  const handleCompleteMission = async (mission: MissionInstance) => {
-    if (!child) return;
-    setIsProcessingMissionAction(mission.id);
-    try {
-      const originalLevel = child.level;
-      const updatedChildProfile = await completeMissionInstance(mission.id);
-      setChild(updatedChildProfile);
-      
-      fetchMissionData(); // Refetch all missions to get the latest state
+  const handleManageInAgenda = (instance: MissionInstance, isToday: boolean) => {
+    const targetDate = isToday ? new Date() : (instance.startDate?.toDate() || instance.dueDate?.toDate());
 
-      let toastDescription = `A missão "${mission.title}" foi concluída.`;
-      if (updatedChildProfile.level > originalLevel) {
-        toastDescription += ` E ${child.name} subiu para o Nível ${updatedChildProfile.level}! Incrível!`;
-      }
-      
-      toast({
-        title: "Missão Cumprida!",
-        description: toastDescription,
-      });
-
-    } catch(error) {
-      console.error("Error completing mission:", error);
-      toast({ title: "Erro ao Concluir Missão", description: "Não foi possível marcar a missão como concluída.", variant: "destructive" });
-    } finally {
-      setIsProcessingMissionAction(null);
+    if (!targetDate) {
+      toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
+      return;
     }
+    
+    const year = targetDate.getFullYear();
+    const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = targetDate.getDate().toString().padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    const popoverId = `${instance.id}-${dateString}`;
+
+    router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
   };
 
   const handleUndoCompletion = async () => {
@@ -574,7 +563,7 @@ export default function ManageChildPage() {
       const isCompletedToday = completedTodayIds.has(instance.id);
 
       return (
-          <Card key={instance.id} className={`shadow-sm flex flex-col transition-all ${isProcessingMissionAction === instance.id ? 'opacity-50' : 'hover:shadow-md'}`}>
+          <Card key={instance.id} className={`shadow-sm flex flex-col transition-all`}>
               <CardHeader>
                   <div className="flex justify-between items-start">
                       <CardTitle className="text-lg">{instance.title}</CardTitle>
@@ -655,12 +644,12 @@ export default function ManageChildPage() {
                       ) : (
                           <div className="flex w-full items-center gap-2">
                               <Button
-                                  className="flex-grow bg-green-600 hover:bg-green-700"
-                                  onClick={() => handleCompleteMission(instance)}
-                                  disabled={!!isProcessingMissionAction || isDeletingMission}
+                                  className="flex-grow"
+                                  onClick={() => handleManageInAgenda(instance, isForToday)}
+                                  disabled={isDeletingMission}
                               >
-                                  {isProcessingMissionAction === instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                                  Marcar como Concluída
+                                  <CalendarDays className="mr-2 h-4 w-4" />
+                                  Gerenciar na Agenda
                               </Button>
                               <TooltipProvider>
                                   <Tooltip>
@@ -669,7 +658,7 @@ export default function ManageChildPage() {
                                               size="icon"
                                               variant="outline"
                                               onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
-                                              disabled={!!isProcessingMissionAction || isDeletingMission}
+                                              disabled={isDeletingMission}
                                           >
                                               <Edit3 className="h-4 w-4" />
                                           </Button>
@@ -686,7 +675,7 @@ export default function ManageChildPage() {
                                               size="icon"
                                               variant="destructive"
                                               onClick={() => setMissionToDelete(instance)}
-                                              disabled={!!isProcessingMissionAction || isDeletingMission}
+                                              disabled={isDeletingMission}
                                           >
                                               <Trash2 className="h-4 w-4" />
                                           </Button>

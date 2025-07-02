@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2 } from 'lucide-react';
@@ -48,11 +49,15 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
   return 'night';
 };
 
-export default function AgendaPage() {
+function AgendaPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const { toast } = useToast();
   const [currentDate, setCurrentDate] = useState(new Date());
+
+  const searchParams = useSearchParams();
+  const focusDateParam = searchParams.get('focus_date');
+  const openPopoverParam = searchParams.get('open_popover');
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
@@ -74,6 +79,26 @@ export default function AgendaPage() {
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
+
+  useEffect(() => {
+    if (focusDateParam) {
+      const [year, month, day] = focusDateParam.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      if (!isNaN(date.getTime())) {
+          setCurrentDate(date);
+      }
+    }
+  }, [focusDateParam]);
+
+  useEffect(() => {
+      if (openPopoverParam) {
+          // Delay to ensure the DOM is updated and the popover target exists
+          const timer = setTimeout(() => {
+              setActivePopover(openPopoverParam);
+          }, 200);
+          return () => clearTimeout(timer);
+      }
+  }, [openPopoverParam]);
 
   const refetchData = useCallback(async () => {
     if (!user) return;
@@ -387,7 +412,7 @@ export default function AgendaPage() {
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator />
@@ -471,7 +496,7 @@ export default function AgendaPage() {
                                         {isCompleted ? (
                                           <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                         ) : (
-                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                         )}
                                         <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                         <Separator />
@@ -639,7 +664,7 @@ export default function AgendaPage() {
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data.id, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
@@ -805,4 +830,10 @@ export default function AgendaPage() {
   );
 }
 
-    
+export default function AgendaPage() {
+  return (
+    <Suspense fallback={<Loading />}>
+      <AgendaPageContent />
+    </Suspense>
+  )
+}
