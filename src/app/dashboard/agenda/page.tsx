@@ -75,14 +75,28 @@ export default function AgendaPage() {
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
-  const fetchAgendaData = useCallback(async () => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    };
-    
-    setIsLoading(true);
+  const refetchData = useCallback(async () => {
+    if (!user) return;
     try {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      const instances = await getMissionInstancesForContext(user.uid, familyIdToQuery);
+      setMissionInstances(instances);
+    } catch (error) {
+      console.error("Error refetching mission instances:", error);
+      toast({ title: 'Erro ao atualizar missões', variant: 'destructive' });
+    }
+  }, [user, currentContext, toast]);
+
+
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    const loadDataForContext = async () => {
+      setIsLoading(true);
+      try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
         const [fetchedChildren, fetchedInstances] = await Promise.all([
@@ -92,22 +106,22 @@ export default function AgendaPage() {
         
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
-        if (Object.keys(selectedChildrenIds).length === 0) {
-            const initialSelection: Record<string, boolean> = {};
-            fetchedChildren.forEach(c => initialSelection[c.id] = true);
-            setSelectedChildrenIds(initialSelection);
-        }
 
-    } catch (error) {
-        console.error("Error fetching agenda data:", error);
-    } finally {
+        const initialSelection: Record<string, boolean> = {};
+        fetchedChildren.forEach(c => initialSelection[c.id] = true);
+        setSelectedChildrenIds(initialSelection);
+        setAllChildrenSelected(true);
+
+      } catch (error) {
+        console.error("Error fetching agenda data for new context:", error);
+        toast({ title: 'Erro ao carregar agenda', variant: 'destructive' });
+      } finally {
         setIsLoading(false);
-    }
-  }, [user, currentContext, selectedChildrenIds]);
+      }
+    };
 
-  useEffect(() => {
-    fetchAgendaData();
-  }, [fetchAgendaData]);
+    loadDataForContext();
+  }, [user, currentContext, toast]);
   
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
@@ -124,7 +138,7 @@ export default function AgendaPage() {
   };
 
   const handleAssignmentComplete = () => {
-    fetchAgendaData(); // Refetch data after assignment/edit
+    refetchData();
   };
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
@@ -230,7 +244,7 @@ export default function AgendaPage() {
     try {
         await completeMissionInstance(missionInstance.id, date);
         toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
-        fetchAgendaData();
+        refetchData();
     } catch (error) {
         console.error("Error completing mission:", error);
         toast({ title: 'Erro ao concluir', variant: 'destructive' });
@@ -245,7 +259,7 @@ export default function AgendaPage() {
     try {
         await reactivateMissionInstance(missionInstance.id, date);
         toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
-        fetchAgendaData();
+        refetchData();
     } catch (error: any) {
         console.error("Error undoing completion:", error);
         toast({ title: 'Erro ao desfazer', description: error.message, variant: 'destructive' });
@@ -265,7 +279,7 @@ export default function AgendaPage() {
     try {
       await excludeMissionInstanceOccurrence(instanceToExclude.instance.id, instanceToExclude.date);
       toast({ title: 'Ocorrência Removida!', description: `A missão não aparecerá mais neste dia.` });
-      fetchAgendaData(); // Refetch data
+      refetchData();
     } catch (error) {
       console.error("Error excluding mission occurrence:", error);
       toast({ title: 'Erro ao remover', variant: 'destructive' });
@@ -515,7 +529,7 @@ export default function AgendaPage() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
           const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-          const isWeeklyView = dateRangeFilter === 'week' || dateRangeFilter === 'workweek';
+          const useDetailedView = dateRangeFilter === 'day' || dateRangeFilter === '3days';
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -534,19 +548,19 @@ export default function AgendaPage() {
                       {dayEvents.morning.length > 0 && (
                         <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
-                          {isWeeklyView ? renderWeeklyPeriodList(dayEvents.morning, day) : renderEventListForPeriod(dayEvents.morning, day)}
+                          {useDetailedView ? renderEventListForPeriod(dayEvents.morning, day) : renderWeeklyPeriodList(dayEvents.morning, day)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
                         <div className={cn("space-y-2", "bg-orange-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
-                           {isWeeklyView ? renderWeeklyPeriodList(dayEvents.afternoon, day) : renderEventListForPeriod(dayEvents.afternoon, day)}
+                           {useDetailedView ? renderEventListForPeriod(dayEvents.afternoon, day) : renderWeeklyPeriodList(dayEvents.afternoon, day)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
                         <div className={cn("space-y-2", "bg-indigo-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
-                           {isWeeklyView ? renderWeeklyPeriodList(dayEvents.night, day) : renderEventListForPeriod(dayEvents.night, day)}
+                           {useDetailedView ? renderEventListForPeriod(dayEvents.night, day) : renderWeeklyPeriodList(dayEvents.night, day)}
                         </div>
                       )}
                     </CardContent>
@@ -790,3 +804,5 @@ export default function AgendaPage() {
     </>
   );
 }
+
+    
