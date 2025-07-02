@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -118,10 +118,18 @@ export default function AgendaPage() {
     setIsAssignDialogOpen(true);
   };
 
-  const handleEditClick = async (instance: MissionInstance, date: Date) => {
-      setActivePopover(null);
-      setInstanceToEdit(instance);
-      setIsAssignDialogOpen(true);
+  const handleEditClick = (instance: MissionInstance, date: Date) => {
+    setActivePopover(null);
+    if (instance.isRecurring) {
+        setInstanceToEdit(instance);
+        setOccurrenceDate(date);
+        setIsEditRecurrenceDialogOpen(true);
+    } else {
+        setInstanceToEdit(instance);
+        setOccurrenceDate(date);
+        setEditMode('all'); // For non-recurring, it's always 'all'
+        setIsAssignDialogOpen(true);
+    }
   };
 
   const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
@@ -250,7 +258,7 @@ export default function AgendaPage() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await reactivateMissionInstance(missionInstance.id, date);
+        await reactivateMissionInstance(missionInstance, date);
         toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
         fetchAgendaData();
     } catch (error: any) {
@@ -459,8 +467,7 @@ export default function AgendaPage() {
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-          const allDayEvents = [...dayEvents.morning, ...dayEvents.afternoon, ...dayEvents.night];
-          const hasEventsForDay = allDayEvents.length > 0;
+          const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
           const isCompactView = dateRangeFilter === 'week' || dateRangeFilter === 'workweek';
           
           return (
@@ -475,78 +482,24 @@ export default function AgendaPage() {
                     <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
                         Nenhuma missão.
                     </CardContent>
-                ) : isCompactView ? (
-                  <CardContent className="p-2">
-                    <ScrollArea className="h-48">
-                      <ul className="space-y-1.5">
-                        {allDayEvents
-                          .sort((a, b) => {
-                              const childA = childrenMap.get(a.data.childId)?.name || '';
-                              const childB = childrenMap.get(b.data.childId)?.name || '';
-                              const nameComparison = childA.localeCompare(childB);
-                              if (nameComparison !== 0) return nameComparison;
-
-                              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-                              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-                              return timeA.getTime() - timeB.getTime();
-                          })
-                          .map(event => {
-                            const child = childrenMap.get(event.data.childId);
-                            if (!child) return null;
-                            const popoverId = `${event.data.id}-${dateKey}`;
-                            const isCompleted = isMissionCompletedForDate(event.data, day);
-                            const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
-                            const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                            return (
-                              <li key={`${event.data.id}-${event.data.childId}`} className="text-xs flex items-start gap-1.5">
-                                <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                                <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
-                                    <PopoverTrigger asChild>
-                                        <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline gap-1.5", isCompleted && "line-through text-muted-foreground/70")}>
-                                            {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block text-green-500" />}
-                                            <span className="font-semibold text-foreground/80">{formattedTime}</span>
-                                            <span className="font-medium text-foreground/90 truncate">{child.name}:</span>
-                                            <span className="text-muted-foreground truncate">{event.title}</span>
-                                        </button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-2">
-                                       <div className="flex flex-col gap-1">
-                                          {isCompleted ? (
-                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                          ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                          )}
-                                          <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
-                                          <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                          <Separator/>
-                                          <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
-                                      </div>
-                                    </PopoverContent>
-                                </Popover>
-                              </li>
-                            )
-                          })}
-                      </ul>
-                    </ScrollArea>
-                  </CardContent>
                 ) : (
-                    <CardContent className="p-4 space-y-4">
+                    <CardContent className={cn("space-y-4", isCompactView ? "p-2" : "p-4")}>
                       {dayEvents.morning.length > 0 && (
-                        <div className="space-y-2 bg-yellow-500/5 p-3 rounded-lg">
-                          <h4 className="flex items-center gap-2 text-base font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
-                          {renderEventListForPeriod(dayEvents.morning, day)}
+                        <div className={cn("space-y-2", !isCompactView && "bg-yellow-500/5 p-3 rounded-lg")}>
+                          <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
+                          {isCompactView ? renderCompactPeriod(dayEvents.morning, day) : renderEventListForPeriod(dayEvents.morning, day)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
-                        <div className="space-y-2 bg-orange-500/5 p-3 rounded-lg">
-                          <h4 className="flex items-center gap-2 text-base font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
-                          {renderEventListForPeriod(dayEvents.afternoon, day)}
+                        <div className={cn("space-y-2", !isCompactView && "bg-orange-500/5 p-3 rounded-lg")}>
+                          <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
+                           {isCompactView ? renderCompactPeriod(dayEvents.afternoon, day) : renderEventListForPeriod(dayEvents.afternoon, day)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
-                        <div className="space-y-2 bg-indigo-500/5 p-3 rounded-lg">
-                          <h4 className="flex items-center gap-2 text-base font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
-                          {renderEventListForPeriod(dayEvents.night, day)}
+                        <div className={cn("space-y-2", !isCompactView && "bg-indigo-500/5 p-3 rounded-lg")}>
+                          <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
+                           {isCompactView ? renderCompactPeriod(dayEvents.night, day) : renderEventListForPeriod(dayEvents.night, day)}
                         </div>
                       )}
                     </CardContent>
@@ -556,6 +509,61 @@ export default function AgendaPage() {
           );
         })}
       </div>
+    );
+  };
+  
+  const renderCompactPeriod = (events: CalendarEvent[], day: Date) => {
+    const sortedEvents = [...events].sort((a,b) => {
+        const childA = childrenMap.get(a.data.childId)?.name || '';
+        const childB = childrenMap.get(b.data.childId)?.name || '';
+        const nameComparison = childA.localeCompare(childB);
+        if (nameComparison !== 0) return nameComparison;
+        
+        const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
+        const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
+        return timeA.getTime() - timeB.getTime();
+    });
+
+    return (
+      <ul className="space-y-1.5 pl-2 mt-1">
+        {sortedEvents.map(event => {
+          const child = childrenMap.get(event.data.childId);
+          if (!child) return null;
+          const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+          const isCompleted = isMissionCompletedForDate(event.data, day);
+          const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+          const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+          
+          return (
+            <li key={`${event.data.id}-${event.data.childId}`} className="text-xs flex items-start gap-1.5">
+              <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                  <PopoverTrigger asChild>
+                      <button disabled={isProcessingAction === event.data.id} className={cn("text-left leading-tight hover:text-primary disabled:opacity-50 disabled:cursor-wait flex items-baseline gap-1.5", isCompleted && "line-through text-muted-foreground/70")}>
+                          {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block text-green-500" />}
+                          <span className="font-semibold text-foreground/80">{formattedTime}</span>
+                          <span className="font-medium text-foreground/90 truncate">{child.name}:</span>
+                          <span className="text-muted-foreground truncate">{event.title}</span>
+                      </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2">
+                     <div className="flex flex-col gap-1">
+                        {isCompleted ? (
+                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)}><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                        ) : (
+                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)}><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => handleAssignToOthersClick(event.data)}><Users className="mr-2 h-4 w-4" /> Atribuir a outros Heróis</Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                        <Separator/>
+                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                    </div>
+                  </PopoverContent>
+              </Popover>
+            </li>
+          );
+        })}
+      </ul>
     );
   };
 
