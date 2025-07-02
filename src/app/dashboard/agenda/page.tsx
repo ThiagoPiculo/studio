@@ -525,19 +525,19 @@ export default function AgendaPage() {
                 ) : (
                     <CardContent className="p-4 space-y-4">
                       {dayEvents.morning.length > 0 && (
-                        <div className={cn("space-y-2", !isWeeklyView && "bg-yellow-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
                           {isWeeklyView ? renderWeeklyPeriodList(dayEvents.morning, day) : renderEventListForPeriod(dayEvents.morning, day)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
-                        <div className={cn("space-y-2", !isWeeklyView && "bg-orange-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", "bg-orange-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
                            {isWeeklyView ? renderWeeklyPeriodList(dayEvents.afternoon, day) : renderEventListForPeriod(dayEvents.afternoon, day)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
-                        <div className={cn("space-y-2", !isWeeklyView && "bg-indigo-500/5 p-3 rounded-lg")}>
+                        <div className={cn("space-y-2", "bg-indigo-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
                            {isWeeklyView ? renderWeeklyPeriodList(dayEvents.night, day) : renderEventListForPeriod(dayEvents.night, day)}
                         </div>
