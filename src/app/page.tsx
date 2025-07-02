@@ -46,18 +46,7 @@ export default function WelcomePage() {
           Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
         </p>
         
-        <div className="relative w-full max-w-4xl mb-16">
-            <Card className="rounded-3xl shadow-clay overflow-hidden p-2 bg-card">
-                 <Image 
-                    src="https://placehold.co/1024x512.png"
-                    alt="Grupo de crianças super-heróis"
-                    width={1024}
-                    height={512}
-                    className="rounded-2xl w-full h-auto"
-                    data-ai-hint="superhero kids team"
-                    priority
-                 />
-            </Card>
+        <div className="relative w-full max-w-4xl mb-16 h-0">
             <CornerIcon icon={Star} className="top-0 left-0 -translate-x-1/3 -translate-y-1/3 rotate-[-15deg]" />
             <CornerIcon icon={Award} className="top-0 right-0 translate-x-1/3 -translate-y-1/3 rotate-[15deg]" />
             <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
