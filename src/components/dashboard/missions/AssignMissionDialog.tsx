@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -26,10 +26,13 @@ import {
   deleteMissionInstancesByTemplateAndChild,
   updateRecurringMissionInstance,
   getMissionTemplateById,
+  getMissionInstancesForContext,
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, ListChecks, Edit, CalendarDays } from 'lucide-react';
+import { Loader2, Users, AlertCircle, ListChecks, Edit, CalendarDays, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -150,6 +153,8 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const [currentTemplate, setCurrentTemplate] = useState<MissionTemplate | null>(template);
   const [childToCustomize, setChildToCustomize] = useState<ChildProfile | null>(null);
   const [customSchedules, setCustomSchedules] = useState<Record<string, AssignmentFormValues>>({});
+  const [allInstances, setAllInstances] = useState<MissionInstance[]>([]);
+  const [conflictingAssignments, setConflictingAssignments] = useState<Record<string, MissionInstance>>({});
 
   const isEditInstanceMode = !!instanceToEdit;
 
@@ -163,7 +168,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
   
-  const getScheduleForChild = (childId: string): AssignmentFormValues => {
+  const getScheduleForChild = useCallback((childId: string): AssignmentFormValues => {
     if (customSchedules[childId]) {
       return customSchedules[childId];
     }
@@ -179,7 +184,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             endDate: currentTemplate.recurrenceRule.endDate?.toDate() ?? null,
         } : null,
     };
-  };
+  }, [customSchedules, currentTemplate]);
 
   const handleSaveCustomization = (childId: string, schedule: AssignmentFormValues) => {
     setCustomSchedules(prev => ({ ...prev, [childId]: schedule }));
@@ -191,7 +196,8 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       if (!isOpen || !user) return;
 
       setIsLoading(true);
-      setCustomSchedules({}); // Reset customizations on open
+      setCustomSchedules({}); 
+      setConflictingAssignments({});
       
       let finalTemplate = template;
       if (instanceToEdit && !template) {
@@ -205,29 +211,27 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       }
       setCurrentTemplate(finalTemplate);
       
-      if (isEditInstanceMode && instanceToEdit) {
-        const children = await getChildProfilesForAttribution(user.uid, currentContext);
+      try {
+        const [children, instances] = await Promise.all([
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, currentContext)
+        ]);
         setEligibleChildren(children);
+        setAllInstances(instances);
 
-        let initialRecurrenceRule = null;
-        if (instanceToEdit.recurrenceRule) {
-            const rule = instanceToEdit.recurrenceRule as any;
-            initialRecurrenceRule = {
-                ...rule,
-                endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null)
+        if (isEditInstanceMode && instanceToEdit) {
+            let initialRecurrenceRule = null;
+            if (instanceToEdit.recurrenceRule) {
+                const rule = instanceToEdit.recurrenceRule as any;
+                initialRecurrenceRule = { ...rule, endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null) }
             }
-        }
-        editForm.reset({
-            isRecurring: !!instanceToEdit.isRecurring,
-            startDate: instanceToEdit.startDate?.toDate() || null,
-            dueDate: instanceToEdit.dueDate?.toDate() || null,
-            recurrenceRule: initialRecurrenceRule,
-        });
-      } else if (!isEditInstanceMode && finalTemplate) {
-          try {
-            const children = await getChildProfilesForAttribution(user.uid, currentContext);
-            setEligibleChildren(children);
-
+            editForm.reset({
+                isRecurring: !!instanceToEdit.isRecurring,
+                startDate: instanceToEdit.startDate?.toDate() || null,
+                dueDate: instanceToEdit.dueDate?.toDate() || null,
+                recurrenceRule: initialRecurrenceRule,
+            });
+        } else if (!isEditInstanceMode && finalTemplate) {
             const assignmentsPromises = children.map(async (child) => {
               const activeInstances = await getActiveChildMissionInstancesByTemplateAndChild(finalTemplate!.id, child.id);
               return { childId: child.id, hasActiveInstance: activeInstances.length > 0 };
@@ -244,17 +248,50 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             
             setExistingAssignments(newExistingAssignments);
             setSelectedChildren(initialSelection);
-
-          } catch (error) {
-            console.error("Error fetching children or assignments:", error);
-            toast({ title: "Erro ao Carregar Crianças", variant: "destructive" });
-          }
+        }
+      } catch (error) {
+        console.error("Error fetching dialog data:", error);
+        toast({ title: "Erro ao Carregar Dados", variant: "destructive" });
       }
 
       setIsLoading(false);
     }
     initializeDialog();
   }, [isOpen, template, instanceToEdit, user, currentContext, toast, editForm, isEditInstanceMode, onOpenChange]);
+
+  useEffect(() => {
+    if (isLoading || isEditInstanceMode) {
+        setConflictingAssignments({});
+        return;
+    }
+
+    const newConflicts: Record<string, MissionInstance> = {};
+    for (const childId in selectedChildren) {
+        if (selectedChildren[childId] && !existingAssignments[childId]) {
+            const newMissionSchedule = getScheduleForChild(childId);
+            const newMissionStartDate = newMissionSchedule.isRecurring ? newMissionSchedule.startDate : newMissionSchedule.dueDate;
+
+            if (!newMissionStartDate) continue;
+
+            const conflictingInstance = allInstances.find(inst => {
+                if (inst.id === currentTemplate?.id) return false;
+                if (inst.childId !== childId) return false;
+                
+                const existingMissionStartDate = inst.isRecurring ? inst.startDate?.toDate() : inst.dueDate?.toDate();
+                if (!existingMissionStartDate) return false;
+                
+                return newMissionStartDate.getTime() === existingMissionStartDate.getTime();
+            });
+            
+            if (conflictingInstance) {
+                newConflicts[childId] = conflictingInstance;
+            }
+        }
+    }
+    setConflictingAssignments(newConflicts);
+
+  }, [selectedChildren, allInstances, getScheduleForChild, existingAssignments, isLoading, isEditInstanceMode, currentTemplate]);
+
 
   const familyChildren = useMemo(() => {
     return eligibleChildren.filter(child => child.familyId).sort((a,b) => a.name.localeCompare(b.name));
@@ -359,6 +396,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       const hasCustomSchedule = !!customSchedules[child.id];
       const isAlreadyAssigned = existingAssignments[child.id];
       const isSelected = selectedChildren[child.id];
+      const conflict = conflictingAssignments[child.id];
 
       const getStatusText = () => {
         if (isAlreadyAssigned) {
@@ -392,6 +430,18 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                         <span className="font-medium">
                             {child.name}
                         </span>
+                         {conflict && (
+                            <TooltipProvider>
+                                <Tooltip delayDuration={100}>
+                                    <TooltipTrigger asChild>
+                                        <AlertTriangle className="h-4 w-4 text-destructive" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Conflito com: "{conflict.title}" no mesmo horário.</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        )}
                     </Label>
                 </div>
                 {!isAlreadyAssigned && (
@@ -413,42 +463,6 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
         </div>
       )
     })
-  );
-
-  const renderAssignToChildren = () => (
-    <>
-      <div className="space-y-2">
-          {isLoading ? (
-              <div className="flex items-center justify-center h-40">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
-                  <p>Carregando crianças...</p>
-              </div>
-              ) : eligibleChildren.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground text-sm">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
-                  Nenhum Mini Herói encontrado para atribuição.
-              </div>
-              ) : (
-              <ScrollArea className="h-64 mt-2 pr-3">
-                  <div className="space-y-3">
-                      {familyChildren.length > 0 && (
-                          <div className="space-y-2">
-                              <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
-                              {renderChildList(familyChildren)}
-                          </div>
-                      )}
-                      {familyChildren.length > 0 && personalChildren.length > 0 && <Separator className="my-2" />}
-                      {personalChildren.length > 0 && (
-                          <div className="space-y-2">
-                              <Label className="text-sm font-semibold text-muted-foreground">No Seu Espaço Pessoal</Label>
-                              {renderChildList(personalChildren)}
-                          </div>
-                      )}
-                  </div>
-              </ScrollArea>
-          )}
-      </div>
-    </>
   );
 
   const getEditDescription = () => {
@@ -503,7 +517,35 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             </Form>
         ) : (
             <div className="space-y-4 pt-4">
-                {renderAssignToChildren()}
+                {isLoading ? (
+                    <div className="flex items-center justify-center h-40">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+                        <p>Carregando crianças...</p>
+                    </div>
+                    ) : eligibleChildren.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                        <AlertCircle className="h-8 w-8 mx-auto mb-2 text-primary" />
+                        Nenhum Mini Herói encontrado para atribuição.
+                    </div>
+                    ) : (
+                    <ScrollArea className="h-64 mt-2 pr-3">
+                        <div className="space-y-3">
+                            {familyChildren.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
+                                    {renderChildList(familyChildren)}
+                                </div>
+                            )}
+                            {familyChildren.length > 0 && personalChildren.length > 0 && <Separator className="my-2" />}
+                            {personalChildren.length > 0 && (
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold text-muted-foreground">No Seu Espaço Pessoal</Label>
+                                    {renderChildList(personalChildren)}
+                                </div>
+                            )}
+                        </div>
+                    </ScrollArea>
+                )}
                 <DialogFooter>
                     <DialogClose asChild><Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button></DialogClose>
                     <Button onClick={handleAssignSubmit} disabled={isProcessing || isLoading}>
