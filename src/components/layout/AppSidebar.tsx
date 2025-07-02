@@ -11,7 +11,6 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupLabel,
-    SidebarTrigger
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, ListChecks, Gift, Users } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
@@ -34,9 +33,8 @@ function AppLogo() {
 export function AppSidebar() {
     return (
         <Sidebar>
-            <SidebarHeader className="flex items-center justify-between">
+            <SidebarHeader>
                 <AppLogo />
-                <SidebarTrigger />
             </SidebarHeader>
 
             <SidebarContent className="p-0">

@@ -123,7 +123,7 @@ export function Breadcrumbs() {
   }
 
   return (
-    <nav aria-label="breadcrumb" className="mb-6 text-sm text-muted-foreground">
+    <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
       <ol className="flex items-center space-x-1.5 flex-wrap">
         {breadcrumbs.map((crumb, index) => {
            if (!crumb || !crumb.href) return null;
