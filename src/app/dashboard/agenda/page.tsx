@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2 } from 'lucide-react';
@@ -78,6 +78,7 @@ function AgendaPageContent() {
   const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
+  const [highlightedMissionId, setHighlightedMissionId] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
   useEffect(() => {
@@ -91,14 +92,29 @@ function AgendaPageContent() {
   }, [focusDateParam]);
 
   useEffect(() => {
-      if (openPopoverParam) {
-          // Delay to ensure the DOM is updated and the popover target exists
-          const timer = setTimeout(() => {
-              setActivePopover(openPopoverParam);
-          }, 200);
-          return () => clearTimeout(timer);
-      }
+    if (openPopoverParam) {
+        const timer = setTimeout(() => {
+            const element = document.querySelector(`[data-mission-id="${openPopoverParam}"]`);
+            setActivePopover(openPopoverParam);
+            setHighlightedMissionId(openPopoverParam);
+
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            
+            // Clean up URL to prevent re-triggering on refresh
+            const currentUrl = new URL(window.location.toString());
+            currentUrl.searchParams.delete('open_popover');
+            currentUrl.searchParams.delete('focus_date');
+            window.history.replaceState({}, '', currentUrl.toString());
+
+        }, 200);
+        return () => clearTimeout(timer);
+    }
+  // I'm intentionally not including other dependencies, this should only run when the param from the URL changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openPopoverParam]);
+
 
   const refetchData = useCallback(async () => {
     if (!user) return;
@@ -399,9 +415,22 @@ function AgendaPageContent() {
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                               return(
                               <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
-                                  <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                  <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
+                                    setActivePopover(isOpen ? popoverId : null);
+                                    if (!isOpen) {
+                                      setHighlightedMissionId(null);
+                                    }
+                                  }}>
                                     <PopoverTrigger asChild>
-                                        <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                        <button 
+                                            data-mission-id={popoverId}
+                                            disabled={isProcessingAction === event.data.id} 
+                                            className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
+                                              "hover:bg-accent/50",
+                                              isCompleted && "line-through text-muted-foreground/70",
+                                              highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                                            )}
+                                        >
                                             {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
                                             <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
                                             <span>{event.title}</span>
@@ -483,9 +512,22 @@ function AgendaPageContent() {
                             const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                             return (
                             <li key={event.data.id} className="text-xs text-muted-foreground leading-snug flex justify-between items-center gap-2">
-                                <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                                <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
+                                  setActivePopover(isOpen ? popoverId : null);
+                                  if (!isOpen) {
+                                    setHighlightedMissionId(null);
+                                  }
+                                }}>
                                   <PopoverTrigger asChild>
-                                      <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-center", isCompleted && "line-through text-muted-foreground/70")}>
+                                      <button 
+                                          data-mission-id={popoverId}
+                                          disabled={isProcessingAction === event.data.id} 
+                                          className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center",
+                                            "hover:bg-accent/50", 
+                                            isCompleted && "line-through text-muted-foreground/70",
+                                            highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                                          )}
+                                        >
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3.5 w-3.5 animate-spin inline-block mr-1.5" /> : isCompleted && <CheckCircle className="h-3.5 w-3.5 inline-block mr-1.5 text-green-500" />}
                                           <span className="font-semibold text-foreground/80 mr-1.5 w-10 text-left">{formattedTime}</span>
                                           <span>{event.title}</span>
@@ -651,9 +693,22 @@ function AgendaPageContent() {
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => setActivePopover(isOpen ? popoverId : null)}>
+                              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
+                                setActivePopover(isOpen ? popoverId : null);
+                                if (!isOpen) {
+                                  setHighlightedMissionId(null);
+                                }
+                              }}>
                                   <PopoverTrigger asChild>
-                                      <button disabled={isProcessingAction === event.data.id} className={cn("w-full text-left leading-tight hover:bg-accent/50 p-1 -m-1 rounded-md transition-colors disabled:opacity-50 disabled:cursor-wait flex items-baseline", isCompleted && "line-through text-muted-foreground/70")}>
+                                      <button 
+                                          data-mission-id={popoverId}
+                                          disabled={isProcessingAction === event.data.id} 
+                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-baseline", 
+                                            "hover:bg-accent/50",
+                                            isCompleted && "line-through text-muted-foreground/70",
+                                            highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                                          )}
+                                        >
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
                                           <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
                                           <span className="flex-1">{event.title}</span>
@@ -837,3 +892,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
