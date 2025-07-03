@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -32,7 +31,6 @@ import {
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
 import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -52,7 +50,6 @@ function FamilyPageContent() {
   const { currentContext, setCurrentContext, availableContexts, setAvailableContexts } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
   
   const [isClient, setIsClient] = useState(false);
   const [familyDetails, setFamilyDetails] = useState<Family | null>(null);
@@ -492,40 +489,12 @@ function FamilyPageContent() {
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
+             <CardHeader>
               <CardTitle>Convidar para a Aliança</CardTitle>
-              <CardDescription>Adicione outros responsáveis à sua aliança para gerenciarem os Mini Herois juntos.</CardDescription>
+              <CardDescription>Adicione outros responsáveis para gerenciar os Mini Heróis juntos.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="link" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="link">Por Link ou Código</TabsTrigger>
-                  <TabsTrigger value="email">Por E-mail</TabsTrigger>
-                </TabsList>
-                <TabsContent value="link" className="pt-6">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Qualquer pessoa com este link ou código pode entrar na sua aliança como colaborador.
-                  </p>
-                  <div className="flex items-center gap-2">
-                      <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-                      <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
-                          <Copy className="h-5 w-5" />
-                      </Button>
-                      {isOwner && (
-                      <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
-                          {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-                      </Button>
-                      )}
-                  </div>
-                  <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
-                      <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
-                  </Button>
-                </TabsContent>
-                <TabsContent value="email" className="pt-6">
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Envie um convite para um responsável com conta no Mini Herois se juntar à sua aliança.
-                  </p>
-                  <form onSubmit={handleSendInvitation} className="space-y-4">
+                <form onSubmit={handleSendInvitation} className="space-y-4">
                       <Input
                           type="email"
                           placeholder="email.do.responsavel@exemplo.com"
@@ -536,11 +505,36 @@ function FamilyPageContent() {
                       />
                       <Button type="submit" disabled={isProcessingEmailInvite}>
                           {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                          Enviar Convite
+                          Enviar Convite por E-mail
                       </Button>
                   </form>
-                </TabsContent>
-              </Tabs>
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">
+                        Ou
+                      </span>
+                    </div>
+                  </div>
+                  <div className='space-y-2'>
+                    <Label className='text-muted-foreground'>Compartilhar Código de Convite</Label>
+                    <div className="flex items-center gap-2">
+                        <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
+                        <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
+                            <Copy className="h-5 w-5" />
+                        </Button>
+                        {isOwner && (
+                        <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
+                            {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                        </Button>
+                        )}
+                    </div>
+                    <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
+                        <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
+                    </Button>
+                  </div>
             </CardContent>
           </Card>
         </div>
@@ -798,19 +792,14 @@ function FamilyPageContent() {
         </Card>
       )}
 
-      <Tabs defaultValue={searchParams.get('action') || 'create'} className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="create"><UserPlus className="mr-2 h-4 w-4" />Criar uma Aliança</TabsTrigger>
-          <TabsTrigger value="join"><LinkIcon className="mr-2 h-4 w-4" />Entrar em uma Aliança</TabsTrigger>
-        </TabsList>
-        <TabsContent value="create">
-          <Card>
+      <div className="grid md:grid-cols-2 gap-6">
+        <Card>
             <CardHeader>
-              <CardTitle>Crie Sua Própria Aliança</CardTitle>
-              <CardDescription>Dê um nome para sua aliança. Após criar, você receberá um código para convidar outros responsáveis.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança</CardTitle>
+                <CardDescription>Dê um nome para sua aliança e convide outros responsáveis.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
-              <CardContent className="space-y-2">
+              <CardContent>
                 <Input 
                   placeholder="Ex: Aliança Aventura" 
                   value={familyName}
@@ -826,15 +815,13 @@ function FamilyPageContent() {
               </CardFooter>
             </form>
           </Card>
-        </TabsContent>
-        <TabsContent value="join">
           <Card>
             <CardHeader>
-              <CardTitle>Junte-se a uma Aliança Existente</CardTitle>
-              <CardDescription>Peça o código de convite de 6 dígitos para o administrador da aliança e insira-o abaixo.</CardDescription>
+                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
+                <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
-              <CardContent className="space-y-2">
+              <CardContent>
                  <Input 
                   placeholder="Código de 6 dígitos"
                   value={inviteCode}
@@ -852,8 +839,8 @@ function FamilyPageContent() {
               </CardFooter>
             </form>
           </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
+
        <Card className="bg-muted/50">
         <CardHeader className="flex-row items-center gap-3">
           <Home className="h-6 w-6 text-muted-foreground"/>
