@@ -193,16 +193,17 @@ export default function MissionsHubPage() {
                         O Motor da Aventura: Missões
                     </DialogTitle>
                     <DialogDescription className="pt-2">
-                      As missões são o mapa e os desafios que levam ao tesouro. Em termos simples, são as tarefas, hábitos e responsabilidades que você quer incentivar.
+                      Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele.
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] pr-4">
-                  <div className="space-y-3 text-sm text-muted-foreground pb-4">
+                  <div className="space-y-4 text-sm text-muted-foreground pb-4">
+                    <p>Em termos simples, as missões são as tarefas, os hábitos e as responsabilidades que você quer incentivar no dia a dia da criança.</p>
                     <p>Elas transformam deveres em uma jornada heroica, e seu propósito é multifacetado:</p>
-                    <ul className="list-disc pl-5 space-y-2">
+                    <ul className="list-disc pl-5 space-y-3">
                         <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
                         <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
-                        <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói precisa completar missões para ganhar Estrelas (⭐). As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
+                        <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
                         <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
                         <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
                     </ul>
@@ -387,5 +388,4 @@ export default function MissionsHubPage() {
     </div>
   );
 }
-
     
