@@ -35,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { serverTimestamp } from 'firebase/firestore';
+import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
@@ -44,8 +44,6 @@ import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict 
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { Timestamp } from 'firebase/firestore';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -1403,5 +1401,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-
-    
