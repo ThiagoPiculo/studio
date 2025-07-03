@@ -23,6 +23,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -41,7 +51,6 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRecurrenceSummary } from '@/lib/calendar-utils';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function MissionsHubPage() {
@@ -217,6 +226,11 @@ export default function MissionsHubPage() {
                 <p className="pt-2">Em resumo, as missões são a base da gamificação. Elas são as ações que impulsionam o progresso, geram as recompensas e transformam a rotina de obrigações em uma jornada de conquistas e crescimento.</p>
               </div>
             </ScrollArea>
+            <DialogFooter className="mt-4">
+              <DialogClose asChild>
+                <Button variant="outline" className="w-full">Entendido!</Button>
+              </DialogClose>
+            </DialogFooter>
         </DialogContent>
       </Dialog>
       
