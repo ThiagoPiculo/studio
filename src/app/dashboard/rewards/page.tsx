@@ -48,6 +48,7 @@ import { useRouter } from 'next/navigation';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const starCostFilterOptions = [
   { value: 'all', label: 'Qualquer Custo' },
@@ -258,7 +259,7 @@ export default function RewardTemplatesHubPage() {
                   <Info className="mr-2 h-5 w-5" /> Sobre Recompensas
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-headline flex items-center gap-2">
                         <Gift className="h-6 w-6 text-primary" />
@@ -268,25 +269,27 @@ export default function RewardTemplatesHubPage() {
                       As recompensas são uma parte fundamental da jornada no Mini Heróis. Elas são o grande prêmio no final da aventura, o "tesouro" que os heróis ganham com seu esforço.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 space-y-3 text-sm text-muted-foreground">
-                    <p>Pense nelas como a motivação principal para as crianças. O sistema funciona com uma lógica simples e poderosa:</p>
-                    <p><strong>Esforço Gera Valor:</strong> Ao completar as missões do dia a dia (as tarefas), a criança ganha Estrelas (⭐). Essas estrelas são a "moeda" do nosso universo heroico. Elas são a representação visual e tangível do esforço e da responsabilidade da criança.</p>
-                    <p><strong>Valor Gera Conquistas:</strong> A criança acumula essas estrelas em seu perfil. Com elas, ela pode "comprar" ou "resgatar" as recompensas que você, o responsável, criou e disponibilizou.</p>
-                    <p className="font-semibold text-foreground">O objetivo das recompensas vai muito além de simplesmente "dar um prêmio". Elas servem para:</p>
-                    <ul className="list-disc pl-5 space-y-2">
-                        <li><strong className="text-foreground">Ensinar Causa e Efeito:</strong> A criança aprende de forma concreta que o seu esforço (completar missões) leva a um resultado positivo e desejado (conquistar uma recompensa).</li>
-                        <li><strong className="text-foreground">Introduzir Educação Financeira:</strong> A dinâmica de "juntar estrelas" para conseguir algo maior ensina, de forma lúdica, os conceitos de economizar, poupar e trabalhar por um objetivo.</li>
-                        <li><strong className="text-foreground">Fortalecer Laços Familiares:</strong> Muitas das melhores recompensas não são coisas, mas sim experiências. Uma "tarde de jogos em família", "uma hora a mais no parque com o papai" ou "ajudar a fazer o bolo do fim de semana" são recompensas que criam memórias e fortalecem a conexão entre vocês.</li>
-                        <li><strong className="text-foreground">Dar Autonomia e Poder de Escolha:</strong> Ao permitir que a criança escolha qual recompensa ela quer "comprar" com suas estrelas, você dá a ela um senso de controle e autonomia, o que é muito importante para o seu desenvolvimento.</li>
-                    </ul>
-                    <p className="font-semibold text-foreground">O sistema é flexível para você criar recompensas que se encaixem na sua família:</p>
-                     <ul className="list-disc pl-5 space-y-1">
-                        <li><strong>Experiências:</strong> Um piquenique, uma noite de cinema, uma história extra antes de dormir.</li>
-                        <li><strong>Privilégios:</strong> Escolher o jantar de sexta-feira, ter 30 minutos a mais de videogame.</li>
-                        <li><strong>Itens Materiais:</strong> Um gibi, um brinquedo pequeno, um livro novo.</li>
-                    </ul>
-                    <p className="pt-2">Em resumo, as recompensas são a ferramenta que fecha o ciclo de gamificação: a missão é o desafio, as estrelas são a pontuação, e a recompensa é a conquista que torna toda a jornada divertida e valiosa.</p>
-                </div>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                  <div className="space-y-3 text-sm text-muted-foreground pb-4">
+                      <p>Pense nelas como a motivação principal para as crianças. O sistema funciona com uma lógica simples e poderosa:</p>
+                      <p><strong>Esforço Gera Valor:</strong> Ao completar as missões do dia a dia (as tarefas), a criança ganha Estrelas (⭐). Essas estrelas são a "moeda" do nosso universo heroico. Elas são a representação visual e tangível do esforço e da responsabilidade da criança.</p>
+                      <p><strong>Valor Gera Conquistas:</strong> A criança acumula essas estrelas em seu perfil. Com elas, ela pode "comprar" ou "resgatar" as recompensas que você, o responsável, criou e disponibilizou.</p>
+                      <p className="font-semibold text-foreground">O objetivo das recompensas vai muito além de simplesmente "dar um prêmio". Elas servem para:</p>
+                      <ul className="list-disc pl-5 space-y-2">
+                          <li><strong className="text-foreground">Ensinar Causa e Efeito:</strong> A criança aprende de forma concreta que o seu esforço (completar missões) leva a um resultado positivo e desejado (conquistar uma recompensa).</li>
+                          <li><strong className="text-foreground">Introduzir Educação Financeira:</strong> A dinâmica de "juntar estrelas" para conseguir algo maior ensina, de forma lúdica, os conceitos de economizar, poupar e trabalhar por um objetivo.</li>
+                          <li><strong className="text-foreground">Fortalecer Laços Familiares:</strong> Muitas das melhores recompensas não são coisas, mas sim experiências. Uma "tarde de jogos em família", "uma hora a mais no parque com o papai" ou "ajudar a fazer o bolo do fim de semana" são recompensas que criam memórias e fortalecem a conexão entre vocês.</li>
+                          <li><strong className="text-foreground">Dar Autonomia e Poder de Escolha:</strong> Ao permitir que a criança escolha qual recompensa ela quer "comprar" com suas estrelas, você dá a ela um senso de controle e autonomia, o que é muito importante para o seu desenvolvimento.</li>
+                      </ul>
+                      <p className="font-semibold text-foreground">O sistema é flexível para você criar recompensas que se encaixem na sua família:</p>
+                       <ul className="list-disc pl-5 space-y-1">
+                          <li><strong>Experiências:</strong> Um piquenique, uma noite de cinema, uma história extra antes de dormir.</li>
+                          <li><strong>Privilégios:</strong> Escolher o jantar de sexta-feira, ter 30 minutos a mais de videogame.</li>
+                          <li><strong>Itens Materiais:</strong> Um gibi, um brinquedo pequeno, um livro novo.</li>
+                      </ul>
+                      <p className="pt-2">Em resumo, as recompensas são a ferramenta que fecha o ciclo de gamificação: a missão é o desafio, as estrelas são a pontuação, e a recompensa é a conquista que torna toda a jornada divertida e valiosa.</p>
+                  </div>
+                </ScrollArea>
             </DialogContent>
           </Dialog>
         </CardContent>
