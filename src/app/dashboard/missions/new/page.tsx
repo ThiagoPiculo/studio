@@ -18,7 +18,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
 import { missionCategories, weekdays } from '@/lib/types'; 
-import { Loader2, ListChecks, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
@@ -169,7 +169,7 @@ function CreateMissionTemplatePageContent() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <ListChecks className="h-10 w-10 text-primary" />
+            <Target className="h-10 w-10 text-primary" />
             <div>
               <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
               <CardDescription className="text-md">
@@ -284,7 +284,7 @@ function CreateMissionTemplatePageContent() {
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <ListChecks className="mr-2 h-4 w-4" />
+                  <Target className="mr-2 h-4 w-4" />
                 )}
                 Criar e Atribuir Missão
               </Button>

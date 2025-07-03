@@ -2,7 +2,7 @@
 // src/app/dashboard/tasks/page.tsx
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lightbulb, ListChecks } from 'lucide-react';
+import { Lightbulb, Target } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TasksHubPage() {
@@ -11,7 +11,7 @@ export default function TasksHubPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
-            <ListChecks className="mr-3 h-8 w-8 text-primary" />
+            <Target className="mr-3 h-8 w-8 text-primary" />
             Gerenciamento de Tarefas
           </CardTitle>
           <CardDescription>

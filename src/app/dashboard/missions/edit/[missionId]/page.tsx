@@ -17,7 +17,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getMissionTemplateById, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
 import { missionCategories, weekdays } from '@/lib/types'; 
-import { Loader2, ListChecks, Save, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
+import { Loader2, Target, Save, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
 import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 import { Timestamp } from 'firebase/firestore';
 
@@ -220,7 +220,7 @@ export default function EditMissionTemplatePage() {
       <Card className="shadow-xl">
         <CardHeader>
            <div className="flex items-center gap-3 mb-2">
-            <ListChecks className="h-10 w-10 text-primary" />
+            <Target className="h-10 w-10 text-primary" />
             <div>
               <CardTitle className="text-3xl font-headline">Editar Missão</CardTitle>
               <CardDescription className="text-md">

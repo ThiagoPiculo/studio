@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
+import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -162,7 +162,7 @@ export default function MissionsHubPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
-            <ListChecks className="mr-3 h-8 w-8 text-primary" />
+            <Target className="mr-3 h-8 w-8 text-primary" />
             Central de Missões
           </CardTitle>
           <CardDescription>
@@ -189,7 +189,7 @@ export default function MissionsHubPage() {
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-                        <ListChecks className="h-6 w-6 text-primary" />
+                        <Target className="h-6 w-6 text-primary" />
                         O Motor da Aventura: Missões
                     </DialogTitle>
                     <DialogDescription className="pt-2">

@@ -8,7 +8,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { UserPlus, ListChecks, Gift, CheckCircle, Circle, ArrowRight } from 'lucide-react';
+import { UserPlus, Target, Gift, CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface GettingStartedGuideProps {
@@ -67,7 +67,7 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
 
   const steps = [
     { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Herói', href: '/dashboard/onboarding', icon: UserPlus },
-    { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: ListChecks },
+    { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: Target },
     { name: 'rewards', complete: hasRewards, title: 'Crie sua primeira Recompensa', href: '/dashboard/rewards/new', icon: Gift },
   ];
 

@@ -28,7 +28,7 @@ import {
   getMissionTemplateById,
   getMissionInstancesForContext,
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, ListChecks, Edit, CalendarDays, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, AlertTriangle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -494,7 +494,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle className="text-2xl flex items-center gap-2">
-            {isEditInstanceMode ? <Edit className="h-6 w-6 text-primary" /> : <ListChecks className="h-6 w-6 text-primary" />}
+            {isEditInstanceMode ? <Edit className="h-6 w-6 text-primary" /> : <Target className="h-6 w-6 text-primary" />}
             {getDialogTitle()}
           </DialogTitle>
           <DialogDescription>
