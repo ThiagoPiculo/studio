@@ -51,7 +51,7 @@ export function FamilyContextSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="end">
-        <DropdownMenuLabel>Alternar Contexto</DropdownMenuLabel>
+        <DropdownMenuLabel>Minhas Alianças</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={currentContext} onValueChange={handleContextChange}>
           {availableContexts.map((context) => (
             <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer">

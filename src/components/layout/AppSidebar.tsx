@@ -68,9 +68,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/family" tooltip="Aliança">
+                         <SidebarMenuButton href="/dashboard/family" tooltip="Gerenciar Aliança">
                             <Shield />
-                            <span>Aliança</span>
+                            <span>Gerenciar Aliança</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
