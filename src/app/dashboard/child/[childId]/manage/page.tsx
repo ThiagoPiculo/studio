@@ -47,7 +47,7 @@ import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate }
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Tooltip, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
