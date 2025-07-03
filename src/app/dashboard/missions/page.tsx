@@ -159,61 +159,66 @@ export default function MissionsHubPage() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline flex items-center">
-            <Target className="mr-3 h-8 w-8 text-primary" />
-            Central de Missões
-          </CardTitle>
-          <CardDescription>
-            {templatesDescription}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-wrap gap-4">
-           <Link href="/dashboard/missions/new">
-            <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
-              <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
-            </Button>
-          </Link>
-          <Link href="/dashboard/missions/ideas">
-            <Button variant="secondary" className="w-full sm:w-auto">
-              <Lightbulb className="mr-2 h-5 w-5" /> Ver Ideias de Missões
-            </Button>
-          </Link>
-          <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                  <Info className="mr-2 h-5 w-5" /> Sobre Missões
+      <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
+        <Card className="shadow-lg">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center">
+                  <Target className="mr-3 h-8 w-8 text-primary" />
+                  Central de Missões
+                </CardTitle>
+                <CardDescription>
+                  {templatesDescription}
+                </CardDescription>
+              </div>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0">
+                    <Info className="mr-2 h-4 w-4" /> Sobre Missões
+                </Button>
+              </DialogTrigger>
+            </div>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-4">
+            <Link href="/dashboard/missions/new">
+              <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+                <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-                        <Target className="h-6 w-6 text-primary" />
-                        O Motor da Aventura: Missões
-                    </DialogTitle>
-                    <DialogDescription className="pt-2">
-                      Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="max-h-[60vh] pr-4">
-                  <div className="space-y-4 text-sm text-muted-foreground pb-4">
-                    <p>Em termos simples, as missões são as tarefas, os hábitos e as responsabilidades que você quer incentivar no dia a dia da criança.</p>
-                    <p>Elas transformam deveres em uma jornada heroica, e seu propósito é multifacetado:</p>
-                    <ul className="list-disc pl-5 space-y-3">
-                        <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
-                        <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
-                        <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
-                        <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
-                        <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
-                    </ul>
-                    <p className="pt-2">Em resumo, as missões são a base da gamificação. Elas são as ações que impulsionam o progresso, geram as recompensas e transformam a rotina de obrigações em uma jornada de conquistas e crescimento.</p>
-                  </div>
-                </ScrollArea>
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
+            </Link>
+            <Link href="/dashboard/missions/ideas">
+              <Button variant="secondary" className="w-full sm:w-auto">
+                <Lightbulb className="mr-2 h-5 w-5" /> Ver Ideias de Missões
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <DialogContent className="sm:max-w-xl">
+            <DialogHeader>
+                <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                    <Target className="h-6 w-6 text-primary" />
+                    O Motor da Aventura: Missões
+                </DialogTitle>
+                <DialogDescription className="pt-2">
+                  Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele.
+                </DialogDescription>
+            </DialogHeader>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4 text-sm text-muted-foreground pb-4">
+                <p>Em termos simples, as missões são as tarefas, os hábitos e as responsabilidades que você quer incentivar no dia a dia da criança.</p>
+                <p>Elas transformam deveres em uma jornada heroica, e seu propósito é multifacetado:</p>
+                <ul className="list-disc pl-5 space-y-3">
+                    <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
+                    <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
+                    <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
+                    <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
+                    <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
+                </ul>
+                <p className="pt-2">Em resumo, as missões são a base da gamificação. Elas são as ações que impulsionam o progresso, geram as recompensas e transformam a rotina de obrigações em uma jornada de conquistas e crescimento.</p>
+              </div>
+            </ScrollArea>
+        </DialogContent>
+      </Dialog>
       
       <Card>
         <CardHeader>
