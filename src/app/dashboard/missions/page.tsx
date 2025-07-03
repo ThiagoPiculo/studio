@@ -173,7 +173,7 @@ export default function MissionsHubPage() {
             </Button>
           </Link>
           <Link href="/dashboard/missions/ideas">
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="secondary" className="w-full sm:w-auto">
               <Lightbulb className="mr-2 h-5 w-5" /> Ver Ideias de Missões
             </Button>
           </Link>

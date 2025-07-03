@@ -239,7 +239,7 @@ export default function RewardTemplatesHubPage() {
             </Button>
           </Link>
           <Link href="/dashboard/rewards/ideas">
-            <Button variant="outline" className="w-full sm:w-auto">
+            <Button variant="secondary" className="w-full sm:w-auto">
               <Sparkles className="mr-2 h-5 w-5" /> Ver Ideias de Recompensas
             </Button>
           </Link>
