@@ -84,7 +84,9 @@ export default function MissionIdeasPage() {
                         <Skeleton className="h-10 w-full" />
                     </CardContent>
                 </Card>
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Skeleton className="h-24 w-full rounded-lg" />
+                    <Skeleton className="h-24 w-full rounded-lg" />
                     <Skeleton className="h-24 w-full rounded-lg" />
                     <Skeleton className="h-24 w-full rounded-lg" />
                 </div>
@@ -122,9 +124,9 @@ export default function MissionIdeasPage() {
             </Card>
 
             {filteredMissionGroups.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full space-y-4">
+                <Accordion type="single" collapsible className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
                     {filteredMissionGroups.map((group) => (
-                        <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md">
+                        <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md break-inside-avoid">
                             <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
                             <div className="flex items-center gap-3">
                                     <group.icon className="h-7 w-7 text-primary" />
