@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, getChildRewardInstancesByChild, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, completeMissionInstance, deleteMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -47,6 +47,7 @@ import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate }
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Tooltip, TooltipProvider, TooltipContent } from '@/components/ui/tooltip';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -59,44 +60,124 @@ export default function ManageChildPage() {
   const { toast } = useToast();
   const childId = params.childId as string;
 
+  // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
+  
+  // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
-
-  const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
-  const [isLoadingRewards, setIsLoadingRewards] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
-  const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
-  const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
-  const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
-  const [isProcessingRewardAction, setIsProcessingRewardAction] = useState(false);
-  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
-  
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [isLoadingMissions, setIsLoadingMissions] = useState(false);
+
+  // Mission-specific states
   const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
-  const [isDeletingMission, setIsDeletingMission] = useState(false);
   const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
-  const [isReactivatingMission, setIsReactivatingMission] = useState(false);
-  
   const [missionToUndo, setMissionToUndo] = useState<{instance: MissionInstance, date: Date} | null>(null);
-  const [isUndoing, setIsUndoing] = useState(false);
-
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [isLoadingActivities, setIsLoadingActivities] = useState(false);
-  const [stats, setStats] = useState({
-    completedMissions: 0,
-    starsEarned: 0,
-    rewardsRedeemed: 0,
-    pendingMissions: 0,
-    availableRewards: 0,
-    earnedBadges: 0,
-  });
+  
+  // Reward-specific states
+  const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
+  const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
+  const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
+  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
   
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
+
+  // Centralized data fetching function
+  const fetchData = useCallback(async () => {
+    if (!childId) return;
+    setIsLoading(true);
+    try {
+      const [profile, missions, rewards] = await Promise.all([
+        getChildProfileById(childId),
+        getMissionInstancesByChild(childId),
+        getChildRewardInstancesByChild(childId),
+      ]);
+
+      if (profile) {
+        setChild(profile);
+        setMissionInstances(missions);
+        setChildRewards(rewards.sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
+        }));
+      } else {
+        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herói.", variant: "destructive" });
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error("Error fetching child data:", error);
+      toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados. Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [childId, router, toast]);
+
+  // Initial data fetch
+  useEffect(() => {
+    if (childId) {
+      fetchData();
+    } else {
+      router.push('/dashboard');
+    }
+  }, [childId, fetchData, router]);
+
+  // Derived data using useMemo for reactivity and performance
+  const stats = useMemo(() => {
+    if (!child || !missionInstances || !childRewards) {
+      return { completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0, pendingMissions: 0, availableRewards: 0, earnedBadges: 0 };
+    }
+
+    const totalCompletedOccurrences = missionInstances.reduce((sum, m) => sum + Object.keys(m.completionLog || {}).length, 0);
+
+    const totalStarsEarned = missionInstances
+      .flatMap(m => Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward))
+      .reduce((sum, stars) => sum + (stars || 0), 0);
+
+    const pendingMissionsCount = missionInstances.filter(m => m.status === 'pending').length;
+    const redeemedRewardsCount = childRewards.filter(r => r.status === 'redeemed').length;
+    const availableRewardsCount = childRewards.filter(r => r.status === 'active').length;
+    const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
+
+    return {
+      completedMissions: totalCompletedOccurrences,
+      starsEarned: totalStarsEarned,
+      rewardsRedeemed: redeemedRewardsCount,
+      pendingMissions: pendingMissionsCount,
+      availableRewards: availableRewardsCount,
+      earnedBadges: earnedBadgesCount,
+    };
+  }, [child, missionInstances, childRewards]);
+
+  const activities = useMemo(() => {
+    if (!missionInstances || !childRewards) return [];
+    
+    const redeemedRewards = childRewards.filter(r => r.status === 'redeemed' && r.redeemedAt);
+
+    const allActivities: Activity[] = [
+      ...missionInstances.flatMap(m =>
+        Object.entries(m.completionLog || {}).map(([dateStr, completedTimestamp]) => ({
+          ...m,
+          type: 'mission' as const,
+          scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
+          completedAt: completedTimestamp,
+        }))
+      ),
+      ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
+    ].sort((a, b) => {
+        const timeA = a.completedAt instanceof Timestamp ? a.completedAt.toDate().getTime() : new Date(a.completedAt as any).getTime();
+        const timeB = b.completedAt instanceof Timestamp ? b.completedAt.toDate().getTime() : new Date(b.completedAt as any).getTime();
+        return timeB - timeA;
+    });
+    return allActivities.slice(0, 10);
+  }, [missionInstances, childRewards]);
+
 
   const calculateXpDetails = (level: number, currentXp: number) => {
     let xpForCurrentLevel = 0;
@@ -125,129 +206,10 @@ export default function ManageChildPage() {
     return differenceInYears(new Date(), birthDate);
   };
 
-  const fetchChildData = useCallback(async () => {
-    if (!childId) return;
-    setIsLoading(true);
-    try {
-      const profile = await getChildProfileById(childId);
-      if (profile) {
-        setChild(profile);
-      } else {
-        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herói. Verifique o link ou volte ao painel.", variant: "destructive" });
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error("Error fetching child profile:", error);
-      toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados da criança. Verifique sua conexão ou tente recarregar a página.", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [childId, router, toast]);
-
-  useEffect(() => {
-    if (childId) {
-      fetchChildData();
-    } else {
-        router.push('/dashboard');
-    }
-  }, [childId, router, fetchChildData]);
-  
-  const fetchMissionData = useCallback(async () => {
-      if (!childId) return;
-      setIsLoadingMissions(true);
-      try {
-          const missions = await getMissionInstancesByChild(childId);
-          setMissionInstances(missions);
-      } catch (error) {
-          console.error("Error fetching mission instances:", error);
-          toast({ title: "Erro ao Carregar Missões", description: "Não foi possível buscar as missões atribuídas.", variant: "destructive" });
-      } finally {
-          setIsLoadingMissions(false);
-      }
-  }, [childId, toast]);
-
-  useEffect(() => {
-    if (activeTab === 'rewards' && childId) {
-      setIsLoadingRewards(true);
-      getChildRewardInstancesByChild(childId)
-        .then(rewards => {
-          setChildRewards(rewards.sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1; 
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1; 
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
-          }));
-        })
-        .catch(error => {
-          console.error("Error fetching child rewards:", error);
-          toast({ title: "Erro ao Carregar Recompensas", description: "Não foi possível buscar as recompensas atribuídas.", variant: "destructive" });
-        })
-        .finally(() => {
-          setIsLoadingRewards(false);
-        });
-    }
-    
-    if (activeTab === 'missions' && childId) {
-        fetchMissionData();
-    }
-    
-    if (activeTab === 'overview' && childId && child) {
-      setIsLoadingActivities(true);
-      Promise.all([
-        getMissionInstancesByChild(childId),
-        getChildRewardInstancesByChild(childId),
-      ]).then(([missions, rewards]) => {
-        const totalCompletedOccurrences = missions.reduce((sum, m) => sum + Object.keys(m.completionLog || {}).length, 0);
-        const pendingMissions = missions.filter(m => m.status === 'pending');
-        const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
-        const availableRewards = rewards.filter(r => r.status === 'active');
-        
-        const totalStarsEarned = missions
-          .flatMap(m => Object.keys(m.completionLog || {}).length > 0 ? Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward) : [])
-          .reduce((sum, stars) => sum + stars, 0);
-
-        const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
-
-        setStats({
-          completedMissions: totalCompletedOccurrences,
-          starsEarned: totalStarsEarned,
-          rewardsRedeemed: redeemedRewards.length,
-          pendingMissions: pendingMissions.length,
-          availableRewards: availableRewards.length,
-          earnedBadges: earnedBadgesCount,
-        });
-
-        const allActivities: Activity[] = [
-          ...missions.flatMap(m =>
-            Object.entries(m.completionLog || {}).map(([dateStr, completedTimestamp]) => ({
-              ...m,
-              type: 'mission' as const,
-              scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()), // Parse the date string key
-              completedAt: completedTimestamp,
-            }))
-          ),
-          ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
-        ].sort((a, b) => {
-            const timeA = a.completedAt instanceof Timestamp ? a.completedAt.toDate().getTime() : new Date(a.completedAt as any).getTime();
-            const timeB = b.completedAt instanceof Timestamp ? b.completedAt.toDate().getTime() : new Date(b.completedAt as any).getTime();
-            return timeB - timeA;
-        });
-        setActivities(allActivities.slice(0, 10)); // Limit to 10 recent activities
-      }).catch(error => {
-        console.error("Error fetching activities:", error);
-        toast({ title: "Erro ao Carregar Atividades", description: "Não foi possível buscar o histórico de atividades.", variant: "destructive" });
-      }).finally(() => {
-        setIsLoadingActivities(false);
-      });
-    }
-  }, [activeTab, childId, toast, fetchMissionData, child]);
-  
-  const handleProfileUpdate = useCallback(() => {
-    fetchChildData().then(() => {
-      toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
-    });
-  }, [fetchChildData, toast, child?.name]);
+  const handleProfileUpdate = useCallback(async () => {
+    await fetchData();
+    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
+  }, [fetchData, toast, child?.name]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child) return;
@@ -302,12 +264,10 @@ export default function ManageChildPage() {
 
   const handleUndoCompletion = async () => {
       if (!missionToUndo || !child) return;
-      setIsUndoing(true);
+      setIsDeleting(true); // Using isDeleting as a generic processing state for this dialog
       try {
-        const updatedChildProfile = await reactivateMissionInstance(missionToUndo.instance.id, missionToUndo.date);
-        setChild(updatedChildProfile);
-        fetchMissionData();
-
+        await reactivateMissionInstance(missionToUndo.instance.id, missionToUndo.date);
+        await fetchData();
         toast({
           title: "Ação Desfeita!",
           description: `A conclusão da missão "${missionToUndo.instance.title}" foi revertida.`,
@@ -316,7 +276,7 @@ export default function ManageChildPage() {
         console.error("Error undoing mission completion:", error);
         toast({ title: "Erro ao Desfazer", description: error.message || "Não foi possível desfazer a conclusão.", variant: "destructive" });
       } finally {
-        setIsUndoing(false);
+        setIsDeleting(false);
         setMissionToUndo(null);
       }
   };
@@ -324,13 +284,10 @@ export default function ManageChildPage() {
 
   const handleReactivateMission = async () => {
     if (!missionToReactivate || !child) return;
-    setIsReactivatingMission(true);
+    setIsDeleting(true);
     try {
-      // For legacy 'completed' missions, we don't have a specific date. We assume the last completion.
-      const updatedChildProfile = await reactivateMissionInstance(missionToReactivate.id);
-      setChild(updatedChildProfile);
-      fetchMissionData();
-
+      await reactivateMissionInstance(missionToReactivate.id);
+      await fetchData();
       toast({
         title: "Missão Reativada!",
         description: `A missão "${missionToReactivate.title}" está pendente novamente.`,
@@ -339,17 +296,17 @@ export default function ManageChildPage() {
       console.error("Error reactivating mission:", error);
       toast({ title: "Erro ao Reativar", description: error.message || "Não foi possível reativar a missão.", variant: "destructive" });
     } finally {
-      setIsReactivatingMission(false);
+      setIsDeleting(true);
       setMissionToReactivate(null);
     }
   };
   
   const handleDeleteMissionInstance = async () => {
     if (!missionToDelete) return;
-    setIsDeletingMission(true);
+    setIsDeleting(true);
     try {
       await deleteMissionInstance(missionToDelete.id);
-      setMissionInstances(prev => prev.filter(m => m.id !== missionToDelete.id));
+      await fetchData();
       toast({
         title: "Missão Removida",
         description: `A missão "${missionToDelete.title}" foi removida da lista de ${child?.name}.`
@@ -358,11 +315,10 @@ export default function ManageChildPage() {
       console.error("Error deleting mission instance:", error);
       toast({ title: "Erro ao Remover Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
     } finally {
-      setIsDeletingMission(false);
+      setIsDeleting(false);
       setMissionToDelete(null);
     }
   };
-
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -417,14 +373,14 @@ export default function ManageChildPage() {
 
   const handleMarkAsRedeemed = async () => {
     if (!instanceToManage || !child) return;
-    setIsProcessingRewardAction(true);
+    setIsDeleting(true);
     try {
       const currentChildProfile = await getChildProfileById(child.id); 
       if (!currentChildProfile) throw new Error("Perfil da criança não encontrado para verificação de estrelas.");
 
       if (currentChildProfile.stars < instanceToManage.starsCost) {
         toast({ title: "Quase lá!", description: `${child.name} precisa de mais estrelas para resgatar "${instanceToManage.title}". Continue as missões!`, variant: "destructive", duration: 7000 });
-        setIsProcessingRewardAction(false);
+        setIsDeleting(false);
         setIsRedeemConfirmOpen(false);
         return;
       }
@@ -433,36 +389,23 @@ export default function ManageChildPage() {
       await updateChildProfile(child.id, { stars: newStars });
       await updateChildRewardInstance(instanceToManage.id, { status: 'redeemed', isRedeemed: true, redeemedAt: serverTimestamp() as any });
       
-      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? {...r, status: 'redeemed', isRedeemed: true, redeemedAt: new Date() as any } : r).sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
-          }));
-      setChild(prev => prev ? { ...prev, stars: newStars } : null);
+      await fetchData();
       toast({ title: "Conquista Desbloqueada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error) {
       console.error("Error marking reward as redeemed:", error);
       toast({ title: "Erro ao Resgatar", description: "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
     } finally {
-      setIsProcessingRewardAction(false);
+      setIsDeleting(false);
       setIsRedeemConfirmOpen(false);
       setInstanceToManage(null);
     }
   };
 
   const handleToggleInstanceStatus = async (instance: ChildRewardInstance, newStatus: 'active' | 'disabled') => {
-    setIsProcessingRewardAction(true);
+    setIsDeleting(true);
     try {
       await updateChildRewardInstance(instance.id, { status: newStatus });
-      setChildRewards(prev => prev.map(r => r.id === instance.id ? {...r, status: newStatus } : r).sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds; 
-          }));
+      await fetchData();
       toast({ 
         title: "Status da Recompensa Atualizado", 
         description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.` 
@@ -471,22 +414,22 @@ export default function ManageChildPage() {
       console.error(`Error toggling reward instance status:`, error);
       toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
     } finally {
-      setIsProcessingRewardAction(false);
+      setIsDeleting(false);
     }
   };
   
   const handleDeleteInstance = async () => {
     if (!instanceToManage) return;
-    setIsProcessingRewardAction(true);
+    setIsDeleting(true);
     try {
       await deleteChildRewardInstance(instanceToManage.id);
-      setChildRewards(prev => prev.filter(r => r.id !== instanceToManage.id));
+      await fetchData();
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
       console.error("Error deleting reward instance:", error);
       toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });
     } finally {
-      setIsProcessingRewardAction(false);
+      setIsDeleting(false);
       setIsDeleteInstanceConfirmOpen(false);
       setInstanceToManage(null);
     }
@@ -500,12 +443,12 @@ export default function ManageChildPage() {
   }, [childRewards, instanceStatusFilter]);
   
   const { todaysMissions, otherPendingMissions } = useMemo(() => {
-      if (isLoadingMissions || !missionInstances) {
+      if (!missionInstances) {
           return { todaysMissions: [], otherPendingMissions: [] };
       }
       const pending = missionInstances.filter(m => m.status === 'pending');
       return getTodaysMissions(pending, new Date());
-  }, [missionInstances, isLoadingMissions]);
+  }, [missionInstances]);
 
   const completedMissions = useMemo(() => {
     return missionInstances
@@ -629,7 +572,7 @@ export default function ManageChildPage() {
                               <TooltipProvider>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isUndoing}>
+                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isDeleting}>
                                               <Undo2 className="h-4 w-4" />
                                           </Button>
                                       </TooltipTrigger>
@@ -644,7 +587,7 @@ export default function ManageChildPage() {
                               <Button
                                   className="flex-grow"
                                   onClick={() => handleManageInAgenda(instance, isForToday)}
-                                  disabled={isDeletingMission}
+                                  disabled={isDeleting}
                               >
                                   <CalendarDays className="mr-2 h-4 w-4" />
                                   Gerenciar na Agenda
@@ -656,7 +599,7 @@ export default function ManageChildPage() {
                                               size="icon"
                                               variant="outline"
                                               onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
-                                              disabled={isDeletingMission}
+                                              disabled={isDeleting}
                                           >
                                               <Edit3 className="h-4 w-4" />
                                           </Button>
@@ -673,7 +616,7 @@ export default function ManageChildPage() {
                                               size="icon"
                                               variant="destructive"
                                               onClick={() => setMissionToDelete(instance)}
-                                              disabled={isDeletingMission}
+                                              disabled={isDeleting}
                                           >
                                               <Trash2 className="h-4 w-4" />
                                           </Button>
@@ -690,9 +633,9 @@ export default function ManageChildPage() {
                           variant="outline"
                           className="w-full"
                           onClick={() => setMissionToReactivate(instance)}
-                          disabled={isReactivatingMission}
+                          disabled={isDeleting}
                       >
-                          {isReactivatingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                           Reativar Missão
                       </Button>
                   )}
@@ -738,27 +681,23 @@ export default function ManageChildPage() {
               <div className="mt-4 border-t border-border/20 pt-4 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2">
                 <div className="flex items-center gap-1.5 text-sm font-medium" title="Missões">
                     <CheckSquare className="h-4 w-4 text-green-500" />
-                    {isLoadingActivities ? <Skeleton className="h-4 w-48" /> : (
-                        <span>
-                            <span className="font-bold text-foreground">{stats.completedMissions}</span>
-                            <span className="text-muted-foreground"> Completas</span>
-                            <span className="mx-2 text-muted-foreground">|</span>
-                            <span className="font-bold text-foreground">{stats.pendingMissions}</span>
-                            <span className="text-muted-foreground"> Pendentes</span>
-                        </span>
-                    )}
+                    <span>
+                        <span className="font-bold text-foreground">{stats.completedMissions}</span>
+                        <span className="text-muted-foreground"> Completas</span>
+                        <span className="mx-2 text-muted-foreground">|</span>
+                        <span className="font-bold text-foreground">{stats.pendingMissions}</span>
+                        <span className="text-muted-foreground"> Pendentes</span>
+                    </span>
                 </div>
                 <div className="flex items-center gap-1.5 text-sm font-medium" title="Recompensas">
                     <Trophy className="h-4 w-4 text-orange-500" />
-                    {isLoadingActivities ? <Skeleton className="h-4 w-48" /> : (
-                        <span>
-                            <span className="font-bold text-foreground">{stats.availableRewards}</span>
-                            <span className="text-muted-foreground"> Disponíveis</span>
-                            <span className="mx-2 text-muted-foreground">|</span>
-                            <span className="font-bold text-foreground">{stats.rewardsRedeemed}</span>
-                            <span className="text-muted-foreground"> Resgatadas</span>
-                        </span>
-                    )}
+                    <span>
+                        <span className="font-bold text-foreground">{stats.availableRewards}</span>
+                        <span className="text-muted-foreground"> Disponíveis</span>
+                        <span className="mx-2 text-muted-foreground">|</span>
+                        <span className="font-bold text-foreground">{stats.rewardsRedeemed}</span>
+                        <span className="text-muted-foreground"> Resgatadas</span>
+                    </span>
                 </div>
               </div>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
@@ -819,7 +758,7 @@ export default function ManageChildPage() {
                   <CheckSquare className="h-5 w-5 text-green-500" />
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.completedMissions}</div>
+                  <div className="text-2xl font-bold">{stats.completedMissions}</div>
                   <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
                 </CardContent>
                 <CardFooter>
@@ -839,7 +778,7 @@ export default function ManageChildPage() {
                   <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.starsEarned}</div>
+                  <div className="text-2xl font-bold">{stats.starsEarned}</div>
                   <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
                 </CardContent>
                  <CardFooter>
@@ -859,7 +798,7 @@ export default function ManageChildPage() {
                   <Trophy className="h-5 w-5 text-orange-500" />
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.rewardsRedeemed}</div>
+                  <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
                   <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
                 </CardContent>
                 <CardFooter>
@@ -882,7 +821,7 @@ export default function ManageChildPage() {
                   <Medal className="h-5 w-5 text-blue-500" />
                 </CardHeader>
                 <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.earnedBadges}</div>
+                  <div className="text-2xl font-bold">{stats.earnedBadges}</div>
                   <p className="text-xs text-muted-foreground">Total de medalhas recebidas</p>
                 </CardContent>
                 <CardFooter>
@@ -904,12 +843,7 @@ export default function ManageChildPage() {
                 <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
               </CardHeader>
               <CardContent>
-                {isLoadingActivities ? (
-                  <div className="flex items-center justify-center p-6">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <p className="ml-2 text-muted-foreground">Buscando histórico...</p>
-                  </div>
-                ) : activities.length === 0 ? (
+                {activities.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
                     <Clock className="h-10 w-10 mx-auto mb-2" />
                     Nenhuma atividade recente registrada.
@@ -983,13 +917,7 @@ export default function ManageChildPage() {
                         </RadioGroup>
                     </div>
                 </CardHeader>
-                {isLoadingMissions ? (
-                  <CardContent><div className="flex justify-center items-center py-10">
-                      <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                      <p className="ml-3 text-muted-foreground">Carregando missões...</p>
-                  </div></CardContent>
-                ) : (
-                  <CardContent className="space-y-6">
+                <CardContent className="space-y-6">
                     {missionStatusFilter === 'pending' && (
                         <>
                           {missionInstances.filter(m => m.status === 'pending').length === 0 ? (
@@ -1044,7 +972,6 @@ export default function ManageChildPage() {
                         </>
                     )}
                   </CardContent>
-                )}
             </Card>
           </TabsContent>
 
@@ -1083,12 +1010,7 @@ export default function ManageChildPage() {
                 <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
                   <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Catálogo (Atribuir Novas)
                 </Button>
-                {isLoadingRewards ? (
-                  <div className="flex justify-center items-center py-10">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                    <p className="ml-3 text-muted-foreground">Carregando recompensas...</p>
-                  </div>
-                ) : filteredChildRewards.length === 0 ? (
+                {filteredChildRewards.length === 0 ? (
                   <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                     <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-lg text-muted-foreground">
@@ -1148,7 +1070,7 @@ export default function ManageChildPage() {
                             {instance.status !== 'redeemed' ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isProcessingRewardAction}>
+                                  <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
                                     <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
                                   </Button>
                                 </DropdownMenuTrigger>
@@ -1157,16 +1079,16 @@ export default function ManageChildPage() {
                                   <DropdownMenuSeparator />
                                   {instance.status === 'active' && (
                                     <>
-                                      <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isProcessingRewardAction}>
+                                      <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting}>
                                         <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isProcessingRewardAction}>
+                                      <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
                                         <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
                                       </DropdownMenuItem>
                                     </>
                                   )}
                                   {instance.status === 'disabled' && (
-                                    <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isProcessingRewardAction}>
+                                    <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
                                       <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
                                     </DropdownMenuItem>
                                   )}
@@ -1174,7 +1096,7 @@ export default function ManageChildPage() {
                                   <DropdownMenuItem 
                                     onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }} 
                                     className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                                    disabled={isProcessingRewardAction}
+                                    disabled={isDeleting}
                                   >
                                     <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
                                   </DropdownMenuItem>
@@ -1291,7 +1213,7 @@ export default function ManageChildPage() {
             child={child} 
             isOpen={isAddMissionDialogOpen}
             onOpenChange={setIsAddMissionDialogOpen}
-            onMissionAdded={fetchMissionData}
+            onMissionAdded={fetchData}
         />
       )}
 
@@ -1304,9 +1226,9 @@ export default function ManageChildPage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeletingMission}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteMissionInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingMission}>
-                    {isDeletingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteMissionInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Sim, Remover
                 </AlertDialogAction>
             </AlertDialogFooter>
@@ -1322,9 +1244,9 @@ export default function ManageChildPage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-                <AlertDialogCancel disabled={isUndoing}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleUndoCompletion} disabled={isUndoing}>
-                    {isUndoing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
+                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleUndoCompletion} disabled={isDeleting}>
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
                     Sim, Desfazer
                 </AlertDialogAction>
             </AlertDialogFooter>
@@ -1341,9 +1263,9 @@ export default function ManageChildPage() {
                   </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isReactivatingMission}>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleReactivateMission} disabled={isReactivatingMission}>
-                      {isReactivatingMission ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                  <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleReactivateMission} disabled={isDeleting}>
+                      {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
                       Sim, Reativar
                   </AlertDialogAction>
               </AlertDialogFooter>
@@ -1364,13 +1286,13 @@ export default function ManageChildPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isProcessingRewardAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
               <AlertDialogAction 
                 onClick={handleMarkAsRedeemed} 
                 className="bg-green-600 hover:bg-green-700" 
-                disabled={isProcessingRewardAction || child.stars < instanceToManage.starsCost}
+                disabled={isDeleting || child.stars < instanceToManage.starsCost}
               >
-                {isProcessingRewardAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 Sim, Marcar como Resgatada
               </AlertDialogAction>
             </AlertDialogFooter>
@@ -1389,9 +1311,9 @@ export default function ManageChildPage() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsDeleteInstanceConfirmOpen(false)} disabled={isProcessingRewardAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteInstance} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingRewardAction}>
-                {isProcessingRewardAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+              <AlertDialogCancel onClick={() => setIsDeleteInstanceConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                 Sim, Remover Atribuição
               </AlertDialogAction>
             </AlertDialogFooter>
