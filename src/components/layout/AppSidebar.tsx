@@ -18,7 +18,7 @@ import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 import { AgendaSidebarFilters } from '../dashboard/agenda/AgendaSidebarFilters';
-import { Separator } from '../ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function AppLogo() {
     const { state } = useSidebar();
@@ -59,9 +59,21 @@ export function AppSidebar() {
                             <CalendarDays />
                             <span>Agenda</span>
                         </SidebarMenuButton>
+                        
                         {pathname.startsWith('/dashboard/agenda') && (
-                            <div className="pl-6 pt-2 space-y-4 group-data-[collapsible=icon]:hidden">
-                                <AgendaSidebarFilters />
+                            <div className="group-data-[collapsible=icon]:hidden">
+                                <Accordion type="single" collapsible defaultValue="agenda-filters" className="w-full">
+                                    <AccordionItem value="agenda-filters" className="border-none">
+                                        <AccordionTrigger className="py-1 px-3 text-xs hover:no-underline hover:bg-sidebar-accent rounded-md mx-2 w-[calc(100%-1rem)] flex font-semibold text-sidebar-foreground/70">
+                                            Filtros
+                                        </AccordionTrigger>
+                                        <AccordionContent>
+                                            <div className="pl-6 pt-2 pr-2 space-y-4">
+                                                <AgendaSidebarFilters />
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                </Accordion>
                             </div>
                         )}
                     </SidebarMenuItem>
