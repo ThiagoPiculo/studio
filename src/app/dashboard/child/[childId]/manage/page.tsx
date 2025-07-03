@@ -40,7 +40,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { format, differenceInYears, isSameDay, parse } from 'date-fns';
+import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
@@ -231,8 +231,8 @@ export default function ManageChildPage() {
           ),
           ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
         ].sort((a, b) => {
-            const timeA = a.completedAt.toDate().getTime();
-            const timeB = b.completedAt.toDate().getTime();
+            const timeA = a.completedAt instanceof Timestamp ? a.completedAt.toDate().getTime() : new Date(a.completedAt as any).getTime();
+            const timeB = b.completedAt instanceof Timestamp ? b.completedAt.toDate().getTime() : new Date(b.completedAt as any).getTime();
             return timeB - timeA;
         });
         setActivities(allActivities.slice(0, 10)); // Limit to 10 recent activities
@@ -942,8 +942,8 @@ export default function ManageChildPage() {
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                                <p className="text-sm font-semibold">{format(completedDate, 'HH:mm')}</p>
-                                <p className="text-xs text-muted-foreground">{format(completedDate, 'dd/MM/yyyy')}</p>
+                                <p className="text-sm font-semibold">{format(completedDate, "HH:mm 'de' dd/MM/yyyy")}</p>
+                                <p className="text-xs text-muted-foreground capitalize">{formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true })}</p>
                             </div>
                           </li>
                           {index < activities.length - 1 && <Separator />}
@@ -1320,7 +1320,7 @@ export default function ManageChildPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Desfazer Conclusão?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso irá reverter a conclusão da missão "{missionToUndo?.instance.title}" para o dia {format(missionToUndo!.date, 'dd/MM/yyyy')}, incluindo as estrelas e XP ganhos. Deseja continuar?
+                  {missionToUndo && `Isso irá reverter a conclusão da missão "${missionToUndo.instance.title}" para o dia ${format(missionToUndo.date, 'dd/MM/yyyy')}, incluindo as estrelas e XP ganhos. Deseja continuar?`}
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -1403,3 +1403,5 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+    
