@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, UserCircle, Rocket, Settings } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings, ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 
@@ -39,20 +39,23 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="flex h-auto w-full items-center justify-start gap-2 rounded-md px-2 py-1.5 text-left">
-          <Avatar
-            className="h-9 w-9"
-            style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
-          >
-            {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
-            <AvatarFallback
-              className="font-bold"
-              style={avatarColor ? { backgroundColor: avatarColor } : {}}
-            >
-              {getInitials(displayName)}
-            </AvatarFallback>
-          </Avatar>
-          <span className="truncate text-sm font-semibold leading-tight group-data-[collapsible=icon]:hidden">{displayName || (isChildAuthenticated ? "Herói" : "Admin")}</span>
+        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent focus:ring-sidebar-ring">
+            <div className="flex items-center gap-2 truncate">
+              <Avatar
+                className="h-8 w-8"
+                style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
+              >
+                {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
+                <AvatarFallback
+                  className="font-bold text-xs"
+                  style={avatarColor ? { backgroundColor: avatarColor } : {}}
+                >
+                  {getInitials(displayName)}
+                </AvatarFallback>
+              </Avatar>
+              <span className="truncate text-sm font-semibold leading-tight group-data-[collapsible=icon]:hidden">{displayName || (isChildAuthenticated ? "Herói" : "Admin")}</span>
+            </div>
+            <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 group-data-[collapsible=icon]:hidden" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -82,7 +85,7 @@ export function UserNav() {
           )}
            {isChildAuthenticated && childProfile && (
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/dashboard/child/${childProfile.id}`}>
+              <Link href={`/dashboard/child/${childProfile.id}/manage`}>
                 <Rocket className="mr-2 h-4 w-4" />
                 <span>Minha Página de Herói</span>
               </Link>
