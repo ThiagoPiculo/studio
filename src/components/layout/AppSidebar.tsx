@@ -16,6 +16,9 @@ import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
+import { usePathname } from 'next/navigation';
+import { AgendaSidebarFilters } from '../dashboard/agenda/AgendaSidebarFilters';
+import { Separator } from '../ui/separator';
 
 function AppLogo() {
     const { state } = useSidebar();
@@ -30,6 +33,8 @@ function AppLogo() {
 }
 
 export function AppSidebar() {
+    const pathname = usePathname();
+
     return (
         <Sidebar>
             <SidebarRail />
@@ -50,7 +55,7 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda">
+                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda" isActive={pathname.startsWith('/dashboard/agenda')}>
                             <CalendarDays />
                             <span>Agenda</span>
                         </SidebarMenuButton>
@@ -75,6 +80,14 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                 </SidebarMenu>
                 
+                {pathname.startsWith('/dashboard/agenda') && (
+                    <>
+                        <Separator className="my-2" />
+                        <div className="p-2">
+                            <AgendaSidebarFilters />
+                        </div>
+                    </>
+                )}
             </SidebarContent>
 
             <SidebarFooter>

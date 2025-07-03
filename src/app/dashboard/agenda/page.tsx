@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2 } from 'lucide-react';
@@ -15,15 +15,13 @@ import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types
 import { useToast } from '@/hooks/use-toast';
 
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import Loading from './loading';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Toggle } from '@/components/ui/toggle';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
@@ -53,21 +51,18 @@ function AgendaPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const { toast } = useToast();
-  const [currentDate, setCurrentDate] = useState(new Date());
-
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  const focusDateParam = searchParams.get('focus_date');
-  const openPopoverParam = searchParams.get('open_popover');
+  
+  const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>('3days');
-  const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>('all');
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<Record<string, boolean>>({});
-  const [allChildrenSelected, setAllChildrenSelected] = useState(true);
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
 
   // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
@@ -81,17 +76,22 @@ function AgendaPageContent() {
   const [highlightedMissionId, setHighlightedMissionId] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
+  // Read filters from URL
+  const dateRangeFilter = (searchParams.get('view') || '3days') as DateRangeFilter;
+  const timePeriodFilter = (searchParams.get('period') || 'all') as TimePeriod;
+
   useEffect(() => {
+    const focusDateParam = searchParams.get('focus_date');
+    const openPopoverParam = searchParams.get('open_popover');
+    
     if (focusDateParam) {
       const [year, month, day] = focusDateParam.split('-').map(Number);
       const date = new Date(year, month - 1, day);
-      if (!isNaN(date.getTime())) {
+      if (!isNaN(date.getTime()) && !isSameDay(date, currentDate)) {
           setCurrentDate(date);
       }
     }
-  }, [focusDateParam]);
 
-  useEffect(() => {
     if (openPopoverParam) {
         const timer = setTimeout(() => {
             const element = document.querySelector(`[data-mission-id="${openPopoverParam}"]`);
@@ -111,9 +111,7 @@ function AgendaPageContent() {
         }, 200);
         return () => clearTimeout(timer);
     }
-  // I'm intentionally not including other dependencies, this should only run when the param from the URL changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openPopoverParam]);
+  }, [searchParams, currentDate]);
 
 
   const refetchData = useCallback(async () => {
@@ -147,11 +145,7 @@ function AgendaPageContent() {
         
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
-
-        const initialSelection: Record<string, boolean> = {};
-        fetchedChildren.forEach(c => initialSelection[c.id] = true);
-        setSelectedChildrenIds(initialSelection);
-        setAllChildrenSelected(true);
+        setSelectedChildrenIds([]);
 
       } catch (error) {
         console.error("Error fetching agenda data for new context:", error);
@@ -215,11 +209,9 @@ function AgendaPageContent() {
   }, [currentDate, dateRangeFilter]);
 
   const eventsByDate = useMemo(() => {
-    const activeChildFilters = Object.entries(selectedChildrenIds).filter(([,v]) => v).map(([k]) => k);
-    
-    const instancesToProcess = allChildrenSelected 
+    const instancesToProcess = selectedChildrenIds.length === 0 
       ? missionInstances 
-      : missionInstances.filter(inst => activeChildFilters.includes(inst.childId));
+      : missionInstances.filter(inst => selectedChildrenIds.includes(inst.childId));
 
     const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }> = {};
     const daysInView = eachDayOfInterval(viewInterval);
@@ -255,28 +247,38 @@ function AgendaPageContent() {
     });
 
     return acc;
-  }, [viewInterval, missionInstances, selectedChildrenIds, allChildrenSelected, timePeriodFilter]);
+  }, [viewInterval, missionInstances, selectedChildrenIds, timePeriodFilter]);
+
+  const createUrlWithNewDate = (newDate: Date) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('focus_date', format(newDate, 'yyyy-MM-dd'));
+    return `${pathname}?${params.toString()}`;
+  }
 
   const handlePrev = () => {
     const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
+    let newDate;
     if (dateRangeFilter === 'month') {
-        setCurrentDate(subMonths(currentDate, 1));
+        newDate = subMonths(currentDate, 1);
     } else {
-        setCurrentDate(subDays(currentDate, dateChanges[dateRangeFilter]));
+        newDate = subDays(currentDate, dateChanges[dateRangeFilter]);
     }
+    router.replace(createUrlWithNewDate(newDate));
   };
 
   const handleNext = () => {
     const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
+    let newDate;
     if (dateRangeFilter === 'month') {
-        setCurrentDate(addMonths(currentDate, 1));
+        newDate = addMonths(currentDate, 1);
     } else {
-        setCurrentDate(addDays(currentDate, dateChanges[dateRangeFilter]));
+        newDate = addDays(currentDate, dateChanges[dateRangeFilter]);
     }
+    router.replace(createUrlWithNewDate(newDate));
   };
   
   const handleToday = () => {
-    setCurrentDate(new Date());
+    router.replace(createUrlWithNewDate(new Date()));
   };
   
   const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
@@ -356,22 +358,6 @@ function AgendaPageContent() {
         return `${format(start, "d 'de' MMMM", { locale: ptBR })} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
     }
   };
-  
-  const handleChildSelectionChange = useCallback((childId: string, isSelected: boolean) => {
-    setSelectedChildrenIds(prev => {
-        const newSelection = { ...prev, [childId]: isSelected };
-        const allSelected = children.every(c => newSelection[c.id]);
-        setAllChildrenSelected(allSelected);
-        return newSelection;
-    });
-  }, [children]);
-
-  const handleSelectAllChange = useCallback((isSelected: boolean) => {
-    setAllChildrenSelected(isSelected);
-    const newSelection: Record<string, boolean> = {};
-    children.forEach(c => newSelection[c.id] = isSelected);
-    setSelectedChildrenIds(newSelection);
-  }, [children]);
 
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
   
@@ -781,6 +767,7 @@ function AgendaPageContent() {
                       <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
                           <ChevronLeft className="h-4 w-4" />
                       </Button>
+                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
                       <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize">
                         {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                       </h2>
@@ -793,55 +780,49 @@ function AgendaPageContent() {
                   </div>
               </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent>
             <Separator/>
-            <div className="flex flex-col md:flex-row gap-6 pt-2">
-              <div className="w-full md:w-auto md:max-w-xs space-y-2 md:border-r md:pr-6">
-                  <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" />Filtrar por Herói</Label>
-                  <div className="flex items-center space-x-2 pb-2 border-b">
-                      <Checkbox id="select-all" checked={allChildrenSelected} onCheckedChange={handleSelectAllChange} />
-                      <Label htmlFor="select-all" className="font-medium">Todos os Heróis</Label>
-                  </div>
-                  <ScrollArea className="h-32">
-                      <div className="space-y-2 py-1 pr-2">
-                          {children.map(child => (
-                              <div key={child.id} className="flex items-center space-x-3">
-                                  <Checkbox id={`child-filter-${child.id}`} checked={!!selectedChildrenIds[child.id]} onCheckedChange={(checked) => handleChildSelectionChange(child.id, !!checked)} />
-                                  <Label htmlFor={`child-filter-${child.id}`} className="font-normal flex items-center gap-2 cursor-pointer">
-                                      <Avatar className="h-6 w-6 ring-1 ring-offset-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                          <AvatarImage src={child.avatar} alt={child.name} />
-                                          <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                      </Avatar>
-                                      {child.name}
-                                  </Label>
-                              </div>
-                          ))}
-                      </div>
-                  </ScrollArea>
-              </div>
-              <div className="flex-1 flex flex-col gap-4">
-                  <div>
-                    <Label className="text-sm font-semibold text-muted-foreground">Ver Período</Label>
-                    <div className="flex flex-wrap items-center gap-2 mt-1">
-                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                      <ToggleGroup type="single" value={dateRangeFilter} onValueChange={(v) => v && setDateRangeFilter(v as DateRangeFilter)} className="justify-start">
-                          <ToggleGroupItem value="day" aria-label="Ver 1 Dia">1 Dia</ToggleGroupItem>
-                          <ToggleGroupItem value="3days" aria-label="Ver 3 dias">3 Dias</ToggleGroupItem>
-                          <ToggleGroupItem value="workweek" aria-label="Ver semana útil">Semana Útil</ToggleGroupItem>
-                          <ToggleGroupItem value="week" aria-label="Ver semana">Semana</ToggleGroupItem>
-                          <ToggleGroupItem value="month" aria-label="Ver mês">Mês</ToggleGroupItem>
-                      </ToggleGroup>
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-semibold text-muted-foreground">Período do Dia</Label>
-                    <ToggleGroup type="single" value={timePeriodFilter} onValueChange={(v) => v && setTimePeriodFilter(v as TimePeriod)} className="justify-start mt-1">
-                        <ToggleGroupItem value="all" aria-label="Ver todos">Todos</ToggleGroupItem>
-                        <ToggleGroupItem value="morning" aria-label="Ver manhã" className="gap-1.5"><Sun className="h-4 w-4" />Manhã</ToggleGroupItem>
-                        <ToggleGroupItem value="afternoon" aria-label="Ver tarde" className="gap-1.5"><CloudSun className="h-4 w-4" />Tarde</ToggleGroupItem>
-                        <ToggleGroupItem value="night" aria-label="Ver noite" className="gap-1.5"><Moon className="h-4 w-4" />Noite</ToggleGroupItem>
-                    </ToggleGroup>
-                  </div>
+            <div className="w-full space-y-2 pt-4">
+              <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                <Users className="h-4 w-4" />Filtrar por Herói
+              </Label>
+              <div className="flex flex-wrap items-center gap-2">
+                <Toggle
+                    size="sm"
+                    variant="outline"
+                    pressed={selectedChildrenIds.length === 0}
+                    onPressedChange={(pressed) => {
+                      if (pressed) {
+                        setSelectedChildrenIds([])
+                      }
+                    }}
+                    className="h-9"
+                >
+                    Todos os Heróis
+                </Toggle>
+                {children.map(child => (
+                    <Toggle
+                        key={child.id}
+                        size="sm"
+                        variant="outline"
+                        className="flex items-center gap-2 h-9 px-3"
+                        pressed={selectedChildrenIds.includes(child.id)}
+                        onPressedChange={(pressed) => {
+                          const otherIds = selectedChildrenIds.filter(id => id !== child.id);
+                          if (pressed) {
+                            setSelectedChildrenIds([...otherIds, child.id]);
+                          } else {
+                            setSelectedChildrenIds(otherIds);
+                          }
+                        }}
+                    >
+                        <Avatar className="h-6 w-6 ring-1 ring-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
+                            <AvatarImage src={child.avatar} alt={child.name} />
+                            <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                        </Avatar>
+                        {child.name}
+                    </Toggle>
+                ))}
               </div>
             </div>
           </CardContent>
@@ -902,5 +883,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
