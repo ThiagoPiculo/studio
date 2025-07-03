@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -8,7 +7,8 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
-    SidebarRail
+    SidebarRail,
+    SidebarFooter
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, Target, Gift, Shield } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
@@ -39,13 +39,10 @@ export function AppSidebar() {
             <SidebarRail />
             <SidebarHeader>
                 <AppLogo />
+                <FamilyContextSwitcher />
             </SidebarHeader>
 
-            <SidebarContent className="p-0">
-                 <div className="p-2">
-                    <FamilyContextSwitcher />
-                 </div>
-
+            <SidebarContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard" tooltip="Painel do Heroi">
@@ -95,11 +92,11 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-                <div className="flex flex-col gap-2 p-2 mt-auto">
-                    <UserNav />
-                </div>
             </SidebarContent>
 
+            <SidebarFooter>
+                <UserNav />
+            </SidebarFooter>
         </Sidebar>
     );
 }
