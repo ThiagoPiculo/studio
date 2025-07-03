@@ -1,4 +1,3 @@
-
 "use client";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -54,7 +53,7 @@ export default function RewardIdeasPage() {
                 </CardHeader>
             </Card>
 
-            <Accordion type="single" collapsible className="w-full space-y-4">
+            <Accordion type="single" collapsible className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
               {predefinedRewardGroups.map((group) => {
                 const groupedIdeas = groupIdeasBySubCategory(group.items);
                 return (
