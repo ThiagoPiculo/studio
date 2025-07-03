@@ -23,12 +23,20 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate, getChildProfilesForAttribution, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
@@ -74,6 +82,7 @@ export default function RewardTemplatesHubPage() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoadingFilterData, setIsLoadingFilterData] = useState(false);
+  const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
 
 
   useEffect(() => {
@@ -232,7 +241,7 @@ export default function RewardTemplatesHubPage() {
             {templatesDescription}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="flex flex-wrap gap-4">
           <Link href="/dashboard/rewards/new">
             <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
               <PlusCircle className="mr-2 h-5 w-5" /> Criar nova recompensa
@@ -243,6 +252,34 @@ export default function RewardTemplatesHubPage() {
               <Sparkles className="mr-2 h-5 w-5" /> Ver Ideias de Recompensas
             </Button>
           </Link>
+          <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                  <Info className="mr-2 h-5 w-5" /> Sobre Recompensas
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                        <Gift className="h-6 w-6 text-primary" />
+                        O Poder das Recompensas
+                    </DialogTitle>
+                    <DialogDescription className="pt-2">
+                        Recompensas são a ferramenta que fecha o ciclo de gamificação: a missão é o desafio, as estrelas são a pontuação, e a recompensa é a conquista que torna a jornada valiosa.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="py-4 space-y-3 text-sm">
+                    <p>Elas são uma ferramenta pedagógica para:</p>
+                    <ul className="list-disc pl-5 space-y-2 text-muted-foreground">
+                        <li><strong className="text-foreground">Ensinar Causa e Efeito:</strong> A criança aprende que o esforço leva a um resultado positivo e desejado.</li>
+                        <li><strong className="text-foreground">Introduzir Educação Financeira:</strong> A dinâmica de "juntar estrelas" ensina sobre poupança e planejamento.</li>
+                        <li><strong className="text-foreground">Fortalecer Laços Familiares:</strong> As melhores recompensas são experiências compartilhadas, não apenas itens materiais.</li>
+                        <li><strong className="text-foreground">Promover Autonomia:</strong> Permitir que a criança escolha qual recompensa alcançar lhe dá um senso de controle e poder.</li>
+                    </ul>
+                    <p className="pt-2">Use o catálogo para criar e gerenciar todos os tesouros que seus Mini Herois poderão conquistar!</p>
+                </div>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
