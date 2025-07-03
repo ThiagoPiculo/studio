@@ -59,6 +59,11 @@ export function AppSidebar() {
                             <CalendarDays />
                             <span>Agenda</span>
                         </SidebarMenuButton>
+                        {pathname.startsWith('/dashboard/agenda') && (
+                            <div className="pl-6 pt-2 space-y-4 group-data-[collapsible=icon]:hidden">
+                                <AgendaSidebarFilters />
+                            </div>
+                        )}
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/missions" tooltip="Missões">
@@ -79,15 +84,6 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-                
-                {pathname.startsWith('/dashboard/agenda') && (
-                    <>
-                        <Separator className="my-2" />
-                        <div className="p-2">
-                            <AgendaSidebarFilters />
-                        </div>
-                    </>
-                )}
             </SidebarContent>
 
             <SidebarFooter>
