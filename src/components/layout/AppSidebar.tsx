@@ -11,7 +11,8 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupLabel,
-    SidebarGroupContent
+    SidebarGroupContent,
+    SidebarRail
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, ListChecks, Gift, Users } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
@@ -34,6 +35,7 @@ function AppLogo() {
 export function AppSidebar() {
     return (
         <Sidebar>
+            <SidebarRail />
             <SidebarHeader>
                 <AppLogo />
             </SidebarHeader>
