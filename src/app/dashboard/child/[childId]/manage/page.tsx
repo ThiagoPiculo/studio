@@ -197,7 +197,7 @@ export default function ManageChildPage() {
         getMissionInstancesByChild(childId),
         getChildRewardInstancesByChild(childId),
       ]).then(([missions, rewards]) => {
-        const completedMissions = missions.filter(m => m.status === 'completed');
+        const totalCompletedOccurrences = missions.reduce((sum, m) => sum + (m.completedDates?.length || 0), 0);
         const pendingMissions = missions.filter(m => m.status === 'pending');
         const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
         const availableRewards = rewards.filter(r => r.status === 'active');
@@ -209,7 +209,7 @@ export default function ManageChildPage() {
         const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
 
         setStats({
-          completedMissions: completedMissions.length,
+          completedMissions: totalCompletedOccurrences,
           starsEarned: totalStarsEarned,
           rewardsRedeemed: redeemedRewards.length,
           pendingMissions: pendingMissions.length,
