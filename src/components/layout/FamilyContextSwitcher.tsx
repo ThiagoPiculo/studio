@@ -30,10 +30,10 @@ export function FamilyContextSwitcher() {
   
   if (isLoading) {
     return (
-      <Button variant="outline" className="w-auto min-w-[180px] justify-between h-10 gap-2" disabled>
+      <Button variant="outline" className="w-full justify-start h-10 gap-2 px-2 text-left" disabled>
         <div className="flex items-center gap-2">
             <Loader2 className="h-4 w-4 animate-spin" />
-            <span>Carregando...</span>
+            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">Carregando...</span>
         </div>
       </Button>
     );
@@ -42,12 +42,12 @@ export function FamilyContextSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-auto min-w-[180px] justify-between h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
+        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-sidebar-ring">
           <div className="flex items-center gap-2 truncate">
             {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <Shield className="h-4 w-4 shrink-0" />}
-            <span className="truncate">{currentContextData?.name ?? "Carregando..."}</span>
+            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">{currentContextData?.name ?? "Carregando..."}</span>
           </div>
-          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 group-data-[collapsible=icon]:hidden" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64" align="end">
