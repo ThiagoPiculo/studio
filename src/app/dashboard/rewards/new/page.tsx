@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense } from 'react';
@@ -164,7 +165,7 @@ function CreateRewardTemplatePageContent() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
         <Link href="/dashboard/rewards/ideas">
-          <Button variant="outline">
+          <Button variant="secondary">
             <Sparkles className="mr-2 h-4 w-4" /> Ver Ideias de Recompensas
           </Button>
         </Link>
