@@ -782,10 +782,7 @@ function AgendaPageContent() {
           </CardHeader>
           <CardContent>
             <Separator/>
-            <div className="w-full space-y-2 pt-4">
-              <Label className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
-                <Users className="h-4 w-4" />Filtrar por Herói
-              </Label>
+            <div className="w-full pt-4">
               <div className="flex flex-wrap items-center gap-2">
                 <Toggle
                     size="sm"
