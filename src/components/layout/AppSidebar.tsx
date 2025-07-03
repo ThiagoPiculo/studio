@@ -44,9 +44,9 @@ export function AppSidebar() {
 
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard" tooltip="Painel">
+                        <SidebarMenuButton href="/dashboard" tooltip="Painel do Heroi">
                             <LayoutDashboard />
-                            <span>Painel</span>
+                            <span>Painel do Heroi</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
