@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, Fragment } from 'react';
@@ -18,6 +17,7 @@ interface Breadcrumb {
 
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Painel',
+  agenda: 'Agenda',
   manage: 'Gerenciar',
   family: 'Aliança',
   missions: 'Missões',
@@ -117,10 +117,6 @@ export function Breadcrumbs() {
 
     generateBreadcrumbs();
   }, [pathname, params, currentContext, availableContexts, isFamilyLoading]);
-
-  if (breadcrumbs.length <= 1 && pathname === '/dashboard') {
-    return null;
-  }
 
   return (
     <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
