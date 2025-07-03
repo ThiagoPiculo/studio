@@ -1,3 +1,4 @@
+
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -39,7 +40,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent focus:ring-sidebar-ring">
+        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-sidebar-ring">
             <div className="flex items-center gap-2 truncate">
               <Avatar
                 className="h-8 w-8"
