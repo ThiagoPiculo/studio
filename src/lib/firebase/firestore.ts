@@ -851,16 +851,16 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         transaction.update(childRef, finalChildUpdates);
 
         // --- Mission Instance Update ---
-        const completionTimestamp = completionDate ? Timestamp.fromDate(completionDate) : Timestamp.now();
+        const actualCompletionTimestamp = Timestamp.now();
         const serverUpdateTime = serverTimestamp();
 
         if (!missionData.isRecurring) {
             transaction.update(missionRef, {
                 status: 'completed',
-                completedAt: completionTimestamp,
+                completedAt: actualCompletionTimestamp,
                 updatedAt: serverUpdateTime,
                 completionCount: 1,
-                completedDates: arrayUnion(completionTimestamp)
+                completedDates: arrayUnion(actualCompletionTimestamp)
             });
         } else {
             const newCompletionCount = (missionData.completionCount || 0) + 1;
@@ -868,13 +868,13 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
 
             const missionUpdates: any = {
                 completionCount: newCompletionCount,
-                completedDates: arrayUnion(completionTimestamp),
+                completedDates: arrayUnion(actualCompletionTimestamp),
                 updatedAt: serverUpdateTime,
             };
 
             if (isFullyCompleted) {
                 missionUpdates.status = 'completed';
-                missionUpdates.completedAt = completionTimestamp;
+                missionUpdates.completedAt = actualCompletionTimestamp;
             }
             transaction.update(missionRef, missionUpdates);
         }
@@ -897,21 +897,23 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         }
         
         const missionData = missionSnap.data() as MissionInstance;
-        const completionDates = missionData.completedDates || [];
+        const completionDates: Timestamp[] = (missionData.completedDates || []).sort((a, b) => b.toMillis() - a.toMillis());
         
         if (completionDates.length === 0) {
             throw new Error("A missão não possui conclusões para serem desfeitas.");
         }
         
-        let completionToRemove: Timestamp | null = null;
+        let updatedCompletionDates: Timestamp[];
+
         if (dateToUndo) {
-            completionToRemove = completionDates.find(ts => isSameDay(ts.toDate(), dateToUndo)) || null;
-            if (!completionToRemove) {
+            // Filter out any completion that happened on the given day
+            updatedCompletionDates = completionDates.filter(ts => !isSameDay(ts.toDate(), dateToUndo));
+            if (updatedCompletionDates.length === completionDates.length) {
                 throw new Error("Não há conclusão para esta data para ser desfeita.");
             }
         } else {
-            // If no date is given (from older flows like manage page), remove the most recent one.
-            completionToRemove = completionDates.sort((a, b) => b.toMillis() - a.toMillis())[0];
+            // If no date is given (from older flows), remove the most recent one.
+            updatedCompletionDates = completionDates.slice(1);
         }
 
         const childRef = doc(db, 'children', missionData.childId);
@@ -928,7 +930,6 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
             xp: Math.max(0, childData.xp - missionData.xpReward),
             updatedAt: serverTimestamp() 
         };
-        // We will not de-level the child for simplicity.
         transaction.update(childRef, finalChildUpdates);
         
         // Revert mission status
@@ -936,8 +937,8 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
             status: 'pending',
             completedAt: null, // Always reset final completion when undoing
             updatedAt: serverTimestamp(),
-            completionCount: Math.max(0, (missionData.completionCount || 0) - 1),
-            completedDates: arrayRemove(completionToRemove),
+            completionCount: updatedCompletionDates.length,
+            completedDates: updatedCompletionDates,
         };
         
         transaction.update(missionRef, missionUpdates);
