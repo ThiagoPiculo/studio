@@ -23,7 +23,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users } from 'lucide-react';
+import { ListChecks, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -41,6 +41,8 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRecurrenceSummary } from '@/lib/calendar-utils';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -59,6 +61,7 @@ export default function MissionsHubPage() {
   
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
+  const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!user) {
@@ -166,7 +169,7 @@ export default function MissionsHubPage() {
             {templatesDescription}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="flex flex-wrap gap-4">
            <Link href="/dashboard/missions/new">
             <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
               <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
@@ -177,6 +180,37 @@ export default function MissionsHubPage() {
               <Lightbulb className="mr-2 h-5 w-5" /> Ver Ideias de Missões
             </Button>
           </Link>
+          <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                  <Info className="mr-2 h-5 w-5" /> Sobre Missões
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                        <ListChecks className="h-6 w-6 text-primary" />
+                        O Motor da Aventura: Missões
+                    </DialogTitle>
+                    <DialogDescription className="pt-2">
+                      As missões são o mapa e os desafios que levam ao tesouro. Em termos simples, são as tarefas, hábitos e responsabilidades que você quer incentivar.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] pr-4">
+                  <div className="space-y-3 text-sm text-muted-foreground pb-4">
+                    <p>Elas transformam deveres em uma jornada heroica, e seu propósito é multifacetado:</p>
+                    <ul className="list-disc pl-5 space-y-2">
+                        <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
+                        <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
+                        <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói precisa completar missões para ganhar Estrelas (⭐). As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
+                        <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
+                        <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
+                    </ul>
+                    <p className="pt-2">Em resumo, as missões são a base da gamificação. Elas são as ações que impulsionam o progresso, geram as recompensas e transformam a rotina de obrigações em uma jornada de conquistas e crescimento.</p>
+                  </div>
+                </ScrollArea>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
       
@@ -353,3 +387,5 @@ export default function MissionsHubPage() {
     </div>
   );
 }
+
+    
