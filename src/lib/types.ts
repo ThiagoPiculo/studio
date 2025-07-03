@@ -127,15 +127,14 @@ export interface MissionInstance {
   xpReward: number;
   status: 'pending' | 'completed' | 'expired';
   assignedAt: Timestamp;
-  completedAt?: Timestamp; // Now marks the FINAL completion time
-  dueDate?: Timestamp | null;
   updatedAt: Timestamp;
+  dueDate?: Timestamp | null;
   startDate?: Timestamp | null;
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
-  completedDates?: Timestamp[]; // Array of completion timestamps
-  exceptionDates?: Timestamp[]; // Dates this recurrence should be skipped
+  completionLog?: { [key: string]: Timestamp }; // Map of scheduled date (YYYY-MM-DD) to completion timestamp
+  exceptionDates?: { [key: string]: boolean }; // Using a map for faster lookups
 }
 
 

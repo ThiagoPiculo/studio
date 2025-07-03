@@ -40,7 +40,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { formatDistanceToNow, differenceInYears, isSameDay } from 'date-fns';
+import { format, differenceInYears, isSameDay, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
@@ -50,7 +50,10 @@ import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
-type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
+type Activity = 
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
+    | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp });
+
 
 export default function ManageChildPage() {
   const params = useParams();
@@ -81,7 +84,7 @@ export default function ManageChildPage() {
   const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
   const [isReactivatingMission, setIsReactivatingMission] = useState(false);
   
-  const [missionToUndo, setMissionToUndo] = useState<MissionInstance | null>(null);
+  const [missionToUndo, setMissionToUndo] = useState<{instance: MissionInstance, date: Date} | null>(null);
   const [isUndoing, setIsUndoing] = useState(false);
 
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -197,13 +200,13 @@ export default function ManageChildPage() {
         getMissionInstancesByChild(childId),
         getChildRewardInstancesByChild(childId),
       ]).then(([missions, rewards]) => {
-        const totalCompletedOccurrences = missions.reduce((sum, m) => sum + (m.completedDates?.length || 0), 0);
+        const totalCompletedOccurrences = missions.reduce((sum, m) => sum + Object.keys(m.completionLog || {}).length, 0);
         const pendingMissions = missions.filter(m => m.status === 'pending');
         const redeemedRewards = rewards.filter(r => r.status === 'redeemed');
         const availableRewards = rewards.filter(r => r.status === 'active');
         
         const totalStarsEarned = missions
-          .flatMap(m => m.completedDates ? Array(m.completedDates.length).fill(m.starsReward) : [])
+          .flatMap(m => Object.keys(m.completionLog || {}).length > 0 ? Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward) : [])
           .reduce((sum, stars) => sum + stars, 0);
 
         const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
@@ -218,20 +221,19 @@ export default function ManageChildPage() {
         });
 
         const allActivities: Activity[] = [
-          ...missions
-            .filter(m => m.completedDates && m.completedDates.length > 0)
-            .flatMap(m => m.completedDates!.map(date => ({ ...m, type: 'mission' as const, completedAt: date }))),
-          ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const })),
+          ...missions.flatMap(m =>
+            Object.entries(m.completionLog || {}).map(([dateStr, completedTimestamp]) => ({
+              ...m,
+              type: 'mission' as const,
+              scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()), // Parse the date string key
+              completedAt: completedTimestamp,
+            }))
+          ),
+          ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
         ].sort((a, b) => {
-          const dateA = a.type === 'mission' ? a.completedAt : a.redeemedAt;
-          const dateB = b.type === 'mission' ? b.completedAt : b.redeemedAt;
-          
-          if (!dateA || !dateB) return 0;
-          
-          const timeA = (dateA as any).toDate ? (dateA as any).toDate().getTime() : new Date(dateA as any).getTime();
-          const timeB = (dateB as any).toDate ? (dateB as any).toDate().getTime() : new Date(dateB as any).getTime();
-          
-          return timeB - timeA;
+            const timeA = a.completedAt.toDate().getTime();
+            const timeB = b.completedAt.toDate().getTime();
+            return timeB - timeA;
         });
         setActivities(allActivities.slice(0, 10)); // Limit to 10 recent activities
       }).catch(error => {
@@ -304,13 +306,13 @@ export default function ManageChildPage() {
       if (!missionToUndo || !child) return;
       setIsUndoing(true);
       try {
-        const updatedChildProfile = await reactivateMissionInstance(missionToUndo.id);
+        const updatedChildProfile = await reactivateMissionInstance(missionToUndo.instance.id, missionToUndo.date);
         setChild(updatedChildProfile);
         fetchMissionData();
 
         toast({
           title: "Ação Desfeita!",
-          description: `A última conclusão da missão "${missionToUndo.title}" foi revertida.`,
+          description: `A conclusão da missão "${missionToUndo.instance.title}" foi revertida.`,
         });
       } catch (error: any) {
         console.error("Error undoing mission completion:", error);
@@ -326,24 +328,10 @@ export default function ManageChildPage() {
     if (!missionToReactivate || !child) return;
     setIsReactivatingMission(true);
     try {
+      // For legacy 'completed' missions, we don't have a specific date. We assume the last completion.
       const updatedChildProfile = await reactivateMissionInstance(missionToReactivate.id);
       setChild(updatedChildProfile);
-
-      setMissionInstances(prev => {
-        const updatedInstances = prev.map(m => {
-          if (m.id === missionToReactivate.id) {
-            return {
-              ...m,
-              status: 'pending',
-              completionCount: Math.max(0, (m.completionCount || 0) - 1),
-              completedAt: undefined,
-              // We just remove one completion, no need to manage the dates array on the client
-            } as MissionInstance;
-          }
-          return m;
-        });
-        return updatedInstances.sort((a,b) => (b.assignedAt as any).seconds - (a.assignedAt as any).seconds);
-      });
+      fetchMissionData();
 
       toast({
         title: "Missão Reativada!",
@@ -525,8 +513,8 @@ export default function ManageChildPage() {
     return missionInstances
         .filter(m => m.status === 'completed')
         .sort((a, b) => {
-            const dateA = (a.completedAt as Timestamp)?.toDate() || new Date(0);
-            const dateB = (b.completedAt as Timestamp)?.toDate() || new Date(0);
+            const dateA = a.updatedAt?.toDate() || new Date(0);
+            const dateB = b.updatedAt?.toDate() || new Date(0);
             return dateB.getTime() - dateA.getTime();
         });
   }, [missionInstances]);
@@ -535,8 +523,8 @@ export default function ManageChildPage() {
       const today = new Date();
       const ids = new Set<string>();
       missionInstances.forEach(mission => {
-          if (mission.completedDates?.some(ts => isSameDay(ts.toDate(), today))) {
-              ids.add(mission.id);
+          if (mission.completionLog && Object.keys(mission.completionLog).some(dateStr => isSameDay(parse(dateStr, 'yyyy-MM-dd', new Date()), today))) {
+            ids.add(mission.id);
           }
       });
       return ids;
@@ -611,7 +599,7 @@ export default function ManageChildPage() {
                   {instance.isRecurring && instance.recurrenceRule?.count && (
                       <div className="flex items-center text-muted-foreground font-medium">
                           <CheckSquare className="h-4 w-4 mr-1.5 text-green-600" />
-                          Progresso: {instance.completionCount || 0} / {instance.recurrenceRule.count}
+                          Progresso: {Object.keys(instance.completionLog || {}).length} / {instance.recurrenceRule.count}
                       </div>
                   )}
                   <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
@@ -625,10 +613,10 @@ export default function ManageChildPage() {
                               Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
                           </div>
                       )}
-                      {instance.status === 'completed' && instance.completedAt && (
+                      {instance.status === 'completed' && instance.updatedAt && (
                           <div className="flex items-center font-medium text-green-600">
                               <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                              Concluída em: {new Date((instance.completedAt as any).seconds * 1000).toLocaleDateString()}
+                              Concluída em: {new Date((instance.updatedAt as any).seconds * 1000).toLocaleDateString()}
                           </div>
                       )}
                   </div>
@@ -643,7 +631,7 @@ export default function ManageChildPage() {
                               <TooltipProvider>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo(instance)} disabled={isUndoing}>
+                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isUndoing}>
                                               <Undo2 className="h-4 w-4" />
                                           </Button>
                                       </TooltipTrigger>
@@ -931,11 +919,9 @@ export default function ManageChildPage() {
                 ) : (
                   <ul className="space-y-4">
                     {activities.map((activity, index) => {
-                      const date = activity.type === 'mission' ? activity.completedAt?.toDate() : activity.redeemedAt?.toDate();
-                      const timeAgo = date ? formatDistanceToNow(date, { addSuffix: true, locale: ptBR }) : '';
-
+                      const completedDate = activity.completedAt.toDate();
                       return (
-                        <Fragment key={activity.id + date?.getTime()}>
+                        <Fragment key={activity.id + completedDate.getTime()}>
                           <li className="flex items-center gap-4">
                             {activity.type === 'mission' ? (
                                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -949,13 +935,15 @@ export default function ManageChildPage() {
                             <div className="flex-grow">
                               <p className="font-semibold">{activity.title}</p>
                               <p className="text-sm text-muted-foreground">
-                                {activity.type === 'mission'
-                                  ? `+${activity.xpReward} XP, +${activity.starsReward} Estrelas`
-                                  : `-${activity.starsCost} Estrelas`}
+                                {activity.type === 'mission' ?
+                                    `Concluída para: ${format(activity.scheduledFor, 'PPP', { locale: ptBR })}`
+                                    : `Custo: ${activity.starsCost} Estrelas`
+                                }
                               </p>
                             </div>
                             <div className="text-right flex-shrink-0">
-                              <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                                <p className="text-sm font-semibold">{format(completedDate, 'HH:mm')}</p>
+                                <p className="text-xs text-muted-foreground">{format(completedDate, 'dd/MM/yyyy')}</p>
                             </div>
                           </li>
                           {index < activities.length - 1 && <Separator />}
@@ -1332,7 +1320,7 @@ export default function ManageChildPage() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Desfazer Conclusão?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Isso irá reverter a última conclusão da missão "{missionToUndo?.title}", incluindo as estrelas e XP ganhos. Deseja continuar?
+                  Isso irá reverter a conclusão da missão "{missionToUndo?.instance.title}" para o dia {format(missionToUndo!.date, 'dd/MM/yyyy')}, incluindo as estrelas e XP ganhos. Deseja continuar?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

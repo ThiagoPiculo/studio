@@ -1,5 +1,6 @@
 
 
+
 import {
   collection,
   doc,
@@ -16,14 +17,12 @@ import {
   setDoc,
   orderBy,
   runTransaction,
-  arrayUnion,
-  arrayRemove,
-  increment,
+  deleteField,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule } from '@/lib/types';
 import { heroColors } from '../hero-colors';
-import { startOfDay, isSameDay, subDays } from 'date-fns';
+import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
 
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
@@ -676,7 +675,7 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'completedAt' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completedDates' | 'exceptionDates'>,
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates'>,
   templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -701,8 +700,8 @@ export const addMissionInstance = async (
     isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
     completionCount: 0,
-    completedDates: [],
-    exceptionDates: [],
+    completionLog: {},
+    exceptionDates: {},
   };
   await setDoc(newInstanceRef, newInstance);
   return newInstance;
@@ -735,8 +734,9 @@ export const updateMissionInstance = async (instanceId: string, updates: Partial
 
 export const excludeMissionInstanceOccurrence = async (instanceId: string, dateToExclude: Date): Promise<void> => {
   const instanceRef = doc(db, 'missionInstances', instanceId);
+  const dateKey = formatDateFns(startOfDay(dateToExclude), 'yyyy-MM-dd');
   await updateDoc(instanceRef, {
-    exceptionDates: arrayUnion(Timestamp.fromDate(startOfDay(dateToExclude))),
+    [`exceptionDates.${dateKey}`]: true,
     updatedAt: serverTimestamp()
   });
 };
@@ -796,7 +796,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     await batch.commit();
 };
 
-export const completeMissionInstance = async (missionInstanceId: string, completionDate?: Date): Promise<ChildProfile> => {
+export const completeMissionInstance = async (missionInstanceId: string, completionDate: Date): Promise<ChildProfile> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
     const calculateXpForNextLevel = (level: number): number => {
@@ -814,12 +814,10 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         }
         
         const missionData = missionSnap.data() as MissionInstance;
-        
-        // Use the provided completion date, or the current time as a fallback.
-        const actualCompletionTimestamp = completionDate ? Timestamp.fromDate(completionDate) : Timestamp.now();
+        const completionDateKey = formatDateFns(completionDate, 'yyyy-MM-dd');
         
         // Prevent re-completing for the same day
-        if ((missionData.completedDates || []).some(ts => isSameDay(ts.toDate(), actualCompletionTimestamp.toDate()))) {
+        if (missionData.completionLog && missionData.completionLog[completionDateKey]) {
             throw new Error("Esta missão já foi concluída para esta data.");
         }
 
@@ -833,10 +831,8 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         const childData = childSnap.data() as ChildProfile;
         
         // --- Child Stats Update ---
-        const currentStars = childData.stars;
-        const currentXp = childData.xp;
-        const newStars = currentStars + missionData.starsReward;
-        const newXp = currentXp + missionData.xpReward;
+        const newStars = childData.stars + missionData.starsReward;
+        const newXp = childData.xp + missionData.xpReward;
         let newLevel = childData.level;
 
         let xpForNextLevel = calculateXpForNextLevel(childData.level);
@@ -845,41 +841,27 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
             xpForNextLevel = calculateXpForNextLevel(newLevel);
         }
 
-        const finalChildUpdates: any = {
+        transaction.update(childRef, {
             stars: newStars,
             xp: newXp,
             level: newLevel,
             updatedAt: serverTimestamp(),
-        };
-        transaction.update(childRef, finalChildUpdates);
+        });
 
         // --- Mission Instance Update ---
-        const serverUpdateTime = serverTimestamp();
+        const newCompletionCount = Object.keys(missionData.completionLog || {}).length + 1;
+        const isFullyCompleted = missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count;
 
-        if (!missionData.isRecurring) {
-            transaction.update(missionRef, {
-                status: 'completed',
-                completedAt: actualCompletionTimestamp,
-                updatedAt: serverUpdateTime,
-                completionCount: 1,
-                completedDates: arrayUnion(actualCompletionTimestamp)
-            });
-        } else {
-            const newCompletionCount = (missionData.completionCount || 0) + 1;
-            const isFullyCompleted = missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count;
+        const missionUpdates: any = {
+            completionCount: newCompletionCount,
+            [`completionLog.${completionDateKey}`]: Timestamp.now(),
+            updatedAt: serverTimestamp(),
+        };
 
-            const missionUpdates: any = {
-                completionCount: newCompletionCount,
-                completedDates: arrayUnion(actualCompletionTimestamp),
-                updatedAt: serverUpdateTime,
-            };
-
-            if (isFullyCompleted) {
-                missionUpdates.status = 'completed';
-                missionUpdates.completedAt = actualCompletionTimestamp;
-            }
-            transaction.update(missionRef, missionUpdates);
+        if (isFullyCompleted) {
+            missionUpdates.status = 'completed';
         }
+        transaction.update(missionRef, missionUpdates);
         
         return {
             ...childData,
@@ -899,23 +881,16 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         }
         
         const missionData = missionSnap.data() as MissionInstance;
-        const completionDates: Timestamp[] = (missionData.completedDates || []).sort((a, b) => b.toMillis() - a.toMillis());
         
-        if (completionDates.length === 0) {
-            throw new Error("A missão não possui conclusões para serem desfeitas.");
-        }
-        
-        let updatedCompletionDates: Timestamp[];
-
-        if (dateToUndo) {
-            // Filter out any completion that happened on the given day
-            updatedCompletionDates = completionDates.filter(ts => !isSameDay(ts.toDate(), dateToUndo));
-            if (updatedCompletionDates.length === completionDates.length) {
-                throw new Error("Não há conclusão para esta data para ser desfeita.");
-            }
+        if (!dateToUndo) {
+            // This handles legacy missions that were just marked 'completed' without a specific date log.
+            // It assumes we are undoing the entire mission.
+            if (missionData.status !== 'completed') throw new Error("A missão não está concluída para ser reativada.");
         } else {
-            // If no date is given (from older flows), remove the most recent one.
-            updatedCompletionDates = completionDates.slice(1);
+             const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
+             if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
+                throw new Error("Não há conclusão para esta data para ser desfeita.");
+             }
         }
 
         const childRef = doc(db, 'children', missionData.childId);
@@ -937,11 +912,18 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         // Revert mission status
         const missionUpdates: any = {
             status: 'pending',
-            completedAt: null, // Always reset final completion when undoing
             updatedAt: serverTimestamp(),
-            completionCount: updatedCompletionDates.length,
-            completedDates: updatedCompletionDates,
         };
+
+        if (dateToUndo) {
+            const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
+            missionUpdates[`completionLog.${completionDateKey}`] = deleteField();
+            missionUpdates.completionCount = Math.max(0, Object.keys(missionData.completionLog || {}).length - 1);
+        } else {
+            // Legacy undo
+             missionUpdates.completionCount = 0;
+             missionUpdates.completionLog = {};
+        }
         
         transaction.update(missionRef, missionUpdates);
 
@@ -1000,8 +982,9 @@ export const updateRecurringMissionInstance = async (
       transaction.update(originalInstanceRef, scheduleUpdates);
     } 
     else if (editMode === 'single') {
+      const dateKey = formatDateFns(startOfDay(occurrenceDate), 'yyyy-MM-dd');
       transaction.update(originalInstanceRef, {
-        exceptionDates: arrayUnion(Timestamp.fromDate(startOfDay(occurrenceDate)))
+        [`exceptionDates.${dateKey}`]: true,
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -1015,8 +998,8 @@ export const updateRecurringMissionInstance = async (
           updatedAt: serverTimestamp(),
           status: 'pending',
           completionCount: 0,
-          completedDates: [],
-          exceptionDates: [],
+          completionLog: {},
+          exceptionDates: {},
       };
       delete newOneOffInstanceData.id; // Firestore generates ID
       transaction.set(newInstanceRef, newOneOffInstanceData);
@@ -1037,8 +1020,8 @@ export const updateRecurringMissionInstance = async (
           updatedAt: serverTimestamp(),
           status: 'pending',
           completionCount: 0,
-          completedDates: [],
-          exceptionDates: [],
+          completionLog: {},
+          exceptionDates: {},
           isRecurring: scheduleUpdates.isRecurring,
           dueDate: scheduleUpdates.dueDate,
           recurrenceRule: scheduleUpdates.recurrenceRule,
