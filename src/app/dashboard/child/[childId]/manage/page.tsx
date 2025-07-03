@@ -48,6 +48,7 @@ import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -86,6 +87,8 @@ export default function ManageChildPage() {
   
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [isResettingProgress, setIsResettingProgress] = useState(false);
+  const [isAboutBadgesOpen, setIsAboutBadgesOpen] = useState(false);
+
 
   // Centralized data fetching function
   const fetchData = useCallback(async () => {
@@ -1133,77 +1136,143 @@ export default function ManageChildPage() {
             </Card>
           </TabsContent>
           <TabsContent value="badges" className="space-y-6">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Mural de Medalhas de {child.name}</CardTitle>
-                <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-8">
-                 <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
-                  {predefinedBadgeCategories.map((category, index) => (
-                    <Fragment key={category.title}>
-                      {index > 0 && <Separator />}
-                      <div>
-                        <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                          {category.items.map((badge) => {
-                            const isEarned = child.earnedBadgeIds?.includes(badge.id);
-                            return (
-                               <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
-                                <div className={cn(
-                                  "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
-                                  isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
-                                )}>
+            <Dialog open={isAboutBadgesOpen} onOpenChange={setIsAboutBadgesOpen}>
+              <Card className="shadow-md">
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <CardTitle>Mural de Medalhas de {child.name}</CardTitle>
+                            <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada.</CardDescription>
+                        </div>
+                        <DialogTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Info className="mr-2 h-4 w-4" /> Sobre Medalhas
+                          </Button>
+                        </DialogTrigger>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-8">
+                  <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
+                    {predefinedBadgeCategories.map((category, index) => (
+                      <Fragment key={category.title}>
+                        {index > 0 && <Separator />}
+                        <div>
+                          <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                            {category.items.map((badge) => {
+                              const isEarned = child.earnedBadgeIds?.includes(badge.id);
+                              return (
+                                <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
                                   <div className={cn(
-                                    "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
-                                    isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
-                                  )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                                    <badge.icon className="h-9 w-9 text-white" />
+                                    "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
+                                    isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
+                                  )}>
+                                    <div className={cn(
+                                      "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
+                                      isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
+                                    )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                                      <badge.icon className="h-9 w-9 text-white" />
+                                    </div>
+                                    <p className={cn(
+                                      "text-sm font-semibold h-10 flex items-center",
+                                      isEarned ? 'text-foreground' : 'text-muted-foreground'
+                                    )}>{badge.title}</p>
                                   </div>
-                                  <p className={cn(
-                                    "text-sm font-semibold h-10 flex items-center",
-                                    isEarned ? 'text-foreground' : 'text-muted-foreground'
-                                  )}>{badge.title}</p>
-                                </div>
-                              </DialogTrigger>
-                            );
-                          })}
+                                </DialogTrigger>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    </Fragment>
-                  ))}
-                  {selectedBadge && (
-                    <DialogContent>
-                      <DialogHeader className="items-center text-center">
-                        <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
-                            <selectedBadge.icon className="h-12 w-12 text-white" />
+                      </Fragment>
+                    ))}
+                    {selectedBadge && (
+                      <DialogContent>
+                        <DialogHeader className="items-center text-center">
+                          <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
+                              <selectedBadge.icon className="h-12 w-12 text-white" />
+                          </div>
+                          <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
+                          <DialogDescription className="text-base text-muted-foreground pt-2">
+                            {selectedBadge.description}
+                          </DialogDescription>
+                        </DialogHeader>
+                        <div className="text-center pt-2">
+                          {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
+                              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">
+                                  <CheckCircle className="mr-2 h-4 w-4"/>Conquistado!
+                              </Badge>
+                          ) : (
+                              <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-sm">
+                                  Ainda não conquistado!
+                              </Badge>
+                          )}
                         </div>
-                        <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
-                        <DialogDescription className="text-base text-muted-foreground pt-2">
-                          {selectedBadge.description}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="text-center pt-2">
-                        {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
-                            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">
-                                <CheckCircle className="mr-2 h-4 w-4"/>Conquistado!
-                            </Badge>
-                        ) : (
-                            <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-sm">
-                                Ainda não conquistado!
-                            </Badge>
-                        )}
-                      </div>
-                      <DialogFooter>
-                          <DialogClose asChild>
-                              <Button variant="outline" className="w-full">Fechar</Button>
-                          </DialogClose>
-                      </DialogFooter>
-                    </DialogContent>
-                  )}
-                </Dialog>
-              </CardContent>
-            </Card>
+                        <DialogFooter>
+                            <DialogClose asChild>
+                                <Button variant="outline" className="w-full">Fechar</Button>
+                            </DialogClose>
+                        </DialogFooter>
+                      </DialogContent>
+                    )}
+                  </Dialog>
+                </CardContent>
+              </Card>
+
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                    <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                        <Medal className="h-6 w-6 text-primary" />
+                        O Mural de Conquistas
+                    </DialogTitle>
+                    <DialogDescription className="pt-2">
+                        As medalhas celebram a jornada do seu herói, reconhecendo desde os primeiros passos até a maestria.
+                    </DialogDescription>
+                </DialogHeader>
+                <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+                    <div className="space-y-4 text-sm text-muted-foreground pb-4 pr-1">
+                        <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
+                        
+                        <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
+                        <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um herói, incentivando-o a começar com o pé direito.</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Herói Novato:</strong> Conquistada ao completar a primeira missão.</li>
+                            <li><strong>Defensor do Sorriso:</strong> Ganha ao fazer a missão "Escovar os dentes" pela primeira vez.</li>
+                            <li><strong>Guardião do Descanso:</strong> Recebida ao arrumar a cama pela primeira vez.</li>
+                        </ul>
+
+                        <h4 className="font-bold text-foreground pt-2">Consistência e Hábitos</h4>
+                        <p>Aqui, o que vale é a dedicação! Estas medalhas recompensam a criação de rotinas e a persistência, que são a base para a formação de hábitos sólidos.</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Guardião da Rotina:</strong> Para quem completa a mesma missão por 7 dias seguidos.</li>
+                            <li><strong>Semana Perfeita:</strong> Um grande feito! Para quem completa todas as missões agendadas durante 7 dias consecutivos.</li>
+                            <li><strong>Mestre da Persistência:</strong> Uma medalha rara para quem completa a mesma missão por 30 dias seguidos.</li>
+                        </ul>
+
+                        <h4 className="font-bold text-foreground pt-2">Maestria e Progresso</h4>
+                        <p>Estas medalhas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Caçador de Estrelas:</strong> Por acumular um total de 100 estrelas (⭐).</li>
+                            <li><strong>Herói em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
+                            <li><strong>Campeão dos Heróis:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
+                        </ul>
+                        
+                        <h4 className="font-bold text-foreground pt-2">Exploração e Diversidade</h4>
+                        <p>Estas incentivam a curiosidade e a versatilidade, motivando a criança a sair da zona de conforto e experimentar novas responsabilidades.</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>Herói Versátil:</strong> Para quem completa missões de pelo menos 3 categorias diferentes (ex: Casa, Escola e Saúde).</li>
+                            <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
+                        </ul>
+
+                        <p className="pt-2">Essencialmente, o sistema de medalhas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Herói, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
+                    </div>
+                </ScrollArea>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline" className="w-full">Entendido!</Button>
+                    </DialogClose>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </TabsContent>
           <TabsContent value="edit">
             <Card className="shadow-md">
@@ -1341,3 +1410,5 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+    
