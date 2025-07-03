@@ -161,7 +161,7 @@ function CreateMissionTemplatePageContent() {
           <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
         </Button>
         <Link href="/dashboard/missions/ideas">
-          <Button variant="outline">
+          <Button variant="secondary">
             <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
           </Button>
         </Link>
