@@ -1,4 +1,3 @@
-
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -40,9 +39,9 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-10 w-10 rounded-full">
+        <Button variant="ghost" className="flex h-auto w-full items-center justify-start gap-2 rounded-md px-2 py-1.5 text-left">
           <Avatar
-            className="h-10 w-10 ring-2 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
+            className="h-9 w-9"
             style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
           >
             {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
@@ -53,6 +52,7 @@ export function UserNav() {
               {getInitials(displayName)}
             </AvatarFallback>
           </Avatar>
+          <span className="truncate text-sm font-semibold leading-tight group-data-[collapsible=icon]:hidden">{displayName || (isChildAuthenticated ? "Herói" : "Admin")}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
