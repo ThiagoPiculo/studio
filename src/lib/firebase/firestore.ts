@@ -815,8 +815,11 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         
         const missionData = missionSnap.data() as MissionInstance;
         
+        // Use the provided completion date, or the current time as a fallback.
+        const actualCompletionTimestamp = completionDate ? Timestamp.fromDate(completionDate) : Timestamp.now();
+        
         // Prevent re-completing for the same day
-        if (completionDate && (missionData.completedDates || []).some(ts => isSameDay(ts.toDate(), completionDate))) {
+        if ((missionData.completedDates || []).some(ts => isSameDay(ts.toDate(), actualCompletionTimestamp.toDate()))) {
             throw new Error("Esta missão já foi concluída para esta data.");
         }
 
@@ -851,7 +854,6 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         transaction.update(childRef, finalChildUpdates);
 
         // --- Mission Instance Update ---
-        const actualCompletionTimestamp = Timestamp.now();
         const serverUpdateTime = serverTimestamp();
 
         if (!missionData.isRecurring) {
