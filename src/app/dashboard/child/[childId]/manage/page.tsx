@@ -92,6 +92,7 @@ export default function ManageChildPage() {
     rewardsRedeemed: 0,
     pendingMissions: 0,
     availableRewards: 0,
+    earnedBadges: 0,
   });
   
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
@@ -190,7 +191,7 @@ export default function ManageChildPage() {
         fetchMissionData();
     }
     
-    if (activeTab === 'overview' && childId) {
+    if (activeTab === 'overview' && childId && child) {
       setIsLoadingActivities(true);
       Promise.all([
         getMissionInstancesByChild(childId),
@@ -205,12 +206,15 @@ export default function ManageChildPage() {
           .flatMap(m => m.completedDates ? Array(m.completedDates.length).fill(m.starsReward) : [])
           .reduce((sum, stars) => sum + stars, 0);
 
+        const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
+
         setStats({
           completedMissions: completedMissions.length,
           starsEarned: totalStarsEarned,
           rewardsRedeemed: redeemedRewards.length,
           pendingMissions: pendingMissions.length,
           availableRewards: availableRewards.length,
+          earnedBadges: earnedBadgesCount,
         });
 
         const allActivities: Activity[] = [
@@ -234,7 +238,7 @@ export default function ManageChildPage() {
         setIsLoadingActivities(false);
       });
     }
-  }, [activeTab, childId, toast, fetchMissionData]);
+  }, [activeTab, childId, toast, fetchMissionData, child]);
   
   const handleProfileUpdate = useCallback(() => {
     fetchChildData().then(() => {
@@ -819,7 +823,7 @@ export default function ManageChildPage() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               <Card className="shadow-sm flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
@@ -880,6 +884,26 @@ export default function ManageChildPage() {
                     }}
                   >
                     Explorar Recompensas
+                  </Button>
+                </CardFooter>
+              </Card>
+              <Card className="shadow-sm flex flex-col">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium">Medalhas Conquistadas</CardTitle>
+                  <Medal className="h-5 w-5 text-blue-500" />
+                </CardHeader>
+                <CardContent className="flex-grow">
+                  <div className="text-2xl font-bold">{isLoadingActivities ? <Loader2 className="h-6 w-6 animate-spin" /> : stats.earnedBadges}</div>
+                  <p className="text-xs text-muted-foreground">Total de medalhas recebidas</p>
+                </CardContent>
+                <CardFooter>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => setActiveTab('badges')}
+                  >
+                    Ver Mural de Medalhas
                   </Button>
                 </CardFooter>
               </Card>
@@ -1389,4 +1413,3 @@ export default function ManageChildPage() {
   );
 }
 
-    
