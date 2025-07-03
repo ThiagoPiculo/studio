@@ -46,8 +46,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Timestamp } from 'firebase/firestore';
-import { predefinedBadgeCategories } from '@/lib/badges';
+import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -92,6 +93,8 @@ export default function ManageChildPage() {
     pendingMissions: 0,
     availableRewards: 0,
   });
+  
+  const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
 
   const calculateXpDetails = (level: number, currentXp: number) => {
     let xpForCurrentLevel = 0;
@@ -1182,50 +1185,72 @@ export default function ManageChildPage() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle>Mural de Medalhas de {child.name}</CardTitle>
-                <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada. Passe o mouse sobre uma medalha para ver como ganhá-la!</CardDescription>
+                <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-8">
-                {predefinedBadgeCategories.map((category, index) => (
-                  <Fragment key={category.title}>
-                    {index > 0 && <Separator />}
-                    <div>
-                      <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                        {category.items.map((badge) => {
-                          const isEarned = child.earnedBadgeIds?.includes(badge.id);
-                          return (
-                            <TooltipProvider key={badge.id} delayDuration={100}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
+                 <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
+                  {predefinedBadgeCategories.map((category, index) => (
+                    <Fragment key={category.title}>
+                      {index > 0 && <Separator />}
+                      <div>
+                        <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                          {category.items.map((badge) => {
+                            const isEarned = child.earnedBadgeIds?.includes(badge.id);
+                            return (
+                               <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
+                                <div className={cn(
+                                  "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
+                                  isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
+                                )}>
                                   <div className={cn(
-                                    "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1",
-                                    isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
-                                  )}>
-                                    <div className={cn(
-                                      "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
-                                      isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
-                                    )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                                      <badge.icon className="h-9 w-9 text-white" />
-                                    </div>
-                                    <p className={cn(
-                                      "text-sm font-semibold h-10 flex items-center",
-                                      isEarned ? 'text-foreground' : 'text-muted-foreground'
-                                    )}>{badge.title}</p>
+                                    "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
+                                    isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
+                                  )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                                    <badge.icon className="h-9 w-9 text-white" />
                                   </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="max-w-[250px]">
-                                  <p className="font-bold text-base mb-1">{badge.title}</p>
-                                  <p className="text-sm text-muted-foreground">{badge.description}</p>
-                                  {!isEarned && <p className="mt-2 font-bold text-destructive">Ainda não conquistado!</p>}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          );
-                        })}
+                                  <p className={cn(
+                                    "text-sm font-semibold h-10 flex items-center",
+                                    isEarned ? 'text-foreground' : 'text-muted-foreground'
+                                  )}>{badge.title}</p>
+                                </div>
+                              </DialogTrigger>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  </Fragment>
-                ))}
+                    </Fragment>
+                  ))}
+                  {selectedBadge && (
+                    <DialogContent>
+                      <DialogHeader className="items-center text-center">
+                        <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
+                            <selectedBadge.icon className="h-12 w-12 text-white" />
+                        </div>
+                        <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
+                        <DialogDescription className="text-base text-muted-foreground pt-2">
+                          {selectedBadge.description}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="text-center pt-2">
+                        {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">
+                                <CheckCircle className="mr-2 h-4 w-4"/>Conquistado!
+                            </Badge>
+                        ) : (
+                            <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-sm">
+                                Ainda não conquistado!
+                            </Badge>
+                        )}
+                      </div>
+                      <DialogFooter>
+                          <DialogClose asChild>
+                              <Button variant="outline" className="w-full">Fechar</Button>
+                          </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  )}
+                </Dialog>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1363,3 +1388,5 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+    

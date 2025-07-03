@@ -53,3 +53,5 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
 ];
 
 export const allBadgesMap = new Map(predefinedBadgeCategories.flatMap(category => category.items).map(badge => [badge.id, badge]));
+
+    
