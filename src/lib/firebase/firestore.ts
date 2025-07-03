@@ -796,7 +796,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     await batch.commit();
 };
 
-export const completeMissionInstance = async (missionInstanceId: string, completionDate: Date): Promise<ChildProfile> => {
+export const completeMissionInstance = async (missionInstanceId: string, completionDate: Date): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
     const calculateXpForNextLevel = (level: number): number => {
@@ -810,7 +810,8 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
     return await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
-            throw new Error("Missão não encontrada ou já foi concluída.");
+            console.error("Mission instance not found.");
+            return null;
         }
         
         const missionData = missionSnap.data() as MissionInstance;
@@ -818,14 +819,16 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         
         // Prevent re-completing for the same day
         if (missionData.completionLog && missionData.completionLog[completionDateKey]) {
-            throw new Error("Esta missão já foi concluída para esta data.");
+            console.warn("Mission already completed for this date.");
+            return null; // Return null instead of throwing
         }
 
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
         if (!childSnap.exists()) {
-            throw new Error("Perfil da criança associado à missão não foi encontrado.");
+             console.error("Child profile associated with the mission not found.");
+             return null;
         }
         
         const childData = childSnap.data() as ChildProfile;
@@ -871,25 +874,28 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
     });
 };
 
-export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile> => {
+export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
 
     return await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
-            throw new Error("Missão não encontrada.");
+            console.error("Mission instance not found.");
+            return null;
         }
         
         const missionData = missionSnap.data() as MissionInstance;
         
         if (!dateToUndo) {
-            // This handles legacy missions that were just marked 'completed' without a specific date log.
-            // It assumes we are undoing the entire mission.
-            if (missionData.status !== 'completed') throw new Error("A missão não está concluída para ser reativada.");
+            if (missionData.status !== 'completed') {
+                console.warn("Mission is not completed, cannot reactivate.");
+                return null;
+            }
         } else {
              const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
              if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
-                throw new Error("Não há conclusão para esta data para ser desfeita.");
+                console.warn("No completion found for this date to undo.");
+                return null;
              }
         }
 
@@ -897,7 +903,8 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         const childSnap = await transaction.get(childRef);
         
         if (!childSnap.exists()) {
-            throw new Error("Perfil da criança associado à missão não foi encontrado.");
+            console.error("Child profile associated with the mission not found.");
+            return null;
         }
         const childData = childSnap.data() as ChildProfile;
 

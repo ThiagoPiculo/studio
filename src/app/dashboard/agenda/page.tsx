@@ -283,12 +283,17 @@ function AgendaPageContent() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await completeMissionInstance(missionInstance.id, date);
-        toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
+        const result = await completeMissionInstance(missionInstance.id, date);
+        if (result) {
+            toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
+        } else {
+            toast({ title: 'Ação Duplicada', description: 'Esta missão já foi concluída para esta data.', variant: 'default' });
+        }
         refetchData();
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error completing mission:", error);
-        toast({ title: 'Erro ao concluir', variant: 'destructive' });
+        toast({ title: 'Erro ao concluir', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
+        refetchData();
     } finally {
         setIsProcessingAction(null);
     }
@@ -298,12 +303,17 @@ function AgendaPageContent() {
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        await reactivateMissionInstance(missionInstance.id, date);
-        toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
+        const result = await reactivateMissionInstance(missionInstance.id, date);
+        if (result) {
+            toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
+        } else {
+            toast({ title: 'Ação Inválida', description: 'Não havia uma conclusão para esta data para ser desfeita.', variant: 'default' });
+        }
         refetchData();
     } catch (error: any) {
         console.error("Error undoing completion:", error);
         toast({ title: 'Erro ao desfazer', description: error.message, variant: 'destructive' });
+        refetchData();
     } finally {
         setIsProcessingAction(null);
     }
