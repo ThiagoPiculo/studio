@@ -8,37 +8,60 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { ChildProfile } from "@/lib/types";
-import { getChildProfilesByOwner, getChildProfilesByFamily } from "@/lib/firebase/firestore";
+import type { ChildProfile, MissionTemplate, RewardTemplate } from "@/lib/types";
+import { 
+    getChildProfilesByOwner, 
+    getChildProfilesByFamily,
+    getMissionTemplatesByOwnerOrFamily,
+    getRewardTemplatesByOwnerOrFamily
+} from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
+import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 
 export default function DashboardPage() {
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
+  const { currentContext } = useFamily();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  
+  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+  const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
+
 
   useEffect(() => {
-    const fetchChildren = async () => {
+    const fetchDashboardData = async () => {
       if (!user) return;
       setIsLoadingChildren(true);
+      setIsLoadingGuideData(true);
+
       try {
-        let profiles: ChildProfile[];
-        if (currentContext === 'my-space') {
-          profiles = await getChildProfilesByOwner(user.uid);
-        } else {
-          profiles = await getChildProfilesByFamily(currentContext);
-        }
-        setChildren(profiles);
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+
+        const [childProfiles, missionTpls, rewardTpls] = await Promise.all([
+          currentContext === 'my-space' 
+            ? getChildProfilesByOwner(user.uid) 
+            : getChildProfilesByFamily(currentContext),
+          getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+        ]);
+        
+        setChildren(childProfiles);
+        setMissionTemplates(missionTpls);
+        setRewardTemplates(rewardTpls);
+
       } catch (error) {
-        console.error("Error fetching children:", error);
+        console.error("Error fetching dashboard data:", error);
         setChildren([]);
+        setMissionTemplates([]);
+        setRewardTemplates([]);
       } finally {
         setIsLoadingChildren(false);
+        setIsLoadingGuideData(false);
       }
     };
 
-    fetchChildren();
+    fetchDashboardData();
   }, [user, currentContext]);
   
   const getInitials = (name?: string | null) => {
@@ -66,19 +89,21 @@ export default function DashboardPage() {
       </div>
     );
   }
-
-  const currentContextData = availableContexts.find(c => c.id === currentContext);
-  const contextName = currentContextData ? currentContextData.name : (currentContext === 'my-space' ? "Seu Espaço" : `Família: ${currentContext}`);
-
+  
+  const hasChildren = children.length > 0;
+  const hasMissions = missionTemplates.length > 0;
+  const hasRewards = rewardTemplates.length > 0;
+  const showGuide = !isLoadingGuideData && (!hasChildren || !hasMissions || !hasRewards);
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Bem-vindo(a), {user.name || "Usuário Master"}!</CardTitle>
-          <CardDescription>Visão geral dos seus Mini Herois em <span className="font-semibold text-primary">{contextName}</span>.</CardDescription>
-        </CardHeader>
-      </Card>
+       {showGuide && (
+         <GettingStartedGuide 
+            hasChildren={hasChildren}
+            hasMissions={hasMissions}
+            hasRewards={hasRewards}
+          />
+      )}
 
       <section>
         <div className="flex justify-between items-center mb-6">
