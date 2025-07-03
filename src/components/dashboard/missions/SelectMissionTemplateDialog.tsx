@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -187,7 +186,7 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
         )}
         <DialogFooter className="mt-4 pt-4 border-t">
           <Link href="/dashboard/missions/new" className="w-full">
-            <Button variant="outline" className="w-full" onClick={() => onOpenChange(false)}>
+            <Button variant="secondary" className="w-full" onClick={() => onOpenChange(false)}>
               <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Missão no Catálogo
             </Button>
           </Link>
