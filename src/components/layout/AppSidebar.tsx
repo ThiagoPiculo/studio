@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -22,7 +23,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 function AppLogo() {
     const { state } = useSidebar();
     return (
-        <Link href="/dashboard" className="flex items-center gap-2">
+        <Link href="/dashboard" className="flex h-10 items-center justify-center gap-2 group-data-[collapsible=icon]:gap-0">
             <Rocket className="h-7 w-7 text-primary" />
             <span className="font-headline text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
                 Mini Herois
