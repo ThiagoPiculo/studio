@@ -19,7 +19,7 @@ interface Breadcrumb {
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Painel',
   manage: 'Gerenciar',
-  family: 'Família',
+  family: 'Aliança',
   missions: 'Missões',
   rewards: 'Recompensas',
   profile: 'Meu Perfil',

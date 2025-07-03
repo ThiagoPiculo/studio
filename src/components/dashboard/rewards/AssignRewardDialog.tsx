@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
@@ -232,14 +233,14 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
           <div className="text-center py-6 text-muted-foreground">
             <AlertCircle className="h-10 w-10 mx-auto mb-2 text-primary" />
             Nenhum Mini Herói encontrado para atribuição. 
-            <br/>Adicione crianças ou verifique o contexto familiar.
+            <br/>Adicione crianças ou verifique o contexto da aliança.
           </div>
         ) : (
           <ScrollArea className="h-[16.25rem] mt-2 pr-3">
               <div className="space-y-3">
                   {familyChildren.length > 0 && (
                       <div className="space-y-2">
-                          <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
+                          <Label className="text-sm font-semibold text-muted-foreground">Na Aliança "{familyName}"</Label>
                           {renderChildList(familyChildren)}
                       </div>
                   )}

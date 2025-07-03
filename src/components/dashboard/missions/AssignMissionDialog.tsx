@@ -532,7 +532,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                         <div className="space-y-3">
                             {familyChildren.length > 0 && (
                                 <div className="space-y-2">
-                                    <Label className="text-sm font-semibold text-muted-foreground">Na Família "{familyName}"</Label>
+                                    <Label className="text-sm font-semibold text-muted-foreground">Na Aliança "{familyName}"</Label>
                                     {renderChildList(familyChildren)}
                                 </div>
                             )}

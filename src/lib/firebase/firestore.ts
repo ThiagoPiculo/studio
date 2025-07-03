@@ -209,7 +209,7 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
 export const createFamilyInvitation = async (familyId: string, inviterId: string, inviterName: string, inviteeEmail: string): Promise<void> => {
   const family = await getFamilyById(familyId);
   if (!family) {
-    throw new Error("Família não encontrada.");
+    throw new Error("Aliança não encontrada.");
   }
 
   const invitee = await findUserByEmail(inviteeEmail);
@@ -218,7 +218,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
   }
   
   if (invitee.uid === family.ownerId || invitee.uid === inviterId) {
-    throw new Error("Você não pode convidar a si mesmo ou o proprietário da família.");
+    throw new Error("Você não pode convidar a si mesmo ou o proprietário da aliança.");
   }
 
   const existingMembershipQuery = query(collection(db, 'familyMemberships'),
@@ -227,7 +227,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
   );
   const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
   if (!existingMembershipSnapshot.empty) {
-    throw new Error("Este usuário já é um membro da família.");
+    throw new Error("Este usuário já é um membro da aliança.");
   }
   
   const pendingInvitationQuery = query(collection(db, 'familyInvitations'),
@@ -368,7 +368,7 @@ export const updateFamilyName = async (familyId: string, ownerId: string, newNam
   const familyRef = doc(db, 'families', familyId);
   const familySnap = await getDoc(familyRef);
   if (!familySnap.exists() || familySnap.data().ownerId !== ownerId) {
-    throw new Error("Apenas o proprietário pode editar o nome da família.");
+    throw new Error("Apenas o proprietário pode editar o nome da aliança.");
   }
   await updateDoc(familyRef, {
     name: newName,
@@ -425,7 +425,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   const familyId = invitation.familyId;
   const family = await getFamilyById(familyId);
   if (!family) {
-    throw new Error("Família associada ao convite não encontrada.");
+    throw new Error("Aliança associada ao convite não encontrada.");
   }
 
   const batch = writeBatch(db);

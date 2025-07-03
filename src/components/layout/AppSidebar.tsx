@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -67,9 +68,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/family" tooltip="Família">
+                         <SidebarMenuButton href="/dashboard/family" tooltip="Aliança">
                             <Users />
-                            <span>Família</span>
+                            <span>Aliança</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
