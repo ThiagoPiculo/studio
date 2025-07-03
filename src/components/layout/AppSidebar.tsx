@@ -8,7 +8,6 @@ import {
     SidebarMenu,
     SidebarMenuItem,
     SidebarMenuButton,
-    SidebarFooter,
     SidebarRail
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, Target, Gift, Shield } from 'lucide-react';
@@ -96,11 +95,11 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
+                <div className="flex flex-col gap-2 p-2 mt-auto">
+                    <UserNav />
+                </div>
             </SidebarContent>
 
-            <SidebarFooter>
-                <UserNav />
-            </SidebarFooter>
         </Sidebar>
     );
 }
