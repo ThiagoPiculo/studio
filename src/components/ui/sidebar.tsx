@@ -3,9 +3,10 @@
 
 import * as React from "react"
 import Link from "next/link"
+import * as Collapsible from "@radix-ui/react-collapsible"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { PanelLeft } from "lucide-react"
+import { ChevronRight, PanelLeft } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -416,39 +417,36 @@ const SidebarContent = React.forwardRef<
 SidebarContent.displayName = "SidebarContent"
 
 const SidebarGroup = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div">
->(({ className, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      data-sidebar="group"
-      className={cn("relative flex w-full min-w-0 flex-col p-2", className)}
-      {...props}
-    />
-  )
-})
+  React.ElementRef<typeof Collapsible.Root>,
+  React.ComponentProps<typeof Collapsible.Root>
+>(({ className, ...props }, ref) => (
+  <Collapsible.Root
+    ref={ref}
+    data-sidebar="group"
+    className={cn("relative flex w-full min-w-0 flex-col", className)}
+    {...props}
+  />
+))
 SidebarGroup.displayName = "SidebarGroup"
 
 const SidebarGroupLabel = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div"> & { asChild?: boolean }
->(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : "div"
-
-  return (
-    <Comp
-      ref={ref}
-      data-sidebar="group-label"
-      className={cn(
-        "duration-200 flex h-8 shrink-0 items-center rounded-md px-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-[margin,opa] ease-linear focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        "group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0",
-        className
-      )}
-      {...props}
-    />
-  )
-})
+  React.ElementRef<typeof Collapsible.Trigger>,
+  React.ComponentProps<typeof Collapsible.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <Collapsible.Trigger
+    ref={ref}
+    data-sidebar="group-label"
+    className={cn(
+      "group/trigger mx-2 flex w-[calc(100%-1rem)] cursor-pointer items-center justify-between rounded-md p-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-colors focus-visible:ring-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      "group-data-[collapsible=icon]:hidden",
+      className
+    )}
+    {...props}
+  >
+    <div className="flex items-center gap-2">{children}</div>
+    <ChevronRight className="size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90" />
+  </Collapsible.Trigger>
+))
 SidebarGroupLabel.displayName = "SidebarGroupLabel"
 
 const SidebarGroupAction = React.forwardRef<
@@ -475,13 +473,16 @@ const SidebarGroupAction = React.forwardRef<
 SidebarGroupAction.displayName = "SidebarGroupAction"
 
 const SidebarGroupContent = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div">
+  React.ElementRef<typeof Collapsible.Content>,
+  React.ComponentProps<typeof Collapsible.Content>
 >(({ className, ...props }, ref) => (
-  <div
+  <Collapsible.Content
     ref={ref}
     data-sidebar="group-content"
-    className={cn("w-full text-sm", className)}
+    className={cn(
+      "w-full text-sm overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
+      className
+    )}
     {...props}
   />
 ))

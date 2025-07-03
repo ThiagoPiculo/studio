@@ -11,6 +11,7 @@ import {
     SidebarFooter,
     SidebarGroup,
     SidebarGroupLabel,
+    SidebarGroupContent
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, ListChecks, Gift, Users } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
@@ -55,29 +56,34 @@ export function AppSidebar() {
                             <span>Agenda</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
-                        <SidebarMenuItem>
-                            <SidebarMenuButton href="/dashboard/missions" tooltip="Missões">
-                                <ListChecks />
-                                <span>Missões</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        <SidebarMenuItem>
-                             <SidebarMenuButton href="/dashboard/rewards" tooltip="Recompensas">
-                                <Gift />
-                                <span>Recompensas</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                         <SidebarMenuItem>
-                             <SidebarMenuButton href="/dashboard/family" tooltip="Família">
-                                <Users />
-                                <span>Família</span>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                    </SidebarGroup>
-                </SidebarMenu>
+                </SidebarMenu>    
+                
+                <SidebarGroup defaultOpen>
+                    <SidebarGroupLabel>Gerenciamento</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                        <SidebarMenu className="pt-1">
+                            <SidebarMenuItem>
+                                <SidebarMenuButton href="/dashboard/missions" tooltip="Missões">
+                                    <ListChecks />
+                                    <span>Missões</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                            <SidebarMenuItem>
+                                 <SidebarMenuButton href="/dashboard/rewards" tooltip="Recompensas">
+                                    <Gift />
+                                    <span>Recompensas</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                 <SidebarMenuButton href="/dashboard/family" tooltip="Família">
+                                    <Users />
+                                    <span>Família</span>
+                                </SidebarMenuButton>
+                            </SidebarMenuItem>
+                        </SidebarMenu>
+                    </SidebarGroupContent>
+                </SidebarGroup>
+                
             </SidebarContent>
 
             <SidebarFooter>
