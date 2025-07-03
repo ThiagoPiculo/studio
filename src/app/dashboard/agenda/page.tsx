@@ -755,7 +755,7 @@ function AgendaPageContent() {
           <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <div>
-                      <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                      <CardTitle className="text-3xl font-headline flex items-center gap-2 whitespace-nowrap">
                           <CalendarIcon className="h-8 w-8 text-primary" />
                           Agenda dos Heróis
                       </CardTitle>
