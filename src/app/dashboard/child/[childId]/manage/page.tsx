@@ -3,13 +3,13 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild } from '@/lib/firebase/firestore';
+import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -85,6 +85,7 @@ export default function ManageChildPage() {
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
   
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
+  const [isResettingProgress, setIsResettingProgress] = useState(false);
 
   // Centralized data fetching function
   const fetchData = useCallback(async () => {
@@ -137,7 +138,7 @@ export default function ManageChildPage() {
     const totalCompletedOccurrences = missionInstances.reduce((sum, m) => sum + Object.keys(m.completionLog || {}).length, 0);
 
     const totalStarsEarned = missionInstances
-      .flatMap(m => Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward))
+      .flatMap(m => Object.keys(m.completionLog || {}).length > 0 ? Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward) : [])
       .reduce((sum, stars) => sum + (stars || 0), 0);
 
     const pendingMissionsCount = missionInstances.filter(m => m.status === 'pending').length;
@@ -279,6 +280,21 @@ export default function ManageChildPage() {
         setIsDeleting(false);
         setMissionToUndo(null);
       }
+  };
+
+  const handleResetProgress = async () => {
+    if (!child) return;
+    setIsResettingProgress(true);
+    try {
+      await resetChildProgress(child.id);
+      await fetchData(); // Re-fetch all data to update the UI
+      toast({ title: "Progresso Redefinido!", description: `Os dados de ${child.name} foram zerados com sucesso.` });
+    } catch (error) {
+      console.error("Error resetting child progress:", error);
+      toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso.", variant: "destructive" });
+    } finally {
+      setIsResettingProgress(false);
+    }
   };
 
 
@@ -1201,6 +1217,8 @@ export default function ManageChildPage() {
                   onProfileUpdate={handleProfileUpdate}
                   onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
+                  onResetProgress={handleResetProgress}
+                  isResetting={isResettingProgress}
                 />
               </CardContent>
             </Card>

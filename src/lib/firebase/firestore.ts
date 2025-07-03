@@ -1,6 +1,5 @@
 
 
-
 import {
   collection,
   doc,
@@ -170,6 +169,49 @@ export const deleteChildProfile = async (childId: string): Promise<void> => {
 
   await batch.commit();
 };
+
+export const resetChildProgress = async (childId: string): Promise<void> => {
+  const batch = writeBatch(db);
+
+  // 1. Reset the child's main profile stats
+  const childRef = doc(db, 'children', childId);
+  batch.update(childRef, {
+    stars: 0,
+    xp: 0,
+    level: 1,
+    earnedBadgeIds: [],
+    updatedAt: serverTimestamp(),
+  });
+
+  // 2. Find and reset all mission instances for this child
+  const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
+  const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
+  missionInstancesSnapshot.forEach(missionDoc => {
+    batch.update(missionDoc.ref, {
+      status: 'pending',
+      completionCount: 0,
+      completionLog: {},
+    });
+  });
+
+  // 3. Find and reset all redeemed reward instances for this child
+  const rewardInstancesQuery = query(
+    collection(db, "childRewardInstances"),
+    where("childId", "==", childId),
+    where("status", "==", "redeemed")
+  );
+  const rewardInstancesSnapshot = await getDocs(rewardInstancesQuery);
+  rewardInstancesSnapshot.forEach(rewardDoc => {
+    batch.update(rewardDoc.ref, {
+      status: 'active',
+      isRedeemed: false,
+      redeemedAt: deleteField(),
+    });
+  });
+
+  await batch.commit();
+};
+
 
 // --- Family ---
 export const createFamily = async (ownerId: string, familyName: string): Promise<Family> => {
@@ -810,8 +852,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
     return await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
-            console.error("Mission instance not found.");
-            return null;
+            throw new Error("Mission instance not found.");
         }
         
         const missionData = missionSnap.data() as MissionInstance;
@@ -820,15 +861,14 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         // Prevent re-completing for the same day
         if (missionData.completionLog && missionData.completionLog[completionDateKey]) {
             console.warn("Mission already completed for this date.");
-            return null; // Return null instead of throwing
+            return null;
         }
 
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
         if (!childSnap.exists()) {
-             console.error("Child profile associated with the mission not found.");
-             return null;
+             throw new Error("Child profile associated with the mission not found.");
         }
         
         const childData = childSnap.data() as ChildProfile;
@@ -880,31 +920,29 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
     return await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
-            console.error("Mission instance not found.");
-            return null;
+            throw new Error("Mission instance not found.");
         }
         
         const missionData = missionSnap.data() as MissionInstance;
         
-        if (!dateToUndo) {
-            if (missionData.status !== 'completed') {
-                console.warn("Mission is not completed, cannot reactivate.");
-                return null;
-            }
-        } else {
+        if (dateToUndo) {
              const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
              if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
                 console.warn("No completion found for this date to undo.");
                 return null;
              }
+        } else {
+             if (missionData.status !== 'completed') {
+                console.warn("Mission is not completed, cannot reactivate.");
+                return null;
+            }
         }
 
         const childRef = doc(db, 'children', missionData.childId);
         const childSnap = await transaction.get(childRef);
         
         if (!childSnap.exists()) {
-            console.error("Child profile associated with the mission not found.");
-            return null;
+            throw new Error("Child profile associated with the mission not found.");
         }
         const childData = childSnap.data() as ChildProfile;
 

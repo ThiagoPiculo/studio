@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2 } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -40,6 +40,7 @@ import {
 import { heroColors } from "@/lib/hero-colors";
 import { ColorSelector } from "./ColorSelector";
 import { Skeleton } from "../ui/skeleton";
+import { Separator } from "../ui/separator";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -61,9 +62,11 @@ interface EditChildProfileFormProps {
   onProfileUpdate: () => void;
   onDeleteProfile: () => void;
   isDeleting: boolean;
+  onResetProgress: () => void;
+  isResetting: boolean;
 }
 
-export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, isDeleting }: EditChildProfileFormProps) {
+export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, isDeleting, onResetProgress, isResetting }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -345,8 +348,8 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
           )}
         />
         
-        <div className="flex flex-col sm:flex-row-reverse gap-2 mt-8 border-t pt-6">
-            <Button type="submit" className="sm:w-auto flex-grow" disabled={isLoading || isDeleting}>
+        <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
+            <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isDeleting}>
               {isLoading ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -354,9 +357,39 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
               )}
               Salvar Alterações
             </Button>
+        </div>
+      </form>
+      <Separator className="my-8" />
+      <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
+        <h3 className="font-semibold text-lg text-destructive">Zona de Perigo</h3>
+        <p className="text-sm text-muted-foreground">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
+        <div className="flex flex-col sm:flex-row gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="sm:w-auto flex-grow" disabled={isDeleting || isLoading}>
+                <Button type="button" variant="outline" className="w-full" disabled={isResetting || isDeleting}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Redefinir Progresso
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Redefinir o progresso de {child.name}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta ação é irreversível. Todas as estrelas, XP, níveis, missões concluídas e recompensas resgatadas serão zeradas. O perfil voltará ao estado inicial.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isResetting}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={onResetProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResetting}>
+                        {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Sim, Redefinir
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button type="button" variant="destructive" className="w-full" disabled={isDeleting || isLoading}>
                   <Trash2 className="mr-2 h-4 w-4" />
                   Excluir Perfil
                 </Button>
@@ -378,7 +411,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
               </AlertDialogContent>
             </AlertDialog>
         </div>
-      </form>
+      </div>
     </Form>
   );
 }
