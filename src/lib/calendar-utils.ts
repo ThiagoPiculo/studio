@@ -42,10 +42,8 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
     const checkDate = startOfDay(date);
     const weekStartsOn = 1; // Monday
 
-    if (mission.exceptionDates?.some(ts => {
-        const exceptionDate = getDateObject(ts);
-        return exceptionDate && isSameDay(exceptionDate, checkDate);
-    })) {
+    const dateKeyForException = formatDateFns(checkDate, 'yyyy-MM-dd');
+    if (mission.exceptionDates && mission.exceptionDates[dateKeyForException]) {
         return false;
     }
 
@@ -114,13 +112,11 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
 }
 
 export function isMissionCompletedForDate(mission: MissionInstance, date: Date): boolean {
-    if (!mission.completedDates || mission.completedDates.length === 0) {
-        return false;
+    if (!mission.completionLog) {
+      return false;
     }
-    return mission.completedDates.some(ts => {
-        const completedDate = getDateObject(ts);
-        return !!completedDate && isSameDay(completedDate, date);
-    });
+    const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
+    return !!mission.completionLog[dateKey];
 }
 
 
