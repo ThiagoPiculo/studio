@@ -11,7 +11,7 @@ import {
     SidebarFooter,
     SidebarRail
 } from '@/components/ui/sidebar';
-import { Rocket, LayoutDashboard, CalendarDays, ListChecks, Gift, Users } from 'lucide-react';
+import { Rocket, LayoutDashboard, CalendarDays, ListChecks, Gift, Shield } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
@@ -69,7 +69,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard/family" tooltip="Aliança">
-                            <Users />
+                            <Shield />
                             <span>Aliança</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

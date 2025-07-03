@@ -31,7 +31,7 @@ import {
   updateFamilyName,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -419,7 +419,7 @@ function FamilyPageContent() {
         <Card className="shadow-lg">
           <CardHeader>
             <div className="flex items-start gap-4">
-              <Users className="h-8 w-8 text-primary mt-1" />
+              <Shield className="h-8 w-8 text-primary mt-1" />
               <div className='flex-grow'>
                 {isOwner && isEditingName ? (
                   <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
@@ -747,7 +747,7 @@ function FamilyPageContent() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
-            <Users className="mr-3 h-8 w-8 text-primary" />
+            <Shield className="mr-3 h-8 w-8 text-primary" />
             Alianças de Heróis
           </CardTitle>
           <CardDescription>

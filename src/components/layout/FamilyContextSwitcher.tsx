@@ -11,7 +11,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Home, Users, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Home, Shield, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function FamilyContextSwitcher() {
@@ -44,7 +44,7 @@ export function FamilyContextSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-auto min-w-[180px] justify-between h-10 gap-2 bg-transparent border-border hover:bg-accent/10 focus:ring-ring focus:ring-offset-0">
           <div className="flex items-center gap-2 truncate">
-            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <Users className="h-4 w-4 shrink-0" />}
+            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <Shield className="h-4 w-4 shrink-0" />}
             <span className="truncate">{currentContextData?.name ?? "Carregando..."}</span>
           </div>
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -56,7 +56,7 @@ export function FamilyContextSwitcher() {
           {availableContexts.map((context) => (
             <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer">
               <div className="flex items-center gap-2">
-                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
                 <span>{context.name}</span>
               </div>
             </DropdownMenuRadioItem>
