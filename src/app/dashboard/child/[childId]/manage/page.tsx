@@ -228,7 +228,10 @@ export default function ManageChildPage() {
           
           if (!dateA || !dateB) return 0;
           
-          return (dateB as any).seconds - (dateA as any).seconds;
+          const timeA = (dateA as any).toDate ? (dateA as any).toDate().getTime() : new Date(dateA as any).getTime();
+          const timeB = (dateB as any).toDate ? (dateB as any).toDate().getTime() : new Date(dateB as any).getTime();
+          
+          return timeB - timeA;
         });
         setActivities(allActivities.slice(0, 10)); // Limit to 10 recent activities
       }).catch(error => {
@@ -1412,4 +1415,3 @@ export default function ManageChildPage() {
     </div>
   );
 }
-
