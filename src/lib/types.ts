@@ -25,6 +25,7 @@ export interface ChildProfile {
   accessCode: string; // 6-digit code for child login
   avatar?: string; // URL to avatar image
   color: HeroColor;
+  earnedBadgeIds?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

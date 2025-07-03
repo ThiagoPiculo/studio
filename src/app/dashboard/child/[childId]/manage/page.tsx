@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2 } from 'lucide-react';
+import { ArrowLeft, User, ListChecks, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, BarChart, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -46,6 +46,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Timestamp } from 'firebase/firestore';
+import { predefinedBadgeCategories } from '@/lib/badges';
+import { cn } from '@/lib/utils';
 
 type Activity = (MissionInstance & { type: 'mission' }) | (ChildRewardInstance & { type: 'reward' });
 
@@ -789,10 +791,11 @@ export default function ManageChildPage() {
       </Card>
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-4 lg:grid-cols-4 lg:h-10 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-5 lg:grid-cols-5 lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><BarChart className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
+          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4" />Medalhas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4" />Editar Perfil</TabsTrigger>
         </TabsList>
         
@@ -1172,6 +1175,57 @@ export default function ManageChildPage() {
                     })}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+          <TabsContent value="badges" className="space-y-6">
+            <Card className="shadow-md">
+              <CardHeader>
+                <CardTitle>Mural de Medalhas de {child.name}</CardTitle>
+                <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada. Passe o mouse sobre uma medalha para ver como ganhá-la!</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-8">
+                {predefinedBadgeCategories.map((category, index) => (
+                  <Fragment key={category.title}>
+                    {index > 0 && <Separator />}
+                    <div>
+                      <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                        {category.items.map((badge) => {
+                          const isEarned = child.earnedBadgeIds?.includes(badge.id);
+                          return (
+                            <TooltipProvider key={badge.id} delayDuration={100}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className={cn(
+                                    "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1",
+                                    isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
+                                  )}>
+                                    <div className={cn(
+                                      "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
+                                      isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
+                                    )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                                      <badge.icon className="h-9 w-9 text-white" />
+                                    </div>
+                                    <p className={cn(
+                                      "text-sm font-semibold h-10 flex items-center",
+                                      isEarned ? 'text-foreground' : 'text-muted-foreground'
+                                    )}>{badge.title}</p>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="max-w-[250px]">
+                                  <p className="font-bold text-base mb-1">{badge.title}</p>
+                                  <p className="text-sm text-muted-foreground">{badge.description}</p>
+                                  {!isEarned && <p className="mt-2 font-bold text-destructive">Ainda não conquistado!</p>}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </Fragment>
+                ))}
               </CardContent>
             </Card>
           </TabsContent>
