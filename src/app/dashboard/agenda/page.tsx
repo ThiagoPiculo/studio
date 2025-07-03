@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -596,7 +596,7 @@ function AgendaPageContent() {
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
-              <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2", isToday(day) && "text-primary")}>
+              <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap", isToday(day) && "text-primary")}>
                 {format(day, "EEEE, dd", { locale: ptBR })}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
@@ -608,6 +608,15 @@ function AgendaPageContent() {
                     </CardContent>
                 ) : (
                     <CardContent className="p-4 space-y-4">
+                      {isToday(day) && hasEventsForDay && (
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-semibold flex items-center gap-2 text-accent">
+                                <Target className="h-5 w-5" />
+                                Missões de Hoje
+                            </h3>
+                            <Separator />
+                        </div>
+                      )}
                       {dayEvents.morning.length > 0 && (
                         <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
