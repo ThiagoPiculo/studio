@@ -5,16 +5,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Home, Users, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
-import Link from 'next/link';
+import { Home, Users, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export function FamilyContextSwitcher() {
@@ -65,25 +62,6 @@ export function FamilyContextSwitcher() {
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
-        
-        <DropdownMenuSeparator />
-
-        {currentContext === 'my-space' ? (
-          <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/dashboard/family">
-              <Users className="mr-2 h-4 w-4" />
-              <span>Criar ou Gerenciar Famílias</span>
-            </Link>
-          </DropdownMenuItem>
-        ) : (
-           <DropdownMenuItem asChild className="cursor-pointer">
-            <Link href="/dashboard/family">
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Gerenciar Família Atual</span>
-            </Link>
-          </DropdownMenuItem>
-        )}
-
       </DropdownMenuContent>
     </DropdownMenu>
   );
