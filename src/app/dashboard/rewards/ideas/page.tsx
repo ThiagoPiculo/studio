@@ -135,15 +135,15 @@ export default function RewardIdeasPage() {
                 {filteredRewardGroups.map((group) => {
                     const groupedIdeas = groupIdeasBySubCategory(group.items);
                     return (
-                    <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md">
+                    <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md break-inside-avoid">
                         <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                        <div className="flex items-center gap-3">
-                            <group.icon className="h-7 w-7 text-primary" />
                             <div>
-                                <h3 className="text-2xl font-headline">{group.userCategory}</h3>
-                                <p className="text-sm text-muted-foreground font-normal mt-1">{group.description}</p>
+                                <h3 className="text-2xl font-headline font-semibold mb-2">{group.userCategory}</h3>
+                                <div className="flex items-start gap-2 text-sm text-muted-foreground font-normal">
+                                    <group.icon className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                                    <p>{group.description}</p>
+                                </div>
                             </div>
-                        </div>
                         </AccordionTrigger>
                         <AccordionContent className="p-6 pt-0">
                         {Object.entries(groupedIdeas).map(([subCategory, ideas]) => (
