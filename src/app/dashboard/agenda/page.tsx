@@ -80,6 +80,13 @@ function AgendaPageContent() {
   const dateRangeFilter = (searchParams.get('view') || '3days') as DateRangeFilter;
   const timePeriodFilter = (searchParams.get('period') || 'all') as TimePeriod;
 
+  const handleShowTodayMissions = () => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('view', 'day');
+    newParams.set('focus_date', format(new Date(), 'yyyy-MM-dd'));
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
   useEffect(() => {
     const focusDateParam = searchParams.get('focus_date');
     const openPopoverParam = searchParams.get('open_popover');
@@ -366,10 +373,6 @@ function AgendaPageContent() {
     if (!events) return false;
     return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
   });
-
-  const isTodayInView = useMemo(() => {
-    return eachDayOfInterval(viewInterval).some(day => isSameDay(day, new Date()));
-  }, [viewInterval]);
 
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
       const eventsByChild = events.reduce((acc, event) => {
@@ -782,11 +785,9 @@ function AgendaPageContent() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        {isTodayInView && (
-                            <span className="inline-flex items-center text-accent font-semibold px-3 py-2 text-sm rounded-md bg-accent/10">
-                                <Target className="mr-2 h-4 w-4" /> Missões de Hoje
-                            </span>
-                        )}
+                        <Button variant="outline" onClick={handleShowTodayMissions}>
+                            <Target className="mr-2 h-4 w-4" /> Missões de Hoje
+                        </Button>
                         <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
                         </Button>
@@ -894,3 +895,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
