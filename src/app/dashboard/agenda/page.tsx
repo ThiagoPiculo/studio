@@ -676,12 +676,12 @@ function AgendaPageContent() {
               
               return (
                 <div key={dateKey} className={cn(
-                    "h-32 md:h-40 border-r border-b p-2 flex flex-col",
+                    "h-28 sm:h-32 md:h-40 border-r border-b p-1 sm:p-2 flex flex-col",
                     !isSameMonth(day, currentDate) && "bg-muted/50 text-muted-foreground",
                     isToday(day) && "bg-accent/10"
                 )}>
                   <div className={cn(
-                      "font-semibold text-sm",
+                      "font-semibold text-xs sm:text-sm",
                       isToday(day) && "flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground"
                   )}>{format(day, 'd')}</div>
                   <ScrollArea className="flex-1 mt-1">
@@ -770,13 +770,13 @@ function AgendaPageContent() {
                           Planeje e visualize as missões da sua equipe.
                       </CardDescription>
                   </div>
-                  <div className="flex items-center gap-4 flex-wrap justify-end">
+                  <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 sm:gap-4">
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                        <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize whitespace-nowrap">
+                        <h2 className="text-xl font-semibold text-center w-auto capitalize whitespace-nowrap">
                             {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                         </h2>
                         <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">

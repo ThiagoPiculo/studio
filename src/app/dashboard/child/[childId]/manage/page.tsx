@@ -873,7 +873,7 @@ export default function ManageChildPage() {
                       const completedDate = activity.completedAt.toDate();
                       return (
                         <Fragment key={activity.id + completedDate.getTime()}>
-                          <li className="flex items-center gap-4">
+                          <li className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
                             {activity.type === 'mission' ? (
                                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
                                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -892,7 +892,7 @@ export default function ManageChildPage() {
                                 }
                               </p>
                             </div>
-                            <div className="text-right flex-shrink-0">
+                            <div className="w-full sm:w-auto text-left sm:text-right flex-shrink-0">
                                 <p className="text-sm font-semibold">{format(completedDate, "HH:mm 'de' dd/MM/yyyy")}</p>
                                 <p className="text-xs text-muted-foreground capitalize">{formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true })}</p>
                             </div>
