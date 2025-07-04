@@ -6,14 +6,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -33,7 +25,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
+import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -337,33 +329,53 @@ export default function MissionsHubPage() {
                             )}
                         </div>
                     </CardContent>
-                    <CardFooter className="flex-col space-y-2 pt-4">
-                      <Button 
-                        variant="default" 
-                        className="w-full" 
+                    <CardFooter className="flex items-center gap-2 pt-4">
+                      <Button
+                        variant="default"
+                        className="w-full"
                         disabled={isProcessingAction || template.status === 'archived'}
                         onClick={() => handleOpenAssignDialog(template)}
                       >
-                         <BadgeCheck className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
+                        <BadgeCheck className="mr-2 h-4 w-4" /> Atribuir
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
-                            <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Gerenciar Missão</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={isProcessingAction}>
-                            <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}
+                              disabled={isProcessingAction}
+                              className="flex-shrink-0"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                              <span className="sr-only">Editar Missão</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar Missão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setTemplateToDelete(template)}
+                              disabled={isProcessingAction}
+                              className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Excluir Missão</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir Missão</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </CardFooter>
                   </Card>
                 );

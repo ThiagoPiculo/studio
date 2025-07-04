@@ -6,14 +6,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -514,33 +506,53 @@ export default function RewardTemplatesHubPage() {
                             )}
                         </div>
                     </CardContent>
-                    <CardFooter className="flex-col space-y-2 pt-4">
-                      <Button 
-                        variant="default" 
-                        className="w-full" 
+                    <CardFooter className="flex items-center gap-2 pt-4">
+                      <Button
+                        variant="default"
+                        className="w-full"
                         onClick={() => handleOpenAssignDialog(template)}
                         disabled={isProcessingAction || template.status === 'archived'}
                       >
-                          <Users className="mr-2 h-4 w-4" /> Atribuir a Mini Herois
+                        <Users className="mr-2 h-4 w-4" /> Atribuir
                       </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="w-full" disabled={isProcessingAction}>
-                            <MoreHorizontal className="mr-2 h-4 w-4" /> Mais Ações
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuLabel>Gerenciar Recompensa</DropdownMenuLabel>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={isProcessingAction}>
-                            <Edit3 className="mr-2 h-4 w-4" /> Editar Recompensa
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem onClick={() => setTemplateToDelete(template)} className="text-destructive focus:text-destructive-foreground focus:bg-destructive" disabled={isProcessingAction}>
-                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Recompensa
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)}
+                              disabled={isProcessingAction}
+                              className="flex-shrink-0"
+                            >
+                              <Edit3 className="h-4 w-4" />
+                              <span className="sr-only">Editar Recompensa</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Editar Recompensa</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => setTemplateToDelete(template)}
+                              disabled={isProcessingAction}
+                              className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Excluir Recompensa</span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Excluir Recompensa</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </CardFooter>
                   </Card>
                 );
