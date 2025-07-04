@@ -13,17 +13,11 @@ const CornerIcon = ({ icon: Icon, className }: { icon: React.ElementType, classN
 export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-transparent p-6 selection:bg-primary selection:text-primary-foreground">
-        <header className="w-full max-w-7xl mx-auto grid grid-cols-3 items-center py-4 px-2">
-            <div />
-            <div className="flex items-center justify-center space-x-4">
-                <Rocket className="h-9 w-9 md:h-12 md:w-12 text-primary filter drop-shadow-md" />
-                <span className="font-headline text-4xl md:text-5xl font-bold text-primary">Mini Herois</span>
+        <header className="w-full max-w-7xl mx-auto flex items-center justify-center py-4 px-2">
+            <div className="flex items-center justify-center space-x-2 md:space-x-4">
+                <Rocket className="h-9 w-9 md:h-12 md:w-12 text-primary filter drop-shadow-md animate-float" />
+                <span className="font-headline text-4xl md:text-5xl font-bold text-primary whitespace-nowrap">Mini Herois</span>
             </div>
-            <nav className="justify-self-end">
-                <Link href="/auth/login" passHref>
-                    <Button variant="ghost">Entrar</Button>
-                </Link>
-            </nav>
         </header>
       <main className="flex flex-col items-center w-full max-w-5xl mx-auto text-center mt-8 sm:mt-16">
         
