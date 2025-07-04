@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -17,12 +16,13 @@ import {
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export default function DashboardPage() {
   const { user, loading } = useAuth();
   const { currentContext } = useFamily();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   
@@ -32,17 +32,30 @@ export default function DashboardPage() {
   const [isRedirecting, setIsRedirecting] = useState(true);
 
   useEffect(() => {
+    const initialLoad = searchParams.get('initial_load');
+
     if (!loading && user) {
+      if (initialLoad === 'true') {
         const initialPage = user.settings?.initialPage || 'agenda';
         if (initialPage !== 'dashboard') {
-            router.replace(`/dashboard/${initialPage}`);
+          // It's the initial load, so redirect to the preferred page.
+          // Replace history so the user can't go "back" to the redirecting dashboard.
+          router.replace(`/dashboard/${initialPage}`);
         } else {
-            setIsRedirecting(false);
+          // The preferred page is the dashboard, so we stay.
+          // Replace history to remove the query param from the URL.
+          router.replace('/dashboard');
+          setIsRedirecting(false);
         }
+      } else {
+        // It's not the initial load, so we are here intentionally.
+        setIsRedirecting(false);
+      }
     } else if (!loading && !user) {
+      // Not logged in, so no redirect.
       setIsRedirecting(false);
     }
-  }, [user, loading, router]);
+  }, [user, loading, router, searchParams]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {

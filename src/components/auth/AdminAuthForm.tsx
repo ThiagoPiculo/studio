@@ -1,4 +1,3 @@
-
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -81,7 +80,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         const { email, password } = values as z.infer<typeof loginSchema>;
         const userProfile = await signInAdmin(email, password);
         toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
-        router.push("/dashboard");
+        router.push("/dashboard?initial_load=true");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         const userProfile = await signUpAdmin(name, email, password);
@@ -92,7 +91,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         } else {
           toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
-        router.push("/dashboard");
+        router.push("/dashboard?initial_load=true");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
@@ -126,7 +125,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     try {
       const userProfile = await signInWithGoogle();
       toast({ title: "Boas-vindas!", description: getLoginToastDescription(userProfile) });
-      router.push("/dashboard");
+      router.push("/dashboard?initial_load=true");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);
       toast({
