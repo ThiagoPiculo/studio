@@ -1,4 +1,3 @@
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -14,12 +13,13 @@ const CornerIcon = ({ icon: Icon, className }: { icon: React.ElementType, classN
 export default function WelcomePage() {
   return (
     <div className="flex min-h-screen flex-col items-center bg-transparent p-6 selection:bg-primary selection:text-primary-foreground">
-        <header className="w-full max-w-7xl mx-auto flex justify-between items-center py-4 px-2">
-             <div className="flex items-center space-x-2">
+        <header className="w-full max-w-7xl mx-auto grid grid-cols-3 items-center py-4 px-2">
+            <div />
+            <div className="flex items-center justify-center space-x-2">
                 <Rocket className="h-8 w-8 text-primary filter drop-shadow-md" />
-                <span className="font-headline text-2xl font-bold text-foreground">Mini Herois</span>
+                <span className="font-headline text-3xl font-bold text-primary">Mini Herois</span>
             </div>
-            <nav>
+            <nav className="justify-self-end">
                 <Link href="/auth/login" passHref>
                     <Button variant="ghost">Entrar</Button>
                 </Link>
