@@ -29,6 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -260,6 +261,13 @@ function AgendaPageContent() {
     const params = new URLSearchParams(searchParams.toString());
     params.set('focus_date', format(newDate, 'yyyy-MM-dd'));
     return `${pathname}?${params.toString()}`;
+  }
+  
+  const handleFilterChange = (type: 'view' | 'period', value: string | null) => {
+    if (!value) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.set(type, value);
+    router.replace(`${pathname}?${params.toString()}`);
   }
 
   const handlePrev = () => {
@@ -785,6 +793,33 @@ function AgendaPageContent() {
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <Select value={dateRangeFilter} onValueChange={(value) => handleFilterChange('view', value)}>
+                            <SelectTrigger className="w-auto h-10">
+                                <SelectValue placeholder="Ver" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="day">1 Dia</SelectItem>
+                                <SelectItem value="3days">3 Dias</SelectItem>
+                                <SelectItem value="workweek">Semana Útil</SelectItem>
+                                <SelectItem value="week">Semana</SelectItem>
+                                <SelectItem value="month">Mês</SelectItem>
+                            </SelectContent>
+                        </Select>
+
+                        <Select value={timePeriodFilter} onValueChange={(value) => handleFilterChange('period', value)}>
+                            <SelectTrigger className="w-auto h-10">
+                                <SelectValue placeholder="Período" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">Todos</SelectItem>
+                                <SelectItem value="morning"><span className="flex items-center gap-2"><Sun className="h-4 w-4" />Manhã</span></SelectItem>
+                                <SelectItem value="afternoon"><span className="flex items-center gap-2"><CloudSun className="h-4 w-4" />Tarde</span></SelectItem>
+                                <SelectItem value="night"><span className="flex items-center gap-2"><Moon className="h-4 w-4" />Noite</span></SelectItem>
+                            </SelectContent>
+                        </Select>
+                        
+                        <div className="h-6 w-px bg-border mx-1"></div>
+
                         <Button variant="outline" className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
                             <Target className="mr-2 h-4 w-4" /> Missões de Hoje
                         </Button>
@@ -896,5 +931,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
