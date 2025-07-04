@@ -31,7 +31,7 @@ import {
   updateFamilyName,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -419,6 +419,10 @@ function FamilyPageContent() {
       return (a.name || '').localeCompare(b.name || '');
     });
   }, [familyMembers, familyDetails]);
+
+  const userAlliances = useMemo(() => {
+    return availableContexts.filter(c => c.id !== 'my-space');
+  }, [availableContexts]);
 
   if (!isClient || isLoading) {
     return <Loading />;
@@ -809,6 +813,36 @@ function FamilyPageContent() {
                 </div>
               </div>
             ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {userAlliances.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              Mudar para uma Aliança
+            </CardTitle>
+            <CardDescription>Acesse rapidamente uma das suas alianças existentes.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  Selecionar Aliança
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                {userAlliances.map(alliance => (
+                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>{alliance.name}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </CardContent>
         </Card>
       )}
