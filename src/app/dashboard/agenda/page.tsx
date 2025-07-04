@@ -784,7 +784,7 @@ function AgendaPageContent() {
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                        <h2 className="text-lg font-semibold text-center w-auto capitalize whitespace-nowrap">
+                        <h2 className="text-sm font-medium text-center w-auto capitalize whitespace-nowrap">
                             {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                         </h2>
                         <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
