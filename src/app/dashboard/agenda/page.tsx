@@ -13,6 +13,7 @@ import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissi
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -55,6 +56,7 @@ function AgendaPageContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const isMobile = useIsMobile();
   
   const [currentDate, setCurrentDate] = useState(new Date());
   
@@ -601,13 +603,15 @@ function AgendaPageContent() {
         workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
     };
   
+    const finalGridClass = isMobile ? 'grid-cols-1' : gridClasses[dateRangeFilter];
+
     return (
-      <div className={cn("grid gap-4", gridClasses[dateRangeFilter])}>
+      <div className={cn("grid gap-4", finalGridClass)}>
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
           const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-          const useDetailedView = dateRangeFilter === 'day' || dateRangeFilter === '3days';
+          const useDetailedView = isMobile || dateRangeFilter === 'day' || dateRangeFilter === '3days';
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
