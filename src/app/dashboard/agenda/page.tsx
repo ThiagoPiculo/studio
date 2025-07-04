@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target } from 'lucide-react';
 
@@ -776,7 +776,7 @@ function AgendaPageContent() {
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                        <h2 className="text-xl font-semibold text-center w-auto capitalize whitespace-nowrap">
+                        <h2 className="text-lg font-semibold text-center w-auto capitalize whitespace-nowrap">
                             {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                         </h2>
                         <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
