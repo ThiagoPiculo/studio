@@ -38,27 +38,32 @@ export function Notifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Real fetch effect
+  // Real-time listener effect
   useEffect(() => {
     if (!user) {
-        setNotifications([]);
-        setIsLoading(false);
-        return;
-    };
-    
-    setIsLoading(true);
-    getUserNotifications(user.uid)
-      .then(setNotifications)
-      .catch(err => {
-        console.error("Failed to fetch notifications:", err);
-        toast({ title: "Erro ao buscar notificações", variant: 'destructive'});
-      })
-      .finally(() => setIsLoading(false));
+      setNotifications([]);
+      setIsLoading(false);
+      return;
+    }
 
-    // Note: This does not use a real-time listener (onSnapshot) for simplicity.
-    // A real-time listener would be better for instant updates.
-  }, [user, toast]);
-  
+    // Set loading to true when starting to listen
+    setIsLoading(true);
+
+    const unsubscribe = getUserNotifications(user.uid, (updatedNotifications) => {
+      setNotifications(updatedNotifications);
+      // Set loading to false once the first batch of notifications is received
+      if (isLoading) {
+        setIsLoading(false);
+      }
+    });
+
+    // Cleanup function to unsubscribe when the component unmounts or user changes
+    return () => {
+      unsubscribe();
+    };
+    // We only want to re-run this effect when the user changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
@@ -67,7 +72,8 @@ export function Notifications() {
     const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
     try {
         await markNotificationsAsRead(user.uid, unreadIds);
-        setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+        // The real-time listener will automatically update the UI,
+        // so we don't need to manually set state here.
     } catch (error) {
         console.error("Failed to mark notifications as read:", error);
         toast({ title: "Erro ao atualizar notificações", variant: 'destructive'});

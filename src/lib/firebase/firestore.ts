@@ -17,6 +17,7 @@ import {
   orderBy,
   runTransaction,
   deleteField,
+  onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification } from '@/lib/types';
@@ -1290,17 +1291,31 @@ export const addNotification = async (notificationData: Omit<Notification, 'id' 
     await setDoc(newNotificationRef, newNotification);
 };
 
-export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
-    const q = query(
-        collection(db, 'notifications'),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
+export const getUserNotifications = (
+  userId: string,
+  onUpdate: (notifications: Notification[]) => void
+): (() => void) => { // Returns an unsubscribe function
+  const q = query(
+    collection(db, 'notifications'),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const notifications = querySnapshot.docs.map(
+      (doc) => ({ id: doc.id, ...doc.data() }) as Notification
     );
-    const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Notification);
+    onUpdate(notifications);
+  }, (error) => {
+    console.error("Error listening to notifications:", error);
+    onUpdate([]);
+  });
+
+  return unsubscribe;
 };
 
 export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
+    if (notificationIds.length === 0) return;
     const batch = writeBatch(db);
     notificationIds.forEach(id => {
         const notifRef = doc(db, 'notifications', id);
