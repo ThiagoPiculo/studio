@@ -229,13 +229,13 @@ function FamilyPageContent() {
       if (error.message === "Este usuário já é um membro da aliança.") {
         toast({
           title: "Membro já na equipe!",
-          description: `O usuário com o e-mail ${inviteEmail.trim()} já faz parte desta aliança.`,
+          description: `O usuário com o e-mail ${inviteEmail.trim()} já faz parte desta aliança. Não é necessário enviar um novo convite.`,
           variant: "default",
         });
       } else if (error.message === "Nenhum usuário encontrado com este e-mail.") {
           toast({
               title: "Herói Ainda Não Cadastrado",
-              description: "Peça para a pessoa criar uma conta primeiro. Depois, você poderá adicioná-la à sua aliança!",
+              description: "O e-mail que você inseriu não pertence a um herói cadastrado. Peça para a pessoa criar uma conta primeiro. Depois, você poderá adicioná-la à sua aliança!",
               variant: "default",
           });
       } else {
@@ -505,8 +505,8 @@ function FamilyPageContent() {
           </Card>
           <Card>
              <CardHeader>
-              <CardTitle>Convidar para a Aliança</CardTitle>
-              <CardDescription>Adicione outros responsáveis para gerenciar os Mini Herois juntos.</CardDescription>
+              <CardTitle>Adicionar Colaborador</CardTitle>
+              <CardDescription>Adicione um usuário já cadastrado pelo e-mail para colaborar na gestão da aliança.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSendInvitation} className="space-y-4">
@@ -520,7 +520,7 @@ function FamilyPageContent() {
                       />
                       <Button type="submit" disabled={isProcessingEmailInvite}>
                           {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                          Enviar Convite por E-mail
+                          Adicionar por email de usuário cadastrado
                       </Button>
                   </form>
                   <div className="relative my-6">
