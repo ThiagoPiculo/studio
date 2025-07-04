@@ -43,6 +43,9 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
         } else {
             initialDate = setMinutes(value, roundedMinutes);
         }
+      } else {
+        // Default to today at 9:00 if no value is provided
+        initialDate = setSeconds(setMinutes(setHours(new Date(), 9), 0), 0);
       }
       setTempDate(initialDate);
     }
