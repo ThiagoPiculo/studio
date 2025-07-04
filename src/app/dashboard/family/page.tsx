@@ -765,34 +765,36 @@ function FamilyPageContent() {
     <div className="space-y-6">
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="text-3xl font-headline flex items-center">
-            <Shield className="mr-3 h-8 w-8 text-primary" />
-            Alianças de Heróis
-          </CardTitle>
-          <CardDescription>
-            Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
-          </CardDescription>
+           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center">
+                  <Shield className="mr-3 h-8 w-8 text-primary" />
+                  Alianças de Heróis
+                </CardTitle>
+                <CardDescription>
+                  Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
+                </CardDescription>
+              </div>
+              {userAlliances.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto justify-between flex-shrink-0">
+                    Mudar para uma aliança
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                  {userAlliances.map(alliance => (
+                    <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>{`Aliança: ${alliance.name}`}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
         </CardHeader>
-        {userAlliances.length > 0 && (
-          <CardContent>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto justify-between">
-                  Mudar para uma aliança
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                {userAlliances.map(alliance => (
-                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>{`Aliança: ${alliance.name}`}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardContent>
-        )}
       </Card>
       
       {isLoadingInvitations ? (
