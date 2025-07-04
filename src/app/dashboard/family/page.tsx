@@ -848,7 +848,7 @@ function FamilyPageContent() {
           </Card>
           <Card className="bg-muted/50 h-full">
             <CardHeader className="flex-row items-center gap-3">
-              <Home className="h-6 w-6 text-muted-foreground"/>
+              <Home className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
               <div>
                 <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
                 <CardDescription className="text-sm">
@@ -912,7 +912,7 @@ function FamilyPageContent() {
        {!userAlliances.length > 0 && (
           <Card className="bg-muted/50">
             <CardHeader className="flex-row items-center gap-3">
-              <Home className="h-6 w-6 text-muted-foreground"/>
+              <Home className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
               <div>
                 <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
                 <CardDescription className="text-sm">
