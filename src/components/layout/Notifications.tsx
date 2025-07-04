@@ -174,36 +174,38 @@ export function Notifications() {
         
         <DropdownMenuSeparator />
         
-        <ScrollArea className="max-h-72">
-            {isLoading ? (
-                 <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                 </div>
-            ) : filteredNotifications.length === 0 ? (
-                <p className="p-4 text-sm text-center text-muted-foreground">
-                    {notifications.length > 0 ? "Nenhuma notificação encontrada com os filtros atuais." : "Nenhuma notificação por enquanto."}
-                </p>
-            ) : (
-                filteredNotifications.map(notification => {
-                    const Icon = notificationIcons[notification.type] || Bell;
-                    const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
-                    return (
-                        <DropdownMenuItem key={notification.id} asChild className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto">
-                            <Link href={notification.href} className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md">
-                               {!notification.isRead && <div className="mt-2 flex h-2 w-2 rounded-full bg-primary" />}
-                               <div className={`flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5 ${notification.isRead ? 'opacity-60' : ''}`}>
-                                 <Icon className="h-5 w-5 text-muted-foreground" />
-                               </div>
-                               <div className="grid gap-1 flex-grow">
-                                 <p className="text-sm font-medium">{notification.title}</p>
-                                 <p className="text-sm text-muted-foreground">{notification.description}</p>
-                                 <p className="text-xs text-muted-foreground">{timeAgo}</p>
-                               </div>
-                            </Link>
-                        </DropdownMenuItem>
-                    )
-                })
-            )}
+        <ScrollArea className="h-[300px] pr-3">
+            <div className="space-y-1">
+                {isLoading ? (
+                     <div className="flex items-center justify-center p-4">
+                        <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                     </div>
+                ) : filteredNotifications.length === 0 ? (
+                    <p className="p-4 text-sm text-center text-muted-foreground">
+                        {notifications.length > 0 ? "Nenhuma notificação encontrada com os filtros atuais." : "Nenhuma notificação por enquanto."}
+                    </p>
+                ) : (
+                    filteredNotifications.map(notification => {
+                        const Icon = notificationIcons[notification.type] || Bell;
+                        const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
+                        return (
+                            <DropdownMenuItem key={notification.id} asChild className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto h-auto whitespace-normal">
+                                <Link href={notification.href} className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md">
+                                   {!notification.isRead && <div className="mt-2 flex h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
+                                   <div className={`flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5 ${notification.isRead ? 'opacity-60' : ''} ${!notification.isRead ? 'ml-[-16px]' : ''}`}>
+                                     <Icon className="h-5 w-5 text-muted-foreground" />
+                                   </div>
+                                   <div className="grid gap-1 flex-grow">
+                                     <p className="text-sm font-medium leading-tight">{notification.title}</p>
+                                     <p className="text-sm text-muted-foreground leading-snug">{notification.description}</p>
+                                     <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                                   </div>
+                                </Link>
+                            </DropdownMenuItem>
+                        )
+                    })
+                )}
+            </div>
         </ScrollArea>
         <DropdownMenuSeparator />
         <DropdownMenuItem 
