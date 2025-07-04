@@ -9,7 +9,6 @@ import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
-import { UserNav } from '@/components/layout/UserNav';
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading, isChildAuthenticated } = useAuth();
@@ -45,12 +44,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <AppSidebar />
       <SidebarInset>
         <div className="flex flex-col" style={{ minHeight: '100svh' }}>
-          <header className="sticky top-0 z-40 flex h-14 items-center gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-            <SidebarTrigger />
-            <Breadcrumbs />
-            <div className="ml-auto flex items-center gap-2">
+          <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger />
+              <Breadcrumbs />
+            </div>
+            <div className="flex items-center gap-2">
               <Notifications />
-              <UserNav />
             </div>
           </header>
           <main className="flex-1 p-4 sm:p-6 lg:p-8">

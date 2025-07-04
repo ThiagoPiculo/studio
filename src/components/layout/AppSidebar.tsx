@@ -76,7 +76,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                {/* UserNav was moved to the main header in DashboardLayout */}
+                <UserNav />
             </SidebarFooter>
         </Sidebar>
     );
