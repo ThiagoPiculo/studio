@@ -817,35 +817,48 @@ function FamilyPageContent() {
         </Card>
       )}
 
-      {userAlliances.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              Mudar para uma Aliança
-            </CardTitle>
-            <CardDescription>Acesse rapidamente uma das suas alianças existentes.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  Selecionar Aliança
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                {userAlliances.map(alliance => (
-                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>{alliance.name}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardContent>
-        </Card>
-      )}
+      {userAlliances.length > 0 ? (
+        <div className="grid md:grid-cols-2 gap-6 items-start">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Mudar para uma Aliança
+              </CardTitle>
+              <CardDescription>Acesse rapidamente uma das suas alianças existentes.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between">
+                    Selecionar Aliança
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                  {userAlliances.map(alliance => (
+                    <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                      <Shield className="mr-2 h-4 w-4" />
+                      <span>{alliance.name}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </CardContent>
+          </Card>
+          <Card className="bg-muted/50 h-full">
+            <CardHeader className="flex-row items-center gap-3">
+              <Home className="h-6 w-6 text-muted-foreground"/>
+              <div>
+                <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
+                <CardDescription className="text-sm">
+                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+                </CardDescription>
+              </div>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : null}
 
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
@@ -896,17 +909,19 @@ function FamilyPageContent() {
           </Card>
       </div>
 
-       <Card className="bg-muted/50">
-        <CardHeader className="flex-row items-center gap-3">
-          <Home className="h-6 w-6 text-muted-foreground"/>
-          <div>
-            <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
-            <CardDescription className="text-sm">
-                Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
-            </CardDescription>
-          </div>
-        </CardHeader>
-       </Card>
+       {!userAlliances.length > 0 && (
+          <Card className="bg-muted/50">
+            <CardHeader className="flex-row items-center gap-3">
+              <Home className="h-6 w-6 text-muted-foreground"/>
+              <div>
+                <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
+                <CardDescription className="text-sm">
+                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+                </CardDescription>
+              </div>
+            </CardHeader>
+          </Card>
+       )}
     </div>
   );
 }
