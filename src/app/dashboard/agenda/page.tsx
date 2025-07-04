@@ -483,103 +483,6 @@ function AgendaPageContent() {
     );
   };
   
-  const renderWeeklyPeriodList = (events: CalendarEvent[], day: Date) => {
-    const eventsByChild = events.reduce((acc, event) => {
-        const childId = event.data.childId;
-        if (!acc[childId]) acc[childId] = [];
-        acc[childId].push(event);
-        return acc;
-    }, {} as Record<string, CalendarEvent[]>);
-
-    const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
-        const childA = childrenMap.get(a)?.name || '';
-        const childB = childrenMap.get(b)?.name || '';
-        return childA.localeCompare(childB);
-    });
-
-    return (
-      <ul className="space-y-3">
-        {sortedChildIds.map(childId => {
-          const child = childrenMap.get(childId);
-          if (!child) return null;
-          const childEvents = eventsByChild[childId].sort((a, b) => {
-              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-              if (timeA.getTime() !== timeB.getTime()) {
-                return timeA.getTime() - timeB.getTime();
-              }
-              return a.title.localeCompare(b.title);
-          });
-
-          return (
-            <li key={childId} className="flex items-start gap-2.5">
-                <div className="w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                <div className="flex-grow">
-                    <p className="font-semibold text-sm leading-tight">{child.name}</p>
-                    <ul className="mt-1 space-y-1.5">
-                        {childEvents.map(event => {
-                            const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-                            const isCompleted = isMissionCompletedForDate(event.data, day);
-                            const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
-                            const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                            return (
-                            <li key={event.data.id} className="text-xs text-muted-foreground leading-snug flex justify-between items-center gap-2">
-                                <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
-                                  setActivePopover(isOpen ? popoverId : null);
-                                  if (!isOpen) {
-                                    setHighlightedMissionId(null);
-                                  }
-                                }}>
-                                  <PopoverTrigger asChild>
-                                      <button 
-                                          data-mission-id={popoverId}
-                                          disabled={isProcessingAction === event.data.id} 
-                                          className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center",
-                                            "hover:bg-accent/50", 
-                                            isCompleted && "line-through text-muted-foreground/70",
-                                            highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
-                                          )}
-                                        >
-                                          {isProcessingAction === event.data.id ? <Loader2 className="h-3.5 w-3.5 animate-spin inline-block mr-1.5" /> : isCompleted && <CheckCircle className="h-3.5 w-3.5 inline-block mr-1.5 text-green-500" />}
-                                          <span className="font-semibold text-foreground/80 mr-1.5 w-10 text-left">{formattedTime}</span>
-                                          <span>{event.title}</span>
-                                      </button>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-2">
-                                      <div className="flex flex-col gap-1">
-                                        {isCompleted ? (
-                                          <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                        ) : (
-                                          <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                        )}
-                                        <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                        <Separator />
-                                        <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
-                                      </div>
-                                  </PopoverContent>
-                                </Popover>
-                                <div className="flex-shrink-0 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                                    <span className="flex items-center gap-1">
-                                        <StarIcon className="h-3 w-3 text-yellow-400 fill-yellow-400" />
-                                        {event.data.starsReward}
-                                    </span>
-                                    <span className="flex items-center gap-1">
-                                        <BadgeCheck className="h-3 w-3 text-blue-500" />
-                                        {event.data.xpReward}
-                                    </span>
-                                </div>
-                            </li>
-                            );
-                        })}
-                    </ul>
-                </div>
-            </li>
-          );
-        })}
-      </ul>
-    );
-  };
-  
   const renderGridView = () => {
     const days = eachDayOfInterval(viewInterval);
   
@@ -610,7 +513,6 @@ function AgendaPageContent() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
           const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-          const useDetailedView = isMobile || dateRangeFilter === 'day' || dateRangeFilter === '3days';
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -629,19 +531,19 @@ function AgendaPageContent() {
                       {dayEvents.morning.length > 0 && (
                         <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
-                          {useDetailedView ? renderEventListForPeriod(dayEvents.morning, day) : renderWeeklyPeriodList(dayEvents.morning, day)}
+                          {renderEventListForPeriod(dayEvents.morning, day)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
                         <div className={cn("space-y-2", "bg-orange-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
-                           {useDetailedView ? renderEventListForPeriod(dayEvents.afternoon, day) : renderWeeklyPeriodList(dayEvents.afternoon, day)}
+                           {renderEventListForPeriod(dayEvents.afternoon, day)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
                         <div className={cn("space-y-2", "bg-indigo-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
-                           {useDetailedView ? renderEventListForPeriod(dayEvents.night, day) : renderWeeklyPeriodList(dayEvents.night, day)}
+                           {renderEventListForPeriod(dayEvents.night, day)}
                         </div>
                       )}
                     </CardContent>
