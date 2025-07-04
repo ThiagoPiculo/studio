@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -187,7 +188,7 @@ export default function SettingsPage() {
                         id="confirm-join"
                         checked={settings.confirmJoinAlliance}
                         onCheckedChange={(checked) => handleSettingChange('confirmJoinAlliance', checked)}
-                        disabled={true} // Funcionalidade futura
+                        disabled={isUpdatingSettings}
                     />
                 </div>
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
@@ -199,7 +200,7 @@ export default function SettingsPage() {
                         id="child-redeem"
                         checked={settings.childCanRedeemRewards}
                         onCheckedChange={(checked) => handleSettingChange('childCanRedeemRewards', checked)}
-                        disabled={true} // Funcionalidade futura
+                        disabled={isUpdatingSettings}
                     />
                 </div>
             </CardContent>
