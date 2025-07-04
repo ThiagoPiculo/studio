@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { predefinedRewardGroups } from "@/lib/predefined-reward-ideas";
 import type { PredefinedRewardIdea } from "@/lib/predefined-reward-ideas";
-import { Sparkles, ArrowRight, ArrowLeft, Search, PackageSearch } from "lucide-react";
+import { Sparkles, ArrowRight, ArrowLeft, Search, PackageSearch, Star as StarIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Fragment, useState, useMemo } from 'react';
 import { Input } from "@/components/ui/input";
@@ -24,6 +24,9 @@ export default function RewardIdeasPage() {
         queryParams.append('category', idea.suggestedAppCategory);
         if (idea.isMaterialSuggestion !== undefined) {
             queryParams.append('isMaterial', String(idea.isMaterialSuggestion));
+        }
+        if (idea.starsCost) {
+            queryParams.append('starsCost', String(idea.starsCost));
         }
         router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
     };
@@ -109,7 +112,13 @@ export default function RewardIdeasPage() {
                                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                     <div>
                                         <h5 className="font-semibold text-md">{idea.title}</h5>
-                                        {idea.description && <p className="text-sm text-muted-foreground mt-0.5">{idea.description}</p>}
+                                        {idea.starsCost && (
+                                            <p className="text-sm font-medium text-amber-600 flex items-center gap-1 mt-1">
+                                                <StarIcon className="h-4 w-4 fill-amber-500 text-amber-500" />
+                                                Custo Sugerido: {idea.starsCost} estrelas
+                                            </p>
+                                        )}
+                                        {idea.description && <p className="text-sm text-muted-foreground mt-1">{idea.description}</p>}
                                     </div>
                                     <Button 
                                         size="sm" 

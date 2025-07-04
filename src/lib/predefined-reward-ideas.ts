@@ -9,6 +9,7 @@ export interface PredefinedRewardIdea {
   userSubCategory?: string; // A subcategoria do usuário (ex: "Controle")
   suggestedAppCategory: RewardCategory; // A categoria correspondente do app (USA OS NOVOS IDs)
   isMaterialSuggestion?: boolean; // Se a sugestão tende a ser material
+  starsCost?: number;
 }
 
 export interface PredefinedRewardGroup {
@@ -32,6 +33,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 50,
       },
       {
         title: "DJ Oficial da Viagem",
@@ -40,6 +42,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 30,
       },
       {
         title: "Chef da Noite Auxiliar",
@@ -48,6 +51,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 40,
       },
       {
         title: "Decidir a Atividade do Fim de Semana",
@@ -56,6 +60,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 75,
       },
       {
         title: "Fotógrafo da Família por um Dia",
@@ -64,6 +69,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 25,
       },
       {
         title: "Planejar Café da Manhã Especial",
@@ -72,6 +78,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 60,
       },
       // Flexibilidade
       {
@@ -81,6 +88,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 25,
       },
       {
         title: "Dormir 30 Minutos Mais Tarde",
@@ -89,6 +97,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 40,
       },
       {
         title: "Vale-Pular-Tarefa",
@@ -97,6 +106,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 100,
       },
       {
         title: "Ter 15 minutos livres extras",
@@ -105,6 +115,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 15,
       },
       {
         title: "Escolher usar uma roupa especial",
@@ -113,6 +124,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 10,
       },
       // Exclusividade
       {
@@ -122,6 +134,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "experiences", 
         isMaterialSuggestion: false,
+        starsCost: 150,
       },
       {
         title: "O Dia do Sim (com Regras)",
@@ -130,6 +143,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 250,
       },
       {
         title: "Direito a contar a primeira história",
@@ -138,6 +152,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 20,
       },
       {
         title: "Café da manhã ou lanche especial na cama",
@@ -146,6 +161,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 80,
       },
       {
         title: "Ser o primeiro a experimentar algo novo",
@@ -154,6 +170,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
+        starsCost: 15,
       },
     ],
   },
@@ -170,6 +187,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 120,
       },
       {
         title: "Acampamento na sala",
@@ -178,6 +196,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 80,
       },
       {
         title: "Caça ao tesouro em casa",
@@ -186,6 +205,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 60,
       },
       {
         title: "Noite de culinária divertida",
@@ -194,6 +214,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 70,
       },
       {
         title: "Sessão de fotos temáticas",
@@ -202,6 +223,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 50,
       },
       {
         title: "Cápsula do tempo familiar",
@@ -210,6 +232,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 40,
       },
       {
         title: "Noite de Karaokê em família",
@@ -218,6 +241,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 60,
       },
       // Social
       {
@@ -227,6 +251,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 200,
       },
       {
         title: "Levar amigo para passeio",
@@ -235,6 +260,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 150,
       },
       {
         title: "Olimpíada no quintal",
@@ -243,6 +269,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 75,
       },
       {
         title: "Chamada de vídeo estendida",
@@ -251,6 +278,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 20,
       },
       // Cultural
       {
@@ -260,6 +288,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 100,
       },
       {
         title: "Estreia no cinema",
@@ -268,6 +297,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 120,
       },
       {
         title: "Visita a jardim botânico ou feira",
@@ -276,6 +306,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 80,
       },
       {
         title: "Peça de teatro infantil",
@@ -284,6 +315,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 150,
       },
     ],
   },
@@ -300,6 +332,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 70,
       },
       {
         title: "Kit de arte específico",
@@ -308,6 +341,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 80,
       },
       {
         title: "Acessório para esporte",
@@ -316,6 +350,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 50,
       },
       {
         title: "Partitura nova",
@@ -324,6 +359,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 30,
       },
       {
         title: "Adesivos decorativos",
@@ -332,6 +368,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 15,
       },
       // Necessidades Planejadas
       {
@@ -341,6 +378,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 25,
       },
       {
         title: "Escolher estampa de material escolar",
@@ -349,6 +387,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 20,
       },
       // Pequenos Mimos
       {
@@ -358,6 +397,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 10,
       },
       {
         title: "Gibi ou revista em quadrinhos",
@@ -366,6 +406,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 25,
       },
       {
         title: "Chaveiro de personagem",
@@ -374,6 +415,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 15,
       },
       {
         title: "Massinha de modelar nova cor",
@@ -382,6 +424,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 10,
       },
     ],
   },
@@ -398,6 +441,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false,
+        starsCost: 100,
       },
       {
         title: "Kit de ciências",
@@ -406,6 +450,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
+        starsCost: 120,
       },
       {
         title: "Curso online rápido",
@@ -414,6 +459,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false,
+        starsCost: 80,
       },
       {
         title: "App ou jogo educativo premium",
@@ -422,6 +468,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false, 
+        starsCost: 50,
       },
       {
         title: "Assinatura de revista infantil educativa",
@@ -430,6 +477,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
+        starsCost: 90,
       },
       // Criatividade
       {
@@ -439,6 +487,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
+        starsCost: 75,
       },
       {
         title: "Diário ou caderno de desenho de qualidade",
@@ -447,6 +496,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 40,
       },
       {
         title: "Ingressos para oficina criativa",
@@ -455,6 +505,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 60,
       },
       {
         title: "Microfone de brinquedo",
@@ -463,6 +514,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 50,
       },
       // Saúde e Bem-estar
       {
@@ -472,6 +524,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 200,
       },
       {
         title: "Item para atividade física",
@@ -480,6 +533,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
+        starsCost: 80,
       },
       {
         title: "Dia de spa em casa",
@@ -488,6 +542,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
+        starsCost: 60,
       },
     ],
   },
@@ -503,7 +558,8 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userCategory: "Impacto e Generosidade",
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
-        isMaterialSuggestion: false, 
+        isMaterialSuggestion: false,
+        starsCost: 10,
       },
       {
         title: "Doação familiar para ONG",
@@ -512,6 +568,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 15,
       },
       {
         title: "Apadrinhar uma árvore",
@@ -520,6 +577,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 20,
       },
       // Voluntariado
       {
@@ -529,6 +587,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 5,
       },
       {
         title: "Mutirão de limpeza",
@@ -537,6 +596,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 5,
       },
       {
         title: "Ajudar em campanha de agasalho",
@@ -545,6 +605,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 5,
       },
       // Atos de Gentileza
       {
@@ -554,6 +615,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 5,
       },
       {
         title: "Desenho/cartão para vizinho",
@@ -562,6 +624,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
+        starsCost: 5,
       },
       {
         title: "Comprar flores para presentear",
@@ -570,8 +633,10 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity", 
         isMaterialSuggestion: true,
+        starsCost: 5,
       },
     ],
   },
 ];
+
 

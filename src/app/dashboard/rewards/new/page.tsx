@@ -51,6 +51,7 @@ function CreateRewardTemplatePageContent() {
   const initialDescription = searchParams.get('description') || '';
   const categoryParam = searchParams.get('category') as RewardCategory | null;
   const isMaterialParam = searchParams.get('isMaterial');
+  const initialStarsCost = searchParams.get('starsCost');
 
   let resolvedInitialCategory: RewardCategory | undefined = undefined;
   if (categoryParam && rewardCategories.some(rc => rc.id === categoryParam)) {
@@ -70,7 +71,7 @@ function CreateRewardTemplatePageContent() {
       title: initialTitle,
       description: initialDescription,
       category: resolvedInitialCategory, 
-      starsCost: 10,
+      starsCost: initialStarsCost ? parseInt(initialStarsCost, 10) : 10,
       isMaterial: resolvedInitialIsMaterial,
     },
   });
