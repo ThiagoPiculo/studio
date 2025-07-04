@@ -184,40 +184,22 @@ function CreateMissionTemplatePageContent() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título da Missão</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Arrumar a cama todas as manhãs" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detalhes sobre a missão, como 'Deixar o travesseiro e o lençol bem esticados'."
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
+                 <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título da Missão</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Arrumar a cama" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
@@ -226,7 +208,7 @@ function CreateMissionTemplatePageContent() {
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma categoria..." />
+                            <SelectValue placeholder="Selecione..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -245,8 +227,6 @@ function CreateMissionTemplatePageContent() {
                   )}
                 />
               </div>
-
-              <RecurrenceControl />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField
@@ -282,6 +262,26 @@ function CreateMissionTemplatePageContent() {
                   )}
                 />
               </div>
+              
+              <FormField
+                control={form.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Descrição (Opcional)</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Detalhes sobre a missão, como 'Deixar o travesseiro e o lençol bem esticados'."
+                        className="resize-none"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <RecurrenceControl />
               
               <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
                 {isLoading ? (
@@ -322,5 +322,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
-    

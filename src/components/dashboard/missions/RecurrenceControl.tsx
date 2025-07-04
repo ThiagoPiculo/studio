@@ -1,10 +1,11 @@
+
 "use client"
 
 import * as React from "react"
 import { useFormContext } from "react-hook-form"
 import { format, setHours, setMinutes, setSeconds, parse, isValid } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Clock, Settings2 } from "lucide-react"
+import { Calendar as CalendarIcon, Clock, Settings2, Sun, CloudSun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -156,8 +157,13 @@ export function RecurrenceControl() {
             <FormItem>
               <FormLabel>Data de Início da Recorrência</FormLabel>
               <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
-              <FormDescription className="text-xs">
-                A hora aqui define o período (Manhã, Tarde, Noite) na agenda.
+               <FormDescription className="text-xs space-y-1">
+                <span>A hora aqui define o período na agenda:</span>
+                <div className="flex items-center gap-4 text-muted-foreground/80">
+                  <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" /> Manhã</span>
+                  <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" /> Tarde</span>
+                  <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" /> Noite</span>
+                </div>
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -187,8 +193,13 @@ export function RecurrenceControl() {
                 <FormItem>
                   <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
                   <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
-                   <FormDescription className="text-xs">
-                    Para missões únicas, esta é a data de vencimento. A hora define o período (Manhã, Tarde, Noite) na agenda.
+                   <FormDescription className="text-xs space-y-1">
+                    <span>Para missões únicas, esta é a data de vencimento. A hora define o período na agenda:</span>
+                    <div className="flex items-center gap-4 text-muted-foreground/80">
+                      <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" /> Manhã</span>
+                      <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" /> Tarde</span>
+                      <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" /> Noite</span>
+                    </div>
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
