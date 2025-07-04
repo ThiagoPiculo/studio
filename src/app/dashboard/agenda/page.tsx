@@ -367,6 +367,10 @@ function AgendaPageContent() {
     return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
   });
 
+  const isTodayInView = useMemo(() => {
+    return eachDayOfInterval(viewInterval).some(day => isSameDay(day, new Date()));
+  }, [viewInterval]);
+
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
       const eventsByChild = events.reduce((acc, event) => {
           const childId = event.data.childId;
@@ -608,15 +612,6 @@ function AgendaPageContent() {
                     </CardContent>
                 ) : (
                     <CardContent className="p-4 space-y-4">
-                      {isToday(day) && hasEventsForDay && (
-                        <div className="space-y-2">
-                            <h3 className="text-lg font-semibold flex items-center gap-2 text-accent">
-                                <Target className="h-5 w-5" />
-                                Missões de Hoje
-                            </h3>
-                            <Separator />
-                        </div>
-                      )}
                       {dayEvents.morning.length > 0 && (
                         <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
@@ -772,20 +767,30 @@ function AgendaPageContent() {
                           Planeje e visualize as missões da sua equipe.
                       </CardDescription>
                   </div>
-                  <div className="flex items-center gap-2 flex-wrap justify-end">
-                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
-                          <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                      <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize whitespace-nowrap">
-                        {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                      </h2>
-                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
-                          <ChevronRight className="h-4 w-4" />
-                      </Button>
-                      <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
-                      </Button>
+                  <div className="flex items-center gap-4 flex-wrap justify-end">
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                            <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <Button variant="outline" onClick={handleToday}>Hoje</Button>
+                        <h2 className="text-xl font-semibold text-center w-auto min-w-48 capitalize whitespace-nowrap">
+                            {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                        </h2>
+                        <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                            <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {isTodayInView && (
+                            <span className="inline-flex items-center text-accent font-semibold px-3 py-2 text-sm rounded-md bg-accent/10">
+                                <Target className="mr-2 h-4 w-4" /> Missões de Hoje
+                            </span>
+                        )}
+                        <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                        </Button>
+                      </div>
                   </div>
               </div>
           </CardHeader>
