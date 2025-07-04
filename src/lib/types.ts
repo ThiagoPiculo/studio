@@ -5,11 +5,20 @@ import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, S
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
+export type InitialPage = 'dashboard' | 'agenda' | 'missions' | 'rewards' | 'family';
+
+export interface UserSettings {
+  initialPage: InitialPage;
+  confirmJoinAlliance: boolean;
+  childCanRedeemRewards: boolean;
+}
+
 export interface UserProfile {
   uid: string;
   email: string | null;
   name: string | null;
   createdAt: Timestamp;
+  settings?: Partial<UserSettings>;
 }
 
 export interface ChildProfile {

@@ -13,6 +13,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getFeatureVoteCount, toggleUserFeatureVote, getUserFeatureVote } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -20,6 +23,7 @@ export default function SettingsPage() {
   const [integrationLikes, setIntegrationLikes] = useState(0);
   const [hasLikedIntegration, setHasLikedIntegration] = useState(false);
   const [isLoadingLikes, setIsLoadingLikes] = useState(true);
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
 
   const featureId = 'integrations';
 
@@ -79,6 +83,32 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSettingChange = async (key: string, value: any) => {
+    if (!user) return;
+    setIsUpdatingSettings(true);
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      await updateDoc(userDocRef, {
+        [`settings.${key}`]: value,
+      });
+      toast({
+        title: "Configuração Salva!",
+        description: "Sua preferência foi atualizada.",
+      });
+    } catch (error) {
+      console.error("Error updating setting:", error);
+      toast({ title: "Erro ao Salvar", description: "Não foi possível salvar a configuração.", variant: "destructive" });
+    } finally {
+      setIsUpdatingSettings(false);
+    }
+  };
+
+  const settings = {
+    initialPage: user?.settings?.initialPage || 'agenda',
+    confirmJoinAlliance: user?.settings?.confirmJoinAlliance ?? false,
+    childCanRedeemRewards: user?.settings?.childCanRedeemRewards ?? true,
+  };
+
 
   return (
     <div className="space-y-8">
@@ -119,6 +149,61 @@ export default function SettingsPage() {
                 </Button>
             </Link>
           </CardContent>
+        </Card>
+
+        <Card className="md:col-span-2">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações do Sistema</CardTitle>
+                <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                    <Label htmlFor="initial-page-select" className="flex flex-col gap-1 pr-4">
+                        <span className="font-semibold">Tela inicial após login</span>
+                        <span className="font-normal text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</span>
+                    </Label>
+                    <Select
+                        value={settings.initialPage}
+                        onValueChange={(value) => handleSettingChange('initialPage', value)}
+                        disabled={isUpdatingSettings}
+                    >
+                        <SelectTrigger id="initial-page-select" className="w-auto sm:w-[180px] flex-shrink-0">
+                            <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="dashboard">Painel do Heroi</SelectItem>
+                            <SelectItem value="agenda">Agenda</SelectItem>
+                            <SelectItem value="missions">Missões</SelectItem>
+                            <SelectItem value="rewards">Recompensas</SelectItem>
+                            <SelectItem value="family">Alianças</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                    <Label htmlFor="confirm-join" className="flex flex-col gap-1 pr-4">
+                        <span className="font-semibold">Confirmar entrada em aliança?</span>
+                        <span className="font-normal text-xs text-muted-foreground">Exige sua aprovação quando outro responsável entra na sua aliança por código.</span>
+                    </Label>
+                    <Switch
+                        id="confirm-join"
+                        checked={settings.confirmJoinAlliance}
+                        onCheckedChange={(checked) => handleSettingChange('confirmJoinAlliance', checked)}
+                        disabled={true} // Funcionalidade futura
+                    />
+                </div>
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                    <Label htmlFor="child-redeem" className="flex flex-col gap-1 pr-4">
+                        <span className="font-semibold">Autorizar resgate de recompensa pela criança</span>
+                        <span className="font-normal text-xs text-muted-foreground">Permite que a criança resgate recompensas diretamente. Se desativado, o resgate precisará da sua aprovação.</span>
+                    </Label>
+                    <Switch
+                        id="child-redeem"
+                        checked={settings.childCanRedeemRewards}
+                        onCheckedChange={(checked) => handleSettingChange('childCanRedeemRewards', checked)}
+                        disabled={true} // Funcionalidade futura
+                    />
+                </div>
+            </CardContent>
         </Card>
 
         <Card className="md:col-span-2">

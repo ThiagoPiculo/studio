@@ -17,21 +17,40 @@ import {
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { currentContext } = useFamily();
+  const router = useRouter();
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(true);
 
+  useEffect(() => {
+    if (!loading && user) {
+        const initialPage = user.settings?.initialPage || 'agenda';
+        if (initialPage !== 'dashboard') {
+            router.replace(`/dashboard/${initialPage}`);
+        } else {
+            setIsRedirecting(false);
+        }
+    } else if (!loading && !user) {
+      setIsRedirecting(false);
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoadingChildren(false);
+        setIsLoadingGuideData(false);
+        return
+      };
       setIsLoadingChildren(true);
       setIsLoadingGuideData(true);
 
@@ -81,11 +100,11 @@ export default function DashboardPage() {
     return age;
   };
 
-  if (!user) {
+  if (loading || isRedirecting) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-        Carregando dados do usuário...
+        Carregando...
       </div>
     );
   }

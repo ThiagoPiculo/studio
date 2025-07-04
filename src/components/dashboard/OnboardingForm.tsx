@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -69,7 +70,7 @@ export function OnboardingForm() {
         gender: values.childGender,
       });
       toast({ title: "Mini Herói Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
-      router.push("/dashboard/agenda"); 
+      router.push("/dashboard"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({
