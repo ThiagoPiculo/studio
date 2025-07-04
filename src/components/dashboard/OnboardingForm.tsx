@@ -69,7 +69,7 @@ export function OnboardingForm() {
         gender: values.childGender,
       });
       toast({ title: "Mini Herói Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
-      router.push("/dashboard"); 
+      router.push("/dashboard/agenda"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({

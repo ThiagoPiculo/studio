@@ -62,7 +62,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         const { email, password } = values as z.infer<typeof loginSchema>;
         await signInAdmin(email, password);
         toast({ title: "Que bom te ver de novo!", description: "Sua central de missões está pronta para novas aventuras." });
-        router.push("/dashboard");
+        router.push("/dashboard/agenda");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         const userProfile = await signUpAdmin(name, email, password);
@@ -73,7 +73,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         } else {
           toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
-        router.push("/dashboard");
+        router.push("/dashboard/agenda");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
@@ -107,7 +107,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     try {
       await signInWithGoogle();
       toast({ title: "Boas-vindas!", description: "Login com Google efetuado. Sua aventura está prestes a começar." });
-      router.push("/dashboard");
+      router.push("/dashboard/agenda");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);
       toast({
