@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -68,9 +67,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/family" tooltip="Gerenciar Aliança">
+                         <SidebarMenuButton href="/dashboard/family" tooltip="Aliança e Colaboradores">
                             <Shield />
-                            <span>Gerenciar Aliança</span>
+                            <span>Aliança e Colaboradores</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
