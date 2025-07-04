@@ -113,7 +113,7 @@ export function Notifications() {
         ) : (
             notifications.map(notification => {
                 const Icon = notificationIcons[notification.type] || Bell;
-                const timeAgo = formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true });
+                const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
                 return (
                     <DropdownMenuItem key={notification.id} asChild className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto">
                         <Link href={notification.href} className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md">
