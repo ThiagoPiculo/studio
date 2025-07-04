@@ -27,6 +27,13 @@ export default function WelcomePage() {
         </header>
       <main className="flex flex-col items-center w-full max-w-5xl mx-auto text-center mt-8 sm:mt-16">
         
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+          Crianças em Missões Heroicas!
+        </h1>
+        <p className="text-lg text-foreground/80 max-w-2xl mb-16">
+          Fortalecendo laços familiares com reforço positivo e diversão gamificada.
+        </p>
+
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                 <CardHeader className="p-0 items-center mb-4">
@@ -68,16 +75,9 @@ export default function WelcomePage() {
             <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
-          Crianças em Missões Heroicas!
-        </h1>
-        <p className="text-lg text-foreground/80 max-w-2xl mb-16">
-          Fortalecendo laços familiares com reforço positivo e diversão gamificada.
-        </p>
-
       </main>
 
-      <footer className="mt-16 text-center">
+      <footer className="mt-auto pt-16 text-center">
         <p className="text-sm text-muted-foreground">&copy; {new Date().getFullYear()} Mini Herois. Todos os direitos reservados.</p>
       </footer>
     </div>
