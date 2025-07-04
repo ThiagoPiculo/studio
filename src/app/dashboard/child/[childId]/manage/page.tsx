@@ -874,7 +874,7 @@ export default function ManageChildPage() {
                               <p className="font-semibold">{activity.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 {activity.type === 'mission' ?
-                                    `Concluída para: ${format(activity.scheduledFor, 'PPP', { locale: ptBR })}`
+                                    `Concluída (ref. a ${format(activity.scheduledFor, 'dd/MM/yyyy')})`
                                     : `Custo: ${activity.starsCost} Estrelas`
                                 }
                               </p>
@@ -1397,4 +1397,6 @@ export default function ManageChildPage() {
     </div>
   );
 }
+    
+
     
