@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch, Star, BadgeCheckIcon } from "lucide-react";
+import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch, Star, BadgeCheckIcon, Sparkles } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PredefinedMissionIdea } from "@/lib/predefined-missions";
 import { useState, useEffect, useMemo } from 'react';
@@ -16,6 +16,16 @@ import type { MissionTemplate } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const rewardFilterOptions = [
+    { value: 'all', label: 'Qualquer Recompensa' },
+    { value: '5-10', label: 'Hábitos Diários Rápidos (5 ★ | 10 XP)' },
+    { value: '10-15', label: 'Responsabilidades e Tarefas (10 ★ | 15 XP)' },
+    { value: '15-25', label: 'Desenvolvimento e Estudos (15 ★ | 25 XP)' },
+    { value: '20-30', label: 'Comportamento e Gentileza (20 ★ | 30 XP)' },
+];
 
 export default function MissionIdeasPage() {
     const router = useRouter();
@@ -25,6 +35,7 @@ export default function MissionIdeasPage() {
     const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
+    const [rewardFilter, setRewardFilter] = useState('all');
 
     useEffect(() => {
         if (!user) {
@@ -47,18 +58,29 @@ export default function MissionIdeasPage() {
     }, [userTemplates]);
 
     const filteredMissionGroups = useMemo(() => {
-        if (!searchTerm.trim()) {
-            return predefinedMissionGroups;
-        }
-        const lowercasedFilter = searchTerm.toLowerCase();
         const groupsWithFilteredItems = predefinedMissionGroups.map(group => {
-            const filteredItems = group.items.filter(idea =>
-                idea.title.toLowerCase().includes(lowercasedFilter)
-            );
+            let filteredItems = group.items;
+
+            // Apply reward filter
+            if (rewardFilter !== 'all') {
+                const [stars, xp] = rewardFilter.split('-').map(Number);
+                filteredItems = filteredItems.filter(idea => 
+                    idea.starsReward === stars && idea.xpReward === xp
+                );
+            }
+            
+            // Apply search term filter
+            if (searchTerm.trim()) {
+                const lowercasedFilter = searchTerm.toLowerCase();
+                filteredItems = filteredItems.filter(idea =>
+                    idea.title.toLowerCase().includes(lowercasedFilter)
+                );
+            }
+            
             return { ...group, items: filteredItems };
         });
         return groupsWithFilteredItems.filter(group => group.items.length > 0);
-    }, [searchTerm]);
+    }, [searchTerm, rewardFilter]);
 
     const handleUseIdea = (idea: PredefinedMissionIdea) => {
         const queryParams = new URLSearchParams();
@@ -83,7 +105,10 @@ export default function MissionIdeasPage() {
                         <Skeleton className="h-4 w-3/4 mt-2" />
                     </CardHeader>
                     <CardContent className="p-6 pt-0">
-                        <Skeleton className="h-10 w-full" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
                     </CardContent>
                 </Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -112,15 +137,37 @@ export default function MissionIdeasPage() {
                     </CardDescription>
                 </CardHeader>
                  <CardContent className="p-6 pt-0">
-                    <div className="relative">
-                        <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                        <Input
-                            type="text"
-                            placeholder="Buscar ideias de missões (ex: cama, lição, dentes)..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10"
-                        />
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="search-filter" className="sr-only">Busca</Label>
+                            <div className="relative">
+                                <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    id="search-filter"
+                                    type="text"
+                                    placeholder="Buscar por título (ex: cama, lição)..."
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="w-full pl-10"
+                                />
+                            </div>
+                        </div>
+                         <div>
+                            <Label htmlFor="reward-filter" className="sr-only">Filtro de Recompensa</Label>
+                            <Select value={rewardFilter} onValueChange={setRewardFilter}>
+                                <SelectTrigger id="reward-filter" className="w-full">
+                                    <div className="flex items-center gap-2">
+                                        <Sparkles className="h-4 w-4 text-muted-foreground" />
+                                        <SelectValue placeholder="Filtrar por recompensa..." />
+                                    </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {rewardFilterOptions.map(opt => (
+                                    <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
@@ -193,9 +240,9 @@ export default function MissionIdeasPage() {
             ) : (
                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                   <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                  <p className="text-lg text-muted-foreground">Nenhuma ideia encontrada para "{searchTerm}".</p>
+                  <p className="text-lg text-muted-foreground">Nenhuma ideia encontrada com os filtros atuais.</p>
                   <p className="text-sm text-muted-foreground mt-1">
-                    Tente buscar por outras palavras.
+                    Tente buscar por outras palavras ou alterar o filtro de recompensas.
                   </p>
                 </div>
             )}
