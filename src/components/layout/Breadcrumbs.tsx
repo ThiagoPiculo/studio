@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, Fragment } from 'react';
@@ -98,19 +99,34 @@ export function Breadcrumbs() {
       setBreadcrumbs([{ label: 'Painel', href: '/dashboard' }, ...loadingCrumbs]);
       
       const resolvedCrumbs = (await Promise.all(promises)).filter(Boolean) as Breadcrumb[];
-      let finalCrumbs = [{ label: 'Painel', href: '/dashboard' }, ...resolvedCrumbs];
-      
-      // Inject family context if needed
-      if (currentContext !== 'my-space' && !isFamilyLoading) {
-          const isFamilyPageAlreadyInCrumb = finalCrumbs.some(c => c.href === '/dashboard/family');
-          if (!isFamilyPageAlreadyInCrumb) {
-              const familyContext = availableContexts.find(c => c.id === currentContext);
-              if (familyContext) {
-                  const familyCrumb = { label: familyContext.name, href: '/dashboard/family', isLoading: false };
-                  finalCrumbs.splice(1, 0, familyCrumb); // Inject after 'Painel'
-              }
-          }
+      let finalCrumbs = [{ label: 'Painel', href: '/dashboard' }];
+
+      const currentContextObject = availableContexts.find(c => c.id === currentContext);
+
+      if (currentContextObject && !isFamilyLoading) {
+        const isFamilyPage = pathname === '/dashboard/family';
+
+        if (isFamilyPage) {
+            // When on the family page, the breadcrumb is the context name itself.
+             finalCrumbs.push({ 
+                label: currentContextObject.name, 
+                href: '/dashboard/family', 
+                isLoading: false 
+            });
+        } else if (pathname !== '/dashboard') {
+            // On any other dashboard page, inject the context as a link to the family page.
+            const contextCrumb: Breadcrumb = {
+                label: currentContextObject.name,
+                href: '/dashboard/family',
+                isLoading: false
+            };
+            finalCrumbs.push(contextCrumb, ...resolvedCrumbs);
+        }
+      } else if (pathname !== '/dashboard') {
+        // Fallback for when context is still loading
+        finalCrumbs.push(...resolvedCrumbs);
       }
+
 
       setBreadcrumbs(finalCrumbs);
     };
