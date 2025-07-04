@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getChildProfileById, regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -394,25 +394,12 @@ export default function ManageChildPage() {
     if (!instanceToManage || !child) return;
     setIsDeleting(true);
     try {
-      const currentChildProfile = await getChildProfileById(child.id); 
-      if (!currentChildProfile) throw new Error("Perfil da criança não encontrado para verificação de estrelas.");
-
-      if (currentChildProfile.stars < instanceToManage.starsCost) {
-        toast({ title: "Quase lá!", description: `${child.name} precisa de mais estrelas para resgatar "${instanceToManage.title}". Continue as missões!`, variant: "destructive", duration: 7000 });
-        setIsDeleting(false);
-        setIsRedeemConfirmOpen(false);
-        return;
-      }
-
-      const newStars = currentChildProfile.stars - instanceToManage.starsCost;
-      await updateChildProfile(child.id, { stars: newStars });
-      await updateChildRewardInstance(instanceToManage.id, { status: 'redeemed', isRedeemed: true, redeemedAt: serverTimestamp() as any });
-      
+      await redeemChildRewardInstance(instanceToManage.id, child.id);
       await fetchData();
       toast({ title: "Conquista Desbloqueada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error marking reward as redeemed:", error);
-      toast({ title: "Erro ao Resgatar", description: "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
+      toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
     } finally {
       setIsDeleting(false);
       setIsRedeemConfirmOpen(false);

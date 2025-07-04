@@ -1,4 +1,5 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, School, HeartPulse, Smile, Users, Banknote, Leaf, Bike } from 'lucide-react';
@@ -280,7 +281,7 @@ export type IconType = LucideIconType;
 export interface Notification {
   id: string; // doc ID
   userId: string; // who this notification is for
-  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed';
+  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed';
   title: string;
   description: string;
   href: string; // link to the relevant page

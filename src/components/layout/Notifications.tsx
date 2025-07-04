@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2 } from 'lucide-react';
@@ -27,6 +28,7 @@ const notificationIcons: { [key in Notification['type']]: React.ElementType } = 
   alliance_join_request: UserPlus,
   alliance_join_approved: UserPlus,
   mission_assigned: PlusCircle,
+  mission_completed: CheckCircle,
   reward_redeemed: CheckCircle,
 };
 

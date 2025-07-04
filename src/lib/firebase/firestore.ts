@@ -23,6 +23,38 @@ import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTem
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
 
+// --- Notifications Helper ---
+const createAndDispatchNotifications = async (
+  childId: string,
+  notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'>
+): Promise<void> => {
+  const child = await getChildProfileById(childId);
+  if (!child) return;
+
+  const batch = writeBatch(db);
+  let userIdsToNotify: string[] = [];
+
+  if (child.familyId) {
+    const members = await getFamilyMembers(child.familyId);
+    userIdsToNotify = members.map(m => m.uid);
+  } else {
+    userIdsToNotify = [child.ownerId];
+  }
+
+  userIdsToNotify.forEach(userId => {
+    const newNotificationRef = doc(collection(db, 'notifications'));
+    const newNotification: Omit<Notification, 'id'> = {
+      ...notificationPayload,
+      userId,
+      isRead: false,
+      createdAt: serverTimestamp() as Timestamp,
+    };
+    batch.set(newNotificationRef, newNotification);
+  });
+  await batch.commit();
+};
+
+
 // --- User Profile ---
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   const docRef = doc(db, 'users', uid);
@@ -335,6 +367,22 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   });
   await batch.commit();
 
+  // Notify existing members
+  const newMemberProfile = await getUserProfile(userId);
+  const existingMembers = await getFamilyMembers(family.id); // This will include the new member
+  const notificationPromises = existingMembers
+      .filter(member => member.uid !== userId)
+      .map(member => {
+          return addNotification({
+              userId: member.uid,
+              type: 'alliance_join_approved',
+              title: 'Novo membro na Aliança!',
+              description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança via código.`,
+              href: '/dashboard/family',
+          });
+      });
+  await Promise.all(notificationPromises);
+
   return newMembership;
 };
 
@@ -347,7 +395,7 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 
   const usersQuery = query(collection(db, 'users'), where('__name__', 'in', memberUserIds));
   const usersSnapshot = await getDocs(usersQuery);
-  const users = usersSnapshot.docs.map(doc => doc.data() as UserProfile);
+  const users = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
   return users.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
 };
 
@@ -493,6 +541,23 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   });
   
   await batch.commit();
+
+  // Notify existing members
+  const newMemberProfile = await getUserProfile(userId);
+  const existingMembers = await getFamilyMembers(familyId); // This will include the new member
+  const notificationPromises = existingMembers
+      .filter(member => member.uid !== userId) // Don't notify the new member
+      .map(member => {
+          return addNotification({ // Using the simpler addNotification here
+              userId: member.uid,
+              type: 'alliance_join_approved',
+              title: 'Novo membro na Aliança!',
+              description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança ${family.name}.`,
+              href: '/dashboard/family',
+          });
+      });
+  await Promise.all(notificationPromises);
+
   return family;
 };
 
@@ -627,6 +692,60 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
   await updateDoc(instanceRef, {
     ...updates,
     updatedAt: serverTimestamp() as Timestamp,
+  });
+};
+
+export const redeemChildRewardInstance = async (instanceId: string, childId: string): Promise<void> => {
+  const instanceRef = doc(db, 'childRewardInstances', instanceId);
+  const childRef = doc(db, 'children', childId);
+
+  await runTransaction(db, async (transaction) => {
+      const instanceSnap = await transaction.get(instanceRef);
+      const childSnap = await transaction.get(childRef);
+
+      if (!instanceSnap.exists() || !childSnap.exists()) {
+          throw new Error("Recompensa ou perfil da criança não encontrado.");
+      }
+
+      const instanceData = instanceSnap.data() as ChildRewardInstance;
+      const childData = childSnap.data() as ChildProfile;
+
+      if (childData.stars < instanceData.starsCost) {
+          throw new Error("Estrelas insuficientes para resgatar esta recompensa.");
+      }
+      if (instanceData.status === 'redeemed') {
+          throw new Error("Esta recompensa já foi resgatada.");
+      }
+
+      // Update child's stars
+      transaction.update(childRef, {
+          stars: childData.stars - instanceData.starsCost,
+          updatedAt: serverTimestamp(),
+      });
+
+      // Update reward instance
+      transaction.update(instanceRef, {
+          status: 'redeemed',
+          isRedeemed: true,
+          redeemedAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+      });
+  });
+  
+  // After transaction, send notification
+  const finalInstanceSnap = await getDoc(instanceRef);
+  const finalChildSnap = await getDoc(childRef);
+  if (!finalInstanceSnap.exists() || !finalChildSnap.exists()) return;
+
+  const instanceData = finalInstanceSnap.data() as ChildRewardInstance;
+  const childData = finalChildSnap.data() as ChildProfile;
+
+  await createAndDispatchNotifications(childId, {
+      type: 'reward_redeemed',
+      title: 'Recompensa Resgatada!',
+      description: `${childData.name} resgatou: "${instanceData.title}".`,
+      href: `/dashboard/child/${childId}/manage`,
+      relatedChildId: childId,
   });
 };
 
@@ -849,7 +968,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         return xpForCurrentLevel + (100 + (level - 1) * 50);
     };
 
-    return await runTransaction(db, async (transaction) => {
+    const updatedChildProfile = await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
             throw new Error("Mission instance not found.");
@@ -912,6 +1031,32 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
             id: childSnap.id
         } as ChildProfile;
     });
+
+    if (updatedChildProfile) {
+      const missionData = (await getDoc(missionRef)).data() as MissionInstance;
+      const originalChildData = await getChildProfileById(missionData.childId);
+
+      // Notification for mission completion
+      await createAndDispatchNotifications(missionData.childId, {
+          type: 'mission_completed',
+          title: `Missão Cumprida!`,
+          description: `${updatedChildProfile.name} concluiu: "${missionData.title}".`,
+          href: `/dashboard/child/${missionData.childId}/manage`,
+          relatedChildId: missionData.childId
+      });
+
+      // Notification for level up
+      if (originalChildData && updatedChildProfile.level > originalChildData.level) {
+           await createAndDispatchNotifications(missionData.childId, {
+              type: 'new_level',
+              title: 'Subiu de Nível!',
+              description: `${updatedChildProfile.name} alcançou o nível ${updatedChildProfile.level}!`,
+              href: `/dashboard/child/${missionData.childId}/manage`,
+              relatedChildId: missionData.childId
+          });
+      }
+    }
+    return updatedChildProfile;
 };
 
 export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile | null> => {
@@ -1046,7 +1191,7 @@ export const updateRecurringMissionInstance = async (
           completionLog: {},
           exceptionDates: {},
       };
-      delete newOneOffInstanceData.id; // Firestore generates ID
+      delete (newOneOffInstanceData as any).id; // Firestore generates ID
       transaction.set(newInstanceRef, newOneOffInstanceData);
 
     } 
@@ -1071,7 +1216,7 @@ export const updateRecurringMissionInstance = async (
           dueDate: scheduleUpdates.dueDate,
           recurrenceRule: scheduleUpdates.recurrenceRule,
       };
-      delete newForwardInstanceData.id;
+      delete (newForwardInstanceData as any).id;
       transaction.set(newInstanceRef, newForwardInstanceData);
     }
   });
