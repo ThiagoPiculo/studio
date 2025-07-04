@@ -30,9 +30,10 @@ As cores são definidas em `src/app/globals.css` usando variáveis HSL CSS. O si
 
 ## 3. Tipografia
 
-As fontes são configuradas em `tailwind.config.ts`:
+As fontes são configuradas em `tailwind.config.ts` e importadas em `src/app/layout.tsx`:
 
-- **Fonte Principal (`font-body` e `font-headline`):** 'PT Sans', 'sans-serif'. Usada para todos os textos para garantir consistência e legibilidade.
+- **Fonte de Corpo (`font-body`):** 'Nunito', 'sans-serif'. Usada para textos gerais, parágrafos e descrições, oferecendo ótima legibilidade.
+- **Fonte de Títulos (`font-headline`):** 'Quicksand', 'sans-serif'. Usada para títulos e elementos de destaque na UI, com um visual moderno e arredondado que complementa a estética do app.
 
 ## 4. Espaçamento e Layout
 
