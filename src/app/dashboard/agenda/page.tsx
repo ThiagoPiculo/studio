@@ -788,8 +788,9 @@ function AgendaPageContent() {
                         <Button variant="outline" className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
                             <Target className="mr-2 h-4 w-4" /> Missões de Hoje
                         </Button>
-                        <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                        <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon">
+                            <PlusCircle className="h-4 w-4" />
+                            <span className="sr-only">Adicionar Missão</span>
                         </Button>
                       </div>
                   </div>
