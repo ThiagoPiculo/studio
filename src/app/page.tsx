@@ -62,11 +62,11 @@ export default function WelcomePage() {
             </Card>
         </div>
 
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
           Crianças em Missões Heroicas!
         </h1>
-        <p className="text-base text-foreground/80 max-w-2xl mb-24">
-          Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
+        <p className="text-lg text-foreground/80 max-w-2xl mb-24">
+          Fortalecendo laços familiares com reforço positivo e diversão gamificada.
         </p>
 
         <div className="relative w-full max-w-4xl mb-16 h-0">
