@@ -6,10 +6,80 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2 } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { getFeatureVoteCount, toggleUserFeatureVote, getUserFeatureVote } from '@/lib/firebase/firestore';
+import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [integrationLikes, setIntegrationLikes] = useState(0);
+  const [hasLikedIntegration, setHasLikedIntegration] = useState(false);
+  const [isLoadingLikes, setIsLoadingLikes] = useState(true);
+
+  const featureId = 'integrations';
+
+  useEffect(() => {
+    if (!user) {
+      setIsLoadingLikes(false);
+      return;
+    }
+  
+    async function fetchLikeData() {
+      setIsLoadingLikes(true);
+      try {
+        const [count, hasLiked] = await Promise.all([
+          getFeatureVoteCount(featureId),
+          getUserFeatureVote(user.uid, featureId)
+        ]);
+        setIntegrationLikes(count);
+        setHasLikedIntegration(hasLiked);
+      } catch (error) {
+        console.error("Error fetching like data:", error);
+      } finally {
+        setIsLoadingLikes(false);
+      }
+    }
+
+    fetchLikeData();
+  }, [user]);
+
+  const handleLikeIntegration = async () => {
+    if (!user) {
+      toast({ title: "Você precisa estar logado para votar.", variant: "destructive" });
+      return;
+    }
+    
+    const originalLikedState = hasLikedIntegration;
+    const originalLikes = integrationLikes;
+
+    // Optimistic update
+    const newLikedState = !hasLikedIntegration;
+    setHasLikedIntegration(newLikedState);
+    setIntegrationLikes(prev => newLikedState ? prev + 1 : prev - 1);
+
+    try {
+      await toggleUserFeatureVote(user.uid, featureId);
+      if (newLikedState) {
+          toast({
+              title: "Obrigado pelo seu feedback!",
+              description: "Sua opinião nos ajuda a priorizar novas funcionalidades.",
+          });
+      }
+    } catch (error) {
+      console.error("Error toggling feature vote:", error);
+      toast({ title: "Erro", description: "Não foi possível registrar seu voto.", variant: "destructive"});
+      // Revert optimistic update on error
+      setHasLikedIntegration(originalLikedState);
+      setIntegrationLikes(originalLikes);
+    }
+  };
+
+
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
@@ -83,6 +153,23 @@ export default function SettingsPage() {
             <p className="text-sm text-muted-foreground">
               (Em breve) Imagine conectar sua agenda Google ou receber lembretes na Alexa. Estamos trabalhando para tornar isso possível!
             </p>
+            <div className="mt-4 pt-4 border-t flex items-center justify-between">
+              <p className="text-sm font-semibold text-muted-foreground">Gostou da ideia?</p>
+              <Button
+                variant={hasLikedIntegration ? 'secondary' : 'outline'}
+                size="sm"
+                onClick={handleLikeIntegration}
+                disabled={isLoadingLikes}
+                className="shadow-sm"
+              >
+                {isLoadingLikes ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <ThumbsUp className={cn("mr-2 h-4 w-4", hasLikedIntegration && "fill-current text-primary")} />
+                )}
+                {integrationLikes} {integrationLikes === 1 ? 'Like' : 'Likes'}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

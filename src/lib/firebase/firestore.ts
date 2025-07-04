@@ -1076,3 +1076,60 @@ export const updateRecurringMissionInstance = async (
     }
   });
 };
+
+
+// --- Feature Votes ---
+
+// This function gets the vote count.
+export const getFeatureVoteCount = async (featureId: string): Promise<number> => {
+  try {
+    const docRef = doc(db, 'feature_votes', featureId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data().likeCount || 0;
+    }
+    return 0;
+  } catch (error) {
+    console.error(`Error getting vote count for ${featureId}:`, error);
+    return 0; // Fail gracefully
+  }
+};
+
+// This function checks if a specific user has voted for a feature.
+export const getUserFeatureVote = async (userId: string, featureId: string): Promise<boolean> => {
+  try {
+    const voteRef = doc(db, `feature_votes/${featureId}/voters/${userId}`);
+    const voteSnap = await getDoc(voteRef);
+    return voteSnap.exists();
+  } catch (error) {
+    console.error(`Error getting user vote for ${featureId}:`, error);
+    return false; // Fail gracefully
+  }
+};
+
+// This function toggles a user's vote for a feature in a single transaction.
+export const toggleUserFeatureVote = async (userId: string, featureId: string): Promise<void> => {
+  const featureVoteRef = doc(db, 'feature_votes', featureId);
+  const userVoteRef = doc(db, `feature_votes/${featureId}/voters/${userId}`);
+
+  await runTransaction(db, async (transaction) => {
+    const userVoteSnap = await transaction.get(userVoteRef);
+    const featureVoteSnap = await transaction.get(featureVoteRef);
+    
+    const currentCount = featureVoteSnap.data()?.likeCount || 0;
+
+    if (userVoteSnap.exists()) {
+      // User has already voted, so we're un-voting.
+      transaction.delete(userVoteRef);
+      transaction.update(featureVoteRef, { likeCount: Math.max(0, currentCount - 1) });
+    } else {
+      // User has not voted, so we're adding a vote.
+      transaction.set(userVoteRef, { votedAt: serverTimestamp() });
+      if (featureVoteSnap.exists()) {
+        transaction.update(featureVoteRef, { likeCount: currentCount + 1 });
+      } else {
+        transaction.set(featureVoteRef, { likeCount: 1 });
+      }
+    }
+  });
+};
