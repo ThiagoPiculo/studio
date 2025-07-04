@@ -785,7 +785,7 @@ function AgendaPageContent() {
                     }}
                     className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 >
-                    Todos os Heróis
+                    Todos
                 </Toggle>
                 {children.map(child => {
                   const isPressed = selectedChildrenIds.includes(child.id);
@@ -793,9 +793,13 @@ function AgendaPageContent() {
                     <Toggle
                         key={child.id}
                         size="sm"
-                        variant="outline"
-                        className="h-9 px-3 transition-colors duration-200 data-[state=on]:border-transparent"
-                        style={isPressed ? { backgroundColor: child.color, color: 'white' } : {}}
+                        className={cn(
+                            "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
+                            isPressed
+                              ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
+                              : 'opacity-70 hover:opacity-100'
+                        )}
+                        style={{ backgroundColor: child.color }}
                         pressed={isPressed}
                         onPressedChange={(pressed) => {
                           const otherIds = selectedChildrenIds.filter(id => id !== child.id);
