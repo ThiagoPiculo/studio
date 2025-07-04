@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -29,7 +29,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -784,7 +784,7 @@ function AgendaPageContent() {
                             <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                        <h2 className="text-sm font-medium text-center w-auto capitalize whitespace-nowrap">
+                        <h2 className="text-sm font-medium text-center w-auto capitalize whitespace-nowrap px-2">
                             {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                         </h2>
                         <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
@@ -793,30 +793,64 @@ function AgendaPageContent() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Select value={dateRangeFilter} onValueChange={(value) => handleFilterChange('view', value)}>
-                            <SelectTrigger className="w-auto h-10">
-                                <SelectValue placeholder="Ver" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="day">1 Dia</SelectItem>
-                                <SelectItem value="3days">3 Dias</SelectItem>
-                                <SelectItem value="workweek">Semana Útil</SelectItem>
-                                <SelectItem value="week">Semana</SelectItem>
-                                <SelectItem value="month">Mês</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <Select value={timePeriodFilter} onValueChange={(value) => handleFilterChange('period', value)}>
-                            <SelectTrigger className="w-auto h-10">
-                                <SelectValue placeholder="Período" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="morning"><span className="flex items-center gap-2"><Sun className="h-4 w-4" />Manhã</span></SelectItem>
-                                <SelectItem value="afternoon"><span className="flex items-center gap-2"><CloudSun className="h-4 w-4" />Tarde</span></SelectItem>
-                                <SelectItem value="night"><span className="flex items-center gap-2"><Moon className="h-4 w-4" />Noite</span></SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="h-10">
+                                    <Filter className="mr-2 h-4 w-4" />
+                                    Filtros
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto" align="end">
+                                <div className="grid grid-cols-2 gap-x-8 gap-y-4 p-4">
+                                    <div className="space-y-2">
+                                        <Label className="font-semibold">Visão da Agenda</Label>
+                                        <RadioGroup value={dateRangeFilter} onValueChange={(value) => handleFilterChange('view', value)} className="space-y-1">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="day" id="view-day" />
+                                                <Label htmlFor="view-day" className="font-normal cursor-pointer">1 Dia</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="3days" id="view-3days" />
+                                                <Label htmlFor="view-3days" className="font-normal cursor-pointer">3 Dias</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="workweek" id="view-workweek" />
+                                                <Label htmlFor="view-workweek" className="font-normal cursor-pointer">Semana Útil</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="week" id="view-week" />
+                                                <Label htmlFor="view-week" className="font-normal cursor-pointer">Semana</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="month" id="view-month" />
+                                                <Label htmlFor="view-month" className="font-normal cursor-pointer">Mês</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="font-semibold">Período do Dia</Label>
+                                        <RadioGroup value={timePeriodFilter} onValueChange={(value) => handleFilterChange('period', value)} className="space-y-1">
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="all" id="period-all" />
+                                                <Label htmlFor="period-all" className="font-normal cursor-pointer">Todos</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="morning" id="period-morning" />
+                                                <Label htmlFor="period-morning" className="font-normal flex items-center gap-2 cursor-pointer"><Sun className="h-4 w-4" />Manhã</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="afternoon" id="period-afternoon" />
+                                                <Label htmlFor="period-afternoon" className="font-normal flex items-center gap-2 cursor-pointer"><CloudSun className="h-4 w-4" />Tarde</Label>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="night" id="period-night" />
+                                                <Label htmlFor="period-night" className="font-normal flex items-center gap-2 cursor-pointer"><Moon className="h-4 w-4" />Noite</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
                         
                         <div className="h-6 w-px bg-border mx-1"></div>
 
