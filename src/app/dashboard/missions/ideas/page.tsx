@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch } from "lucide-react";
+import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch, Star, BadgeCheckIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PredefinedMissionIdea } from "@/lib/predefined-missions";
 import { useState, useEffect, useMemo } from 'react';
@@ -64,6 +64,8 @@ export default function MissionIdeasPage() {
         const queryParams = new URLSearchParams();
         queryParams.append('title', idea.title);
         queryParams.append('category', idea.suggestedAppCategory);
+        queryParams.append('starsReward', String(idea.starsReward));
+        queryParams.append('xpReward', String(idea.xpReward));
         router.push(`/dashboard/missions/new?${queryParams.toString()}`);
     };
     
@@ -143,14 +145,22 @@ export default function MissionIdeasPage() {
                                         return (
                                         <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                                <div className="flex items-center gap-2 flex-grow flex-wrap">
+                                                <div className="flex-grow space-y-1">
                                                     <h4 className="font-semibold text-md">{idea.title}</h4>
-                                                    {alreadyExists && (
-                                                        <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
-                                                            <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
-                                                            No Catálogo
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <Badge variant="secondary" className="text-xs font-normal">
+                                                            <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
                                                         </Badge>
-                                                    )}
+                                                        <Badge variant="secondary" className="text-xs font-normal">
+                                                            <BadgeCheckIcon className="mr-1.5 h-3 w-3 text-blue-500" /> {idea.xpReward} XP
+                                                        </Badge>
+                                                        {alreadyExists && (
+                                                            <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
+                                                                <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
+                                                                No Catálogo
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 {alreadyExists ? (
                                                     <Button 
@@ -192,3 +202,5 @@ export default function MissionIdeasPage() {
         </div>
     );
 }
+
+    

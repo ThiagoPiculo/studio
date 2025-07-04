@@ -87,6 +87,9 @@ function CreateMissionTemplatePageContent() {
 
   const initialTitle = searchParams.get('title') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
+  const starsParam = searchParams.get('starsReward');
+  const xpParam = searchParams.get('xpReward');
+
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
     resolvedInitialCategory = categoryParam;
@@ -98,8 +101,8 @@ function CreateMissionTemplatePageContent() {
       title: initialTitle,
       description: '',
       category: resolvedInitialCategory, 
-      starsReward: 5,
-      xpReward: 10,
+      starsReward: starsParam ? parseInt(starsParam, 10) : 5,
+      xpReward: xpParam ? parseInt(xpParam, 10) : 10,
       isRecurring: false,
       startDate: null,
       dueDate: null,
@@ -319,3 +322,5 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
+    
