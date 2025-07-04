@@ -23,6 +23,7 @@ import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification } from '@/lib/types';
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 // --- Notifications Helper ---
 const createAndDispatchNotifications = async (
@@ -1041,7 +1042,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
       await createAndDispatchNotifications(missionData.childId, {
           type: 'mission_completed',
           title: `Missão Cumprida!`,
-          description: `${updatedChildProfile.name} concluiu: "${missionData.title}".`,
+          description: `${updatedChildProfile.name} concluiu: "${missionData.title}" (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).`,
           href: `/dashboard/child/${missionData.childId}/manage`,
           relatedChildId: missionData.childId
       });
@@ -1127,10 +1128,14 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
 
     if (updatedChildProfile) {
         const missionData = (await getDoc(missionRef)).data() as MissionInstance;
+        const description = dateToUndo 
+            ? `A conclusão da missão "${missionData.title}" (ref. a ${formatDateFns(dateToUndo, 'dd/MM/yyyy')}) foi revertida.`
+            : `A conclusão da missão "${missionData.title}" foi revertida.`;
+        
         await createAndDispatchNotifications(missionData.childId, {
             type: 'mission_completion_undone',
             title: 'Ação Desfeita',
-            description: `A conclusão da missão "${missionData.title}" foi revertida.`,
+            description,
             href: `/dashboard/child/${missionData.childId}/manage`,
             relatedChildId: missionData.childId,
         });
@@ -1336,3 +1341,4 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
+
