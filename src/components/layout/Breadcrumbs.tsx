@@ -99,34 +99,34 @@ export function Breadcrumbs() {
       setBreadcrumbs([{ label: 'Painel', href: '/dashboard' }, ...loadingCrumbs]);
       
       const resolvedCrumbs = (await Promise.all(promises)).filter(Boolean) as Breadcrumb[];
-      let finalCrumbs = [{ label: 'Painel', href: '/dashboard' }];
+      
+      const finalCrumbs: Breadcrumb[] = [{ label: 'Painel', href: '/dashboard' }];
 
       const currentContextObject = availableContexts.find(c => c.id === currentContext);
 
-      if (currentContextObject && !isFamilyLoading) {
+      // Handle all pages except the dashboard root
+      if (pathname !== '/dashboard') {
         const isFamilyPage = pathname === '/dashboard/family';
-
-        if (isFamilyPage) {
-            // When on the family page, the breadcrumb is the context name itself.
-             finalCrumbs.push({ 
-                label: currentContextObject.name, 
-                href: '/dashboard/family', 
-                isLoading: false 
-            });
-        } else if (pathname !== '/dashboard') {
-            // On any other dashboard page, inject the context as a link to the family page.
-            const contextCrumb: Breadcrumb = {
-                label: currentContextObject.name,
-                href: '/dashboard/family',
-                isLoading: false
-            };
-            finalCrumbs.push(contextCrumb, ...resolvedCrumbs);
+        
+        if (isFamilyLoading) {
+          finalCrumbs.push({ label: '...', href: '/dashboard/family', isLoading: true });
+        } else if (currentContextObject) {
+          const contextLabel = currentContext === 'my-space' 
+            ? 'Meu Espaço' 
+            : `Aliança: ${currentContextObject.name}`;
+          
+          finalCrumbs.push({
+            label: contextLabel,
+            href: '/dashboard/family',
+            isLoading: false
+          });
         }
-      } else if (pathname !== '/dashboard') {
-        // Fallback for when context is still loading
-        finalCrumbs.push(...resolvedCrumbs);
+        
+        // Add the rest of the breadcrumbs only if we are not on the family page itself
+        if (!isFamilyPage) {
+          finalCrumbs.push(...resolvedCrumbs);
+        }
       }
-
 
       setBreadcrumbs(finalCrumbs);
     };
