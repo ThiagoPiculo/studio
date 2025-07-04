@@ -1063,7 +1063,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
 export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
 
-    return await runTransaction(db, async (transaction) => {
+    const updatedChildProfile = await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
             throw new Error("Mission instance not found.");
@@ -1124,6 +1124,19 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
             id: childSnap.id
         } as ChildProfile;
     });
+
+    if (updatedChildProfile) {
+        const missionData = (await getDoc(missionRef)).data() as MissionInstance;
+        await createAndDispatchNotifications(missionData.childId, {
+            type: 'mission_completion_undone',
+            title: 'Ação Desfeita',
+            description: `A conclusão da missão "${missionData.title}" foi revertida.`,
+            href: `/dashboard/child/${missionData.childId}/manage`,
+            relatedChildId: missionData.childId,
+        });
+    }
+
+    return updatedChildProfile;
 };
 
 

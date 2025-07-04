@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2 } from 'lucide-react';
+import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -30,6 +30,7 @@ const notificationIcons: { [key in Notification['type']]: React.ElementType } = 
   mission_assigned: PlusCircle,
   mission_completed: CheckCircle,
   reward_redeemed: CheckCircle,
+  mission_completion_undone: Undo2,
 };
 
 export function Notifications() {

@@ -281,7 +281,7 @@ export type IconType = LucideIconType;
 export interface Notification {
   id: string; // doc ID
   userId: string; // who this notification is for
-  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed';
+  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone';
   title: string;
   description: string;
   href: string; // link to the relevant page
