@@ -500,7 +500,7 @@ function AgendaPageContent() {
     
     const gridClasses = {
         day: 'grid-cols-1',
-        '3days': 'grid-cols-1 lg:grid-cols-3',
+        '3days': 'grid-cols-1 md:grid-cols-3',
         week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7',
         workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
     };
@@ -783,17 +783,20 @@ function AgendaPageContent() {
                         setSelectedChildrenIds([])
                       }
                     }}
-                    className="h-9"
+                    className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
                 >
                     Todos os Heróis
                 </Toggle>
-                {children.map(child => (
+                {children.map(child => {
+                  const isPressed = selectedChildrenIds.includes(child.id);
+                  return (
                     <Toggle
                         key={child.id}
                         size="sm"
                         variant="outline"
-                        className="flex items-center gap-2 h-9 px-3"
-                        pressed={selectedChildrenIds.includes(child.id)}
+                        className="h-9 px-3 transition-colors duration-200 data-[state=on]:border-transparent"
+                        style={isPressed ? { backgroundColor: child.color, color: 'white' } : {}}
+                        pressed={isPressed}
                         onPressedChange={(pressed) => {
                           const otherIds = selectedChildrenIds.filter(id => id !== child.id);
                           if (pressed) {
@@ -803,13 +806,10 @@ function AgendaPageContent() {
                           }
                         }}
                     >
-                        <Avatar className="h-6 w-6 ring-1 ring-background ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                            <AvatarImage src={child.avatar} alt={child.name} />
-                            <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                        </Avatar>
                         {child.name}
                     </Toggle>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </CardContent>
