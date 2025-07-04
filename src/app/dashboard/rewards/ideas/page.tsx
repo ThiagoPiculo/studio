@@ -15,9 +15,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 const starCostFilterOptions = [
     { value: 'all', label: 'Qualquer Custo' },
-    { value: 'low', label: 'Baixo (1-25 ★)' },
-    { value: 'medium', label: 'Médio (26-75 ★)' },
-    { value: 'high', label: 'Alto (76+ ★)' },
+    { value: 'low', label: 'Pequenos Mimos (1-25 ★)' },
+    { value: 'medium', label: 'Recompensas Médias (26-75 ★)' },
+    { value: 'high', label: 'Grandes Conquistas (76+ ★)' },
 ];
 
 export default function RewardIdeasPage() {
