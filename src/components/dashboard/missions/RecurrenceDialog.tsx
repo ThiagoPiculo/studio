@@ -89,21 +89,18 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
     const finalRule: RecurrenceRule = {
       freq,
       interval: Math.max(1, interval || 1),
+      endDate: null,
+      count: null,
     };
 
-    if (freq === 'WEEKLY') {
-      finalRule.byDay = byDay.length > 0 ? byDay : undefined;
+    if (freq === 'WEEKLY' && byDay.length > 0) {
+      finalRule.byDay = byDay;
     }
 
     if (endCondition === 'on' && endDate) {
-      finalRule.endDate = endDate as any; // Keep as Date object for form context
-      finalRule.count = null;
+      finalRule.endDate = endDate as any;
     } else if (endCondition === 'after' && count > 0) {
       finalRule.count = count;
-      finalRule.endDate = null;
-    } else {
-        finalRule.endDate = null;
-        finalRule.count = null;
     }
 
     onSave(finalRule);

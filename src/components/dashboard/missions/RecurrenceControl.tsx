@@ -159,14 +159,14 @@ export function RecurrenceControl() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
 
   const setDaily = () => {
-    setValue('recurrenceRule', { freq: 'DAILY', interval: 1, byDay: undefined, endDate: null, count: null }, { shouldValidate: true });
+    setValue('recurrenceRule', { freq: 'DAILY', interval: 1, endDate: null, count: null }, { shouldValidate: true });
   };
   
   const setWeekly = () => {
     if (!startDate) {
         // Validation will catch this, so we just set a basic weekly rule.
         // The user must select a start date for the form to be valid.
-        setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, byDay: undefined, endDate: null, count: null }, { shouldValidate: true });
+        setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, endDate: null, count: null }, { shouldValidate: true });
         return;
     }
     const dayOfWeek = getDayToWeekday[getDay(startDate)];
@@ -229,12 +229,14 @@ export function RecurrenceControl() {
             <FormItem>
               <FormLabel>Data de Início da Recorrência</FormLabel>
               <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
-               <FormDescription className="text-xs space-y-1">
-                <span>A hora aqui define o período na agenda:</span>
-                <div className="flex items-center gap-4 text-muted-foreground/80">
-                  <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" /> Manhã</span>
-                  <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" /> Tarde</span>
-                  <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" /> Noite</span>
+               <FormDescription className="text-xs">
+                <div className="flex items-center gap-1">
+                    <span>A hora aqui define o período na agenda:</span>
+                    <div className="flex items-center gap-2 text-muted-foreground/80 ml-1">
+                      <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" />Manhã</span>
+                      <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" />Tarde</span>
+                      <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" />Noite</span>
+                    </div>
                 </div>
               </FormDescription>
               <FormMessage />
@@ -273,12 +275,14 @@ export function RecurrenceControl() {
                 <FormItem>
                   <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
                   <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
-                   <FormDescription className="text-xs space-y-1">
-                    <span>Para missões únicas, esta é a data de vencimento. A hora define o período na agenda:</span>
-                    <div className="flex items-center gap-4 text-muted-foreground/80">
-                      <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" /> Manhã</span>
-                      <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" /> Tarde</span>
-                      <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" /> Noite</span>
+                   <FormDescription className="text-xs">
+                    <div className="flex items-center gap-1">
+                        <span>Para missões únicas, esta é a data de vencimento. A hora define o período na agenda:</span>
+                        <div className="flex items-center gap-2 text-muted-foreground/80 ml-1">
+                        <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" />Manhã</span>
+                        <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" />Tarde</span>
+                        <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" />Noite</span>
+                        </div>
                     </div>
                   </FormDescription>
                   <FormMessage />
