@@ -252,7 +252,7 @@ function FamilyPageContent() {
     setIsProcessingInvitationAction(invitation.id);
     try {
       const family = await acceptFamilyInvitation(invitation.id, user.uid);
-      const newContext = { id: family.id, name: family.name };
+      const newContext = { id: family.id, name: `Aliança: ${family.name}` };
       if(!availableContexts.find(c => c.id === newContext.id)){
         setAvailableContexts([...availableContexts, newContext]);
       }
@@ -847,14 +847,14 @@ function FamilyPageContent() {
             </CardContent>
           </Card>
           <Card className="bg-muted/50 h-full">
-            <CardHeader className="flex-row items-center gap-3">
-              <Home className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
-              <div>
-                <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
-                <CardDescription className="text-sm">
-                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
-                </CardDescription>
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-primary" />
+                <span>O que é o "Meu Espaço"?</span>
+              </CardTitle>
+              <CardDescription className="pt-2">
+                  Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+              </CardDescription>
             </CardHeader>
           </Card>
         </div>
@@ -911,14 +911,14 @@ function FamilyPageContent() {
 
        {!userAlliances.length > 0 && (
           <Card className="bg-muted/50">
-            <CardHeader className="flex-row items-center gap-3">
-              <Home className="h-6 w-6 text-muted-foreground flex-shrink-0"/>
-              <div>
-                <CardTitle className="text-lg">O que é o "Meu Espaço"?</CardTitle>
-                <CardDescription className="text-sm">
-                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
-                </CardDescription>
-              </div>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Home className="h-5 w-5 text-primary" />
+                <span>O que é o "Meu Espaço"?</span>
+              </CardTitle>
+              <CardDescription className="pt-2">
+                  Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+              </CardDescription>
             </CardHeader>
           </Card>
        )}
