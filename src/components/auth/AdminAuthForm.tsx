@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
 import { signInAdmin, signUpAdmin, signInWithGoogle } from "@/lib/firebase/auth";
 import { joinFamilyByInviteCode } from "@/lib/firebase/firestore";
+import type { UserProfile } from "@/lib/types";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -55,13 +56,31 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     defaultValues: mode === 'login' ? { email: "", password: "" } : { name: "", email: "", password: "", confirmPassword: "" },
   });
 
+  const getLoginToastDescription = (userProfile: UserProfile | null): string => {
+    const pageInfo: { [key: string]: { name: string, gender: 'f' | 'm' } } = {
+        dashboard: { name: 'Painel do Herói', gender: 'm' },
+        agenda: { name: 'Agenda', gender: 'f' },
+        missions: { name: 'Central de Missões', gender: 'f' },
+        rewards: { name: 'Catálogo de Recompensas', gender: 'm' },
+        family: { name: 'Aliança', gender: 'f' },
+    };
+
+    const initialPage = userProfile?.settings?.initialPage || 'agenda';
+    const info = pageInfo[initialPage] || pageInfo['missions'];
+    
+    const article = info.gender === 'f' ? 'Sua' : 'Seu';
+    const adjective = info.gender === 'f' ? 'pronta' : 'pronto';
+    
+    return `${article} ${info.name} está ${adjective} para novas aventuras.`;
+  }
+
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     try {
       if (mode === "login") {
         const { email, password } = values as z.infer<typeof loginSchema>;
-        await signInAdmin(email, password);
-        toast({ title: "Que bom te ver de novo!", description: "Sua central de missões está pronta para novas aventuras." });
+        const userProfile = await signInAdmin(email, password);
+        toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
@@ -105,8 +124,8 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     try {
-      await signInWithGoogle();
-      toast({ title: "Boas-vindas!", description: "Login com Google efetuado. Sua aventura está prestes a começar." });
+      const userProfile = await signInWithGoogle();
+      toast({ title: "Boas-vindas!", description: getLoginToastDescription(userProfile) });
       router.push("/dashboard");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);
