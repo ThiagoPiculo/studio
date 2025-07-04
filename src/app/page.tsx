@@ -26,8 +26,8 @@ export default function WelcomePage() {
             </nav>
         </header>
       <main className="flex flex-col items-center w-full max-w-5xl mx-auto text-center mt-8 sm:mt-16">
-        <h1 className="text-4xl md:text-6xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
-          Transforme Tarefas em <br/> Aventuras Heroicas!
+        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+          Crianças em Missões Heroicas!
         </h1>
         <p className="text-lg text-foreground/80 max-w-2xl mb-12">
           Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
