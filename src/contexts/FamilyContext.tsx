@@ -49,6 +49,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         );
 
         setAvailableContextsState(uniqueContexts);
+
+        const preferredContext = user.settings?.initialContext;
+        if (preferredContext && uniqueContexts.some(c => c.id === preferredContext)) {
+          setCurrentContextState(preferredContext);
+        } else {
+          // If no preference or preference is invalid, default to my-space
+          setCurrentContextState('my-space');
+        }
+
         setIsLoading(false);
       }, (error) => {
         console.error("Error fetching family contexts:", error);

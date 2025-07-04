@@ -11,6 +11,7 @@ export interface UserSettings {
   initialPage: InitialPage;
   confirmJoinAlliance: boolean;
   childCanRedeemRewards: boolean;
+  initialContext?: string;
 }
 
 export interface UserProfile {

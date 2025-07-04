@@ -10,6 +10,7 @@ import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, Thum
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getFeatureVoteCount, toggleUserFeatureVote, getUserFeatureVote } from '@/lib/firebase/firestore';
 import { cn } from '@/lib/utils';
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 export default function SettingsPage() {
   const { user } = useAuth();
+  const { availableContexts } = useFamily();
   const { toast } = useToast();
   const [integrationLikes, setIntegrationLikes] = useState(0);
   const [hasLikedIntegration, setHasLikedIntegration] = useState(false);
@@ -105,6 +107,7 @@ export default function SettingsPage() {
 
   const settings = {
     initialPage: user?.settings?.initialPage || 'agenda',
+    initialContext: user?.settings?.initialContext || 'my-space',
     confirmJoinAlliance: user?.settings?.confirmJoinAlliance ?? false,
     childCanRedeemRewards: user?.settings?.childCanRedeemRewards ?? true,
   };
@@ -176,6 +179,28 @@ export default function SettingsPage() {
                             <SelectItem value="missions">Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>
                             <SelectItem value="family">Alianças</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
+                    <Label htmlFor="initial-context-select" className="flex flex-col gap-1 pr-4">
+                        <span className="font-semibold">Espaço de trabalho inicial</span>
+                        <span className="font-normal text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</span>
+                    </Label>
+                    <Select
+                        value={settings.initialContext}
+                        onValueChange={(value) => handleSettingChange('initialContext', value)}
+                        disabled={isUpdatingSettings || availableContexts.length <= 1}
+                    >
+                        <SelectTrigger id="initial-context-select" className="w-auto sm:w-[180px] flex-shrink-0">
+                            <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {availableContexts.map(context => (
+                                <SelectItem key={context.id} value={context.id}>
+                                    {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                                </SelectItem>
+                            ))}
                         </SelectContent>
                     </Select>
                 </div>
