@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -225,8 +226,16 @@ function FamilyPageContent() {
       toast({ title: "Convite Enviado!", description: `Um convite para a aventura foi enviado para ${inviteEmail.trim()}.` });
       setInviteEmail('');
     } catch (error: any) {
-      console.error("Error sending invitation:", error);
-      toast({ title: "Erro ao Convidar", description: error.message, variant: "destructive" });
+      if (error.message === "Este usuário já é um membro da aliança.") {
+        toast({
+          title: "Membro já na equipe!",
+          description: `O usuário com o e-mail ${inviteEmail.trim()} já faz parte desta aliança. Não é necessário enviar um novo convite.`,
+          variant: "default",
+        });
+      } else {
+        console.error("Error sending invitation:", error);
+        toast({ title: "Erro ao Convidar", description: error.message, variant: "destructive" });
+      }
     } finally {
       setIsProcessingEmailInvite(false);
     }
