@@ -773,6 +773,26 @@ function FamilyPageContent() {
             Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
           </CardDescription>
         </CardHeader>
+        {userAlliances.length > 0 && (
+          <CardContent>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full sm:w-auto justify-between">
+                  Mudar para uma aliança
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                {userAlliances.map(alliance => (
+                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                    <Shield className="mr-2 h-4 w-4" />
+                    <span>{`Aliança: ${alliance.name}`}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardContent>
+        )}
       </Card>
       
       {isLoadingInvitations ? (
@@ -876,26 +896,6 @@ function FamilyPageContent() {
             Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
           </CardDescription>
         </CardHeader>
-        {userAlliances.length > 0 && (
-          <CardContent>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  Mudar para uma aliança
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                {userAlliances.map(alliance => (
-                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                    <Shield className="mr-2 h-4 w-4" />
-                    <span>{`Aliança: ${alliance.name}`}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </CardContent>
-        )}
       </Card>
     </div>
   );
