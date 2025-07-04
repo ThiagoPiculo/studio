@@ -68,7 +68,7 @@ export default function WelcomePage() {
             <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
         </div>
 
-        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+        <h1 className="text-3xl md:text-5xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
           Crianças em Missões Heroicas!
         </h1>
         <p className="text-lg text-foreground/80 max-w-2xl mb-16">
