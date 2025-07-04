@@ -336,7 +336,7 @@ export default function MissionsHubPage() {
                         disabled={isProcessingAction || template.status === 'archived'}
                         onClick={() => handleOpenAssignDialog(template)}
                       >
-                        <BadgeCheck className="mr-2 h-4 w-4" /> Atribuir
+                        <Users className="mr-2 h-4 w-4" /> Atribuir
                       </Button>
                       <TooltipProvider>
                         <Tooltip>
@@ -419,4 +419,3 @@ export default function MissionsHubPage() {
     </div>
   );
 }
-    
