@@ -26,14 +26,8 @@ export default function WelcomePage() {
             </nav>
         </header>
       <main className="flex flex-col items-center w-full max-w-5xl mx-auto text-center mt-8 sm:mt-16">
-        <h1 className="text-4xl md:text-5xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
-          Crianças em Missões Heroicas!
-        </h1>
-        <p className="text-lg text-foreground/80 max-w-2xl mb-12">
-          Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
-        </p>
         
-        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
+        <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                 <CardHeader className="p-0 items-center mb-4">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
@@ -67,6 +61,13 @@ export default function WelcomePage() {
                 </Link>
             </Card>
         </div>
+
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+          Crianças em Missões Heroicas!
+        </h1>
+        <p className="text-base text-foreground/80 max-w-2xl mb-24">
+          Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
+        </p>
 
         <div className="relative w-full max-w-4xl mb-16 h-0">
             <CornerIcon icon={Star} className="top-0 left-0 -translate-x-1/3 -translate-y-1/3 rotate-[-15deg]" />
