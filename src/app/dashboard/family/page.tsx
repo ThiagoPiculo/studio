@@ -430,37 +430,43 @@ function FamilyPageContent() {
       <div className="space-y-8">
         <Card className="shadow-lg">
           <CardHeader>
-            <div className="flex items-start gap-4">
-              <Shield className="h-8 w-8 text-primary mt-1" />
-              <div className='flex-grow'>
-                {isOwner && isEditingName ? (
-                  <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
-                    <Input
-                      value={familyNameInput}
-                      onChange={(e) => setFamilyNameInput(e.target.value)}
-                      className="h-auto text-3xl font-headline p-0 border-0 border-b-2 border-primary/50 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
-                      autoFocus
-                      onKeyDown={(e) => { if (e.key === 'Escape') { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}}
-                    />
-                    <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isUpdatingName || !familyNameInput.trim() || familyNameInput.trim() === familyDetails.name}>
-                      {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-5 w-5" />}
-                    </Button>
-                    <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}>
-                      <X className="h-5 w-5" />
-                    </Button>
-                  </form>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <CardTitle className="text-3xl font-headline">Aliança: {familyDetails.name}</CardTitle>
-                    {isOwner && (
-                      <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
-                        <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-start gap-4 flex-grow">
+                <Shield className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
+                <div className='flex-grow'>
+                  {isOwner && isEditingName ? (
+                    <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
+                      <Input
+                        value={familyNameInput}
+                        onChange={(e) => setFamilyNameInput(e.target.value)}
+                        className="h-auto text-3xl font-headline p-0 border-0 border-b-2 border-primary/50 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
+                        autoFocus
+                        onKeyDown={(e) => { if (e.key === 'Escape') { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}}
+                      />
+                      <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isUpdatingName || !familyNameInput.trim() || familyNameInput.trim() === familyDetails.name}>
+                        {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-5 w-5" />}
                       </Button>
-                    )}
-                  </div>
-                )}
-                <CardDescription>Gerencie os membros e as configurações da sua aliança.</CardDescription>
+                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}>
+                        <X className="h-5 w-5" />
+                      </Button>
+                    </form>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-3xl font-headline">Aliança: {familyDetails.name}</CardTitle>
+                      {isOwner && (
+                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
+                          <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                  <CardDescription>Gerencie os membros e as configurações da sua aliança.</CardDescription>
+                </div>
               </div>
+              <Button variant="outline" onClick={() => setCurrentContext('my-space')} className="w-full sm:w-auto flex-shrink-0">
+                <Home className="mr-2 h-4 w-4" />
+                Mudar para Meu Espaço
+              </Button>
             </div>
           </CardHeader>
         </Card>
