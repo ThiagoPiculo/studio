@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -77,7 +76,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
-                <UserNav />
+                {/* UserNav was moved to the main header in DashboardLayout */}
             </SidebarFooter>
         </Sidebar>
     );

@@ -19,7 +19,7 @@ import {
   deleteField,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification } from '@/lib/types';
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
 
@@ -1132,4 +1132,34 @@ export const toggleUserFeatureVote = async (userId: string, featureId: string): 
       }
     }
   });
+};
+
+// --- Notifications ---
+export const addNotification = async (notificationData: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<void> => {
+    const newNotificationRef = doc(collection(db, 'notifications'));
+    const newNotification: Omit<Notification, 'id'> = {
+        ...notificationData,
+        isRead: false,
+        createdAt: serverTimestamp() as Timestamp,
+    };
+    await setDoc(newNotificationRef, newNotification);
+};
+
+export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
+    const q = query(
+        collection(db, 'notifications'),
+        where('userId', '==', userId),
+        orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as Notification);
+};
+
+export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
+    const batch = writeBatch(db);
+    notificationIds.forEach(id => {
+        const notifRef = doc(db, 'notifications', id);
+        batch.update(notifRef, { isRead: true });
+    });
+    await batch.commit();
 };

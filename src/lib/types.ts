@@ -276,3 +276,15 @@ export type AuthContextType = {
 };
 
 export type IconType = LucideIconType;
+
+export interface Notification {
+  id: string; // doc ID
+  userId: string; // who this notification is for
+  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed';
+  title: string;
+  description: string;
+  href: string; // link to the relevant page
+  isRead: boolean;
+  createdAt: Timestamp;
+  relatedChildId?: string; // Optional, if it's about a specific child
+}

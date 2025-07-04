@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, UserCircle, Rocket, Settings, ChevronsUpDown } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 
@@ -39,23 +39,19 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-sidebar-ring group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-            <div className="flex items-center gap-2 truncate group-data-[collapsible=icon]:gap-0">
-              <Avatar
-                className="h-8 w-8"
-                style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
+        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar
+              className="h-8 w-8"
+              style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
+            >
+              {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
+              <AvatarFallback
+                className="font-bold text-xs"
+                style={avatarColor ? { backgroundColor: avatarColor } : {}}
               >
-                {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
-                <AvatarFallback
-                  className="font-bold text-xs"
-                  style={avatarColor ? { backgroundColor: avatarColor } : {}}
-                >
-                  {getInitials(displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <span className="truncate text-sm font-semibold leading-tight group-data-[collapsible=icon]:hidden">{displayName || (isChildAuthenticated ? "Herói" : "Admin")}</span>
-            </div>
-            <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 group-data-[collapsible=icon]:hidden" />
+                {getInitials(displayName)}
+              </AvatarFallback>
+            </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
