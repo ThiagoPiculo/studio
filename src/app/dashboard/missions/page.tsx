@@ -114,12 +114,13 @@ export default function MissionsHubPage() {
     return missionCategories.find(cat => cat.id === categoryId);
   };
   
-  const currentContextName = useMemo(() => {
-    if (currentContext === 'my-space') return "Seu Espaço Pessoal";
-    return availableContexts.find(f => f.id === currentContext)?.name || `Família ${currentContext}`;
+  const currentContextText = useMemo(() => {
+    if (currentContext === 'my-space') return "o seu Espaço Pessoal";
+    const family = availableContexts.find(f => f.id === currentContext);
+    return family ? `a Aliança ${family.name}` : "o contexto atual";
   }, [availableContexts, currentContext]);
 
-  const templatesDescription = `Catálogo de missões em ${currentContextName}. Crie e gerencie missões para atribuir aos seus Mini Herois.`;
+  const templatesDescription = `Catálogo de missões em ${currentContextText}. Crie e gerencie missões para atribuir aos seus Mini Herois.`;
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -229,7 +230,7 @@ export default function MissionsHubPage() {
       <Card>
         <CardHeader>
           <CardTitle>Missões do Catálogo</CardTitle>
-          <CardDescription>Abaixo estão as missões que você já criou para o contexto atual.</CardDescription>
+          <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
         </CardHeader>
         <CardContent>
           {isLoading ? (
