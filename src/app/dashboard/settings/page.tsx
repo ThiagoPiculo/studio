@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -157,7 +156,7 @@ export default function SettingsPage() {
                 <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
                     <Label htmlFor="initial-page-select" className="flex flex-col gap-1 pr-4">
                         <span className="font-semibold">Tela inicial após login</span>
                         <span className="font-normal text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</span>
@@ -179,7 +178,7 @@ export default function SettingsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
                     <Label htmlFor="confirm-join" className="flex flex-col gap-1 pr-4">
                         <span className="font-semibold">Confirmar entrada em aliança?</span>
                         <span className="font-normal text-xs text-muted-foreground">Exige sua aprovação quando outro responsável entra na sua aliança por código.</span>
@@ -191,7 +190,7 @@ export default function SettingsPage() {
                         disabled={true} // Funcionalidade futura
                     />
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50">
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
                     <Label htmlFor="child-redeem" className="flex flex-col gap-1 pr-4">
                         <span className="font-semibold">Autorizar resgate de recompensa pela criança</span>
                         <span className="font-normal text-xs text-muted-foreground">Permite que a criança resgate recompensas diretamente. Se desativado, o resgate precisará da sua aprovação.</span>
