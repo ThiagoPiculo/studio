@@ -15,7 +15,7 @@ import { Switch } from "@/components/ui/switch"
 import type { RecurrenceRule } from "@/lib/types"
 import { weekdayLabels } from "@/lib/types";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RecurrenceDialog } from './RecurrenceDialog';
 import { Timestamp } from "firebase/firestore"
 import { formatRecurrenceSummary } from "@/lib/calendar-utils";
@@ -28,11 +28,23 @@ interface DateTimePickerProps {
 
 const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
   const [isOpen, setIsOpen] = React.useState(false);
-  const [tempDate, setTempDate] = React.useState<Date | undefined>(value && isValid(value) ? value : undefined);
+  const [tempDate, setTempDate] = React.useState<Date | undefined>(undefined);
 
+  // When popover opens, sync tempDate with the external value, snapping minutes
   React.useEffect(() => {
     if (isOpen) {
-      setTempDate(value && isValid(value) ? value : undefined);
+      let initialDate: Date | undefined = undefined;
+      if (value && isValid(value)) {
+        const minutes = value.getMinutes();
+        const roundedMinutes = Math.round(minutes / 15) * 15;
+        if (roundedMinutes === 60) {
+            // Handle rounding up to the next hour
+            initialDate = setHours(setMinutes(value, 0), value.getHours() + 1);
+        } else {
+            initialDate = setMinutes(value, roundedMinutes);
+        }
+      }
+      setTempDate(initialDate);
     }
   }, [isOpen, value]);
 
@@ -46,7 +58,7 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
       setTempDate(undefined);
       return;
     }
-    const currentHours = tempDate ? tempDate.getHours() : 9;
+    const currentHours = tempDate ? tempDate.getHours() : 9; // Default to 9 AM
     const currentMinutes = tempDate ? tempDate.getMinutes() : 0;
     let newDate = setHours(selectedDate, currentHours);
     newDate = setMinutes(newDate, currentMinutes);
@@ -54,14 +66,21 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
     setTempDate(newDate);
   };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const time = e.target.value;
-    const [hours, minutes] = time.split(':').map(Number);
-    if (!isNaN(hours) && !isNaN(minutes)) {
-      const baseDate = tempDate || new Date();
-      let newDate = setHours(baseDate, hours);
-      newDate = setMinutes(newDate, minutes);
-      setTempDate(newDate);
+  const handleHourChange = (hour: string) => {
+    const newHour = parseInt(hour, 10);
+    if (!isNaN(newHour)) {
+        const baseDate = tempDate || new Date(); // If no date, use now
+        const newDate = setHours(baseDate, newHour);
+        setTempDate(newDate);
+    }
+  };
+
+  const handleMinuteChange = (minute: string) => {
+    const newMinute = parseInt(minute, 10);
+    if (!isNaN(newMinute)) {
+        const baseDate = tempDate || new Date(); // If no date, use now
+        const newDate = setMinutes(baseDate, newMinute);
+        setTempDate(newDate);
     }
   };
 
@@ -91,14 +110,37 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
         <div className="flex items-center justify-between p-3 border-t border-border">
           <div className="flex items-center gap-2">
             <Clock className="h-4 w-4 text-muted-foreground" />
-            <Label htmlFor="time-input">Horário</Label>
-            <Input
-              id="time-input"
-              type="time"
-              value={tempDate ? format(tempDate, "HH:mm") : ""}
-              onChange={handleTimeChange}
-              className="w-auto"
-            />
+            <Label>Horário</Label>
+            <div className="flex items-center gap-1">
+              <Select
+                value={tempDate ? format(tempDate, "HH") : undefined}
+                onValueChange={handleHourChange}
+              >
+                <SelectTrigger className="w-[70px] h-8">
+                  <SelectValue placeholder="Hora" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 24 }).map((_, i) => {
+                    const hour = i.toString().padStart(2, '0');
+                    return <SelectItem key={hour} value={hour}>{hour}</SelectItem>
+                  })}
+                </SelectContent>
+              </Select>
+              <span>:</span>
+              <Select
+                value={tempDate ? format(tempDate, "mm") : undefined}
+                onValueChange={handleMinuteChange}
+              >
+                <SelectTrigger className="w-[70px] h-8">
+                  <SelectValue placeholder="Min" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['00', '15', '30', '45'].map(minute => (
+                    <SelectItem key={minute} value={minute}>{minute}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <Button size="sm" onClick={handleConfirm}>OK</Button>
         </div>
