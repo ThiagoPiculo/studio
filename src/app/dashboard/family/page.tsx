@@ -229,9 +229,15 @@ function FamilyPageContent() {
       if (error.message === "Este usuário já é um membro da aliança.") {
         toast({
           title: "Membro já na equipe!",
-          description: `O usuário com o e-mail ${inviteEmail.trim()} já faz parte desta aliança. Não é necessário enviar um novo convite.`,
+          description: `O usuário com o e-mail ${inviteEmail.trim()} já faz parte desta aliança.`,
           variant: "default",
         });
+      } else if (error.message === "Nenhum usuário encontrado com este e-mail.") {
+          toast({
+              title: "Herói Ainda Não Cadastrado",
+              description: "Peça para a pessoa criar uma conta primeiro. Depois, você poderá adicioná-la à sua aliança!",
+              variant: "default",
+          });
       } else {
         console.error("Error sending invitation:", error);
         toast({ title: "Erro ao Convidar", description: error.message, variant: "destructive" });
@@ -500,7 +506,7 @@ function FamilyPageContent() {
           <Card>
              <CardHeader>
               <CardTitle>Convidar para a Aliança</CardTitle>
-              <CardDescription>Adicione outros responsáveis para gerenciar os Mini Heróis juntos.</CardDescription>
+              <CardDescription>Adicione outros responsáveis para gerenciar os Mini Herois juntos.</CardDescription>
             </CardHeader>
             <CardContent>
                 <form onSubmit={handleSendInvitation} className="space-y-4">
