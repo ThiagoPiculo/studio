@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, Fragment } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
@@ -34,9 +34,7 @@ const pathTranslations: { [key: string]: string } = {
   tasks: 'Tarefas',
 };
 
-// Segments that should appear as text but not be clickable links
 const nonClickableStaticSegments = ['edit', 'manage', 'new', 'edit-template'];
-// Segments that are purely for folder structure and should be ignored completely
 const structuralSegmentsToSkip = ['child'];
 
 const titleCase = (str: string) => {
@@ -53,18 +51,43 @@ export function Breadcrumbs() {
     const generateBreadcrumbs = async () => {
       const pathSegments = pathname.split('/').filter(Boolean);
 
-      if (pathSegments.length === 0) {
-        setBreadcrumbs([]);
+      let initialCrumbs: Breadcrumb[] = [];
+
+      // 1. Determine the root breadcrumb based on context
+      if (isFamilyLoading) {
+        initialCrumbs.push({ label: '...', href: '#', isLoading: true });
+      } else {
+        const contextData = availableContexts.find(c => c.id === currentContext);
+        if (contextData) {
+          if (contextData.id === 'my-space') {
+            initialCrumbs.push({ label: 'Meu Espaço', href: '/dashboard', isLoading: false });
+          } else {
+            initialCrumbs.push({ label: `Aliança: ${contextData.name}`, href: '/dashboard/family', isLoading: false });
+          }
+        } else {
+          initialCrumbs.push({ label: '...', href: '#', isLoading: true });
+        }
+      }
+
+      // If we are at a root page, we're done.
+      if (pathname === '/dashboard' || (pathname === '/dashboard/family' && currentContext !== 'my-space')) {
+        setBreadcrumbs(initialCrumbs);
         return;
       }
       
-      const promises = pathSegments.slice(1).map(async (segment, index) => {
+      // 2. Build the rest of the breadcrumbs
+      const remainingSegments = pathSegments.slice(1);
+      const promises = remainingSegments.map(async (segment, index) => {
         if (structuralSegmentsToSkip.includes(segment)) return null;
+
+        if (segment === 'family' && currentContext !== 'my-space') {
+          return null;
+        }
 
         const currentCrumbPath = `/${pathSegments.slice(0, index + 2).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
         const crumb: Breadcrumb = { label, href: currentCrumbPath, isLoading: false };
-
+        
         if (params.childId && segment === params.childId) {
           crumb.isLoading = true;
           const child = await getChildProfileById(segment);
@@ -90,45 +113,9 @@ export function Breadcrumbs() {
 
         return crumb;
       });
-
-      // Set initial loading state
-      const loadingCrumbs = pathSegments.slice(1)
-          .filter(seg => !structuralSegmentsToSkip.includes(seg))
-          .map((seg, index) => ({ label: '...', href: `/#${index}`, isLoading: true }));
-
-      setBreadcrumbs([{ label: 'Painel', href: '/dashboard' }, ...loadingCrumbs]);
       
       const resolvedCrumbs = (await Promise.all(promises)).filter(Boolean) as Breadcrumb[];
-      
-      const finalCrumbs: Breadcrumb[] = [{ label: 'Painel', href: '/dashboard' }];
-
-      const currentContextObject = availableContexts.find(c => c.id === currentContext);
-
-      // Handle all pages except the dashboard root
-      if (pathname !== '/dashboard') {
-        const isFamilyPage = pathname === '/dashboard/family';
-        
-        if (isFamilyLoading) {
-          finalCrumbs.push({ label: '...', href: '/dashboard/family', isLoading: true });
-        } else if (currentContextObject) {
-          const contextLabel = currentContext === 'my-space' 
-            ? 'Meu Espaço' 
-            : `Aliança: ${currentContextObject.name}`;
-          
-          finalCrumbs.push({
-            label: contextLabel,
-            href: '/dashboard/family',
-            isLoading: false
-          });
-        }
-        
-        // Add the rest of the breadcrumbs only if we are not on the family page itself
-        if (!isFamilyPage) {
-          finalCrumbs.push(...resolvedCrumbs);
-        }
-      }
-
-      setBreadcrumbs(finalCrumbs);
+      setBreadcrumbs([...initialCrumbs, ...resolvedCrumbs]);
     };
 
     generateBreadcrumbs();
