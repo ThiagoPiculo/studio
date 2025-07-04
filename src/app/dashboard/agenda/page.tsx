@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameMonth, isSameDay } from 'date-fns';
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target } from 'lucide-react';
 
@@ -785,7 +785,7 @@ function AgendaPageContent() {
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <Button variant="outline" onClick={handleShowTodayMissions}>
+                        <Button variant="outline" className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
                             <Target className="mr-2 h-4 w-4" /> Missões de Hoje
                         </Button>
                         <Button onClick={() => setIsSelectMissionDialogOpen(true)}>
