@@ -33,12 +33,6 @@ export default function WelcomePage() {
           Uma plataforma de gamificação que fortalece laços familiares através do reforço positivo e diversão.
         </p>
         
-        <div className="relative w-full max-w-4xl mb-16 h-0">
-            <CornerIcon icon={Star} className="top-0 left-0 -translate-x-1/3 -translate-y-1/3 rotate-[-15deg]" />
-            <CornerIcon icon={Award} className="top-0 right-0 translate-x-1/3 -translate-y-1/3 rotate-[15deg]" />
-            <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
-        </div>
-
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-24">
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                 <CardHeader className="p-0 items-center mb-4">
@@ -72,6 +66,12 @@ export default function WelcomePage() {
                     </Button>
                 </Link>
             </Card>
+        </div>
+
+        <div className="relative w-full max-w-4xl mb-16 h-0">
+            <CornerIcon icon={Star} className="top-0 left-0 -translate-x-1/3 -translate-y-1/3 rotate-[-15deg]" />
+            <CornerIcon icon={Award} className="top-0 right-0 translate-x-1/3 -translate-y-1/3 rotate-[15deg]" />
+            <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
         </div>
       </main>
 
