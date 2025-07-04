@@ -183,19 +183,90 @@ export default function EditRewardTemplatePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <FormField
-                control={form.control}
-                name="title"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Título da Recompensa</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Ex: Uma tarde de jogos de tabuleiro" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Título da Recompensa</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: Uma tarde de jogos" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="category"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Categoria</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma categoria..." />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {rewardCategories.map((category) => (
+                            <SelectItem key={category.id} value={category.id}>
+                               <div className="flex items-center">
+                                 {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
+                                <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                                  {category.label}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="starsCost"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Custo em Estrelas</FormLabel>
+                      <FormControl>
+                        <Input type="number" placeholder="Ex: 50" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Quantas estrelas o Mini Heroi precisa.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isMaterial"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30 h-full">
+                      <div className="space-y-0.5">
+                        <FormLabel>Item material?</FormLabel>
+                        <FormDescription>
+                          É um objeto físico?
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                          disabled={form.getValues('category') === 'material_items'}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -215,74 +286,6 @@ export default function EditRewardTemplatePage() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="category"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Categoria</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione uma categoria..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {rewardCategories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                             <div className="flex items-center">
-                               {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
-                              <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
-                                {category.label}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                control={form.control}
-                name="isMaterial"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30">
-                    <div className="space-y-0.5">
-                      <FormLabel>Recompensa é um item material?</FormLabel>
-                      <FormDescription>
-                        Marque se a recompensa é um objeto físico.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={form.getValues('category') === 'material_items'}
-                      />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="starsCost"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Custo em Estrelas</FormLabel>
-                    <FormControl>
-                      <Input type="number" placeholder="Ex: 50" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Quantas estrelas o Mini Heroi precisa para resgatar.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               <FormField
                 control={form.control}
                 name="status"
