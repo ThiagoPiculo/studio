@@ -860,7 +860,7 @@ export default function ManageChildPage() {
                       const completedDate = activity.completedAt.toDate();
                       return (
                         <Fragment key={activity.id + completedDate.getTime()}>
-                          <li className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                          <li className="flex items-start gap-4">
                             {activity.type === 'mission' ? (
                                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
                                 <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -870,7 +870,7 @@ export default function ManageChildPage() {
                                 <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                               </div>
                             )}
-                            <div className="flex-grow">
+                            <div className="grid gap-1 flex-grow">
                               <p className="font-semibold">{activity.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 {activity.type === 'mission' ?
@@ -878,10 +878,9 @@ export default function ManageChildPage() {
                                     : `Custo: ${activity.starsCost} Estrelas`
                                 }
                               </p>
-                            </div>
-                            <div className="w-full sm:w-auto text-left sm:text-right flex-shrink-0">
-                                <p className="text-sm font-semibold">{format(completedDate, "HH:mm 'de' dd/MM/yyyy")}</p>
-                                <p className="text-xs text-muted-foreground capitalize">{formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true })}</p>
+                              <p className="text-xs text-muted-foreground capitalize">
+                                {formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true })}
+                              </p>
                             </div>
                           </li>
                           {index < activities.length - 1 && <Separator />}
