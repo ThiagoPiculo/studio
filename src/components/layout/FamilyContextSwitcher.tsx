@@ -11,16 +11,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
 import { Home, Shield, ChevronsUpDown, Loader2 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading } = useFamily();
   const { user } = useAuth();
-  const router = useRouter();
 
   const handleContextChange = (value: string) => {
     setCurrentContext(value);
-    router.push('/dashboard');
   };
   
   const currentContextData = availableContexts.find(c => c.id === currentContext);
