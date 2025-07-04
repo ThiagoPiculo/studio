@@ -25,7 +25,7 @@ import {
 import { ptBR } from 'date-fns/locale';
 
 const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 };
-const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
+export const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
 
 // Helper to safely get a JS Date object from various possible inputs
 const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | null => {

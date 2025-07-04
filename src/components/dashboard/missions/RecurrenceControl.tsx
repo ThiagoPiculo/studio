@@ -3,7 +3,7 @@
 
 import * as React from "react"
 import { useFormContext } from "react-hook-form"
-import { format, setHours, setMinutes, setSeconds, parse, isValid } from "date-fns"
+import { format, setHours, setMinutes, setSeconds, parse, isValid, getDay } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { Calendar as CalendarIcon, Clock, Settings2, Sun, CloudSun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -13,12 +13,10 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import type { RecurrenceRule } from "@/lib/types"
-import { weekdayLabels } from "@/lib/types";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RecurrenceDialog } from './RecurrenceDialog';
-import { Timestamp } from "firebase/firestore"
-import { formatRecurrenceSummary } from "@/lib/calendar-utils";
+import { formatRecurrenceSummary, getDayToWeekday } from "@/lib/calendar-utils";
 
 interface DateTimePickerProps {
   value: Date | null | undefined;
@@ -156,8 +154,39 @@ const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label 
 export function RecurrenceControl() {
   const { control, watch, setValue } = useFormContext();
   const isRecurring = watch('isRecurring');
-  const recurrenceRule = watch('recurrenceRule');
+  const recurrenceRule: RecurrenceRule | null = watch('recurrenceRule');
+  const startDate: Date | null = watch('startDate');
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  const setDaily = () => {
+    setValue('recurrenceRule', { freq: 'DAILY', interval: 1, byDay: undefined, endDate: null, count: null }, { shouldValidate: true });
+  };
+  
+  const setWeekly = () => {
+    if (!startDate) {
+        // Validation will catch this, so we just set a basic weekly rule.
+        // The user must select a start date for the form to be valid.
+        setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, byDay: undefined, endDate: null, count: null }, { shouldValidate: true });
+        return;
+    }
+    const dayOfWeek = getDayToWeekday[getDay(startDate)];
+    setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, byDay: [dayOfWeek], endDate: null, count: null }, { shouldValidate: true });
+  };
+  
+  let activeMode: 'daily' | 'weekly' | 'custom' | null = null;
+  if (recurrenceRule) {
+    if (recurrenceRule.freq === 'DAILY' && recurrenceRule.interval === 1 && !recurrenceRule.byDay && !recurrenceRule.endDate && !recurrenceRule.count) {
+      activeMode = 'daily';
+    } else if (
+      recurrenceRule.freq === 'WEEKLY' &&
+      recurrenceRule.interval === 1 &&
+      (!recurrenceRule.endDate && !recurrenceRule.count)
+    ) {
+      activeMode = 'weekly';
+    } else {
+      activeMode = 'custom';
+    }
+  }
 
   return (
     <div className="space-y-6 rounded-lg border p-4">
@@ -182,9 +211,7 @@ export function RecurrenceControl() {
                     setValue('startDate', null, { shouldValidate: true });
                   } else {
                     setValue('dueDate', null, { shouldValidate: true });
-                    if (!recurrenceRule) {
-                      setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1 }, { shouldValidate: true });
-                    }
+                    setDaily(); // Default to daily when turned on
                   }
                 }}
               />
@@ -216,10 +243,18 @@ export function RecurrenceControl() {
         />
           <div className="space-y-2">
             <Label>Regra de Repetição</Label>
-            <Button variant="outline" type="button" className="w-full justify-between" onClick={() => setIsDialogOpen(true)}>
-              <span className="truncate pr-2">{formatRecurrenceSummary({ isRecurring, recurrenceRule })}</span>
-              <Settings2 className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            </Button>
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button type="button" variant={activeMode === 'daily' ? "secondary" : "outline"} onClick={setDaily}>Diário</Button>
+                <Button type="button" variant={activeMode === 'weekly' ? "secondary" : "outline"} onClick={setWeekly} disabled={!startDate}>Semanal</Button>
+                <Button type="button" variant={activeMode === 'custom' ? "secondary" : "outline"} onClick={() => setIsDialogOpen(true)}>
+                    Personalizar...
+                </Button>
+            </div>
+            {activeMode === 'custom' && (
+                 <p className="text-xs text-muted-foreground text-center pt-1">
+                    Regra atual: {formatRecurrenceSummary({ isRecurring, recurrenceRule })}
+                </p>
+            )}
             <RecurrenceDialog 
                 isOpen={isDialogOpen}
                 onOpenChange={setIsDialogOpen}
