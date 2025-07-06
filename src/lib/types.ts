@@ -62,11 +62,12 @@ export interface FamilyInvitation {
   id: string; // Document ID
   familyId: string;
   familyName: string;
-  inviterId: string;
-  inviterName: string;
-  inviteeId: string;
+  inviterId: string; // For 'invite': who is inviting. For 'request': who is approving (owner).
+  inviterName: string; // For 'invite': inviter's name. For 'request': requester's name.
+  inviteeId: string; // For 'invite': who is being invited. For 'request': who is requesting.
   inviteeEmail: string;
   status: 'pending' | 'accepted' | 'declined';
+  type: 'invite' | 'request';
   createdAt: Timestamp;
 }
 

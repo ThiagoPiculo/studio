@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -29,9 +30,12 @@ import {
   assignChildrenToFamily,
   removeChildFromFamily,
   updateFamilyName,
+  getPendingJoinRequestsForFamily,
+  approveJoinRequest,
+  declineJoinRequest,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -68,6 +72,11 @@ function FamilyPageContent() {
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
   const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null);
+  
+  const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
+  const [isLoadingJoinRequests, setIsLoadingJoinRequests] = useState(false);
+  const [isProcessingJoinRequest, setIsProcessingJoinRequest] = useState<string | null>(null);
+
 
   const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
   const [isRemovingMember, setIsRemovingMember] = useState(false);
@@ -96,6 +105,28 @@ function FamilyPageContent() {
     }
   }, [familyDetails]);
 
+  const fetchFamilyData = async (familyId: string) => {
+    try {
+      const [details, members, children, requests] = await Promise.all([
+        getFamilyById(familyId),
+        getFamilyMembers(familyId),
+        getChildProfilesByFamily(familyId),
+        user?.uid === (await getFamilyById(familyId))?.ownerId ? getPendingJoinRequestsForFamily(familyId) : Promise.resolve([]),
+      ]);
+      setFamilyDetails(details);
+      setFamilyMembers(members);
+      setChildrenInFamily(children);
+      setJoinRequests(requests);
+    } catch (error) {
+      console.error("Error fetching family data:", error);
+      toast({ title: "Erro ao Carregar Aliança", description: "Não foi possível buscar os dados da aliança. Voltando para seu espaço pessoal.", variant: "destructive" });
+      setCurrentContext('my-space');
+    } finally {
+      setIsLoading(false);
+      setIsLoadingJoinRequests(false);
+    }
+  };
+
   useEffect(() => {
     if (!user || !isClient) return;
 
@@ -104,38 +135,22 @@ function FamilyPageContent() {
       setFamilyDetails(null);
       setFamilyMembers([]);
       setChildrenInFamily([]);
+      setJoinRequests([]);
       
       setIsLoadingInvitations(true);
       getPendingInvitationsForUser(user.uid)
         .then(invites => setInvitations(invites))
         .catch(error => {
           console.error("Error fetching invitations:", error);
-          toast({ title: "Erro ao buscar convites", description: "Não foi possível carregar convites pendentes.", variant: "destructive" });
+          toast({ title: "Erro ao buscar convites", variant: "destructive" });
         })
         .finally(() => setIsLoadingInvitations(false));
         
     } else {
       setIsLoading(true);
+      setIsLoadingJoinRequests(true);
       setInvitations([]);
-      const fetchFamilyData = async () => {
-        try {
-          const [details, members, children] = await Promise.all([
-            getFamilyById(currentContext),
-            getFamilyMembers(currentContext),
-            getChildProfilesByFamily(currentContext)
-          ]);
-          setFamilyDetails(details);
-          setFamilyMembers(members);
-          setChildrenInFamily(children);
-        } catch (error) {
-          console.error("Error fetching family data:", error);
-          toast({ title: "Erro ao Carregar Aliança", description: "Não foi possível buscar os dados da aliança. Voltando para seu espaço pessoal.", variant: "destructive" });
-          setCurrentContext('my-space');
-        } finally {
-          setIsLoading(false);
-        }
-      };
-      fetchFamilyData();
+      fetchFamilyData(currentContext);
     }
   }, [currentContext, user, toast, setCurrentContext, isClient]);
 
@@ -191,24 +206,26 @@ function FamilyPageContent() {
     }
     setIsProcessing(true);
     try {
-      const membership = await joinFamilyByInviteCode(user.uid, inviteCode.trim());
-      if (membership) {
-        const family = await getFamilyById(membership.familyId);
-        if(family) {
-            const newContext = { id: family.id, name: family.name };
-            if(!availableContexts.find(c => c.id === newContext.id)){
-              setAvailableContexts([...availableContexts, newContext]);
-            }
-            setCurrentContext(family.id);
-            toast({ title: "Bem-vindo(a) à Equipe!", description: `Agora você faz parte da Aliança ${family.name}!` });
-            router.push('/dashboard/family');
+      await joinFamilyByInviteCode(user.uid, inviteCode.trim());
+      const familyQuery = query(collection(db, 'families'), where('inviteCode', '==', inviteCode.trim()));
+      const familySnapshot = await getDocs(familyQuery);
+      if (!familySnapshot.empty) {
+        const family = { id: familySnapshot.docs[0].id, ...familySnapshot.docs[0].data() } as Family;
+        const newContext = { id: family.id, name: family.name };
+        if (!availableContexts.find(c => c.id === newContext.id)) {
+            setAvailableContexts([...availableContexts, newContext]);
         }
-      } else {
-          toast({ title: "Código Inválido ou Inexistente", description: "Verifique o código e tente novamente.", variant: "destructive" });
+        setCurrentContext(family.id);
+        toast({ title: "Bem-vindo(a) à Equipe!", description: `Agora você faz parte da Aliança ${family.name}!` });
+        router.push('/dashboard/family');
       }
-    } catch (error) {
-      console.error("Error joining family:", error);
-      toast({ title: "Ops! Algo deu errado...", description: "Não conseguimos te adicionar à aliança. Verifique o código e tente de novo.", variant: "destructive" });
+    } catch (error: any) {
+      if (error.message === "APPROVAL_PENDING") {
+        toast({ title: "Pedido Enviado!", description: "Um pedido para entrar na aliança foi enviado ao proprietário para aprovação." });
+      } else {
+        console.error("Error joining family:", error);
+        toast({ title: "Ops! Algo deu errado...", description: "Não conseguimos te adicionar à aliança. Verifique o código e tente de novo.", variant: "destructive" });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -277,6 +294,37 @@ function FamilyPageContent() {
       toast({ title: "Erro ao Recusar Convite", description: error.message, variant: "destructive" });
     } finally {
       setIsProcessingInvitationAction(null);
+    }
+  };
+
+  const handleApproveRequest = async (requestId: string) => {
+    if (!user) return;
+    setIsProcessingJoinRequest(requestId);
+    try {
+      await approveJoinRequest(requestId, user.uid);
+      setJoinRequests(prev => prev.filter(req => req.id !== requestId));
+      fetchFamilyData(currentContext); // Refresh family members
+      toast({ title: "Membro Aprovado!", description: "O novo colaborador foi adicionado à sua aliança." });
+    } catch (error: any) {
+       console.error("Error approving request:", error);
+       toast({ title: "Erro ao Aprovar", description: error.message, variant: "destructive" });
+    } finally {
+       setIsProcessingJoinRequest(null);
+    }
+  };
+
+  const handleDeclineRequest = async (requestId: string) => {
+    if (!user) return;
+    setIsProcessingJoinRequest(requestId);
+    try {
+      await declineJoinRequest(requestId, user.uid);
+      setJoinRequests(prev => prev.filter(req => req.id !== requestId));
+      toast({ title: "Pedido Recusado." });
+    } catch (error: any) {
+       console.error("Error declining request:", error);
+       toast({ title: "Erro ao Recusar", description: error.message, variant: "destructive" });
+    } finally {
+       setIsProcessingJoinRequest(null);
     }
   };
 
@@ -474,6 +522,48 @@ function FamilyPageContent() {
             </div>
           </CardHeader>
         </Card>
+        
+        {isOwner && (isLoadingJoinRequests ? (
+          <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando pedidos...</CardContent></Card>
+        ) : joinRequests.length > 0 && (
+          <Card className="border-accent bg-accent/5">
+            <CardHeader>
+              <CardTitle>Pedidos para Entrar na Aliança</CardTitle>
+              <CardDescription>Os usuários abaixo usaram o código de convite e aguardam sua aprovação.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {joinRequests.map(req => (
+                <div key={req.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                  <div>
+                    <p className="font-semibold">{req.inviterName}</p>
+                    <p className="text-sm text-muted-foreground">{req.inviteeEmail}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      onClick={() => handleDeclineRequest(req.id)}
+                      disabled={isProcessingJoinRequest === req.id}
+                    >
+                      {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
+                      Recusar
+                    </Button>
+                    <Button 
+                      size="sm"
+                      className="bg-green-600 hover:bg-green-700"
+                      onClick={() => handleApproveRequest(req.id)}
+                      disabled={isProcessingJoinRequest === req.id}
+                    >
+                      {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-1 h-4 w-4" />}
+                      Aprovar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        ))}
 
         <div className="grid md:grid-cols-2 gap-6">
           <Card>

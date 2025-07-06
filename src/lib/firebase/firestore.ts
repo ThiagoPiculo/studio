@@ -325,6 +325,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     inviteeId: invitee.uid,
     inviteeEmail: invitee.email!,
     status: 'pending',
+    type: 'invite',
     createdAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newInvitationRef, newInvitation);
@@ -344,11 +345,55 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   const familySnapshot = await getDocs(familyQuery);
 
   if (familySnapshot.empty) {
-    console.error('Invalid invite code');
-    return null;
+    throw new Error("Código de convite inválido.");
   }
   const familyDoc = familySnapshot.docs[0];
   const family = { id: familyDoc.id, ...familyDoc.data() } as Family;
+
+  const ownerProfile = await getUserProfile(family.ownerId);
+  if (ownerProfile?.settings?.confirmJoinAlliance) {
+    const joiningUserProfile = await getUserProfile(userId);
+    if (!joiningUserProfile) {
+      throw new Error("Perfil do usuário que está tentando entrar não foi encontrado.");
+    }
+    
+    const existingRequestQuery = query(collection(db, 'familyInvitations'),
+      where('familyId', '==', family.id),
+      where('inviteeId', '==', userId),
+      where('type', '==', 'request'),
+      where('status', '==', 'pending')
+    );
+    const existingRequestSnapshot = await getDocs(existingRequestQuery);
+    if (!existingRequestSnapshot.empty) {
+        throw new Error("APPROVAL_PENDING");
+    }
+
+    const newRequestRef = doc(collection(db, 'familyInvitations'));
+    const newRequest: FamilyInvitation = {
+      id: newRequestRef.id,
+      familyId: family.id,
+      familyName: family.name,
+      inviterId: family.ownerId, 
+      inviterName: joiningUserProfile.name || 'Usuário sem nome', 
+      inviteeId: userId, 
+      inviteeEmail: joiningUserProfile.email || '',
+      status: 'pending',
+      type: 'request',
+      createdAt: serverTimestamp() as Timestamp,
+    };
+    await setDoc(newRequestRef, newRequest);
+
+    await addNotification({
+      userId: family.ownerId,
+      type: 'alliance_join_request',
+      title: 'Pedido para entrar na Aliança',
+      description: `${joiningUserProfile.name || 'Um usuário'} deseja entrar na sua aliança "${family.name}".`,
+      href: '/dashboard/family',
+    });
+
+    throw new Error("APPROVAL_PENDING");
+  }
+
 
   const existingMembershipQuery = query(collection(db, 'familyMemberships'),
     where('familyId', '==', family.id),
@@ -508,6 +553,7 @@ export const getPendingInvitationsForUser = async (userId: string): Promise<Fami
     collection(db, 'familyInvitations'),
     where('inviteeId', '==', userId),
     where('status', '==', 'pending'),
+    where('type', '==', 'invite'),
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(q);
@@ -579,6 +625,77 @@ export const declineFamilyInvitation = async (invitationId: string): Promise<voi
     throw new Error("Convite inválido ou já processado.");
   }
   await updateDoc(invitationRef, { status: 'declined' });
+};
+
+export const getPendingJoinRequestsForFamily = async (familyId: string): Promise<FamilyInvitation[]> => {
+    const q = query(collection(db, 'familyInvitations'),
+        where('familyId', '==', familyId),
+        where('type', '==', 'request'),
+        where('status', '==', 'pending')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+};
+
+
+export const approveJoinRequest = async (invitationId: string, approverId: string): Promise<void> => {
+  const invitationRef = doc(db, 'familyInvitations', invitationId);
+  const familyId = (await getDoc(invitationRef)).data()?.familyId;
+  const userId = (await getDoc(invitationRef)).data()?.inviteeId;
+
+  await runTransaction(db, async (transaction) => {
+    const invitationSnap = await transaction.get(invitationRef);
+    if (!invitationSnap.exists() || invitationSnap.data().type !== 'request' || invitationSnap.data().status !== 'pending') {
+      throw new Error("Pedido de entrada inválido ou já processado.");
+    }
+    const invitation = invitationSnap.data() as FamilyInvitation;
+    if (invitation.inviterId !== approverId) {
+      throw new Error("Apenas o proprietário da aliança pode aprovar pedidos.");
+    }
+
+    // Add membership
+    const newMembershipRef = doc(collection(db, 'familyMemberships'));
+    const newMembership: FamilyMembership = {
+      id: newMembershipRef.id,
+      familyId: familyId,
+      userId: userId,
+      role: 'Collaborator',
+      joinedAt: serverTimestamp() as Timestamp,
+    };
+    transaction.set(newMembershipRef, newMembership);
+
+    // Update children's familyId
+    const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
+    const childrenSnapshot = await getDocs(childrenQuery);
+    childrenSnapshot.forEach(childDoc => {
+      transaction.update(childDoc.ref, { familyId: familyId, updatedAt: serverTimestamp() });
+    });
+    
+    // Update invitation status
+    transaction.update(invitationRef, { status: 'accepted' });
+  });
+
+  // Send notification to the newly added member
+  const updatedInvitation = (await getDoc(invitationRef)).data() as FamilyInvitation;
+  await addNotification({
+      userId: updatedInvitation.inviteeId,
+      type: 'alliance_join_approved',
+      title: 'Você entrou na Aliança!',
+      description: `Seu pedido para entrar na aliança "${updatedInvitation.familyName}" foi aprovado.`,
+      href: '/dashboard/family',
+  });
+};
+
+export const declineJoinRequest = async (invitationId: string, declinerId: string): Promise<void> => {
+    const invitationRef = doc(db, 'familyInvitations', invitationId);
+    const invitationSnap = await getDoc(invitationRef);
+    if (!invitationSnap.exists() || invitationSnap.data().type !== 'request' || invitationSnap.data().status !== 'pending') {
+      throw new Error("Pedido de entrada inválido ou já processado.");
+    }
+    if (invitationSnap.data().inviterId !== declinerId) {
+      throw new Error("Apenas o proprietário da aliança pode recusar pedidos.");
+    }
+    await updateDoc(invitationRef, { status: 'declined' });
 };
 
 
@@ -1350,5 +1467,3 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
-
-

@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -86,8 +87,16 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         const userProfile = await signUpAdmin(name, email, password);
         
         if (inviteCode) {
-          await joinFamilyByInviteCode(userProfile.uid, inviteCode);
-          toast({ title: "Boas-vindas à Equipe!", description: "Sua conta foi criada e você já se juntou à aventura em família." });
+          try {
+            await joinFamilyByInviteCode(userProfile.uid, inviteCode);
+            toast({ title: "Boas-vindas à Equipe!", description: "Sua conta foi criada e você já se juntou à aventura em família." });
+          } catch (e: any) {
+            if (e.message === 'APPROVAL_PENDING') {
+              toast({ title: "Pedido Enviado!", description: "Sua conta foi criada e um pedido para entrar na aliança foi enviado ao proprietário." });
+            } else {
+              toast({ title: "Erro ao entrar na Aliança", description: "Não foi possível entrar na aliança após o cadastro. Tente usar o código na página da Aliança.", variant: "destructive" });
+            }
+          }
         } else {
           toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
