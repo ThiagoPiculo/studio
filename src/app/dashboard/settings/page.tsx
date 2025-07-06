@@ -19,6 +19,7 @@ import { db } from '@/lib/firebase/config';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { NotificationType } from '@/lib/types';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 const notificationSettingsConfig: {
@@ -285,39 +286,51 @@ export default function SettingsPage() {
       </AlertDialog>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Blocks className="h-5 w-5 text-primary" /> Futuras Integrações</CardTitle>
-             <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {featureIdeas.map((feature) => {
-              const Icon = feature.icon;
-              const voteInfo = featureVotes[feature.id] || { count: 0, liked: false };
-              return (
-                 <div key={feature.id} className="p-4 border rounded-lg flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-semibold flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground" /> {feature.title}</h4>
-                      <p className="text-sm text-muted-foreground mt-1 mb-3">{feature.description}</p>
-                    </div>
-                    <Button
-                      variant={voteInfo.liked ? 'secondary' : 'outline'}
-                      size="sm"
-                      onClick={() => handleLikeFeature(feature.id)}
-                      disabled={isLoadingVotes}
-                      className="shadow-sm w-fit"
-                    >
-                      {isLoadingVotes ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <ThumbsUp className={cn("mr-2 h-4 w-4", voteInfo.liked && "fill-current text-primary")} />
-                      )}
-                      {voteInfo.count} {voteInfo.count === 1 ? 'Like' : 'Likes'}
-                    </Button>
-                </div>
-              );
-            })}
-          </CardContent>
+        <Card className="lg:col-span-2 p-0">
+            <Accordion type="single" collapsible className="w-full" defaultValue="integrations">
+                <AccordionItem value="integrations" className="border-b-0">
+                    <AccordionTrigger className="p-6 hover:no-underline">
+                        <div className="flex flex-col items-start text-left space-y-1.5">
+                            <h2 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2">
+                                <Blocks className="h-5 w-5 text-primary" /> Futuras Integrações
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!
+                            </p>
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent>
+                        <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {featureIdeas.map((feature) => {
+                                const Icon = feature.icon;
+                                const voteInfo = featureVotes[feature.id] || { count: 0, liked: false };
+                                return (
+                                    <div key={feature.id} className="p-4 border rounded-lg flex flex-col justify-between">
+                                        <div>
+                                            <h4 className="font-semibold flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground" /> {feature.title}</h4>
+                                            <p className="text-sm text-muted-foreground mt-1 mb-3">{feature.description}</p>
+                                        </div>
+                                        <Button
+                                            variant={voteInfo.liked ? 'secondary' : 'outline'}
+                                            size="sm"
+                                            onClick={() => handleLikeFeature(feature.id)}
+                                            disabled={isLoadingVotes}
+                                            className="shadow-sm w-fit"
+                                        >
+                                            {isLoadingVotes ? (
+                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            ) : (
+                                                <ThumbsUp className={cn("mr-2 h-4 w-4", voteInfo.liked && "fill-current text-primary")} />
+                                            )}
+                                            {voteInfo.count} {voteInfo.count === 1 ? 'Like' : 'Likes'}
+                                        </Button>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            </Accordion>
         </Card>
 
         <Card className="lg:col-span-2">
@@ -340,7 +353,7 @@ export default function SettingsPage() {
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="dashboard">Crianças</SelectItem>
+                            <SelectItem value="dashboard">Mini Herois</SelectItem>
                             <SelectItem value="agenda">Agenda</SelectItem>
                             <SelectItem value="missions">Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>
