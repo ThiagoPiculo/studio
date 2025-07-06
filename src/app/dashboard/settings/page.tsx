@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,75 +96,109 @@ const notificationSettingsConfig: {
   }
 ];
 
+const featureIdeas = [
+  {
+    id: 'integration_google_calendar',
+    icon: CalendarDays,
+    title: 'Google Agenda',
+    description: 'Sincronize missões e prazos automaticamente com a sua agenda do Google para nunca perder uma aventura.'
+  },
+  {
+    id: 'integration_amazon_alexa',
+    icon: Mic,
+    title: 'Amazon Alexa',
+    description: 'Receba lembretes de missões e marque-as como concluídas usando simples comandos de voz.'
+  },
+  {
+    id: 'integration_ifttt',
+    icon: Zap,
+    title: 'IFTTT (If This Then That)',
+    description: 'Crie automações personalizadas, como acender uma luz inteligente quando uma missão for concluída.'
+  },
+  {
+    id: 'integration_google_classroom',
+    icon: School,
+    title: 'Google Classroom',
+    description: 'Importe automaticamente tarefas e trabalhos escolares como missões para seus herois.'
+  }
+];
+
 
 export default function SettingsPage() {
   const { user } = useAuth();
   const { availableContexts } = useFamily();
   const { toast } = useToast();
-  const [integrationLikes, setIntegrationLikes] = useState(0);
-  const [hasLikedIntegration, setHasLikedIntegration] = useState(false);
-  const [isLoadingLikes, setIsLoadingLikes] = useState(true);
+  
+  const [featureVotes, setFeatureVotes] = useState<Record<string, { count: number; liked: boolean }>>({});
+  const [isLoadingVotes, setIsLoadingVotes] = useState(true);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
   
   const [confirmationDetails, setConfirmationDetails] = useState<{ key: NotificationType; title: string; description: string; } | null>(null);
 
-  const featureId = 'integrations';
-
   useEffect(() => {
     if (!user) {
-      setIsLoadingLikes(false);
+      setIsLoadingVotes(false);
       return;
     }
   
-    async function fetchLikeData() {
-      setIsLoadingLikes(true);
-      try {
-        const [count, hasLiked] = await Promise.all([
-          getFeatureVoteCount(featureId),
-          getUserFeatureVote(user.uid, featureId)
-        ]);
-        setIntegrationLikes(count);
-        setHasLikedIntegration(hasLiked);
-      } catch (error) {
-        console.error("Error fetching like data:", error);
-      } finally {
-        setIsLoadingLikes(false);
-      }
+    async function fetchAllVoteData() {
+      setIsLoadingVotes(true);
+      const voteData: Record<string, { count: number; liked: boolean }> = {};
+      
+      const promises = featureIdeas.map(async (feature) => {
+        try {
+          const [count, hasLiked] = await Promise.all([
+            getFeatureVoteCount(feature.id),
+            getUserFeatureVote(user.uid, feature.id)
+          ]);
+          voteData[feature.id] = { count, liked: hasLiked };
+        } catch (error) {
+           console.error(`Failed to load votes for ${feature.id}`, error);
+           voteData[feature.id] = { count: 0, liked: false };
+        }
+      });
+
+      await Promise.all(promises);
+      setFeatureVotes(voteData);
+      setIsLoadingVotes(false);
     }
 
-    fetchLikeData();
+    fetchAllVoteData();
   }, [user]);
 
-  const handleLikeIntegration = async () => {
+  const handleLikeFeature = async (featureId: string) => {
     if (!user) {
       toast({ title: "Você precisa estar logado para votar.", variant: "destructive" });
       return;
     }
     
-    const originalLikedState = hasLikedIntegration;
-    const originalLikes = integrationLikes;
+    const originalState = featureVotes[featureId] || { count: 0, liked: false };
 
-    // Optimistic update
-    const newLikedState = !hasLikedIntegration;
-    setHasLikedIntegration(newLikedState);
-    setIntegrationLikes(prev => newLikedState ? prev + 1 : prev - 1);
+    setFeatureVotes(prevVotes => {
+        const newLikedState = !originalState.liked;
+        const newCount = newLikedState ? originalState.count + 1 : Math.max(0, originalState.count - 1);
+        return {
+            ...prevVotes,
+            [featureId]: { count: newCount, liked: newLikedState }
+        };
+    });
 
     try {
       await toggleUserFeatureVote(user.uid, featureId);
-      if (newLikedState) {
+      if (!originalState.liked) {
+          const feature = featureIdeas.find(f => f.id === featureId);
           toast({
               title: "Obrigado pelo seu feedback!",
-              description: "Sua opinião nos ajuda a priorizar novas funcionalidades.",
+              description: `Seu voto para "${feature?.title}" nos ajuda a priorizar novas funcionalidades.`,
           });
       }
     } catch (error) {
       console.error("Error toggling feature vote:", error);
       toast({ title: "Erro", description: "Não foi possível registrar seu voto.", variant: "destructive"});
-      // Revert optimistic update on error
-      setHasLikedIntegration(originalLikedState);
-      setIntegrationLikes(originalLikes);
+      setFeatureVotes(prevVotes => ({ ...prevVotes, [featureId]: originalState }));
     }
   };
+
 
   const handleSettingUpdate = async (key: string, value: any) => {
     if (!user) return;
@@ -252,6 +286,41 @@ export default function SettingsPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><Blocks className="h-5 w-5 text-primary" /> Futuras Integrações</CardTitle>
+             <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {featureIdeas.map((feature) => {
+              const Icon = feature.icon;
+              const voteInfo = featureVotes[feature.id] || { count: 0, liked: false };
+              return (
+                 <div key={feature.id} className="p-4 border rounded-lg flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-semibold flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground" /> {feature.title}</h4>
+                      <p className="text-sm text-muted-foreground mt-1 mb-3">{feature.description}</p>
+                    </div>
+                    <Button
+                      variant={voteInfo.liked ? 'secondary' : 'outline'}
+                      size="sm"
+                      onClick={() => handleLikeFeature(feature.id)}
+                      disabled={isLoadingVotes}
+                      className="shadow-sm w-fit"
+                    >
+                      {isLoadingVotes ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ThumbsUp className={cn("mr-2 h-4 w-4", voteInfo.liked && "fill-current text-primary")} />
+                      )}
+                      {voteInfo.count} {voteInfo.count === 1 ? 'Like' : 'Likes'}
+                    </Button>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <Card className="lg:col-span-2">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações Gerais</CardTitle>
                 <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
@@ -337,36 +406,6 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
         </div>
-
-
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Blocks className="h-5 w-5 text-primary" /> Integrações</CardTitle>
-             <CardDescription>Conecte o Mini Herois a outros serviços.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              (Em breve) Imagine conectar sua agenda Google ou receber lembretes na Alexa. Estamos trabalhando para tornar isso possível!
-            </p>
-            <div className="mt-4 pt-4 border-t flex items-center justify-between">
-              <p className="text-sm font-semibold text-muted-foreground">Gostou da ideia?</p>
-              <Button
-                variant={hasLikedIntegration ? 'secondary' : 'outline'}
-                size="sm"
-                onClick={handleLikeIntegration}
-                disabled={isLoadingLikes}
-                className="shadow-sm"
-              >
-                {isLoadingLikes ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <ThumbsUp className={cn("mr-2 h-4 w-4", hasLikedIntegration && "fill-current text-primary")} />
-                )}
-                {integrationLikes} {integrationLikes === 1 ? 'Like' : 'Likes'}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     </div>
   );
