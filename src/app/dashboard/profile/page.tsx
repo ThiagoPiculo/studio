@@ -88,7 +88,7 @@ export default function ProfilePage() {
     setIsSendingResetEmail(true);
     try {
       await resetPassword(user.email);
-      toast({ title: "Mapa Secreto Enviado!", description: "Enviamos um link para seu e-mail para você criar uma nova senha." });
+      toast({ title: "Mapa Secreto Enviado!", description: "Enviamos um link para o seu e-mail para que você possa criar uma nova senha." });
     } catch (error) {
       console.error("Error sending password reset email:", error);
       toast({ title: "Erro ao Enviar E-mail", description: "Não foi possível enviar o e-mail de redefinição. Tente novamente.", variant: "destructive" });
@@ -102,7 +102,7 @@ export default function ProfilePage() {
       setIsResettingAllProgress(true);
       try {
         await resetAllChildrenProgress(user.uid);
-        toast({ title: "Nova Temporada Iniciada!", description: "O progresso de todos os seus Mini Herois foi redefinido." });
+        toast({ title: "Nova Temporada Iniciada!", description: `O progresso de todos os seus Mini Herois (${formatChildNames(children)}) foi redefinido.` });
       } catch (error) {
         console.error("Error resetting all children progress:", error);
         toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso. Tente novamente.", variant: "destructive" });
@@ -209,7 +209,7 @@ export default function ProfilePage() {
         <CardContent className="space-y-4">
             <div className="space-y-1">
                 <h4 className="font-semibold">Redefinir Senha</h4>
-                <p className="text-sm text-muted-foreground">Será enviado um link para seu e-mail ({user.email}) para que você possa criar uma nova senha de acesso.</p>
+                <p className="text-sm text-muted-foreground">Será enviado um link para seu e-mail (<span className="font-semibold text-foreground">{user.email}</span>) para que você possa criar uma nova senha de acesso.</p>
                 <Button 
                   variant="outline" 
                   onClick={handlePasswordReset} 
@@ -221,7 +221,7 @@ export default function ProfilePage() {
                 </Button>
             </div>
             
-            <Separator />
+            <Separator className="my-8" />
             
             <div className="space-y-1">
                 <h4 className="font-semibold">Redefinir Progresso de Todos os Herois</h4>
@@ -250,7 +250,7 @@ export default function ProfilePage() {
                  </AlertDialog>
             </div>
             
-             <Separator />
+             <Separator className="my-8" />
             
              <div className="space-y-1">
                 <h4 className="font-semibold">Excluir Conta Permanentemente</h4>
