@@ -140,20 +140,6 @@ export default function SettingsPage() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary" /> Gerenciamento da Conta</CardTitle>
-            <CardDescription>Acesse e edite suas informações de perfil.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/dashboard/profile">
-                <Button className="w-full">
-                    Ir para o Perfil <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-            </Link>
-          </CardContent>
-        </Card>
-
         <Card className="md:col-span-2">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações do Sistema</CardTitle>
