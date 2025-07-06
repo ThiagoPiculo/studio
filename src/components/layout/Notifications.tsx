@@ -66,6 +66,9 @@ export function Notifications() {
   
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  // Filter states
+  const [readStatusFilter, setReadStatusFilter] = useState('unread');
   const [typeFilter, setTypeFilter] = useState('all');
   const [childFilter, setChildFilter] = useState('all');
   
@@ -132,9 +135,12 @@ export function Notifications() {
     return notifications.filter(notification => {
       const typeMatch = typeFilter === 'all' || notificationTypeMap[notification.type] === typeFilter;
       const childMatch = childFilter === 'all' || notification.relatedChildId === childFilter;
-      return typeMatch && childMatch;
+      const readMatch = readStatusFilter === 'all' ||
+                        (readStatusFilter === 'unread' && !notification.isRead) ||
+                        (readStatusFilter === 'read' && notification.isRead);
+      return typeMatch && childMatch && readMatch;
     });
-  }, [notifications, typeFilter, childFilter]);
+  }, [notifications, typeFilter, childFilter, readStatusFilter]);
   
   const handleNotificationClick = (notification: Notification) => {
     // If the notification has a related context and it's different from the current one
@@ -173,10 +179,21 @@ export function Notifications() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        <div className="p-2 flex gap-2">
+        <div className="p-2 grid grid-cols-3 gap-2">
+            <Select value={readStatusFilter} onValueChange={setReadStatusFilter}>
+                <SelectTrigger className="w-full h-8 text-xs">
+                    <SelectValue placeholder="Status..." />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectItem value="all" className="text-xs">Todas</SelectItem>
+                    <SelectItem value="unread" className="text-xs">Não Lidas</SelectItem>
+                    <SelectItem value="read" className="text-xs">Lidas</SelectItem>
+                </SelectContent>
+            </Select>
+
             <Select value={typeFilter} onValueChange={setTypeFilter}>
                 <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Filtrar por tipo..." />
+                    <SelectValue placeholder="Tipo..." />
                 </SelectTrigger>
                 <SelectContent>
                     {Object.entries(notificationCategoryLabels).map(([key, label]) => (
@@ -184,9 +201,10 @@ export function Notifications() {
                     ))}
                 </SelectContent>
             </Select>
+
             <Select value={childFilter} onValueChange={setChildFilter} disabled={isLoadingChildren || children.length === 0}>
                 <SelectTrigger className="w-full h-8 text-xs">
-                    <SelectValue placeholder="Filtrar por herói..." />
+                    <SelectValue placeholder="Herói..." />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all" className="text-xs">Todos os Heróis</SelectItem>
@@ -199,15 +217,15 @@ export function Notifications() {
         
         <DropdownMenuSeparator />
         
-        <ScrollArea className="h-[300px] pr-3">
-            <div className="space-y-1">
+        <ScrollArea className="h-[300px] pr-1">
+            <div className="space-y-1 p-1">
                 {isLoading ? (
                      <div className="flex items-center justify-center p-4">
                         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                      </div>
                 ) : filteredNotifications.length === 0 ? (
                     <p className="p-4 text-sm text-center text-muted-foreground">
-                        {notifications.length > 0 ? "Nenhuma notificação encontrada com os filtros atuais." : "Nenhuma notificação por enquanto."}
+                        {notifications.length > 0 ? "Nenhuma notificação com os filtros atuais." : "Nenhuma notificação por enquanto."}
                     </p>
                 ) : (
                     filteredNotifications.map(notification => {
@@ -219,12 +237,14 @@ export function Notifications() {
                               onSelect={() => handleNotificationClick(notification)}
                               className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto h-auto whitespace-normal p-0"
                             >
-                              <div className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md w-full">
-                                {!notification.isRead && <div className="mt-2 flex h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
-                                <div className={`flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5 ${notification.isRead ? 'opacity-60' : ''} ${!notification.isRead ? 'ml-[-16px]' : ''}`}>
+                              <div className="flex items-start gap-2.5 p-2 hover:bg-accent/50 rounded-md w-full">
+                                <div className="w-2 flex-shrink-0 pt-1.5">
+                                    {!notification.isRead && <div className="h-2 w-2 rounded-full bg-primary" />}
+                                </div>
+                                <div className="flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5">
                                   <Icon className="h-5 w-5 text-muted-foreground" />
                                 </div>
-                                <div className="grid gap-1 flex-grow">
+                                <div className={`grid gap-1 flex-grow ${notification.isRead ? 'opacity-70' : ''}`}>
                                   <p className="text-sm font-medium leading-tight">{notification.title}</p>
                                   <p className="text-sm text-muted-foreground leading-snug">{notification.description}</p>
                                   <p className="text-xs text-muted-foreground">{timeAgo}</p>
