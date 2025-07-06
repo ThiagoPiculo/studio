@@ -6,7 +6,7 @@ import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, S
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
-export type InitialPage = 'dashboard' | 'agenda' | 'missions' | 'rewards' | 'family';
+export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family';
 
 export type NotificationType = 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone';
 

@@ -12,7 +12,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, Shield } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
@@ -22,7 +22,7 @@ import { usePathname } from 'next/navigation';
 function AppLogo() {
     return (
         <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-            <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+            <Link href="/dashboard/heroes" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
                 <Rocket className="h-7 w-7 text-primary" />
                 <span className="font-headline text-xl font-bold text-foreground">
                     Mini Herois
@@ -47,7 +47,13 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard" tooltip="Mini Herois" isActive={pathname === '/dashboard'}>
+                        <SidebarMenuButton href="/dashboard" tooltip="Painel" isActive={pathname === '/dashboard'}>
+                            <LayoutGrid className="text-primary"/>
+                            <span>Painel</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/heroes" tooltip="Mini Herois" isActive={pathname.startsWith('/dashboard/heroes') || pathname === '/dashboard/onboarding' || pathname.startsWith('/dashboard/child')}>
                             <Rocket className="text-primary"/>
                             <span>Mini Herois</span>
                         </SidebarMenuButton>

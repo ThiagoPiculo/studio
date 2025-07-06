@@ -58,7 +58,8 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
 
   const getLoginToastDescription = (userProfile: UserProfile | null): string => {
     const pageInfo: { [key: string]: { name: string, gender: 'f' | 'm' } } = {
-        dashboard: { name: 'Painel do Herói', gender: 'm' },
+        dashboard: { name: 'Painel', gender: 'm' },
+        heroes: { name: 'Central de Herois', gender: 'f' },
         agenda: { name: 'Agenda', gender: 'f' },
         missions: { name: 'Central de Missões', gender: 'f' },
         rewards: { name: 'Catálogo de Recompensas', gender: 'm' },
@@ -66,7 +67,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     };
 
     const initialPage = userProfile?.settings?.initialPage || 'agenda';
-    const info = pageInfo[initialPage] || pageInfo['missions'];
+    const info = pageInfo[initialPage] || pageInfo['heroes'];
     
     const article = info.gender === 'f' ? 'Sua' : 'Seu';
     const adjective = info.gender === 'f' ? 'pronta' : 'pronto';
@@ -81,7 +82,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         const { email, password } = values as z.infer<typeof loginSchema>;
         const userProfile = await signInAdmin(email, password);
         toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
-        router.push("/dashboard?initial_load=true");
+        router.push("/dashboard/heroes?initial_load=true");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         const userProfile = await signUpAdmin(name, email, password);
@@ -100,7 +101,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         } else {
           toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
-        router.push("/dashboard?initial_load=true");
+        router.push("/dashboard/heroes?initial_load=true");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
@@ -134,7 +135,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     try {
       const userProfile = await signInWithGoogle();
       toast({ title: "Boas-vindas!", description: getLoginToastDescription(userProfile) });
-      router.push("/dashboard?initial_load=true");
+      router.push("/dashboard/heroes?initial_load=true");
     } catch (error: any) {
       console.error("Google Sign-In failed:", error);
       toast({

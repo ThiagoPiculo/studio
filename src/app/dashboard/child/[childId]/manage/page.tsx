@@ -113,7 +113,7 @@ export default function ManageChildPage() {
         }));
       } else {
         toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi.", variant: "destructive" });
-        router.push('/dashboard');
+        router.push('/dashboard/heroes');
       }
     } catch (error) {
       console.error("Error fetching child data:", error);
@@ -128,7 +128,7 @@ export default function ManageChildPage() {
     if (childId) {
       fetchData();
     } else {
-      router.push('/dashboard');
+      router.push('/dashboard/heroes');
     }
   }, [childId, fetchData, router]);
 
@@ -240,7 +240,7 @@ export default function ManageChildPage() {
     try {
       await deleteChildProfile(child.id);
       toast({ title: "Missão Arquivada", description: `O perfil de ${child.name} foi arquivado. Novas aventuras o(a) aguardam!` });
-      router.push('/dashboard');
+      router.push('/dashboard/heroes');
     } catch (error) {
       console.error("Error deleting child profile:", error);
       toast({ title: "Erro ao Excluir", description: "Não foi possível excluir o perfil da criança. Por favor, tente novamente mais tarde.", variant: "destructive" });
@@ -495,7 +495,7 @@ export default function ManageChildPage() {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <p className="text-lg text-destructive">Mini Heroi não encontrado.</p>
-        <Button onClick={() => router.push('/dashboard')} className="mt-4">
+        <Button onClick={() => router.push('/dashboard/heroes')} className="mt-4">
             Voltar ao Painel
         </Button>
       </div>

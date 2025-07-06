@@ -70,7 +70,7 @@ export function OnboardingForm() {
         gender: values.childGender,
       });
       toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
-      router.push("/dashboard"); 
+      router.push("/dashboard/heroes"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({

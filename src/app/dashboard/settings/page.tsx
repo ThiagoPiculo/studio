@@ -353,7 +353,8 @@ export default function SettingsPage() {
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="dashboard">Mini Herois</SelectItem>
+                            <SelectItem value="dashboard">Painel</SelectItem>
+                            <SelectItem value="heroes">Mini Herois</SelectItem>
                             <SelectItem value="agenda">Agenda</SelectItem>
                             <SelectItem value="missions">Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>

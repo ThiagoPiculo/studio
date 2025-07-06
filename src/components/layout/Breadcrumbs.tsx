@@ -8,7 +8,6 @@ import { ChevronRight } from 'lucide-react';
 import { getChildProfileById, getMissionTemplateById, getRewardTemplateById } from '@/lib/firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { useFamily } from '@/contexts/FamilyContext';
 
 interface Breadcrumb {
   label: string;
@@ -18,6 +17,7 @@ interface Breadcrumb {
 
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Painel',
+  heroes: 'Mini Herois',
   agenda: 'Agenda',
   manage: 'Gerenciar',
   family: 'Aliança',
@@ -32,10 +32,10 @@ const pathTranslations: { [key: string]: string } = {
   ideas: 'Ideias',
   suggest: 'Sugerir com IA',
   tasks: 'Tarefas',
+  child: 'child' // placeholder for logic
 };
 
 const nonClickableStaticSegments = ['edit', 'manage', 'new', 'edit-template'];
-const structuralSegmentsToSkip = ['child'];
 
 const titleCase = (str: string) => {
     return str.replace(/-/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -44,82 +44,53 @@ const titleCase = (str: string) => {
 export function Breadcrumbs() {
   const pathname = usePathname();
   const params = useParams();
-  const { currentContext, availableContexts, isLoading: isFamilyLoading } = useFamily();
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
 
   useEffect(() => {
     const generateBreadcrumbs = async () => {
       const pathSegments = pathname.split('/').filter(Boolean);
-
-      let initialCrumbs: Breadcrumb[] = [];
-
-      // 1. Determine the root breadcrumb based on context
-      if (isFamilyLoading) {
-        initialCrumbs.push({ label: '...', href: '#', isLoading: true });
-      } else {
-        const contextData = availableContexts.find(c => c.id === currentContext);
-        if (contextData) {
-          if (contextData.id === 'my-space') {
-            initialCrumbs.push({ label: 'Meu Espaço', href: '/dashboard', isLoading: false });
-          } else {
-            initialCrumbs.push({ label: `Aliança: ${contextData.name}`, href: '/dashboard/family', isLoading: false });
-          }
-        } else {
-          initialCrumbs.push({ label: '...', href: '#', isLoading: true });
-        }
-      }
-
-      // If we are at a root page, we're done.
-      if (pathname === '/dashboard' || (pathname === '/dashboard/family' && currentContext !== 'my-space')) {
-        setBreadcrumbs(initialCrumbs);
-        return;
-      }
       
-      // 2. Build the rest of the breadcrumbs
-      const remainingSegments = pathSegments.slice(1);
-      const promises = remainingSegments.map(async (segment, index) => {
-        if (structuralSegmentsToSkip.includes(segment)) return null;
-
-        if (segment === 'family' && currentContext !== 'my-space') {
-          return null;
-        }
-
-        const currentCrumbPath = `/${pathSegments.slice(0, index + 2).join('/')}`;
+      const crumbPromises = pathSegments.map(async (segment, index) => {
+        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
-        const crumb: Breadcrumb = { label, href: currentCrumbPath, isLoading: false };
+        const isLoading = false;
         
+        // This is a dynamic segment, so we fetch data
         if (params.childId && segment === params.childId) {
-          crumb.isLoading = true;
-          const child = await getChildProfileById(segment);
-          crumb.label = child?.name || 'Herói';
-          crumb.href = `/dashboard/child/${segment}/manage`;
-          crumb.isLoading = false;
-        } else if (params.missionId && segment === params.missionId) {
-          crumb.isLoading = true;
-          const mission = await getMissionTemplateById(segment);
-          crumb.label = mission?.title || 'Missão';
-          crumb.isLoading = false;
-        } else if (params.templateId && segment === params.templateId) {
-          crumb.isLoading = true;
-          const template = await getRewardTemplateById(segment);
-          crumb.label = template?.title || 'Recompensa';
-          crumb.isLoading = false;
-        } else if (params.rewardId && segment === params.rewardId) { 
-          crumb.isLoading = true;
-          const template = await getRewardTemplateById(segment);
-          crumb.label = template?.title || 'Recompensa';
-          crumb.isLoading = false;
+            const child = await getChildProfileById(segment);
+            return { label: child?.name || "Herói", href, isLoading: !child };
+        }
+        if (params.missionId && segment === params.missionId) {
+             const mission = await getMissionTemplateById(segment);
+             return { label: mission?.title || "Missão", href, isLoading: !mission };
+        }
+        if (params.templateId && segment === params.templateId) {
+             const template = await getRewardTemplateById(segment);
+             return { label: template?.title || "Recompensa", href, isLoading: !template };
+        }
+        if (params.rewardId && segment === params.rewardId) {
+             const template = await getRewardTemplateById(segment);
+             return { label: template?.title || "Recompensa", href, isLoading: !template };
         }
 
-        return crumb;
+        // Skip structural segments like 'child' from appearing
+        if (segment === 'child') {
+            return null;
+        }
+
+        return { label, href, isLoading };
       });
       
-      const resolvedCrumbs = (await Promise.all(promises)).filter(Boolean) as Breadcrumb[];
-      setBreadcrumbs([...initialCrumbs, ...resolvedCrumbs]);
+      const resolvedCrumbs = (await Promise.all(crumbPromises)).filter(Boolean) as Breadcrumb[];
+      setBreadcrumbs(resolvedCrumbs);
     };
 
-    generateBreadcrumbs();
-  }, [pathname, params, currentContext, availableContexts, isFamilyLoading]);
+    if (pathname.startsWith('/dashboard')) {
+        generateBreadcrumbs();
+    }
+  }, [pathname, params]);
+
+  if (!pathname.startsWith('/dashboard')) return null;
 
   return (
     <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
@@ -128,9 +99,9 @@ export function Breadcrumbs() {
            if (!crumb || !crumb.href) return null;
 
            const isLast = index === breadcrumbs.length - 1;
-           const segments = crumb.href.split('/');
-           const lastSegmentOfCrumb = segments[segments.length - 1];
            
+           // A segment is non-clickable if it's the last one, or if it's a static "action" word.
+           const lastSegmentOfCrumb = crumb.href.split('/').pop() || '';
            const shouldBeLink = !isLast && !nonClickableStaticSegments.includes(lastSegmentOfCrumb);
 
            return (
