@@ -8,11 +8,16 @@ import type { HeroColor } from './hero-colors';
 
 export type InitialPage = 'dashboard' | 'agenda' | 'missions' | 'rewards' | 'family';
 
+export type NotificationType = 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone';
+
+export type NotificationPreferences = {
+  [key in NotificationType]?: boolean;
+};
+
 export interface UserSettings {
   initialPage: InitialPage;
-  confirmJoinAlliance: boolean;
-  childCanRedeemRewards: boolean;
   initialContext?: string;
+  notifications?: Partial<NotificationPreferences>;
 }
 
 export interface UserProfile {
@@ -282,7 +287,7 @@ export type IconType = LucideIconType;
 export interface Notification {
   id: string; // doc ID
   userId: string; // who this notification is for
-  type: 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone';
+  type: NotificationType;
   title: string;
   description: string;
   href: string; // link to the relevant page

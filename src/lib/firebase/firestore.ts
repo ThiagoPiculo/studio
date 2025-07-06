@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType } from '@/lib/types';
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -33,7 +33,6 @@ const createAndDispatchNotifications = async (
   const child = await getChildProfileById(childId);
   if (!child) return;
 
-  const batch = writeBatch(db);
   let userIdsToNotify: string[] = [];
 
   if (child.familyId) {
@@ -43,18 +42,15 @@ const createAndDispatchNotifications = async (
     userIdsToNotify = [child.ownerId];
   }
 
-  userIdsToNotify.forEach(userId => {
-    const newNotificationRef = doc(collection(db, 'notifications'));
-    const newNotification: Omit<Notification, 'id'> = {
+  const notificationPromises = userIdsToNotify.map(userId => {
+    return addNotification({
       ...notificationPayload,
       userId,
-      isRead: false,
       relatedContextId: child.familyId || null,
-      createdAt: serverTimestamp() as Timestamp,
-    };
-    batch.set(newNotificationRef, newNotification);
+    });
   });
-  await batch.commit();
+
+  await Promise.all(notificationPromises);
 };
 
 
@@ -351,14 +347,14 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   }
   const familyDoc = familySnapshot.docs[0];
   const family = { id: familyDoc.id, ...familyDoc.data() } as Family;
-
+  
   const ownerProfile = await getUserProfile(family.ownerId);
-  if (ownerProfile?.settings?.confirmJoinAlliance) {
-    const joiningUserProfile = await getUserProfile(userId);
-    if (!joiningUserProfile) {
-      throw new Error("Perfil do usuário que está tentando entrar não foi encontrado.");
-    }
-    
+  const joiningUserProfile = await getUserProfile(userId);
+  if (!joiningUserProfile) {
+    throw new Error("Perfil do usuário que está tentando entrar não foi encontrado.");
+  }
+
+  if (ownerProfile?.settings?.notifications?.['alliance_join_request'] !== false) {
     const existingRequestQuery = query(collection(db, 'familyInvitations'),
       where('familyId', '==', family.id),
       where('inviteeId', '==', userId),
@@ -427,7 +423,6 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   await batch.commit();
 
   // Notify existing members
-  const newMemberProfile = await getUserProfile(userId);
   const existingMembers = await getFamilyMembers(family.id); // This will include the new member
   const notificationPromises = existingMembers
       .filter(member => member.uid !== userId)
@@ -436,7 +431,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
               userId: member.uid,
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
-              description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança via código.`,
+              description: `${joiningUserProfile?.name || 'Um novo heroi'} juntou-se à aliança via código.`,
               href: '/dashboard/family',
               relatedContextId: family.id,
           });
@@ -611,7 +606,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
               userId: member.uid,
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
-              description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança ${family.name}.`,
+              description: `${newMemberProfile?.name || 'Um novo heroi'} juntou-se à aliança ${family.name}.`,
               href: '/dashboard/family',
               relatedContextId: family.id,
           });
@@ -1447,6 +1442,13 @@ export const toggleUserFeatureVote = async (userId: string, featureId: string): 
 
 // --- Notifications ---
 export const addNotification = async (notificationData: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<void> => {
+    const userProfile = await getUserProfile(notificationData.userId);
+    const shouldNotify = userProfile?.settings?.notifications?.[notificationData.type] !== false;
+
+    if (!shouldNotify) {
+        return;
+    }
+
     const newNotificationRef = doc(collection(db, 'notifications'));
     const newNotification: Omit<Notification, 'id'> = {
         ...notificationData,

@@ -2,11 +2,11 @@
 "use client";
 
 import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,85 @@ import { cn } from '@/lib/utils';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import type { NotificationType } from '@/lib/types';
+
+
+const notificationSettingsConfig: {
+  category: string;
+  items: {
+    key: NotificationType;
+    icon: React.ElementType;
+    label: string;
+    description: string;
+    confirmation: {
+        title: string;
+        description: string;
+    }
+  }[]
+}[] = [
+  {
+    category: "Progresso dos Herois",
+    items: [
+      {
+        key: 'mission_completed',
+        icon: CheckCircle,
+        label: "Missão Concluída",
+        description: "Quando uma criança marca uma missão como concluída.",
+        confirmation: {
+            title: "Desativar alertas de Missão Concluída?",
+            description: "Você não será mais notificado imediatamente quando uma missão for concluída. Você ainda poderá ver o progresso na página da criança."
+        }
+      },
+      {
+        key: 'reward_redeemed',
+        icon: Award,
+        label: "Recompensa Resgatada",
+        description: "Quando uma criança usa suas estrelas para resgatar uma recompensa.",
+        confirmation: {
+            title: "Desativar alertas de Recompensa Resgatada?",
+            description: "Você não saberá imediatamente quando uma recompensa for resgatada, o que pode ser importante para recompensas que exigem sua ação (como um passeio)."
+        }
+      },
+      {
+        key: 'new_level',
+        icon: Award,
+        label: "Subiu de Nível",
+        description: "Quando uma criança acumula XP suficiente para subir de nível.",
+         confirmation: {
+            title: "Desativar alertas de Nível?",
+            description: "Você não verá mais as comemorações quando uma criança atingir um novo nível de progresso."
+        }
+      },
+    ]
+  },
+  {
+    category: "Atividade da Aliança",
+    items: [
+      {
+        key: 'alliance_join_request',
+        icon: UserPlus,
+        label: "Pedido para Entrar na Aliança",
+        description: "Alerta para aprovar um novo membro que usou o código de convite.",
+         confirmation: {
+            title: "Desativar alertas de Pedidos para Entrar?",
+            description: "Você não será notificado sobre novos pedidos para entrar na sua aliança, o que pode fazer com que novos membros não consigam participar."
+        }
+      },
+      {
+        key: 'alliance_join_approved',
+        icon: CheckCircle,
+        label: "Novo Membro na Aliança",
+        description: "Avisa quando um novo membro foi aprovado e entrou na sua aliança.",
+        confirmation: {
+            title: "Desativar alertas de Novos Membros?",
+            description: "Você não saberá quando novos colaboradores se juntarem à sua aliança para gerenciar os herois."
+        }
+      }
+    ]
+  }
+];
+
 
 export default function SettingsPage() {
   const { user } = useAuth();
@@ -26,6 +105,8 @@ export default function SettingsPage() {
   const [hasLikedIntegration, setHasLikedIntegration] = useState(false);
   const [isLoadingLikes, setIsLoadingLikes] = useState(true);
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  
+  const [confirmationDetails, setConfirmationDetails] = useState<{ key: NotificationType; title: string; description: string; } | null>(null);
 
   const featureId = 'integrations';
 
@@ -85,7 +166,7 @@ export default function SettingsPage() {
     }
   };
 
-  const handleSettingChange = async (key: string, value: any) => {
+  const handleSettingUpdate = async (key: string, value: any) => {
     if (!user) return;
     setIsUpdatingSettings(true);
     try {
@@ -105,11 +186,26 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSwitchChange = (key: NotificationType, checked: boolean, confirmation: { title: string; description: string; }) => {
+    if (checked) {
+      handleSettingUpdate(`notifications.${key}`, true);
+    } else {
+      setConfirmationDetails({ key, ...confirmation });
+    }
+  };
+
+  const handleConfirmChange = () => {
+    if (confirmationDetails) {
+      handleSettingUpdate(`notifications.${confirmationDetails.key}`, false);
+      setConfirmationDetails(null);
+    }
+  };
+
+
   const settings = {
     initialPage: user?.settings?.initialPage || 'agenda',
     initialContext: user?.settings?.initialContext || 'my-space',
-    confirmJoinAlliance: user?.settings?.confirmJoinAlliance ?? false,
-    childCanRedeemRewards: user?.settings?.childCanRedeemRewards ?? true,
+    notifications: user?.settings?.notifications || {},
   };
 
 
@@ -134,14 +230,33 @@ export default function SettingsPage() {
           </div>
         </CardHeader>
       </Card>
+      
+      <AlertDialog open={!!confirmationDetails} onOpenChange={(isOpen) => !isOpen && setConfirmationDetails(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{confirmationDetails?.title}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmationDetails?.description}
+              <br/><br/>
+              Recomendamos manter esta notificação ativada para uma melhor experiência. Deseja mesmo desativá-la?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmChange} className="bg-destructive hover:bg-destructive/90">
+                Desativar Mesmo Assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <Card className="md:col-span-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <Card className="lg:col-span-2">
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações do Sistema</CardTitle>
+                <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações Gerais</CardTitle>
                 <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-3">
                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
                     <Label htmlFor="initial-page-select" className="flex flex-col gap-1 pr-4">
                         <span className="font-semibold">Tela inicial após login</span>
@@ -149,7 +264,7 @@ export default function SettingsPage() {
                     </Label>
                     <Select
                         value={settings.initialPage}
-                        onValueChange={(value) => handleSettingChange('initialPage', value)}
+                        onValueChange={(value) => handleSettingUpdate('initialPage', value)}
                         disabled={isUpdatingSettings}
                     >
                         <SelectTrigger id="initial-page-select" className="w-auto sm:w-[180px] flex-shrink-0">
@@ -171,7 +286,7 @@ export default function SettingsPage() {
                     </Label>
                     <Select
                         value={settings.initialContext}
-                        onValueChange={(value) => handleSettingChange('initialContext', value)}
+                        onValueChange={(value) => handleSettingUpdate('initialContext', value)}
                         disabled={isUpdatingSettings || availableContexts.length <= 1}
                     >
                         <SelectTrigger id="initial-context-select" className="w-auto sm:w-[180px] flex-shrink-0">
@@ -186,57 +301,45 @@ export default function SettingsPage() {
                         </SelectContent>
                     </Select>
                 </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
-                    <Label htmlFor="confirm-join" className="flex flex-col gap-1 pr-4">
-                        <span className="font-semibold">Confirmar entrada em aliança?</span>
-                        <span className="font-normal text-xs text-muted-foreground">Exige sua aprovação quando outro responsável entra na sua aliança por código.</span>
-                    </Label>
-                    <Switch
-                        id="confirm-join"
-                        checked={settings.confirmJoinAlliance}
-                        onCheckedChange={(checked) => handleSettingChange('confirmJoinAlliance', checked)}
-                        disabled={isUpdatingSettings}
-                    />
-                </div>
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
-                    <Label htmlFor="child-redeem" className="flex flex-col gap-1 pr-4">
-                        <span className="font-semibold">Autorizar resgate de recompensa pela criança</span>
-                        <span className="font-normal text-xs text-muted-foreground">Permite que a criança resgate recompensas diretamente. Se desativado, o resgate precisará da sua aprovação.</span>
-                    </Label>
-                    <Switch
-                        id="child-redeem"
-                        checked={settings.childCanRedeemRewards}
-                        onCheckedChange={(checked) => handleSettingChange('childCanRedeemRewards', checked)}
-                        disabled={isUpdatingSettings}
-                    />
-                </div>
             </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /> Preferências de Notificação</CardTitle>
-            <CardDescription>Escolha como você quer ser notificado. (Funcionalidade em desenvolvimento)</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-             <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50 opacity-60">
-                <Label htmlFor="summary-emails" className="flex flex-col gap-1 cursor-not-allowed">
-                  <span className="font-semibold">Resumos semanais por e-mail</span>
-                  <span className="font-normal text-xs text-muted-foreground">Receba um relatório do progresso dos herois.</span>
-                </Label>
-                <Switch id="summary-emails" disabled />
-              </div>
-              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50 opacity-60">
-                 <Label htmlFor="mission-alerts" className="flex flex-col gap-1 cursor-not-allowed">
-                  <span className="font-semibold">Alertas de missões importantes</span>
-                   <span className="font-normal text-xs text-muted-foreground">Seja notificado sobre missões próximas do prazo.</span>
-                </Label>
-                <Switch id="mission-alerts" disabled />
-              </div>
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-2">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /> Preferências de Notificação</CardTitle>
+                    <CardDescription>Escolha quais alertas você deseja receber.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    {notificationSettingsConfig.map(category => (
+                        <div key={category.category} className="space-y-3 break-inside-avoid">
+                            <h3 className="font-semibold text-md">{category.category}</h3>
+                            {category.items.map(item => {
+                                const Icon = item.icon;
+                                const isChecked = settings.notifications[item.key] !== false; // Default to true if undefined
+                                return (
+                                    <div key={item.key} className="flex items-start justify-between p-3 rounded-lg border bg-muted/50">
+                                        <Label htmlFor={item.key} className="flex flex-col gap-1 pr-4 cursor-pointer">
+                                            <span className="font-medium flex items-center gap-2"><Icon className="h-4 w-4"/> {item.label}</span>
+                                            <span className="font-normal text-xs text-muted-foreground">{item.description}</span>
+                                        </Label>
+                                        <Switch
+                                            id={item.key}
+                                            checked={isChecked}
+                                            onCheckedChange={(checked) => handleSwitchChange(item.key, checked, item.confirmation)}
+                                            disabled={isUpdatingSettings}
+                                        />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
 
-        <Card>
+
+        <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Blocks className="h-5 w-5 text-primary" /> Integrações</CardTitle>
              <CardDescription>Conecte o Mini Herois a outros serviços.</CardDescription>
