@@ -1,4 +1,3 @@
-
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,7 +10,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Home, Shield, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { Home, ChevronsUpDown, Loader2, Link as LinkIcon } from 'lucide-react';
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading } = useFamily();
@@ -47,7 +46,7 @@ export function FamilyContextSwitcher() {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-sidebar-ring group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
           <div className="flex items-center gap-2 truncate group-data-[collapsible=icon]:gap-0">
-            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <Shield className="h-4 w-4 shrink-0" />}
+            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0 text-chart-5" /> : <LinkIcon className="h-4 w-4 shrink-0 text-chart-4" />}
             <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">Estou em: {getDisplayName(currentContextData)}</span>
           </div>
           <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 group-data-[collapsible=icon]:hidden" />
@@ -59,7 +58,7 @@ export function FamilyContextSwitcher() {
           {availableContexts.map((context) => (
             <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer">
               <div className="flex items-center gap-2">
-                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
+                {context.id === 'my-space' ? <Home className="h-4 w-4 text-chart-5" /> : <LinkIcon className="h-4 w-4 text-chart-4" />}
                 <span>{getDisplayName(context)}</span>
               </div>
             </DropdownMenuRadioItem>
