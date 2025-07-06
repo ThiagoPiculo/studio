@@ -487,8 +487,6 @@ function FamilyPageContent() {
     return availableContexts.filter(c => c.id !== 'my-space');
   }, [availableContexts]);
   
-  const pendingJoinRequest = useMemo(() => pendingRequests[0], [pendingRequests]);
-
   if (!isClient || isLoading) {
     return <Loading />;
   }
@@ -947,6 +945,49 @@ function FamilyPageContent() {
         </Card>
       )}
 
+      {pendingRequests.length > 0 && (
+          <Card className="border-blue-500 bg-blue-500/5">
+            <CardHeader>
+              <CardTitle>Pedidos Enviados</CardTitle>
+              <CardDescription>Suas solicitações para entrar nestas alianças estão aguardando aprovação dos proprietários.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {pendingRequests.map(req => (
+                <div key={req.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                  <div>
+                    <p className="font-semibold">Aliança {req.familyName}</p>
+                    <p className="text-sm text-muted-foreground">Pedido enviado para aprovação</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button variant="secondary" size="sm">
+                             <HelpCircle className="mr-2 h-4 w-4" /> O que fazer agora?
+                         </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Aguardando Aprovação do Herói Mestre</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança e Colaboradores" na conta dele(a) para aprovar sua entrada.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Entendi!</AlertDialogCancel>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <Button size="sm" variant="outline" onClick={() => handleResendNotification(req.id)} disabled={isResending}>
+                        {isResending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                        Reenviar Notificação
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
             <CardHeader>
@@ -970,63 +1011,30 @@ function FamilyPageContent() {
               </CardFooter>
             </form>
           </Card>
-          {pendingJoinRequest ? (
-            <Card className="bg-muted/30">
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5 text-primary" />Pedido Enviado</CardTitle>
-                  <CardDescription>Sua solicitação para entrar na <span className="font-bold text-primary">{pendingJoinRequest.familyName}</span> está aguardando aprovação.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                 <Button className="w-full" variant="outline" onClick={() => handleResendNotification(pendingJoinRequest.id)} disabled={isResending}>
-                     {isResending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                     Reenviar Notificação
-                 </Button>
-                  <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                         <Button className="w-full" variant="secondary">
-                             <HelpCircle className="mr-2 h-4 w-4" /> O que fazer agora?
-                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Aguardando Aprovação do Herói Mestre</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança e Colaboradores" na conta dele(a) para aprovar sua entrada.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel>Entendi!</AlertDialogCancel>
-                          </AlertDialogFooter>
-                      </AlertDialogContent>
-                  </AlertDialog>
+          <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
+                <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleJoinFamily}>
+              <CardContent>
+                  <Input 
+                  placeholder="Código de 6 dígitos"
+                  value={inviteCode}
+                  onChange={(e) => setInviteCode(e.target.value)}
+                  maxLength={6}
+                  required
+                  className="font-mono tracking-widest"
+                />
               </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
-                  <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
-              </CardHeader>
-              <form onSubmit={handleJoinFamily}>
-                <CardContent>
-                   <Input 
-                    placeholder="Código de 6 dígitos"
-                    value={inviteCode}
-                    onChange={(e) => setInviteCode(e.target.value)}
-                    maxLength={6}
-                    required
-                    className="font-mono tracking-widest"
-                  />
-                </CardContent>
-                <CardFooter>
-                  <Button type="submit" disabled={isProcessing}>
-                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
-                    Entrar com Código
-                  </Button>
-                </CardFooter>
-              </form>
-            </Card>
-          )}
+              <CardFooter>
+                <Button type="submit" disabled={isProcessing}>
+                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                  Entrar com Código
+                </Button>
+              </CardFooter>
+            </form>
+          </Card>
       </div>
 
        <Card className="bg-muted/50">
