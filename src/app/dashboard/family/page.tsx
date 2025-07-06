@@ -568,6 +568,59 @@ function FamilyPageContent() {
         <div className="grid md:grid-cols-2 gap-6">
           <Card>
             <CardHeader>
+                <CardTitle className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Aliança
+                    </div>
+                    <Button variant="outline" size="sm" onClick={handleOpenAddChildDialog}>
+                      <Users className="mr-2 h-4 w-4" />
+                      Adicionar Membro Infantil
+                    </Button>
+                </CardTitle>
+                <CardDescription>Gerencie o perfil de cada Mini Herói da sua aliança.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {childrenInFamily.length > 0 ? (
+                    <div className="space-y-4">
+                        {childrenInFamily.map(child => (
+                            <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                                <div className="flex items-center gap-4">
+                                    <Avatar
+                                      className="h-12 w-12 text-xl ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                      style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                    >
+                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                        <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                            {getInitials(child.name)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                      <span className="font-semibold">{child.name}</span>
+                                      <p className="text-sm text-muted-foreground">Nível: {child.level} - {child.stars} Estrelas</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Link href={`/dashboard/child/${child.id}/manage`}>
+                                      <Button variant="outline" size="sm">
+                                          Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
+                                      </Button>
+                                  </Link>
+                                  {isOwner && (
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToRemove(child)}>
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta aliança. Clique em "Adicionar" acima para começar.</p>
+                )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader>
               <CardTitle>Membros Responsáveis</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
@@ -603,6 +656,9 @@ function FamilyPageContent() {
               ))}
             </CardContent>
           </Card>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-6">
           <Card>
              <CardHeader>
               <CardTitle>Adicionar Colaborador</CardTitle>
@@ -652,98 +708,43 @@ function FamilyPageContent() {
                   </div>
             </CardContent>
           </Card>
+          <Card className="border-destructive bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isProcessing}>
+                    {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
+                    {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isOwner 
+                        ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
+                        : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
+                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Sim, {isOwner ? "Excluir" : "Sair"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <p className="text-xs text-destructive/80 mt-2">
+                  {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
+              </p>
+            </CardContent>
+          </Card>
         </div>
         
-        <Card>
-          <CardHeader>
-              <CardTitle className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                      <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Aliança
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleOpenAddChildDialog}>
-                    <Users className="mr-2 h-4 w-4" />
-                    Adicionar Membro Infantil
-                  </Button>
-              </CardTitle>
-              <CardDescription>Gerencie o perfil de cada Mini Herói da sua aliança.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              {childrenInFamily.length > 0 ? (
-                  <div className="space-y-4">
-                      {childrenInFamily.map(child => (
-                          <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                              <div className="flex items-center gap-4">
-                                  <Avatar
-                                    className="h-12 w-12 text-xl ring-2 ring-offset-background ring-[var(--ring-color)]"
-                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                  >
-                                      <AvatarImage src={child.avatar} alt={child.name} />
-                                      <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
-                                          {getInitials(child.name)}
-                                      </AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <span className="font-semibold">{child.name}</span>
-                                    <p className="text-sm text-muted-foreground">Nível: {child.level} - {child.stars} Estrelas</p>
-                                  </div>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Link href={`/dashboard/child/${child.id}/manage`}>
-                                    <Button variant="outline" size="sm">
-                                        Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </Link>
-                                {isOwner && (
-                                  <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToRemove(child)}>
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                )}
-                              </div>
-                          </div>
-                      ))}
-                  </div>
-              ) : (
-                  <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta aliança. Clique em "Adicionar" acima para começar.</p>
-              )}
-          </CardContent>
-        </Card>
-
-        <Card className="border-destructive bg-destructive/5">
-          <CardHeader>
-            <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="destructive" disabled={isProcessing}>
-                  {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
-                  {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    {isOwner 
-                      ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
-                      : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
-                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    Sim, {isOwner ? "Excluir" : "Sair"}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <p className="text-xs text-destructive/80 mt-2">
-                {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
-            </p>
-          </CardContent>
-        </Card>
-
         {memberToRemove && (
           <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
             <AlertDialogContent>
