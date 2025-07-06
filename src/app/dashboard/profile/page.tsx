@@ -8,24 +8,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail } from 'lucide-react';
+import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw } from 'lucide-react';
 import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { resetPassword } from '@/lib/firebase/auth';
+import { getChildProfilesByOwner, resetAllChildrenProgress } from '@/lib/firebase/firestore';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
+
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const [isEditingName, setIsEditingName] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.name || '');
+  const [displayName, setDisplayName] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
+  const [isResettingAllProgress, setIsResettingAllProgress] = useState(false);
+  const [childrenCount, setChildrenCount] = useState(0);
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.name || '');
+      getChildProfilesByOwner(user.uid).then(profiles => {
+        setChildrenCount(profiles.length);
+      });
     }
   }, [user]);
 
@@ -45,16 +66,11 @@ export default function ProfilePage() {
 
     setIsSavingName(true);
     try {
-      // Atualizar no Firebase Authentication
       await updateAuthProfile(auth.currentUser, { displayName: displayName.trim() });
-
-      // Atualizar no Firestore
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, { name: displayName.trim() });
-
       toast({ title: "Identidade de Heroi Atualizada!", description: "Seu nome foi atualizado com sucesso." });
       setIsEditingName(false);
-      // O AuthContext deve atualizar o nome automaticamente devido ao listener do Firestore
     } catch (error) {
       console.error("Error updating name:", error);
       toast({ title: "Erro ao Salvar", description: "Não foi possível atualizar seu nome. Tente novamente.", variant: "destructive" });
@@ -78,6 +94,28 @@ export default function ProfilePage() {
     } finally {
       setIsSendingResetEmail(false);
     }
+  };
+
+  const handleResetAllProgress = async () => {
+      if (!user) return;
+      setIsResettingAllProgress(true);
+      try {
+        await resetAllChildrenProgress(user.uid);
+        toast({ title: "Nova Temporada Iniciada!", description: "O progresso de todos os seus Mini Herois foi redefinido." });
+      } catch (error) {
+        console.error("Error resetting all children progress:", error);
+        toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso. Tente novamente.", variant: "destructive" });
+      } finally {
+        setIsResettingAllProgress(false);
+      }
+  };
+  
+  const handleDeleteAccount = () => {
+    toast({
+        title: "Função em Desenvolvimento",
+        description: "A exclusão de conta será implementada em breve. Por enquanto, se desejar excluir sua conta, entre em contato com o suporte.",
+        duration: 8000,
+    });
   };
 
   if (loading) {
@@ -150,24 +188,91 @@ export default function ProfilePage() {
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+      
+      <Card className="border-destructive/50 shadow-lg">
+        <CardHeader className="bg-destructive/5">
+            <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="h-6 w-6"/> Zona de Perigo</CardTitle>
+            <CardDescription className="text-destructive/90">As ações abaixo são importantes e, em alguns casos, irreversíveis. Use com cuidado.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            <div className="space-y-1">
+                <h4 className="font-semibold">Redefinir Senha</h4>
+                <p className="text-sm text-muted-foreground">Será enviado um link para seu e-mail ({user.email}) para que você possa criar uma nova senha de acesso.</p>
+                <Button 
+                  variant="outline" 
+                  onClick={handlePasswordReset} 
+                  disabled={isSendingResetEmail}
+                  className="w-full sm:w-auto shadow-sm"
+                >
+                  {isSendingResetEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                  Enviar E-mail de Redefinição
+                </Button>
+            </div>
+            
+            <Separator />
+            
+            <div className="space-y-1">
+                <h4 className="font-semibold">Redefinir Progresso de Todos os Herois</h4>
+                <p className="text-sm text-muted-foreground">Esta ação irá zerar as estrelas, XP e o histórico de missões de todos os seus Mini Herois, sem apagar os perfis. Ideal para começar uma "nova temporada".</p>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={childrenCount === 0 || isResettingAllProgress}>
+                            <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso Geral
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Redefinir o progresso de TODOS os seus heróis?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação é irreversível e afetará todos os {childrenCount} heróis sob sua gestão. Todas as estrelas, XP, níveis e históricos de conclusão serão zerados. Deseja continuar?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isResettingAllProgress}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetAllProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingAllProgress}>
+                                {isResettingAllProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Sim, Redefinir Tudo
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
+            </div>
+            
+             <Separator />
+            
+             <div className="space-y-1">
+                <h4 className="font-semibold">Excluir Conta Permanentemente</h4>
+                <p className="text-sm text-muted-foreground">Isso removerá sua conta de Mestre e todos os dados associados (perfis de crianças, missões, etc.) de forma permanente.</p>
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full sm:w-auto shadow-sm">
+                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Minha Conta
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza ABSOLUTA?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação é final e não pode ser desfeita. Todos os seus dados, incluindo perfis de crianças, missões, recompensas e progresso, serão <span className="font-bold">excluídos permanentemente</span>.
+                                <br/><br/>
+                                Por segurança, ao confirmar, enviaremos um e-mail com o passo final para a exclusão.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90">
+                                Entendi, quero excluir
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
+            </div>
 
-          <div className="pt-4 border-t">
-            <h3 className="text-lg font-semibold mb-2">Segurança da Conta</h3>
-            <Button 
-              variant="outline" 
-              onClick={handlePasswordReset} 
-              disabled={isSendingResetEmail}
-              className="w-full sm:w-auto shadow-sm"
-            >
-              {isSendingResetEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
-              Redefinir Senha por E-mail
-            </Button>
-            <p className="text-xs text-muted-foreground mt-2">
-              Será enviado um link para o seu e-mail ({user.email}) para que você possa criar uma nova senha.
-            </p>
-          </div>
         </CardContent>
       </Card>
     </div>
   );
 }
+

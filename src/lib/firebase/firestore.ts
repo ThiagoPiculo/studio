@@ -243,6 +243,17 @@ export const resetChildProgress = async (childId: string): Promise<void> => {
   await batch.commit();
 };
 
+export const resetAllChildrenProgress = async (ownerId: string): Promise<void> => {
+  const children = await getChildProfilesByOwner(ownerId);
+  if (children.length === 0) {
+    return;
+  }
+  // This performs multiple transactions, which is acceptable for a small number of children.
+  // For a very large number of children, a single batched write would be more efficient.
+  const resetPromises = children.map(child => resetChildProgress(child.id));
+  await Promise.all(resetPromises);
+};
+
 
 // --- Family ---
 export const createFamily = async (ownerId: string, familyName: string): Promise<Family> => {
@@ -1490,3 +1501,4 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
+

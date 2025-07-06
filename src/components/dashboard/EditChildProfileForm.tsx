@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -360,13 +360,13 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         </div>
       </form>
       <Separator className="my-8" />
-      <div className="space-y-4 rounded-lg border border-destructive/50 p-4">
-        <h3 className="font-semibold text-lg text-destructive">Zona de Perigo</h3>
-        <p className="text-sm text-muted-foreground">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
+      <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+        <h3 className="font-semibold text-lg text-destructive flex items-center gap-2"><AlertTriangle/> Zona de Perigo</h3>
+        <p className="text-sm text-destructive/90">As ações abaixo são irreversíveis. Tenha certeza do que está fazendo.</p>
         <div className="flex flex-col sm:flex-row gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button type="button" variant="outline" className="w-full" disabled={isResetting || isDeleting}>
+                <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isResetting || isDeleting}>
                   <RotateCcw className="mr-2 h-4 w-4" />
                   Redefinir Progresso
                 </Button>
@@ -415,3 +415,4 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
     </Form>
   );
 }
+
