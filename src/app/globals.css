@@ -26,6 +26,13 @@
     --ring: 250 65% 60%;
     --radius: 1.25rem;
 
+    /* Chart & Icon Colors */
+    --chart-1: 220 85% 60%; /* blue */
+    --chart-2: 145 65% 45%; /* green */
+    --chart-3: 0 85% 60%;   /* red */
+    --chart-4: 260 85% 65%; /* purple */
+    --chart-5: 35 95% 55%;  /* orange */
+
     /* Sidebar Variables */
     --sidebar-background: 250 60% 99%;
     --sidebar-foreground: 250 40% 25%;
@@ -58,6 +65,13 @@
     --input: 250 30% 28%;
     --ring: 250 65% 65%;
     --radius: 1.25rem;
+
+    /* Chart & Icon Colors */
+    --chart-1: 220 85% 70%; /* lighter blue */
+    --chart-2: 145 65% 55%; /* lighter green */
+    --chart-3: 0 85% 70%;   /* lighter red */
+    --chart-4: 260 85% 75%; /* lighter purple */
+    --chart-5: 35 95% 65%;  /* lighter orange */
     
     /* Dark Sidebar Variables */
     --sidebar-background: 250 20% 15%;

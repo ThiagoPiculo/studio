@@ -54,25 +54,25 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda" isActive={pathname.startsWith('/dashboard/agenda')}>
-                            <CalendarDays className="text-blue-500" />
+                            <CalendarDays className="text-chart-1" />
                             <span>Agenda</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/missions" tooltip="Missões" isActive={pathname.startsWith('/dashboard/missions')}>
-                            <Target className="text-red-500" />
+                            <Target className="text-chart-3" />
                             <span>Missões</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard/rewards" tooltip="Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
-                            <Gift className="text-green-500" />
+                            <Gift className="text-chart-2" />
                             <span>Recompensas</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard/family" tooltip="Aliança e Colaboradores" isActive={pathname.startsWith('/dashboard/family')}>
-                            <Shield className="text-purple-500" />
+                            <Shield className="text-chart-4" />
                             <span>Aliança e Colaboradores</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
