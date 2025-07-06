@@ -12,7 +12,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Shield } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Shield, Link as LinkIcon } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
@@ -72,7 +72,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard/family" tooltip="Aliança e Colaboradores" isActive={pathname.startsWith('/dashboard/family')}>
-                            <Users className="text-chart-4" />
+                            <LinkIcon className="text-chart-4" />
                             <span>Aliança e Colaboradores</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
