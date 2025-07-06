@@ -140,7 +140,7 @@ export default function DashboardPage() {
 
       <section>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-headline">Seus Mini Herois</h2>
+          <h2 className="text-2xl font-headline">Suas Crianças</h2>
           <Link href="/dashboard/onboarding">
             <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Mini Heroi</Button>
           </Link>

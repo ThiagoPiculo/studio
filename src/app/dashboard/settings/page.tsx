@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -155,7 +156,7 @@ export default function SettingsPage() {
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="dashboard">Painel do Heroi</SelectItem>
+                            <SelectItem value="dashboard">Crianças</SelectItem>
                             <SelectItem value="agenda">Agenda</SelectItem>
                             <SelectItem value="missions">Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>
@@ -221,7 +222,7 @@ export default function SettingsPage() {
              <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/50 opacity-60">
                 <Label htmlFor="summary-emails" className="flex flex-col gap-1 cursor-not-allowed">
                   <span className="font-semibold">Resumos semanais por e-mail</span>
-                  <span className="font-normal text-xs text-muted-foreground">Receba um relatório do progresso dos heróis.</span>
+                  <span className="font-normal text-xs text-muted-foreground">Receba um relatório do progresso dos herois.</span>
                 </Label>
                 <Switch id="summary-emails" disabled />
               </div>
