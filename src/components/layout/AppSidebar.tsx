@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -8,7 +9,8 @@ import {
     SidebarMenuItem,
     SidebarMenuButton,
     SidebarRail,
-    SidebarFooter
+    SidebarFooter,
+    SidebarTrigger
 } from '@/components/ui/sidebar';
 import { Rocket, LayoutDashboard, CalendarDays, Target, Gift, Shield } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
@@ -18,14 +20,16 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 
 function AppLogo() {
-    const { state } = useSidebar();
     return (
-        <Link href="/dashboard" className="flex h-10 items-center justify-center gap-2 group-data-[collapsible=icon]:gap-0">
-            <Rocket className="h-7 w-7 text-primary" />
-            <span className="font-headline text-xl font-bold text-foreground group-data-[collapsible=icon]:hidden">
-                Mini Herois
-            </span>
-        </Link>
+        <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+            <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+                <Rocket className="h-7 w-7 text-primary" />
+                <span className="font-headline text-xl font-bold text-foreground">
+                    Mini Herois
+                </span>
+            </Link>
+            <SidebarTrigger />
+        </div>
     )
 }
 

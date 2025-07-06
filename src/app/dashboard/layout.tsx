@@ -1,3 +1,4 @@
+
 "use client";
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -46,7 +47,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex flex-col" style={{ minHeight: '100svh' }}>
           <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
             <div className="flex items-center gap-4">
-              <SidebarTrigger />
+              <SidebarTrigger className="md:hidden" />
               <Breadcrumbs />
             </div>
             <div className="flex items-center gap-2">
