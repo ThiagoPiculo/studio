@@ -289,4 +289,5 @@ export interface Notification {
   isRead: boolean;
   createdAt: Timestamp;
   relatedChildId?: string; // Optional, if it's about a specific child
+  relatedContextId?: string | null;
 }

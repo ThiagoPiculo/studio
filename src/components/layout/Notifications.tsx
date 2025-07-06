@@ -23,6 +23,7 @@ import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useRouter } from 'next/navigation';
 
 // Map notification types to icons
 const notificationIcons: { [key in Notification['type']]: React.ElementType } = {
@@ -57,7 +58,8 @@ const notificationCategoryLabels: { [key: string]: string } = {
 
 export function Notifications() {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, setCurrentContext } = useFamily();
+  const router = useRouter();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -123,6 +125,15 @@ export function Notifications() {
       return typeMatch && childMatch;
     });
   }, [notifications, typeFilter, childFilter]);
+  
+  const handleNotificationClick = (notification: Notification) => {
+    // Switch context if the notification is for a different context
+    if (notification.relatedContextId && notification.relatedContextId !== currentContext) {
+      setCurrentContext(notification.relatedContextId);
+    }
+    // Navigate to the notification's link
+    router.push(notification.href);
+  };
 
 
   return (
@@ -189,18 +200,22 @@ export function Notifications() {
                         const Icon = notificationIcons[notification.type] || Bell;
                         const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
                         return (
-                            <DropdownMenuItem key={notification.id} asChild className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto h-auto whitespace-normal">
-                                <Link href={notification.href} className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md">
-                                   {!notification.isRead && <div className="mt-2 flex h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
-                                   <div className={`flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5 ${notification.isRead ? 'opacity-60' : ''} ${!notification.isRead ? 'ml-[-16px]' : ''}`}>
-                                     <Icon className="h-5 w-5 text-muted-foreground" />
-                                   </div>
-                                   <div className="grid gap-1 flex-grow">
-                                     <p className="text-sm font-medium leading-tight">{notification.title}</p>
-                                     <p className="text-sm text-muted-foreground leading-snug">{notification.description}</p>
-                                     <p className="text-xs text-muted-foreground">{timeAgo}</p>
-                                   </div>
-                                </Link>
+                           <DropdownMenuItem
+                              key={notification.id}
+                              onSelect={() => handleNotificationClick(notification)}
+                              className="cursor-pointer data-[disabled]:opacity-100 data-[disabled]:pointer-events-auto h-auto whitespace-normal p-0"
+                            >
+                              <div className="flex items-start gap-3 p-2 hover:bg-accent/50 rounded-md w-full">
+                                {!notification.isRead && <div className="mt-2 flex h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
+                                <div className={`flex-shrink-0 p-1.5 rounded-full bg-muted mt-0.5 ${notification.isRead ? 'opacity-60' : ''} ${!notification.isRead ? 'ml-[-16px]' : ''}`}>
+                                  <Icon className="h-5 w-5 text-muted-foreground" />
+                                </div>
+                                <div className="grid gap-1 flex-grow">
+                                  <p className="text-sm font-medium leading-tight">{notification.title}</p>
+                                  <p className="text-sm text-muted-foreground leading-snug">{notification.description}</p>
+                                  <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                                </div>
+                              </div>
                             </DropdownMenuItem>
                         )
                     })

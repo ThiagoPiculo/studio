@@ -49,6 +49,7 @@ const createAndDispatchNotifications = async (
       ...notificationPayload,
       userId,
       isRead: false,
+      relatedContextId: child.familyId || null,
       createdAt: serverTimestamp() as Timestamp,
     };
     batch.set(newNotificationRef, newNotification);
@@ -337,6 +338,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     title: 'Você foi convidado!',
     description: `${inviterName} convidou você para se juntar à aliança "${family.name}".`,
     href: '/dashboard/family',
+    relatedContextId: family.id,
   });
 };
 
@@ -389,6 +391,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
       title: 'Pedido para entrar na Aliança',
       description: `${joiningUserProfile.name || 'Um usuário'} deseja entrar na sua aliança "${family.name}".`,
       href: '/dashboard/family',
+      relatedContextId: family.id,
     });
 
     throw new Error("APPROVAL_PENDING");
@@ -435,6 +438,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
               title: 'Novo membro na Aliança!',
               description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança via código.`,
               href: '/dashboard/family',
+              relatedContextId: family.id,
           });
       });
   await Promise.all(notificationPromises);
@@ -611,6 +615,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
               title: 'Novo membro na Aliança!',
               description: `${newMemberProfile?.name || 'Um novo herói'} juntou-se à aliança ${family.name}.`,
               href: '/dashboard/family',
+              relatedContextId: family.id,
           });
       });
   await Promise.all(notificationPromises);
@@ -683,6 +688,7 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
       title: 'Você entrou na Aliança!',
       description: `Seu pedido para entrar na aliança "${updatedInvitation.familyName}" foi aprovado.`,
       href: '/dashboard/family',
+      relatedContextId: updatedInvitation.familyId,
   });
 };
 
