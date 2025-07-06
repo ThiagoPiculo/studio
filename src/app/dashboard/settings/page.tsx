@@ -126,7 +126,10 @@ export default function SettingsPage() {
                 </CardDescription>
               </div>
             </div>
-            <ThemeSwitcher />
+            <div className="flex items-center gap-2">
+              <Label htmlFor="theme-switcher-button" className="text-sm font-medium">Tema visual</Label>
+              <ThemeSwitcher />
+            </div>
           </div>
         </CardHeader>
       </Card>

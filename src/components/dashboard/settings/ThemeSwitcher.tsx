@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 type Theme = "light" | "dark" | "system"
 
 export function ThemeSwitcher() {
-  const [theme, setTheme] = React.useState<Theme>("system")
+  const [theme, setTheme] = React.useState<Theme>("light")
 
   // On initial mount, read the theme from localStorage
   React.useEffect(() => {
@@ -65,7 +65,7 @@ export function ThemeSwitcher() {
   }
 
   return (
-    <Button variant="ghost" size="icon" onClick={cycleTheme} aria-label={getTooltipText()}>
+    <Button id="theme-switcher-button" variant="ghost" size="icon" onClick={cycleTheme} aria-label={getTooltipText()}>
         {renderIcon()}
     </Button>
   )
