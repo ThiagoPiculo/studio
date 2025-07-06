@@ -1,3 +1,4 @@
+
 "use client";
 
 import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
@@ -47,13 +48,13 @@ export default function OnboardingPage() {
 
   const getTitle = () => {
     if (isLoadingCount) return "Carregando...";
-    return childrenCount === 0 ? "Vamos Adicionar Seu Primeiro Mini Herois!" : "Vamos Adicionar Mais um Mini Herois!";
+    return childrenCount === 0 ? "Vamos Adicionar Seu Primeiro Mini Heroi!" : "Vamos Adicionar Mais um Mini Heroi!";
   };
 
   const getDescription = () => {
     if (isLoadingCount) return "Aguarde um momento...";
     return childrenCount === 0 
-      ? "Toda grande aventura começa com um herói (ou heroína!). Conte-nos um pouco sobre sua criança para começar." 
+      ? "Toda grande aventura começa com um heroi (ou heroína!). Conte-nos um pouco sobre sua criança para começar." 
       : "A equipe de Mini Herois está crescendo! Conte-nos um pouco sobre a nova criança.";
   };
 

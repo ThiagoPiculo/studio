@@ -20,7 +20,7 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Iniciação e Primeiros Passos",
         items: [
-            { id: 'hero_novato', title: 'Herói Novato', description: 'Conclua sua primeira missão de qualquer tipo para celebrar o início da sua jornada.', icon: Sparkles, color: '#4ade80' },
+            { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo para celebrar o início da sua jornada.', icon: Sparkles, color: '#4ade80' },
             { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes" pela primeira vez.', icon: Smile, color: '#60a5fa' },
             { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama" pela primeira vez para mostrar sua responsabilidade.', icon: BedDouble, color: '#c084fc' },
         ]
@@ -39,14 +39,14 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
             { id: 'cacador_estrelas', title: 'Caçador de Estrelas', description: 'Acumule um total de 100 estrelas.', icon: Star, color: '#f59e0b' },
             { id: 'colecionador_tesouros', title: 'Colecionador de Tesouros', description: 'Acumule um total de 500 estrelas. Um grande avanço!', icon: Stars, color: '#f59e0b' },
             { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Uma conquista épica! Acumule um total de 1.000 estrelas.', icon: Crown, color: '#f59e0b' },
-            { id: 'heroi_ascensao', title: 'Herói em Ascensão', description: 'Alcance o Nível 5 de XP para reconhecer seu progresso.', icon: TrendingUp, color: '#818cf8' },
-            { id: 'campeao_herois', title: 'Campeão dos Heróis', description: 'Um símbolo de grande experiência! Alcance o Nível 10 de XP.', icon: Award, color: '#a78bfa' },
+            { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5 de XP para reconhecer seu progresso.', icon: TrendingUp, color: '#818cf8' },
+            { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Um símbolo de grande experiência! Alcance o Nível 10 de XP.', icon: Award, color: '#a78bfa' },
         ]
     },
     {
         title: "Exploração e Diversidade",
         items: [
-            { id: 'heroi_versatil', title: 'Herói Versátil', description: 'Conclua pelo menos uma missão de 3 categorias diferentes (ex: Casa, Escola, Saúde).', icon: Puzzle, color: '#fb923c' },
+            { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Conclua pelo menos uma missão de 3 categorias diferentes (ex: Casa, Escola, Saúde).', icon: Puzzle, color: '#fb923c' },
             { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão da categoria Social ou Ambiental pela primeira vez.', icon: Compass, color: '#34d399' },
         ]
     }

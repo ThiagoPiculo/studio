@@ -12,8 +12,8 @@ function RegisterPageContent() {
   const searchParams = useSearchParams();
   const inviteCode = searchParams.get('invite_code');
 
-  const title = inviteCode ? "Junte-se à Equipe de Heróis!" : "Monte sua Central de Missões";
-  const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Crie sua conta para guiar seus heróis em jornadas inesquecíveis.";
+  const title = inviteCode ? "Junte-se à Equipe de Herois!" : "Monte sua Central de Missões";
+  const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Crie sua conta para guiar seus herois em jornadas inesquecíveis.";
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">

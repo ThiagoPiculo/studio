@@ -327,7 +327,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
           name="color"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Cor do Herói</FormLabel>
+              <FormLabel>Cor do Heroi</FormLabel>
               <FormControl>
                  {isLoadingColors ? (
                     <div className="grid grid-cols-8 gap-2">

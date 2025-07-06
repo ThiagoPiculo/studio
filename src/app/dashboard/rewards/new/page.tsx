@@ -100,7 +100,7 @@ function CreateRewardTemplatePageContent() {
         // Mostra o toast de aviso para recompensas materiais, se aplicável
         if (isCategoryMaterial) {
             toast({
-                title: "Dica de Mestre Herói",
+                title: "Dica de Mestre Heroi",
                 description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
                 variant: "default", 
                 duration: 10000,
@@ -111,7 +111,7 @@ function CreateRewardTemplatePageContent() {
     // Disparar a lógica do toast se a categoria inicial for material
     if (form.getValues('category') === 'material_items') {
         toast({
-            title: "Dica de Mestre Herói",
+            title: "Dica de Mestre Heroi",
             description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
             variant: "default",
             duration: 10000,

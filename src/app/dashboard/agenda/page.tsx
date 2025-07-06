@@ -677,7 +677,7 @@ function AgendaPageContent() {
                   <div>
                       <CardTitle className="text-3xl font-headline flex items-center gap-2 whitespace-nowrap">
                           <CalendarIcon className="h-8 w-8 text-primary" />
-                          Agenda dos Heróis
+                          Agenda dos Herois
                       </CardTitle>
                       <CardDescription>
                           Planeje e visualize as missões da sua equipe.
@@ -849,7 +849,7 @@ function AgendaPageContent() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Excluir esta ocorrência?</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" para o Mini Herói <strong>{instanceToExclude ? childrenMap.get(instanceToExclude.instance.childId)?.name : ''}</strong> apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
+                    Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" para o Mini Heroi <strong>{instanceToExclude ? childrenMap.get(instanceToExclude.instance.childId)?.name : ''}</strong> apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
                     <br />
                     As outras repetições não serão afetadas.
                 </AlertDialogDescription>

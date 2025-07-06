@@ -69,13 +69,13 @@ export function OnboardingForm() {
         birthDate: Timestamp.fromDate(values.childBirthDate), 
         gender: values.childGender,
       });
-      toast({ title: "Mini Herói Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
+      toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
       toast({
-        title: "Falha ao Adicionar Mini Herói",
-        description: "Não foi possível adicionar o Mini Herói. Verifique os dados informados ou tente novamente mais tarde.",
+        title: "Falha ao Adicionar Mini Heroi",
+        description: "Não foi possível adicionar o Mini Heroi. Verifique os dados informados ou tente novamente mais tarde.",
         variant: "destructive",
       });
     } finally {
@@ -206,7 +206,7 @@ export function OnboardingForm() {
           name="childGender"
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>Gênero do Mini Herói/Heroína</FormLabel>
+              <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
               <FormControl>
                 <RadioGroup
                   onValueChange={field.onChange}
@@ -244,7 +244,7 @@ export function OnboardingForm() {
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          Adicionar Mini Herói
+          Adicionar Mini Heroi
         </Button>
       </form>
     </Form>

@@ -112,7 +112,7 @@ export default function ManageChildPage() {
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
         }));
       } else {
-        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Herói.", variant: "destructive" });
+        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi.", variant: "destructive" });
         router.push('/dashboard');
       }
     } catch (error) {
@@ -212,7 +212,7 @@ export default function ManageChildPage() {
 
   const handleProfileUpdate = useCallback(async () => {
     await fetchData();
-    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Herói ${child?.name || ''} foram salvas.` });
+    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${child?.name || ''} foram salvas.` });
   }, [fetchData, toast, child?.name]);
 
   const handleRegenerateAccessCode = async () => {
@@ -486,7 +486,7 @@ export default function ManageChildPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando dados do Mini Herói...</p>
+        <p className="text-lg text-muted-foreground">Carregando dados do Mini Heroi...</p>
       </div>
     );
   }
@@ -494,7 +494,7 @@ export default function ManageChildPage() {
   if (!child) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
-        <p className="text-lg text-destructive">Mini Herói não encontrado.</p>
+        <p className="text-lg text-destructive">Mini Heroi não encontrado.</p>
         <Button onClick={() => router.push('/dashboard')} className="mt-4">
             Voltar ao Painel
         </Button>
@@ -1211,7 +1211,7 @@ export default function ManageChildPage() {
                         O Mural de Conquistas
                     </DialogTitle>
                     <DialogDescription className="pt-2">
-                        As medalhas celebram a jornada do seu herói, reconhecendo desde os primeiros passos até a maestria.
+                        As medalhas celebram a jornada do seu heroi, reconhecendo desde os primeiros passos até a maestria.
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] -mx-6 px-6">
@@ -1219,9 +1219,9 @@ export default function ManageChildPage() {
                         <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
                         
                         <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
-                        <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um herói, incentivando-o a começar com o pé direito.</p>
+                        <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
                         <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Herói Novato:</strong> Conquistada ao completar a primeira missão.</li>
+                            <li><strong>Heroi Novato:</strong> Conquistada ao completar a primeira missão.</li>
                             <li><strong>Defensor do Sorriso:</strong> Ganha ao fazer a missão "Escovar os dentes" pela primeira vez.</li>
                             <li><strong>Guardião do Descanso:</strong> Recebida ao arrumar a cama pela primeira vez.</li>
                         </ul>
@@ -1238,18 +1238,18 @@ export default function ManageChildPage() {
                         <p>Estas medalhas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Caçador de Estrelas:</strong> Por acumular um total de 100 estrelas (⭐).</li>
-                            <li><strong>Herói em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
-                            <li><strong>Campeão dos Heróis:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
+                            <li><strong>Heroi em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
+                            <li><strong>Campeão dos Herois:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
                         </ul>
                         
                         <h4 className="font-bold text-foreground pt-2">Exploração e Diversidade</h4>
                         <p>Estas incentivam a curiosidade e a versatilidade, motivando a criança a sair da zona de conforto e experimentar novas responsabilidades.</p>
                         <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Herói Versátil:</strong> Para quem completa missões de pelo menos 3 categorias diferentes (ex: Casa, Escola e Saúde).</li>
+                            <li><strong>Heroi Versátil:</strong> Para quem completa missões de pelo menos 3 categorias diferentes (ex: Casa, Escola e Saúde).</li>
                             <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
                         </ul>
 
-                        <p className="pt-2">Essencialmente, o sistema de medalhas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Herói, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
+                        <p className="pt-2">Essencialmente, o sistema de medalhas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
                     </div>
                 </ScrollArea>
                 <DialogFooter>

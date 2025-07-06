@@ -267,7 +267,7 @@ export default function RewardTemplatesHubPage() {
               O Poder das Recompensas
             </DialogTitle>
             <DialogDescription className="pt-2">
-              As recompensas são a parte fundamental da jornada no Mini Herois. Elas são o grande prêmio no final da aventura, o "tesouro" que os heróis ganham com seu esforço.
+              As recompensas são a parte fundamental da jornada no Mini Herois. Elas são o grande prêmio no final da aventura, o "tesouro" que os herois ganham com seu esforço.
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh] pr-4">
@@ -502,7 +502,7 @@ export default function RewardTemplatesHubPage() {
                                     )}
                                 </div>
                             ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum herói com esta recompensa ativa.</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta recompensa ativa.</p>
                             )}
                         </div>
                     </CardContent>

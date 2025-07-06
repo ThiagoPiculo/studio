@@ -26,7 +26,7 @@ Esta seção apresenta um resumo das informações e progresso da criança no ap
     *   **Detalhes**: Assim como em muitos jogos, XP é acumulado ao realizar certas ações, principalmente completar missões. Ao atingir uma certa quantidade de XP, a criança sobe de nível.
 
 7.  **Código de Acesso (Ex: "🛡️ Código de Acesso: 633640")**:
-    *   **O que é**: Este é o **Código de Acesso** de 6 dígitos, também chamado de "Chave Secreta de Herói".
+    *   **O que é**: Este é o **Código de Acesso** de 6 dígitos, também chamado de "Chave Secreta de Heroi".
     *   **Detalhes**: A criança usa este código para fazer login na interface infantil do aplicativo. O ícone de escudo 🛡️ reforça a ideia de ser algo seguro e pessoal. É através deste código que ela acessa suas missões, recompensas e acompanha seu progresso.
 
 Em resumo, este cabeçalho do perfil da criança é um painel visual que mostra suas informações básicas de identificação, seu progresso no sistema de gamificação (Nível, Estrelas, XP) e o código de acesso essencial para o login infantil.

@@ -23,7 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 const childLoginSchema = z.object({
   accessCode: z
     .string()
-    .length(6, { message: "Hmm, sua Chave Secreta tem que ter 6 números. Conte direitinho e tente de novo, herói!" })
+    .length(6, { message: "Hmm, sua Chave Secreta tem que ter 6 números. Conte direitinho e tente de novo, heroi!" })
     .regex(/^\d{6}$/, { message: "Opa! A Chave Secreta só usa números, como 1, 2, 3... Tente digitar só os números mágicos!" }),
 });
 
@@ -69,7 +69,7 @@ export function ChildLoginForm() {
 
   const handleHelpClick = () => {
     toast({
-      title: "Precisa de Ajuda, Herói?",
+      title: "Precisa de Ajuda, Heroi?",
       description: "Sua Chave Secreta é um código de 6 números. Peça para um adulto te mostrar qual é o seu, para você poder entrar na aventura!",
       duration: 10000,
     });
@@ -83,7 +83,7 @@ export function ChildLoginForm() {
           name="accessCode"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="text-lg font-semibold text-center block mb-2">Digite sua Chave Secreta de Herói</FormLabel>
+              <FormLabel className="text-lg font-semibold text-center block mb-2">Digite sua Chave Secreta de Heroi</FormLabel>
               <FormControl>
                 <Input
                   placeholder="□ □ □ □ □ □"

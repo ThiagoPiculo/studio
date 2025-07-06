@@ -1,3 +1,4 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -37,7 +38,7 @@ export default function WelcomePage() {
                     <CardTitle className="text-2xl font-semibold">Sou Responsável</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
-                    Crie missões personalizadas, defina recompensas e acompanhe o progresso dos seus Mini Heróis. Gerencie a Aliança Familiar completa.
+                    Crie missões personalizadas, defina recompensas e acompanhe o progresso dos seus Mini Herois. Gerencie a Aliança Familiar completa.
                 </CardDescription>
                 <Link href="/auth/login" passHref>
                     <Button size="lg" className="w-full rounded-xl text-lg shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
@@ -50,7 +51,7 @@ export default function WelcomePage() {
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
                         <Heart className="h-9 w-9 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
                     </div>
-                    <CardTitle className="text-2xl font-semibold">Sou um Mini Herói</CardTitle>
+                    <CardTitle className="text-2xl font-semibold">Sou um Mini Heroi</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
                     Complete missões divertidas, ganhe estrelas ⭐, suba de nível 🚀 e desbloqueie conquistas incríveis! Sua jornada heroica começa aqui.

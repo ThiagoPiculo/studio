@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -157,7 +158,7 @@ export default function DashboardPage() {
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando sua primeira criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Herói
+                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
                 </Button>
               </Link>
             </CardContent>

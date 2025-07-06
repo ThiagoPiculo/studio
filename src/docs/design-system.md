@@ -1,3 +1,4 @@
+
 # Design System - Mini Herois
 
 Este documento descreve os princípios visuais e de componentes para o projeto Mini Herois, visando manter a consistência e a qualidade da interface do usuário.

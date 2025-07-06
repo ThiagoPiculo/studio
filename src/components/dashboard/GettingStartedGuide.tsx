@@ -66,7 +66,7 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   };
 
   const steps = [
-    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Herói', href: '/dashboard/onboarding', icon: UserPlus },
+    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Heroi', href: '/dashboard/onboarding', icon: UserPlus },
     { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: Target },
     { name: 'rewards', complete: hasRewards, title: 'Crie sua primeira Recompensa', href: '/dashboard/rewards/new', icon: Gift },
   ];

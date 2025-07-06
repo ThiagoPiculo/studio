@@ -52,7 +52,7 @@ export default function ProfilePage() {
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, { name: displayName.trim() });
 
-      toast({ title: "Identidade de Herói Atualizada!", description: "Seu nome foi atualizado com sucesso." });
+      toast({ title: "Identidade de Heroi Atualizada!", description: "Seu nome foi atualizado com sucesso." });
       setIsEditingName(false);
       // O AuthContext deve atualizar o nome automaticamente devido ao listener do Firestore
     } catch (error) {

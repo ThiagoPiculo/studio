@@ -1,6 +1,7 @@
-# Guia Rápido: Agendando Missões para seus Heróis
 
-Bem-vindo ao centro de comando de missões! Agendar tarefas para seus Mini Heróis é fácil e flexível. Aqui está como você pode fazer isso, seja para todos de uma vez ou personalizando para cada um.
+# Guia Rápido: Agendando Missões para seus Herois
+
+Bem-vindo ao centro de comando de missões! Agendar tarefas para seus Mini Herois é fácil e flexível. Aqui está como você pode fazer isso, seja para todos de uma vez ou personalizando para cada um.
 
 ## Situação 1: Uma Regra para Todos (O Caminho Rápido)
 
@@ -8,7 +9,7 @@ Esta é a forma mais comum e rápida, perfeita para tarefas como "arrumar a cama
 
 1.  **Comece na Agenda:** Na tela da "Agenda", clique no botão **+ Adicionar Missão**.
 2.  **Escolha a Missão:** Uma janela aparecerá com todas as missões que você já criou no seu catálogo. Clique na missão que você quer agendar (ex: "Fazer o dever de casa").
-3.  **Selecione os Heróis:** Agora você verá uma lista com os seus Mini Heróis. Marque a caixa de seleção ao lado de cada criança que participará desta missão.
+3.  **Selecione os Herois:** Agora você verá uma lista com os seus Mini Herois. Marque a caixa de seleção ao lado de cada criança que participará desta missão.
     *   *Dica:* Note que, por padrão, todos receberão o mesmo horário que você definiu quando criou a missão no catálogo.
 4.  **Confirme:** Clique em **"Confirmar Atribuições"**.
 
@@ -16,7 +17,7 @@ Esta é a forma mais comum e rápida, perfeita para tarefas como "arrumar a cama
 
 ---
 
-## Situação 2: Horários Diferentes para Heróis Diferentes (O Truque do Mestre)
+## Situação 2: Horários Diferentes para Herois Diferentes (O Truque do Mestre)
 
 E se uma das crianças tiver um horário diferente? Sem problemas! O sistema foi feito para isso.
 

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -266,8 +265,8 @@ function FamilyPageContent() {
         });
       } else if (error.message === "Nenhum usuário encontrado com este e-mail.") {
           toast({
-              title: "Herói Ainda Não Cadastrado",
-              description: "O e-mail que você inseriu não pertence a um herói cadastrado. Peça para a pessoa criar uma conta primeiro. Depois, você poderá adicioná-la à sua aliança!",
+              title: "Heroi Ainda Não Cadastrado",
+              description: "O e-mail que você inseriu não pertence a um heroi cadastrado. Peça para a pessoa criar uma conta primeiro. Depois, você poderá adicioná-la à sua aliança!",
               variant: "default",
           });
       } else {
@@ -419,7 +418,7 @@ function FamilyPageContent() {
         setUnassignedChildren(children);
     } catch (error) {
         console.error("Error fetching unassigned children:", error);
-        toast({ title: "Erro ao buscar Mini Herois", description: "Não foi possível carregar seus heróis disponíveis.", variant: "destructive" });
+        toast({ title: "Erro ao buscar Mini Herois", description: "Não foi possível carregar seus herois disponíveis.", variant: "destructive" });
     } finally {
         setIsLoadingUnassigned(false);
     }
@@ -436,14 +435,14 @@ function FamilyPageContent() {
         .map(([childId]) => childId);
 
       if (childrenIdsToAssign.length === 0) {
-          toast({ title: "Nenhum Herói Selecionado", description: "Selecione pelo menos um Mini Herói para adicionar à aliança." });
+          toast({ title: "Nenhum Heroi Selecionado", description: "Selecione pelo menos um Mini Heroi para adicionar à aliança." });
           return;
       }
       
       setIsAssigningChildren(true);
       try {
           await assignChildrenToFamily(childrenIdsToAssign, currentContext);
-          toast({ title: "Equipe Reforçada!", description: `${childrenIdsToAssign.length} ${childrenIdsToAssign.length === 1 ? 'Mini Herói foi adicionado' : 'Mini Herois foram adicionados'} à aliança!` });
+          toast({ title: "Equipe Reforçada!", description: `${childrenIdsToAssign.length} ${childrenIdsToAssign.length === 1 ? 'Mini Heroi foi adicionado' : 'Mini Herois foram adicionados'} à aliança!` });
           
           getChildProfilesByFamily(currentContext).then(setChildrenInFamily);
 
@@ -462,7 +461,7 @@ function FamilyPageContent() {
     try {
         await removeChildFromFamily(childToRemove.id);
         setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
-        toast({ title: "Herói em Missão Solo", description: `${childToRemove.name} agora está no espaço pessoal e não faz mais parte da aliança.` });
+        toast({ title: "Heroi em Missão Solo", description: `${childToRemove.name} agora está no espaço pessoal e não faz mais parte da aliança.` });
     } catch (error: any) {
         console.error("Error removing child from family:", error);
         toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
@@ -592,7 +591,7 @@ function FamilyPageContent() {
                       Adicionar Membro Infantil
                     </Button>
                 </CardTitle>
-                <CardDescription>Gerencie o perfil de cada Mini Herói da sua aliança.</CardDescription>
+                <CardDescription>Gerencie o perfil de cada Mini Heroi da sua aliança.</CardDescription>
             </CardHeader>
             <CardContent>
                 {childrenInFamily.length > 0 ? (
@@ -803,9 +802,9 @@ function FamilyPageContent() {
         <Dialog open={isAddChildDialogOpen} onOpenChange={setIsAddChildDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Adicionar Mini Heróis à Aliança</DialogTitle>
+                    <DialogTitle>Adicionar Mini Herois à Aliança</DialogTitle>
                     <DialogDescription>
-                        Selecione os Mini Heróis do seu espaço pessoal que você deseja adicionar à aliança "{familyDetails?.name}".
+                        Selecione os Mini Herois do seu espaço pessoal que você deseja adicionar à aliança "{familyDetails?.name}".
                     </DialogDescription>
                 </DialogHeader>
                 {isLoadingUnassigned ? (
@@ -814,11 +813,11 @@ function FamilyPageContent() {
                     </div>
                 ) : unassignedChildren.length === 0 ? (
                     <div className="py-6 text-center">
-                        <p className="text-muted-foreground mb-4">Todos os seus Mini Heróis já fazem parte de uma aliança.</p>
+                        <p className="text-muted-foreground mb-4">Todos os seus Mini Herois já fazem parte de uma aliança.</p>
                         <Link href="/dashboard/onboarding">
                             <Button>
                                 <PlusCircle className="mr-2 h-4 w-4" />
-                                Cadastrar Novo Mini Herói
+                                Cadastrar Novo Mini Heroi
                             </Button>
                         </Link>
                     </div>
@@ -875,7 +874,7 @@ function FamilyPageContent() {
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
                   <Shield className="mr-3 h-8 w-8 text-primary" />
-                  Alianças de Heróis
+                  Alianças de Herois
                 </CardTitle>
                 <CardDescription>
                   Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
@@ -967,7 +966,7 @@ function FamilyPageContent() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                           <AlertDialogHeader>
-                              <AlertDialogTitle>Aguardando Aprovação do Herói Mestre</AlertDialogTitle>
+                              <AlertDialogTitle>Aguardando Aprovação do Heroi Mestre</AlertDialogTitle>
                               <AlertDialogDescription>
                                   Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança e Colaboradores" na conta dele(a) para aprovar sua entrada.
                               </AlertDialogDescription>

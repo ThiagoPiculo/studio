@@ -1,13 +1,14 @@
+
 # Guia do Usuário: O Poder das Recompensas
 
-Bem-vindo ao arsenal de motivação do Mini Heróis! As recompensas são o coração do nosso sistema de gamificação, transformando esforço em conquistas tangíveis e divertidas.
+Bem-vindo ao arsenal de motivação do Mini Herois! As recompensas são o coração do nosso sistema de gamificação, transformando esforço em conquistas tangíveis e divertidas.
 
 ## Como as Recompensas Funcionam?
 
 O ciclo é simples e poderoso, desenhado para ensinar sobre valor e esforço de uma forma que as crianças entendem:
 
-1.  **Heróis Cumprem Missões:** Ao realizar as tarefas diárias que você define (como "arrumar a cama" ou "fazer a lição"), a criança ganha **Estrelas (⭐)**.
-2.  **Estrelas são Moedas Heroicas:** As estrelas são a representação visual do trabalho bem feito. Elas se acumulam no perfil do herói.
+1.  **Herois Cumprem Missões:** Ao realizar as tarefas diárias que você define (como "arrumar a cama" ou "fazer a lição"), a criança ganha **Estrelas (⭐)**.
+2.  **Estrelas são Moedas Heroicas:** As estrelas são a representação visual do trabalho bem feito. Elas se acumulam no perfil do heroi.
 3.  **Estrelas Desbloqueiam Tesouros:** Com as estrelas que juntou, a criança pode "comprar" ou "resgatar" as recompensas que você cadastrou no Catálogo de Recompensas.
 
 ## Para Que Servem as Recompensas?
@@ -27,6 +28,6 @@ O sistema é totalmente flexível. Aqui estão algumas ideias para começar:
 *   **Privilégios:** Escolher o cardápio do jantar, ter 30 minutos a mais de videogame, dormir um pouco mais tarde no fim de semana.
 *   **Itens Materiais:** Um gibi novo, um pacote de figurinhas, um livro ou um brinquedo pequeno.
 
-**Dica de Mestre Herói:** Equilibre os tipos de recompensas. As experiências e privilégios costumam ter um impacto emocional mais duradouro e fortalecem os laços familiares.
+**Dica de Mestre Heroi:** Equilibre os tipos de recompensas. As experiências e privilégios costumam ter um impacto emocional mais duradouro e fortalecem os laços familiares.
 
-Use o **Catálogo de Recompensas** para criar e gerenciar todos os tesouros que seus Mini Heróis poderão conquistar. Boa jornada!
+Use o **Catálogo de Recompensas** para criar e gerenciar todos os tesouros que seus Mini Herois poderão conquistar. Boa jornada!

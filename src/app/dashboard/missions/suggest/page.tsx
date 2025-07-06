@@ -55,7 +55,7 @@ export default function SuggestMissionsPage() {
         setSuggestedMissions(result.missions);
         toast({
           title: 'Missões Sugeridas!',
-          description: 'Nossa IA preparou algumas ideias para inspirar seus heróis.',
+          description: 'Nossa IA preparou algumas ideias para inspirar seus herois.',
         });
       } else {
         setSuggestedMissions([]);

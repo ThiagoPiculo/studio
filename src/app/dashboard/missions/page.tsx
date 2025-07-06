@@ -212,7 +212,7 @@ export default function MissionsHubPage() {
                 <ul className="list-disc pl-5 space-y-3">
                     <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
                     <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
-                    <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o herói ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
+                    <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o heroi ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
                     <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
                     <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
                 </ul>
@@ -326,7 +326,7 @@ export default function MissionsHubPage() {
                                     )}
                                 </div>
                             ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum herói com esta missão ativa.</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
                             )}
                         </div>
                     </CardContent>
