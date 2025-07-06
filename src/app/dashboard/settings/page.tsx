@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -117,29 +116,22 @@ export default function SettingsPage() {
     <div className="space-y-8">
       <Card className="shadow-lg">
         <CardHeader>
-          <div className="flex items-center gap-4">
-            <SettingsIcon className="h-8 w-8 text-primary" />
-            <div>
-              <CardTitle className="text-3xl font-headline">Configurações</CardTitle>
-              <CardDescription>
-                Gerencie as configurações da sua conta e preferências do aplicativo.
-              </CardDescription>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <SettingsIcon className="h-8 w-8 text-primary" />
+              <div>
+                <CardTitle className="text-3xl font-headline">Configurações</CardTitle>
+                <CardDescription>
+                  Gerencie as configurações da sua conta e preferências do aplicativo.
+                </CardDescription>
+              </div>
             </div>
+            <ThemeSwitcher />
           </div>
         </CardHeader>
       </Card>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5 text-primary" /> Tema Visual</CardTitle>
-            <CardDescription>Escolha a aparência do aplicativo.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ThemeSwitcher />
-          </CardContent>
-        </Card>
-
         <Card className="md:col-span-2">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações do Sistema</CardTitle>

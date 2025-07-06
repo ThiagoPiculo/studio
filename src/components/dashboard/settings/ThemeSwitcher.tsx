@@ -1,17 +1,16 @@
-
 "use client"
 
-import { useState, useEffect } from "react"
+import * as React from "react"
 import { Sun, Moon, Laptop } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 type Theme = "light" | "dark" | "system"
 
 export function ThemeSwitcher() {
-  const [theme, setTheme] = useState<Theme>("system")
+  const [theme, setTheme] = React.useState<Theme>("system")
 
   // On initial mount, read the theme from localStorage
-  useEffect(() => {
+  React.useEffect(() => {
     const storedTheme = localStorage.getItem("theme") as Theme | null
     if (storedTheme && ["light", "dark", "system"].includes(storedTheme)) {
       setTheme(storedTheme)
@@ -19,7 +18,7 @@ export function ThemeSwitcher() {
   }, [])
 
   // Whenever the theme state changes, apply it to the DOM and save to localStorage
-  useEffect(() => {
+  React.useEffect(() => {
     const root = window.document.documentElement
     
     // Determine if dark mode should be active
@@ -34,32 +33,40 @@ export function ThemeSwitcher() {
     localStorage.setItem("theme", theme)
   }, [theme])
 
+  const cycleTheme = () => {
+    const themes: Theme[] = ["light", "dark", "system"];
+    const currentIndex = themes.indexOf(theme);
+    const nextIndex = (currentIndex + 1) % themes.length;
+    setTheme(themes[nextIndex]);
+  };
+
+  const renderIcon = () => {
+    switch (theme) {
+      case "light":
+        return <Sun className="h-5 w-5" />;
+      case "dark":
+        return <Moon className="h-5 w-5" />;
+      case "system":
+        return <Laptop className="h-5 w-5" />;
+      default:
+        return <Laptop className="h-5 w-5" />;
+    }
+  };
+  
+  const getTooltipText = () => {
+     switch (theme) {
+      case "light":
+        return "Mudar para tema escuro";
+      case "dark":
+        return "Mudar para tema do sistema";
+      case "system":
+        return "Mudar para tema claro";
+    }
+  }
+
   return (
-    <div className="flex gap-2 rounded-lg border p-1 bg-muted/50">
-      <Button
-        variant={theme === "light" ? "secondary" : "ghost"}
-        onClick={() => setTheme("light")}
-        className="flex-1"
-        aria-pressed={theme === 'light'}
-      >
-        <Sun className="mr-2 h-4 w-4" /> Claro
-      </Button>
-      <Button
-        variant={theme === "dark" ? "secondary" : "ghost"}
-        onClick={() => setTheme("dark")}
-        className="flex-1"
-        aria-pressed={theme === 'dark'}
-      >
-        <Moon className="mr-2 h-4 w-4" /> Escuro
-      </Button>
-      <Button
-        variant={theme === "system" ? "secondary" : "ghost"}
-        onClick={() => setTheme("system")}
-        className="flex-1"
-        aria-pressed={theme === 'system'}
-      >
-        <Laptop className="mr-2 h-4 w-4" /> Sistema
-      </Button>
-    </div>
+    <Button variant="ghost" size="icon" onClick={cycleTheme} aria-label={getTooltipText()}>
+        {renderIcon()}
+    </Button>
   )
 }
