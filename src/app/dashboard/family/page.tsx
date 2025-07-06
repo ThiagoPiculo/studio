@@ -868,7 +868,7 @@ function FamilyPageContent() {
               {userAlliances.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto justify-between flex-shrink-0">
+                  <Button variant="secondary" className="w-full sm:w-auto justify-between flex-shrink-0">
                     Mudar para uma aliança
                     <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                   </Button>
