@@ -328,6 +328,15 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     createdAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newInvitationRef, newInvitation);
+  
+  // Notify the invitee
+  await addNotification({
+    userId: invitee.uid,
+    type: 'alliance_join_request',
+    title: 'Você foi convidado!',
+    description: `${inviterName} convidou você para se juntar à aliança "${family.name}".`,
+    href: '/dashboard/family',
+  });
 };
 
 export const joinFamilyByInviteCode = async (userId: string, inviteCode: string): Promise<FamilyMembership | null> => {
@@ -1278,7 +1287,7 @@ export const toggleUserFeatureVote = async (userId: string, featureId: string): 
 
   await runTransaction(db, async (transaction) => {
     const userVoteSnap = await transaction.get(userVoteRef);
-    const featureVoteSnap = await transaction.get(featureVoteRef);
+    const featureVoteSnap = await getDoc(featureVoteRef);
     
     const currentCount = featureVoteSnap.data()?.likeCount || 0;
 
@@ -1341,4 +1350,5 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
+
 
