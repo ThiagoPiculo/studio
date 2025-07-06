@@ -68,7 +68,8 @@ export function Notifications() {
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   const [typeFilter, setTypeFilter] = useState('all');
   const [childFilter, setChildFilter] = useState('all');
-
+  
+  const [pendingNavigation, setPendingNavigation] = useState<{ href: string; contextId: string } | null>(null);
 
   // Real-time listener effect for notifications
   useEffect(() => {
@@ -105,6 +106,15 @@ export function Notifications() {
       .finally(() => setIsLoadingChildren(false));
   }, [user, currentContext]);
 
+  // Effect to handle navigation *after* context switch
+  useEffect(() => {
+    if (pendingNavigation && currentContext === pendingNavigation.contextId) {
+      router.push(pendingNavigation.href);
+      setPendingNavigation(null); // Clear pending navigation after it's done
+    }
+  }, [currentContext, pendingNavigation, router]);
+
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
   const handleMarkAllAsRead = async () => {
@@ -127,12 +137,16 @@ export function Notifications() {
   }, [notifications, typeFilter, childFilter]);
   
   const handleNotificationClick = (notification: Notification) => {
-    // Switch context if the notification is for a different context
+    // If the notification has a related context and it's different from the current one
     if (notification.relatedContextId && notification.relatedContextId !== currentContext) {
+      // Set the pending navigation state which the useEffect will watch
+      setPendingNavigation({ href: notification.href, contextId: notification.relatedContextId });
+      // Trigger the context switch
       setCurrentContext(notification.relatedContextId);
+    } else {
+      // If no context switch is needed, navigate immediately
+      router.push(notification.href);
     }
-    // Navigate to the notification's link
-    router.push(notification.href);
   };
 
 
