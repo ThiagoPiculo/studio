@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -12,7 +11,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Shield, Link as LinkIcon } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
@@ -48,7 +47,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard" tooltip="Crianças" isActive={pathname === '/dashboard'}>
-                            <Shield className="text-primary"/>
+                            <Rocket className="text-primary"/>
                             <span>Crianças</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
