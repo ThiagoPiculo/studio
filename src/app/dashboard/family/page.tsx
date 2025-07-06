@@ -498,7 +498,7 @@ function FamilyPageContent() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <div className="flex items-start gap-4 flex-grow">
-                <Shield className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
+                <LinkIcon className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
                 <div className='flex-grow'>
                   {isOwner && isEditingName ? (
                     <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
@@ -873,7 +873,7 @@ function FamilyPageContent() {
            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
-                  <Shield className="mr-3 h-8 w-8 text-primary" />
+                  <LinkIcon className="mr-3 h-8 w-8 text-primary" />
                   Alianças de Herois
                 </CardTitle>
                 <CardDescription>
@@ -891,7 +891,7 @@ function FamilyPageContent() {
                 <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
                   {userAlliances.map(alliance => (
                     <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                      <Shield className="mr-2 h-4 w-4" />
+                      <LinkIcon className="mr-2 h-4 w-4" />
                       <span>{`Aliança: ${alliance.name}`}</span>
                     </DropdownMenuItem>
                   ))}
@@ -1039,7 +1039,7 @@ function FamilyPageContent() {
        <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 flex-shrink-0" />
+            <Home className="mr-2 h-5 w-5" />
             <span>O que é o "Meu Espaço"?</span>
           </CardTitle>
           <CardDescription className="pt-2">
