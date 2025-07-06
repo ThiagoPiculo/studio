@@ -1039,7 +1039,7 @@ function FamilyPageContent() {
        <Card className="bg-muted/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Home className="h-5 w-5 text-primary flex-shrink-0" />
+            <Home className="h-5 w-5 flex-shrink-0" />
             <span>O que é o "Meu Espaço"?</span>
           </CardTitle>
           <CardDescription className="pt-2">
