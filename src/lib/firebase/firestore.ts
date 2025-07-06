@@ -342,7 +342,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
   });
 };
 
-export const joinFamilyByInviteCode = async (userId: string, inviteCode: string): Promise<FamilyMembership | null> => {
+export const joinFamilyByInviteCode = async (userId: string, inviteCode: string): Promise<void> => {
   const familyQuery = query(collection(db, 'families'), where('inviteCode', '==', inviteCode));
   const familySnapshot = await getDocs(familyQuery);
 
@@ -405,7 +405,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
   if (!existingMembershipSnapshot.empty) {
     console.log('User is already a member of this family.');
-    return existingMembershipSnapshot.docs[0].data() as FamilyMembership;
+    return;
   }
 
   const newMembershipRef = doc(collection(db, 'familyMemberships'));
@@ -442,8 +442,6 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
           });
       });
   await Promise.all(notificationPromises);
-
-  return newMembership;
 };
 
 export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]> => {
@@ -552,17 +550,17 @@ export const regenerateFamilyInviteCode = async (familyId: string, currentUserId
 
 // --- Family Invitations ---
 
-export const getPendingInvitationsForUser = async (userId: string): Promise<FamilyInvitation[]> => {
+export const getPendingActionsForUser = async (userId: string): Promise<FamilyInvitation[]> => {
   const q = query(
     collection(db, 'familyInvitations'),
     where('inviteeId', '==', userId),
     where('status', '==', 'pending'),
-    where('type', '==', 'invite'),
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
 };
+
 
 export const acceptFamilyInvitation = async (invitationId: string, userId: string): Promise<Family> => {
   const invitationRef = doc(db, 'familyInvitations', invitationId);
@@ -702,6 +700,23 @@ export const declineJoinRequest = async (invitationId: string, declinerId: strin
       throw new Error("Apenas o proprietário da aliança pode recusar pedidos.");
     }
     await updateDoc(invitationRef, { status: 'declined' });
+};
+
+export const resendJoinRequestNotification = async (requestId: string): Promise<void> => {
+  const requestRef = doc(db, 'familyInvitations', requestId);
+  const requestSnap = await getDoc(requestRef);
+  if (!requestSnap.exists() || requestSnap.data().status !== 'pending') {
+    throw new Error("Pedido inválido ou já processado.");
+  }
+  const request = requestSnap.data() as FamilyInvitation;
+  await addNotification({
+    userId: request.inviterId, // The owner who needs to approve
+    type: 'alliance_join_request',
+    title: 'Lembrete: Pedido de Entrada',
+    description: `${request.inviterName} ainda aguarda sua aprovação para entrar na aliança "${request.familyName}".`,
+    href: '/dashboard/family',
+    relatedContextId: request.familyId,
+  });
 };
 
 

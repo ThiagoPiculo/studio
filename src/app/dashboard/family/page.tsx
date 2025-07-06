@@ -20,7 +20,7 @@ import {
   leaveFamily, 
   deleteFamily, 
   createFamilyInvitation,
-  getPendingInvitationsForUser,
+  getPendingActionsForUser,
   acceptFamilyInvitation,
   declineFamilyInvitation,
   regenerateFamilyInviteCode,
@@ -33,9 +33,10 @@ import {
   getPendingJoinRequestsForFamily,
   approveJoinRequest,
   declineJoinRequest,
+  resendJoinRequestNotification,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -70,8 +71,10 @@ function FamilyPageContent() {
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<FamilyInvitation[]>([]);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
   const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null);
+  const [isResending, setIsResending] = useState(false);
   
   const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
   const [isLoadingJoinRequests, setIsLoadingJoinRequests] = useState(false);
@@ -138,8 +141,11 @@ function FamilyPageContent() {
       setJoinRequests([]);
       
       setIsLoadingInvitations(true);
-      getPendingInvitationsForUser(user.uid)
-        .then(invites => setInvitations(invites))
+      getPendingActionsForUser(user.uid)
+        .then(actions => {
+          setInvitations(actions.filter(a => a.type === 'invite'));
+          setPendingRequests(actions.filter(a => a.type === 'request'));
+        })
         .catch(error => {
           console.error("Error fetching invitations:", error);
           toast({ title: "Erro ao buscar convites", variant: "destructive" });
@@ -150,6 +156,7 @@ function FamilyPageContent() {
       setIsLoading(true);
       setIsLoadingJoinRequests(true);
       setInvitations([]);
+      setPendingRequests([]);
       fetchFamilyData(currentContext);
     }
   }, [currentContext, user, toast, setCurrentContext, isClient]);
@@ -207,29 +214,37 @@ function FamilyPageContent() {
     setIsProcessing(true);
     try {
       await joinFamilyByInviteCode(user.uid, inviteCode.trim());
-      const familyQuery = query(collection(db, 'families'), where('inviteCode', '==', inviteCode.trim()));
-      const familySnapshot = await getDocs(familyQuery);
-      if (!familySnapshot.empty) {
-        const family = { id: familySnapshot.docs[0].id, ...familySnapshot.docs[0].data() } as Family;
-        const newContext = { id: family.id, name: family.name };
-        if (!availableContexts.find(c => c.id === newContext.id)) {
-            setAvailableContexts([...availableContexts, newContext]);
-        }
-        setCurrentContext(family.id);
-        toast({ title: "Bem-vindo(a) à Equipe!", description: `Agora você faz parte da Aliança ${family.name}!` });
-        router.push('/dashboard/family');
-      }
+      // Re-fetch pending actions to update the UI state
+      const actions = await getPendingActionsForUser(user.uid);
+      setPendingRequests(actions.filter(a => a.type === 'request'));
+      toast({ title: "Pedido Enviado!", description: "Um pedido para entrar na aliança foi enviado ao proprietário para aprovação." });
     } catch (error: any) {
       if (error.message === "APPROVAL_PENDING") {
         toast({ title: "Pedido Enviado!", description: "Um pedido para entrar na aliança foi enviado ao proprietário para aprovação." });
+        // Re-fetch to update UI
+        getPendingActionsForUser(user.uid).then(actions => setPendingRequests(actions.filter(a => a.type === 'request')));
       } else {
         console.error("Error joining family:", error);
-        toast({ title: "Ops! Algo deu errado...", description: "Não conseguimos te adicionar à aliança. Verifique o código e tente de novo.", variant: "destructive" });
+        toast({ title: "Ops! Algo deu errado...", description: error.message || "Não conseguimos te adicionar à aliança. Verifique o código e tente de novo.", variant: "destructive" });
       }
     } finally {
+      setInviteCode('');
       setIsProcessing(false);
     }
   };
+
+  const handleResendNotification = async (requestId: string) => {
+    setIsResending(true);
+    try {
+      await resendJoinRequestNotification(requestId);
+      toast({ title: "Notificação Reenviada!", description: "O proprietário da aliança foi notificado novamente sobre o seu pedido." });
+    } catch (error: any) {
+       console.error("Error resending notification:", error);
+       toast({ title: "Erro ao Reenviar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsResending(false);
+    }
+  }
 
   const handleSendInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -471,6 +486,8 @@ function FamilyPageContent() {
   const userAlliances = useMemo(() => {
     return availableContexts.filter(c => c.id !== 'my-space');
   }, [availableContexts]);
+  
+  const pendingJoinRequest = useMemo(() => pendingRequests[0], [pendingRequests]);
 
   if (!isClient || isLoading) {
     return <Loading />;
@@ -953,30 +970,63 @@ function FamilyPageContent() {
               </CardFooter>
             </form>
           </Card>
-          <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
-                <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
-            </CardHeader>
-            <form onSubmit={handleJoinFamily}>
-              <CardContent>
-                 <Input 
-                  placeholder="Código de 6 dígitos"
-                  value={inviteCode}
-                  onChange={(e) => setInviteCode(e.target.value)}
-                  maxLength={6}
-                  required
-                  className="font-mono tracking-widest"
-                />
+          {pendingJoinRequest ? (
+            <Card className="bg-muted/30">
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Send className="h-5 w-5 text-primary" />Pedido Enviado</CardTitle>
+                  <CardDescription>Sua solicitação para entrar na <span className="font-bold text-primary">{pendingJoinRequest.familyName}</span> está aguardando aprovação.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                 <Button className="w-full" variant="outline" onClick={() => handleResendNotification(pendingJoinRequest.id)} disabled={isResending}>
+                     {isResending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                     Reenviar Notificação
+                 </Button>
+                  <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                         <Button className="w-full" variant="secondary">
+                             <HelpCircle className="mr-2 h-4 w-4" /> O que fazer agora?
+                         </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Aguardando Aprovação do Herói Mestre</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança e Colaboradores" na conta dele(a) para aprovar sua entrada.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel>Entendi!</AlertDialogCancel>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                  </AlertDialog>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isProcessing}>
-                  {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
-                  Entrar com Código
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
+                  <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
+              </CardHeader>
+              <form onSubmit={handleJoinFamily}>
+                <CardContent>
+                   <Input 
+                    placeholder="Código de 6 dígitos"
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    maxLength={6}
+                    required
+                    className="font-mono tracking-widest"
+                  />
+                </CardContent>
+                <CardFooter>
+                  <Button type="submit" disabled={isProcessing}>
+                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LinkIcon className="mr-2 h-4 w-4" />}
+                    Entrar com Código
+                  </Button>
+                </CardFooter>
+              </form>
+            </Card>
+          )}
       </div>
 
        <Card className="bg-muted/50">
