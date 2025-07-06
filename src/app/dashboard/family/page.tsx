@@ -515,7 +515,7 @@ function FamilyPageContent() {
                   <CardDescription>Gerencie os membros e as configurações da sua aliança.</CardDescription>
                 </div>
               </div>
-              <Button variant="outline" onClick={() => setCurrentContext('my-space')} className="w-full sm:w-auto flex-shrink-0">
+              <Button variant="secondary" onClick={() => setCurrentContext('my-space')} className="w-full sm:w-auto flex-shrink-0">
                 <Home className="mr-2 h-4 w-4" />
                 Mudar para Meu Espaço
               </Button>
