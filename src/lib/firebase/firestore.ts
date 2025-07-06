@@ -1282,8 +1282,8 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
     if (updatedChildProfile) {
         const missionData = (await getDoc(missionRef)).data() as MissionInstance;
         const description = dateToUndo 
-            ? `A conclusão da missão "${missionData.title}" (ref. a ${formatDateFns(dateToUndo, 'dd/MM/yyyy')}) foi revertida.`
-            : `A conclusão da missão "${missionData.title}" foi revertida.`;
+            ? `A conclusão da missão "${missionData.title}" para ${updatedChildProfile.name} (ref. a ${formatDateFns(dateToUndo, 'dd/MM/yyyy')}) foi revertida.`
+            : `A conclusão da missão "${missionData.title}" para ${updatedChildProfile.name} foi revertida.`;
         
         await createAndDispatchNotifications(missionData.childId, {
             type: 'mission_completion_undone',
@@ -1501,4 +1501,3 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
-

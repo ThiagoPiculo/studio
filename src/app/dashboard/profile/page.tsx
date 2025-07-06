@@ -14,6 +14,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { resetPassword } from '@/lib/firebase/auth';
 import { getChildProfilesByOwner, resetAllChildrenProgress } from '@/lib/firebase/firestore';
+import type { ChildProfile } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,13 +40,13 @@ export default function ProfilePage() {
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
   const [isResettingAllProgress, setIsResettingAllProgress] = useState(false);
-  const [childrenCount, setChildrenCount] = useState(0);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.name || '');
       getChildProfilesByOwner(user.uid).then(profiles => {
-        setChildrenCount(profiles.length);
+        setChildren(profiles);
       });
     }
   }, [user]);
@@ -116,6 +117,15 @@ export default function ProfilePage() {
         description: "A exclusão de conta será implementada em breve. Por enquanto, se desejar excluir sua conta, entre em contato com o suporte.",
         duration: 8000,
     });
+  };
+
+  const formatChildNames = (children: ChildProfile[]) => {
+    const names = children.map(c => c.name);
+    if (names.length === 0) return "";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} e ${names[1]}`;
+    const last = names.pop();
+    return `${names.join(', ')} e ${last}`;
   };
 
   if (loading) {
@@ -218,7 +228,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">Esta ação irá zerar as estrelas, XP e o histórico de missões de todos os seus Mini Herois, sem apagar os perfis. Ideal para começar uma "nova temporada".</p>
                  <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={childrenCount === 0 || isResettingAllProgress}>
+                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingAllProgress}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso Geral
                         </Button>
                     </AlertDialogTrigger>
@@ -226,7 +236,7 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Redefinir o progresso de TODOS os seus heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação é irreversível e afetará todos os {childrenCount} heróis sob sua gestão. Todas as estrelas, XP, níveis e históricos de conclusão serão zerados. Deseja continuar?
+                                Esta ação é irreversível e afetará o progresso de {children.length} {children.length === 1 ? 'herói' : 'heróis'} sob sua gestão: <span className="font-semibold">{formatChildNames(children)}</span>. Todas as estrelas, XP, níveis e históricos de conclusão serão zerados. Deseja continuar?
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -275,4 +285,3 @@ export default function ProfilePage() {
     </div>
   );
 }
-
