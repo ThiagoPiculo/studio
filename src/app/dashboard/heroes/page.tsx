@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2, Settings, Gift, Trophy, Target, Medal } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Trophy, Target, Medal } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance } from "@/lib/types";
 import { 
@@ -239,7 +239,7 @@ export default function HeroesPage() {
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20">
                     <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                      <Target className="h-5 w-5 text-chart-1" />
+                      <Target className="h-5 w-5 text-chart-3" />
                       <p className="font-bold text-lg">{todaysMissionsCount}</p>
                       <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
