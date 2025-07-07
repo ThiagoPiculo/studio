@@ -25,6 +25,8 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info, Sun, CloudSun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -64,6 +66,8 @@ export default function MissionsHubPage() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
+  
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
 
   const periodIcons = {
     Manhã: Sun,
@@ -128,6 +132,16 @@ export default function MissionsHubPage() {
   }, [availableContexts, currentContext]);
 
   const templatesDescription = `Catálogo de missões em ${currentContextText}. Crie e gerencie missões para atribuir aos seus Mini Herois.`;
+  
+  const filteredTemplates = useMemo(() => {
+    return missionTemplates
+      .filter(template => {
+        if (recurrenceFilter === 'unique') return !template.isRecurring;
+        if (recurrenceFilter === 'recurring') return template.isRecurring;
+        return true;
+      })
+      .sort((a, b) => (a.isRecurring ? 1 : 0) - (b.isRecurring ? 1 : 0));
+  }, [missionTemplates, recurrenceFilter]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -238,6 +252,27 @@ export default function MissionsHubPage() {
         <CardHeader>
           <CardTitle>Missões do Catálogo</CardTitle>
           <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
+           <div className="pt-4">
+            <Label className="text-sm font-medium text-muted-foreground">Filtrar por tipo de recorrência:</Label>
+            <RadioGroup
+                value={recurrenceFilter}
+                onValueChange={(v) => setRecurrenceFilter(v as 'all' | 'unique' | 'recurring')}
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
+            >
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="all" id="filter-all" />
+                    <Label htmlFor="filter-all" className="cursor-pointer font-normal">Todas</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="unique" id="filter-unique" />
+                    <Label htmlFor="filter-unique" className="cursor-pointer font-normal">Únicas</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="recurring" id="filter-recurring" />
+                    <Label htmlFor="filter-recurring" className="cursor-pointer font-normal">Recorrentes</Label>
+                </div>
+            </RadioGroup>
+          </div>
         </CardHeader>
         <CardContent>
           {isLoading ? (
@@ -247,17 +282,17 @@ export default function MissionsHubPage() {
             </div>
           ) : error ? (
             <p className="text-destructive text-center py-10">{error}</p>
-          ) : missionTemplates.length === 0 ? (
+          ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
               <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">Nenhuma missão encontrada no seu catálogo.</p>
+              <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
               <p className="text-sm text-muted-foreground mt-1">
-                <Link href="/dashboard/missions/new" className="text-primary hover:underline">Crie uma nova missão</Link> ou busque inspiração nas <Link href="/dashboard/missions/ideas" className="text-primary hover:underline">ideias de missões</Link>.
+                Tente limpar os filtros ou <Link href="/dashboard/missions/new" className="text-primary hover:underline">crie uma nova missão</Link>.
               </p>
             </div>
           ) : (
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {missionTemplates.map((template) => {
+              {filteredTemplates.map((template) => {
                 const categoryDetails = getCategoryDetails(template.category);
                 const CategoryIconComponent = categoryDetails?.icon;
                 const assignedChildren = assignmentsByTemplate.get(template.id) || [];
@@ -271,8 +306,20 @@ export default function MissionsHubPage() {
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
                       <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl">{template.title}</CardTitle>
-                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                        <div className="flex items-center gap-2 pr-2">
+                           <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  {template.isRecurring ? <Repeat className="h-5 w-5 text-muted-foreground flex-shrink-0" /> : <Target className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{template.isRecurring ? 'Missão Recorrente' : 'Missão Única'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          <CardTitle className="text-xl">{template.title}</CardTitle>
+                        </div>
+                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
                             {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                         </Badge>
                       </div>
