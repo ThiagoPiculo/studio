@@ -100,22 +100,31 @@ function SchoolSchedulePageContent() {
       ]);
       setChildren(fetchedChildren);
       setScheduleEntries(fetchedEntries);
-      if (fetchedChildren.length > 0 && !selectedChildId) {
-        setSelectedChildId(fetchedChildren[0].id);
-      } else if (fetchedChildren.length === 0) {
-        setSelectedChildId('');
-      }
     } catch (error) {
       console.error("Error fetching schedule data:", error);
       toast({ title: "Erro ao carregar dados", variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentContext, toast, selectedChildId]);
+  }, [user, currentContext, toast]);
 
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+  
+  useEffect(() => {
+    if (isLoading) return;
+
+    // If there is no selected child but there are children available, select the first one.
+    if (!selectedChildId && children.length > 0) {
+        setSelectedChildId(children[0].id);
+    }
+    // If a child was selected but is no longer in the list (e.g., context changed),
+    // select the first available child or clear the selection.
+    else if (selectedChildId && !children.find(c => c.id === selectedChildId)) {
+        setSelectedChildId(children.length > 0 ? children[0].id : '');
+    }
+  }, [children, selectedChildId, isLoading]);
 
   useEffect(() => {
     let slots: string[] = [];
@@ -418,14 +427,6 @@ function SchoolSchedulePageContent() {
                         ))}
                     </SelectContent>
                 </Select>
-                 {selectedChildId && (
-                    <Button asChild variant="outline" size="sm">
-                        <Link href={`/dashboard/child/${selectedChildId}/manage?tab=edit`}>
-                            <Edit className="mr-2 h-4 w-4" />
-                            Editar Turno
-                        </Link>
-                    </Button>
-                )}
                  <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="outline" size="icon">
@@ -455,6 +456,18 @@ function SchoolSchedulePageContent() {
                                   ))}
                               </ToggleGroup>
                           </div>
+                          {selectedChildId && <Separator />}
+                          {selectedChildId && (
+                              <div className="space-y-2">
+                                  <Label className="font-semibold">Turno Escolar</Label>
+                                  <Button asChild variant="outline" size="sm" className="w-full justify-start">
+                                      <Link href={`/dashboard/child/${selectedChildId}/manage?tab=edit`}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Editar Turno do Herói
+                                      </Link>
+                                  </Button>
+                              </div>
+                          )}
                           <Separator />
                           <div className="flex items-center justify-between">
                             <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
