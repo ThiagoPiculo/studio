@@ -2,10 +2,11 @@
 "use client";
 
 import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
-import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry, updateChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels } from '@/lib/types';
 import { getDayToWeekday } from '@/lib/calendar-utils';
@@ -35,7 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-
+import { Input } from '@/components/ui/input';
 
 const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
@@ -64,6 +65,8 @@ function SchoolSchedulePageContent() {
   const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
   const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
   const [useColors, setUseColors] = useState<boolean>(true);
+
+  const selectedChild = useMemo(() => children.find(c => c.id === selectedChildId), [children, selectedChildId]);
 
 
   const schoolShiftMap: Record<SchoolShift, string> = {
@@ -115,22 +118,37 @@ function SchoolSchedulePageContent() {
   }, [fetchData]);
 
   useEffect(() => {
-    const selectedChild = children.find(c => c.id === selectedChildId);
     let slots: string[] = [];
+    const child = children.find(c => c.id === selectedChildId);
 
-    switch (selectedChild?.schoolShift) {
-        case 'morning':
-            slots = Array.from({ length: 7 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`); // 7h to 13h
-            break;
-        case 'afternoon':
-            slots = Array.from({ length: 7 }, (_, i) => `${(i + 13).toString().padStart(2, '0')}:00`); // 13h to 19h
-            break;
-        case 'full_time':
-        case 'not_applicable':
-        default:
-            slots = Array.from({ length: 15 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`); // 7h to 21h
-            break;
+    let startHour = 7;
+    let endHour = 19; // Default range
+    
+    if (child?.schoolShiftStart && child?.schoolShiftEnd) {
+        startHour = parseInt(child.schoolShiftStart.split(':')[0], 10);
+        endHour = parseInt(child.schoolShiftEnd.split(':')[0], 10) + 1; // Include the last hour
+    } else {
+        switch (child?.schoolShift) {
+            case 'morning':
+                startHour = 7;
+                endHour = 13;
+                break;
+            case 'afternoon':
+                startHour = 13;
+                endHour = 19;
+                break;
+            case 'full_time':
+            case 'not_applicable':
+            default:
+                startHour = 7;
+                endHour = 21;
+                break;
+        }
     }
+    
+    // Generate slots from start to end hour
+    slots = Array.from({ length: endHour - startHour }, (_, i) => `${(i + startHour).toString().padStart(2, '0')}:00`);
+
     setTimeSlots(slots);
   }, [selectedChildId, children]);
   
@@ -182,6 +200,8 @@ function SchoolSchedulePageContent() {
         familyId: currentContext === 'my-space' ? null : currentContext,
         createdAt: new Timestamp(0,0), // Placeholder
         updatedAt: new Timestamp(0,0), // Placeholder
+        schoolShiftStart: '',
+        schoolShiftEnd: '',
     };
 
     setEntryToEdit(newEntry);
@@ -337,7 +357,7 @@ function SchoolSchedulePageContent() {
       <div className="grid" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
         {visibleWeekdays.map(day => (
           <div key={day} className="flex justify-center items-center gap-2">
-            <h3 className="font-semibold">{weekdayLabels[day].long}</h3>
+            <h3 className="font-semibold">{weekdayLabels[day].short}</h3>
             {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
           </div>
         ))}
@@ -350,11 +370,11 @@ function SchoolSchedulePageContent() {
       return (
           <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
               <div className="flex">
-                  <div className="w-14 flex-shrink-0" /> 
+                  <div className="sticky left-0 bg-background w-14 flex-shrink-0 z-10" /> 
                   <div className="flex">
                       {visibleWeekdays.map(day => (
                           <div key={day} className="w-36 sm:w-48 flex-shrink-0 flex justify-center items-center gap-2">
-                              <h3 className="font-semibold">{weekdayLabels[day].long}</h3>
+                              <h3 className="font-semibold">{weekdayLabels[day].short}</h3>
                               {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
                           </div>
                       ))}
@@ -381,9 +401,9 @@ function SchoolSchedulePageContent() {
                 Visualize e gerencie os horários de aula dos seus heróis.
               </CardDescription>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2 justify-end">
                 <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
-                    <SelectTrigger className="w-[240px]">
+                    <SelectTrigger className="w-full sm:w-[240px]">
                         <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             <SelectValue placeholder="Selecione um herói..." />
@@ -397,6 +417,14 @@ function SchoolSchedulePageContent() {
                         ))}
                     </SelectContent>
                 </Select>
+                 {selectedChildId && (
+                    <Button asChild variant="outline" size="sm">
+                        <Link href={`/dashboard/child/${selectedChildId}/manage?tab=edit`}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Editar Turno
+                        </Link>
+                    </Button>
+                )}
                  <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="outline" size="icon">
@@ -518,6 +546,3 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
-
-
-    
