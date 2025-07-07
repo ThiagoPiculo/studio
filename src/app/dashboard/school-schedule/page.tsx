@@ -29,6 +29,8 @@ import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Loading from './loading';
 import { Timestamp } from 'firebase/firestore';
+import { Switch } from '@/components/ui/switch';
+import { Separator } from '@/components/ui/separator';
 
 
 const subjectColors = [
@@ -55,6 +57,7 @@ function SchoolSchedulePageContent() {
   
   const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
   const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
+  const [useColors, setUseColors] = useState<boolean>(true);
 
 
   const schoolShiftMap: Record<SchoolShift, string> = {
@@ -228,25 +231,28 @@ function SchoolSchedulePageContent() {
                             .map(entry => {
                                 const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
                                 const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+                                const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
                                 
+                                if (useColors) {
+                                    entryStyle.backgroundColor = `${entry.color}80`;
+                                    entryStyle.borderColor = entry.color;
+                                }
+
                                 return (
                                     <div
                                         key={entry.id}
-                                        className="absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer"
-                                        style={{
-                                            top: `${top}px`,
-                                            height: `${height}px`,
-                                            backgroundColor: `${entry.color}80`,
-                                            borderColor: entry.color,
-                                            borderWidth: '1px'
-                                        }}
+                                        className={cn(
+                                            "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border",
+                                            !useColors && "bg-primary/10 border-primary/20"
+                                        )}
+                                        style={entryStyle}
                                         onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
                                     >
-                                        <p className="font-bold text-sm text-white [text-shadow:1px_1px_1px_#00000050] truncate">{entry.subject}</p>
-                                        <p className="text-xs text-white/90 [text-shadow:1px_1px_1px_#00000050]">{entry.startTime} - {entry.endTime}</p>
+                                        <p className={cn("font-bold text-sm truncate", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
+                                        <p className={cn("text-xs", useColors ? "text-white/90 [text-shadow:1px_1px_1px_#00000050]" : "text-primary/80")}>{entry.startTime} - {entry.endTime}</p>
                                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
+                                            <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
+                                            <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
                                         </div>
                                     </div>
                                 );
@@ -297,26 +303,37 @@ function SchoolSchedulePageContent() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-4">
-                        <div className="space-y-2">
-                            <Label className="font-semibold">Exibir Dias da Semana</Label>
-                            <ToggleGroup
-                                type="multiple"
-                                variant="outline"
-                                value={visibleWeekdays}
-                                onValueChange={(value) => handleVisibleDaysChange(value as Weekday[])}
-                                className="flex flex-wrap justify-start gap-1"
-                            >
-                                {allWeekdays.map(day => (
-                                <ToggleGroupItem
-                                    key={day}
-                                    value={day}
-                                    className="h-8 w-8 p-0"
-                                    aria-label={weekdayLabels[day].long}
-                                >
-                                    {weekdayLabels[day].short}
-                                </ToggleGroupItem>
-                                ))}
-                            </ToggleGroup>
+                        <div className="grid gap-4">
+                          <div className="space-y-2">
+                              <Label className="font-semibold">Exibir Dias da Semana</Label>
+                              <ToggleGroup
+                                  type="multiple"
+                                  variant="outline"
+                                  value={visibleWeekdays}
+                                  onValueChange={(value) => handleVisibleDaysChange(value as Weekday[])}
+                                  className="flex flex-wrap justify-start gap-1"
+                              >
+                                  {allWeekdays.map(day => (
+                                  <ToggleGroupItem
+                                      key={day}
+                                      value={day}
+                                      className="h-8 w-8 p-0"
+                                      aria-label={weekdayLabels[day].long}
+                                  >
+                                      {weekdayLabels[day].short}
+                                  </ToggleGroupItem>
+                                  ))}
+                              </ToggleGroup>
+                          </div>
+                          <Separator />
+                          <div className="flex items-center justify-between">
+                            <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
+                            <Switch
+                                id="use-colors-switch"
+                                checked={useColors}
+                                onCheckedChange={setUseColors}
+                            />
+                           </div>
                         </div>
                     </PopoverContent>
                 </Popover>
