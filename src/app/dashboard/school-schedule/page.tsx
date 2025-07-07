@@ -318,8 +318,8 @@ function SchoolSchedulePageContent() {
             {inBoundsSchedule
                 .filter(entry => entry.dayOfWeek === day)
                 .map(entry => {
-                    const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
-                    const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+                    const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48 + 2; // +2 for spacing
+                    const height = Math.max(0, ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48 - 4); // -4 for spacing
                     const layoutProps = scheduleLayout.get(entry.id) || { width: 'calc(100% - 4px)', left: '2px' };
 
                     const entryStyle: React.CSSProperties = { 
