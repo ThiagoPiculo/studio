@@ -112,11 +112,11 @@ export const getChildProfileById = async (childId: string): Promise<ChildProfile
 };
 
 export const getChildProfilesByOwner = async (ownerId: string, unassignedOnly = false): Promise<ChildProfile[]> => {
-  const constraints = [where('ownerId', '==', ownerId), orderBy('name', 'asc')];
+  const constraints = [where('ownerId', '==', ownerId)];
   if (unassignedOnly) {
     constraints.push(where('familyId', '==', null));
   }
-  const q = query(collection(db, 'children'), ...constraints);
+  const q = query(collection(db, 'children'), ...constraints, orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
@@ -1153,191 +1153,136 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     await batch.commit();
 };
 
-const awardBadge = async (childId: string, badgeId: string) => {
+export const recalculateAndSyncBadges = async (childId: string): Promise<void> => {
     const childRef = doc(db, 'children', childId);
-    const badge = allBadgesMap.get(badgeId);
-    if (!badge) return;
+    const childSnap = await getDoc(childRef);
 
-    await runTransaction(db, async (transaction) => {
-        const childSnap = await transaction.get(childRef);
-        if (!childSnap.exists()) return;
+    if (!childSnap.exists()) return;
 
-        const childData = childSnap.data() as ChildProfile;
-        const earnedBadges = childData.earnedBadgeIds || [];
-
-        if (!earnedBadges.includes(badgeId)) {
-            transaction.update(childRef, {
-                earnedBadgeIds: [...earnedBadges, badgeId]
-            });
-        }
-    });
-
-    const childData = await getChildProfileById(childId);
-    if (childData) {
-        await createAndDispatchNotifications(childId, {
-            type: 'new_badge',
-            title: 'Nova Conquista Desbloqueada!',
-            description: `${childData.name} ganhou a conquista: "${badge.title}"!`,
-            href: `/dashboard/child/${childId}/manage`,
-            relatedChildId: childId,
-        });
-    }
-};
-
-export const checkAndAwardBadges = async (
-    missionJustCompleted: MissionInstance,
-    updatedChildProfile: ChildProfile
-) => {
-    const earnedBadgeIds = updatedChildProfile.earnedBadgeIds || [];
-    const badgesToAward: string[] = [];
+    const childProfile = { id: childSnap.id, ...childSnap.data() } as ChildProfile;
+    const currentBadgeIds = new Set(childProfile.earnedBadgeIds || []);
+    const finalBadgeSet = new Set<string>();
 
     // 1. Progress-based badges (Stars & Level)
-    const progressBasedChecks: { [key: string]: () => boolean } = {
-        'heroi_ascensao': () => updatedChildProfile.level >= 5,
-        'campeao_herois': () => updatedChildProfile.level >= 10,
-        'cacador_estrelas': () => updatedChildProfile.stars >= 100,
-        'colecionador_tesouros': () => updatedChildProfile.stars >= 500,
-        'lenda_estelar': () => updatedChildProfile.stars >= 1000,
-    };
-    for (const badgeId in progressBasedChecks) {
-        if (!earnedBadgeIds.includes(badgeId) && progressBasedChecks[badgeId]()) {
-            badgesToAward.push(badgeId);
-        }
-    }
+    if (childProfile.level >= 5) finalBadgeSet.add('heroi_ascensao');
+    if (childProfile.level >= 10) finalBadgeSet.add('campeao_herois');
+    if (childProfile.stars >= 100) finalBadgeSet.add('cacador_estrelas');
+    if (childProfile.stars >= 500) finalBadgeSet.add('colecionador_tesouros');
+    if (childProfile.stars >= 1000) finalBadgeSet.add('lenda_estelar');
 
-    // 2. Completion-based badges (requires querying all instances for history)
-    const allInstancesQuery = query(collection(db, 'missionInstances'), where('childId', '==', updatedChildProfile.id));
+    // 2. Completion-based badges
+    const allInstancesQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
     const allInstancesSnapshot = await getDocs(allInstancesQuery);
     const allInstances = allInstancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
 
-    // A. Check for "Heroi Novato" (first-ever completion)
-    if (!earnedBadgeIds.includes('hero_novato')) {
-      const totalCompletions = allInstances.reduce((sum, doc) => sum + (Object.keys(doc.completionLog || {}).length), 0);
-      if (totalCompletions === 1) {
-        badgesToAward.push('hero_novato');
-      }
+    const totalCompletions = allInstances.reduce((sum, inst) => sum + Object.keys(inst.completionLog || {}).length, 0);
+    if (totalCompletions > 0) {
+        finalBadgeSet.add('hero_novato');
     }
 
-    // B. Check for specific first-time missions based on the one just completed
-    const missionTitle = missionJustCompleted.title.toLowerCase().trim();
-    const updatedInstanceOfJustCompleted = allInstances.find(i => i.id === missionJustCompleted.id);
-    const completionCountForThisTemplate = Object.keys(updatedInstanceOfJustCompleted?.completionLog || {}).length;
+    const completedCategories = new Set<string>();
+    let hasCompletedSocialOrEnv = false;
 
-    if (completionCountForThisTemplate === 1) {
-        if (!earnedBadgeIds.includes('defensor_sorriso') && missionTitle === 'escovar os dentes') {
-            badgesToAward.push('defensor_sorriso');
+    // Check for specific missions and categories
+    for (const instance of allInstances) {
+        const completions = Object.keys(instance.completionLog || {});
+        if (completions.length > 0) {
+            completedCategories.add(instance.category);
+            const missionTitle = instance.title.toLowerCase().trim();
+            if (missionTitle === 'escovar os dentes') finalBadgeSet.add('defensor_sorriso');
+            if (missionTitle === 'arrumar a cama') finalBadgeSet.add('guardiao_descanso');
+            if (instance.category === 'social' || instance.category === 'environmental') {
+                hasCompletedSocialOrEnv = true;
+            }
         }
-        if (!earnedBadgeIds.includes('guardiao_descanso') && missionTitle === 'arrumar a cama') {
-            badgesToAward.push('guardiao_descanso');
+    }
+
+    if (completedCategories.size >= 3) {
+        finalBadgeSet.add('heroi_versatil');
+    }
+    if (hasCompletedSocialOrEnv) {
+        finalBadgeSet.add('aventureiro_nato');
+    }
+
+    // Check for streaks
+    let foundRoutineGuard = false;
+    let foundPersistenceMaster = false;
+    for (const instance of allInstances) {
+        if (foundRoutineGuard && foundPersistenceMaster) break; // Optimization
+
+        const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a,b) => a.getTime() - b.getTime());
+        if (completionDates.length >= 7) {
+            let consecutiveDays = 0;
+            let lastDate: Date | null = null;
+            for (const currentDate of completionDates) {
+                if (lastDate && differenceInDays(currentDate, lastDate) === 1) {
+                    consecutiveDays++;
+                } else {
+                    consecutiveDays = 1; // Start new streak
+                }
+                lastDate = currentDate;
+                if (!foundRoutineGuard && consecutiveDays >= 7) {
+                    finalBadgeSet.add('guardiao_rotina');
+                    foundRoutineGuard = true;
+                }
+                if (!foundPersistenceMaster && consecutiveDays >= 30) {
+                    finalBadgeSet.add('mestre_persistencia');
+                    foundPersistenceMaster = true;
+                }
+            }
         }
     }
     
-    // C. Check for "Heroi Versátil" (3+ different categories completed)
-    if (!earnedBadgeIds.includes('heroi_versatil')) {
-        const completedCategories = new Set<string>();
-        allInstances.forEach(instance => {
-            if (Object.keys(instance.completionLog || {}).length > 0) {
-                completedCategories.add(instance.category);
-            }
-        });
-        if (completedCategories.size >= 3) {
-            badgesToAward.push('heroi_versatil');
-        }
-    }
+    // Check for "Semana Perfeita"
+    const today = startOfDay(new Date());
+    let foundPerfectWeek = false;
+    // Check starting from the last 30 days to keep it reasonably performant
+    for (let i = 0; i < 30; i++) { 
+        if (foundPerfectWeek) break;
+        const windowStart = subDays(today, i + 6); // A week ends on `subDays(today, i)`
+        let isPerfectWeek = true;
 
-    // D. Check for "Aventureiro Nato" (first social or environmental mission)
-    if (!earnedBadgeIds.includes('aventureiro_nato')) {
-        const hasCompletedAdventurousMission = allInstances.some(instance => 
-            (instance.category === 'social' || instance.category === 'environmental') && 
-            Object.keys(instance.completionLog || {}).length > 0
-        );
-        if (hasCompletedAdventurousMission) {
-            badgesToAward.push('aventureiro_nato');
-        }
-    }
-
-    // E. Check for "Guardião da Rotina" (7 consecutive days on same mission)
-    if (!earnedBadgeIds.includes('guardiao_rotina')) {
-        for (const instance of allInstances) {
-            const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a,b) => a.getTime() - b.getTime());
-            if (completionDates.length >= 7) {
-                let consecutiveDays = 1;
-                for (let i = 1; i < completionDates.length; i++) {
-                    const diffDays = differenceInDays(completionDates[i], completionDates[i-1]);
-                    if (diffDays === 1) {
-                        consecutiveDays++;
-                    } else if (diffDays > 1) {
-                        consecutiveDays = 1; // Reset if there's a gap
-                    }
-                    if (consecutiveDays >= 7) {
-                        badgesToAward.push('guardiao_rotina');
-                        break; 
-                    }
-                }
-            }
-            if (badgesToAward.includes('guardiao_rotina')) break;
-        }
-    }
-
-    // F. Check for "Mestre da Persistência" (30 consecutive days on same mission)
-    if (!earnedBadgeIds.includes('mestre_persistencia')) {
-        for (const instance of allInstances) {
-            const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a,b) => a.getTime() - b.getTime());
-            if (completionDates.length >= 30) {
-                let consecutiveDays = 1;
-                for (let i = 1; i < completionDates.length; i++) {
-                    const diffDays = differenceInDays(completionDates[i], completionDates[i-1]);
-                    if (diffDays === 1) {
-                        consecutiveDays++;
-                    } else if (diffDays > 1) {
-                        consecutiveDays = 1; // Reset if there's a gap
-                    }
-                    if (consecutiveDays >= 30) {
-                        badgesToAward.push('mestre_persistencia');
-                        break;
-                    }
-                }
-            }
-            if (badgesToAward.includes('mestre_persistencia')) break;
-        }
-    }
-
-    // G. Check for "Semana Perfeita" (all scheduled missions completed for 7 consecutive days)
-    if (!earnedBadgeIds.includes('semana_perfeita')) {
-        const today = startOfDay(new Date());
-        // Check starting from the last 30 days to keep it reasonably performant
-        for (let i = 0; i < 30; i++) { 
-            const windowStart = subDays(today, i + 6); // A week ends on `subDays(today, i)`
-            let isPerfectWeek = true;
-
-            for (let j = 0; j < 7; j++) {
-                const checkDate = addDays(windowStart, j);
-                const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
-                if (scheduledMissions.length === 0) continue; // No missions scheduled on this day, so it doesn't break the streak.
-                
-                const allCompleted = scheduledMissions.every(inst => {
-                    const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
-                    return inst.completionLog && inst.completionLog[dateKey];
-                });
-                
-                if (!allCompleted) {
-                    isPerfectWeek = false;
-                    break;
-                }
-            }
-
-            if (isPerfectWeek) {
-                badgesToAward.push('semana_perfeita');
+        for (let j = 0; j < 7; j++) {
+            const checkDate = addDays(windowStart, j);
+            const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
+            if (scheduledMissions.length === 0) continue; // No missions scheduled on this day, so it doesn't break the streak.
+            
+            const allCompleted = scheduledMissions.every(inst => {
+                const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
+                return inst.completionLog && inst.completionLog[dateKey];
+            });
+            
+            if (!allCompleted) {
+                isPerfectWeek = false;
                 break;
             }
         }
+        if (isPerfectWeek) {
+            finalBadgeSet.add('semana_perfeita');
+            foundPerfectWeek = true;
+        }
     }
 
-    // 3. Final step: Award unique badges found
-    if (badgesToAward.length > 0) {
-        const uniqueBadges = [...new Set(badgesToAward)];
-        for (const badgeId of uniqueBadges) {
-            await awardBadge(updatedChildProfile.id, badgeId);
+    // 3. Compare and update
+    const newlyAwardedBadges = [...finalBadgeSet].filter(badgeId => !currentBadgeIds.has(badgeId));
+    const finalBadgeArray = Array.from(finalBadgeSet);
+    
+    // Only write to DB if there's a change
+    if (finalBadgeArray.length !== currentBadgeIds.size || newlyAwardedBadges.length > 0) {
+        await updateDoc(childRef, { earnedBadgeIds: finalBadgeArray });
+    }
+
+    // 4. Send notifications for newly awarded badges
+    for (const badgeId of newlyAwardedBadges) {
+        const badge = allBadgesMap.get(badgeId);
+        if (badge) {
+            await createAndDispatchNotifications(childId, {
+                type: 'new_badge',
+                title: 'Nova Conquista Desbloqueada!',
+                description: `${childProfile.name} ganhou a conquista: "${badge.title}"!`,
+                href: `/dashboard/child/${childId}/manage`,
+                relatedChildId: childId,
+            });
         }
     }
 };
@@ -1442,8 +1387,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
           });
       }
       
-      // Check for all badges after stats have been updated
-      await checkAndAwardBadges(missionData, updatedChildProfile);
+      await recalculateAndSyncBadges(updatedChildProfile.id);
     }
     return updatedChildProfile;
 };
@@ -1526,6 +1470,8 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
             href: `/dashboard/child/${missionData.childId}/manage`,
             relatedChildId: missionData.childId,
         });
+        
+        await recalculateAndSyncBadges(updatedChildProfile.id);
     }
 
     return updatedChildProfile;
