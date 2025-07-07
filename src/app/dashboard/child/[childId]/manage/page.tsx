@@ -736,7 +736,7 @@ export default function ManageChildPage() {
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><BarChart className="mr-2 h-4 w-4" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><ListChecks className="mr-2 h-4 w-4" />Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4" />Recompensas</TabsTrigger>
-          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4" />Medalhas</TabsTrigger>
+          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4" />Conquistas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4" />Editar Perfil</TabsTrigger>
         </TabsList>
         
@@ -823,12 +823,12 @@ export default function ManageChildPage() {
               </Card>
               <Card className="shadow-sm flex flex-col">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Medalhas Conquistadas</CardTitle>
+                  <CardTitle className="text-sm font-medium">Conquistas Desbloqueadas</CardTitle>
                   <Medal className="h-5 w-5 text-blue-500" />
                 </CardHeader>
                 <CardContent className="flex-grow">
                   <div className="text-2xl font-bold">{stats.earnedBadges}</div>
-                  <p className="text-xs text-muted-foreground">Total de medalhas recebidas</p>
+                  <p className="text-xs text-muted-foreground">Total de conquistas desbloqueadas</p>
                 </CardContent>
                 <CardFooter>
                   <Button
@@ -837,7 +837,7 @@ export default function ManageChildPage() {
                     className="w-full"
                     onClick={() => setActiveTab('badges')}
                   >
-                    Ver Mural de Medalhas
+                    Ver Mural de Conquistas
                   </Button>
                 </CardFooter>
               </Card>
@@ -1127,12 +1127,12 @@ export default function ManageChildPage() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Mural de Medalhas de {child.name}</CardTitle>
+                            <CardTitle>Mural de Conquistas de {child.name}</CardTitle>
                             <CardDescription>Todas as conquistas heroicas e troféus especiais ganhos na jornada.</CardDescription>
                         </div>
                         <DialogTrigger asChild>
                           <Button variant="outline" size="sm">
-                            <Info className="mr-2 h-4 w-4" /> Sobre Medalhas
+                            <Info className="mr-2 h-4 w-4" /> Sobre Conquistas
                           </Button>
                         </DialogTrigger>
                     </div>
@@ -1211,15 +1211,15 @@ export default function ManageChildPage() {
                         O Mural de Conquistas
                     </DialogTitle>
                     <DialogDescription className="pt-2">
-                        As medalhas celebram a jornada do seu heroi, reconhecendo desde os primeiros passos até a maestria.
+                        As conquistas celebram a jornada do seu heroi, reconhecendo desde os primeiros passos até a maestria.
                     </DialogDescription>
                 </DialogHeader>
                 <ScrollArea className="max-h-[60vh] -mx-6 px-6">
                     <div className="space-y-4 text-sm text-muted-foreground pb-4 pr-1">
-                        <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
+                        <p>As conquistas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
                         
                         <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
-                        <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
+                        <p>Estas são as conquistas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Heroi Novato:</strong> Conquistada ao completar a primeira missão.</li>
                             <li><strong>Defensor do Sorriso:</strong> Ganha ao fazer a missão "Escovar os dentes" pela primeira vez.</li>
@@ -1227,15 +1227,15 @@ export default function ManageChildPage() {
                         </ul>
 
                         <h4 className="font-bold text-foreground pt-2">Consistência e Hábitos</h4>
-                        <p>Aqui, o que vale é a dedicação! Estas medalhas recompensam a criação de rotinas e a persistência, que são a base para a formação de hábitos sólidos.</p>
+                        <p>Aqui, o que vale é a dedicação! Estas conquistas recompensam a criação de rotinas e a persistência, que são a base para a formação de hábitos sólidos.</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Guardião da Rotina:</strong> Para quem completa a mesma missão por 7 dias seguidos.</li>
                             <li><strong>Semana Perfeita:</strong> Um grande feito! Para quem completa todas as missões agendadas durante 7 dias consecutivos.</li>
-                            <li><strong>Mestre da Persistência:</strong> Uma medalha rara para quem completa a mesma missão por 30 dias seguidos.</li>
+                            <li><strong>Mestre da Persistência:</strong> Uma conquista rara para quem completa a mesma missão por 30 dias seguidos.</li>
                         </ul>
 
                         <h4 className="font-bold text-foreground pt-2">Maestria e Progresso</h4>
-                        <p>Estas medalhas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
+                        <p>Estas conquistas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
                         <ul className="list-disc pl-5 space-y-1">
                             <li><strong>Caçador de Estrelas:</strong> Por acumular um total de 100 estrelas (⭐).</li>
                             <li><strong>Heroi em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
@@ -1249,7 +1249,7 @@ export default function ManageChildPage() {
                             <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
                         </ul>
 
-                        <p className="pt-2">Essencialmente, o sistema de medalhas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
+                        <p className="pt-2">Essencialmente, o sistema de conquistas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
                     </div>
                 </ScrollArea>
                 <DialogFooter>

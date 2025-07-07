@@ -68,6 +68,16 @@ const notificationSettingsConfig: {
             description: "Você não verá mais as comemorações quando uma criança atingir um novo nível de progresso."
         }
       },
+      {
+        key: 'new_badge',
+        icon: Award,
+        label: "Nova Conquista Desbloqueada",
+        description: "Quando uma criança atinge os critérios para desbloquear uma nova conquista.",
+        confirmation: {
+            title: "Desativar alertas de Novas Conquistas?",
+            description: "Você não será mais notificado quando uma nova conquista for desbloqueada, o que pode diminuir a celebração dos feitos."
+        }
+      },
     ]
   },
   {
