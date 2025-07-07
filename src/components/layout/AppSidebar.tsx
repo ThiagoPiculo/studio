@@ -13,7 +13,6 @@ import {
     SidebarTrigger
 } from '@/components/ui/sidebar';
 import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, School } from 'lucide-react';
-import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -41,7 +40,6 @@ export function AppSidebar() {
             <SidebarRail />
             <SidebarHeader>
                 <AppLogo />
-                <FamilyContextSwitcher />
             </SidebarHeader>
 
             <SidebarContent>

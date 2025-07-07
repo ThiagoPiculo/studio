@@ -23,15 +23,13 @@ export function FamilyContextSwitcher() {
   
   const currentContextData = availableContexts.find(c => c.id === currentContext);
 
-  if (!user) return null;
+  if (!user || availableContexts.length <= 1) return null;
   
   if (isLoading) {
     return (
-      <Button variant="outline" className="w-full justify-start h-10 gap-2 px-2 text-left" disabled>
-        <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin" />
-            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">Carregando...</span>
-        </div>
+      <Button variant="outline" className="w-[220px] justify-start h-9" disabled>
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          Carregando...
       </Button>
     );
   }
@@ -45,16 +43,16 @@ export function FamilyContextSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full justify-between h-10 gap-2 px-2 text-left bg-transparent border-transparent hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus:ring-sidebar-ring group-data-[collapsible=icon]:w-10 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-          <div className="flex items-center gap-2 truncate group-data-[collapsible=icon]:gap-0">
+        <Button variant="outline" className="w-full max-w-[240px] justify-between h-9">
+          <div className="flex items-center gap-2 truncate">
             {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <LinkIcon className="h-4 w-4 shrink-0 text-chart-4" />}
-            <span className="truncate text-sm font-semibold group-data-[collapsible=icon]:hidden">Estou em: {getDisplayName(currentContextData)}</span>
+            <span className="truncate text-sm font-medium">{getDisplayName(currentContextData)}</span>
           </div>
-          <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0 group-data-[collapsible=icon]:hidden" />
+          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-64" align="end">
-        <DropdownMenuLabel>Mudar para:</DropdownMenuLabel>
+      <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+        <DropdownMenuLabel>Mudar contexto</DropdownMenuLabel>
         <DropdownMenuRadioGroup value={currentContext} onValueChange={handleContextChange}>
           {availableContexts.map((context) => (
             <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer">
