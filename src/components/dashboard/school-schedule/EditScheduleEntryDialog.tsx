@@ -35,6 +35,12 @@ const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
 ];
 
+const schoolSubjects = [
+    "Português", "Matemática", "Ciências", "História", "Geografia", "Inglês", 
+    "Educação Física", "Artes", "Música", "Redação", "Espanhol", "Informática",
+    "Filosofia", "Sociologia", "Química", "Física", "Biologia"
+];
+
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -126,7 +132,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                         <FormField control={form.control} name="subject" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Matéria</FormLabel>
-                                <FormControl><Input placeholder="Ex: Matemática" {...field} /></FormControl>
+                                <FormControl>
+                                    <Input placeholder="Ex: Matemática" {...field} list="subjects-list" />
+                                </FormControl>
+                                <datalist id="subjects-list">
+                                    {schoolSubjects.map(subject => <option key={subject} value={subject} />)}
+                                </datalist>
                                 <FormMessage />
                             </FormItem>
                         )} />
