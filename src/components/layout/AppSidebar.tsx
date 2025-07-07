@@ -65,9 +65,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/missions" tooltip="Missões" isActive={pathname.startsWith('/dashboard/missions')}>
+                        <SidebarMenuButton href="/dashboard/missions" tooltip="Central de Missões" isActive={pathname.startsWith('/dashboard/missions')}>
                             <Target className="text-chart-3" />
-                            <span>Missões</span>
+                            <span>Central de Missões</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>

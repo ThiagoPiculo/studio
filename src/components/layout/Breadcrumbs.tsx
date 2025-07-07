@@ -21,7 +21,7 @@ const pathTranslations: { [key: string]: string } = {
   agenda: 'Agenda',
   manage: 'Gerenciar',
   family: 'Aliança',
-  missions: 'Missões',
+  missions: 'Central de Missões',
   rewards: 'Recompensas',
   profile: 'Meu Perfil',
   settings: 'Configurações',
