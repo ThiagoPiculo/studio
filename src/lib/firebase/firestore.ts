@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -1754,6 +1754,27 @@ export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry
   await setDoc(newEntryRef, newEntry);
   return newEntry;
 };
+
+export const addRecurringSchoolEntry = async (
+    baseEntry: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt' | 'dayOfWeek'>, 
+    days: Weekday[]
+): Promise<void> => {
+    const batch = writeBatch(db);
+    const now = serverTimestamp() as Timestamp;
+
+    days.forEach(day => {
+        const newEntryRef = doc(collection(db, 'schoolSchedules'));
+        const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
+            ...baseEntry,
+            dayOfWeek: day,
+            createdAt: now,
+            updatedAt: now,
+        };
+        batch.set(newEntryRef, newEntry);
+    });
+
+    await batch.commit();
+}
 
 export const updateSchoolScheduleEntry = async (entryId: string, updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>): Promise<void> => {
   const entryRef = doc(db, 'schoolSchedules', entryId);

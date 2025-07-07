@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save } from 'lucide-react';
-import type { SchoolScheduleEntry } from '@/lib/types';
+import type { SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 
@@ -22,7 +22,7 @@ const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
   dayOfWeek: z.enum(weekdays),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, "Use o formato HH:mm."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
 }).refine(data => data.startTime < data.endTime, {
   message: "O horário final deve ser depois do inicial.",
@@ -36,6 +36,7 @@ const subjectColors = [
 ];
 
 const schoolSubjects = [
+    "Recreio/Intervalo",
     "Português", "Matemática", "Ciências", "História", "Geografia", "Inglês", 
     "Educação Física", "Artes", "Música", "Redação", "Espanhol", "Informática",
     "Filosofia", "Sociologia", "Química", "Física", "Biologia"
@@ -93,7 +94,21 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
         setIsProcessing(true);
         try {
-            if (entryToEdit && entryToEdit.id) {
+            if (data.subject === 'Recreio/Intervalo') {
+                const daysToRepeat: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+                const baseEntry = {
+                    subject: data.subject,
+                    startTime: data.startTime,
+                    endTime: data.endTime,
+                    color: '#868e96', // A neutral gray color for recess
+                    childId,
+                    ownerId: user.uid,
+                    familyId: currentContext === 'my-space' ? null : currentContext,
+                };
+                await addRecurringSchoolEntry(baseEntry, daysToRepeat);
+                toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
+
+            } else if (entryToEdit && entryToEdit.id) {
                 // Update
                 await updateSchoolScheduleEntry(entryToEdit.id, data);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${data.subject} foi atualizada no horário.` });
@@ -145,7 +160,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                             <FormField control={form.control} name="dayOfWeek" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia da Semana</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={form.watch('subject') === 'Recreio/Intervalo'}>
                                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {weekdays.map(day => (
@@ -159,7 +174,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                              <FormField control={form.control} name="color" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Cor</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select onValueChange={field.onChange} value={field.value} disabled={form.watch('subject') === 'Recreio/Intervalo'}>
                                         <FormControl><SelectTrigger style={{backgroundColor: field.value}}><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {subjectColors.map(color => (
