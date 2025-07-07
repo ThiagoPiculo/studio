@@ -241,15 +241,15 @@ export default function HeroesPage() {
                           {getInitials(child.name)}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-grow">
-                        <CardTitle className="text-2xl font-semibold">{child.name}</CardTitle>
+                      <div className="flex-grow overflow-hidden">
+                        <CardTitle className="text-2xl font-semibold truncate">{child.name}</CardTitle>
                         <CardDescription>{age} anos</CardDescription>
-                        <div className="flex items-baseline gap-1.5 mt-2">
-                          <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
-                          <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
-                        </div>
                       </div>
                   </div>
+                   <div className="flex items-baseline justify-center gap-1.5 mt-2">
+                      <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
+                      <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
+                    </div>
                 </CardHeader>
 
                 <CardContent className="p-4 pt-0 flex-grow">
@@ -315,19 +315,18 @@ export default function HeroesPage() {
                           {todaysSchedule.length > 0 ? (
                               <div className="space-y-1">
                                   <div className="grid grid-cols-2 gap-x-2 gap-y-1">
-                                      {todaysSchedule.slice(0, 4).map(entry => (
+                                      {todaysSchedule.slice(0, 6).map(entry => (
                                           <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
                                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
                                               <div className="flex flex-col flex-grow truncate">
                                                   <span className="font-semibold truncate">{entry.subject}</span>
-                                                  <span className="text-muted-foreground">{entry.startTime} - {entry.endTime}</span>
                                               </div>
                                           </div>
                                       ))}
                                   </div>
-                                  {todaysSchedule.length > 4 && (
+                                  {todaysSchedule.length > 6 && (
                                       <Link href={`/dashboard/school-schedule`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                        + {todaysSchedule.length - 4} mais...
+                                        + {todaysSchedule.length - 6} mais...
                                       </Link>
                                   )}
                               </div>
