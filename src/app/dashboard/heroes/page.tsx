@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -219,9 +218,9 @@ export default function HeroesPage() {
                       <div className="flex-grow">
                         <CardTitle className="text-2xl font-semibold">{child.name}</CardTitle>
                         <CardDescription>{age} anos</CardDescription>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
-                          <span className="font-bold text-amber-600">{child.stars}</span>
+                        <div className="flex items-baseline gap-1.5 mt-2">
+                          <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
+                          <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
                         </div>
                       </div>
                   </div>
@@ -238,17 +237,20 @@ export default function HeroesPage() {
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20">
-                    <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                    <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                      <CheckSquare className="h-5 w-5 text-chart-1" />
                       <p className="font-bold text-lg">{todaysMissionsCount}</p>
-                      <p className="text-xs text-muted-foreground">Missões Hoje</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
-                    <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                    <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                       <Gift className="h-5 w-5 text-chart-2" />
                        <p className="font-bold text-lg">{availableRewardsCount}</p>
-                      <p className="text-xs text-muted-foreground">Recompensas</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
                     </Link>
-                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                      <Trophy className="h-5 w-5 text-chart-5" />
                       <p className="font-bold text-lg">{unlockedAchievementsCount}</p>
-                      <p className="text-xs text-muted-foreground">Conquistas</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
                     </Link>
                 </CardFooter>
               </Card>

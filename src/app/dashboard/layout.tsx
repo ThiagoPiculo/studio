@@ -1,4 +1,3 @@
-
 "use client";
 import type { ReactNode } from 'react';
 import { useEffect } from 'react';
@@ -54,7 +53,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <Notifications />
             </div>
           </header>
-          <main className="flex-1 p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300">
             {children}
           </main>
           <Footer />
