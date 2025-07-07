@@ -9,11 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { getDayToWeekday } from '@/lib/calendar-utils';
+import { getDayToWeekday, parseTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2 } from 'lucide-react';
+import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -36,7 +36,6 @@ import { Separator } from '@/components/ui/separator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
 
 const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
@@ -82,11 +81,6 @@ function SchoolSchedulePageContent() {
     setVisibleWeekdays(sortedDays);
   };
 
-  const parseTime = useCallback((time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  }, []);
-
   const fetchData = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
@@ -115,12 +109,9 @@ function SchoolSchedulePageContent() {
   useEffect(() => {
     if (isLoading) return;
 
-    // If there is no selected child but there are children available, select the first one.
     if (!selectedChildId && children.length > 0) {
         setSelectedChildId(children[0].id);
     }
-    // If a child was selected but is no longer in the list (e.g., context changed),
-    // select the first available child or clear the selection.
     else if (selectedChildId && !children.find(c => c.id === selectedChildId)) {
         setSelectedChildId(children.length > 0 ? children[0].id : '');
     }
@@ -131,36 +122,22 @@ function SchoolSchedulePageContent() {
     const child = children.find(c => c.id === selectedChildId);
 
     let startHour = 7;
-    let endHour = 19; // Default range
+    let endHour = 19;
     
     if (child?.schoolShiftStart && child?.schoolShiftEnd) {
         startHour = parseInt(child.schoolShiftStart.split(':')[0], 10);
         const endHourRaw = parseInt(child.schoolShiftEnd.split(':')[0], 10);
         const endMinutesRaw = parseInt(child.schoolShiftEnd.split(':')[1], 10);
-        // Include the last hour block if there are minutes in it, otherwise, the range will be exclusive.
         endHour = endMinutesRaw > 0 ? endHourRaw + 1 : endHourRaw;
     } else {
         switch (child?.schoolShift) {
-            case 'morning':
-                startHour = 7;
-                endHour = 13;
-                break;
-            case 'afternoon':
-                startHour = 13;
-                endHour = 19;
-                break;
-            case 'full_time':
-            case 'not_applicable':
-            default:
-                startHour = 7;
-                endHour = 21;
-                break;
+            case 'morning': startHour = 7; endHour = 13; break;
+            case 'afternoon': startHour = 13; endHour = 19; break;
+            case 'full_time': case 'not_applicable': default: startHour = 7; endHour = 21; break;
         }
     }
     
-    // Generate slots from start to end hour
     slots = Array.from({ length: endHour - startHour }, (_, i) => `${(i + startHour).toString().padStart(2, '0')}:00`);
-
     setTimeSlots(slots);
   }, [selectedChildId, children]);
   
@@ -168,14 +145,9 @@ function SchoolSchedulePageContent() {
     if (isMobile && scrollRef.current && visibleWeekdays.length > 0) {
       const today = new Date().getDay();
       const todayWeekday = getDayToWeekday[today];
-      
-      const scrollTargetDay = visibleWeekdays.includes(todayWeekday) 
-        ? todayWeekday 
-        : visibleWeekdays[0];
-
+      const scrollTargetDay = visibleWeekdays.includes(todayWeekday) ? todayWeekday : visibleWeekdays[0];
       const targetElement = scrollRef.current.querySelector(`[data-day="${scrollTargetDay}"]`);
       if (targetElement) {
-        // Using a small timeout to ensure the layout is stable before scrolling
         setTimeout(() => {
           targetElement.scrollIntoView({ behavior: 'auto', inline: 'start', block: 'nearest' });
         }, 100);
@@ -195,13 +167,11 @@ function SchoolSchedulePageContent() {
   
   const handleAddFromSlot = (day: Weekday, time: string) => {
     if (!selectedChildId || !user) return;
-
     const [hour, minute] = time.split(':').map(Number);
     const endHour = (hour + 1).toString().padStart(2, '0');
     const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
-
     const newEntry: SchoolScheduleEntry = {
-        id: '', // Empty ID signifies a new entry
+        id: '',
         subject: '',
         dayOfWeek: day,
         startTime: time,
@@ -210,10 +180,9 @@ function SchoolSchedulePageContent() {
         childId: selectedChildId,
         ownerId: user.uid,
         familyId: currentContext === 'my-space' ? null : currentContext,
-        createdAt: new Timestamp(0,0), // Placeholder
-        updatedAt: new Timestamp(0,0), // Placeholder
+        createdAt: new Timestamp(0,0),
+        updatedAt: new Timestamp(0,0),
     };
-
     setEntryToEdit(newEntry);
     setIsDialogOpen(true);
   };
@@ -229,7 +198,7 @@ function SchoolSchedulePageContent() {
     try {
       await deleteSchoolScheduleEntry(entryToDelete.id);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
-      fetchData(); // Refetch data
+      fetchData();
     } catch (error) {
       console.error("Error deleting entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
@@ -239,7 +208,6 @@ function SchoolSchedulePageContent() {
     }
   };
 
-
   const childSchedule = useMemo(() => {
     return scheduleEntries.filter(entry => entry.childId === selectedChildId);
   }, [scheduleEntries, selectedChildId]);
@@ -247,154 +215,56 @@ function SchoolSchedulePageContent() {
   const hasRecess = useMemo(() => {
     return scheduleEntries.some(entry => entry.childId === selectedChildId && entry.subject === 'Recreio/Intervalo');
   }, [scheduleEntries, selectedChildId]);
-  
-  const renderDayColumn = (day: Weekday) => {
-    const todayWeekday = getDayToWeekday[new Date().getDay()];
-    const isToday = day === todayWeekday;
+
+  const DayColumnContent = ({ day }: { day: Weekday }) => {
     const topOffsetMinutes = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
     
     return (
-      <div 
-        key={day} 
-        data-day={day} 
-        className={cn(
-            "relative border-r", 
-            isMobile ? "w-36 sm:w-48 flex-shrink-0" : "flex-1",
-            (day === 'SA' || day === 'SU') && "bg-muted/20"
-        )}>
-          {/* Clickable background slots */}
-          {timeSlots.map((time, index) => (
-               <div 
-                  key={time} 
-                  className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < timeSlots.length - 1 && "border-b")}
-                  onClick={() => handleAddFromSlot(day, time)}
-               ></div>
-          ))}
-          
-          {/* Absolutely positioned entries for this day */}
-          {childSchedule
-              .filter(entry => entry.dayOfWeek === day)
-              .map(entry => {
-                  const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
-                  const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
-                  const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
-                  
-                  if (useColors) {
-                      entryStyle.backgroundColor = `${entry.color}80`;
-                      entryStyle.borderColor = entry.color;
-                  }
+        <div className={cn("relative h-full", (day === 'SA' || day === 'SU') && "bg-muted/20")}>
+            {timeSlots.map((time, index) => (
+                <div 
+                    key={time} 
+                    className={cn(
+                        "h-12 cursor-pointer hover:bg-primary/5 transition-colors", 
+                        index < timeSlots.length - 1 && "border-b"
+                    )}
+                    onClick={() => handleAddFromSlot(day, time)}
+                ></div>
+            ))}
+            {childSchedule
+                .filter(entry => entry.dayOfWeek === day)
+                .map(entry => {
+                    const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
+                    const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+                    const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
+                    
+                    if (useColors) {
+                        entryStyle.backgroundColor = `${entry.color}80`;
+                        entryStyle.borderColor = entry.color;
+                    }
 
-                  return (
-                      <div
-                          key={entry.id}
-                          className={cn(
-                              "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
-                              !useColors && "bg-primary/10 border-primary/20"
-                          )}
-                          style={entryStyle}
-                          onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
-                      >
-                          <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
-                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                              <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                              <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
-                          </div>
-                      </div>
-                  );
-              })}
-      </div>
-    );
-  };
-  
-  const renderDesktopGrid = () => {
-    if (timeSlots.length === 0) {
-      return <div className="text-center py-10 text-muted-foreground">Selecione um herói para ver o horário.</div>;
-    }
-    if (visibleWeekdays.length === 0) {
-        return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
-    }
-
-    const totalHeight = timeSlots.length * 48; // h-12 is 3rem = 48px
-
-    return (
-        <div className="grid grid-cols-[auto_1fr]">
-            {/* Time Column */}
-            <div className="text-right pr-2">
-                {timeSlots.map(time => (
-                    <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
-                ))}
-            </div>
-
-            {/* Grid Content */}
-            <div className="grid border-l" style={{ height: `${totalHeight}px`, gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
-                {visibleWeekdays.map(renderDayColumn)}
-            </div>
+                    return (
+                        <div
+                            key={entry.id}
+                            className={cn(
+                                "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
+                                !useColors && "bg-primary/10 border-primary/20"
+                            )}
+                            style={entryStyle}
+                            onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
+                        >
+                            <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
+                                <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
+                            </div>
+                        </div>
+                    );
+                })}
         </div>
     );
   };
-
-  const renderMobileGrid = () => {
-      if (timeSlots.length === 0) {
-          return <div className="text-center py-10 text-muted-foreground">Selecione um herói para ver o horário.</div>;
-      }
-      if (visibleWeekdays.length === 0) {
-          return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
-      }
-      const totalHeight = timeSlots.length * 48;
-
-      return (
-        <ScrollArea ref={scrollRef} className="w-full whitespace-nowrap" orientation="horizontal">
-              <div className="flex" style={{ height: `${totalHeight}px`}}>
-                  {/* Sticky Time Column */}
-                  <div className="sticky left-0 bg-background z-10 w-14 flex-shrink-0">
-                      {timeSlots.map(time => (
-                          <div key={time} className="h-12 flex items-center justify-end pr-2 text-xs text-muted-foreground">{time}</div>
-                      ))}
-                  </div>
-                  {/* Scrollable Day Columns */}
-                  <div className="flex">
-                      {visibleWeekdays.map(renderDayColumn)}
-                  </div>
-              </div>
-              <ScrollBar orientation="horizontal" className="mt-2"/>
-          </ScrollArea>
-      )
-  };
   
-  const renderDayHeaders = () => {
-    const todayWeekday = getDayToWeekday[new Date().getDay()];
-    return (
-      <div className="grid" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
-        {visibleWeekdays.map(day => (
-          <div key={day} className="flex justify-center items-center gap-2">
-            <h3 className="font-semibold">{weekdayLabels[day].short}</h3>
-            {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
-          </div>
-        ))}
-      </div>
-    );
-  };
-
-  const renderMobileDayHeaders = () => {
-      const todayWeekday = getDayToWeekday[new Date().getDay()];
-      return (
-          <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
-              <div className="flex">
-                  <div className="sticky left-0 bg-background w-14 flex-shrink-0 z-10" /> 
-                  <div className="flex">
-                      {visibleWeekdays.map(day => (
-                          <div key={day} className="w-36 sm:w-48 flex-shrink-0 flex justify-center items-center gap-2">
-                              <h3 className="font-semibold">{weekdayLabels[day].short}</h3>
-                              {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
-                          </div>
-                      ))}
-                  </div>
-              </div>
-              <ScrollBar orientation="horizontal" />
-          </ScrollArea>
-      );
-  };
-
   if (isLoading) return <Loading />;
 
   return (
@@ -490,29 +360,76 @@ function SchoolSchedulePageContent() {
       </Card>
 
       <Card>
-        <CardHeader className={cn("grid items-end p-4 pb-2", !isMobile && "grid-cols-[auto_1fr]")}>
-            {!isMobile ? (
-              <>
-                <div className="pr-2">{/* Empty cell for time column */}</div>
-                {renderDayHeaders()}
-              </>
-            ) : (
-                renderMobileDayHeaders()
-            )}
-        </CardHeader>
-        <CardContent className="p-4 pt-0 overflow-x-auto">
+        <CardContent className="overflow-x-auto p-0">
           {children.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
+            <div className="text-center py-10 text-muted-foreground p-4">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
               <p className="font-semibold">Nenhum herói encontrado.</p>
               <p>Você precisa cadastrar um herói antes de montar a agenda escolar.</p>
             </div>
           ) : !selectedChildId ? (
-            <div className="text-center py-10 text-muted-foreground">
+            <div className="text-center py-10 text-muted-foreground p-4">
               <p>Selecione um herói para ver ou editar a agenda.</p>
             </div>
+          ) : isMobile ? (
+             <div className="flex w-full">
+                <div className="sticky left-0 z-10 flex w-14 flex-shrink-0 flex-col bg-background shadow-md">
+                    <div className="flex h-12 items-center justify-center border-b border-r font-semibold"><Clock className="h-4 w-4" /></div>
+                    {timeSlots.map(time => (
+                        <div key={time} className="flex h-12 items-center justify-end border-r pr-2 text-xs text-muted-foreground">
+                            {time}
+                        </div>
+                    ))}
+                </div>
+                <ScrollArea className="flex-1" orientation="horizontal" ref={scrollRef}>
+                    <div className="flex flex-col">
+                        <div className="sticky top-0 z-10 flex h-12 bg-background">
+                            {visibleWeekdays.map(day => (
+                                <div key={day} className="flex w-36 flex-shrink-0 items-center justify-center gap-2 border-b border-r font-semibold sm:w-48">
+                                    <h3>{weekdayLabels[day].short}</h3>
+                                    {day === getDayToWeekday[new Date().getDay()] && <Badge variant="secondary">Hoje</Badge>}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="flex" style={{ height: `${timeSlots.length * 48}px` }}>
+                             {visibleWeekdays.map(day => (
+                                <div key={day} data-day={day} className="w-36 flex-shrink-0 border-r sm:w-48">
+                                    <DayColumnContent day={day} />
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <ScrollBar orientation="horizontal" />
+                </ScrollArea>
+             </div>
           ) : (
-            isMobile ? renderMobileGrid() : renderDesktopGrid()
+            <div className="p-4">
+                <div className="grid grid-cols-[auto_1fr] border-b">
+                    <div className="pr-2" />
+                    <div className="grid" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
+                        {visibleWeekdays.map(day => (
+                            <div key={day} className="flex justify-center items-center gap-2 py-2">
+                                <h3 className="font-semibold">{weekdayLabels[day].short}</h3>
+                                {day === getDayToWeekday[new Date().getDay()] && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+                 <div className="grid grid-cols-[auto_1fr]">
+                    <div className="text-right pr-2">
+                        {timeSlots.map(time => (
+                            <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
+                        ))}
+                    </div>
+                    <div className="grid border-l" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
+                        {visibleWeekdays.map(day => (
+                            <div key={day} data-day={day} className="flex-1 border-r">
+                                <DayColumnContent day={day} />
+                            </div>
+                        ))}
+                    </div>
+                 </div>
+            </div>
           )}
         </CardContent>
       </Card>

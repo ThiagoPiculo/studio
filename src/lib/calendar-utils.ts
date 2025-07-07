@@ -46,6 +46,14 @@ export const getPeriodOfDay = (date: Date | null | undefined): 'Manhã' | 'Tarde
     return 'Noite';
 };
 
+export const parseTime = (time: string): number => {
+  const [hours, minutes] = time.split(':').map(Number);
+  if (isNaN(hours) || isNaN(minutes)) {
+    return 0;
+  }
+  return hours * 60 + minutes;
+};
+
 export function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
     const checkDate = startOfDay(date);
     const weekStartsOn = 1; // Monday
