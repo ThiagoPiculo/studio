@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -86,7 +85,7 @@ function ManageChildPageContent() {
 
 
   // Mission-specific states
-  const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
+  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
   
@@ -508,27 +507,26 @@ function ManageChildPageContent() {
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
   
-  const pendingMissions = useMemo(() => {
+  const filteredMissions = useMemo(() => {
     if (!missionInstances) return [];
     return missionInstances
-      .filter(m => m.status === 'pending')
+      .filter(instance => {
+        if (recurrenceFilter === 'all') return true;
+        if (recurrenceFilter === 'unique') return !instance.isRecurring;
+        if (recurrenceFilter === 'recurring') return !!instance.isRecurring;
+        return true;
+      })
       .sort((a, b) => {
+        // Pending missions first
+        if (a.status === 'pending' && b.status !== 'pending') return -1;
+        if (a.status !== 'pending' && b.status === 'pending') return 1;
+        
+        // Then by date
         const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
         const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
         return dateA.getTime() - dateB.getTime();
       });
-  }, [missionInstances]);
-
-
-  const completedMissions = useMemo(() => {
-    return missionInstances
-        .filter(m => m.status === 'completed')
-        .sort((a, b) => {
-            const dateA = a.updatedAt?.toDate() || new Date(0);
-            const dateB = b.updatedAt?.toDate() || new Date(0);
-            return dateB.getTime() - dateA.getTime();
-        });
-  }, [missionInstances]);
+  }, [missionInstances, recurrenceFilter]);
 
 
   const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
@@ -999,57 +997,38 @@ function ManageChildPageContent() {
                         </Button>
                     </div>
                      <div className="pt-4">
-                        <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status</Label>
+                        <Label className="text-sm font-medium text-muted-foreground">Filtrar por Recorrência</Label>
                         <RadioGroup
-                            value={missionStatusFilter}
-                            onValueChange={(v) => setMissionStatusFilter(v as 'pending' | 'completed')}
+                            value={recurrenceFilter}
+                            onValueChange={(v) => setRecurrenceFilter(v as 'all' | 'unique' | 'recurring')}
                             className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
                         >
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="pending" id="filter-pending-missions" />
-                                <Label htmlFor="filter-pending-missions" className="cursor-pointer font-normal">Pendentes</Label>
+                                <RadioGroupItem value="all" id="filter-all-missions" />
+                                <Label htmlFor="filter-all-missions" className="cursor-pointer font-normal">Todas</Label>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="completed" id="filter-completed-missions" />
-                                <Label htmlFor="filter-completed-missions" className="cursor-pointer font-normal">Concluídas</Label>
+                                <RadioGroupItem value="unique" id="filter-unique-missions" />
+                                <Label htmlFor="filter-unique-missions" className="cursor-pointer font-normal">Únicas</Label>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                                <RadioGroupItem value="recurring" id="filter-recurring-missions" />
+                                <Label htmlFor="filter-recurring-missions" className="cursor-pointer font-normal">Recorrentes</Label>
                             </div>
                         </RadioGroup>
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    {missionStatusFilter === 'pending' && (
-                        <>
-                          {pendingMissions.length === 0 ? (
-                            <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                                <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                                <p className="text-lg text-muted-foreground">Nenhuma missão pendente para {child.name}.</p>
-                                <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Nova Missão" para começar a jornada!</p>
-                            </div>
-                          ) : (
-                            <div>
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                    {pendingMissions.map(instance => renderMissionCard(instance))}
-                                </div>
-                            </div>
-                          )}
-                        </>
-                    )}
-                    {missionStatusFilter === 'completed' && (
-                        <>
-                          {completedMissions.length === 0 ? (
-                             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                                <Trophy className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                                <p className="text-lg text-muted-foreground">{child.name} ainda não concluiu nenhuma missão.</p>
-                                <p className="text-sm text-muted-foreground mt-1">Volte para a aba "Pendentes" para ver o que falta!</p>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                  {completedMissions.map(instance => renderMissionCard(instance))}
-                              </div>
-                            </div>
-                          )}
-                        </>
+                    {filteredMissions.length === 0 ? (
+                      <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                          <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                          <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
+                          <p className="text-sm text-muted-foreground mt-1">Tente outro filtro ou clique em "Adicionar Nova Missão" para começar a jornada!</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                          {filteredMissions.map(instance => renderMissionCard(instance))}
+                      </div>
                     )}
                   </CardContent>
             </Card>
@@ -1476,10 +1455,3 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
-    
-
-    
-
-
-
-
