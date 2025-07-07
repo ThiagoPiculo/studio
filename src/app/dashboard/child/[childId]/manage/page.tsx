@@ -733,11 +733,11 @@ export default function ManageChildPage() {
 
       <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-5 lg:grid-cols-5 lg:h-10 bg-muted/50 p-1 rounded-lg">
-          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-chart-1" />Visão Geral</TabsTrigger>
-          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-chart-3" />Missões</TabsTrigger>
-          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-chart-2" />Recompensas</TabsTrigger>
-          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-chart-4" />Conquistas</TabsTrigger>
-          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4 text-chart-5" />Editar Perfil</TabsTrigger>
+          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
+          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Missões</TabsTrigger>
+          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-green-500" />Recompensas</TabsTrigger>
+          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Conquistas</TabsTrigger>
+          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
         </TabsList>
         
         <div className="mt-4">
@@ -1153,6 +1153,9 @@ export default function ManageChildPage() {
                                     "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
                                     isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
                                   )}>
+                                      {!isEarned && (
+                                          <Lock className="absolute top-3 right-3 h-5 w-5 text-amber-500 drop-shadow-sm" />
+                                      )}
                                       <div className={cn(
                                         "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
                                         isEarned ? badge.color : 'bg-gray-400 dark:bg-gray-700'
@@ -1161,9 +1164,6 @@ export default function ManageChildPage() {
                                               "h-9 w-9 text-white",
                                               !isEarned && "opacity-30"
                                           )} />
-                                          {!isEarned && (
-                                              <Lock className="absolute h-8 w-8 text-white/70" />
-                                          )}
                                       </div>
                                       <div className="flex-grow h-24 flex flex-col justify-center">
                                           <p className={cn(
