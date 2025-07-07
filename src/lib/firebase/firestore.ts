@@ -109,8 +109,12 @@ export const getChildProfileById = async (childId: string): Promise<ChildProfile
   return null;
 };
 
-export const getChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
-  const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), orderBy('name', 'asc'));
+export const getChildProfilesByOwner = async (ownerId: string, unassignedOnly = false): Promise<ChildProfile[]> => {
+  const constraints = [where('ownerId', '==', ownerId), orderBy('name', 'asc')];
+  if (unassignedOnly) {
+    constraints.push(where('familyId', '==', null));
+  }
+  const q = query(collection(db, 'children'), ...constraints);
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };

@@ -14,8 +14,8 @@ import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { resetPassword } from '@/lib/firebase/auth';
-import { getChildProfilesByOwner, resetSelectedChildrenProgress, resetSchedulesForChildren } from '@/lib/firebase/firestore';
-import type { ChildProfile } from '@/lib/types';
+import { getChildProfilesByOwner, getChildProfilesByFamily, getFamilyMembers, resetSelectedChildrenProgress, resetSchedulesForChildren, getUserProfile } from '@/lib/firebase/firestore';
+import type { ChildProfile, UserProfile } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,7 @@ import { useRouter } from 'next/navigation';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 
 export default function ProfilePage() {
@@ -52,22 +53,61 @@ export default function ProfilePage() {
   const [isResettingRoutines, setIsResettingRoutines] = useState(false);
   const [isResetRoutinesDialogOpen, setIsResetRoutinesDialogOpen] = useState(false);
   const [selectedChildrenForRoutines, setSelectedChildrenForRoutines] = useState<Record<string, boolean>>({});
+  
+  const [allContextChildren, setAllContextChildren] = useState<ChildProfile[]>([]);
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
+  const [isLoadingDialogData, setIsLoadingDialogData] = useState(true);
 
-  const [children, setChildren] = useState<ChildProfile[]>([]);
 
   useEffect(() => {
     if (user) {
       setDisplayName(user.name || '');
-      getChildProfilesByOwner(user.uid).then(profiles => {
-        setChildren(profiles);
-      });
     }
   }, [user]);
+
+   useEffect(() => {
+    if (!user || !availableContexts.length) return;
+
+    const fetchDialogData = async () => {
+        setIsLoadingDialogData(true);
+        const childrenPromises: Promise<ChildProfile[]>[] = [];
+        const membersMap = new Map<string, UserProfile>();
+        if(user) membersMap.set(user.uid, user);
+
+        for (const context of availableContexts) {
+            if (context.id === 'my-space') {
+                childrenPromises.push(getChildProfilesByOwner(user.uid, true)); // true for only unassigned
+            } else {
+                childrenPromises.push(getChildProfilesByFamily(context.id));
+                const members = await getFamilyMembers(context.id);
+                members.forEach(member => membersMap.set(member.uid, member));
+            }
+        }
+        
+        try {
+            const childrenResults = await Promise.all(childrenPromises);
+            const allChildren = childrenResults.flat();
+             const uniqueChildren = allChildren.filter((child, index, self) =>
+                index === self.findIndex((c) => c.id === child.id)
+            );
+
+            setAllContextChildren(uniqueChildren);
+            setMemberProfiles(Object.fromEntries(membersMap));
+        } catch (error) {
+            console.error("Error fetching data for dialogs:", error);
+            toast({ title: "Erro ao carregar dados", description: "Não foi possível carregar a lista completa de crianças e membros.", variant: "destructive" });
+        } finally {
+            setIsLoadingDialogData(false);
+        }
+    };
+
+    fetchDialogData();
+  }, [user, availableContexts, toast]);
   
   const groupedChildren = useMemo(() => {
     const groups: Record<string, ChildProfile[]> = { 'my-space': [] };
     
-    children.forEach(child => {
+    allContextChildren.forEach(child => {
         const contextId = child.familyId || 'my-space';
         if (!groups[contextId]) {
             groups[contextId] = [];
@@ -80,9 +120,9 @@ export default function ProfilePage() {
       const contextName = contextId === 'my-space' 
         ? 'No Meu Espaço' 
         : `Na Aliança "${contextInfo?.name || 'Desconhecida'}"`;
-      return { contextId, contextName, children: childrenInGroup };
+      return { contextId, contextName, children: childrenInGroup.sort((a,b) => a.name.localeCompare(b.name)) };
     }).filter(group => group.children.length > 0);
-  }, [children, availableContexts]);
+  }, [allContextChildren, availableContexts]);
 
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -141,7 +181,7 @@ export default function ProfilePage() {
     setIsResettingProgress(true);
     try {
       await resetSelectedChildrenProgress(user.uid, childIdsToReset);
-      const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      const childNames = allContextChildren.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
       toast({ title: "Progresso Redefinido!", description: `O progresso de ${formatChildNames(childNames)} foi zerado.` });
       setIsResetProgressDialogOpen(false);
       setSelectedChildrenForProgress({});
@@ -163,7 +203,7 @@ export default function ProfilePage() {
     setIsResettingRoutines(true);
     try {
       await resetSchedulesForChildren(user.uid, childIdsToReset);
-      const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      const childNames = allContextChildren.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
       toast({ title: "Rotinas Removidas!", description: `Todas as missões agendadas para ${formatChildNames(childNames)} foram removidas.` });
       setIsResetRoutinesDialogOpen(false);
       setSelectedChildrenForRoutines({});
@@ -212,6 +252,46 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const renderChildSelection = (
+    child: ChildProfile,
+    selectionState: Record<string, boolean>,
+    onSelectionChange: (id: string, checked: boolean) => void
+  ) => {
+    const isOwner = child.ownerId === user.uid;
+    const ownerName = isOwner ? 'Você' : memberProfiles[child.ownerId]?.name || 'Desconhecido';
+    const id = `reset-child-${child.id}`;
+
+    return (
+      <div
+        key={child.id}
+        className={cn(
+          "flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 transition-colors",
+          !isOwner && "bg-muted/50 opacity-70 cursor-not-allowed"
+        )}
+      >
+        <Checkbox
+          id={id}
+          checked={!!selectionState[child.id]}
+          onCheckedChange={(checked) => onSelectionChange(child.id, !!checked)}
+          disabled={!isOwner}
+        />
+        <Label htmlFor={id} className={cn("flex-grow flex items-center gap-3", isOwner ? "cursor-pointer" : "cursor-not-allowed")}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={child.avatar} alt={child.name} />
+            <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span>{child.name}</span>
+            {!isOwner && (
+                <span className="text-xs italic text-muted-foreground/80">(Proprietário: {ownerName})</span>
+            )}
+          </div>
+        </Label>
+      </div>
+    );
+  };
+
 
   return (
     <div className="space-y-8 max-w-2xl mx-auto">
@@ -296,7 +376,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">Zera as estrelas, XP e o histórico de missões das crianças selecionadas. Ideal para começar uma "nova temporada".</p>
                  <AlertDialog open={isResetProgressDialogOpen} onOpenChange={setIsResetProgressDialogOpen}>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={children.length === 0 || isResettingProgress}>
+                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoadingDialogData || allContextChildren.length === 0 || isResettingProgress}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso
                         </Button>
                     </AlertDialogTrigger>
@@ -304,7 +384,7 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Redefinir o progresso de quais heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Selecione as crianças (apenas as que você cadastrou) que terão seu progresso zerado. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
+                                Apenas os herois que você cadastrou podem ser selecionados. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <ScrollArea className="max-h-[40vh] my-4 pr-3">
@@ -313,15 +393,7 @@ export default function ProfilePage() {
                                <div key={group.contextId}>
                                  <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
                                  <div className="space-y-2 mt-2">
-                                  {group.children.map(child => (
-                                      <Label key={child.id} htmlFor={`progress-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
-                                        <Checkbox id={`progress-reset-${child.id}`} checked={!!selectedChildrenForProgress[child.id]} onCheckedChange={(checked) => setSelectedChildrenForProgress(prev => ({...prev, [child.id]: !!checked}))} />
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage src={child.avatar} alt={child.name} />
-                                          <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <span>{child.name}</span>
-                                      </Label>
+                                  {group.children.map(child => renderChildSelection(child, selectedChildrenForProgress, (id, checked) => setSelectedChildrenForProgress(prev => ({...prev, [id]: checked}))
                                   ))}
                                   </div>
                                </div>
@@ -346,7 +418,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">Remove TODAS as missões (únicas e recorrentes) da agenda das crianças selecionadas. Use para limpar a agenda e começar do zero.</p>
                  <AlertDialog open={isResetRoutinesDialogOpen} onOpenChange={setIsResetRoutinesDialogOpen}>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={children.length === 0 || isResettingRoutines}>
+                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoadingDialogData || allContextChildren.length === 0 || isResettingRoutines}>
                             <CalendarOff className="mr-2 h-4 w-4" /> Redefinir Rotinas
                         </Button>
                     </AlertDialogTrigger>
@@ -354,7 +426,7 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Limpar a agenda de quais heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Selecione as crianças (apenas as que você cadastrou) para remover TODAS as missões agendadas. Esta ação não pode ser desfeita.
+                                Apenas os herois que você cadastrou podem ser selecionados. Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <ScrollArea className="max-h-[40vh] my-4 pr-3">
@@ -363,15 +435,7 @@ export default function ProfilePage() {
                                <div key={group.contextId}>
                                  <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
                                  <div className="space-y-2 mt-2">
-                                  {group.children.map(child => (
-                                      <Label key={child.id} htmlFor={`routine-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
-                                        <Checkbox id={`routine-reset-${child.id}`} checked={!!selectedChildrenForRoutines[child.id]} onCheckedChange={(checked) => setSelectedChildrenForRoutines(prev => ({...prev, [child.id]: !!checked}))} />
-                                        <Avatar className="h-8 w-8">
-                                          <AvatarImage src={child.avatar} alt={child.name} />
-                                          <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <span>{child.name}</span>
-                                      </Label>
+                                  {group.children.map(child => renderChildSelection(child, selectedChildrenForRoutines, (id, checked) => setSelectedChildrenForRoutines(prev => ({...prev, [id]: checked}))
                                   ))}
                                   </div>
                                </div>
