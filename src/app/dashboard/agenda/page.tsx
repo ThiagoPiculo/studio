@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
+import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails } from '@/lib/types';
+import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -48,6 +49,10 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
   if (hour >= 6 && hour < 12) return 'morning';
   if (hour >= 12 && hour < 18) return 'afternoon';
   return 'night';
+};
+
+const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
+    return missionCategories.find(cat => cat.id === categoryId);
 };
 
 function AgendaPageContent() {
@@ -496,6 +501,8 @@ function AgendaPageContent() {
                         const isCompleted = isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                        const categoryDetails = getMissionCategoryDetails(event.data.category);
+                        const CategoryIcon = categoryDetails?.icon;
                         return(
                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
                             <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
@@ -516,7 +523,8 @@ function AgendaPageContent() {
                                   >
                                       {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
                                       <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
-                                      <span>{event.title}</span>
+                                      {CategoryIcon && <CategoryIcon className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />}
+                                      <span className="flex-1 truncate">{event.title}</span>
                                   </button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-2">
@@ -670,6 +678,8 @@ function AgendaPageContent() {
                         const isCompleted = isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                        const categoryDetails = getMissionCategoryDetails(event.data.category);
+                        const CategoryIcon = categoryDetails?.icon;
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
@@ -690,8 +700,9 @@ function AgendaPageContent() {
                                           )}
                                         >
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
+                                          {CategoryIcon && <CategoryIcon className="h-3 w-3 inline-block mr-1 text-muted-foreground shrink-0" />}
                                           <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
-                                          <span className="flex-1">{event.title}</span>
+                                          <span className="flex-1 truncate">{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-2">

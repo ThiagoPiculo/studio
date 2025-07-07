@@ -8,7 +8,8 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, PackageOpen, CheckCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
+import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry, MissionCategoryDetails } from "@/lib/types";
+import { missionCategories } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
     getMissionTemplatesByOwnerOrFamily,
@@ -29,6 +30,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
+const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
+    return missionCategories.find(cat => cat.id === categoryId);
+};
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -263,7 +267,7 @@ export default function HeroesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-4 pt-0 flex-grow">
+                <CardContent className="p-4 pt-0 flex-grow flex flex-col">
                    <div className="grid grid-cols-3 items-center gap-2">
                         <div className="flex-shrink-0 flex items-center justify-start gap-1.5 w-[70px]">
                             <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
@@ -278,12 +282,12 @@ export default function HeroesPage() {
                         </div>
                     </div>
                    <Separator className="my-4" />
-                   <Tabs defaultValue="missions" className="w-full">
+                   <Tabs defaultValue="missions" className="w-full flex flex-col flex-grow">
                       <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
                           <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
                           <TabsTrigger value="school" className="text-xs gap-1.5"><School className="h-4 w-4"/>Escola Hoje</TabsTrigger>
                       </TabsList>
-                      <TabsContent value="missions" className="mt-2 h-[145px]">
+                      <TabsContent value="missions" className="mt-2 flex-grow">
                         <ScrollArea className="h-full w-full">
                           <ul className="space-y-1 pr-3">
                             {todaysMissions.length > 0 ? (
@@ -294,6 +298,8 @@ export default function HeroesPage() {
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                               const popoverId = `${mission.id}-${today}`;
                               const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
+                              const categoryDetails = getMissionCategoryDetails(mission.category);
+                              const CategoryIcon = categoryDetails?.icon;
                               
                               return (
                                 <li key={mission.id}>
@@ -310,7 +316,8 @@ export default function HeroesPage() {
                                         <CircleDot className="h-4 w-4 text-primary shrink-0" />
                                       )}
                                       <span className="text-xs font-mono w-10">{formattedTime}</span>
-                                      <span className={cn("truncate flex-grow font-semibold", isCompleted && "line-through")}>
+                                      {CategoryIcon && <CategoryIcon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                      <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
                                       </span>
                                     </div>
@@ -332,7 +339,7 @@ export default function HeroesPage() {
                           </ul>
                          </ScrollArea>
                       </TabsContent>
-                      <TabsContent value="school" className="mt-2 h-[145px]">
+                      <TabsContent value="school" className="mt-2 flex-grow">
                         <ScrollArea className="h-full w-full">
                           <div className="grid grid-cols-1 gap-y-1 pr-3">
                               {todaysSchedule.length > 0 ? (
