@@ -16,16 +16,15 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       const [h, m] = value.split(':');
       return { hour: h, minute: m };
     }
-    // Return a default or empty state if value is invalid/missing
-    return { hour: '00', minute: '00' };
+    return { hour: undefined, minute: undefined };
   }, [value]);
 
   const handleHourChange = (newHour: string) => {
-    onChange(`${newHour}:${minute}`);
+    onChange(`${newHour}:${minute || '00'}`);
   };
 
   const handleMinuteChange = (newMinute: string) => {
-    onChange(`${hour}:${newMinute}`);
+    onChange(`${hour || '00'}:${newMinute}`);
   };
 
   return (
@@ -44,7 +43,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
       <span className="font-semibold">:</span>
       <Select value={minute} onValueChange={handleMinuteChange}>
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Minuto" />
+          <SelectValue placeholder="Min." />
         </SelectTrigger>
         <SelectContent>
           {['00', '15', '30', '45'].map(m => (

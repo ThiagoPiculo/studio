@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -26,14 +25,14 @@ const shiftFormSchema = z.object({
 }).superRefine((data, ctx) => {
   const isShiftApplicable = data.schoolShift !== 'not_applicable';
   if (isShiftApplicable) {
-    if (!data.schoolShiftStart) {
+    if (!data.schoolShiftStart || !/^\d{2}:\d{2}$/.test(data.schoolShiftStart)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftStart'],
         message: 'O horário de início é obrigatório.',
       });
     }
-    if (!data.schoolShiftEnd) {
+    if (!data.schoolShiftEnd || !/^\d{2}:\d{2}$/.test(data.schoolShiftEnd)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftEnd'],
@@ -80,30 +79,31 @@ export function EditShiftDialog({ isOpen, onOpenChange, onSave, child }: EditShi
                 schoolShiftEnd: child.schoolShiftEnd || '',
             });
         }
-    }, [child, form]);
+    }, [child, form, isOpen]);
 
     const watchedSchoolShift = form.watch('schoolShift');
 
-    useEffect(() => {
-        switch (watchedSchoolShift) {
+    const handleShiftChange = (value: string) => {
+        form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
+        switch (value) {
             case 'morning':
-                form.setValue('schoolShiftStart', '08:00');
-                form.setValue('schoolShiftEnd', '12:00');
+                form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+                form.setValue('schoolShiftEnd', '12:00', { shouldValidate: true });
                 break;
             case 'afternoon':
-                form.setValue('schoolShiftStart', '13:00');
-                form.setValue('schoolShiftEnd', '17:00');
+                form.setValue('schoolShiftStart', '13:00', { shouldValidate: true });
+                form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
                 break;
             case 'full_time':
-                form.setValue('schoolShiftStart', '08:00');
-                form.setValue('schoolShiftEnd', '17:00');
+                form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+                form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
                 break;
             case 'not_applicable':
-                form.setValue('schoolShiftStart', '');
-                form.setValue('schoolShiftEnd', '');
+                form.setValue('schoolShiftStart', '', { shouldValidate: true });
+                form.setValue('schoolShiftEnd', '', { shouldValidate: true });
                 break;
         }
-    }, [watchedSchoolShift, form]);
+    }
 
     const onSubmit = async (data: FormValues) => {
         if (!child) {
@@ -148,7 +148,7 @@ export function EditShiftDialog({ isOpen, onOpenChange, onSave, child }: EditShi
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Turno Escolar</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value}>
+                                    <Select onValueChange={handleShiftChange} value={field.value}>
                                         <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {schoolShifts.map(shift => (

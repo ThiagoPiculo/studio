@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -64,14 +63,14 @@ const profileFormSchema = z.object({
 }).superRefine((data, ctx) => {
   const isShiftApplicable = data.schoolShift !== 'not_applicable';
   if (isShiftApplicable) {
-    if (!data.schoolShiftStart) {
+    if (!data.schoolShiftStart || !/^\d{2}:\d{2}$/.test(data.schoolShiftStart)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftStart'],
         message: 'O horário de início é obrigatório.',
       });
     }
-    if (!data.schoolShiftEnd) {
+    if (!data.schoolShiftEnd || !/^\d{2}:\d{2}$/.test(data.schoolShiftEnd)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftEnd'],
@@ -128,27 +127,6 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   const watchedSchoolShift = form.watch("schoolShift");
 
   useEffect(() => {
-    switch (watchedSchoolShift) {
-        case 'morning':
-            form.setValue('schoolShiftStart', '08:00');
-            form.setValue('schoolShiftEnd', '12:00');
-            break;
-        case 'afternoon':
-            form.setValue('schoolShiftStart', '13:00');
-            form.setValue('schoolShiftEnd', '17:00');
-            break;
-        case 'full_time':
-            form.setValue('schoolShiftStart', '08:00');
-            form.setValue('schoolShiftEnd', '17:00');
-            break;
-        case 'not_applicable':
-            form.setValue('schoolShiftStart', '');
-            form.setValue('schoolShiftEnd', '');
-            break;
-    }
-  }, [watchedSchoolShift, form]);
-
-  useEffect(() => {
     form.reset({
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
@@ -162,6 +140,28 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       setMonth(child.birthDate.toDate());
     }
   }, [child, form]);
+
+  const handleShiftChange = (value: string) => {
+    form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
+    switch (value) {
+        case 'morning':
+            form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '12:00', { shouldValidate: true });
+            break;
+        case 'afternoon':
+            form.setValue('schoolShiftStart', '13:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
+            break;
+        case 'full_time':
+            form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
+            break;
+        case 'not_applicable':
+            form.setValue('schoolShiftStart', '', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '', { shouldValidate: true });
+            break;
+    }
+  };
 
   useEffect(() => {
     const fetchAuxiliaryData = async () => {
@@ -215,8 +215,8 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         birthDate: Timestamp.fromDate(data.birthDate),
         gender: data.gender,
         schoolShift: data.schoolShift,
-        schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : undefined,
-        schoolShiftEnd: data.schoolShift !== 'not_applicable' ? data.schoolShiftEnd : undefined,
+        schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : '',
+        schoolShiftEnd: data.schoolShift !== 'not_applicable' ? data.schoolShiftEnd : '',
         color: data.color,
       };
       await updateChildProfile(child.id, updates);
@@ -414,7 +414,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Turno Escolar</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={handleShiftChange} value={field.value}>
                                 <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
                                 <SelectContent>
                                     {schoolShifts.map(shift => (

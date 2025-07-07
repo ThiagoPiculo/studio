@@ -1,4 +1,3 @@
-
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -27,6 +26,7 @@ import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
 
@@ -46,14 +46,14 @@ const onboardingSchema = z.object({
 }).superRefine((data, ctx) => {
   const isShiftApplicable = data.schoolShift !== 'not_applicable';
   if (isShiftApplicable) {
-    if (!data.schoolShiftStart) {
+    if (!data.schoolShiftStart || !/^\d{2}:\d{2}$/.test(data.schoolShiftStart)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftStart'],
         message: 'O horário de início é obrigatório.',
       });
     }
-    if (!data.schoolShiftEnd) {
+    if (!data.schoolShiftEnd || !/^\d{2}:\d{2}$/.test(data.schoolShiftEnd)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['schoolShiftEnd'],
@@ -96,26 +96,27 @@ export function OnboardingForm() {
 
   const watchedSchoolShift = form.watch('schoolShift');
 
-  useEffect(() => {
-    switch (watchedSchoolShift) {
+  const handleShiftChange = (value: string) => {
+    form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
+    switch (value) {
         case 'morning':
-            form.setValue('schoolShiftStart', '08:00');
-            form.setValue('schoolShiftEnd', '12:00');
+            form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '12:00', { shouldValidate: true });
             break;
         case 'afternoon':
-            form.setValue('schoolShiftStart', '13:00');
-            form.setValue('schoolShiftEnd', '17:00');
+            form.setValue('schoolShiftStart', '13:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
             break;
         case 'full_time':
-            form.setValue('schoolShiftStart', '08:00');
-            form.setValue('schoolShiftEnd', '17:00');
+            form.setValue('schoolShiftStart', '08:00', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '17:00', { shouldValidate: true });
             break;
         case 'not_applicable':
-            form.setValue('schoolShiftStart', '');
-            form.setValue('schoolShiftEnd', '');
+            form.setValue('schoolShiftStart', '', { shouldValidate: true });
+            form.setValue('schoolShiftEnd', '', { shouldValidate: true });
             break;
     }
-  }, [watchedSchoolShift, form]);
+  };
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
@@ -129,8 +130,8 @@ export function OnboardingForm() {
         birthDate: Timestamp.fromDate(values.childBirthDate), 
         gender: values.childGender,
         schoolShift: values.schoolShift,
-        schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : undefined,
-        schoolShiftEnd: values.schoolShift !== 'not_applicable' ? values.schoolShiftEnd : undefined,
+        schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : '',
+        schoolShiftEnd: values.schoolShift !== 'not_applicable' ? values.schoolShiftEnd : '',
       });
       toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard/heroes"); 
@@ -311,7 +312,7 @@ export function OnboardingForm() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Turno Escolar</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={handleShiftChange} value={field.value}>
                                 <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecione..."/>
