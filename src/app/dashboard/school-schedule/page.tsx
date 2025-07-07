@@ -7,11 +7,11 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
-import { weekdays, weekdayLabels, schoolShifts } from '@/lib/types';
+import { weekdays, weekdayLabels } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2 } from 'lucide-react';
+import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2 } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -24,6 +24,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Label } from '@/components/ui/label';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Loading from './loading';
 
 
@@ -45,13 +48,21 @@ function SchoolSchedulePageContent() {
 
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   
-  const orderedWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+  const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
+
 
   const schoolShiftMap: Record<SchoolShift, string> = {
     morning: 'Manhã',
     afternoon: 'Tarde',
     full_time: 'Integral',
     not_applicable: 'Não se aplica'
+  };
+  
+  const handleVisibleDaysChange = (newDays: Weekday[]) => {
+    // Sort the newDays array according to the predefined order of allWeekdays
+    const sortedDays = allWeekdays.filter(day => newDays.includes(day));
+    setVisibleWeekdays(sortedDays);
   };
 
   const parseTime = useCallback((time: string) => {
@@ -166,6 +177,9 @@ function SchoolSchedulePageContent() {
     if (visibleTimeSlots.length === 0) {
        return <div className="text-center py-10 text-muted-foreground">Nenhuma aula agendada para este herói.</div>;
     }
+    if (visibleWeekdays.length === 0) {
+        return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
+    }
 
     const topOffsetMinutes = parseTime(visibleTimeSlots[0]);
     const totalHeight = visibleTimeSlots.length * 48; // h-12 is 3rem = 48px
@@ -180,8 +194,8 @@ function SchoolSchedulePageContent() {
             </div>
 
             {/* Grid Content */}
-            <div className="grid grid-cols-7 border-l" style={{ height: `${totalHeight}px` }}>
-                {orderedWeekdays.map(day => (
+            <div className={cn("grid border-l", `grid-cols-${visibleWeekdays.length}`)} style={{ height: `${totalHeight}px` }}>
+                {visibleWeekdays.map(day => (
                     <div key={day} className={cn(
                         "relative border-r",
                         (day === 'SA' || day === 'SU') && "bg-muted/20"
@@ -259,6 +273,36 @@ function SchoolSchedulePageContent() {
                         ))}
                     </SelectContent>
                 </Select>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" size="icon">
+                            <Settings2 className="h-4 w-4" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4">
+                        <div className="space-y-2">
+                            <Label className="font-semibold">Exibir Dias da Semana</Label>
+                            <ToggleGroup
+                                type="multiple"
+                                variant="outline"
+                                value={visibleWeekdays}
+                                onValueChange={(value) => handleVisibleDaysChange(value as Weekday[])}
+                                className="flex flex-wrap justify-start gap-1"
+                            >
+                                {allWeekdays.map(day => (
+                                <ToggleGroupItem
+                                    key={day}
+                                    value={day}
+                                    className="h-8 w-8 p-0"
+                                    aria-label={weekdayLabels[day].long}
+                                >
+                                    {weekdayLabels[day].short}
+                                </ToggleGroupItem>
+                                ))}
+                            </ToggleGroup>
+                        </div>
+                    </PopoverContent>
+                </Popover>
               <Button onClick={handleAddClick} disabled={!selectedChildId}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Adicionar Aula
@@ -269,10 +313,10 @@ function SchoolSchedulePageContent() {
       </Card>
 
       <Card>
-        <CardHeader className="grid grid-cols-[auto_1fr] items-end p-4">
+        <CardHeader className={cn("grid items-end p-4", `grid-cols-[auto_1fr]`)}>
             <div>{/* Empty cell for time column */}</div>
-            <div className="grid grid-cols-7 text-center">
-                {orderedWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
+            <div className={cn("grid text-center", `grid-cols-${visibleWeekdays.length || 1}`)}>
+                {visibleWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
             </div>
         </CardHeader>
         <CardContent className="p-4 pt-0 overflow-x-auto">
