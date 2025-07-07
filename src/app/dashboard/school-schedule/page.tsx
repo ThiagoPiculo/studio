@@ -210,39 +210,68 @@ function SchoolSchedulePageContent() {
     const layoutMap = new Map<string, { width: string; left: string }>();
 
     visibleWeekdays.forEach(day => {
-      const dayEntries = inBoundsSchedule.filter(e => e.dayOfWeek === day);
-      if (dayEntries.length === 0) return;
+        const dayEntries = inBoundsSchedule.filter(e => e.dayOfWeek === day);
+        if (dayEntries.length === 0) return;
 
-      const sorted = [...dayEntries].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
-      const columns: SchoolScheduleEntry[][] = [];
+        // Group overlapping entries using a connected components approach
+        const entriesToProcess = [...dayEntries];
+        const groups: SchoolScheduleEntry[][] = [];
 
-      for (const entry of sorted) {
-        let placed = false;
-        for (const col of columns) {
-          const lastEntryInCol = col[col.length - 1];
-          if (parseTime(entry.startTime) >= parseTime(lastEntryInCol.endTime)) {
-            col.push(entry);
-            placed = true;
-            break;
-          }
+        while(entriesToProcess.length > 0) {
+            let currentGroup: SchoolScheduleEntry[] = [entriesToProcess.shift()!];
+            let queue = [...currentGroup];
+
+            while(queue.length > 0) {
+                const currentEntry = queue.shift()!;
+                
+                for (let i = entriesToProcess.length - 1; i >= 0; i--) {
+                    const otherEntry = entriesToProcess[i];
+                    const overlaps = parseTime(currentEntry.startTime) < parseTime(otherEntry.endTime) && parseTime(currentEntry.endTime) > parseTime(otherEntry.startTime);
+                    
+                    if (overlaps) {
+                        currentGroup.push(otherEntry);
+                        queue.push(otherEntry);
+                        entriesToProcess.splice(i, 1);
+                    }
+                }
+            }
+            groups.push(currentGroup);
         }
-        if (!placed) {
-          columns.push([entry]);
-        }
-      }
 
-      const totalCols = columns.length;
-      if (totalCols > 1) {
-        const colWidth = 100 / totalCols;
-        columns.forEach((col, colIndex) => {
-          col.forEach(entry => {
-            layoutMap.set(entry.id, {
-              width: `calc(${colWidth}% - 4px)`, // 2px gap on each side
-              left: `calc(${colIndex * colWidth}% + 2px)`,
-            });
-          });
-        });
-      }
+        // For each group of overlapping entries, calculate layout
+        for (const group of groups) {
+            const sortedGroup = group.sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
+            
+            const columns: SchoolScheduleEntry[][] = [];
+
+            for (const entry of sortedGroup) {
+                let placed = false;
+                for (const col of columns) {
+                    const lastEntryInCol = col[col.length - 1];
+                    if (parseTime(entry.startTime) >= parseTime(lastEntryInCol.endTime)) {
+                        col.push(entry);
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    columns.push([entry]);
+                }
+            }
+
+            const totalCols = columns.length;
+            if (totalCols > 0) {
+                const colWidth = 100 / totalCols;
+                columns.forEach((col, colIndex) => {
+                    col.forEach(entry => {
+                        layoutMap.set(entry.id, {
+                            width: `calc(${colWidth}% - 4px)`,
+                            left: `calc(${colIndex * colWidth}% + 2px)`,
+                        });
+                    });
+                });
+            }
+        }
     });
 
     return layoutMap;
