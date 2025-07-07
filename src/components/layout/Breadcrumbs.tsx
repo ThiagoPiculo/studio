@@ -23,6 +23,7 @@ const pathTranslations: { [key: string]: string } = {
   family: 'Aliança',
   missions: 'Central de Missões',
   rewards: 'Recompensas',
+  achievements: 'Conquistas',
   profile: 'Meu Perfil',
   settings: 'Configurações',
   onboarding: 'Adicionar Herói',
@@ -52,8 +53,12 @@ export function Breadcrumbs() {
       const currentParams = JSON.parse(paramsString);
       const pathSegments = pathname.split('/').filter(Boolean);
       
-      const crumbPromises = pathSegments.map(async (segment, index) => {
-        const href = `/${pathSegments.slice(0, index + 1).join('/')}`;
+      // Remove 'dashboard' from the beginning of the segments
+      const relevantSegments = pathSegments[0] === 'dashboard' ? pathSegments.slice(1) : pathSegments;
+
+      const crumbPromises = relevantSegments.map(async (segment, index) => {
+        // We construct the href with the /dashboard prefix for correct linking
+        const href = `/dashboard/${relevantSegments.slice(0, index + 1).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
         const isLoading = false;
         
@@ -92,17 +97,16 @@ export function Breadcrumbs() {
     }
   }, [pathname, paramsString]);
 
-  if (!pathname.startsWith('/dashboard')) return null;
+  if (!pathname.startsWith('/dashboard') || breadcrumbs.length === 0) return null;
 
   return (
-    <nav aria-label="breadcrumb" className="text-sm text-muted-foreground">
-      <ol className="flex items-center space-x-1.5 flex-wrap">
+    <nav aria-label="breadcrumb" className="hidden md:block text-sm text-muted-foreground">
+      <ol className="flex items-center space-x-1.5">
         {breadcrumbs.map((crumb, index) => {
            if (!crumb || !crumb.href) return null;
 
            const isLast = index === breadcrumbs.length - 1;
            
-           // A segment is non-clickable if it's the last one, or if it's a static "action" word.
            const lastSegmentOfCrumb = crumb.href.split('/').pop() || '';
            const shouldBeLink = !isLast && !nonClickableStaticSegments.includes(lastSegmentOfCrumb);
 

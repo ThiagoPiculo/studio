@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -368,6 +368,7 @@ export default function SettingsPage() {
                             <SelectItem value="agenda">Agenda dos Herois</SelectItem>
                             <SelectItem value="missions">Central de Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>
+                            <SelectItem value="achievements">Conquistas</SelectItem>
                             <SelectItem value="family">Alianças</SelectItem>
                         </SelectContent>
                     </Select>

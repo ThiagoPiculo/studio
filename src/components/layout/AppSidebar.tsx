@@ -12,7 +12,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, School } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, School, Medal } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -78,6 +78,12 @@ export function AppSidebar() {
                          <SidebarMenuButton href="/dashboard/rewards" tooltip="Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
                             <Gift className="text-chart-2" />
                             <span>Recompensas</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/achievements" tooltip="Conquistas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                            <Medal className="text-amber-500"/>
+                            <span>Conquistas</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
