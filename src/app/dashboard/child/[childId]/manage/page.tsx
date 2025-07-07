@@ -446,6 +446,50 @@ export default function ManageChildPage() {
     [child]
   );
 
+  const renderBadge = (badge: BadgeType) => {
+    if (!child) return null;
+    const isEarned = child.earnedBadgeIds?.includes(badge.id);
+    return (
+      <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
+        <div className={cn(
+          "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
+          isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
+        )}>
+            {isEarned ? (
+              <Medal
+                className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
+                color={badge.color}
+                fill={badge.color}
+              />
+            ) : (
+              <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
+            )}
+            <div className={cn(
+              "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
+              isEarned ? badge.color : 'bg-gray-400 dark:bg-gray-700'
+            )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                <badge.icon className={cn(
+                    "h-9 w-9 text-white",
+                    !isEarned && "opacity-30"
+                )} />
+            </div>
+            <div className="flex-grow h-24 flex flex-col justify-center">
+                <p className={cn(
+                    "text-sm font-semibold",
+                    isEarned ? 'text-foreground' : 'text-muted-foreground'
+                )}>{badge.title}</p>
+                <p className={cn(
+                    "text-xs text-muted-foreground mt-1",
+                    !isEarned && "opacity-70"
+                )}>
+                    {badge.description}
+                </p>
+            </div>
+        </div>
+      </DialogTrigger>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
@@ -1044,58 +1088,35 @@ export default function ManageChildPage() {
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
-                    {predefinedBadgeCategories.map((category, index) => (
-                      <Fragment key={category.title}>
-                        {index > 0 && <Separator />}
-                        <div>
-                          <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                            {category.items.map((badge) => {
-                              const isEarned = child.earnedBadgeIds?.includes(badge.id);
-                              return (
-                                <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
-                                  <div className={cn(
-                                    "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
-                                    isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
-                                  )}>
-                                      {isEarned ? (
-                                        <Medal
-                                          className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
-                                          color={badge.color}
-                                          fill={badge.color}
-                                        />
-                                      ) : (
-                                        <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
-                                      )}
-                                      <div className={cn(
-                                        "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
-                                        isEarned ? badge.color : 'bg-gray-400 dark:bg-gray-700'
-                                      )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                                          <badge.icon className={cn(
-                                              "h-9 w-9 text-white",
-                                              !isEarned && "opacity-30"
-                                          )} />
-                                      </div>
-                                      <div className="flex-grow h-24 flex flex-col justify-center">
-                                          <p className={cn(
-                                              "text-sm font-semibold",
-                                              isEarned ? 'text-foreground' : 'text-muted-foreground'
-                                          )}>{badge.title}</p>
-                                          <p className={cn(
-                                              "text-xs text-muted-foreground mt-1",
-                                              !isEarned && "opacity-70"
-                                          )}>
-                                              {badge.description}
-                                          </p>
-                                      </div>
-                                  </div>
-                                </DialogTrigger>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </Fragment>
-                    ))}
+                    {predefinedBadgeCategories.map((category, index) => {
+                       if (category.title === "Consistência e Hábitos") {
+                          const guardiao = category.items.filter(b => b.id.startsWith('guardiao_rotina'));
+                          const semana = category.items.filter(b => b.id.startsWith('semana_perfeita'));
+                          const mestre = category.items.filter(b => b.id.startsWith('mestre_persistencia'));
+                          return (
+                            <Fragment key={category.title}>
+                                {index > 0 && <Separator />}
+                                <div>
+                                    <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                                    {guardiao.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-6">{guardiao.map(badge => renderBadge(badge))}</div>}
+                                    {semana.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-6">{semana.map(badge => renderBadge(badge))}</div>}
+                                    {mestre.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">{mestre.map(badge => renderBadge(badge))}</div>}
+                                </div>
+                            </Fragment>
+                          );
+                       }
+                       return (
+                          <Fragment key={category.title}>
+                            {index > 0 && <Separator />}
+                            <div>
+                              <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                                {category.items.map((badge) => renderBadge(badge))}
+                              </div>
+                            </div>
+                          </Fragment>
+                       );
+                    })}
                     {selectedBadge && (
                       <DialogContent>
                         <DialogHeader className="items-center text-center">
