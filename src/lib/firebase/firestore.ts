@@ -1239,25 +1239,31 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     // Check starting from the last 30 days to keep it reasonably performant
     for (let i = 0; i < 30; i++) { 
         if (foundPerfectWeek) break;
-        const windowStart = subDays(today, i + 6); // A week ends on `subDays(today, i)`
-        let isPerfectWeek = true;
+        
+        const windowStart = subDays(today, i + 6);
+        let isPerfectWindow = true;
+        let missionsInWindow = 0; // Track if there are any missions in this window
 
         for (let j = 0; j < 7; j++) {
             const checkDate = addDays(windowStart, j);
             const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
-            if (scheduledMissions.length === 0) continue; // No missions scheduled on this day, so it doesn't break the streak.
             
-            const allCompleted = scheduledMissions.every(inst => {
-                const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
-                return inst.completionLog && inst.completionLog[dateKey];
-            });
-            
-            if (!allCompleted) {
-                isPerfectWeek = false;
-                break;
+            if (scheduledMissions.length > 0) {
+                missionsInWindow += scheduledMissions.length;
+                const allCompleted = scheduledMissions.every(inst => {
+                    const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
+                    return inst.completionLog && inst.completionLog[dateKey];
+                });
+
+                if (!allCompleted) {
+                    isPerfectWindow = false; // If any scheduled mission is not complete, the window is not perfect.
+                    break;
+                }
             }
         }
-        if (isPerfectWeek) {
+
+        // A window is only truly perfect if the streak was not broken AND there was at least one mission in it.
+        if (isPerfectWindow && missionsInWindow > 0) {
             finalBadgeSet.add('semana_perfeita');
             foundPerfectWeek = true;
         }
