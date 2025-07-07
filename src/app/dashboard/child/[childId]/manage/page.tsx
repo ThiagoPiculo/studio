@@ -1227,7 +1227,7 @@ export default function ManageChildPage() {
                   onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
                   onResetProgress={handleResetProgress}
-                  isResetting={isResetting}
+                  isResetting={isResettingProgress}
                 />
               </CardContent>
             </Card>
