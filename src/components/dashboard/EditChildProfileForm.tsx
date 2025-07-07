@@ -16,10 +16,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile } from "@/lib/firebase/firestore";
-import type { ChildProfile, HeroColor } from "@/lib/types";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
+import type { ChildProfile, HeroColor, UserProfile } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -76,6 +76,9 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   const [usedColors, setUsedColors] = useState<HeroColor[]>([]);
   const [isLoadingColors, setIsLoadingColors] = useState(true);
 
+  const [owner, setOwner] = useState<UserProfile | null>(null);
+  const [isLoadingOwner, setIsLoadingOwner] = useState(true);
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -99,32 +102,45 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   }, [child, form]);
 
   useEffect(() => {
-    const fetchUsedColors = async () => {
+    const fetchAuxiliaryData = async () => {
         if (!child) {
             setIsLoadingColors(false);
+            setIsLoadingOwner(false);
             return;
         };
+        
         setIsLoadingColors(true);
+        setIsLoadingOwner(true);
+
         try {
+            // Fetch used colors
             let otherChildren: ChildProfile[] = [];
             if (child.familyId) {
                 otherChildren = await getChildProfilesByFamily(child.familyId);
             } else {
                 otherChildren = await getChildProfilesByOwner(child.ownerId);
             }
-            
             const colors = otherChildren
                 .filter(c => c.id !== child.id) 
                 .map(c => c.color);
-                
             setUsedColors(colors as HeroColor[]);
         } catch(error) {
             console.error("Error fetching used colors:", error);
         } finally {
             setIsLoadingColors(false);
         }
+
+        try {
+            // Fetch owner profile
+            const ownerProfile = await getUserProfile(child.ownerId);
+            setOwner(ownerProfile);
+        } catch(error) {
+            console.error("Error fetching owner profile:", error);
+        } finally {
+            setIsLoadingOwner(false);
+        }
     };
-    fetchUsedColors();
+    fetchAuxiliaryData();
   }, [child]);
 
 
@@ -175,152 +191,157 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome da Criança</FormLabel>
-              <FormControl>
-                <Input placeholder="Nome do Mini Heroi" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <FormField
-          control={form.control}
-          name="birthDate"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Data de Nascimento</FormLabel>
-              <div className="flex items-center gap-4">
-                <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                  if (open) {
-                    setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                  }
-                  setIsCalendarOpen(open);
-                }}>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant={"outline"}
-                        className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !field.value && "text-muted-foreground"
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, "PPP", { locale: ptBR })
-                        ) : (
-                          <span>Escolha uma data</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <div className="p-2 border-b">
-                      <Input
-                          placeholder="Digite: dd/mm/aaaa"
-                          value={dateInput}
-                           onChange={(e) => {
-                            const maskedValue = handleDateMask(e.target.value);
-                            setDateInput(maskedValue);
-                            if (maskedValue.length === 10) {
-                              const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                              if (isValid(parsedDate)) {
-                                field.onChange(parsedDate);
-                                setMonth(parsedDate);
-                              }
-                            }
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              e.preventDefault();
-                              const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                              if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                field.onChange(date);
-                                setMonth(date);
-                                setIsCalendarOpen(false);
-                              } else {
-                                toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                              }
-                            }
-                          }}
-                        />
-                    </div>
-                    <Calendar
-                      locale={ptBR}
-                      mode="single"
-                      month={month}
-                      onMonthChange={setMonth}
-                      selected={field.value}
-                      onSelect={(date) => {
-                        field.onChange(date);
-                        if (date) {
-                          setDateInput(format(date, 'dd/MM/yyyy'));
-                          setMonth(date);
-                        }
-                        setIsCalendarOpen(false);
-                      }}
-                      disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                      weekStartsOn={1}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {calculatedAge !== null && (
-                  <div className="text-sm text-muted-foreground whitespace-nowrap">
-                    ({calculatedAge} anos)
-                  </div>
-                )}
-              </div>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        <FormField
-          control={form.control}
-          name="gender"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Gênero</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
-                >
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="boy" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menino</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="girl" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menina</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="not-informed" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nome da Criança</FormLabel>
+                <FormControl>
+                    <Input placeholder="Nome do Mini Heroi" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+            
+            <FormField
+            control={form.control}
+            name="birthDate"
+            render={({ field }) => (
+                <FormItem className="flex flex-col">
+                <FormLabel>Data de Nascimento</FormLabel>
+                <div className="flex items-center gap-4">
+                    <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                    if (open) {
+                        setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                    }
+                    setIsCalendarOpen(open);
+                    }}>
+                    <PopoverTrigger asChild>
+                        <FormControl>
+                        <Button
+                            variant={"outline"}
+                            className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                            )}
+                        >
+                            {field.value ? (
+                            format(field.value, "PPP", { locale: ptBR })
+                            ) : (
+                            <span>Escolha uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                        </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                        <div className="p-2 border-b">
+                        <Input
+                            placeholder="Digite: dd/mm/aaaa"
+                            value={dateInput}
+                            onChange={(e) => {
+                                const maskedValue = handleDateMask(e.target.value);
+                                setDateInput(maskedValue);
+                                if (maskedValue.length === 10) {
+                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                if (isValid(parsedDate)) {
+                                    field.onChange(parsedDate);
+                                    setMonth(parsedDate);
+                                }
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                    field.onChange(date);
+                                    setMonth(date);
+                                    setIsCalendarOpen(false);
+                                } else {
+                                    toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                }
+                                }
+                            }}
+                            />
+                        </div>
+                        <Calendar
+                        locale={ptBR}
+                        mode="single"
+                        month={month}
+                        onMonthChange={setMonth}
+                        selected={field.value}
+                        onSelect={(date) => {
+                            field.onChange(date);
+                            if (date) {
+                            setDateInput(format(date, 'dd/MM/yyyy'));
+                            setMonth(date);
+                            }
+                            setIsCalendarOpen(false);
+                        }}
+                        disabled={(date) =>
+                            date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        weekStartsOn={1}
+                        />
+                    </PopoverContent>
+                    </Popover>
+                    {calculatedAge !== null && (
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
+                        ({calculatedAge} anos)
+                    </div>
+                    )}
+                </div>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+
+            <FormField
+            control={form.control}
+            name="gender"
+            render={({ field }) => (
+                <FormItem className="space-y-3">
+                <FormLabel>Gênero</FormLabel>
+                <FormControl>
+                    <RadioGroup
+                    onValueChange={field.onChange}
+                    value={field.value}
+                    className="flex flex-col space-y-2 pt-1"
+                    >
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                        <RadioGroupItem value="boy" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Menino</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                        <RadioGroupItem value="girl" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Menina</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                        <RadioGroupItem value="not-informed" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                    </FormItem>
+                    </RadioGroup>
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
+        
+        <Separator/>
 
         <FormField
           control={form.control}
@@ -347,6 +368,24 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
             </FormItem>
           )}
         />
+        
+        <Separator/>
+
+        <div className="space-y-4 rounded-lg border bg-muted/50 p-4 text-sm">
+            <h4 className="font-semibold text-foreground">Informações de Criação</h4>
+            <div className="flex items-center gap-2 text-muted-foreground">
+                <User className="h-4 w-4"/>
+                <span>Criado por:</span>
+                {isLoadingOwner ? <Skeleton className="h-4 w-24"/> : <span className="font-medium text-foreground">{owner?.name || 'Desconhecido'}</span>}
+            </div>
+             <div className="flex items-center gap-2 text-muted-foreground">
+                <Clock className="h-4 w-4"/>
+                <span>Data de Criação:</span>
+                <span className="font-medium text-foreground">
+                    {child.createdAt ? format(child.createdAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                </span>
+            </div>
+        </div>
         
         <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
             <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isDeleting}>
@@ -415,4 +454,3 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
     </Form>
   );
 }
-
