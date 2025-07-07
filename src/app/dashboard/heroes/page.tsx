@@ -10,7 +10,7 @@ import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2 } from
 import { useEffect, useState } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate } from "@/lib/types";
 import { 
-    getChildProfilesByOwner, 
+    getUnassignedChildProfilesByOwner,
     getChildProfilesByFamily,
     getMissionTemplatesByOwnerOrFamily,
     getRewardTemplatesByOwnerOrFamily
@@ -73,7 +73,7 @@ export default function HeroesPage() {
 
         const [childProfiles, missionTpls, rewardTpls] = await Promise.all([
           currentContext === 'my-space' 
-            ? getChildProfilesByOwner(user.uid) 
+            ? getUnassignedChildProfilesByOwner(user.uid) 
             : getChildProfilesByFamily(currentContext),
           getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
           getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
