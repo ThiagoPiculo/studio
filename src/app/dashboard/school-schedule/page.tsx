@@ -138,7 +138,7 @@ function SchoolSchedulePageContent() {
   }, [children, selectedChildId, isLoading]);
 
   useEffect(() => {
-    let slots: string[] = [];
+    const newSlots: string[] = [];
     const child = children.find(c => c.id === selectedChildId);
 
     let startHour = 7;
@@ -157,8 +157,12 @@ function SchoolSchedulePageContent() {
         }
     }
     
-    slots = Array.from({ length: endHour - startHour }, (_, i) => `${(i + startHour).toString().padStart(2, '0')}:00`);
-    setTimeSlots(slots);
+    for (let h = startHour; h < endHour; h++) {
+        newSlots.push(`${h.toString().padStart(2, '0')}:00`);
+        newSlots.push(`${h.toString().padStart(2, '0')}:30`);
+    }
+
+    setTimeSlots(newSlots);
   }, [selectedChildId, children]);
   
   useEffect(() => {
@@ -256,8 +260,16 @@ function SchoolSchedulePageContent() {
   const handleAddFromSlot = (day: Weekday, time: string) => {
     if (!selectedChildId || !user) return;
     const [hour, minute] = time.split(':').map(Number);
-    const endHour = (hour + 1).toString().padStart(2, '0');
-    const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
+    
+    let endHour = hour;
+    let endMinute = minute + 60; // Add 1 hour
+    if (endMinute >= 60) {
+        endHour += Math.floor(endMinute / 60);
+        endMinute = endMinute % 60;
+    }
+    
+    const endTime = `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+
     const newEntry: SchoolScheduleEntry = {
         id: '',
         subject: '',
@@ -302,24 +314,29 @@ function SchoolSchedulePageContent() {
 
   const DayColumnContent = ({ day }: { day: Weekday }) => {
     const topOffsetMinutes = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
+    const pixelsPerMinute = 0.8; // h-6 (24px) for 30 mins = 0.8px per minute.
     
     return (
         <div className={cn("relative h-full", (day === 'SA' || day === 'SU') && "bg-muted/20")}>
-            {timeSlots.map((time, index) => (
-                <div 
-                    key={time} 
-                    className={cn(
-                        "h-12 cursor-pointer hover:bg-primary/5 transition-colors", 
-                        index < timeSlots.length - 1 && "border-b"
-                    )}
-                    onClick={() => handleAddFromSlot(day, time)}
-                ></div>
-            ))}
+            {timeSlots.map((time, index) => {
+                const isHalfHour = time.endsWith(':30');
+                return (
+                    <div 
+                        key={time} 
+                        className={cn(
+                            "h-6 cursor-pointer hover:bg-primary/5 transition-colors", 
+                            !isHalfHour && "border-b",
+                            isHalfHour && "border-b border-dashed"
+                        )}
+                        onClick={() => handleAddFromSlot(day, time)}
+                    ></div>
+                )
+            })}
             {inBoundsSchedule
                 .filter(entry => entry.dayOfWeek === day)
                 .map(entry => {
-                    const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48 + 2; // +2 for spacing
-                    const height = Math.max(0, ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48 - 4); // -4 for spacing
+                    const top = (parseTime(entry.startTime) - topOffsetMinutes) * pixelsPerMinute + 2; // +2 for spacing
+                    const height = Math.max(0, (parseTime(entry.endTime) - parseTime(entry.startTime)) * pixelsPerMinute - 4); // -4 for spacing
                     const layoutProps = scheduleLayout.get(entry.id) || { width: 'calc(100% - 4px)', left: '2px' };
 
                     const entryStyle: React.CSSProperties = { 
@@ -496,8 +513,8 @@ function SchoolSchedulePageContent() {
                 <div className="sticky left-0 z-10 flex w-14 flex-shrink-0 flex-col bg-background shadow-md">
                     <div className="flex h-12 items-center justify-center border-b border-r font-semibold"><Clock className="h-4 w-4" /></div>
                     {timeSlots.map(time => (
-                        <div key={time} className="flex h-12 items-center justify-end border-r pr-2 text-xs text-muted-foreground">
-                            {time}
+                        <div key={time} className="flex h-6 items-center justify-end border-r pr-2 text-xs text-muted-foreground">
+                            {time.endsWith(':00') ? time : ''}
                         </div>
                     ))}
                 </div>
@@ -511,7 +528,7 @@ function SchoolSchedulePageContent() {
                                 </div>
                             ))}
                         </div>
-                        <div className="flex" style={{ height: `${timeSlots.length * 48}px` }}>
+                        <div className="flex" style={{ height: `${timeSlots.length * 24}px` }}>
                              {visibleWeekdays.map(day => (
                                 <div key={day} data-day={day} className="w-36 flex-shrink-0 border-r sm:w-48">
                                     <DayColumnContent day={day} />
@@ -538,7 +555,7 @@ function SchoolSchedulePageContent() {
                  <div className="grid grid-cols-[auto_1fr]">
                     <div className="text-right pr-2">
                         {timeSlots.map(time => (
-                            <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
+                            <div key={time} className="h-6 flex items-center justify-end text-xs text-muted-foreground">{time.endsWith(':00') ? time : ''}</div>
                         ))}
                     </div>
                     <div className="grid border-l" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
