@@ -49,6 +49,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -636,38 +638,68 @@ function FamilyPageContent() {
           <Card>
             <CardHeader>
               <CardTitle>Membros Responsáveis</CardTitle>
+              <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
             <CardContent className="flex flex-wrap gap-4">
-              {sortedMembers.map(member => (
-                <div key={member.uid} className="flex flex-col items-center gap-2 p-2 rounded-lg relative group">
-                  <Avatar className="h-16 w-16 text-2xl border-2 border-primary">
-                    <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
-                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                  </Avatar>
-                  <span className="text-sm font-medium text-center">{member.name}</span>
-                  {member.uid === familyDetails.ownerId ? (
-                      <Badge variant="secondary" className="text-xs">Proprietário</Badge>
-                  ) : (
-                      <Badge variant="outline" className="text-xs">Colaborador</Badge>
-                  )}
-                  {isOwner && member.uid !== user?.uid && (
-                    <div className="absolute top-0 right-0">
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity">
-                                  <MoreVertical className="h-4 w-4" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
-                                  <UserX className="mr-2 h-4 w-4" /> Remover Membro
-                              </DropdownMenuItem>
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  )}
-                </div>
-              ))}
+              {sortedMembers.map(member => {
+                 const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
+                return (
+                  <div key={member.uid} className="relative group flex flex-col items-center gap-2 p-4 rounded-lg border bg-card text-center w-full sm:w-48">
+                    {isOwner && member.uid !== user?.uid && (
+                      <div className="absolute top-1 right-1">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity">
+                                    <MoreVertical className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
+                                    <UserX className="mr-2 h-4 w-4" /> Remover Membro
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    )}
+                    <Avatar className="h-16 w-16 text-2xl border-2 border-primary">
+                      <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
+                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                    </Avatar>
+                    <span className="font-semibold text-sm">{member.name}</span>
+                    {member.uid === familyDetails.ownerId ? (
+                        <Badge variant="secondary" className="text-xs">Proprietário</Badge>
+                    ) : (
+                        <Badge variant="outline" className="text-xs">Colaborador</Badge>
+                    )}
+
+                    {ownedChildren.length > 0 && (
+                        <>
+                            <Separator className="my-1 w-full" />
+                            <p className="text-xs text-muted-foreground self-start">Herois:</p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                                {ownedChildren.map(child => (
+                                    <TooltipProvider key={child.id} delayDuration={100}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Link href={`/dashboard/child/${child.id}/manage`}>
+                                                    <Avatar className="h-8 w-8 ring-1 ring-background">
+                                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                                        <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                </Link>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>{child.name}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                ))}
+                            </div>
+                        </>
+                    )}
+                  </div>
+                )
+              })}
             </CardContent>
           </Card>
         </div>
