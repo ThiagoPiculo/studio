@@ -670,14 +670,6 @@ function ManageChildPageContent() {
                         </Badge>
                     </div>
                 )}
-                <div className="flex items-center text-muted-foreground font-medium">
-                    <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                    <span>{instance.starsReward} Estrelas</span>
-                </div>
-                <div className="flex items-center text-muted-foreground font-medium">
-                    <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
-                    <span>{instance.xpReward} XP</span>
-                </div>
                 <div className="flex flex-col gap-1">
                     <div className="flex items-center text-muted-foreground font-medium">
                         <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
@@ -1443,4 +1435,5 @@ export default function ManageChildPage() {
     
 
     
+
 

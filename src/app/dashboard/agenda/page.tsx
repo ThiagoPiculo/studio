@@ -528,16 +528,6 @@ function AgendaPageContent() {
                                   </div>
                               </PopoverContent>
                             </Popover>
-                            <div className="flex-shrink-0 flex items-center gap-3 text-xs font-medium text-muted-foreground">
-                                <span className="flex items-center gap-1">
-                                    <StarIcon className="h-3.5 w-3.5 text-yellow-400 fill-yellow-400" />
-                                    {event.data.starsReward}
-                                </span>
-                                <span className="flex items-center gap-1">
-                                    <BadgeCheck className="h-3.5 w-3.5 text-blue-500" />
-                                    {event.data.xpReward}
-                                </span>
-                            </div>
                         </li>
                         )
                     })}
