@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, PackageOpen, CheckCircle } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry, MissionCategoryDetails } from "@/lib/types";
 import { missionCategories } from "@/lib/types";
@@ -212,14 +212,14 @@ export default function HeroesPage() {
               const todaysMissions = missionInstances
                 .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
                 .sort((a, b) => {
-                  const dateA = getDateObject(a.startDate || a.dueDate);
-                  const dateB = getDateObject(b.startDate || b.dueDate);
+                  const timeA = getDateObject(a.startDate || a.dueDate);
+                  const timeB = getDateObject(b.startDate || b.dueDate);
                   
-                  const timeA = dateA ? dateA.getHours() * 60 + dateA.getMinutes() : Number.MAX_SAFE_INTEGER;
-                  const timeB = dateB ? dateB.getHours() * 60 + dateB.getMinutes() : Number.MAX_SAFE_INTEGER;
+                  const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
+                  const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
 
-                  if (timeA !== timeB) {
-                    return timeA - timeB;
+                  if (minutesA !== minutesB) {
+                      return minutesA - minutesB;
                   }
                   
                   return a.title.localeCompare(b.title);
@@ -236,7 +236,6 @@ export default function HeroesPage() {
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
-              const lockedAchievementsCount = totalBadgesCount - unlockedAchievementsCount;
               const { progressPercentage, xpForNextLevel } = calculateXpDetails(child.level, child.xp);
 
               return (
@@ -267,7 +266,7 @@ export default function HeroesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-4 pt-0 flex-grow flex flex-col">
+                <CardContent className="p-4 pt-0">
                    <div className="grid grid-cols-3 items-center gap-2">
                         <div className="flex-shrink-0 flex items-center justify-start gap-1.5 w-[70px]">
                             <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
@@ -282,13 +281,13 @@ export default function HeroesPage() {
                         </div>
                     </div>
                    <Separator className="my-4" />
-                   <Tabs defaultValue="missions" className="w-full flex flex-col flex-grow">
+                   <Tabs defaultValue="missions" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
                           <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
                           <TabsTrigger value="school" className="text-xs gap-1.5"><School className="h-4 w-4"/>Escola Hoje</TabsTrigger>
                       </TabsList>
-                      <TabsContent value="missions" className="mt-2 flex-grow">
-                        <ScrollArea className="h-full w-full">
+                      <TabsContent value="missions" className="mt-2">
+                        <ScrollArea className="h-[145px] w-full">
                           <ul className="space-y-1 pr-3">
                             {todaysMissions.length > 0 ? (
                             <>
@@ -339,8 +338,8 @@ export default function HeroesPage() {
                           </ul>
                          </ScrollArea>
                       </TabsContent>
-                      <TabsContent value="school" className="mt-2 flex-grow">
-                        <ScrollArea className="h-full w-full">
+                      <TabsContent value="school" className="mt-2">
+                        <ScrollArea className="h-[145px] w-full">
                           <div className="grid grid-cols-1 gap-y-1 pr-3">
                               {todaysSchedule.length > 0 ? (
                                   <ul className="space-y-1">
@@ -380,7 +379,7 @@ export default function HeroesPage() {
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
-                            <PackageOpen className="h-5 w-5 text-chart-2" />
+                            <Gift className="h-5 w-5 text-chart-2" />
                             <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
                             <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                             <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
