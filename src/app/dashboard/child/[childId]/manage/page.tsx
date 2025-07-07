@@ -526,14 +526,29 @@ export default function ManageChildPage() {
   const renderBadge = (badge: BadgeType) => {
     if (!child) return null;
     const isEarned = child.earnedBadgeIds?.includes(badge.id);
-    const isConsistencyBadge = !!badge.progressType;
+    const hasProgress = !!badge.progressType && !!badge.goal;
 
     let currentProgress = 0;
-    if (isConsistencyBadge && !isEarned) {
-      if (badge.progressType === 'singleMissionStreak') {
-        currentProgress = badgeProgress.longestSingleMissionStreak;
-      } else if (badge.progressType === 'perfectStreak') {
-        currentProgress = badgeProgress.longestPerfectStreak;
+    let progressLabel = '';
+
+    if (hasProgress && !isEarned) {
+      switch (badge.progressType) {
+        case 'singleMissionStreak':
+          currentProgress = badgeProgress.longestSingleMissionStreak;
+          progressLabel = 'dias';
+          break;
+        case 'perfectStreak':
+          currentProgress = badgeProgress.longestPerfectStreak;
+          progressLabel = 'dias';
+          break;
+        case 'stars':
+          currentProgress = child.stars;
+          progressLabel = 'estrelas';
+          break;
+        case 'level':
+          currentProgress = child.level;
+          progressLabel = 'nível';
+          break;
       }
     }
     const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
@@ -567,9 +582,9 @@ export default function ManageChildPage() {
                     isEarned ? 'text-foreground' : 'text-muted-foreground'
                 )}>{badge.title}</p>
                 
-                {isConsistencyBadge && !isEarned ? (
+                {hasProgress && !isEarned ? (
                   <div className="mt-2 space-y-1">
-                    {isCalculatingProgress ? (
+                    {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
                       <>
                         <Skeleton className="h-2 w-full" />
                         <Skeleton className="h-3 w-1/2 mx-auto" />
@@ -577,7 +592,7 @@ export default function ManageChildPage() {
                     ) : (
                       <>
                         <Progress value={progressPercentage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">{currentProgress} de {badge.goal} dias</p>
+                        <p className="text-xs text-muted-foreground">{currentProgress} de {badge.goal} {progressLabel}</p>
                       </>
                     )}
                   </div>

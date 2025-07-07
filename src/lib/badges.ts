@@ -11,7 +11,7 @@ export interface Badge {
   icon: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>;
   color: string;
   goal?: number;
-  progressType?: 'singleMissionStreak' | 'perfectStreak';
+  progressType?: 'singleMissionStreak' | 'perfectStreak' | 'stars' | 'level';
 }
 
 export interface BadgeCategory {
@@ -23,7 +23,7 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Iniciação e Primeiros Passos",
         items: [
-            { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo.', icon: Sparkles, color: '#4ade80' },
+            { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo.', icon: Sparkles, color: '#FFD700' },
             { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes".', icon: Smile, color: '#60a5fa' },
             { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama".', icon: BedDouble, color: '#a78bfa' },
         ]
@@ -31,25 +31,25 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Consistência e Hábitos",
         items: [
-            { id: 'guardiao_rotina_bronze', title: 'Guardião da Rotina (Bronze)', description: '2 dias seguidos.', icon: Repeat, color: '#CD7F32', goal: 2, progressType: 'singleMissionStreak' },
-            { id: 'guardiao_rotina_prata', title: 'Guardião da Rotina (Prata)', description: '4 dias seguidos.', icon: Repeat, color: '#C0C0C0', goal: 4, progressType: 'singleMissionStreak' },
-            { id: 'guardiao_rotina_ouro', title: 'Guardião da Rotina (Ouro)', description: '6 dias seguidos.', icon: Repeat, color: '#FFD700', goal: 6, progressType: 'singleMissionStreak' },
-            { id: 'semana_perfeita_bronze', title: 'Semana Perfeita (Bronze)', description: '7 dias perfeitos.', icon: Trophy, color: '#CD7F32', goal: 7, progressType: 'perfectStreak' },
-            { id: 'semana_perfeita_prata', title: 'Semana Perfeita (Prata)', description: '15 dias perfeitos.', icon: Trophy, color: '#C0C0C0', goal: 15, progressType: 'perfectStreak' },
-            { id: 'semana_perfeita_ouro', title: 'Semana Perfeita (Ouro)', description: '21 dias perfeitos.', icon: Trophy, color: '#FFD700', goal: 21, progressType: 'perfectStreak' },
-            { id: 'mestre_persistencia_bronze', title: 'Mestre da Persistência (Bronze)', description: '30 dias seguidos.', icon: Gem, color: '#CD7F32', goal: 30, progressType: 'singleMissionStreak' },
-            { id: 'mestre_persistencia_prata', title: 'Mestre da Persistência (Prata)', description: '45 dias seguidos.', icon: Gem, color: '#C0C0C0', goal: 45, progressType: 'singleMissionStreak' },
-            { id: 'mestre_persistencia_ouro', title: 'Mestre da Persistência (Ouro)', description: '60 dias seguidos.', icon: Gem, color: '#FFD700', goal: 60, progressType: 'singleMissionStreak' },
+            { id: 'guardiao_rotina_bronze', title: 'Guardião da Rotina (Bronze)', description: 'Complete a mesma missão por 2 dias seguidos.', icon: Repeat, color: '#CD7F32', goal: 2, progressType: 'singleMissionStreak' },
+            { id: 'guardiao_rotina_prata', title: 'Guardião da Rotina (Prata)', description: 'Complete a mesma missão por 4 dias seguidos.', icon: Repeat, color: '#C0C0C0', goal: 4, progressType: 'singleMissionStreak' },
+            { id: 'guardiao_rotina_ouro', title: 'Guardião da Rotina (Ouro)', description: 'Complete a mesma missão por 6 dias seguidos.', icon: Repeat, color: '#FFD700', goal: 6, progressType: 'singleMissionStreak' },
+            { id: 'semana_perfeita_bronze', title: 'Semana Perfeita (Bronze)', description: 'Complete todas as missões por 7 dias consecutivos.', icon: Trophy, color: '#CD7F32', goal: 7, progressType: 'perfectStreak' },
+            { id: 'semana_perfeita_prata', title: 'Semana Perfeita (Prata)', description: 'Complete todas as missões por 15 dias consecutivos.', icon: Trophy, color: '#C0C0C0', goal: 15, progressType: 'perfectStreak' },
+            { id: 'semana_perfeita_ouro', title: 'Semana Perfeita (Ouro)', description: 'Complete todas as missões por 21 dias consecutivos.', icon: Trophy, color: '#FFD700', goal: 21, progressType: 'perfectStreak' },
+            { id: 'mestre_persistencia_bronze', title: 'Mestre da Persistência (Bronze)', description: 'Complete a mesma missão por 30 dias seguidos.', icon: Gem, color: '#CD7F32', goal: 30, progressType: 'singleMissionStreak' },
+            { id: 'mestre_persistencia_prata', title: 'Mestre da Persistência (Prata)', description: 'Complete a mesma missão por 45 dias seguidos.', icon: Gem, color: '#C0C0C0', goal: 45, progressType: 'singleMissionStreak' },
+            { id: 'mestre_persistencia_ouro', title: 'Mestre da Persistência (Ouro)', description: 'Complete a mesma missão por 60 dias seguidos.', icon: Gem, color: '#FFD700', goal: 60, progressType: 'singleMissionStreak' },
         ]
     },
     {
         title: "Maestria e Progresso",
         items: [
-            { id: 'cacador_estrelas', title: 'Caçador de Estrelas', description: 'Acumule um total de 100 estrelas.', icon: Star, color: '#facc15' },
-            { id: 'colecionador_tesouros', title: 'Colecionador de Tesouros', description: 'Acumule um total de 500 estrelas.', icon: Stars, color: '#f97316' },
-            { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Acumule um total de 1.000 estrelas.', icon: Crown, color: '#ec4899' },
-            { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5 de XP.', icon: TrendingUp, color: '#22c55e' },
-            { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Alcance o Nível 10 de XP.', icon: Award, color: '#8b5cf6' },
+            { id: 'cacador_estrelas', title: 'Caçador de Estrelas', description: 'Acumule 100 estrelas.', icon: Star, color: '#facc15', goal: 100, progressType: 'stars' },
+            { id: 'colecionador_tesouros', title: 'Colecionador de Tesouros', description: 'Acumule 500 estrelas.', icon: Stars, color: '#f97316', goal: 500, progressType: 'stars' },
+            { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Acumule 1.000 estrelas.', icon: Crown, color: '#ec4899', goal: 1000, progressType: 'stars' },
+            { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5.', icon: TrendingUp, color: '#22c55e', goal: 5, progressType: 'level' },
+            { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Alcance o Nível 10.', icon: Award, color: '#8b5cf6', goal: 10, progressType: 'level' },
         ]
     },
     {
