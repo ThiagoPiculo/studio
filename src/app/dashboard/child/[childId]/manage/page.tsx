@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -254,8 +254,11 @@ export default function ManageChildPage() {
     }
   };
   
-  const handleManageInAgenda = (instance: MissionInstance, isToday: boolean) => {
-    const targetDate = isToday ? new Date() : (instance.startDate?.toDate() || instance.dueDate?.toDate());
+  const handleManageInAgenda = (instance: MissionInstance) => {
+    const today = new Date();
+    // Prioritize today if the mission is scheduled for today, otherwise find the next logical date.
+    const isForToday = isMissionScheduledForDate(instance, today);
+    const targetDate = isForToday ? today : (instance.startDate?.toDate() || instance.dueDate?.toDate());
 
     if (!targetDate) {
       toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
@@ -454,13 +457,17 @@ export default function ManageChildPage() {
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
   
-  const { todaysMissions, otherPendingMissions } = useMemo(() => {
-      if (!missionInstances) {
-          return { todaysMissions: [], otherPendingMissions: [] };
-      }
-      const pending = missionInstances.filter(m => m.status === 'pending');
-      return getTodaysMissions(pending, new Date());
+  const pendingMissions = useMemo(() => {
+    if (!missionInstances) return [];
+    return missionInstances
+      .filter(m => m.status === 'pending')
+      .sort((a, b) => {
+        const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
+        const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
+        return dateA.getTime() - dateB.getTime();
+      });
   }, [missionInstances]);
+
 
   const completedMissions = useMemo(() => {
     return missionInstances
@@ -510,9 +517,10 @@ export default function ManageChildPage() {
 
   const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
 
-  const renderMissionCard = (instance: MissionInstance, isForToday: boolean) => {
+  const renderMissionCard = (instance: MissionInstance) => {
     const categoryDetails = getMissionCategoryDetails(instance.category);
     const CategoryIconComponent = categoryDetails?.icon;
+    const isScheduledForToday = isMissionScheduledForDate(instance, new Date());
     const isCompletedToday = completedTodayIds.has(instance.id);
       
     const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
@@ -521,7 +529,7 @@ export default function ManageChildPage() {
     const PeriodIcon = period ? periodIcons[period] : null;
 
     return (
-        <Card key={instance.id} className={`shadow-sm flex flex-col transition-all`}>
+        <Card key={instance.id} className="shadow-sm flex flex-col transition-all">
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{instance.title}</CardTitle>
@@ -591,7 +599,7 @@ export default function ManageChildPage() {
             </CardContent>
             <CardFooter>
                 {instance.status === 'pending' ? (
-                    isCompletedToday && isForToday ? (
+                    isCompletedToday && isScheduledForToday ? (
                         <div className="flex w-full items-center gap-2">
                             <Button variant="secondary" className="flex-grow bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" disabled>
                                 <CheckCircle2 className="mr-2 h-4 w-4" /> Concluído Hoje
@@ -613,7 +621,7 @@ export default function ManageChildPage() {
                         <div className="flex w-full items-center gap-2">
                             <Button
                                 className="flex-grow"
-                                onClick={() => handleManageInAgenda(instance, isForToday)}
+                                onClick={() => handleManageInAgenda(instance)}
                                 disabled={isDeleting}
                             >
                                 <CalendarDays className="mr-2 h-4 w-4" />
@@ -946,36 +954,19 @@ export default function ManageChildPage() {
                 <CardContent className="space-y-6">
                     {missionStatusFilter === 'pending' && (
                         <>
-                          {missionInstances.filter(m => m.status === 'pending').length === 0 ? (
+                          {pendingMissions.length === 0 ? (
                             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                                 <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                                 <p className="text-lg text-muted-foreground">Nenhuma missão pendente para {child.name}.</p>
                                 <p className="text-sm text-muted-foreground mt-1">Clique em "Adicionar Nova Missão" para começar a jornada!</p>
                             </div>
                           ) : (
-                            <>
-                              <div>
-                                  <h3 className="text-xl font-headline mb-4">Missões para Hoje</h3>
-                                  {todaysMissions.length > 0 ? (
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                          {todaysMissions.map(instance => renderMissionCard(instance, true))}
-                                      </div>
-                                  ) : (
-                                      <p className="text-muted-foreground text-sm text-center py-4 border border-dashed rounded-md">
-                                          Nenhuma missão agendada para hoje. Hora de relaxar!
-                                      </p>
-                                  )}
-                              </div>
-                              {otherPendingMissions.length > 0 && (
-                                  <div>
-                                      <Separator className="my-6" />
-                                      <h3 className="text-xl font-headline mb-4">Próximas Missões</h3>
-                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                          {otherPendingMissions.map(instance => renderMissionCard(instance, false))}
-                                      </div>
-                                  </div>
-                              )}
-                            </>
+                            <div>
+                              <h3 className="text-xl font-headline mb-4">Missões Pendentes</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    {pendingMissions.map(instance => renderMissionCard(instance))}
+                                </div>
+                            </div>
                           )}
                         </>
                     )}
@@ -991,7 +982,7 @@ export default function ManageChildPage() {
                             <div>
                               <h3 className="text-xl font-headline mb-4">Missões Concluídas</h3>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                  {completedMissions.map(instance => renderMissionCard(instance, false))}
+                                  {completedMissions.map(instance => renderMissionCard(instance))}
                               </div>
                             </div>
                           )}
