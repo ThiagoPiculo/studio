@@ -323,7 +323,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                       <RadioGroup
                       onValueChange={field.onChange}
                       value={field.value}
-                      className="flex flex-col space-y-2 pt-1"
+                      className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4"
                       >
                       <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
