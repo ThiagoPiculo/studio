@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, CheckCircle, ListChecks, List, PackageOpen, School, CircleDot, Medal, Lock } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -250,20 +250,22 @@ export default function HeroesPage() {
                         <CardDescription>{age} anos</CardDescription>
                       </div>
                   </div>
-                   <div className="flex items-baseline justify-center gap-1.5 mt-2">
-                      <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
-                      <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
-                    </div>
                 </CardHeader>
 
                 <CardContent className="p-4 pt-0 flex-grow">
-                  <div className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                          <span>Nível {child.level}</span>
-                          <span>{child.xp} / {xpForNextLevel} XP</span>
-                      </div>
-                      <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                  </div>
+                   <div className="grid grid-cols-2 items-center gap-4">
+                        <div className="flex items-baseline justify-center gap-1.5">
+                            <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
+                            <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
+                        </div>
+                        <div className="space-y-1">
+                            <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                                <span>Nível {child.level}</span>
+                                <span>{child.xp} / {xpForNextLevel} XP</span>
+                            </div>
+                            <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                        </div>
+                    </div>
                    <Separator className="my-4" />
                    <Tabs defaultValue="missions" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
@@ -353,7 +355,7 @@ export default function HeroesPage() {
                                 </div>
                                 <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                                 <div className="flex flex-col items-center">
-                                    <List className="h-5 w-5 text-muted-foreground" />
+                                    <CircleDot className="h-5 w-5 text-muted-foreground" />
                                     <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
                                 </div>
                             </div>
