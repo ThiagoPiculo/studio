@@ -22,7 +22,7 @@ import {
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType } from '@/lib/types';
 import { heroColors } from '../hero-colors';
-import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval } from 'date-fns';
+import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
@@ -1136,6 +1136,31 @@ export const deleteMissionInstance = async (instanceId: string): Promise<void> =
     await deleteDoc(instanceRef);
 };
 
+export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date): Promise<void> => {
+  const instanceRef = doc(db, 'missionInstances', instanceId);
+  const newEndDate = subDays(startOfDay(fromDate), 1);
+
+  await runTransaction(db, async (transaction) => {
+    const instanceSnap = await transaction.get(instanceRef);
+    if (!instanceSnap.exists()) {
+      throw new Error("Missão não encontrada.");
+    }
+    const instanceData = instanceSnap.data() as MissionInstance;
+    const rule = instanceData.recurrenceRule || { freq: 'DAILY', interval: 1 };
+    
+    const startDate = instanceData.startDate?.toDate();
+    if (startDate && isBefore(newEndDate, startOfDay(startDate))) {
+      transaction.delete(instanceRef);
+    } else {
+      transaction.update(instanceRef, {
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) },
+        updatedAt: serverTimestamp(),
+      });
+    }
+  });
+};
+
+
 export const deleteMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<void> => {
     const q = query(
         collection(db, 'missionInstances'),
@@ -1696,3 +1721,5 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     });
     await batch.commit();
 };
+
+    

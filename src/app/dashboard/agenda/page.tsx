@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,7 @@ import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRecurrenceDialog';
 
 
 type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -79,6 +80,10 @@ function AgendaPageContent() {
   const [activePopover, setActivePopover] = useState<string | null>(null);
   const [highlightedMissionId, setHighlightedMissionId] = useState<string | null>(null);
   const [instanceToExclude, setInstanceToExclude] = useState<{ instance: MissionInstance; date: Date } | null>(null);
+
+  const [instanceToDeleteInfo, setInstanceToDeleteInfo] = useState<{ instance: MissionInstance; date: Date } | null>(null);
+  const [isDeleteRecurrenceDialogOpen, setIsDeleteRecurrenceDialogOpen] = useState(false);
+  const [isConfirmSimpleDeleteOpen, setIsConfirmSimpleDeleteOpen] = useState(false);
 
   // Read filters from URL
   const dateRangeFilter = (searchParams.get('view') || '3days') as DateRangeFilter;
@@ -363,6 +368,63 @@ function AgendaPageContent() {
     }
   };
 
+  const handleDeleteClick = (instance: MissionInstance, date: Date) => {
+    setActivePopover(null);
+    setInstanceToDeleteInfo({ instance, date });
+    if (instance.isRecurring) {
+        setIsDeleteRecurrenceDialogOpen(true);
+    } else {
+        setIsConfirmSimpleDeleteOpen(true);
+    }
+  };
+
+  const handleConfirmRecurrenceDelete = async (mode: 'single' | 'forward' | 'all') => {
+      if (!instanceToDeleteInfo) return;
+      
+      const { instance, date } = instanceToDeleteInfo;
+      setIsProcessingAction(instance.id);
+      setIsDeleteRecurrenceDialogOpen(false);
+
+      try {
+          if (mode === 'single') {
+              await excludeMissionInstanceOccurrence(instance.id, date);
+              toast({ title: 'Ocorrência Removida!', description: 'A missão foi removida apenas para este dia.' });
+          } else if (mode === 'forward') {
+              await deleteFutureOccurrences(instance.id, date);
+              toast({ title: 'Ocorrências Futuras Removidas!', description: 'Esta e as futuras ocorrências da missão foram removidas.' });
+          } else if (mode === 'all') {
+              await deleteMissionInstance(instance.id);
+              toast({ title: 'Série de Missões Removida!', description: 'Toda a série de missões recorrentes foi removida.' });
+          }
+          await refetchData();
+      } catch (error: any) {
+          console.error("Error deleting recurring mission:", error);
+          toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
+      } finally {
+          setIsProcessingAction(null);
+          setInstanceToDeleteInfo(null);
+      }
+  };
+
+  const handleConfirmSimpleDelete = async () => {
+      if (!instanceToDeleteInfo) return;
+      const { instance } = instanceToDeleteInfo;
+      setIsProcessingAction(instance.id);
+      setIsConfirmSimpleDeleteOpen(false);
+
+      try {
+          await deleteMissionInstance(instance.id);
+          toast({ title: 'Missão Removida!', description: 'A missão foi removida da agenda.' });
+          await refetchData();
+      } catch (error: any) {
+          console.error("Error deleting simple mission:", error);
+          toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
+      } finally {
+          setIsProcessingAction(null);
+          setInstanceToDeleteInfo(null);
+      }
+  };
+
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
@@ -462,7 +524,7 @@ function AgendaPageContent() {
                                     )}
                                     <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                     <Separator />
-                                    <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                    <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
                                   </div>
                               </PopoverContent>
                             </Popover>
@@ -643,7 +705,7 @@ function AgendaPageContent() {
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
-                                          <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleExcludeClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Ocorrência</Button>
+                                          <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
                                       </div>
                                   </PopoverContent>
                               </Popover>
@@ -848,6 +910,30 @@ function AgendaPageContent() {
         onAssigned={handleAssignmentComplete}
       />
 
+      <DeleteRecurrenceDialog
+        isOpen={isDeleteRecurrenceDialogOpen}
+        onOpenChange={setIsDeleteRecurrenceDialogOpen}
+        onSelect={handleConfirmRecurrenceDelete}
+      />
+
+      <AlertDialog open={isConfirmSimpleDeleteOpen} onOpenChange={setIsConfirmSimpleDeleteOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta missão?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Tem certeza que deseja remover a missão "{instanceToDeleteInfo?.instance.title}" da agenda de <strong>{instanceToDeleteInfo ? childrenMap.get(instanceToDeleteInfo.instance.childId)?.name : ''}</strong>? Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmSimpleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>
+                    {isProcessingAction === instanceToDeleteInfo?.instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Sim, Excluir
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <AlertDialog open={!!instanceToExclude} onOpenChange={(isOpen) => !isOpen && setInstanceToExclude(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -878,3 +964,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
