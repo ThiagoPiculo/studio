@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
-import type { ChildProfile, SchoolScheduleEntry, SchoolShift } from '@/lib/types';
+import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels, schoolShifts } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,8 @@ function SchoolSchedulePageContent() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
+  
+  const orderedWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 
   const schoolShiftMap: Record<SchoolShift, string> = {
     morning: 'Manhã',
@@ -51,6 +53,11 @@ function SchoolSchedulePageContent() {
     full_time: 'Integral',
     not_applicable: 'Não se aplica'
   };
+
+  const parseTime = useCallback((time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  }, []);
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -137,64 +144,82 @@ function SchoolSchedulePageContent() {
     return scheduleEntries.filter(entry => entry.childId === selectedChildId);
   }, [scheduleEntries, selectedChildId]);
   
-  const parseTime = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
-    return hours * 60 + minutes;
-  };
+  const visibleTimeSlots = useMemo(() => {
+      if (childSchedule.length === 0) {
+          return [];
+      }
+      return timeSlots.filter(slot => {
+          const slotStart = parseTime(slot);
+          const slotEnd = slotStart + 59;
+          return childSchedule.some(entry => {
+              const entryStart = parseTime(entry.startTime);
+              const entryEnd = parseTime(entry.endTime);
+              return entryStart <= slotEnd && entryEnd > slotStart;
+          });
+      });
+  }, [timeSlots, childSchedule, parseTime]);
   
   const renderScheduleGrid = () => {
+    if (childSchedule.length === 0) {
+      return <div className="text-center py-10 text-muted-foreground">Nenhuma aula agendada para este herói.</div>;
+    }
+    if (visibleTimeSlots.length === 0) {
+       return <div className="text-center py-10 text-muted-foreground">Nenhuma aula agendada para este herói.</div>;
+    }
+
+    const topOffsetMinutes = parseTime(visibleTimeSlots[0]);
+    const totalHeight = visibleTimeSlots.length * 48; // h-12 is 3rem = 48px
+
     return (
-        <div className="relative grid grid-cols-[auto_1fr] h-full">
+        <div className="grid grid-cols-[auto_1fr]">
             {/* Time Column */}
             <div className="text-right pr-2">
-                {timeSlots.map(time => (
+                {visibleTimeSlots.map(time => (
                     <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
                 ))}
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-7 relative border-l">
-                {/* Background Lines */}
-                {timeSlots.map(time => (
-                    <div key={time} className="col-span-7 h-12 border-b" />
-                ))}
-
-                {/* Entries */}
-                {weekdays.map((day, dayIndex) => (
-                    <div key={day} className="absolute inset-0 grid grid-cols-7">
-                        <div className="col-start-1 h-full" style={{gridColumnStart: dayIndex + 1}}>
-                            {childSchedule
-                                .filter(entry => entry.dayOfWeek === day)
-                                .map(entry => {
-                                    const topOffset = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
-                                    const top = ((parseTime(entry.startTime) - topOffset) / 60) * 48; // 48px = 12 * 4rem
-                                    const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
-
-                                    if (top < 0 || parseTime(entry.endTime) < topOffset) return null;
-
-                                    return (
-                                        <div
-                                            key={entry.id}
-                                            className="absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer"
-                                            style={{
-                                                top: `${top}px`,
-                                                height: `${height}px`,
-                                                backgroundColor: `${entry.color}80`, // with transparency
-                                                borderColor: entry.color,
-                                                borderWidth: '1px'
-                                            }}
-                                            onClick={() => handleEditClick(entry)}
-                                        >
-                                            <p className="font-bold text-sm text-white [text-shadow:1px_1px_1px_#00000050] truncate">{entry.subject}</p>
-                                            <p className="text-xs text-white/90 [text-shadow:1px_1px_1px_#00000050]">{entry.startTime} - {entry.endTime}</p>
-                                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                                                <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
-                                            </div>
+            {/* Grid Content */}
+            <div className="grid grid-cols-7 border-l" style={{ height: `${totalHeight}px` }}>
+                {orderedWeekdays.map(day => (
+                    <div key={day} className={cn(
+                        "relative border-r",
+                        (day === 'SA' || day === 'SU') && "bg-muted/20"
+                    )}>
+                        {/* Horizontal lines for each time slot */}
+                        {visibleTimeSlots.map((time, index) => (
+                             <div key={time} className={cn("h-12", index < visibleTimeSlots.length - 1 && "border-b")}></div>
+                        ))}
+                        
+                        {/* Absolutely positioned entries for this day */}
+                        {childSchedule
+                            .filter(entry => entry.dayOfWeek === day)
+                            .map(entry => {
+                                const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
+                                const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+                                
+                                return (
+                                    <div
+                                        key={entry.id}
+                                        className="absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer"
+                                        style={{
+                                            top: `${top}px`,
+                                            height: `${height}px`,
+                                            backgroundColor: `${entry.color}80`,
+                                            borderColor: entry.color,
+                                            borderWidth: '1px'
+                                        }}
+                                        onClick={() => handleEditClick(entry)}
+                                    >
+                                        <p className="font-bold text-sm text-white [text-shadow:1px_1px_1px_#00000050] truncate">{entry.subject}</p>
+                                        <p className="text-xs text-white/90 [text-shadow:1px_1px_1px_#00000050]">{entry.startTime} - {entry.endTime}</p>
+                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-white hover:bg-white/20" onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
                                         </div>
-                                    );
-                                })}
-                        </div>
+                                    </div>
+                                );
+                            })}
                     </div>
                 ))}
             </div>
@@ -247,10 +272,10 @@ function SchoolSchedulePageContent() {
         <CardHeader className="grid grid-cols-[auto_1fr] items-end p-4">
             <div>{/* Empty cell for time column */}</div>
             <div className="grid grid-cols-7 text-center">
-                {weekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
+                {orderedWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
             </div>
         </CardHeader>
-        <CardContent className="p-4 pt-0">
+        <CardContent className="p-4 pt-0 overflow-x-auto">
           {children.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
@@ -262,9 +287,7 @@ function SchoolSchedulePageContent() {
               <p>Selecione um herói para ver ou editar a agenda.</p>
             </div>
           ) : (
-            <div className="h-[720px] overflow-y-auto">
-                {renderScheduleGrid()}
-            </div>
+            renderScheduleGrid()
           )}
         </CardContent>
       </Card>
