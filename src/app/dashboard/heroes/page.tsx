@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List, PackageCheck, School } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List, PackageCheck, School, CircleDot } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -209,7 +209,7 @@ export default function HeroesPage() {
 
               const todaysWeekday = getDayToWeekday[new Date().getDay()];
               const todaysSchedule = scheduleEntries
-                .filter(entry => entry.childId === child.id && entry.dayOfWeek === todaysWeekday)
+                .filter(entry => entry.childId === child.id && entry.dayOfWeek === todaysWeekday && entry.subject !== 'Recreio/Intervalo')
                 .sort((a, b) => a.startTime.localeCompare(b.startTime));
 
               const todaysMissionsCount = todaysMissions.length;
@@ -288,7 +288,7 @@ export default function HeroesPage() {
                                       {isCompleted ? (
                                         <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
                                       ) : (
-                                        <Target className="h-4 w-4 text-primary shrink-0" />
+                                        <CircleDot className="h-4 w-4 text-primary shrink-0" />
                                       )}
                                       <span className="text-xs font-mono w-10">{formattedTime}</span>
                                       <span className={cn("truncate flex-grow", isCompleted && "line-through")}>
