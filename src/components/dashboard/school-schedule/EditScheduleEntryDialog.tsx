@@ -69,6 +69,14 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
     });
 
+    const watchedSubject = form.watch('subject');
+
+    useEffect(() => {
+        if (watchedSubject === 'Recreio/Intervalo') {
+            form.setValue('color', '#868e96');
+        }
+    }, [watchedSubject, form]);
+
     useEffect(() => {
         if (entryToEdit) {
             form.reset({
@@ -76,7 +84,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 dayOfWeek: entryToEdit.dayOfWeek,
                 startTime: entryToEdit.startTime,
                 endTime: entryToEdit.endTime,
-                color: entryToEdit.color,
+                color: entryToEdit.subject === 'Recreio/Intervalo' ? '#868e96' : entryToEdit.color,
             });
         } else {
             form.reset({
@@ -98,15 +106,21 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         try {
             const isWeekday = ['MO', 'TU', 'WE', 'TH', 'FR'].includes(data.dayOfWeek);
             const isCreatingNewRecess = data.subject === 'Recreio/Intervalo' && !(entryToEdit && entryToEdit.id);
+            
+            // Central payload preparation
+            const payload = { ...data };
+            if (payload.subject === 'Recreio/Intervalo') {
+                payload.color = '#868e96';
+            }
 
             if (isCreatingNewRecess && isWeekday) {
                 // Create recurring recess for the week
                 const daysToRepeat: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
                 const baseEntry = {
-                    subject: data.subject,
-                    startTime: data.startTime,
-                    endTime: data.endTime,
-                    color: '#868e96', // A neutral gray color for recess
+                    subject: payload.subject,
+                    startTime: payload.startTime,
+                    endTime: payload.endTime,
+                    color: payload.color,
                     childId,
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
@@ -115,18 +129,18 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
             } else if (entryToEdit && entryToEdit.id) {
                 // Update existing entry (of any kind)
-                await updateSchoolScheduleEntry(entryToEdit.id, data);
-                toast({ title: 'Aula atualizada!', description: `A aula de ${data.subject} foi atualizada no horário.` });
+                await updateSchoolScheduleEntry(entryToEdit.id, payload);
+                toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
                 // Create a single new entry (for regular classes or weekend recess)
                 const newEntryData = {
-                    ...data,
+                    ...payload,
                     childId,
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
                 await addSchoolScheduleEntry(newEntryData);
-                toast({ title: 'Nova aula adicionada!', description: `A aula de ${data.subject} foi adicionada ao horário.` });
+                toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
             }
             onSave();
             onOpenChange(false);
