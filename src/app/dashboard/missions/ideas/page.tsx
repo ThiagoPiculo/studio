@@ -193,8 +193,11 @@ export default function MissionIdeasPage() {
                                         <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
                                             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                                                 <div className="flex-grow space-y-1">
-                                                    <h4 className="font-semibold text-md">{idea.title}</h4>
-                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                    <h4 className="font-semibold text-md flex items-center gap-2">
+                                                        <span className="text-xl">{idea.emoji}</span>
+                                                        <span>{idea.title}</span>
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 flex-wrap pl-8">
                                                         <Badge variant="secondary" className="text-xs font-normal">
                                                             <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
                                                         </Badge>
@@ -249,5 +252,3 @@ export default function MissionIdeasPage() {
         </div>
     );
 }
-
-    
