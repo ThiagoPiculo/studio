@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
@@ -96,7 +96,11 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
         setIsProcessing(true);
         try {
-            if (data.subject === 'Recreio/Intervalo') {
+            const isWeekday = ['MO', 'TU', 'WE', 'TH', 'FR'].includes(data.dayOfWeek);
+            const isCreatingNewRecess = data.subject === 'Recreio/Intervalo' && !(entryToEdit && entryToEdit.id);
+
+            if (isCreatingNewRecess && isWeekday) {
+                // Create recurring recess for the week
                 const daysToRepeat: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
                 const baseEntry = {
                     subject: data.subject,
@@ -109,13 +113,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 };
                 await addRecurringSchoolEntry(baseEntry, daysToRepeat);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
-
             } else if (entryToEdit && entryToEdit.id) {
-                // Update
+                // Update existing entry (of any kind)
                 await updateSchoolScheduleEntry(entryToEdit.id, data);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${data.subject} foi atualizada no horário.` });
             } else {
-                // Create
+                // Create a single new entry (for regular classes or weekend recess)
                 const newEntryData = {
                     ...data,
                     childId,
@@ -150,7 +153,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                         <Info className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
                         <AlertDescription className="text-primary/90">
-                            Comece cadastrando o "Recreio/Intervalo". Isso adicionará o intervalo para todos os dias da semana de uma só vez, facilitando o preenchimento do restante do horário.
+                            Comece cadastrando o "Recreio/Intervalo" em um dia útil. Isso adicionará o intervalo para toda a semana de uma só vez!
                         </AlertDescription>
                     </Alert>
                 )}
@@ -166,6 +169,11 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <datalist id="subjects-list">
                                     {schoolSubjects.map(subject => <option key={subject} value={subject} />)}
                                 </datalist>
+                                {form.watch('subject') === 'Recreio/Intervalo' && (
+                                    <FormDescription>
+                                        Selecione um dia útil para adicionar o intervalo na semana toda.
+                                    </FormDescription>
+                                )}
                                 <FormMessage />
                             </FormItem>
                         )} />
@@ -173,7 +181,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                             <FormField control={form.control} name="dayOfWeek" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Dia da Semana</FormLabel>
-                                    <Select onValueChange={field.onChange} value={field.value} disabled={form.watch('subject') === 'Recreio/Intervalo'}>
+                                    <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                         <SelectContent>
                                             {weekdays.map(day => (
