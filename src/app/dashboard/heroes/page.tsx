@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle, Target } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry, MissionCategoryDetails } from "@/lib/types";
 import { missionCategories } from "@/lib/types";
@@ -182,22 +182,22 @@ export default function HeroesPage() {
 
       <section>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-headline">Seus Mini Herois</h2>
+          <h2 className="text-2xl font-headline">Cartões de Mini Herois</h2>
           <Link href="/dashboard/onboarding">
-            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Mini Heroi</Button>
+            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Cartão</Button>
           </Link>
         </div>
         {isLoadingChildren ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-            Carregando Mini Herois...
+            Carregando Cartões...
           </div>
         ) : children.length === 0 ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum Mini Heroi Ainda!</h3>
-              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando sua primeira criança.</p>
+              <h3 className="text-xl font-semibold mb-2">Nenhum Cartão de Herói Ainda!</h3>
+              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro cartão da criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
                   <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
@@ -304,7 +304,7 @@ export default function HeroesPage() {
                                 <li key={mission.id}>
                                   <Link href={href} className="block">
                                     <div className={cn(
-                                      "text-xs flex items-center gap-2 p-1.5 rounded-md transition-colors",
+                                      "text-xs flex items-center gap-1 p-1.5 rounded-md transition-colors",
                                       isCompleted 
                                         ? "bg-green-500/10 text-muted-foreground" 
                                         : "bg-background hover:bg-accent/50",
@@ -314,8 +314,8 @@ export default function HeroesPage() {
                                       ) : (
                                         <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
                                       )}
-                                      <span className="font-mono w-10">{formattedTime}</span>
-                                      {CategoryIcon && <CategoryIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
+                                      <span className="font-mono text-[11px] w-10">{formattedTime}</span>
+                                      {mission.emoji && <span className="text-sm">{mission.emoji}</span>}
                                       <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
                                       </span>

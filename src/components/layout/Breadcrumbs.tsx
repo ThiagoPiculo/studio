@@ -17,7 +17,7 @@ interface Breadcrumb {
 
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Painel',
-  heroes: 'Mini Herois',
+  heroes: 'Cartões de Mini Herois',
   agenda: 'Agenda dos Herois',
   manage: 'Gerenciar',
   family: 'Aliança',
@@ -44,18 +44,12 @@ const titleCase = (str: string) => {
 
 export function Breadcrumbs() {
   const pathname = usePathname();
-  const params = useParams();
+  const paramsString = JSON.stringify(useParams());
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
-
-  // We stringify the params object to create a stable dependency for useEffect.
-  // This prevents the "params are being enumerated" error with Next.js App Router's proxy object.
-  const paramsString = useMemo(() => JSON.stringify(params), [params]);
 
   useEffect(() => {
     const generateBreadcrumbs = async () => {
-      // We parse the stringified params back into an object for use.
       const currentParams = JSON.parse(paramsString);
-
       const pathSegments = pathname.split('/').filter(Boolean);
       
       const crumbPromises = pathSegments.map(async (segment, index) => {

@@ -51,9 +51,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/heroes" tooltip="Mini Herois" isActive={pathname.startsWith('/dashboard/heroes') || pathname === '/dashboard/onboarding' || pathname.startsWith('/dashboard/child')}>
+                        <SidebarMenuButton href="/dashboard/heroes" tooltip="Cartão de Mini Herois" isActive={pathname.startsWith('/dashboard/heroes') || pathname === '/dashboard/onboarding' || pathname.startsWith('/dashboard/child')}>
                             <Rocket className="text-primary"/>
-                            <span>Mini Herois</span>
+                            <span>Cartão de Mini Herois</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
