@@ -201,7 +201,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
             <FormField
               control={form.control}
               name="name"
@@ -312,7 +312,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
             />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
             <FormField
               control={form.control}
               name="gender"
@@ -356,11 +356,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                     <FormItem>
                         <FormLabel>Turno Escolar</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o turno..."/>
-                                </SelectTrigger>
-                            </FormControl>
+                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
                             <SelectContent>
                                 {schoolShifts.map(shift => (
                                     <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
