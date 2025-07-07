@@ -77,7 +77,6 @@ export default function ManageChildPage() {
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
   const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
-  const [missionToUndo, setMissionToUndo] = useState<{instance: MissionInstance, date: Date} | null>(null);
   
   // Reward-specific states
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
@@ -275,25 +274,6 @@ export default function ManageChildPage() {
     router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
   };
 
-  const handleUndoCompletion = async () => {
-      if (!missionToUndo || !child) return;
-      setIsDeleting(true); // Using isDeleting as a generic processing state for this dialog
-      try {
-        await reactivateMissionInstance(missionToUndo.instance.id, missionToUndo.date);
-        await fetchData();
-        toast({
-          title: "Ação Desfeita!",
-          description: `A conclusão da missão "${missionToUndo.instance.title}" foi revertida.`,
-        });
-      } catch (error: any) {
-        console.error("Error undoing mission completion:", error);
-        toast({ title: "Erro ao Desfazer", description: error.message || "Não foi possível desfazer a conclusão.", variant: "destructive" });
-      } finally {
-        setIsDeleting(false);
-        setMissionToUndo(null);
-      }
-  };
-
   const handleResetProgress = async () => {
     if (!child) return;
     setIsResettingProgress(true);
@@ -479,16 +459,6 @@ export default function ManageChildPage() {
         });
   }, [missionInstances]);
 
-  const completedTodayIds = useMemo(() => {
-      const today = new Date();
-      const ids = new Set<string>();
-      missionInstances.forEach(mission => {
-          if (mission.completionLog && Object.keys(mission.completionLog).some(dateStr => isSameDay(parse(dateStr, 'yyyy-MM-dd', new Date()), today))) {
-            ids.add(mission.id);
-          }
-      });
-      return ids;
-  }, [missionInstances]);
 
   const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
     child ? calculateXpDetails(child.level, child.xp) : { progressPercentage: 0, xpRemaining: 0, xpForNextLevel: 0 },
@@ -520,8 +490,6 @@ export default function ManageChildPage() {
   const renderMissionCard = (instance: MissionInstance) => {
     const categoryDetails = getMissionCategoryDetails(instance.category);
     const CategoryIconComponent = categoryDetails?.icon;
-    const isScheduledForToday = isMissionScheduledForDate(instance, new Date());
-    const isCompletedToday = completedTodayIds.has(instance.id);
       
     const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
     const time = scheduleDate ? format(scheduleDate, 'HH:mm') : null;
@@ -585,7 +553,7 @@ export default function ManageChildPage() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}</span>
+                                <span>Vence em: new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()</span>
                             </div>
                         )}
                     </div>
@@ -593,55 +561,35 @@ export default function ManageChildPage() {
             </CardContent>
             <CardFooter className="p-3">
                 {instance.status === 'pending' ? (
-                    isCompletedToday && isScheduledForToday ? (
-                        <div className="flex w-full items-center gap-2">
-                            <Button variant="secondary" size="sm" className="flex-grow bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" disabled>
-                                <CheckCircle2 className="mr-2 h-4 w-4" /> Concluído Hoje
-                            </Button>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isDeleting}>
-                                            <Undo2 className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Desfazer conclusão de hoje</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    ) : (
-                        <div className="flex w-full items-center gap-2">
-                            <Button
-                                size="sm"
-                                className="flex-grow"
-                                onClick={() => handleManageInAgenda(instance)}
-                                disabled={isDeleting}
-                            >
-                                <CalendarDays className="mr-2 h-4 w-4" />
-                                Ver na Agenda
-                            </Button>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button
-                                            size="icon"
-                                            variant="destructive"
-                                            className="h-9 w-9"
-                                            onClick={() => setMissionToDelete(instance)}
-                                            disabled={isDeleting}
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Remover Missão</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                        </div>
-                    )
+                    <div className="flex w-full items-center gap-2">
+                        <Button
+                            size="sm"
+                            className="flex-grow"
+                            onClick={() => handleManageInAgenda(instance)}
+                            disabled={isDeleting}
+                        >
+                            <CalendarDays className="mr-2 h-4 w-4" />
+                            Ver na Agenda
+                        </Button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        size="icon"
+                                        variant="destructive"
+                                        className="h-9 w-9"
+                                        onClick={() => setMissionToDelete(instance)}
+                                        disabled={isDeleting}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Remover Missão</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
                 ) : ( // Status is 'completed'
                     <Button
                         size="sm"
@@ -1055,11 +1003,11 @@ export default function ManageChildPage() {
                               Custo: {instance.starsCost} estrelas
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                              Atribuída em: new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()
                             </p>
                             {instance.status === 'redeemed' && instance.redeemedAt && (
                               <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: {new Date((instance.redeemedAt as any).seconds * 1000).toLocaleDateString()}
+                                Resgatada em: new Date((instance.redeemedAt as any).seconds * 1000).toLocaleDateString()
                               </p>
                             )}
                           </CardContent>
@@ -1279,7 +1227,7 @@ export default function ManageChildPage() {
                   onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
                   onResetProgress={handleResetProgress}
-                  isResetting={isResettingProgress}
+                  isResetting={isResetting}
                 />
               </CardContent>
             </Card>
@@ -1309,24 +1257,6 @@ export default function ManageChildPage() {
                 <AlertDialogAction onClick={handleDeleteMissionInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Sim, Remover
-                </AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={!!missionToUndo} onOpenChange={(isOpen) => !isOpen && setMissionToUndo(null)}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Desfazer Conclusão?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  {missionToUndo && `Isso irá reverter a conclusão da missão "${missionToUndo.instance.title}" para o dia ${format(missionToUndo.date, 'dd/MM/yyyy')}, incluindo as estrelas e XP ganhos. Deseja continuar?`}
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleUndoCompletion} disabled={isDeleting}>
-                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Undo2 className="mr-2 h-4 w-4" />}
-                    Sim, Desfazer
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

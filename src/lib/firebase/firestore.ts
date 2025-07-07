@@ -24,6 +24,7 @@ import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTem
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { allBadgesMap } from '../badges';
 
 // --- Notifications Helper ---
 const createAndDispatchNotifications = async (
@@ -1151,6 +1152,75 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     await batch.commit();
 };
 
+const awardBadge = async (childId: string, badgeId: string) => {
+    const childRef = doc(db, 'children', childId);
+    const badge = allBadgesMap.get(badgeId);
+    if (!badge) return;
+
+    await runTransaction(db, async (transaction) => {
+        const childSnap = await transaction.get(childRef);
+        if (!childSnap.exists()) return;
+
+        const childData = childSnap.data() as ChildProfile;
+        const earnedBadges = childData.earnedBadgeIds || [];
+
+        if (!earnedBadges.includes(badgeId)) {
+            transaction.update(childRef, {
+                earnedBadgeIds: [...earnedBadges, badgeId]
+            });
+        }
+    });
+
+    const childData = await getChildProfileById(childId);
+    if (childData) {
+        await createAndDispatchNotifications(childId, {
+            type: 'new_badge',
+            title: 'Nova Conquista Desbloqueada!',
+            description: `${childData.name} ganhou a conquista: "${badge.title}"!`,
+            href: `/dashboard/child/${childId}/manage`,
+            relatedChildId: childId,
+        });
+    }
+};
+
+const checkAndAwardBadges = async (updatedChildProfile: ChildProfile) => {
+    const earnedBadgeIds = updatedChildProfile.earnedBadgeIds || [];
+    const badgesToAward: string[] = [];
+
+    const awardChecks: { [key: string]: () => boolean } = {
+        'heroi_ascensao': () => updatedChildProfile.level >= 5,
+        'campeao_herois': () => updatedChildProfile.level >= 10,
+        'cacador_estrelas': () => updatedChildProfile.stars >= 100,
+        'colecionador_tesouros': () => updatedChildProfile.stars >= 500,
+        'lenda_estelar': () => updatedChildProfile.stars >= 1000,
+    };
+
+    for (const badgeId in awardChecks) {
+        if (!earnedBadgeIds.includes(badgeId) && awardChecks[badgeId]()) {
+            badgesToAward.push(badgeId);
+        }
+    }
+
+    // Check for first mission completion
+    if (!earnedBadgeIds.includes('hero_novato')) {
+      const allInstancesQuery = query(collection(db, 'missionInstances'), where('childId', '==', updatedChildProfile.id));
+      const allInstancesSnapshot = await getDocs(allInstancesQuery);
+      const totalCompletions = allInstancesSnapshot.docs.reduce((sum, doc) => sum + (Object.keys(doc.data().completionLog || {}).length), 0);
+      
+      if (totalCompletions === 1) {
+        badgesToAward.push('hero_novato');
+      }
+    }
+
+    if (badgesToAward.length > 0) {
+        const uniqueBadges = [...new Set(badgesToAward)];
+        for (const badgeId of uniqueBadges) {
+            await awardBadge(updatedChildProfile.id, badgeId);
+        }
+    }
+};
+
+
 export const completeMissionInstance = async (missionInstanceId: string, completionDate: Date): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
@@ -1185,6 +1255,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         }
         
         const childData = childSnap.data() as ChildProfile;
+        const originalLevel = childData.level;
         
         // --- Child Stats Update ---
         const newStars = childData.stars + missionData.starsReward;
@@ -1222,14 +1293,14 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
         return {
             ...childData,
             ...{ stars: newStars, xp: newXp, level: newLevel },
-            id: childSnap.id
-        } as ChildProfile;
+            id: childSnap.id,
+            didLevelUp: newLevel > originalLevel, // Pass this info out
+        } as ChildProfile & { didLevelUp: boolean };
     });
 
     if (updatedChildProfile) {
       const missionData = (await getDoc(missionRef)).data() as MissionInstance;
-      const originalChildData = await getChildProfileById(missionData.childId);
-
+      
       // Notification for mission completion
       await createAndDispatchNotifications(missionData.childId, {
           type: 'mission_completed',
@@ -1240,7 +1311,7 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
       });
 
       // Notification for level up
-      if (originalChildData && updatedChildProfile.level > originalChildData.level) {
+      if ((updatedChildProfile as any).didLevelUp) {
            await createAndDispatchNotifications(missionData.childId, {
               type: 'new_level',
               title: 'Subiu de Nível!',
@@ -1249,6 +1320,9 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
               relatedChildId: missionData.childId
           });
       }
+      
+      // Check for all badges after stats have been updated
+      await checkAndAwardBadges(updatedChildProfile);
     }
     return updatedChildProfile;
 };
