@@ -266,7 +266,7 @@ export function OnboardingForm() {
         />
         
         {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
+             <div className="grid grid-cols-2 gap-4">
                  <FormField
                     control={form.control}
                     name="schoolShiftStart"
