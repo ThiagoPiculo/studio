@@ -205,11 +205,21 @@ export default function HeroesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child) => {
               const age = calculateAge(child.birthDate);
-              const todaysMissions = missionInstances.filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date())).sort((a,b) => {
-                const timeA = getDateObject(a.startDate || a.dueDate)?.getTime() || 0;
-                const timeB = getDateObject(b.startDate || b.dueDate)?.getTime() || 0;
-                return timeA - timeB;
-              });
+              const todaysMissions = missionInstances
+                .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
+                .sort((a, b) => {
+                  const dateA = getDateObject(a.startDate || a.dueDate);
+                  const dateB = getDateObject(b.startDate || b.dueDate);
+                  
+                  const timeA = dateA ? dateA.getHours() * 60 + dateA.getMinutes() : Number.MAX_SAFE_INTEGER;
+                  const timeB = dateB ? dateB.getHours() * 60 + dateB.getMinutes() : Number.MAX_SAFE_INTEGER;
+
+                  if (timeA !== timeB) {
+                    return timeA - timeB;
+                  }
+                  
+                  return a.title.localeCompare(b.title);
+                });
 
               const todaysWeekday = getDayToWeekday[new Date().getDay()];
               const todaysSchedule = scheduleEntries
@@ -324,9 +334,9 @@ export default function HeroesPage() {
                       </TabsContent>
                       <TabsContent value="school" className="mt-2 h-[145px]">
                         <ScrollArea className="h-full w-full">
-                          <div className="grid grid-cols-1 gap-y-1">
+                          <div className="grid grid-cols-1 gap-y-1 pr-3">
                               {todaysSchedule.length > 0 ? (
-                                  <ul className="space-y-1 pr-3">
+                                  <ul className="space-y-1">
                                       {todaysSchedule.slice(0, 6).map(entry => (
                                           <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
                                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
