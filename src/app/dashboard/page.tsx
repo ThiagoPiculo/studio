@@ -1,8 +1,7 @@
-
 // src/app/dashboard/page.tsx
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LayoutGrid } from "lucide-react";
+import { BarChart, LayoutGrid, Award } from "lucide-react";
 
 export default function DashboardPage() {
   return (
@@ -19,7 +18,7 @@ export default function DashboardPage() {
         </CardHeader>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <Card>
           <CardHeader>
             <CardTitle className="text-xl flex items-center gap-2">
@@ -29,6 +28,18 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Em breve: Gráficos sobre a evolução de estrelas, XP e missões concluídas por heroi e por período.</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-xl flex items-center gap-2">
+              <Award className="text-chart-5" />
+              Conquistas Recentes
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Em breve: Visualize as últimas medalhas e conquistas desbloqueadas pelos seus herois.</p>
           </CardContent>
         </Card>
         
