@@ -194,7 +194,7 @@ function SchoolSchedulePageContent() {
             </div>
 
             {/* Grid Content */}
-            <div className={cn("grid border-l", `grid-cols-${visibleWeekdays.length}`)} style={{ height: `${totalHeight}px` }}>
+            <div className="grid border-l" style={{ height: `${totalHeight}px`, gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
                 {visibleWeekdays.map(day => (
                     <div key={day} className={cn(
                         "relative border-r",
@@ -315,7 +315,7 @@ function SchoolSchedulePageContent() {
       <Card>
         <CardHeader className={cn("grid items-end p-4", `grid-cols-[auto_1fr]`)}>
             <div>{/* Empty cell for time column */}</div>
-            <div className={cn("grid text-center", `grid-cols-${visibleWeekdays.length || 1}`)}>
+            <div className="grid text-center" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length || 1}, minmax(0, 1fr))` }}>
                 {visibleWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
             </div>
         </CardHeader>
