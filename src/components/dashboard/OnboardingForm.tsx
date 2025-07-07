@@ -40,7 +40,35 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
       required_error: "Por favor, selecione o turno escolar.",
   }),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+}).superRefine((data, ctx) => {
+  const isShiftApplicable = data.schoolShift !== 'not_applicable';
+  if (isShiftApplicable) {
+    if (!data.schoolShiftStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftStart'],
+        message: 'O horário de início é obrigatório.',
+      });
+    }
+    if (!data.schoolShiftEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftEnd'],
+        message: 'O horário de término é obrigatório.',
+      });
+    }
+    if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftEnd'],
+        message: 'O horário final deve ser depois do inicial.',
+      });
+    }
+  }
 });
+
 
 type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
@@ -60,8 +88,12 @@ export function OnboardingForm() {
       childBirthDate: undefined,
       childGender: undefined,
       schoolShift: 'not_applicable',
+      schoolShiftStart: '',
+      schoolShiftEnd: '',
     },
   });
+
+  const watchedSchoolShift = form.watch('schoolShift');
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
@@ -75,6 +107,8 @@ export function OnboardingForm() {
         birthDate: Timestamp.fromDate(values.childBirthDate), 
         gender: values.childGender,
         schoolShift: values.schoolShift,
+        schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : undefined,
+        schoolShiftEnd: values.schoolShift !== 'not_applicable' ? values.schoolShiftEnd : undefined,
       });
       toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard/heroes"); 
@@ -230,6 +264,33 @@ export function OnboardingForm() {
             </FormItem>
           )}
         />
+        
+        {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                 <FormField
+                    control={form.control}
+                    name="schoolShiftStart"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Início do Turno</FormLabel>
+                            <FormControl><Input type="time" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="schoolShiftEnd"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Fim do Turno</FormLabel>
+                            <FormControl><Input type="time" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+             </div>
+        )}
 
         <FormField
           control={form.control}

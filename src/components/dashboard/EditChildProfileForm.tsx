@@ -55,9 +55,36 @@ const profileFormSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
     required_error: "Por favor, selecione o turno escolar.",
   }),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
   color: z.string().refine((val) => heroColors.includes(val as HeroColor), {
     message: "Por favor, selecione uma cor válida."
   }),
+}).superRefine((data, ctx) => {
+  const isShiftApplicable = data.schoolShift !== 'not_applicable';
+  if (isShiftApplicable) {
+    if (!data.schoolShiftStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftStart'],
+        message: 'O horário de início é obrigatório.',
+      });
+    }
+    if (!data.schoolShiftEnd) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftEnd'],
+        message: 'O horário de término é obrigatório.',
+      });
+    }
+    if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['schoolShiftEnd'],
+        message: 'O horário final deve ser depois do inicial.',
+      });
+    }
+  }
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -91,16 +118,22 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
+      schoolShiftStart: child.schoolShiftStart || '',
+      schoolShiftEnd: child.schoolShiftEnd || '',
       color: child.color || heroColors[0], 
     },
   });
   
+  const watchedSchoolShift = form.watch("schoolShift");
+
   useEffect(() => {
     form.reset({
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
+      schoolShiftStart: child.schoolShiftStart || '',
+      schoolShiftEnd: child.schoolShiftEnd || '',
       color: child.color || heroColors[0],
     });
     if (child.birthDate) {
@@ -160,6 +193,8 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         birthDate: Timestamp.fromDate(data.birthDate),
         gender: data.gender,
         schoolShift: data.schoolShift,
+        schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : undefined,
+        schoolShiftEnd: data.schoolShift !== 'not_applicable' ? data.schoolShiftEnd : undefined,
         color: data.color,
       };
       await updateChildProfile(child.id, updates);
@@ -311,63 +346,89 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
               )}
             />
         </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-            <FormField
-              control={form.control}
-              name="gender"
-              render={({ field }) => (
-                  <FormItem className="space-y-3">
-                  <FormLabel>Gênero</FormLabel>
-                  <FormControl>
-                      <RadioGroup
-                      onValueChange={field.onChange}
-                      value={field.value}
-                      className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4"
-                      >
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                          <RadioGroupItem value="boy" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Menino</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                          <RadioGroupItem value="girl" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Menina</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-2 space-y-0">
-                          <FormControl>
-                          <RadioGroupItem value="not-informed" />
-                          </FormControl>
-                          <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                      </FormItem>
-                      </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
+        
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+              <FormItem className="space-y-3">
+              <FormLabel>Gênero</FormLabel>
+              <FormControl>
+                  <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4"
+                  >
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                      <RadioGroupItem value="boy" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Menino</FormLabel>
                   </FormItem>
-              )}
-            />
-             <FormField
-                control={form.control}
-                name="schoolShift"
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Turno Escolar</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
-                            <SelectContent>
-                                {schoolShifts.map(shift => (
-                                    <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        </div>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                      <RadioGroupItem value="girl" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Menina</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                      <RadioGroupItem value="not-informed" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                  </FormItem>
+                  </RadioGroup>
+              </FormControl>
+              <FormMessage />
+              </FormItem>
+          )}
+        />
+        
+        <FormField
+            control={form.control}
+            name="schoolShift"
+            render={({ field }) => (
+                <FormItem>
+                    <FormLabel>Turno Escolar</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
+                        <SelectContent>
+                            {schoolShifts.map(shift => (
+                                <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <FormMessage />
+                </FormItem>
+            )}
+        />
+        
+        {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-in fade-in duration-300">
+                 <FormField
+                    control={form.control}
+                    name="schoolShiftStart"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Início do Turno</FormLabel>
+                            <FormControl><Input type="time" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="schoolShiftEnd"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Fim do Turno</FormLabel>
+                            <FormControl><Input type="time" {...field} /></FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+             </div>
+        )}
         
         <Separator/>
 

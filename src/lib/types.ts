@@ -44,6 +44,8 @@ export interface ChildProfile {
   birthDate: Timestamp;
   gender?: 'boy' | 'girl' | 'not-informed';
   schoolShift?: SchoolShift;
+  schoolShiftStart?: string; // "HH:mm" format
+  schoolShiftEnd?: string;   // "HH:mm" format
   stars: number;
   xp: number;
   level: number;

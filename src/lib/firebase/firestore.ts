@@ -1,5 +1,4 @@
 
-
 import {
   collection,
   doc,
@@ -89,6 +88,8 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     birthDate: childData.birthDate,
     gender: childData.gender,
     schoolShift: childData.schoolShift || 'not_applicable',
+    schoolShiftStart: childData.schoolShiftStart || '',
+    schoolShiftEnd: childData.schoolShiftEnd || '',
     avatar: '',
     stars: 0,
     xp: 0,

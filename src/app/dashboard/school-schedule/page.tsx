@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
-import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry, updateChildProfile } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
-import { weekdays, weekdayLabels } from '@/lib/types';
+import { weekdayLabels } from '@/lib/types';
 import { getDayToWeekday } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -126,7 +126,10 @@ function SchoolSchedulePageContent() {
     
     if (child?.schoolShiftStart && child?.schoolShiftEnd) {
         startHour = parseInt(child.schoolShiftStart.split(':')[0], 10);
-        endHour = parseInt(child.schoolShiftEnd.split(':')[0], 10) + 1; // Include the last hour
+        const endHourRaw = parseInt(child.schoolShiftEnd.split(':')[0], 10);
+        const endMinutesRaw = parseInt(child.schoolShiftEnd.split(':')[1], 10);
+        // Include the last hour block if there are minutes in it, otherwise, the range will be exclusive.
+        endHour = endMinutesRaw > 0 ? endHourRaw + 1 : endHourRaw;
     } else {
         switch (child?.schoolShift) {
             case 'morning':
@@ -200,8 +203,6 @@ function SchoolSchedulePageContent() {
         familyId: currentContext === 'my-space' ? null : currentContext,
         createdAt: new Timestamp(0,0), // Placeholder
         updatedAt: new Timestamp(0,0), // Placeholder
-        schoolShiftStart: '',
-        schoolShiftEnd: '',
     };
 
     setEntryToEdit(newEntry);
