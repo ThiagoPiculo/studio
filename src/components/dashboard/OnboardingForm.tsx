@@ -162,103 +162,142 @@ export function OnboardingForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <FormField
-          control={form.control}
-          name="childName"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Nome da Criança</FormLabel>
-              <FormControl>
-                <Input placeholder="Flip Gato" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <FormField
+            control={form.control}
+            name="childName"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Nome da Criança</FormLabel>
+                <FormControl>
+                    <Input placeholder="Flip Gato" {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+
+            <FormField
+            control={form.control}
+            name="childBirthDate"
+            render={({ field }) => (
+                <FormItem className="flex flex-col">
+                <FormLabel>Data de Nascimento</FormLabel>
+                <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                    if (open) {
+                        setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                    }
+                    setIsCalendarOpen(open);
+                    }}>
+                    <PopoverTrigger asChild>
+                    <FormControl>
+                        <Button
+                        variant={"outline"}
+                        className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                        )}
+                        >
+                        {field.value ? (
+                            format(field.value, "PPP", { locale: ptBR })
+                        ) : (
+                            <span>Escolha uma data</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-2 border-b">
+                        <Input
+                            placeholder="Digite a data: dd/mm/aaaa"
+                            value={dateInput}
+                            onChange={(e) => {
+                            const maskedValue = handleDateMask(e.target.value);
+                            setDateInput(maskedValue);
+                            if (maskedValue.length === 10) {
+                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                if (isValid(parsedDate)) {
+                                field.onChange(parsedDate);
+                                setMonth(parsedDate);
+                                }
+                            }
+                            }}
+                            onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                field.onChange(date);
+                                setMonth(date);
+                                setIsCalendarOpen(false);
+                                } else {
+                                toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                }
+                            }
+                            }}
+                        />
+                    </div>
+                    <Calendar
+                        locale={ptBR}
+                        mode="single"
+                        month={month}
+                        onMonthChange={setMonth}
+                        selected={field.value}
+                        onSelect={(date) => {
+                        field.onChange(date);
+                        if (date) {
+                            setDateInput(format(date, 'dd/MM/yyyy'));
+                            setMonth(date);
+                        }
+                        setIsCalendarOpen(false);
+                        }}
+                        disabled={(date) =>
+                        date > new Date() || date < new Date("1900-01-01")
+                        }
+                        initialFocus
+                        weekStartsOn={1}
+                    />
+                    </PopoverContent>
+                </Popover>
+                <FormMessage />
+                </FormItem>
+            )}
+            />
+        </div>
 
         <FormField
           control={form.control}
-          name="childBirthDate"
+          name="childGender"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Data de Nascimento</FormLabel>
-              <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                  if (open) {
-                    setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                  }
-                  setIsCalendarOpen(open);
-                }}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "w-full pl-3 text-left font-normal",
-                        !field.value && "text-muted-foreground"
-                      )}
-                    >
-                      {field.value ? (
-                        format(field.value, "PPP", { locale: ptBR })
-                      ) : (
-                        <span>Escolha uma data</span>
-                      )}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                   <div className="p-2 border-b">
-                     <Input
-                        placeholder="Digite a data: dd/mm/aaaa"
-                        value={dateInput}
-                        onChange={(e) => {
-                          const maskedValue = handleDateMask(e.target.value);
-                          setDateInput(maskedValue);
-                          if (maskedValue.length === 10) {
-                            const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                            if (isValid(parsedDate)) {
-                              field.onChange(parsedDate);
-                              setMonth(parsedDate);
-                            }
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                            if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                              field.onChange(date);
-                              setMonth(date);
-                              setIsCalendarOpen(false);
-                            } else {
-                              toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                            }
-                          }
-                        }}
-                      />
-                   </div>
-                  <Calendar
-                    locale={ptBR}
-                    mode="single"
-                    month={month}
-                    onMonthChange={setMonth}
-                    selected={field.value}
-                    onSelect={(date) => {
-                      field.onChange(date);
-                      if (date) {
-                        setDateInput(format(date, 'dd/MM/yyyy'));
-                        setMonth(date);
-                      }
-                      setIsCalendarOpen(false);
-                    }}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                    weekStartsOn={1}
-                  />
-                </PopoverContent>
-              </Popover>
+            <FormItem className="space-y-3">
+              <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
+                >
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="boy" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Menino</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="girl" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Menina</FormLabel>
+                  </FormItem>
+                  <FormItem className="flex items-center space-x-2 space-y-0">
+                    <FormControl>
+                      <RadioGroupItem value="not-informed" />
+                    </FormControl>
+                    <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -316,43 +355,6 @@ export function OnboardingForm() {
                 </>
             )}
         </div>
-        
-        <FormField
-          control={form.control}
-          name="childGender"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
-                >
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="boy" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menino</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="girl" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menina</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="not-informed" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         
         <Button type="submit" className="w-full shadow-clay hover:shadow-clay-hover active:shadow-clay-inset rounded-xl h-12 text-lg" disabled={isLoading}>
           {isLoading ? (
