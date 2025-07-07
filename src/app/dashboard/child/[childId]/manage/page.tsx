@@ -963,7 +963,7 @@ export default function ManageChildPage() {
                           ) : (
                             <div>
                               <h3 className="text-xl font-headline mb-4">Missões Pendentes</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {pendingMissions.map(instance => renderMissionCard(instance))}
                                 </div>
                             </div>
@@ -981,7 +981,7 @@ export default function ManageChildPage() {
                           ) : (
                             <div>
                               <h3 className="text-xl font-headline mb-4">Missões Concluídas</h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                   {completedMissions.map(instance => renderMissionCard(instance))}
                               </div>
                             </div>
