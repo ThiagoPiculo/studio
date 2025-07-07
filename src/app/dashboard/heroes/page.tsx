@@ -254,12 +254,12 @@ export default function HeroesPage() {
                 </CardHeader>
 
                 <CardContent className="p-4 pt-0 flex-grow">
-                   <div className="grid grid-cols-3 items-center gap-4">
-                        <div className="flex items-baseline justify-start gap-1.5 col-span-1">
+                   <div className="flex items-center gap-4">
+                        <div className="flex-shrink-0 flex items-baseline justify-start gap-1.5 w-24">
                             <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
                             <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
                         </div>
-                        <div className="space-y-1 col-span-2">
+                        <div className="space-y-1 flex-grow">
                             <div className="flex justify-between text-xs text-muted-foreground font-medium">
                                 <span>Nível {child.level}</span>
                                 <span>{child.xp} / {xpForNextLevel} XP</span>
@@ -308,9 +308,9 @@ export default function HeroesPage() {
                               );
                             })}
                             {todaysMissions.length > 4 && (
-                              <li className="text-xs text-muted-foreground text-center pt-1">
+                              <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
                                 + {todaysMissions.length - 4} mais...
-                              </li>
+                              </Link>
                             )}
                           </ul>
                          ) : (
@@ -324,7 +324,7 @@ export default function HeroesPage() {
                         <ScrollArea className="h-full w-full pr-3">
                           {todaysSchedule.length > 0 ? (
                               <div className="space-y-1">
-                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                                  <div className="grid grid-cols-1 gap-y-1">
                                       {todaysSchedule.slice(0, 6).map(entry => (
                                           <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
                                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
@@ -352,50 +352,29 @@ export default function HeroesPage() {
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                        <div className="flex min-h-[36px] items-center justify-center">
-                            <div className="flex items-end gap-1.5">
-                                <div className="flex flex-col items-center justify-center gap-1">
-                                    <CheckCircle className="h-5 w-5 text-chart-2" />
-                                    <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
-                                </div>
-                                <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                                <div className="flex flex-col items-center justify-center gap-1">
-                                    <CircleDot className="h-5 w-5 text-muted-foreground" />
-                                    <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
-                                </div>
-                            </div>
+                        <div className="flex min-h-[36px] items-center justify-center gap-1.5">
+                            <CheckCircle className="h-5 w-5 text-chart-2" />
+                            <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
+                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                            <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                        <div className="flex min-h-[36px] items-center justify-center">
-                            <div className="flex items-end gap-1.5">
-                                <div className="flex flex-col items-center justify-center gap-1">
-                                    <PackageOpen className="h-5 w-5 text-chart-2" />
-                                    <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
-                                </div>
-                                <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                                <div className="flex flex-col items-center justify-center gap-1">
-                                    <Gift className="h-5 w-5 text-muted-foreground" />
-                                    <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
-                                </div>
-                            </div>
+                        <div className="flex min-h-[36px] items-center justify-center gap-1.5">
+                            <PackageOpen className="h-5 w-5 text-chart-2" />
+                            <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
+                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                            <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                      <div className="flex min-h-[36px] items-center justify-center">
-                          <div className="flex items-end gap-1.5">
-                              <div className="flex flex-col items-center justify-center gap-1">
-                                  <Medal className="h-5 w-5 text-chart-5" />
-                                  <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
-                              </div>
-                              <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                              <div className="flex flex-col items-center justify-center gap-1">
-                                  <Lock className="h-5 w-5 text-muted-foreground" />
-                                  <span className="font-bold text-lg leading-none">{lockedAchievementsCount}</span>
-                              </div>
-                          </div>
+                      <div className="flex min-h-[36px] items-center justify-center gap-1.5">
+                          <Medal className="h-5 w-5 text-chart-5" />
+                          <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
+                           <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                           <Lock className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
                     </Link>
