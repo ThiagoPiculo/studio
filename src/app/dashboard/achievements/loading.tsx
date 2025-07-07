@@ -20,7 +20,9 @@ export default function Loading() {
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <Skeleton className="h-12 w-12 rounded-full" />
-                  <Skeleton className="h-6 w-32" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-6 w-32" />
+                  </div>
                 </div>
               </CardHeader>
               <CardContent className="flex-grow space-y-4">
@@ -52,16 +54,32 @@ export default function Loading() {
               <CardHeader>
                 <Skeleton className="h-6 w-1/2" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-10 w-full" />
+              <CardContent className="space-y-4">
+                  {[1, 2].map((j) => (
+                      <div key={j} className="flex items-center gap-4">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="flex-grow space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-2.5 w-full" />
+                          </div>
+                      </div>
+                  ))}
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
                 <Skeleton className="h-6 w-1/2" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-10 w-full" />
+               <CardContent className="space-y-4">
+                  {[1, 2].map((j) => (
+                      <div key={j} className="flex items-center gap-4">
+                          <Skeleton className="h-12 w-12 rounded-full" />
+                          <div className="flex-grow space-y-2">
+                              <Skeleton className="h-4 w-3/4" />
+                              <Skeleton className="h-4 w-1/2" />
+                          </div>
+                      </div>
+                  ))}
               </CardContent>
             </Card>
           </div>

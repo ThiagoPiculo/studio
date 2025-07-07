@@ -5,36 +5,200 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
 import { allBadgesMap } from '@/lib/badges';
 import type { Badge } from '@/lib/badges';
-import type { ChildProfile } from '@/lib/types';
+import type { ChildProfile, MissionInstance } from '@/lib/types';
+import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
+import { differenceInDays, eachDayOfInterval, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Medal, ArrowRight, Sparkles, Trophy } from "lucide-react";
+import { Medal, ArrowRight, Gem, Trophy } from "lucide-react";
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import Loading from './loading';
+import { Skeleton } from '@/components/ui/skeleton';
+
+interface UpcomingBadge {
+  child: ChildProfile;
+  badge: Badge;
+  progress: number;
+  progressPercentage: number;
+}
+
+interface RareBadge {
+  badge: Badge;
+  earnedBy: ChildProfile[];
+}
 
 export default function AchievementsPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
+  
   const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [badgeProgress, setBadgeProgress] = useState<Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }>>({});
+  
   const [isLoading, setIsLoading] = useState(true);
+  const [isCalculating, setIsCalculating] = useState(true);
 
   useEffect(() => {
     if (user) {
       setIsLoading(true);
-      getChildProfilesForAttribution(user.uid, currentContext)
-        .then(setChildren)
-        .catch(err => {
-          console.error("Error fetching children for achievements:", err);
-        })
-        .finally(() => setIsLoading(false));
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+
+      Promise.all([
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getMissionInstancesForContext(user.uid, familyIdToQuery)
+      ]).then(([fetchedChildren, fetchedInstances]) => {
+        setChildren(fetchedChildren);
+        setMissionInstances(fetchedInstances);
+        setIsLoading(false);
+      }).catch(err => {
+        console.error("Error fetching achievements data:", err);
+        setIsLoading(false);
+      });
+    } else {
+        setIsLoading(false);
     }
   }, [user, currentContext]);
+
+  useEffect(() => {
+    if (isLoading || children.length === 0) {
+      setIsCalculating(false);
+      return;
+    }
+    
+    setIsCalculating(true);
+    const newBadgeProgress: Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }> = {};
+
+    children.forEach(child => {
+      const childInstances = missionInstances.filter(inst => inst.childId === child.id);
+      
+      // SINGLE MISSION STREAK CALC
+      let overallLongestStreak = 0;
+      childInstances.forEach(instance => {
+          const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a, b) => a.getTime() - b.getTime());
+          if (completionDates.length === 0) return;
+
+          let currentStreak = 1;
+          let longestStreakForThisMission = 1;
+          for (let i = 1; i < completionDates.length; i++) {
+              if (differenceInDays(completionDates[i], completionDates[i-1]) === 1) {
+                  currentStreak++;
+              } else if (differenceInDays(completionDates[i], completionDates[i-1]) > 1) {
+                  currentStreak = 1;
+              }
+              if (currentStreak > longestStreakForThisMission) {
+                  longestStreakForThisMission = currentStreak;
+              }
+          }
+          if (longestStreakForThisMission > overallLongestStreak) {
+              overallLongestStreak = longestStreakForThisMission;
+          }
+      });
+
+      // PERFECT STREAK CALC
+      let longestPerfectStreak = 0;
+      let currentPerfectStreak = 0;
+      const allCompletionDates = new Set(childInstances.flatMap(inst => Object.keys(inst.completionLog || {})));
+      if (allCompletionDates.size > 0) {
+          const sortedDates = Array.from(allCompletionDates).map(d => startOfDay(new Date(d))).sort((a, b) => a.getTime() - b.getTime());
+          const firstDate = sortedDates[0];
+          const today = startOfDay(new Date());
+          const daysInInterval = eachDayOfInterval({ start: firstDate, end: today });
+
+          for (const checkDate of daysInInterval) {
+              const scheduledMissions = childInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
+              if (scheduledMissions.length > 0) {
+                  const allCompleted = scheduledMissions.every(inst => isMissionCompletedForDate(inst, checkDate));
+                  if (allCompleted) {
+                      currentPerfectStreak++;
+                  } else {
+                      if (currentPerfectStreak > longestPerfectStreak) {
+                          longestPerfectStreak = currentPerfectStreak;
+                      }
+                      currentPerfectStreak = 0;
+                  }
+              }
+          }
+          if (currentPerfectStreak > longestPerfectStreak) {
+              longestPerfectStreak = currentPerfectStreak;
+          }
+      }
+      
+      newBadgeProgress[child.id] = {
+          longestSingleMissionStreak: overallLongestStreak,
+          longestPerfectStreak: longestPerfectStreak,
+      };
+    });
+    
+    setBadgeProgress(newBadgeProgress);
+    setIsCalculating(false);
+  }, [isLoading, children, missionInstances]);
+
+  const upcomingBadges = useMemo((): UpcomingBadge[] => {
+    if (isCalculating || children.length === 0) return [];
+
+    const allUpcoming: UpcomingBadge[] = [];
+
+    children.forEach(child => {
+      const earnedIds = new Set(child.earnedBadgeIds || []);
+      const childProgress = badgeProgress[child.id];
+      if (!childProgress) return;
+
+      allBadgesMap.forEach(badge => {
+        if (!earnedIds.has(badge.id) && badge.progressType && badge.goal) {
+          let currentProgress = 0;
+          switch (badge.progressType) {
+            case 'singleMissionStreak': currentProgress = childProgress.longestSingleMissionStreak; break;
+            case 'perfectStreak': currentProgress = childProgress.longestPerfectStreak; break;
+            case 'stars': currentProgress = child.stars; break;
+            case 'level': currentProgress = child.level; break;
+          }
+          if (currentProgress > 0) {
+            allUpcoming.push({
+              child,
+              badge,
+              progress: currentProgress,
+              progressPercentage: (currentProgress / badge.goal) * 100,
+            });
+          }
+        }
+      });
+    });
+
+    return allUpcoming.sort((a, b) => b.progressPercentage - a.progressPercentage).slice(0, 3);
+  }, [isCalculating, children, badgeProgress]);
+  
+  const rareBadges = useMemo((): RareBadge[] => {
+    if (children.length === 0) return [];
+    
+    const earnedCountMap = new Map<string, ChildProfile[]>();
+    allBadgesMap.forEach(badge => earnedCountMap.set(badge.id, []));
+
+    children.forEach(child => {
+      (child.earnedBadgeIds || []).forEach(badgeId => {
+        if (earnedCountMap.has(badgeId)) {
+          earnedCountMap.get(badgeId)!.push(child);
+        }
+      });
+    });
+    
+    return Array.from(earnedCountMap.entries())
+      .filter(([, earnedBy]) => earnedBy.length > 0) // Only show badges that have been earned by at least one person
+      .map(([badgeId, earnedBy]) => ({ badge: allBadgesMap.get(badgeId)!, earnedBy }))
+      .sort((a, b) => {
+        if (a.earnedBy.length !== b.earnedBy.length) {
+            return a.earnedBy.length - b.earnedBy.length;
+        }
+        return (b.badge.goal || 0) - (a.badge.goal || 0); // Prioritize harder badges if rarity is the same
+      })
+      .slice(0, 3);
+  }, [children]);
+
 
   const totalBadges = allBadgesMap.size;
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
@@ -151,23 +315,89 @@ export default function AchievementsPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Em breve: Veja quais conquistas estão mais próximas de serem desbloqueadas pela sua equipe.</p>
+                  {isCalculating ? (
+                      <div className="space-y-4">
+                        {[1, 2].map(i => <Skeleton key={i} className="h-16 w-full" />)}
+                      </div>
+                  ) : upcomingBadges.length > 0 ? (
+                      <ul className="space-y-4">
+                        {upcomingBadges.map(({ child, badge, progress }) => (
+                          <li key={`${child.id}-${badge.id}`} className="flex items-center gap-4">
+                            <Avatar
+                              className="h-10 w-10 text-lg ring-1 ring-offset-background ring-[var(--ring-color)]"
+                              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                            >
+                              <AvatarImage src={child.avatar} alt={child.name} />
+                              <AvatarFallback style={{backgroundColor: child.color}}>
+                                {getInitials(child.name)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-grow">
+                                <p className="text-sm font-semibold leading-tight">{badge.title}</p>
+                                <p className="text-xs text-muted-foreground">Para {child.name}</p>
+                                <Progress value={(progress / badge.goal!) * 100} className="h-2 mt-1" />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">{progress} / {badge.goal}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                  ) : (
+                     <p className="text-muted-foreground text-sm">Nenhuma conquista em progresso no momento. Incentive seus heróis!</p>
+                  )}
                 </CardContent>
               </Card>
               <Card>
                 <CardHeader>
                   <CardTitle className="text-xl flex items-center gap-2">
-                    <Sparkles className="text-chart-4" />
+                    <Gem className="text-chart-4" />
                     Conquistas Raras
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <p className="text-muted-foreground">Em breve: Descubra quais são as conquistas mais difíceis e raras de se obter.</p>
+                   {isCalculating ? (
+                      <div className="space-y-4">
+                        {[1, 2].map(i => <Skeleton key={i} className="h-12 w-full" />)}
+                      </div>
+                    ) : rareBadges.length > 0 ? (
+                      <ul className="space-y-4">
+                        {rareBadges.map(({badge, earnedBy}) => (
+                           <li key={badge.id} className="flex items-center gap-4">
+                              <div className="p-3 rounded-full shadow-inner" style={{ backgroundColor: `${badge.color}20` }}>
+                                <badge.icon className="h-6 w-6" style={{ color: badge.color }} />
+                              </div>
+                               <div className="flex-grow">
+                                <p className="font-semibold">{badge.title}</p>
+                                 <p className="text-xs text-muted-foreground">
+                                    Desbloqueada por {earnedBy.length} {earnedBy.length === 1 ? 'herói' : 'heróis'}
+                                </p>
+                                <div className="flex -space-x-2 mt-1">
+                                    {earnedBy.map(child => (
+                                      <TooltipProvider key={child.id}>
+                                        <Tooltip>
+                                          <TooltipTrigger>
+                                            <Avatar className="h-6 w-6 border-2 border-background">
+                                              <AvatarImage src={child.avatar} alt={child.name} />
+                                              <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>{child.name}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ))}
+                                </div>
+                              </div>
+                           </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-muted-foreground text-sm">Nenhuma conquista rara foi desbloqueada ainda. A jornada continua!</p>
+                    )}
                 </CardContent>
               </Card>
             </div>
         </div>
-
       </div>
     </div>
   );
