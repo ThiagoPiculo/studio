@@ -13,7 +13,7 @@ import { getDayToWeekday, parseTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock } from 'lucide-react';
+import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -174,7 +174,75 @@ function SchoolSchedulePageContent() {
       }
     }
   }, [isMobile, visibleWeekdays, children, selectedChildId]);
+  
+  const { inBoundsSchedule, outOfBoundsSchedule } = useMemo(() => {
+    const inBounds: SchoolScheduleEntry[] = [];
+    const outOfBounds: SchoolScheduleEntry[] = [];
+    
+    const child = children.find(c => c.id === selectedChildId);
+    const childEntries = scheduleEntries.filter(entry => entry.childId === selectedChildId);
 
+    if (!child || !child.schoolShiftStart || !child.schoolShiftEnd || child.schoolShift === 'not_applicable') {
+        return { inBoundsSchedule: childEntries, outOfBoundsSchedule: [] };
+    }
+    
+    const shiftStartMinutes = parseTime(child.schoolShiftStart);
+    const shiftEndMinutes = parseTime(child.schoolShiftEnd);
+
+    childEntries.forEach(entry => {
+        const entryStartMinutes = parseTime(entry.startTime);
+        const entryEndMinutes = parseTime(entry.endTime);
+        if (entryStartMinutes >= shiftStartMinutes && entryEndMinutes <= shiftEndMinutes) {
+            inBounds.push(entry);
+        } else {
+            outOfBounds.push(entry);
+        }
+    });
+
+    return { inBoundsSchedule: inBounds, outOfBoundsSchedule: outOfBounds.sort((a,b) => a.startTime.localeCompare(b.startTime)) };
+  }, [scheduleEntries, selectedChildId, children]);
+
+  const scheduleLayout = useMemo(() => {
+    const layoutMap = new Map<string, { width: string; left: string }>();
+
+    visibleWeekdays.forEach(day => {
+      const dayEntries = inBoundsSchedule.filter(e => e.dayOfWeek === day);
+      if (dayEntries.length === 0) return;
+
+      const sorted = [...dayEntries].sort((a, b) => parseTime(a.startTime) - parseTime(b.startTime));
+      const columns: SchoolScheduleEntry[][] = [];
+
+      for (const entry of sorted) {
+        let placed = false;
+        for (const col of columns) {
+          const lastEntryInCol = col[col.length - 1];
+          if (parseTime(entry.startTime) >= parseTime(lastEntryInCol.endTime)) {
+            col.push(entry);
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          columns.push([entry]);
+        }
+      }
+
+      const totalCols = columns.length;
+      if (totalCols > 1) {
+        const colWidth = 100 / totalCols;
+        columns.forEach((col, colIndex) => {
+          col.forEach(entry => {
+            layoutMap.set(entry.id, {
+              width: `calc(${colWidth}% - 4px)`, // 2px gap on each side
+              left: `calc(${colIndex * colWidth}% + 2px)`,
+            });
+          });
+        });
+      }
+    });
+
+    return layoutMap;
+  }, [inBoundsSchedule, visibleWeekdays]);
   
   const handleAddClick = () => {
     if (!selectedChildId) {
@@ -227,14 +295,10 @@ function SchoolSchedulePageContent() {
       setEntryToDelete(null);
     }
   };
-
-  const childSchedule = useMemo(() => {
-    return scheduleEntries.filter(entry => entry.childId === selectedChildId);
-  }, [scheduleEntries, selectedChildId]);
   
   const hasRecess = useMemo(() => {
-    return scheduleEntries.some(entry => entry.childId === selectedChildId && entry.subject === 'Recreio/Intervalo');
-  }, [scheduleEntries, selectedChildId]);
+    return inBoundsSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
+  }, [inBoundsSchedule]);
 
   const DayColumnContent = ({ day }: { day: Weekday }) => {
     const topOffsetMinutes = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
@@ -251,12 +315,19 @@ function SchoolSchedulePageContent() {
                     onClick={() => handleAddFromSlot(day, time)}
                 ></div>
             ))}
-            {childSchedule
+            {inBoundsSchedule
                 .filter(entry => entry.dayOfWeek === day)
                 .map(entry => {
                     const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
                     const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
-                    const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
+                    const layoutProps = scheduleLayout.get(entry.id) || { width: 'calc(100% - 4px)', left: '2px' };
+
+                    const entryStyle: React.CSSProperties = { 
+                        top: `${top}px`, 
+                        height: `${height}px`,
+                        width: layoutProps.width,
+                        left: layoutProps.left,
+                    };
                     
                     if (useColors) {
                         entryStyle.backgroundColor = `${entry.color}80`;
@@ -267,7 +338,7 @@ function SchoolSchedulePageContent() {
                         <div
                             key={entry.id}
                             className={cn(
-                                "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
+                                "absolute p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
                                 !useColors && "bg-primary/10 border-primary/20"
                             )}
                             style={entryStyle}
@@ -376,6 +447,32 @@ function SchoolSchedulePageContent() {
           </div>
         </CardHeader>
       </Card>
+      
+      {outOfBoundsSchedule.length > 0 && (
+        <Card className="border-amber-500 bg-amber-500/5">
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-amber-700">
+                    <AlertTriangle/> Avisos de Agendamento
+                </CardTitle>
+                <CardDescription>
+                    As aulas abaixo estão fora do turno escolar definido para {selectedChild?.name}. Elas não aparecerão na grade, mas continuam salvas.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                {outOfBoundsSchedule.map(entry => (
+                     <div key={entry.id} className="flex items-center justify-between p-2 border rounded-md bg-card">
+                        <div>
+                            <p className="font-semibold">{entry.subject}</p>
+                            <p className="text-sm text-muted-foreground">{weekdayLabels[entry.dayOfWeek].long}: {entry.startTime} - {entry.endTime}</p>
+                        </div>
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(entry)}>
+                           <Edit className="mr-2 h-4 w-4" /> Editar
+                        </Button>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="overflow-x-auto p-0">
