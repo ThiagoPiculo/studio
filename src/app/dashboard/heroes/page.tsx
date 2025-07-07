@@ -22,6 +22,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
 import { isMissionScheduledForDate } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/components/ui/separator";
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -190,7 +191,9 @@ export default function HeroesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child) => {
               const age = calculateAge(child.birthDate);
-              const todaysMissionsCount = missionInstances.filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date())).length;
+              const todaysMissions = missionInstances.filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()));
+              const todaysMissionsCount = todaysMissions.length;
+
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               const { progressPercentage, xpForNextLevel } = calculateXpDetails(child.level, child.xp);
@@ -227,7 +230,7 @@ export default function HeroesPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="p-4 pt-0 flex-grow flex flex-col justify-end">
+                <CardContent className="p-4 pt-0 flex-grow">
                   <div className="space-y-1">
                       <div className="flex justify-between text-xs text-muted-foreground font-medium">
                           <span>Nível {child.level}</span>
@@ -235,9 +238,30 @@ export default function HeroesPage() {
                       </div>
                       <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
                   </div>
+                   <Separator className="my-4" />
+                   <h4 className="font-semibold text-sm mb-2">Missões de Hoje</h4>
+                   {todaysMissions.length > 0 ? (
+                     <ul className="space-y-1">
+                       {todaysMissions.slice(0, 3).map(mission => (
+                         <li key={mission.id} className="text-sm flex items-center gap-2 p-1.5 rounded-md bg-background">
+                           <Target className="h-4 w-4 text-primary shrink-0" />
+                           <span className="truncate">{mission.title}</span>
+                         </li>
+                       ))}
+                       {todaysMissions.length > 3 && (
+                         <li className="text-xs text-muted-foreground text-center pt-1">
+                           + {todaysMissions.length - 3} mais...
+                         </li>
+                       )}
+                     </ul>
+                   ) : (
+                     <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                       Dia de descanso do herói!
+                     </p>
+                   )}
                 </CardContent>
 
-                <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20">
+                <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
                       <Target className="h-5 w-5 text-chart-3" />
                       <p className="font-bold text-lg">{todaysMissionsCount}</p>
