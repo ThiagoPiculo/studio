@@ -6,24 +6,27 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List, PackageCheck } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List, PackageCheck, School } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance } from "@/lib/types";
+import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
     getMissionTemplatesByOwnerOrFamily,
     getRewardTemplatesByOwnerOrFamily,
     getMissionInstancesForContext,
-    getChildRewardInstancesForContext
+    getChildRewardInstancesForContext,
+    getSchoolScheduleForContext
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
-import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject } from "@/lib/calendar-utils";
+import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -37,6 +40,7 @@ export default function HeroesPage() {
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
+  const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
 
   const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(true);
@@ -74,12 +78,13 @@ export default function HeroesPage() {
       try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
-        const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts] = await Promise.all([
+        const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts, scheduleData] = await Promise.all([
           getChildProfilesForAttribution(user.uid, currentContext),
           getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
           getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
           getMissionInstancesForContext(user.uid, familyIdToQuery),
-          getChildRewardInstancesForContext(user.uid, familyIdToQuery)
+          getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+          getSchoolScheduleForContext(user.uid, familyIdToQuery)
         ]);
         
         setChildren(childProfiles);
@@ -87,6 +92,7 @@ export default function HeroesPage() {
         setRewardTemplates(rewardTpls);
         setMissionInstances(missionInsts);
         setRewardInstances(rewardInsts);
+        setScheduleEntries(scheduleData);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
@@ -95,6 +101,7 @@ export default function HeroesPage() {
         setRewardTemplates([]);
         setMissionInstances([]);
         setRewardInstances([]);
+        setScheduleEntries([]);
       } finally {
         setIsLoadingChildren(false);
         setIsLoadingGuideData(false);
@@ -132,7 +139,6 @@ export default function HeroesPage() {
     
     const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
     const xpInCurrentLevel = currentXp - xpForCurrentLevel;
-    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
     
     const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
 
@@ -200,6 +206,11 @@ export default function HeroesPage() {
                 return timeA - timeB;
               });
 
+              const todaysWeekday = getDayToWeekday[new Date().getDay()];
+              const todaysSchedule = scheduleEntries
+                .filter(entry => entry.childId === child.id && entry.dayOfWeek === todaysWeekday)
+                .sort((a, b) => a.startTime.localeCompare(b.startTime));
+
               const todaysMissionsCount = todaysMissions.length;
               const completedTodaysMissionsCount = todaysMissions.filter(m => isMissionCompletedForDate(m, new Date())).length;
 
@@ -249,50 +260,83 @@ export default function HeroesPage() {
                       <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
                   </div>
                    <Separator className="my-4" />
-                   <h4 className="font-semibold text-sm mb-2">Missões de Hoje</h4>
-                   {todaysMissions.length > 0 ? (
-                    <ul className="space-y-1">
-                      {todaysMissions.slice(0, 3).map(mission => {
-                        const isCompleted = isMissionCompletedForDate(mission, new Date());
-                        const eventTime = getDateObject(mission.startDate || mission.dueDate);
-                        const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                        const popoverId = `${mission.id}-${today}`;
-                        const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
-                        
-                        return (
-                          <li key={mission.id}>
-                            <Link href={href} className="block">
-                              <div className={cn(
-                                "text-sm flex items-center gap-2 p-1.5 rounded-md transition-colors",
-                                isCompleted 
-                                  ? "bg-green-500/10 text-muted-foreground" 
-                                  : "bg-background hover:bg-accent/50",
-                              )}>
-                                {isCompleted ? (
-                                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
-                                ) : (
-                                  <Target className="h-4 w-4 text-primary shrink-0" />
-                                )}
-                                <span className="text-xs font-mono w-10">{formattedTime}</span>
-                                <span className={cn("truncate flex-grow", isCompleted && "line-through")}>
-                                  {mission.title}
-                                </span>
+                   <Tabs defaultValue="missions" className="w-full">
+                      <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
+                          <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
+                          <TabsTrigger value="school" className="text-xs gap-1.5"><School className="h-4 w-4"/>Escola Hoje</TabsTrigger>
+                      </TabsList>
+                      <TabsContent value="missions" className="mt-2 min-h-[110px]">
+                          {todaysMissions.length > 0 ? (
+                          <ul className="space-y-1">
+                            {todaysMissions.slice(0, 3).map(mission => {
+                              const isCompleted = isMissionCompletedForDate(mission, new Date());
+                              const eventTime = getDateObject(mission.startDate || mission.dueDate);
+                              const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                              const popoverId = `${mission.id}-${today}`;
+                              const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
+                              
+                              return (
+                                <li key={mission.id}>
+                                  <Link href={href} className="block">
+                                    <div className={cn(
+                                      "text-sm flex items-center gap-2 p-1.5 rounded-md transition-colors",
+                                      isCompleted 
+                                        ? "bg-green-500/10 text-muted-foreground" 
+                                        : "bg-background hover:bg-accent/50",
+                                    )}>
+                                      {isCompleted ? (
+                                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                                      ) : (
+                                        <Target className="h-4 w-4 text-primary shrink-0" />
+                                      )}
+                                      <span className="text-xs font-mono w-10">{formattedTime}</span>
+                                      <span className={cn("truncate flex-grow", isCompleted && "line-through")}>
+                                        {mission.title}
+                                      </span>
+                                    </div>
+                                  </Link>
+                                </li>
+                              );
+                            })}
+                            {todaysMissions.length > 3 && (
+                              <li className="text-xs text-muted-foreground text-center pt-1">
+                                + {todaysMissions.length - 3} mais...
+                              </li>
+                            )}
+                          </ul>
+                         ) : (
+                           <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                             Dia de descanso do herói!
+                           </p>
+                         )}
+                      </TabsContent>
+                      <TabsContent value="school" className="mt-2 min-h-[110px]">
+                          {todaysSchedule.length > 0 ? (
+                              <div className="space-y-1">
+                                  <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+                                      {todaysSchedule.slice(0, 4).map(entry => (
+                                          <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
+                                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
+                                              <div className="flex flex-col flex-grow truncate">
+                                                  <span className="font-semibold truncate">{entry.subject}</span>
+                                                  <span className="text-muted-foreground">{entry.startTime} - {entry.endTime}</span>
+                                              </div>
+                                          </div>
+                                      ))}
+                                  </div>
+                                  {todaysSchedule.length > 4 && (
+                                      <Link href={`/dashboard/school-schedule`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
+                                        + {todaysSchedule.length - 4} mais...
+                                      </Link>
+                                  )}
                               </div>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                      {todaysMissions.length > 3 && (
-                        <li className="text-xs text-muted-foreground text-center pt-1">
-                          + {todaysMissions.length - 3} mais...
-                        </li>
-                      )}
-                    </ul>
-                   ) : (
-                     <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                       Dia de descanso do herói!
-                     </p>
-                   )}
+                          ) : (
+                              <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                                  Nenhuma aula hoje. Dia livre!
+                              </p>
+                          )}
+                      </TabsContent>
+                   </Tabs>
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
