@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -43,7 +43,7 @@ import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, getTodaysMissions, isMissionScheduledForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -88,6 +88,12 @@ export default function ManageChildPage() {
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [isResettingProgress, setIsResettingProgress] = useState(false);
   const [isAboutBadgesOpen, setIsAboutBadgesOpen] = useState(false);
+
+  const periodIcons = {
+    Manhã: Sun,
+    Tarde: CloudSun,
+    Noite: Moon,
+  };
 
 
   // Centralized data fetching function
@@ -505,150 +511,163 @@ export default function ManageChildPage() {
   const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
 
   const renderMissionCard = (instance: MissionInstance, isForToday: boolean) => {
-      const categoryDetails = getMissionCategoryDetails(instance.category);
-      const CategoryIconComponent = categoryDetails?.icon;
-      const isCompletedToday = completedTodayIds.has(instance.id);
+    const categoryDetails = getMissionCategoryDetails(instance.category);
+    const CategoryIconComponent = categoryDetails?.icon;
+    const isCompletedToday = completedTodayIds.has(instance.id);
+      
+    const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
+    const time = scheduleDate ? format(scheduleDate, 'HH:mm') : null;
+    const period = scheduleDate ? getPeriodOfDay(scheduleDate) : null;
+    const PeriodIcon = period ? periodIcons[period] : null;
 
-      return (
-          <Card key={instance.id} className={`shadow-sm flex flex-col transition-all`}>
-              <CardHeader>
-                  <div className="flex justify-between items-start">
-                      <CardTitle className="text-lg">{instance.title}</CardTitle>
-                      <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
-                          {getMissionStatusText(instance.status)}
-                      </Badge>
-                  </div>
-                  {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
-              </CardHeader>
-              <CardContent className="space-y-3 flex-grow text-sm">
-                  {categoryDetails && (
-                      <div className="flex items-center">
-                          <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                              {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                          </span>
-                          <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                              {categoryDetails.label}
-                          </span>
-                      </div>
-                  )}
-                  <div className="flex items-center text-muted-foreground font-medium">
-                      <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                      Recompensa: {instance.starsReward} Estrelas
-                  </div>
-                  <div className="flex items-center text-muted-foreground font-medium">
-                      <BadgeCheck className="h-4 w-4 mr-1.5 text-blue-500" />
-                      Experiência: {instance.xpReward} XP
-                  </div>
-                  <div className="flex items-center text-muted-foreground font-medium">
-                      <Repeat className="h-4 w-4 mr-1.5 text-purple-500" />
-                      <span className="truncate">{formatRecurrenceSummary(instance)}</span>
-                  </div>
-                  {instance.isRecurring && instance.recurrenceRule?.count && (
-                      <div className="flex items-center text-muted-foreground font-medium">
-                          <CheckSquare className="h-4 w-4 mr-1.5 text-green-600" />
-                          Progresso: {Object.keys(instance.completionLog || {}).length} / {instance.recurrenceRule.count}
-                      </div>
-                  )}
-                  <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
-                      <div className="flex items-center">
-                          <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                          Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
-                      </div>
-                      {instance.dueDate && (
-                          <div className="flex items-center font-medium text-destructive/80">
-                              <Clock className="h-3.5 w-3.5 mr-1.5" />
-                              Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
-                          </div>
-                      )}
-                      {instance.status === 'completed' && instance.updatedAt && (
-                          <div className="flex items-center font-medium text-green-600">
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                              Concluída em: {new Date((instance.updatedAt as any).seconds * 1000).toLocaleDateString()}
-                          </div>
-                      )}
-                  </div>
-              </CardContent>
-              <CardFooter>
-                  {instance.status === 'pending' ? (
-                      isCompletedToday && isForToday ? (
-                          <div className="flex w-full items-center gap-2">
-                              <Button variant="secondary" className="flex-grow bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" disabled>
-                                  <CheckCircle2 className="mr-2 h-4 w-4" /> Concluído Hoje
-                              </Button>
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button variant="outline" size="icon" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isDeleting}>
-                                              <Undo2 className="h-4 w-4" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p>Desfazer conclusão de hoje</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                          </div>
-                      ) : (
-                          <div className="flex w-full items-center gap-2">
-                              <Button
-                                  className="flex-grow"
-                                  onClick={() => handleManageInAgenda(instance, isForToday)}
-                                  disabled={isDeleting}
-                              >
-                                  <CalendarDays className="mr-2 h-4 w-4" />
-                                  Gerenciar na Agenda
-                              </Button>
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button
-                                              size="icon"
-                                              variant="outline"
-                                              onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
-                                              disabled={isDeleting}
-                                          >
-                                              <Edit3 className="h-4 w-4" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p>Editar no Catálogo</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                              <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button
-                                              size="icon"
-                                              variant="destructive"
-                                              onClick={() => setMissionToDelete(instance)}
-                                              disabled={isDeleting}
-                                          >
-                                              <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p>Remover Missão</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                              </TooltipProvider>
-                          </div>
-                      )
-                  ) : ( // Status is 'completed'
-                      <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => setMissionToReactivate(instance)}
-                          disabled={isDeleting}
-                      >
-                          {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                          Reativar Missão
-                      </Button>
-                  )}
-              </CardFooter>
-          </Card>
-      );
-  };
+    return (
+        <Card key={instance.id} className={`shadow-sm flex flex-col transition-all`}>
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <CardTitle className="text-lg">{instance.title}</CardTitle>
+                    <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                        {getMissionStatusText(instance.status)}
+                    </Badge>
+                </div>
+                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+            </CardHeader>
+            <CardContent className="space-y-3 flex-grow text-sm">
+                {categoryDetails && (
+                    <div className="flex items-center">
+                        <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                            {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                        </span>
+                        <Badge variant="outline" className={categoryDetails.colorClasses}>
+                            {categoryDetails.label}
+                        </Badge>
+                    </div>
+                )}
+                <div className="flex items-center text-muted-foreground font-medium">
+                    <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
+                    Recompensa: {instance.starsReward} Estrelas
+                </div>
+                <div className="flex items-center text-muted-foreground font-medium">
+                    <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
+                    Experiência: {instance.xpReward} XP
+                </div>
+                <div className="flex flex-col gap-1">
+                    <div className="flex items-center text-muted-foreground font-medium">
+                        <Repeat className="h-5 w-5 mr-1.5 text-purple-500 shrink-0" />
+                        <span className="truncate">{formatRecurrenceSummary(instance)}{time ? `, às ${time}` : ''}</span>
+                    </div>
+                    {period && PeriodIcon && (
+                        <div className="flex items-center text-muted-foreground font-medium pl-[26px]">
+                            <PeriodIcon className="h-4 w-4 mr-1.5 text-gray-500 shrink-0" />
+                            <span>{period}</span>
+                        </div>
+                    )}
+                </div>
+                {instance.isRecurring && instance.recurrenceRule?.count && (
+                    <div className="flex items-center text-muted-foreground font-medium">
+                        <CheckSquare className="h-5 w-5 mr-1.5 text-green-600" />
+                        Progresso: {Object.keys(instance.completionLog || {}).length} / {instance.recurrenceRule.count}
+                    </div>
+                )}
+                <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
+                    <div className="flex items-center">
+                        <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                        Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                    </div>
+                    {instance.dueDate && (
+                        <div className="flex items-center font-medium text-destructive/80">
+                            <Clock className="h-3.5 w-3.5 mr-1.5" />
+                            Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
+                        </div>
+                    )}
+                    {instance.status === 'completed' && instance.updatedAt && (
+                        <div className="flex items-center font-medium text-green-600">
+                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                            Concluída em: {new Date((instance.updatedAt as any).seconds * 1000).toLocaleDateString()}
+                        </div>
+                    )}
+                </div>
+            </CardContent>
+            <CardFooter>
+                {instance.status === 'pending' ? (
+                    isCompletedToday && isForToday ? (
+                        <div className="flex w-full items-center gap-2">
+                            <Button variant="secondary" className="flex-grow bg-green-100 dark:bg-green-900/50 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800" disabled>
+                                <CheckCircle2 className="mr-2 h-4 w-4" /> Concluído Hoje
+                            </Button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" onClick={() => setMissionToUndo({instance, date: new Date()})} disabled={isDeleting}>
+                                            <Undo2 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Desfazer conclusão de hoje</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                    ) : (
+                        <div className="flex w-full items-center gap-2">
+                            <Button
+                                className="flex-grow"
+                                onClick={() => handleManageInAgenda(instance, isForToday)}
+                                disabled={isDeleting}
+                            >
+                                <CalendarDays className="mr-2 h-4 w-4" />
+                                Gerenciar na Agenda
+                            </Button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            size="icon"
+                                            variant="outline"
+                                            onClick={() => router.push(`/dashboard/missions/edit/${instance.templateId}`)}
+                                            disabled={isDeleting}
+                                        >
+                                            <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Editar no Catálogo</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            size="icon"
+                                            variant="destructive"
+                                            onClick={() => setMissionToDelete(instance)}
+                                            disabled={isDeleting}
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Remover Missão</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                    )
+                ) : ( // Status is 'completed'
+                    <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={() => setMissionToReactivate(instance)}
+                        disabled={isDeleting}
+                    >
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                        Reativar Missão
+                    </Button>
+                )}
+            </CardFooter>
+        </Card>
+    );
+};
 
 
   return (
