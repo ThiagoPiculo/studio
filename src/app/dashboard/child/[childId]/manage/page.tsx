@@ -1,9 +1,10 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -76,7 +77,6 @@ export default function ManageChildPage() {
   const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
-  const [missionToReactivate, setMissionToReactivate] = useState<MissionInstance | null>(null);
   
   // Reward-specific states
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
@@ -289,25 +289,6 @@ export default function ManageChildPage() {
     }
   };
 
-
-  const handleReactivateMission = async () => {
-    if (!missionToReactivate || !child) return;
-    setIsDeleting(true);
-    try {
-      await reactivateMissionInstance(missionToReactivate.id);
-      await fetchData();
-      toast({
-        title: "Missão Reativada!",
-        description: `A missão "${missionToReactivate.title}" está pendente novamente.`,
-      });
-    } catch (error: any) {
-      console.error("Error reactivating mission:", error);
-      toast({ title: "Erro ao Reativar", description: error.message || "Não foi possível reativar a missão.", variant: "destructive" });
-    } finally {
-      setIsDeleting(true);
-      setMissionToReactivate(null);
-    }
-  };
   
   const handleDeleteMissionInstance = async () => {
     if (!missionToDelete) return;
@@ -497,7 +478,7 @@ export default function ManageChildPage() {
     const PeriodIcon = period ? periodIcons[period] : null;
 
     return (
-        <Card key={instance.id} className="shadow-sm flex flex-col transition-all">
+        <Card key={instance.id} className="shadow-sm flex flex-col transition-all h-full">
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
                     <CardTitle className="text-base font-semibold leading-tight pr-2">{instance.title}</CardTitle>
@@ -553,55 +534,41 @@ export default function ManageChildPage() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()</span>
+                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
                 </div>
             </CardContent>
             <CardFooter className="p-3">
-                {instance.status === 'pending' ? (
-                    <div className="flex w-full items-center gap-2">
-                        <Button
-                            size="sm"
-                            className="flex-grow"
-                            onClick={() => handleManageInAgenda(instance)}
-                            disabled={isDeleting}
-                        >
-                            <CalendarDays className="mr-2 h-4 w-4" />
-                            Ver na Agenda
-                        </Button>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        size="icon"
-                                        variant="destructive"
-                                        className="h-9 w-9"
-                                        onClick={() => setMissionToDelete(instance)}
-                                        disabled={isDeleting}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Remover Missão</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-                ) : ( // Status is 'completed'
+                 <div className="flex w-full items-center gap-2">
                     <Button
                         size="sm"
-                        variant="outline"
-                        className="w-full"
-                        onClick={() => setMissionToReactivate(instance)}
-                        disabled={isDeleting}
+                        className="flex-grow"
+                        onClick={() => handleManageInAgenda(instance)}
                     >
-                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                        Reativar Missão
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Ver na Agenda
                     </Button>
-                )}
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    className="h-9 w-9"
+                                    onClick={() => setMissionToDelete(instance)}
+                                    disabled={isDeleting}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Remover Atribuição</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
             </CardFooter>
         </Card>
     );
@@ -890,8 +857,7 @@ export default function ManageChildPage() {
                             </div>
                           ) : (
                             <div>
-                              <h3 className="text-xl font-headline mb-4">Missões Pendentes</h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                     {pendingMissions.map(instance => renderMissionCard(instance))}
                                 </div>
                             </div>
@@ -908,8 +874,7 @@ export default function ManageChildPage() {
                             </div>
                           ) : (
                             <div>
-                              <h3 className="text-xl font-headline mb-4">Missões Concluídas</h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                                   {completedMissions.map(instance => renderMissionCard(instance))}
                               </div>
                             </div>
@@ -1261,26 +1226,6 @@ export default function ManageChildPage() {
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {missionToReactivate && (
-        <AlertDialog open={!!missionToReactivate} onOpenChange={(isOpen) => !isOpen && setMissionToReactivate(null)}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle>Reativar Missão "{missionToReactivate.title}"?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                      Isso reverterá a última conclusão desta missão e devolverá as estrelas e XP ganhos. Deseja continuar?
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleReactivateMission} disabled={isDeleting}>
-                      {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                      Sim, Reativar
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
 
       {/* Redeem Confirmation Dialog */}
       {instanceToManage && isRedeemConfirmOpen && child && (
