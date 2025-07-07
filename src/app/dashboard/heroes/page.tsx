@@ -291,7 +291,7 @@ export default function HeroesPage() {
                           <ul className="space-y-1 pr-3">
                             {todaysMissions.length > 0 ? (
                             <>
-                            {todaysMissions.slice(0, 4).map(mission => {
+                            {todaysMissions.slice(0, 6).map(mission => {
                               const isCompleted = isMissionCompletedForDate(mission, new Date());
                               const eventTime = getDateObject(mission.startDate || mission.dueDate);
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
@@ -304,18 +304,18 @@ export default function HeroesPage() {
                                 <li key={mission.id}>
                                   <Link href={href} className="block">
                                     <div className={cn(
-                                      "text-sm flex items-center gap-2 p-1.5 rounded-md transition-colors",
+                                      "text-xs flex items-center gap-2 p-1.5 rounded-md transition-colors",
                                       isCompleted 
                                         ? "bg-green-500/10 text-muted-foreground" 
                                         : "bg-background hover:bg-accent/50",
                                     )}>
                                       {isCompleted ? (
-                                        <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                                        <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
                                       ) : (
-                                        <CircleDot className="h-4 w-4 text-primary shrink-0" />
+                                        <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
                                       )}
-                                      <span className="text-xs font-mono w-10">{formattedTime}</span>
-                                      {CategoryIcon && <CategoryIcon className="h-4 w-4 text-muted-foreground shrink-0" />}
+                                      <span className="font-mono w-10">{formattedTime}</span>
+                                      {CategoryIcon && <CategoryIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />}
                                       <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
                                       </span>
@@ -324,9 +324,9 @@ export default function HeroesPage() {
                                 </li>
                               );
                             })}
-                            {todaysMissions.length > 4 && (
+                            {todaysMissions.length > 6 && (
                               <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                + {todaysMissions.length - 4} mais...
+                                + {todaysMissions.length - 6} mais...
                               </Link>
                             )}
                             </>
@@ -391,7 +391,7 @@ export default function HeroesPage() {
                           <Medal className="h-5 w-5 text-chart-5" />
                           <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                           <Lock className="h-4 w-4 text-muted-foreground" />
+                           <span className="font-bold text-lg leading-none">{totalBadgesCount}</span>
                       </div>
                       <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
                     </Link>
