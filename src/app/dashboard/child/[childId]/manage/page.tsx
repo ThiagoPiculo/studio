@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -1150,19 +1150,33 @@ export default function ManageChildPage() {
                               return (
                                 <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
                                   <div className={cn(
-                                    "flex flex-col items-center justify-start text-center gap-2 p-3 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer",
-                                    isEarned ? 'shadow-lg bg-card' : 'grayscale opacity-60 bg-muted/30'
+                                    "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
+                                    isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
                                   )}>
-                                    <div className={cn(
-                                      "w-16 h-16 rounded-full flex items-center justify-center shadow-inner",
-                                      isEarned ? badge.color : 'bg-gray-300 dark:bg-gray-600'
-                                    )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                                      <badge.icon className="h-9 w-9 text-white" />
-                                    </div>
-                                    <p className={cn(
-                                      "text-sm font-semibold h-10 flex items-center",
-                                      isEarned ? 'text-foreground' : 'text-muted-foreground'
-                                    )}>{badge.title}</p>
+                                      <div className={cn(
+                                        "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
+                                        isEarned ? badge.color : 'bg-gray-400 dark:bg-gray-700'
+                                      )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                                          <badge.icon className={cn(
+                                              "h-9 w-9 text-white",
+                                              !isEarned && "opacity-30"
+                                          )} />
+                                          {!isEarned && (
+                                              <Lock className="absolute h-8 w-8 text-white/70" />
+                                          )}
+                                      </div>
+                                      <div className="flex-grow h-24 flex flex-col justify-center">
+                                          <p className={cn(
+                                              "text-sm font-semibold",
+                                              isEarned ? 'text-foreground' : 'text-muted-foreground'
+                                          )}>{badge.title}</p>
+                                          <p className={cn(
+                                              "text-xs text-muted-foreground mt-1",
+                                              !isEarned && "opacity-70"
+                                          )}>
+                                              {badge.description}
+                                          </p>
+                                      </div>
                                   </div>
                                 </DialogTrigger>
                               );
