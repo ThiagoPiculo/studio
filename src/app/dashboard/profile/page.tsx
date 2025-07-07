@@ -1,19 +1,19 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw } from 'lucide-react';
+import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw, CalendarOff } from 'lucide-react';
 import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { resetPassword } from '@/lib/firebase/auth';
-import { getChildProfilesByOwner, resetAllChildrenProgress } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, resetSelectedChildrenProgress, resetSchedulesForChildren } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import {
   AlertDialog,
@@ -28,6 +28,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Separator } from '@/components/ui/separator';
 import { useRouter } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function ProfilePage() {
@@ -39,7 +42,15 @@ export default function ProfilePage() {
   const [displayName, setDisplayName] = useState('');
   const [isSavingName, setIsSavingName] = useState(false);
   const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
-  const [isResettingAllProgress, setIsResettingAllProgress] = useState(false);
+  
+  const [isResettingProgress, setIsResettingProgress] = useState(false);
+  const [isResetProgressDialogOpen, setIsResetProgressDialogOpen] = useState(false);
+  const [selectedChildrenForProgress, setSelectedChildrenForProgress] = useState<Record<string, boolean>>({});
+
+  const [isResettingRoutines, setIsResettingRoutines] = useState(false);
+  const [isResetRoutinesDialogOpen, setIsResetRoutinesDialogOpen] = useState(false);
+  const [selectedChildrenForRoutines, setSelectedChildrenForRoutines] = useState<Record<string, boolean>>({});
+
   const [children, setChildren] = useState<ChildProfile[]>([]);
 
   useEffect(() => {
@@ -97,18 +108,46 @@ export default function ProfilePage() {
     }
   };
 
-  const handleResetAllProgress = async () => {
-      if (!user) return;
-      setIsResettingAllProgress(true);
-      try {
-        await resetAllChildrenProgress(user.uid);
-        toast({ title: "Nova Temporada Iniciada!", description: `O progresso de todos os seus Mini Herois (${formatChildNames(children)}) foi redefinido.` });
-      } catch (error) {
-        console.error("Error resetting all children progress:", error);
-        toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso. Tente novamente.", variant: "destructive" });
-      } finally {
-        setIsResettingAllProgress(false);
-      }
+  const handleResetSelectedProgress = async () => {
+    const childIdsToReset = Object.entries(selectedChildrenForProgress).filter(([, selected]) => selected).map(([id]) => id);
+    if (childIdsToReset.length === 0) {
+        toast({ title: "Nenhuma criança selecionada." });
+        return;
+    }
+    setIsResettingProgress(true);
+    try {
+      await resetSelectedChildrenProgress(childIdsToReset);
+      const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      toast({ title: "Progresso Redefinido!", description: `O progresso de ${formatChildNames(childNames)} foi zerado.` });
+      setIsResetProgressDialogOpen(false);
+      setSelectedChildrenForProgress({});
+    } catch (error) {
+      console.error("Error resetting progress for selected children:", error);
+      toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso.", variant: "destructive" });
+    } finally {
+      setIsResettingProgress(false);
+    }
+  };
+
+  const handleResetSelectedRoutines = async () => {
+    const childIdsToReset = Object.entries(selectedChildrenForRoutines).filter(([, selected]) => selected).map(([id]) => id);
+    if (childIdsToReset.length === 0) {
+        toast({ title: "Nenhuma criança selecionada." });
+        return;
+    }
+    setIsResettingRoutines(true);
+    try {
+      await resetSchedulesForChildren(childIdsToReset);
+      const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      toast({ title: "Rotinas Removidas!", description: `Todas as missões agendadas para ${formatChildNames(childNames)} foram removidas.` });
+      setIsResetRoutinesDialogOpen(false);
+      setSelectedChildrenForRoutines({});
+    } catch (error) {
+      console.error("Error resetting routines for selected children:", error);
+      toast({ title: "Erro ao Remover Rotinas", description: "Não foi possível limpar a agenda das crianças selecionadas.", variant: "destructive" });
+    } finally {
+      setIsResettingRoutines(false);
+    }
   };
   
   const handleDeleteAccount = () => {
@@ -118,15 +157,19 @@ export default function ProfilePage() {
         duration: 8000,
     });
   };
+  
+  const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
-  const formatChildNames = (children: ChildProfile[]) => {
-    const names = children.map(c => c.name);
+  const formatChildNames = (names: string[]) => {
     if (names.length === 0) return "";
     if (names.length === 1) return names[0];
     if (names.length === 2) return `${names[0]} e ${names[1]}`;
     const last = names.pop();
     return `${names.join(', ')} e ${last}`;
   };
+
+  const selectedProgressCount = useMemo(() => Object.values(selectedChildrenForProgress).filter(Boolean).length, [selectedChildrenForProgress]);
+  const selectedRoutinesCount = useMemo(() => Object.values(selectedChildrenForRoutines).filter(Boolean).length, [selectedChildrenForRoutines]);
 
   if (loading) {
     return (
@@ -224,33 +267,90 @@ export default function ProfilePage() {
             <Separator className="my-8" />
             
             <div className="space-y-1">
-                <h4 className="font-semibold">Redefinir Progresso de Todos os Herois</h4>
-                <p className="text-sm text-muted-foreground">Esta ação irá zerar as estrelas, XP e o histórico de missões de todos os seus Mini Herois, sem apagar os perfis. Ideal para começar uma "nova temporada".</p>
-                 <AlertDialog>
+                <h4 className="font-semibold">Redefinir Progresso dos Herois</h4>
+                <p className="text-sm text-muted-foreground">Zera as estrelas, XP e o histórico de missões das crianças selecionadas. Ideal para começar uma "nova temporada".</p>
+                 <AlertDialog open={isResetProgressDialogOpen} onOpenChange={setIsResetProgressDialogOpen}>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingAllProgress}>
-                            <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso Geral
+                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingProgress}>
+                            <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso
                         </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Redefinir o progresso de TODOS os seus heróis?</AlertDialogTitle>
+                            <AlertDialogTitle>Redefinir o progresso de quais heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação é irreversível e afetará o progresso de {children.length} {children.length === 1 ? 'herói' : 'heróis'} sob sua gestão: <span className="font-semibold">{formatChildNames(children)}</span>. Todas as estrelas, XP, níveis e históricos de conclusão serão zerados. Deseja continuar?
+                                Selecione as crianças que terão seu progresso zerado. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
+                        <ScrollArea className="max-h-[40vh] my-4 pr-3">
+                           <div className="space-y-2">
+                             {children.map(child => (
+                               <Label key={child.id} htmlFor={`progress-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
+                                 <Checkbox id={`progress-reset-${child.id}`} checked={!!selectedChildrenForProgress[child.id]} onCheckedChange={(checked) => setSelectedChildrenForProgress(prev => ({...prev, [child.id]: !!checked}))} />
+                                 <Avatar className="h-8 w-8">
+                                   <AvatarImage src={child.avatar} alt={child.name} />
+                                   <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                 </Avatar>
+                                 <span>{child.name}</span>
+                               </Label>
+                             ))}
+                           </div>
+                        </ScrollArea>
                         <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isResettingAllProgress}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleResetAllProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingAllProgress}>
-                                {isResettingAllProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Sim, Redefinir Tudo
+                            <AlertDialogCancel disabled={isResettingProgress}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetSelectedProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingProgress || selectedProgressCount === 0}>
+                                {isResettingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Redefinir ({selectedProgressCount})
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
+            </div>
+
+            <Separator className="my-8" />
+
+            <div className="space-y-1">
+                <h4 className="font-semibold">Redefinir Rotina Agendada</h4>
+                <p className="text-sm text-muted-foreground">Remove TODAS as missões (únicas e recorrentes) da agenda das crianças selecionadas. Use para limpar a agenda e começar do zero.</p>
+                 <AlertDialog open={isResetRoutinesDialogOpen} onOpenChange={setIsResetRoutinesDialogOpen}>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingRoutines}>
+                            <CalendarOff className="mr-2 h-4 w-4" /> Redefinir Rotinas
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Limpar a agenda de quais heróis?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Selecione as crianças para remover TODAS as missões agendadas. Esta ação não pode ser desfeita.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <ScrollArea className="max-h-[40vh] my-4 pr-3">
+                           <div className="space-y-2">
+                             {children.map(child => (
+                               <Label key={child.id} htmlFor={`routine-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
+                                 <Checkbox id={`routine-reset-${child.id}`} checked={!!selectedChildrenForRoutines[child.id]} onCheckedChange={(checked) => setSelectedChildrenForRoutines(prev => ({...prev, [child.id]: !!checked}))} />
+                                 <Avatar className="h-8 w-8">
+                                   <AvatarImage src={child.avatar} alt={child.name} />
+                                   <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                 </Avatar>
+                                 <span>{child.name}</span>
+                               </Label>
+                             ))}
+                           </div>
+                        </ScrollArea>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isResettingRoutines}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleResetSelectedRoutines} className="bg-destructive hover:bg-destructive/90" disabled={isResettingRoutines || selectedRoutinesCount === 0}>
+                                {isResettingRoutines && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Limpar Agenda ({selectedRoutinesCount})
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                  </AlertDialog>
             </div>
             
-             <Separator className="my-8" />
+            <Separator className="my-8" />
             
              <div className="space-y-1">
                 <h4 className="font-semibold">Excluir Conta Permanentemente</h4>
