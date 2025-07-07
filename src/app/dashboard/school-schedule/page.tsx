@@ -185,40 +185,23 @@ function SchoolSchedulePageContent() {
     return scheduleEntries.filter(entry => entry.childId === selectedChildId);
   }, [scheduleEntries, selectedChildId]);
   
-  const visibleTimeSlots = useMemo(() => {
-      if (childSchedule.length === 0) {
-          return [];
-      }
-      return timeSlots.filter(slot => {
-          const slotStart = parseTime(slot);
-          const slotEnd = slotStart + 59;
-          return childSchedule.some(entry => {
-              const entryStart = parseTime(entry.startTime);
-              const entryEnd = parseTime(entry.endTime);
-              return entryStart <= slotEnd && entryEnd > slotStart;
-          });
-      });
-  }, [timeSlots, childSchedule, parseTime]);
   
   const renderScheduleGrid = () => {
-    if (childSchedule.length === 0) {
-      return <div className="text-center py-10 text-muted-foreground">Nenhuma aula agendada para este herói.</div>;
-    }
-    if (visibleTimeSlots.length === 0) {
-       return <div className="text-center py-10 text-muted-foreground">Nenhuma aula agendada para este herói.</div>;
+    if (timeSlots.length === 0) {
+      return <div className="text-center py-10 text-muted-foreground">Selecione um herói para ver o horário.</div>;
     }
     if (visibleWeekdays.length === 0) {
         return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
     }
 
-    const topOffsetMinutes = parseTime(visibleTimeSlots[0]);
-    const totalHeight = visibleTimeSlots.length * 48; // h-12 is 3rem = 48px
+    const topOffsetMinutes = parseTime(timeSlots[0]);
+    const totalHeight = timeSlots.length * 48; // h-12 is 3rem = 48px
 
     return (
         <div className="grid grid-cols-[auto_1fr]">
             {/* Time Column */}
             <div className="text-right pr-2">
-                {visibleTimeSlots.map(time => (
+                {timeSlots.map(time => (
                     <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
                 ))}
             </div>
@@ -231,10 +214,10 @@ function SchoolSchedulePageContent() {
                         (day === 'SA' || day === 'SU') && "bg-muted/20"
                     )}>
                         {/* Clickable background slots with lines */}
-                        {visibleTimeSlots.map((time, index) => (
+                        {timeSlots.map((time, index) => (
                              <div 
                                 key={time} 
-                                className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < visibleTimeSlots.length - 1 && "border-b")}
+                                className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < timeSlots.length - 1 && "border-b")}
                                 onClick={() => handleAddFromSlot(day, time)}
                              ></div>
                         ))}
