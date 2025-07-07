@@ -316,9 +316,9 @@ function SchoolSchedulePageContent() {
         <ScrollArea ref={scrollRef} className="w-full whitespace-nowrap" orientation="horizontal">
               <div className="flex" style={{ height: `${totalHeight}px`}}>
                   {/* Sticky Time Column */}
-                  <div className="sticky left-0 bg-background z-10 pr-2 text-right">
+                  <div className="sticky left-0 bg-background z-10 w-14 flex-shrink-0">
                       {timeSlots.map(time => (
-                          <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
+                          <div key={time} className="h-12 flex items-center justify-end pr-2 text-xs text-muted-foreground">{time}</div>
                       ))}
                   </div>
                   {/* Scrollable Day Columns */}
@@ -350,7 +350,7 @@ function SchoolSchedulePageContent() {
       return (
           <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
               <div className="flex">
-                  <div className="w-[50px] flex-shrink-0" /> 
+                  <div className="w-14 flex-shrink-0" /> 
                   <div className="flex">
                       {visibleWeekdays.map(day => (
                           <div key={day} className="w-36 sm:w-48 flex-shrink-0 flex justify-center items-center gap-2">
@@ -518,3 +518,6 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
+
+
+    
