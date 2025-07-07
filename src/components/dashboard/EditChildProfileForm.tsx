@@ -19,7 +19,7 @@ import { useState, useEffect } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock, School } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock, RefreshCw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -371,50 +371,56 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         
         <Separator/>
 
-        <FormField
-          control={form.control}
-          name="color"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cor do Heroi</FormLabel>
-              <FormControl>
-                 {isLoadingColors ? (
-                    <div className="grid grid-cols-8 gap-2">
-                        {Array.from({ length: 16 }).map((_, i) => (
-                          <Skeleton key={i} className="h-10 w-10 rounded-full" />
-                        ))}
-                    </div>
-                ) : (
-                    <ColorSelector
-                      value={field.value as HeroColor}
-                      onChange={field.onChange}
-                      disabledColors={usedColors}
-                    />
-                )}
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <Separator/>
-
-        <div className="space-y-4 rounded-lg border bg-muted/50 p-4 text-sm">
-            <h4 className="font-semibold text-foreground">Informações de Criação</h4>
-            <div className="flex items-center gap-2 text-muted-foreground">
-                <User className="h-4 w-4"/>
-                <span>Criado por:</span>
-                {isLoadingOwner ? <Skeleton className="h-4 w-24"/> : <span className="font-medium text-foreground">{owner?.name || 'Desconhecido'}</span>}
-            </div>
-             <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4"/>
-                <span>Data de Criação:</span>
-                <span className="font-medium text-foreground">
-                    {child.createdAt ? format(child.createdAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
-                </span>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+          <FormField
+            control={form.control}
+            name="color"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Cor do Heroi</FormLabel>
+                <FormControl>
+                  {isLoadingColors ? (
+                      <div className="grid grid-cols-8 gap-2">
+                          {Array.from({ length: 16 }).map((_, i) => (
+                            <Skeleton key={i} className="h-10 w-10 rounded-full" />
+                          ))}
+                      </div>
+                  ) : (
+                      <ColorSelector
+                        value={field.value as HeroColor}
+                        onChange={field.onChange}
+                        disabledColors={usedColors}
+                      />
+                  )}
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          <div className="space-y-3 rounded-lg border bg-muted/50 p-4 text-sm h-full">
+              <h4 className="font-semibold text-foreground">Informações de Criação</h4>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                  <User className="h-4 w-4"/>
+                  <span>Criado por:</span>
+                  {isLoadingOwner ? <Skeleton className="h-4 w-24"/> : <span className="font-medium text-foreground">{owner?.name || 'Desconhecido'}</span>}
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4"/>
+                  <span>Data de Criação:</span>
+                  <span className="font-medium text-foreground">
+                      {child.createdAt ? format(child.createdAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                  </span>
+              </div>
+               <div className="flex items-center gap-2 text-muted-foreground">
+                  <RefreshCw className="h-4 w-4"/>
+                  <span>Última Atualização:</span>
+                  <span className="font-medium text-foreground">
+                      {child.updatedAt ? format(child.updatedAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                  </span>
+              </div>
+          </div>
         </div>
-        
+
         <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
             <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isDeleting}>
               {isLoading ? (
