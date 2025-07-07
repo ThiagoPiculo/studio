@@ -21,9 +21,9 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Iniciação e Primeiros Passos",
         items: [
-            { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo para celebrar o início da sua jornada.', icon: Sparkles, color: '#FFD700' },
-            { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes" pela primeira vez.', icon: Smile, color: '#FFD700' },
-            { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama" pela primeira vez para mostrar sua responsabilidade.', icon: BedDouble, color: '#FFD700' },
+            { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo para celebrar o início da sua jornada.', icon: Sparkles, color: '#4ade80' },
+            { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes" pela primeira vez.', icon: Smile, color: '#60a5fa' },
+            { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama" pela primeira vez para mostrar sua responsabilidade.', icon: BedDouble, color: '#a78bfa' },
         ]
     },
     {
@@ -43,18 +43,18 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Maestria e Progresso",
         items: [
-            { id: 'cacador_estrelas', title: 'Caçador de Estrelas', description: 'Acumule um total de 100 estrelas.', icon: Star, color: '#FFD700' },
-            { id: 'colecionador_tesouros', title: 'Colecionador de Tesouros', description: 'Acumule um total de 500 estrelas. Um grande avanço!', icon: Stars, color: '#FFD700' },
-            { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Uma conquista épica! Acumule um total de 1.000 estrelas.', icon: Crown, color: '#FFD700' },
-            { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5 de XP para reconhecer seu progresso.', icon: TrendingUp, color: '#FFD700' },
-            { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Um símbolo de grande experiência! Alcance o Nível 10 de XP.', icon: Award, color: '#FFD700' },
+            { id: 'cacador_estrelas', title: 'Caçador de Estrelas', description: 'Acumule um total de 100 estrelas.', icon: Star, color: '#facc15' },
+            { id: 'colecionador_tesouros', title: 'Colecionador de Tesouros', description: 'Acumule um total de 500 estrelas. Um grande avanço!', icon: Stars, color: '#f97316' },
+            { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Uma conquista épica! Acumule um total de 1.000 estrelas.', icon: Crown, color: '#ec4899' },
+            { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5 de XP para reconhecer seu progresso.', icon: TrendingUp, color: '#22c55e' },
+            { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Um símbolo de grande experiência! Alcance o Nível 10 de XP.', icon: Award, color: '#8b5cf6' },
         ]
     },
     {
         title: "Exploração e Diversidade",
         items: [
-            { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Conclua pelo menos uma missão de 3 categorias diferentes (ex: Casa, Escola, Saúde).', icon: Puzzle, color: '#FFD700' },
-            { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão da categoria Social ou Ambiental pela primeira vez.', icon: Compass, color: '#FFD700' },
+            { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Conclua pelo menos uma missão de 3 categorias diferentes (ex: Casa, Escola, Saúde).', icon: Puzzle, color: '#14b8a6' },
+            { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão da categoria Social ou Ambiental pela primeira vez.', icon: Compass, color: '#a16207' },
         ]
     }
 ];

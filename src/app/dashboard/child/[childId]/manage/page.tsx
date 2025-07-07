@@ -449,6 +449,9 @@ export default function ManageChildPage() {
   const renderBadge = (badge: BadgeType) => {
     if (!child) return null;
     const isEarned = child.earnedBadgeIds?.includes(badge.id);
+    const isProgressive = badge.id.includes('_bronze') || badge.id.includes('_prata') || badge.id.includes('_ouro');
+    const medalColor = isProgressive ? badge.color : '#FFD700';
+
     return (
       <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
         <div className={cn(
@@ -458,14 +461,14 @@ export default function ManageChildPage() {
             {isEarned ? (
               <Medal
                 className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
-                color={badge.color}
+                color={medalColor}
               />
             ) : (
               <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
             )}
             <div className={cn(
               "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
-              isEarned ? badge.color : 'bg-gray-400 dark:bg-gray-700'
+              !isEarned && 'bg-gray-400 dark:bg-gray-700'
             )} style={isEarned ? { backgroundColor: badge.color } : {}}>
                 <badge.icon className={cn(
                     "h-9 w-9 text-white",
