@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance } from "@/lib/types";
 import { 
@@ -196,6 +196,7 @@ export default function HeroesPage() {
               const age = calculateAge(child.birthDate);
               const todaysMissions = missionInstances.filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()));
               const todaysMissionsCount = todaysMissions.length;
+              const completedTodaysMissionsCount = todaysMissions.filter(m => isMissionCompletedForDate(m, new Date())).length;
 
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
@@ -289,10 +290,19 @@ export default function HeroesPage() {
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
-                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                      <Target className="h-5 w-5 text-chart-3" />
-                      <p className="font-bold text-lg">{todaysMissionsCount}</p>
-                      <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
+                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
+                        <div className="flex items-end gap-1.5">
+                            <div className="flex flex-col items-center">
+                                <ListChecks className="h-5 w-5 text-chart-2" />
+                                <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
+                            </div>
+                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                            <div className="flex flex-col items-center">
+                                <List className="h-5 w-5 text-muted-foreground" />
+                                <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
+                            </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
                        <Gift className="h-5 w-5 text-chart-2" />
