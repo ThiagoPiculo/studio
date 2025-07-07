@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
@@ -61,6 +61,7 @@ function ManageChildPageContent() {
   const params = useParams();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const { toast } = useToast();
   const childId = params.childId as string;
 
@@ -74,7 +75,15 @@ function ManageChildPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "overview");
+  
+  const activeTab = searchParams.get('tab') || 'overview';
+  
+  const handleTabChange = (newTab: string) => {
+    const current = new URLSearchParams(searchParams.toString());
+    current.set('tab', newTab);
+    router.replace(`${pathname}?${current.toString()}`, { scroll: false });
+  };
+
 
   // Mission-specific states
   const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
@@ -217,14 +226,6 @@ function ManageChildPageContent() {
     
     setIsCalculatingProgress(false);
   }, [missionInstances]);
-  
-  useEffect(() => {
-    const tabFromUrl = searchParams.get('tab');
-    if (tabFromUrl && tabFromUrl !== activeTab) {
-      setActiveTab(tabFromUrl);
-    }
-  }, [searchParams, activeTab]);
-
 
   // Derived data using useMemo for reactivity and performance
   const stats = useMemo(() => {
@@ -823,7 +824,7 @@ function ManageChildPageContent() {
         </CardHeader>
       </Card>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Central de Missões</TabsTrigger>
@@ -865,7 +866,7 @@ function ManageChildPageContent() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => setActiveTab('missions')}
+                    onClick={() => handleTabChange('missions')}
                   >
                     Explorar Central de Missões
                   </Button>
@@ -885,7 +886,7 @@ function ManageChildPageContent() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => setActiveTab('missions')}
+                    onClick={() => handleTabChange('missions')}
                   >
                     Ver Histórico de Ganhos
                   </Button>
@@ -906,7 +907,7 @@ function ManageChildPageContent() {
                     size="sm"
                     className="w-full"
                     onClick={() => {
-                      setActiveTab('rewards');
+                      handleTabChange('rewards');
                       setInstanceStatusFilter('redeemed');
                     }}
                   >
@@ -928,7 +929,7 @@ function ManageChildPageContent() {
                     variant="outline"
                     size="sm"
                     className="w-full"
-                    onClick={() => setActiveTab('badges')}
+                    onClick={() => handleTabChange('badges')}
                   >
                     Ver Mural de Conquistas
                   </Button>
@@ -1478,6 +1479,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
