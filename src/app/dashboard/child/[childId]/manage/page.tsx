@@ -2,8 +2,8 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
@@ -56,9 +56,10 @@ type Activity =
     | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp });
 
 
-export default function ManageChildPage() {
+function ManageChildPageContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const childId = params.childId as string;
 
@@ -71,7 +72,7 @@ export default function ManageChildPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || "overview");
 
   // Mission-specific states
   const [missionStatusFilter, setMissionStatusFilter] = useState<'pending' | 'completed'>('pending');
@@ -212,6 +213,13 @@ export default function ManageChildPage() {
     
     setIsCalculatingProgress(false);
   }, [missionInstances]);
+  
+  useEffect(() => {
+    const tabFromUrl = searchParams.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [searchParams, activeTab]);
 
 
   // Derived data using useMemo for reactivity and performance
@@ -819,7 +827,7 @@ export default function ManageChildPage() {
         </CardHeader>
       </Card>
 
-      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-5 lg:grid-cols-5 lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Central de Missões</TabsTrigger>
@@ -1424,6 +1432,15 @@ export default function ManageChildPage() {
     </div>
   );
 }
+
+export default function ManageChildPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+            <ManageChildPageContent />
+        </Suspense>
+    )
+}
     
 
     
+
