@@ -188,6 +188,10 @@ function SchoolSchedulePageContent() {
     return scheduleEntries.filter(entry => entry.childId === selectedChildId);
   }, [scheduleEntries, selectedChildId]);
   
+  const hasRecess = useMemo(() => {
+    return scheduleEntries.some(entry => entry.childId === selectedChildId && entry.subject === 'Recreio/Intervalo');
+  }, [scheduleEntries, selectedChildId]);
+  
   
   const renderScheduleGrid = () => {
     if (timeSlots.length === 0) {
@@ -248,7 +252,7 @@ function SchoolSchedulePageContent() {
                                         style={entryStyle}
                                         onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
                                     >
-                                        <p className={cn("font-bold text-sm truncate", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
+                                        <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
                                         <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                             <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
                                             <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
@@ -376,6 +380,7 @@ function SchoolSchedulePageContent() {
           onSave={fetchData}
           entryToEdit={entryToEdit}
           childId={selectedChildId}
+          showRecessHint={!hasRecess}
         />
       )}
 

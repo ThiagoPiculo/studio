@@ -11,12 +11,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save } from 'lucide-react';
+import { Loader2, Save, Info } from 'lucide-react';
 import type { SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels } from '@/lib/types';
 import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
@@ -48,9 +49,10 @@ interface EditScheduleEntryDialogProps {
   onSave: () => void;
   entryToEdit?: SchoolScheduleEntry | null;
   childId: string;
+  showRecessHint?: boolean;
 }
 
-export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId }: EditScheduleEntryDialogProps) {
+export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
     const { currentContext } = useFamily();
     const { toast } = useToast();
@@ -142,6 +144,17 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                         Preencha os detalhes da aula para o horário escolar.
                     </DialogDescription>
                 </DialogHeader>
+
+                {showRecessHint && !entryToEdit && (
+                    <Alert variant="default" className="mt-4 border-primary/20 bg-primary/5">
+                        <Info className="h-4 w-4 text-primary" />
+                        <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
+                        <AlertDescription className="text-primary/90">
+                            Comece cadastrando o "Recreio/Intervalo". Isso adicionará o intervalo para todos os dias da semana de uma só vez, facilitando o preenchimento do restante do horário.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
                         <FormField control={form.control} name="subject" render={({ field }) => (
