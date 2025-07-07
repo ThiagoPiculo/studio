@@ -28,7 +28,7 @@ import {
   getMissionTemplateById,
   getMissionInstancesForContext,
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, AlertTriangle } from 'lucide-react';
+import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, AlertTriangle, Save } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -131,7 +131,7 @@ function CustomizeScheduleDialog({
                         <RecurrenceControl />
                         <DialogFooter>
                             <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>
-                            <Button type="submit">Salvar Agendamento</Button>
+                            <Button type="submit"><Save className="mr-2 h-4 w-4" /> Salvar Agendamento</Button>
                         </DialogFooter>
                     </form>
                 </Form>
@@ -509,7 +509,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                      <DialogFooter>
                         <DialogClose asChild><Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button></DialogClose>
                         <Button type="submit" disabled={isProcessing}>
-                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
+                            {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Salvar Agendamento
                         </Button>
                     </DialogFooter>

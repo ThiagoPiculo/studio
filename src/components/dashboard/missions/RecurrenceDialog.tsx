@@ -24,7 +24,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { format, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar as CalendarIcon, Save } from 'lucide-react';
 import { Timestamp } from 'firebase/firestore';
 
 interface RecurrenceDialogProps {
@@ -220,7 +220,7 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
           <DialogClose asChild>
             <Button variant="outline">Cancelar</Button>
           </DialogClose>
-          <Button onClick={handleSave}>Salvar</Button>
+          <Button onClick={handleSave}><Save className="mr-2 h-4 w-4"/>Salvar</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
