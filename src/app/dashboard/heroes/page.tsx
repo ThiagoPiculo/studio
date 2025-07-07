@@ -2,22 +2,26 @@
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import type { ChildProfile, MissionTemplate, RewardTemplate } from "@/lib/types";
+import { Users, Star, PlusCircle, CheckSquare, Smile, Brain, Sun, Loader2, Settings, Gift, Trophy } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance } from "@/lib/types";
 import { 
-    getUnassignedChildProfilesByOwner,
-    getChildProfilesByFamily,
+    getChildProfilesForAttribution,
     getMissionTemplatesByOwnerOrFamily,
-    getRewardTemplatesByOwnerOrFamily
+    getRewardTemplatesByOwnerOrFamily,
+    getMissionInstancesForContext,
+    getChildRewardInstancesForContext
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Progress } from "@/components/ui/progress";
+import { isMissionScheduledForDate } from "@/lib/calendar-utils";
+import { cn } from "@/lib/utils";
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -29,6 +33,9 @@ export default function HeroesPage() {
   
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
+
   const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(true);
 
@@ -39,21 +46,15 @@ export default function HeroesPage() {
       if (initialLoad === 'true') {
         const initialPage = user.settings?.initialPage || 'agenda';
         if (initialPage !== 'heroes') {
-          // It's the initial load, so redirect to the preferred page.
-          // Replace history so the user can't go "back" to the redirecting dashboard.
           router.replace(`/dashboard/${initialPage}`);
         } else {
-          // The preferred page is this one, so we stay.
-          // Replace history to remove the query param from the URL.
           router.replace('/dashboard/heroes');
           setIsRedirecting(false);
         }
       } else {
-        // It's not the initial load, so we are here intentionally.
         setIsRedirecting(false);
       }
     } else if (!loading && !user) {
-      // Not logged in, so no redirect.
       setIsRedirecting(false);
     }
   }, [user, loading, router, searchParams]);
@@ -71,23 +72,27 @@ export default function HeroesPage() {
       try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
-        const [childProfiles, missionTpls, rewardTpls] = await Promise.all([
-          currentContext === 'my-space' 
-            ? getUnassignedChildProfilesByOwner(user.uid) 
-            : getChildProfilesByFamily(currentContext),
+        const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts] = await Promise.all([
+          getChildProfilesForAttribution(user.uid, currentContext),
           getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+          getMissionInstancesForContext(user.uid, familyIdToQuery),
+          getChildRewardInstancesForContext(user.uid, familyIdToQuery)
         ]);
         
         setChildren(childProfiles);
         setMissionTemplates(missionTpls);
         setRewardTemplates(rewardTpls);
+        setMissionInstances(missionInsts);
+        setRewardInstances(rewardInsts);
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
         setChildren([]);
         setMissionTemplates([]);
         setRewardTemplates([]);
+        setMissionInstances([]);
+        setRewardInstances([]);
       } finally {
         setIsLoadingChildren(false);
         setIsLoadingGuideData(false);
@@ -112,6 +117,24 @@ export default function HeroesPage() {
       age--;
     }
     return age;
+  };
+
+  const calculateXpDetails = (level: number, currentXp: number) => {
+    let xpForCurrentLevel = 0;
+    let xpToLevelUp = 0;
+
+    for (let i = 1; i < level; i++) {
+      xpToLevelUp = 100 + (i - 1) * 50;
+      xpForCurrentLevel += xpToLevelUp;
+    }
+    
+    const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
+    const xpInCurrentLevel = currentXp - xpForCurrentLevel;
+    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
+    
+    const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
+
+    return { progressPercentage, xpRemaining: xpForNextLevel - currentXp, xpForNextLevel };
   };
 
   if (loading || isRedirecting) {
@@ -167,56 +190,71 @@ export default function HeroesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child) => {
               const age = calculateAge(child.birthDate);
+              const todaysMissionsCount = missionInstances.filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date())).length;
+              const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
+              const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
+              const { progressPercentage, xpForNextLevel } = calculateXpDetails(child.level, child.xp);
+
               return (
-              <Card key={child.id} className="overflow-hidden shadow-md hover:shadow-lg transition-all duration-300 ease-in-out transform hover:-translate-y-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 bg-gradient-to-r from-primary/10 via-card to-accent/5 p-4">
-                  <CardTitle className="text-xl font-semibold">{child.name}</CardTitle>
-                </CardHeader>
-                <CardContent className="pt-4 p-4">
-                  <div className="flex items-center justify-center mb-4">
-                    <Avatar
-                      className="h-24 w-24 text-4xl shadow-sm ring-2 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
-                      style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                    >
-                      <AvatarImage src={child.avatar} alt={child.name} />
-                      <AvatarFallback
-                        className="font-bold"
-                        style={child.color ? { backgroundColor: child.color } : {}}
-                      >
-                        {getInitials(child.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center mb-1">Idade: {age} Anos</p>
-                  <p className="text-sm text-muted-foreground text-center mb-2">Nível: {child.level}</p>
-                  <div className="text-center mb-3">
-                    <span className="text-xl font-bold text-accent">{child.stars} Estrelas </span>
-                    <Star className="inline h-5 w-5 fill-accent text-accent" />
-                  </div>
-                  
-                  <p className="text-xs text-muted-foreground text-center">XP: {child.xp}</p>
-                  
-                  <Link href={`/dashboard/child/${child.id}/manage`}>
-                    <Button className="w-full mt-4 shadow-sm">Gerenciar {child.name}</Button>
+              <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
+                <CardHeader className="p-4 relative">
+                  <Link href={`/dashboard/child/${child.id}/manage`} className="absolute top-2 right-2 z-10">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
+                      <Settings className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                    </Button>
                   </Link>
+                  <div className="flex items-center gap-4">
+                     <Avatar
+                        className="h-16 w-16 text-2xl shadow-sm ring-2 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
+                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                      >
+                        <AvatarImage src={child.avatar} alt={child.name} />
+                        <AvatarFallback
+                          className="font-bold"
+                          style={child.color ? { backgroundColor: child.color } : {}}
+                        >
+                          {getInitials(child.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-grow">
+                        <CardTitle className="text-2xl font-semibold">{child.name}</CardTitle>
+                        <CardDescription>{age} anos</CardDescription>
+                        <div className="flex items-center gap-2 mt-1">
+                          <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+                          <span className="font-bold text-amber-600">{child.stars}</span>
+                        </div>
+                      </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="p-4 pt-0 flex-grow flex flex-col justify-end">
+                  <div className="space-y-1">
+                      <div className="flex justify-between text-xs text-muted-foreground font-medium">
+                          <span>Nível {child.level}</span>
+                          <span>{child.xp} / {xpForNextLevel} XP</span>
+                      </div>
+                      <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                  </div>
                 </CardContent>
+
+                <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20">
+                    <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                      <p className="font-bold text-lg">{todaysMissionsCount}</p>
+                      <p className="text-xs text-muted-foreground">Missões Hoje</p>
+                    </Link>
+                    <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                       <p className="font-bold text-lg">{availableRewardsCount}</p>
+                      <p className="text-xs text-muted-foreground">Recompensas</p>
+                    </Link>
+                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors">
+                      <p className="font-bold text-lg">{unlockedAchievementsCount}</p>
+                      <p className="text-xs text-muted-foreground">Conquistas</p>
+                    </Link>
+                </CardFooter>
               </Card>
             )})}
           </div>
         )}
-      </section>
-
-      <section className="grid grid-cols-1 gap-6 max-w-2xl mx-auto">
-        <Card className="shadow-md">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-xl"><CheckSquare className="text-primary"/> Ações Rápidas</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <Link href="/dashboard/missions/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Atribuir Nova Missão</Button></Link>
-            <Link href="/dashboard/rewards/new"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Criar Recompensa</Button></Link>
-            <Link href="/dashboard/family"><Button variant="outline" className="w-full justify-start shadow-sm hover:bg-accent/10 hover:text-primary">Gerenciar Família e Colaboradores</Button></Link>
-          </CardContent>
-        </Card>
       </section>
     </div>
   );
