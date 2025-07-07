@@ -254,12 +254,12 @@ export default function HeroesPage() {
                 </CardHeader>
 
                 <CardContent className="p-4 pt-0 flex-grow">
-                   <div className="grid grid-cols-2 items-center gap-4">
-                        <div className="flex items-baseline justify-start gap-1.5">
+                   <div className="grid grid-cols-3 items-center gap-4">
+                        <div className="flex items-baseline justify-start gap-1.5 col-span-1">
                             <Star className="h-6 w-6 fill-amber-400 text-amber-500" />
                             <span className="text-3xl font-bold text-amber-600">{child.stars}</span>
                         </div>
-                        <div className="space-y-1">
+                        <div className="space-y-1 col-span-2">
                             <div className="flex justify-between text-xs text-muted-foreground font-medium">
                                 <span>Nível {child.level}</span>
                                 <span>{child.xp} / {xpForNextLevel} XP</span>
@@ -354,12 +354,12 @@ export default function HeroesPage() {
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center">
                             <div className="flex items-end gap-1.5">
-                                <div className="flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center justify-center gap-1">
                                     <CheckCircle className="h-5 w-5 text-chart-2" />
                                     <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
                                 </div>
                                 <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                                <div className="flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center justify-center gap-1">
                                     <CircleDot className="h-5 w-5 text-muted-foreground" />
                                     <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
                                 </div>
@@ -370,12 +370,12 @@ export default function HeroesPage() {
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center">
                             <div className="flex items-end gap-1.5">
-                                <div className="flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center justify-center gap-1">
                                     <PackageOpen className="h-5 w-5 text-chart-2" />
                                     <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
                                 </div>
                                 <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                                <div className="flex flex-col items-center gap-1">
+                                <div className="flex flex-col items-center justify-center gap-1">
                                     <Gift className="h-5 w-5 text-muted-foreground" />
                                     <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
                                 </div>
@@ -386,12 +386,12 @@ export default function HeroesPage() {
                     <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                       <div className="flex min-h-[36px] items-center justify-center">
                           <div className="flex items-end gap-1.5">
-                              <div className="flex flex-col items-center gap-1">
+                              <div className="flex flex-col items-center justify-center gap-1">
                                   <Medal className="h-5 w-5 text-chart-5" />
                                   <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
                               </div>
                               <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                              <div className="flex flex-col items-center gap-1">
+                              <div className="flex flex-col items-center justify-center gap-1">
                                   <Lock className="h-5 w-5 text-muted-foreground" />
                                   <span className="font-bold text-lg leading-none">{lockedAchievementsCount}</span>
                               </div>
