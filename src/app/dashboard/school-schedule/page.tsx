@@ -1,13 +1,13 @@
 
 "use client";
 
-import { Suspense, useState, useEffect, useMemo, useCallback } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
-import { weekdays, weekdayLabels } from '@/lib/types';
+import { weekdays, weekdayLabels, getDayToWeekday } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -31,6 +31,9 @@ import Loading from './loading';
 import { Timestamp } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
 
 
 const subjectColors = [
@@ -41,6 +44,8 @@ function SchoolSchedulePageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [selectedChildId, setSelectedChildId] = useState<string>('');
@@ -128,6 +133,26 @@ function SchoolSchedulePageContent() {
     setTimeSlots(slots);
   }, [selectedChildId, children]);
   
+  useEffect(() => {
+    if (isMobile && scrollRef.current && visibleWeekdays.length > 0) {
+      const today = new Date().getDay();
+      const todayWeekday = getDayToWeekday[today];
+      
+      const scrollTargetDay = visibleWeekdays.includes(todayWeekday) 
+        ? todayWeekday 
+        : visibleWeekdays[0];
+
+      const targetElement = scrollRef.current.querySelector(`[data-day="${scrollTargetDay}"]`);
+      if (targetElement) {
+        // Using a small timeout to ensure the layout is stable before scrolling
+        setTimeout(() => {
+          targetElement.scrollIntoView({ behavior: 'auto', inline: 'start', block: 'nearest' });
+        }, 100);
+      }
+    }
+  }, [isMobile, visibleWeekdays, children, selectedChildId]);
+
+  
   const handleAddClick = () => {
     if (!selectedChildId) {
       toast({ title: "Selecione um herói", description: "Você precisa selecionar um herói para adicionar uma aula.", variant: 'default' });
@@ -192,8 +217,65 @@ function SchoolSchedulePageContent() {
     return scheduleEntries.some(entry => entry.childId === selectedChildId && entry.subject === 'Recreio/Intervalo');
   }, [scheduleEntries, selectedChildId]);
   
+  const renderDayColumn = (day: Weekday) => {
+    const todayWeekday = getDayToWeekday[new Date().getDay()];
+    const isToday = day === todayWeekday;
+    const topOffsetMinutes = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
+    
+    return (
+      <div 
+        key={day} 
+        data-day={day} 
+        className={cn(
+            "relative border-r", 
+            isMobile ? "w-36 sm:w-48 flex-shrink-0" : "flex-1",
+            (day === 'SA' || day === 'SU') && "bg-muted/20"
+        )}>
+          {/* Clickable background slots */}
+          {timeSlots.map((time, index) => (
+               <div 
+                  key={time} 
+                  className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < timeSlots.length - 1 && "border-b")}
+                  onClick={() => handleAddFromSlot(day, time)}
+               ></div>
+          ))}
+          
+          {/* Absolutely positioned entries for this day */}
+          {childSchedule
+              .filter(entry => entry.dayOfWeek === day)
+              .map(entry => {
+                  const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
+                  const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+                  const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
+                  
+                  if (useColors) {
+                      entryStyle.backgroundColor = `${entry.color}80`;
+                      entryStyle.borderColor = entry.color;
+                  }
+
+                  return (
+                      <div
+                          key={entry.id}
+                          className={cn(
+                              "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
+                              !useColors && "bg-primary/10 border-primary/20"
+                          )}
+                          style={entryStyle}
+                          onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
+                      >
+                          <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
+                          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                              <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
+                              <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
+                          </div>
+                      </div>
+                  );
+              })}
+      </div>
+    );
+  };
   
-  const renderScheduleGrid = () => {
+  const renderDesktopGrid = () => {
     if (timeSlots.length === 0) {
       return <div className="text-center py-10 text-muted-foreground">Selecione um herói para ver o horário.</div>;
     }
@@ -201,7 +283,6 @@ function SchoolSchedulePageContent() {
         return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
     }
 
-    const topOffsetMinutes = parseTime(timeSlots[0]);
     const totalHeight = timeSlots.length * 48; // h-12 is 3rem = 48px
 
     return (
@@ -215,56 +296,72 @@ function SchoolSchedulePageContent() {
 
             {/* Grid Content */}
             <div className="grid border-l" style={{ height: `${totalHeight}px`, gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
-                {visibleWeekdays.map(day => (
-                    <div key={day} className={cn(
-                        "relative border-r",
-                        (day === 'SA' || day === 'SU') && "bg-muted/20"
-                    )}>
-                        {/* Clickable background slots with lines */}
-                        {timeSlots.map((time, index) => (
-                             <div 
-                                key={time} 
-                                className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < timeSlots.length - 1 && "border-b")}
-                                onClick={() => handleAddFromSlot(day, time)}
-                             ></div>
-                        ))}
-                        
-                        {/* Absolutely positioned entries for this day */}
-                        {childSchedule
-                            .filter(entry => entry.dayOfWeek === day)
-                            .map(entry => {
-                                const top = ((parseTime(entry.startTime) - topOffsetMinutes) / 60) * 48;
-                                const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
-                                const entryStyle: React.CSSProperties = { top: `${top}px`, height: `${height}px` };
-                                
-                                if (useColors) {
-                                    entryStyle.backgroundColor = `${entry.color}80`;
-                                    entryStyle.borderColor = entry.color;
-                                }
-
-                                return (
-                                    <div
-                                        key={entry.id}
-                                        className={cn(
-                                            "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
-                                            !useColors && "bg-primary/10 border-primary/20"
-                                        )}
-                                        style={entryStyle}
-                                        onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
-                                    >
-                                        <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
-                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                            <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                                            <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
-                                        </div>
-                                    </div>
-                                );
-                            })}
-                    </div>
-                ))}
+                {visibleWeekdays.map(renderDayColumn)}
             </div>
         </div>
     );
+  };
+
+  const renderMobileGrid = () => {
+      if (timeSlots.length === 0) {
+          return <div className="text-center py-10 text-muted-foreground">Selecione um herói para ver o horário.</div>;
+      }
+      if (visibleWeekdays.length === 0) {
+          return <div className="text-center py-10 text-muted-foreground">Selecione pelo menos um dia da semana para exibir a agenda.</div>;
+      }
+      const totalHeight = timeSlots.length * 48;
+
+      return (
+        <ScrollArea ref={scrollRef} className="w-full whitespace-nowrap" orientation="horizontal">
+              <div className="flex" style={{ height: `${totalHeight}px`}}>
+                  {/* Sticky Time Column */}
+                  <div className="sticky left-0 bg-background z-10 pr-2 text-right">
+                      {timeSlots.map(time => (
+                          <div key={time} className="h-12 flex items-center justify-end text-xs text-muted-foreground">{time}</div>
+                      ))}
+                  </div>
+                  {/* Scrollable Day Columns */}
+                  <div className="flex">
+                      {visibleWeekdays.map(renderDayColumn)}
+                  </div>
+              </div>
+              <ScrollBar orientation="horizontal" className="mt-2"/>
+          </ScrollArea>
+      )
+  };
+  
+  const renderDayHeaders = () => {
+    const todayWeekday = getDayToWeekday[new Date().getDay()];
+    return (
+      <div className="grid" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length}, minmax(0, 1fr))` }}>
+        {visibleWeekdays.map(day => (
+          <div key={day} className="flex justify-center items-center gap-2">
+            <h3 className="font-semibold">{weekdayLabels[day].long}</h3>
+            {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const renderMobileDayHeaders = () => {
+      const todayWeekday = getDayToWeekday[new Date().getDay()];
+      return (
+          <ScrollArea className="w-full whitespace-nowrap" orientation="horizontal">
+              <div className="flex">
+                  <div className="w-[50px] flex-shrink-0" /> 
+                  <div className="flex">
+                      {visibleWeekdays.map(day => (
+                          <div key={day} className="w-36 sm:w-48 flex-shrink-0 flex justify-center items-center gap-2">
+                              <h3 className="font-semibold">{weekdayLabels[day].long}</h3>
+                              {day === todayWeekday && <Badge variant="secondary" className="px-2 py-0.5 text-xs">Hoje</Badge>}
+                          </div>
+                      ))}
+                  </div>
+              </div>
+              <ScrollBar orientation="horizontal" />
+          </ScrollArea>
+      );
   };
 
   if (isLoading) return <Loading />;
@@ -350,11 +447,15 @@ function SchoolSchedulePageContent() {
       </Card>
 
       <Card>
-        <CardHeader className={cn("grid items-end p-4", `grid-cols-[auto_1fr]`)}>
-            <div className="pr-2">{/* Empty cell for time column */}</div>
-            <div className="grid text-center" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length || 1}, minmax(0, 1fr))` }}>
-                {visibleWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
-            </div>
+        <CardHeader className={cn("grid items-end p-4 pb-2", !isMobile && "grid-cols-[auto_1fr]")}>
+            {!isMobile ? (
+              <>
+                <div className="pr-2">{/* Empty cell for time column */}</div>
+                {renderDayHeaders()}
+              </>
+            ) : (
+                renderMobileDayHeaders()
+            )}
         </CardHeader>
         <CardContent className="p-4 pt-0 overflow-x-auto">
           {children.length === 0 ? (
@@ -368,7 +469,7 @@ function SchoolSchedulePageContent() {
               <p>Selecione um herói para ver ou editar a agenda.</p>
             </div>
           ) : (
-            renderScheduleGrid()
+            isMobile ? renderMobileGrid() : renderDesktopGrid()
           )}
         </CardContent>
       </Card>
