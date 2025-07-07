@@ -46,12 +46,12 @@ export interface ChildProfile {
   schoolShift?: SchoolShift;
   schoolShiftStart?: string; // "HH:mm" format
   schoolShiftEnd?: string;   // "HH:mm" format
+  avatar?: string; // URL to avatar image
+  color: HeroColor;
   stars: number;
   xp: number;
   level: number;
   accessCode: string; // 6-digit code for child login
-  avatar?: string; // URL to avatar image
-  color: HeroColor;
   earnedBadgeIds?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
@@ -102,6 +102,7 @@ export type MissionCategory = typeof missionCategories[number]['id'];
 export type MissionCategoryDetails = typeof missionCategories[number];
 
 export const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+export const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
   SU: { long: 'Domingo', short: 'Dom' },

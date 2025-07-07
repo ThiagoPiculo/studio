@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
-import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry, updateChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
-import { weekdayLabels } from '@/lib/types';
+import { allWeekdays, weekdayLabels } from '@/lib/types';
 import { getDayToWeekday, parseTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -36,6 +36,7 @@ import { Separator } from '@/components/ui/separator';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import { EditShiftDialog } from '@/components/dashboard/school-schedule/EditShiftDialog';
 
 const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
@@ -53,7 +54,8 @@ function SchoolSchedulePageContent() {
   const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
+  const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<SchoolScheduleEntry | null>(null);
 
   const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
@@ -61,8 +63,7 @@ function SchoolSchedulePageContent() {
 
   const [timeSlots, setTimeSlots] = useState<string[]>([]);
   
-  const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-  const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
+  const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>([]);
   const [useColors, setUseColors] = useState<boolean>(true);
 
   const selectedChild = useMemo(() => children.find(c => c.id === selectedChildId), [children, selectedChildId]);
@@ -75,11 +76,30 @@ function SchoolSchedulePageContent() {
     not_applicable: 'Não se aplica'
   };
   
+  useEffect(() => {
+    const savedDays = localStorage.getItem('school_schedule_visible_days');
+    if (savedDays) {
+      try {
+        const parsedDays = JSON.parse(savedDays);
+        if (Array.isArray(parsedDays) && parsedDays.length > 0) {
+          setVisibleWeekdays(parsedDays);
+        } else {
+          setVisibleWeekdays(['MO', 'TU', 'WE', 'TH', 'FR']);
+        }
+      } catch (e) {
+        setVisibleWeekdays(['MO', 'TU', 'WE', 'TH', 'FR']);
+      }
+    } else {
+      setVisibleWeekdays(['MO', 'TU', 'WE', 'TH', 'FR']);
+    }
+  }, []);
+  
   const handleVisibleDaysChange = (newDays: Weekday[]) => {
-    // Sort the newDays array according to the predefined order of allWeekdays
     const sortedDays = allWeekdays.filter(day => newDays.includes(day));
     setVisibleWeekdays(sortedDays);
+    localStorage.setItem('school_schedule_visible_days', JSON.stringify(sortedDays));
   };
+
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -162,7 +182,7 @@ function SchoolSchedulePageContent() {
       return;
     }
     setEntryToEdit(null);
-    setIsDialogOpen(true);
+    setIsEntryDialogOpen(true);
   };
   
   const handleAddFromSlot = (day: Weekday, time: string) => {
@@ -184,12 +204,12 @@ function SchoolSchedulePageContent() {
         updatedAt: new Timestamp(0,0),
     };
     setEntryToEdit(newEntry);
-    setIsDialogOpen(true);
+    setIsEntryDialogOpen(true);
   };
   
   const handleEditClick = (entry: SchoolScheduleEntry) => {
     setEntryToEdit(entry);
-    setIsDialogOpen(true);
+    setIsEntryDialogOpen(true);
   };
 
   const handleDeleteConfirm = async () => {
@@ -330,11 +350,9 @@ function SchoolSchedulePageContent() {
                           {selectedChildId && (
                               <div className="space-y-2">
                                   <Label className="font-semibold">Turno Escolar</Label>
-                                  <Button asChild variant="outline" size="sm" className="w-full justify-start">
-                                      <Link href={`/dashboard/child/${selectedChildId}/manage?tab=edit`}>
-                                          <Edit className="mr-2 h-4 w-4" />
-                                          Editar Turno do Herói
-                                      </Link>
+                                  <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start">
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Editar Turno do Herói
                                   </Button>
                               </div>
                           )}
@@ -352,7 +370,7 @@ function SchoolSchedulePageContent() {
                 </Popover>
               <Button onClick={handleAddClick} disabled={!selectedChildId}>
                 <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Aula
+                + Aula
               </Button>
             </div>
           </div>
@@ -434,14 +452,23 @@ function SchoolSchedulePageContent() {
         </CardContent>
       </Card>
       
-      {isDialogOpen && (
+      {isEntryDialogOpen && (
         <EditScheduleEntryDialog
-          isOpen={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
+          isOpen={isEntryDialogOpen}
+          onOpenChange={setIsEntryDialogOpen}
           onSave={fetchData}
           entryToEdit={entryToEdit}
           childId={selectedChildId}
           showRecessHint={!hasRecess}
+        />
+      )}
+
+      {isShiftDialogOpen && selectedChild && (
+        <EditShiftDialog
+            isOpen={isShiftDialogOpen}
+            onOpenChange={setIsShiftDialogOpen}
+            child={selectedChild}
+            onSave={fetchData}
         />
       )}
 

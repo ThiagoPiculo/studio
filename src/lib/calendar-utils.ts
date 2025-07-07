@@ -1,6 +1,6 @@
 
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
-import { missionCategories, weekdayLabels, weekdays as allWeekdays } from '@/lib/types';
+import { missionCategories, weekdayLabels, allWeekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
 import {
   addDays,
