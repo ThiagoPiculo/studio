@@ -459,7 +459,6 @@ export default function ManageChildPage() {
               <Medal
                 className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
                 color={badge.color}
-                fill={badge.color}
               />
             ) : (
               <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
