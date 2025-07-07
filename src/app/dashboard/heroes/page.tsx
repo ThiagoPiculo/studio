@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle, ListChecks, List, PackageCheck, School, CircleDot } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, CheckCircle, ListChecks, List, PackageCheck, School, CircleDot, Medal, Lock } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { allBadgesMap } from "@/lib/badges";
 
 
 export default function HeroesPage() {
@@ -44,6 +45,8 @@ export default function HeroesPage() {
 
   const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(true);
+
+  const totalBadgesCount = allBadgesMap.size;
 
   useEffect(() => {
     const initialLoad = searchParams.get('initial_load');
@@ -218,6 +221,7 @@ export default function HeroesPage() {
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
+              const lockedAchievementsCount = totalBadgesCount - unlockedAchievementsCount;
               const { progressPercentage, xpForNextLevel } = calculateXpDetails(child.level, child.xp);
 
               return (
@@ -344,7 +348,7 @@ export default function HeroesPage() {
                         <div className="flex min-h-[36px] items-center justify-center">
                             <div className="flex items-end gap-1.5">
                                 <div className="flex flex-col items-center">
-                                    <ListChecks className="h-5 w-5 text-chart-2" />
+                                    <CheckCircle className="h-5 w-5 text-chart-2" />
                                     <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
                                 </div>
                                 <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
@@ -373,9 +377,18 @@ export default function HeroesPage() {
                         <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                      <div className="flex min-h-[36px] flex-col items-center justify-center">
-                          <Medal className="h-5 w-5 text-chart-5" />
-                          <p className="font-bold text-lg leading-none">{unlockedAchievementsCount}</p>
+                      <div className="flex min-h-[36px] items-center justify-center">
+                          <div className="flex items-end gap-1.5">
+                              <div className="flex flex-col items-center">
+                                  <Medal className="h-5 w-5 text-chart-5" />
+                                  <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
+                              </div>
+                              <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                              <div className="flex flex-col items-center">
+                                  <Lock className="h-5 w-5 text-muted-foreground" />
+                                  <span className="font-bold text-lg leading-none">{lockedAchievementsCount}</span>
+                              </div>
+                          </div>
                       </div>
                       <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
                     </Link>
