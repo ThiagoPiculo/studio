@@ -20,6 +20,9 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Toggle } from '@/components/ui/toggle';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
 
 interface UpcomingBadge {
   child: ChildProfile;
@@ -37,12 +40,20 @@ export default function AchievementsPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   
-  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [badgeProgress, setBadgeProgress] = useState<Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }>>({});
   
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(true);
+  
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
+  
+  const children = useMemo(() => {
+    if (selectedChildrenIds.length === 0) return allChildren;
+    return allChildren.filter(child => selectedChildrenIds.includes(child.id));
+  }, [allChildren, selectedChildrenIds]);
+
 
   useEffect(() => {
     if (user) {
@@ -53,7 +64,7 @@ export default function AchievementsPage() {
         getChildProfilesForAttribution(user.uid, currentContext),
         getMissionInstancesForContext(user.uid, familyIdToQuery)
       ]).then(([fetchedChildren, fetchedInstances]) => {
-        setChildren(fetchedChildren);
+        setAllChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
         setIsLoading(false);
       }).catch(err => {
@@ -66,7 +77,7 @@ export default function AchievementsPage() {
   }, [user, currentContext]);
 
   useEffect(() => {
-    if (isLoading || children.length === 0) {
+    if (isLoading || allChildren.length === 0) {
       setIsCalculating(false);
       return;
     }
@@ -74,7 +85,7 @@ export default function AchievementsPage() {
     setIsCalculating(true);
     const newBadgeProgress: Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }> = {};
 
-    children.forEach(child => {
+    allChildren.forEach(child => {
       const childInstances = missionInstances.filter(inst => inst.childId === child.id);
       
       // SINGLE MISSION STREAK CALC
@@ -137,7 +148,7 @@ export default function AchievementsPage() {
     
     setBadgeProgress(newBadgeProgress);
     setIsCalculating(false);
-  }, [isLoading, children, missionInstances]);
+  }, [isLoading, allChildren, missionInstances]);
 
   const upcomingBadges = useMemo((): UpcomingBadge[] => {
     if (isCalculating || children.length === 0) return [];
@@ -219,15 +230,71 @@ export default function AchievementsPage() {
             Acompanhe todas as medalhas e troféus que seus heróis desbloquearam em suas jornadas.
           </CardDescription>
         </CardHeader>
+        {allChildren.length > 0 && (
+          <CardFooter className="p-4 pt-0">
+            <div className="w-full">
+              <Separator className="mb-4" />
+              <div className="flex flex-wrap items-center gap-2">
+                  <Toggle
+                      size="sm"
+                      variant="outline"
+                      pressed={selectedChildrenIds.length === 0}
+                      onPressedChange={(pressed) => {
+                        if (pressed) {
+                          setSelectedChildrenIds([])
+                        }
+                      }}
+                      className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                  >
+                      Todos
+                  </Toggle>
+                  {allChildren.map(child => {
+                    const isPressed = selectedChildrenIds.includes(child.id);
+                    return (
+                      <Toggle
+                          key={child.id}
+                          size="sm"
+                          className={cn(
+                              "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
+                              isPressed
+                                ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
+                                : 'opacity-70 hover:opacity-100'
+                          )}
+                          style={{ backgroundColor: child.color }}
+                          pressed={isPressed}
+                          onPressedChange={(pressed) => {
+                            const otherIds = selectedChildrenIds.filter(id => id !== child.id);
+                            if (pressed) {
+                              setSelectedChildrenIds([...otherIds, child.id]);
+                            } else {
+                              setSelectedChildrenIds(otherIds);
+                            }
+                          }}
+                      >
+                          {child.name}
+                      </Toggle>
+                    )
+                  })}
+                </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
       
       <div className="space-y-6">
         <div>
           <h2 className="text-2xl font-headline mb-4">Progresso por Herói</h2>
-           {children.length === 0 ? (
+           {allChildren.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 <p>Nenhum herói encontrado neste contexto para exibir as conquistas.</p>
+                <p className="text-sm mt-2">Vá para <Link href="/dashboard/onboarding" className="text-primary hover:underline">Adicionar Herói</Link> para começar.</p>
+              </CardContent>
+            </Card>
+          ) : children.length === 0 ? (
+            <Card>
+              <CardContent className="p-6 text-center text-muted-foreground">
+                <p>Nenhum herói selecionado. Use o filtro acima para escolher um ou mais heróis.</p>
               </CardContent>
             </Card>
           ) : (
