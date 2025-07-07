@@ -28,7 +28,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Loading from './loading';
+import { Timestamp } from 'firebase/firestore';
 
+
+const subjectColors = [
+    '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
+];
 
 function SchoolSchedulePageContent() {
   const { user } = useAuth();
@@ -129,6 +134,31 @@ function SchoolSchedulePageContent() {
     setIsDialogOpen(true);
   };
   
+  const handleAddFromSlot = (day: Weekday, time: string) => {
+    if (!selectedChildId || !user) return;
+
+    const [hour, minute] = time.split(':').map(Number);
+    const endHour = (hour + 1).toString().padStart(2, '0');
+    const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
+
+    const newEntry: SchoolScheduleEntry = {
+        id: '', // Empty ID signifies a new entry
+        subject: '',
+        dayOfWeek: day,
+        startTime: time,
+        endTime: endTime,
+        color: subjectColors[Math.floor(Math.random() * subjectColors.length)],
+        childId: selectedChildId,
+        ownerId: user.uid,
+        familyId: currentContext === 'my-space' ? null : currentContext,
+        createdAt: new Timestamp(0,0), // Placeholder
+        updatedAt: new Timestamp(0,0), // Placeholder
+    };
+
+    setEntryToEdit(newEntry);
+    setIsDialogOpen(true);
+  };
+  
   const handleEditClick = (entry: SchoolScheduleEntry) => {
     setEntryToEdit(entry);
     setIsDialogOpen(true);
@@ -200,9 +230,13 @@ function SchoolSchedulePageContent() {
                         "relative border-r",
                         (day === 'SA' || day === 'SU') && "bg-muted/20"
                     )}>
-                        {/* Horizontal lines for each time slot */}
+                        {/* Clickable background slots with lines */}
                         {visibleTimeSlots.map((time, index) => (
-                             <div key={time} className={cn("h-12", index < visibleTimeSlots.length - 1 && "border-b")}></div>
+                             <div 
+                                key={time} 
+                                className={cn("h-12 cursor-pointer hover:bg-primary/5 transition-colors", index < visibleTimeSlots.length - 1 && "border-b")}
+                                onClick={() => handleAddFromSlot(day, time)}
+                             ></div>
                         ))}
                         
                         {/* Absolutely positioned entries for this day */}
@@ -223,7 +257,7 @@ function SchoolSchedulePageContent() {
                                             borderColor: entry.color,
                                             borderWidth: '1px'
                                         }}
-                                        onClick={() => handleEditClick(entry)}
+                                        onClick={(e) => { e.stopPropagation(); handleEditClick(entry); }}
                                     >
                                         <p className="font-bold text-sm text-white [text-shadow:1px_1px_1px_#00000050] truncate">{entry.subject}</p>
                                         <p className="text-xs text-white/90 [text-shadow:1px_1px_1px_#00000050]">{entry.startTime} - {entry.endTime}</p>
@@ -314,7 +348,7 @@ function SchoolSchedulePageContent() {
 
       <Card>
         <CardHeader className={cn("grid items-end p-4", `grid-cols-[auto_1fr]`)}>
-            <div>{/* Empty cell for time column */}</div>
+            <div className="pr-2">{/* Empty cell for time column */}</div>
             <div className="grid text-center" style={{ gridTemplateColumns: `repeat(${visibleWeekdays.length || 1}, minmax(0, 1fr))` }}>
                 {visibleWeekdays.map(day => <h3 key={day} className="font-semibold">{weekdayLabels[day].long}</h3>)}
             </div>
