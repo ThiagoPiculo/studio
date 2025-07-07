@@ -954,5 +954,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
