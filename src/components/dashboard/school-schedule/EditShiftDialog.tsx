@@ -83,6 +83,27 @@ export function EditShiftDialog({ isOpen, onOpenChange, onSave, child }: EditShi
 
     const watchedSchoolShift = form.watch('schoolShift');
 
+    useEffect(() => {
+        switch (watchedSchoolShift) {
+            case 'morning':
+                form.setValue('schoolShiftStart', '08:00');
+                form.setValue('schoolShiftEnd', '12:00');
+                break;
+            case 'afternoon':
+                form.setValue('schoolShiftStart', '13:00');
+                form.setValue('schoolShiftEnd', '17:00');
+                break;
+            case 'full_time':
+                form.setValue('schoolShiftStart', '08:00');
+                form.setValue('schoolShiftEnd', '17:00');
+                break;
+            case 'not_applicable':
+                form.setValue('schoolShiftStart', '');
+                form.setValue('schoolShiftEnd', '');
+                break;
+        }
+    }, [watchedSchoolShift, form]);
+
     const onSubmit = async (data: FormValues) => {
         if (!child) {
             toast({ title: 'Erro de dados.', variant: 'destructive' });

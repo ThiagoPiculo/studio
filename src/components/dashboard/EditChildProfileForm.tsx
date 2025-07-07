@@ -127,6 +127,27 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
   const watchedSchoolShift = form.watch("schoolShift");
 
   useEffect(() => {
+    switch (watchedSchoolShift) {
+        case 'morning':
+            form.setValue('schoolShiftStart', '08:00');
+            form.setValue('schoolShiftEnd', '12:00');
+            break;
+        case 'afternoon':
+            form.setValue('schoolShiftStart', '13:00');
+            form.setValue('schoolShiftEnd', '17:00');
+            break;
+        case 'full_time':
+            form.setValue('schoolShiftStart', '08:00');
+            form.setValue('schoolShiftEnd', '17:00');
+            break;
+        case 'not_applicable':
+            form.setValue('schoolShiftStart', '');
+            form.setValue('schoolShiftEnd', '');
+            break;
+    }
+  }, [watchedSchoolShift, form]);
+
+  useEffect(() => {
     form.reset({
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),

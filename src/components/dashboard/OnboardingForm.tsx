@@ -15,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
@@ -94,6 +94,27 @@ export function OnboardingForm() {
   });
 
   const watchedSchoolShift = form.watch('schoolShift');
+
+  useEffect(() => {
+    switch (watchedSchoolShift) {
+        case 'morning':
+            form.setValue('schoolShiftStart', '08:00');
+            form.setValue('schoolShiftEnd', '12:00');
+            break;
+        case 'afternoon':
+            form.setValue('schoolShiftStart', '13:00');
+            form.setValue('schoolShiftEnd', '17:00');
+            break;
+        case 'full_time':
+            form.setValue('schoolShiftStart', '08:00');
+            form.setValue('schoolShiftEnd', '17:00');
+            break;
+        case 'not_applicable':
+            form.setValue('schoolShiftStart', '');
+            form.setValue('schoolShiftEnd', '');
+            break;
+    }
+  }, [watchedSchoolShift, form]);
 
   const onSubmit = async (values: OnboardingFormValues) => {
     if (!user) {
