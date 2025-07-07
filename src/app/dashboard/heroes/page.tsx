@@ -273,11 +273,11 @@ export default function HeroesPage() {
                           <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
                           <TabsTrigger value="school" className="text-xs gap-1.5"><School className="h-4 w-4"/>Escola Hoje</TabsTrigger>
                       </TabsList>
-                      <TabsContent value="missions" className="mt-2 h-[110px]">
+                      <TabsContent value="missions" className="mt-2 h-[145px]">
                         <ScrollArea className="h-full w-full pr-3">
                           {todaysMissions.length > 0 ? (
                           <ul className="space-y-1">
-                            {todaysMissions.slice(0, 3).map(mission => {
+                            {todaysMissions.slice(0, 4).map(mission => {
                               const isCompleted = isMissionCompletedForDate(mission, new Date());
                               const eventTime = getDateObject(mission.startDate || mission.dueDate);
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
@@ -307,9 +307,9 @@ export default function HeroesPage() {
                                 </li>
                               );
                             })}
-                            {todaysMissions.length > 3 && (
+                            {todaysMissions.length > 4 && (
                               <li className="text-xs text-muted-foreground text-center pt-1">
-                                + {todaysMissions.length - 3} mais...
+                                + {todaysMissions.length - 4} mais...
                               </li>
                             )}
                           </ul>
@@ -320,7 +320,7 @@ export default function HeroesPage() {
                          )}
                          </ScrollArea>
                       </TabsContent>
-                      <TabsContent value="school" className="mt-2 h-[110px]">
+                      <TabsContent value="school" className="mt-2 h-[145px]">
                         <ScrollArea className="h-full w-full pr-3">
                           {todaysSchedule.length > 0 ? (
                               <div className="space-y-1">
@@ -408,3 +408,5 @@ export default function HeroesPage() {
     </div>
   );
 }
+
+    
