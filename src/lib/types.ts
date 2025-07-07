@@ -27,6 +27,15 @@ export interface UserProfile {
   settings?: Partial<UserSettings>;
 }
 
+export const schoolShifts = [
+  { id: 'morning', label: 'Manhã' },
+  { id: 'afternoon', label: 'Tarde' },
+  { id: 'full_time', label: 'Integral' },
+  { id: 'not_applicable', label: 'Não se aplica' },
+] as const;
+
+export type SchoolShift = typeof schoolShifts[number]['id'];
+
 export interface ChildProfile {
   id: string; // Document ID
   ownerId: string; // UID of the Usuário Master
@@ -34,6 +43,7 @@ export interface ChildProfile {
   name: string;
   birthDate: Timestamp;
   gender?: 'boy' | 'girl' | 'not-informed';
+  schoolShift?: SchoolShift;
   stars: number;
   xp: number;
   level: number;

@@ -88,6 +88,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     name: childData.name,
     birthDate: childData.birthDate,
     gender: childData.gender,
+    schoolShift: childData.schoolShift || 'not_applicable',
     avatar: '',
     stars: 0,
     xp: 0,

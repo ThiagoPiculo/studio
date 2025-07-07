@@ -26,6 +26,8 @@ import { cn } from "@/lib/utils";
 import { format, parse, isValid } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { schoolShifts } from "@/lib/types";
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
@@ -34,6 +36,9 @@ const onboardingSchema = z.object({
   }),
   childGender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
+  }),
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
+      required_error: "Por favor, selecione o turno escolar.",
   }),
 });
 
@@ -54,6 +59,7 @@ export function OnboardingForm() {
       childName: "",
       childBirthDate: undefined,
       childGender: undefined,
+      schoolShift: 'not_applicable',
     },
   });
 
@@ -68,6 +74,7 @@ export function OnboardingForm() {
         name: values.childName, 
         birthDate: Timestamp.fromDate(values.childBirthDate), 
         gender: values.childGender,
+        schoolShift: values.schoolShift,
       });
       toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard/heroes"); 
@@ -197,6 +204,29 @@ export function OnboardingForm() {
                 </PopoverContent>
               </Popover>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+        
+        <FormField
+          control={form.control}
+          name="schoolShift"
+          render={({ field }) => (
+            <FormItem>
+                <FormLabel>Turno Escolar</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione o turno..."/>
+                        </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                        {schoolShifts.map(shift => (
+                            <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                <FormMessage />
             </FormItem>
           )}
         />

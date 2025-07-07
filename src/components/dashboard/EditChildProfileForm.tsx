@@ -17,9 +17,9 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
-import type { ChildProfile, HeroColor, UserProfile } from "@/lib/types";
+import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock, School } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -41,6 +41,8 @@ import { heroColors } from "@/lib/hero-colors";
 import { ColorSelector } from "./ColorSelector";
 import { Skeleton } from "../ui/skeleton";
 import { Separator } from "../ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { schoolShifts } from "@/lib/types";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -49,6 +51,9 @@ const profileFormSchema = z.object({
   }),
   gender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
+  }),
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
+    required_error: "Por favor, selecione o turno escolar.",
   }),
   color: z.string().refine((val) => heroColors.includes(val as HeroColor), {
     message: "Por favor, selecione uma cor válida."
@@ -85,6 +90,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
+      schoolShift: child.schoolShift || 'not_applicable',
       color: child.color || heroColors[0], 
     },
   });
@@ -94,6 +100,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
       name: child.name || "",
       birthDate: child.birthDate?.toDate(),
       gender: child.gender || "not-informed",
+      schoolShift: child.schoolShift || 'not_applicable',
       color: child.color || heroColors[0],
     });
     if (child.birthDate) {
@@ -152,6 +159,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         name: data.name,
         birthDate: Timestamp.fromDate(data.birthDate),
         gender: data.gender,
+        schoolShift: data.schoolShift,
         color: data.color,
       };
       await updateChildProfile(child.id, updates);
@@ -193,151 +201,175 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-                <FormItem>
-                <FormLabel>Nome da Criança</FormLabel>
-                <FormControl>
-                    <Input placeholder="Nome do Mini Heroi" {...field} />
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Nome da Criança</FormLabel>
+                  <FormControl>
+                      <Input placeholder="Nome do Mini Heroi" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
             />
             
             <FormField
-            control={form.control}
-            name="birthDate"
-            render={({ field }) => (
-                <FormItem className="flex flex-col">
-                <FormLabel>Data de Nascimento</FormLabel>
-                <div className="flex items-center gap-4">
-                    <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                    if (open) {
-                        setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                    }
-                    setIsCalendarOpen(open);
-                    }}>
-                    <PopoverTrigger asChild>
-                        <FormControl>
-                        <Button
-                            variant={"outline"}
-                            className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                            )}
-                        >
-                            {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                            ) : (
-                            <span>Escolha uma data</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                        </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                        <div className="p-2 border-b">
-                        <Input
-                            placeholder="Digite: dd/mm/aaaa"
-                            value={dateInput}
-                            onChange={(e) => {
-                                const maskedValue = handleDateMask(e.target.value);
-                                setDateInput(maskedValue);
-                                if (maskedValue.length === 10) {
-                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                if (isValid(parsedDate)) {
-                                    field.onChange(parsedDate);
-                                    setMonth(parsedDate);
-                                }
-                                }
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                                if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                    field.onChange(date);
-                                    setMonth(date);
-                                    setIsCalendarOpen(false);
-                                } else {
-                                    toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                                }
-                                }
-                            }}
-                            />
-                        </div>
-                        <Calendar
-                        locale={ptBR}
-                        mode="single"
-                        month={month}
-                        onMonthChange={setMonth}
-                        selected={field.value}
-                        onSelect={(date) => {
-                            field.onChange(date);
-                            if (date) {
-                            setDateInput(format(date, 'dd/MM/yyyy'));
-                            setMonth(date);
-                            }
-                            setIsCalendarOpen(false);
-                        }}
-                        disabled={(date) =>
-                            date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        weekStartsOn={1}
-                        />
-                    </PopoverContent>
-                    </Popover>
-                    {calculatedAge !== null && (
-                    <div className="text-sm text-muted-foreground whitespace-nowrap">
-                        ({calculatedAge} anos)
-                    </div>
-                    )}
-                </div>
-                <FormMessage />
-                </FormItem>
-            )}
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                  <FormLabel>Data de Nascimento</FormLabel>
+                  <div className="flex items-center gap-4">
+                      <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                      if (open) {
+                          setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                      }
+                      setIsCalendarOpen(open);
+                      }}>
+                      <PopoverTrigger asChild>
+                          <FormControl>
+                          <Button
+                              variant={"outline"}
+                              className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                              )}
+                          >
+                              {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                              ) : (
+                              <span>Escolha uma data</span>
+                              )}
+                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                          </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                          <div className="p-2 border-b">
+                          <Input
+                              placeholder="Digite: dd/mm/aaaa"
+                              value={dateInput}
+                              onChange={(e) => {
+                                  const maskedValue = handleDateMask(e.target.value);
+                                  setDateInput(maskedValue);
+                                  if (maskedValue.length === 10) {
+                                  const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                  if (isValid(parsedDate)) {
+                                      field.onChange(parsedDate);
+                                      setMonth(parsedDate);
+                                  }
+                                  }
+                              }}
+                              onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                  if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                      field.onChange(date);
+                                      setMonth(date);
+                                      setIsCalendarOpen(false);
+                                  } else {
+                                      toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                  }
+                                  }
+                              }}
+                              />
+                          </div>
+                          <Calendar
+                          locale={ptBR}
+                          mode="single"
+                          month={month}
+                          onMonthChange={setMonth}
+                          selected={field.value}
+                          onSelect={(date) => {
+                              field.onChange(date);
+                              if (date) {
+                              setDateInput(format(date, 'dd/MM/yyyy'));
+                              setMonth(date);
+                              }
+                              setIsCalendarOpen(false);
+                          }}
+                          disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          weekStartsOn={1}
+                          />
+                      </PopoverContent>
+                      </Popover>
+                      {calculatedAge !== null && (
+                      <div className="text-sm text-muted-foreground whitespace-nowrap">
+                          ({calculatedAge} anos)
+                      </div>
+                      )}
+                  </div>
+                  <FormMessage />
+                  </FormItem>
+              )}
             />
+        </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <FormField
-            control={form.control}
-            name="gender"
-            render={({ field }) => (
-                <FormItem className="space-y-3">
-                <FormLabel>Gênero</FormLabel>
-                <FormControl>
-                    <RadioGroup
-                    onValueChange={field.onChange}
-                    value={field.value}
-                    className="flex flex-col space-y-2 pt-1"
-                    >
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                        <RadioGroupItem value="boy" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Menino</FormLabel>
+              control={form.control}
+              name="gender"
+              render={({ field }) => (
+                  <FormItem className="space-y-3">
+                  <FormLabel>Gênero</FormLabel>
+                  <FormControl>
+                      <RadioGroup
+                      onValueChange={field.onChange}
+                      value={field.value}
+                      className="flex flex-col space-y-2 pt-1"
+                      >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                          <RadioGroupItem value="boy" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Menino</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                          <RadioGroupItem value="girl" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Menina</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                          <RadioGroupItem value="not-informed" />
+                          </FormControl>
+                          <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                      </FormItem>
+                      </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+            />
+             <FormField
+                control={form.control}
+                name="schoolShift"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Turno Escolar</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o turno..."/>
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                {schoolShifts.map(shift => (
+                                    <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
                     </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                        <RadioGroupItem value="girl" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Menina</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                        <FormControl>
-                        <RadioGroupItem value="not-informed" />
-                        </FormControl>
-                        <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                    </FormItem>
-                    </RadioGroup>
-                </FormControl>
-                <FormMessage />
-                </FormItem>
-            )}
+                )}
             />
         </div>
         

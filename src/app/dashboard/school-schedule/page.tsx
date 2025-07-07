@@ -6,8 +6,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
-import type { ChildProfile, SchoolScheduleEntry } from '@/lib/types';
-import { weekdays, weekdayLabels } from '@/lib/types';
+import type { ChildProfile, SchoolScheduleEntry, SchoolShift } from '@/lib/types';
+import { weekdays, weekdayLabels, schoolShifts } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -43,7 +43,14 @@ function SchoolSchedulePageContent() {
   const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const timeSlots = Array.from({ length: 15 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`); // 7 AM to 9 PM
+  const [timeSlots, setTimeSlots] = useState<string[]>([]);
+
+  const schoolShiftMap: Record<SchoolShift, string> = {
+    morning: 'Manhã',
+    afternoon: 'Tarde',
+    full_time: 'Integral',
+    not_applicable: 'Não se aplica'
+  };
 
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -60,6 +67,8 @@ function SchoolSchedulePageContent() {
       setScheduleEntries(fetchedEntries);
       if (fetchedChildren.length > 0 && !selectedChildId) {
         setSelectedChildId(fetchedChildren[0].id);
+      } else if (fetchedChildren.length === 0) {
+        setSelectedChildId('');
       }
     } catch (error) {
       console.error("Error fetching schedule data:", error);
@@ -72,6 +81,26 @@ function SchoolSchedulePageContent() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  useEffect(() => {
+    const selectedChild = children.find(c => c.id === selectedChildId);
+    let slots: string[] = [];
+
+    switch (selectedChild?.schoolShift) {
+        case 'morning':
+            slots = Array.from({ length: 7 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`); // 7h to 13h
+            break;
+        case 'afternoon':
+            slots = Array.from({ length: 7 }, (_, i) => `${(i + 13).toString().padStart(2, '0')}:00`); // 13h to 19h
+            break;
+        case 'full_time':
+        case 'not_applicable':
+        default:
+            slots = Array.from({ length: 15 }, (_, i) => `${(i + 7).toString().padStart(2, '0')}:00`); // 7h to 21h
+            break;
+    }
+    setTimeSlots(slots);
+  }, [selectedChildId, children]);
   
   const handleAddClick = () => {
     if (!selectedChildId) {
@@ -137,8 +166,11 @@ function SchoolSchedulePageContent() {
                             {childSchedule
                                 .filter(entry => entry.dayOfWeek === day)
                                 .map(entry => {
-                                    const top = ((parseTime(entry.startTime) - parseTime(timeSlots[0])) / 60) * 48; // 48px = 12 * 4rem
+                                    const topOffset = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
+                                    const top = ((parseTime(entry.startTime) - topOffset) / 60) * 48; // 48px = 12 * 4rem
                                     const height = ((parseTime(entry.endTime) - parseTime(entry.startTime)) / 60) * 48;
+
+                                    if (top < 0 || parseTime(entry.endTime) < topOffset) return null;
 
                                     return (
                                         <div
@@ -188,7 +220,7 @@ function SchoolSchedulePageContent() {
             </div>
             <div className="flex items-center gap-2">
                 <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-[240px]">
                         <div className="flex items-center gap-2">
                             <User className="h-4 w-4" />
                             <SelectValue placeholder="Selecione um herói..." />
@@ -196,7 +228,9 @@ function SchoolSchedulePageContent() {
                     </SelectTrigger>
                     <SelectContent>
                         {children.map(child => (
-                            <SelectItem key={child.id} value={child.id}>{child.name}</SelectItem>
+                            <SelectItem key={child.id} value={child.id}>
+                                {child.name} ({child.schoolShift ? schoolShiftMap[child.schoolShift] : 'Turno não definido'})
+                            </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
