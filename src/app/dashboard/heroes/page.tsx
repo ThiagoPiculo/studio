@@ -341,36 +341,42 @@ export default function HeroesPage() {
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                        <div className="flex items-end gap-1.5">
-                            <div className="flex flex-col items-center">
-                                <ListChecks className="h-5 w-5 text-chart-2" />
-                                <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
-                            </div>
-                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                            <div className="flex flex-col items-center">
-                                <List className="h-5 w-5 text-muted-foreground" />
-                                <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
+                        <div className="flex min-h-[36px] items-center justify-center">
+                            <div className="flex items-end gap-1.5">
+                                <div className="flex flex-col items-center">
+                                    <ListChecks className="h-5 w-5 text-chart-2" />
+                                    <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
+                                </div>
+                                <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                                <div className="flex flex-col items-center">
+                                    <List className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
+                                </div>
                             </div>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
-                        <div className="flex items-end gap-1.5">
-                            <div className="flex flex-col items-center">
-                                <PackageCheck className="h-5 w-5 text-chart-2" />
-                                <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
-                            </div>
-                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                            <div className="flex flex-col items-center">
-                                <Gift className="h-5 w-5 text-muted-foreground" />
-                                <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
+                        <div className="flex min-h-[36px] items-center justify-center">
+                            <div className="flex items-end gap-1.5">
+                                <div className="flex flex-col items-center">
+                                    <PackageCheck className="h-5 w-5 text-chart-2" />
+                                    <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
+                                </div>
+                                <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
+                                <div className="flex flex-col items-center">
+                                    <Gift className="h-5 w-5 text-muted-foreground" />
+                                    <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
+                                </div>
                             </div>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
                     </Link>
-                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
-                      <Medal className="h-5 w-5 text-chart-5" />
-                      <p className="font-bold text-lg">{unlockedAchievementsCount}</p>
+                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
+                      <div className="flex min-h-[36px] flex-col items-center justify-center">
+                          <Medal className="h-5 w-5 text-chart-5" />
+                          <p className="font-bold text-lg leading-none">{unlockedAchievementsCount}</p>
+                      </div>
                       <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
                     </Link>
                 </CardFooter>
