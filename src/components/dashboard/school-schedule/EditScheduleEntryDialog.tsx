@@ -122,7 +122,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{entryToEdit ? 'Editar Aula' : 'Adicionar Nova Aula'}</DialogTitle>
+                    <DialogTitle>{entryToEdit && entryToEdit.id ? 'Editar Aula' : 'Adicionar Nova Aula'}</DialogTitle>
                     <DialogDescription>
                         Preencha os detalhes da aula para o horário escolar.
                     </DialogDescription>
