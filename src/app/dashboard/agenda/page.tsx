@@ -469,11 +469,15 @@ function AgendaPageContent() {
         {sortedChildIds.map(childId => {
           const child = childrenMap.get(childId);
           if (!child) return null;
-          const childEvents = eventsByChild[childId].sort((a,b) => {
-              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-              if (timeA.getTime() !== timeB.getTime()) {
-                  return timeA.getTime() - timeB.getTime();
+          const childEvents = eventsByChild[childId].sort((a, b) => {
+              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate();
+              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate();
+              
+              const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
+              const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
+
+              if (minutesA !== minutesB) {
+                  return minutesA - minutesB;
               }
               return a.title.localeCompare(b.title);
           });
@@ -635,10 +639,14 @@ function AgendaPageContent() {
                 const nameComparison = childA.localeCompare(childB);
                 if (nameComparison !== 0) return nameComparison;
 
-                const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate() || new Date(0);
-                const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate() || new Date(0);
-                if (timeA.getTime() !== timeB.getTime()) {
-                  return timeA.getTime() - timeB.getTime();
+                const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate();
+                const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate();
+                
+                const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
+                const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
+
+                if (minutesA !== minutesB) {
+                    return minutesA - minutesB;
                 }
                 return a.title.localeCompare(b.title);
               });
