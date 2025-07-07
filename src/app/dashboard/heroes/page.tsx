@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Trophy, Target, Medal } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, Target, Medal, CheckCircle } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance } from "@/lib/types";
 import { 
@@ -20,7 +20,7 @@ import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Progress } from "@/components/ui/progress";
-import { isMissionScheduledForDate } from "@/lib/calendar-utils";
+import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
@@ -244,19 +244,43 @@ export default function HeroesPage() {
                    <Separator className="my-4" />
                    <h4 className="font-semibold text-sm mb-2">Missões de Hoje</h4>
                    {todaysMissions.length > 0 ? (
-                     <ul className="space-y-1">
-                       {todaysMissions.slice(0, 3).map(mission => (
-                         <li key={mission.id} className="text-sm flex items-center gap-2 p-1.5 rounded-md bg-background">
-                           <Target className="h-4 w-4 text-primary shrink-0" />
-                           <span className="truncate">{mission.title}</span>
-                         </li>
-                       ))}
-                       {todaysMissions.length > 3 && (
-                         <li className="text-xs text-muted-foreground text-center pt-1">
-                           + {todaysMissions.length - 3} mais...
-                         </li>
-                       )}
-                     </ul>
+                    <ul className="space-y-1">
+                      {todaysMissions.slice(0, 3).map(mission => {
+                        const isCompleted = isMissionCompletedForDate(mission, new Date());
+                        const eventTime = getDateObject(mission.startDate || mission.dueDate);
+                        const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                        const popoverId = `${mission.id}-${today}`;
+                        const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
+                        
+                        return (
+                          <li key={mission.id}>
+                            <Link href={href} className="block">
+                              <div className={cn(
+                                "text-sm flex items-center gap-2 p-1.5 rounded-md transition-colors",
+                                isCompleted 
+                                  ? "bg-green-500/10 text-muted-foreground" 
+                                  : "bg-background hover:bg-accent/50",
+                              )}>
+                                {isCompleted ? (
+                                  <CheckCircle className="h-4 w-4 text-green-500 shrink-0" />
+                                ) : (
+                                  <Target className="h-4 w-4 text-primary shrink-0" />
+                                )}
+                                <span className="text-xs font-mono w-10">{formattedTime}</span>
+                                <span className={cn("truncate flex-grow", isCompleted && "line-through")}>
+                                  {mission.title}
+                                </span>
+                              </div>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                      {todaysMissions.length > 3 && (
+                        <li className="text-xs text-muted-foreground text-center pt-1">
+                          + {todaysMissions.length - 3} mais...
+                        </li>
+                      )}
+                    </ul>
                    ) : (
                      <p className="text-xs text-muted-foreground text-center py-2 px-1">
                        Dia de descanso do herói!
