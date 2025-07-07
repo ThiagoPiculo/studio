@@ -93,7 +93,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
         }
         setIsProcessing(true);
         try {
-            if (entryToEdit) {
+            if (entryToEdit && entryToEdit.id) {
                 // Update
                 await updateSchoolScheduleEntry(entryToEdit.id, data);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${data.subject} foi atualizada no horário.` });
