@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, CheckCircle, ListChecks, List, PackageCheck, School, CircleDot, Medal, Lock } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, CheckCircle, ListChecks, List, PackageOpen, School, CircleDot, Medal, Lock } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -364,7 +364,7 @@ export default function HeroesPage() {
                         <div className="flex min-h-[36px] items-center justify-center">
                             <div className="flex items-end gap-1.5">
                                 <div className="flex flex-col items-center">
-                                    <PackageCheck className="h-5 w-5 text-chart-2" />
+                                    <PackageOpen className="h-5 w-5 text-chart-2" />
                                     <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
                                 </div>
                                 <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
