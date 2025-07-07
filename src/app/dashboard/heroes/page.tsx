@@ -324,15 +324,14 @@ export default function HeroesPage() {
                       </TabsContent>
                       <TabsContent value="school" className="mt-2 h-[145px]">
                         <ScrollArea className="h-full w-full">
-                          <div className="grid grid-cols-1 gap-y-1 pr-3">
+                          <div className="grid grid-cols-1 gap-y-1">
                               {todaysSchedule.length > 0 ? (
-                                  <>
+                                  <ul className="space-y-1 pr-3">
                                       {todaysSchedule.slice(0, 6).map(entry => (
                                           <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
                                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
-                                              <div className="flex flex-col flex-grow truncate">
-                                                  <span className="font-semibold truncate">{entry.subject}</span>
-                                              </div>
+                                              <span className="font-mono w-10">{entry.startTime}</span>
+                                              <span className="font-semibold truncate">{entry.subject}</span>
                                           </div>
                                       ))}
                                       {todaysSchedule.length > 6 && (
@@ -340,7 +339,7 @@ export default function HeroesPage() {
                                             + {todaysSchedule.length - 6} mais...
                                           </Link>
                                       )}
-                                  </>
+                                  </ul>
                               ) : (
                                   <p className="text-xs text-muted-foreground text-center py-2 px-1">
                                       Nenhuma aula hoje. Dia livre!
