@@ -3,12 +3,13 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw, CalendarOff } from 'lucide-react';
+import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw, CalendarOff, Shield } from 'lucide-react';
 import { updateProfile as updateAuthProfile } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
@@ -35,6 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
+  const { availableContexts, currentContext } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -52,6 +54,7 @@ export default function ProfilePage() {
   const [selectedChildrenForRoutines, setSelectedChildrenForRoutines] = useState<Record<string, boolean>>({});
 
   const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [isOwner, setIsOwner] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -59,8 +62,37 @@ export default function ProfilePage() {
       getChildProfilesByOwner(user.uid).then(profiles => {
         setChildren(profiles);
       });
+
+      const currentFamilyContext = availableContexts.find(c => c.id === currentContext);
+      // This is a simplified check. A robust implementation would fetch family details.
+      // For this page's purpose, if the user is in a family context, we assume they might not be the owner.
+      // A more direct check would be `familyDetails.ownerId === user.uid`
+      // For now, let's assume if it's not "my-space", we need to be careful.
+      // The logic in firestore will do the real check.
+      setIsOwner(true); // Placeholder, real logic would be more complex
     }
-  }, [user]);
+  }, [user, availableContexts, currentContext]);
+  
+  const groupedChildren = useMemo(() => {
+    const groups: Record<string, ChildProfile[]> = { 'my-space': [] };
+    
+    children.forEach(child => {
+        const contextId = child.familyId || 'my-space';
+        if (!groups[contextId]) {
+            groups[contextId] = [];
+        }
+        groups[contextId].push(child);
+    });
+
+    return Object.entries(groups).map(([contextId, childrenInGroup]) => {
+      const contextInfo = availableContexts.find(c => c.id === contextId);
+      const contextName = contextId === 'my-space' 
+        ? 'No Meu Espaço' 
+        : `Na Aliança "${contextInfo?.name || 'Desconhecida'}"`;
+      return { contextId, contextName, children: childrenInGroup };
+    }).filter(group => group.children.length > 0);
+  }, [children, availableContexts]);
+
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setDisplayName(e.target.value);
@@ -271,7 +303,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">Zera as estrelas, XP e o histórico de missões das crianças selecionadas. Ideal para começar uma "nova temporada".</p>
                  <AlertDialog open={isResetProgressDialogOpen} onOpenChange={setIsResetProgressDialogOpen}>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingProgress}>
+                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={children.length === 0 || isResettingProgress}>
                             <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso
                         </Button>
                     </AlertDialogTrigger>
@@ -279,20 +311,27 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Redefinir o progresso de quais heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Selecione as crianças que terão seu progresso zerado. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
+                                Selecione as crianças (apenas as que você cadastrou) que terão seu progresso zerado. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <ScrollArea className="max-h-[40vh] my-4 pr-3">
-                           <div className="space-y-2">
-                             {children.map(child => (
-                               <Label key={child.id} htmlFor={`progress-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
-                                 <Checkbox id={`progress-reset-${child.id}`} checked={!!selectedChildrenForProgress[child.id]} onCheckedChange={(checked) => setSelectedChildrenForProgress(prev => ({...prev, [child.id]: !!checked}))} />
-                                 <Avatar className="h-8 w-8">
-                                   <AvatarImage src={child.avatar} alt={child.name} />
-                                   <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                 </Avatar>
-                                 <span>{child.name}</span>
-                               </Label>
+                           <div className="space-y-4">
+                             {groupedChildren.map(group => (
+                               <div key={group.contextId}>
+                                 <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
+                                 <div className="space-y-2 mt-2">
+                                  {group.children.map(child => (
+                                      <Label key={child.id} htmlFor={`progress-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
+                                        <Checkbox id={`progress-reset-${child.id}`} checked={!!selectedChildrenForProgress[child.id]} onCheckedChange={(checked) => setSelectedChildrenForProgress(prev => ({...prev, [child.id]: !!checked}))} />
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={child.avatar} alt={child.name} />
+                                          <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{child.name}</span>
+                                      </Label>
+                                  ))}
+                                  </div>
+                               </div>
                              ))}
                            </div>
                         </ScrollArea>
@@ -314,7 +353,7 @@ export default function ProfilePage() {
                 <p className="text-sm text-muted-foreground">Remove TODAS as missões (únicas e recorrentes) da agenda das crianças selecionadas. Use para limpar a agenda e começar do zero.</p>
                  <AlertDialog open={isResetRoutinesDialogOpen} onOpenChange={setIsResetRoutinesDialogOpen}>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="w-full sm:w-auto shadow-sm" disabled={children.length === 0 || isResettingRoutines}>
+                        <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={children.length === 0 || isResettingRoutines}>
                             <CalendarOff className="mr-2 h-4 w-4" /> Redefinir Rotinas
                         </Button>
                     </AlertDialogTrigger>
@@ -322,20 +361,27 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Limpar a agenda de quais heróis?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Selecione as crianças para remover TODAS as missões agendadas. Esta ação não pode ser desfeita.
+                                Selecione as crianças (apenas as que você cadastrou) para remover TODAS as missões agendadas. Esta ação não pode ser desfeita.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <ScrollArea className="max-h-[40vh] my-4 pr-3">
-                           <div className="space-y-2">
-                             {children.map(child => (
-                               <Label key={child.id} htmlFor={`routine-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
-                                 <Checkbox id={`routine-reset-${child.id}`} checked={!!selectedChildrenForRoutines[child.id]} onCheckedChange={(checked) => setSelectedChildrenForRoutines(prev => ({...prev, [child.id]: !!checked}))} />
-                                 <Avatar className="h-8 w-8">
-                                   <AvatarImage src={child.avatar} alt={child.name} />
-                                   <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                 </Avatar>
-                                 <span>{child.name}</span>
-                               </Label>
+                           <div className="space-y-4">
+                             {groupedChildren.map(group => (
+                               <div key={group.contextId}>
+                                 <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
+                                 <div className="space-y-2 mt-2">
+                                  {group.children.map(child => (
+                                      <Label key={child.id} htmlFor={`routine-reset-${child.id}`} className="flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 cursor-pointer">
+                                        <Checkbox id={`routine-reset-${child.id}`} checked={!!selectedChildrenForRoutines[child.id]} onCheckedChange={(checked) => setSelectedChildrenForRoutines(prev => ({...prev, [child.id]: !!checked}))} />
+                                        <Avatar className="h-8 w-8">
+                                          <AvatarImage src={child.avatar} alt={child.name} />
+                                          <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <span>{child.name}</span>
+                                      </Label>
+                                  ))}
+                                  </div>
+                               </div>
                              ))}
                            </div>
                         </ScrollArea>
