@@ -28,7 +28,7 @@ const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, T
 export const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
 
 // Helper to safely get a JS Date object from various possible inputs
-const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | null => {
+export const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | null => {
     if (!dateInput) return null;
     if (dateInput instanceof Date && isValid(dateInput)) return dateInput;
     if (typeof (dateInput as any).toDate === 'function') {
@@ -37,6 +37,14 @@ const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | n
     }
     return null;
 }
+
+export const getPeriodOfDay = (date: Date | null | undefined): 'Manhã' | 'Tarde' | 'Noite' | null => {
+    if (!date) return null;
+    const hour = date.getHours();
+    if (hour >= 6 && hour < 12) return 'Manhã';
+    if (hour >= 12 && hour < 18) return 'Tarde';
+    return 'Noite';
+};
 
 export function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
     const checkDate = startOfDay(date);

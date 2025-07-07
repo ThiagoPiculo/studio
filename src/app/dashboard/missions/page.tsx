@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info } from 'lucide-react';
+import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info, Sun, CloudSun, Moon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -42,8 +42,9 @@ import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatRecurrenceSummary } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, getPeriodOfDay, getDateObject } from '@/lib/calendar-utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { format as formatDateFns } from 'date-fns';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -63,6 +64,12 @@ export default function MissionsHubPage() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
+
+  const periodIcons = {
+    Manhã: Sun,
+    Tarde: CloudSun,
+    Noite: Moon,
+  };
 
   useEffect(() => {
     if (!user) {
@@ -254,6 +261,12 @@ export default function MissionsHubPage() {
                 const categoryDetails = getCategoryDetails(template.category);
                 const CategoryIconComponent = categoryDetails?.icon;
                 const assignedChildren = assignmentsByTemplate.get(template.id) || [];
+                
+                const scheduleDate = getDateObject(template.isRecurring ? template.startDate : template.dueDate);
+                const time = scheduleDate ? formatDateFns(scheduleDate, 'HH:mm') : null;
+                const period = scheduleDate ? getPeriodOfDay(scheduleDate) : null;
+                const PeriodIcon = period ? periodIcons[period] : null;
+
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
@@ -286,9 +299,17 @@ export default function MissionsHubPage() {
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <Repeat className="h-5 w-5 mr-1.5 text-purple-500" />
-                          <span className="truncate">{formatRecurrenceSummary(template)}</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center text-sm text-muted-foreground">
+                              <Repeat className="h-5 w-5 mr-1.5 text-purple-500 shrink-0" />
+                              <span className="truncate">{formatRecurrenceSummary(template)}{time ? `, às ${time}` : ''}</span>
+                          </div>
+                          {period && PeriodIcon && (
+                            <div className="flex items-center text-sm text-muted-foreground pl-[26px]">
+                                <PeriodIcon className="h-4 w-4 mr-1.5 text-gray-500 shrink-0" />
+                                <span>{period}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="border-t pt-3 mt-3">
                             <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
