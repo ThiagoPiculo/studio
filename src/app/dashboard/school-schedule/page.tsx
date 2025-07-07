@@ -465,9 +465,14 @@ function SchoolSchedulePageContent() {
                             <p className="font-semibold">{entry.subject}</p>
                             <p className="text-sm text-muted-foreground">{weekdayLabels[entry.dayOfWeek].long}: {entry.startTime} - {entry.endTime}</p>
                         </div>
-                        <Button variant="outline" size="sm" onClick={() => handleEditClick(entry)}>
-                           <Edit className="mr-2 h-4 w-4" /> Editar
-                        </Button>
+                        <div className="flex items-center gap-2">
+                           <Button variant="outline" size="sm" onClick={() => handleEditClick(entry)}>
+                              <Edit className="mr-2 h-4 w-4" /> Editar
+                           </Button>
+                            <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setEntryToDelete(entry)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
+                            </Button>
+                        </div>
                     </div>
                 ))}
             </CardContent>
