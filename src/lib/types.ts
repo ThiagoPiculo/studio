@@ -130,6 +130,7 @@ export interface MissionTemplate {
   familyId?: string | null;
   title: string;
   description?: string;
+  emoji?: string;
   category: MissionCategory;
   starsReward: number;
   xpReward: number;
@@ -151,6 +152,7 @@ export interface MissionInstance {
   familyId?: string | null;
   title: string;
   description?: string;
+  emoji?: string;
   category: MissionCategory;
   starsReward: number;
   xpReward: number;

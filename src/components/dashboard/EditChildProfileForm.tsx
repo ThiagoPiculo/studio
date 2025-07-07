@@ -384,51 +384,54 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
           )}
         />
         
-        <FormField
-            control={form.control}
-            name="schoolShift"
-            render={({ field }) => (
-                <FormItem>
-                    <FormLabel>Turno Escolar</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
-                        <SelectContent>
-                            {schoolShifts.map(shift => (
-                                <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                    <FormMessage />
-                </FormItem>
-            )}
-        />
-        
-        {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
-             <div className="grid grid-cols-2 gap-4">
-                 <FormField
-                    control={form.control}
-                    name="schoolShiftStart"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Início do Turno</FormLabel>
-                            <FormControl><Input type="time" {...field} /></FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="md:col-span-1">
                 <FormField
                     control={form.control}
-                    name="schoolShiftEnd"
+                    name="schoolShift"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Fim do Turno</FormLabel>
-                            <FormControl><Input type="time" {...field} /></FormControl>
+                            <FormLabel>Turno Escolar</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                                <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
+                                <SelectContent>
+                                    {schoolShifts.map(shift => (
+                                        <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-             </div>
-        )}
+            </div>
+            {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
+                <>
+                    <FormField
+                        control={form.control}
+                        name="schoolShiftStart"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Início do Turno</FormLabel>
+                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="schoolShiftEnd"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Fim do Turno</FormLabel>
+                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </>
+            )}
+        </div>
         
         <Separator/>
 
