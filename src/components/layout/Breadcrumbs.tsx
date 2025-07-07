@@ -18,7 +18,7 @@ interface Breadcrumb {
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Painel',
   heroes: 'Mini Herois',
-  agenda: 'Agenda',
+  agenda: 'Agenda dos Herois',
   manage: 'Gerenciar',
   family: 'Aliança',
   missions: 'Central de Missões',

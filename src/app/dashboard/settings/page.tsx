@@ -365,7 +365,7 @@ export default function SettingsPage() {
                         <SelectContent>
                             <SelectItem value="dashboard">Painel</SelectItem>
                             <SelectItem value="heroes">Mini Herois</SelectItem>
-                            <SelectItem value="agenda">Agenda</SelectItem>
+                            <SelectItem value="agenda">Agenda dos Herois</SelectItem>
                             <SelectItem value="missions">Central de Missões</SelectItem>
                             <SelectItem value="rewards">Recompensas</SelectItem>
                             <SelectItem value="family">Alianças</SelectItem>

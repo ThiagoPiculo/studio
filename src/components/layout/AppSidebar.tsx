@@ -57,9 +57,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda" isActive={pathname.startsWith('/dashboard/agenda')}>
+                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda dos Herois" isActive={pathname.startsWith('/dashboard/agenda')}>
                             <CalendarDays className="text-chart-1" />
-                            <span>Agenda</span>
+                            <span>Agenda dos Herois</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
