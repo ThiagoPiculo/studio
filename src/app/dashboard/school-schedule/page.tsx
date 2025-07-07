@@ -242,7 +242,7 @@ function SchoolSchedulePageContent() {
                                     <div
                                         key={entry.id}
                                         className={cn(
-                                            "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center",
+                                            "absolute w-full p-2 rounded-lg shadow-sm group cursor-pointer border flex items-center justify-center",
                                             !useColors && "bg-primary/10 border-primary/20"
                                         )}
                                         style={entryStyle}
