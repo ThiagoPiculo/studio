@@ -23,6 +23,7 @@ import { Progress } from "@/components/ui/progress";
 import { isMissionScheduledForDate } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
+import { format } from 'date-fns';
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -152,6 +153,8 @@ export default function HeroesPage() {
   const hasRewards = rewardTemplates.length > 0;
   const showGuide = !isLoadingGuideData && (!hasChildren || !hasMissions || !hasRewards);
 
+  const today = format(new Date(), 'yyyy-MM-dd');
+
   return (
     <div className="space-y-8">
        {showGuide && (
@@ -262,7 +265,7 @@ export default function HeroesPage() {
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
-                    <Link href={`/dashboard/child/${child.id}/manage`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
+                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center gap-1">
                       <Target className="h-5 w-5 text-chart-3" />
                       <p className="font-bold text-lg">{todaysMissionsCount}</p>
                       <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>

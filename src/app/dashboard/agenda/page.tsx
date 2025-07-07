@@ -65,7 +65,8 @@ function AgendaPageContent() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
+  const childIdParam = searchParams.get('child_id');
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>(childIdParam ? [childIdParam] : []);
 
   // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
@@ -155,7 +156,10 @@ function AgendaPageContent() {
         
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
-        setSelectedChildrenIds([]);
+        // Do not reset selected children if coming from a link
+        if (!childIdParam) {
+          setSelectedChildrenIds([]);
+        }
 
       } catch (error) {
         console.error("Error fetching agenda data for new context:", error);
@@ -166,7 +170,7 @@ function AgendaPageContent() {
     };
 
     loadDataForContext();
-  }, [user, currentContext, toast]);
+  }, [user, currentContext, toast, childIdParam]);
   
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
