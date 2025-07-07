@@ -201,58 +201,73 @@ export const deleteChildProfile = async (childId: string): Promise<void> => {
   await batch.commit();
 };
 
-export const resetChildProgress = async (childId: string): Promise<void> => {
-  const batch = writeBatch(db);
+export const resetChildProgress = async (currentUserId: string, childId: string): Promise<void> => {
+    const childRef = doc(db, 'children', childId);
+    const childSnap = await getDoc(childRef);
 
-  // 1. Reset the child's main profile stats
-  const childRef = doc(db, 'children', childId);
-  batch.update(childRef, {
-    stars: 0,
-    xp: 0,
-    level: 1,
-    earnedBadgeIds: [],
-    updatedAt: serverTimestamp(),
-  });
+    if (!childSnap.exists() || childSnap.data().ownerId !== currentUserId) {
+        throw new Error("Permissão negada: você só pode redefinir o progresso de crianças que você cadastrou.");
+    }
+  
+    const batch = writeBatch(db);
 
-  // 2. Find and reset all mission instances for this child
-  const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
-  const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
-  missionInstancesSnapshot.forEach(missionDoc => {
-    batch.update(missionDoc.ref, {
-      status: 'pending',
-      completionCount: 0,
-      completionLog: {},
+    // 1. Reset the child's main profile stats
+    batch.update(childRef, {
+      stars: 0,
+      xp: 0,
+      level: 1,
+      earnedBadgeIds: [],
+      updatedAt: serverTimestamp(),
     });
-  });
 
-  // 3. Find and reset all redeemed reward instances for this child
-  const rewardInstancesQuery = query(
-    collection(db, "childRewardInstances"),
-    where("childId", "==", childId),
-    where("status", "==", "redeemed")
-  );
-  const rewardInstancesSnapshot = await getDocs(rewardInstancesQuery);
-  rewardInstancesSnapshot.forEach(rewardDoc => {
-    batch.update(rewardDoc.ref, {
-      status: 'active',
-      isRedeemed: false,
-      redeemedAt: deleteField(),
+    // 2. Find and reset all mission instances for this child
+    const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
+    const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
+    missionInstancesSnapshot.forEach(missionDoc => {
+      batch.update(missionDoc.ref, {
+        status: 'pending',
+        completionCount: 0,
+        completionLog: {},
+      });
     });
-  });
 
-  await batch.commit();
+    // 3. Find and reset all redeemed reward instances for this child
+    const rewardInstancesQuery = query(
+      collection(db, "childRewardInstances"),
+      where("childId", "==", childId),
+      where("status", "==", "redeemed")
+    );
+    const rewardInstancesSnapshot = await getDocs(rewardInstancesQuery);
+    rewardInstancesSnapshot.forEach(rewardDoc => {
+      batch.update(rewardDoc.ref, {
+        status: 'active',
+        isRedeemed: false,
+        redeemedAt: deleteField(),
+      });
+    });
+
+    await batch.commit();
 };
 
-export const resetSelectedChildrenProgress = async (childIds: string[]): Promise<void> => {
+export const resetSelectedChildrenProgress = async (currentUserId: string, childIds: string[]): Promise<void> => {
   if (childIds.length === 0) {
     return;
   }
-  const resetPromises = childIds.map(childId => resetChildProgress(childId));
+  const resetPromises = childIds.map(childId => resetChildProgress(currentUserId, childId));
   await Promise.all(resetPromises);
 };
 
-export const resetSchedulesForChildren = async (childIds: string[]): Promise<void> => {
+export const resetSchedulesForChildren = async (currentUserId: string, childIds: string[]): Promise<void> => {
   if (childIds.length === 0) return;
+
+  // Verify ownership before proceeding
+  for (const childId of childIds) {
+    const childRef = doc(db, 'children', childId);
+    const childSnap = await getDoc(childRef);
+    if (!childSnap.exists() || childSnap.data().ownerId !== currentUserId) {
+      throw new Error(`Permissão negada para o herói com ID ${childId}. Você não é o proprietário.`);
+    }
+  }
 
   const batch = writeBatch(db);
 

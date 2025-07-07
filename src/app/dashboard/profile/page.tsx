@@ -36,7 +36,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
-  const { availableContexts, currentContext } = useFamily();
+  const { availableContexts } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -54,7 +54,6 @@ export default function ProfilePage() {
   const [selectedChildrenForRoutines, setSelectedChildrenForRoutines] = useState<Record<string, boolean>>({});
 
   const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [isOwner, setIsOwner] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -62,16 +61,8 @@ export default function ProfilePage() {
       getChildProfilesByOwner(user.uid).then(profiles => {
         setChildren(profiles);
       });
-
-      const currentFamilyContext = availableContexts.find(c => c.id === currentContext);
-      // This is a simplified check. A robust implementation would fetch family details.
-      // For this page's purpose, if the user is in a family context, we assume they might not be the owner.
-      // A more direct check would be `familyDetails.ownerId === user.uid`
-      // For now, let's assume if it's not "my-space", we need to be careful.
-      // The logic in firestore will do the real check.
-      setIsOwner(true); // Placeholder, real logic would be more complex
     }
-  }, [user, availableContexts, currentContext]);
+  }, [user]);
   
   const groupedChildren = useMemo(() => {
     const groups: Record<string, ChildProfile[]> = { 'my-space': [] };
@@ -141,6 +132,7 @@ export default function ProfilePage() {
   };
 
   const handleResetSelectedProgress = async () => {
+    if (!user) return;
     const childIdsToReset = Object.entries(selectedChildrenForProgress).filter(([, selected]) => selected).map(([id]) => id);
     if (childIdsToReset.length === 0) {
         toast({ title: "Nenhuma criança selecionada." });
@@ -148,20 +140,21 @@ export default function ProfilePage() {
     }
     setIsResettingProgress(true);
     try {
-      await resetSelectedChildrenProgress(childIdsToReset);
+      await resetSelectedChildrenProgress(user.uid, childIdsToReset);
       const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
       toast({ title: "Progresso Redefinido!", description: `O progresso de ${formatChildNames(childNames)} foi zerado.` });
       setIsResetProgressDialogOpen(false);
       setSelectedChildrenForProgress({});
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting progress for selected children:", error);
-      toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso.", variant: "destructive" });
+      toast({ title: "Erro ao Redefinir", description: error.message || "Não foi possível redefinir o progresso.", variant: "destructive" });
     } finally {
       setIsResettingProgress(false);
     }
   };
 
   const handleResetSelectedRoutines = async () => {
+    if (!user) return;
     const childIdsToReset = Object.entries(selectedChildrenForRoutines).filter(([, selected]) => selected).map(([id]) => id);
     if (childIdsToReset.length === 0) {
         toast({ title: "Nenhuma criança selecionada." });
@@ -169,14 +162,14 @@ export default function ProfilePage() {
     }
     setIsResettingRoutines(true);
     try {
-      await resetSchedulesForChildren(childIdsToReset);
+      await resetSchedulesForChildren(user.uid, childIdsToReset);
       const childNames = children.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
       toast({ title: "Rotinas Removidas!", description: `Todas as missões agendadas para ${formatChildNames(childNames)} foram removidas.` });
       setIsResetRoutinesDialogOpen(false);
       setSelectedChildrenForRoutines({});
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting routines for selected children:", error);
-      toast({ title: "Erro ao Remover Rotinas", description: "Não foi possível limpar a agenda das crianças selecionadas.", variant: "destructive" });
+      toast({ title: "Erro ao Remover Rotinas", description: error.message || "Não foi possível limpar a agenda das crianças selecionadas.", variant: "destructive" });
     } finally {
       setIsResettingRoutines(false);
     }
