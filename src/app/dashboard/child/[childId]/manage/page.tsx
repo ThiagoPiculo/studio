@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
 import { rewardCategories, missionCategories } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -968,11 +968,11 @@ export default function ManageChildPage() {
                               Custo: {instance.starsCost} estrelas
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Atribuída em: new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()
+                              Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
                             </p>
                             {instance.status === 'redeemed' && instance.redeemedAt && (
                               <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: new Date((instance.redeemedAt as any).seconds * 1000).toLocaleDateString()
+                                Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
                               </p>
                             )}
                           </CardContent>
@@ -1058,8 +1058,10 @@ export default function ManageChildPage() {
                                     "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
                                     isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
                                   )}>
-                                      {!isEarned && (
-                                          <Lock className="absolute top-3 right-3 h-5 w-5 text-amber-500 drop-shadow-sm" />
+                                      {isEarned ? (
+                                        <Medal className="absolute top-2 right-2 h-6 w-6 text-amber-500 fill-amber-400 drop-shadow-lg" />
+                                      ) : (
+                                        <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
                                       )}
                                       <div className={cn(
                                         "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
