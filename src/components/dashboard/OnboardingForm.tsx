@@ -28,6 +28,7 @@ import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { schoolShifts } from "@/lib/types";
+import { TimePicker } from "./school-schedule/TimePicker";
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
@@ -296,7 +297,7 @@ export function OnboardingForm() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Início do Turno</FormLabel>
-                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormControl><TimePicker {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -307,7 +308,7 @@ export function OnboardingForm() {
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Fim do Turno</FormLabel>
-                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormControl><TimePicker {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}

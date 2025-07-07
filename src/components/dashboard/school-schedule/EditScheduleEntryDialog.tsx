@@ -18,6 +18,7 @@ import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEn
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { TimePicker } from './TimePicker';
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
@@ -230,14 +231,14 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                             <FormField control={form.control} name="startTime" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Início</FormLabel>
-                                    <FormControl><Input type="time" {...field} /></FormControl>
+                                    <FormControl><TimePicker {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )} />
                             <FormField control={form.control} name="endTime" render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Fim</FormLabel>
-                                    <FormControl><Input type="time" {...field} /></FormControl>
+                                    <FormControl><TimePicker {...field} /></FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )} />

@@ -15,6 +15,7 @@ import { Loader2, Save } from 'lucide-react';
 import type { ChildProfile, SchoolShift } from '@/lib/types';
 import { schoolShifts } from '@/lib/types';
 import { updateChildProfile } from '@/lib/firebase/firestore';
+import { TimePicker } from './TimePicker';
 
 const shiftFormSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
@@ -167,7 +168,7 @@ export function EditShiftDialog({ isOpen, onOpenChange, onSave, child }: EditShi
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Início do Turno</FormLabel>
-                                            <FormControl><Input type="time" {...field} /></FormControl>
+                                            <FormControl><TimePicker {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}
@@ -178,7 +179,7 @@ export function EditShiftDialog({ isOpen, onOpenChange, onSave, child }: EditShi
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Fim do Turno</FormLabel>
-                                            <FormControl><Input type="time" {...field} /></FormControl>
+                                            <FormControl><TimePicker {...field} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )}

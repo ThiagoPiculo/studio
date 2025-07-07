@@ -43,6 +43,7 @@ import { Skeleton } from "../ui/skeleton";
 import { Separator } from "../ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { schoolShifts } from "@/lib/types";
+import { TimePicker } from "./school-schedule/TimePicker";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -434,7 +435,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Início do Turno</FormLabel>
-                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormControl><TimePicker {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
@@ -445,7 +446,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Fim do Turno</FormLabel>
-                                <FormControl><Input type="time" {...field} /></FormControl>
+                                <FormControl><TimePicker {...field} /></FormControl>
                                 <FormMessage />
                             </FormItem>
                         )}
