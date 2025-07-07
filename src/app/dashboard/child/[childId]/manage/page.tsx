@@ -989,7 +989,7 @@ function ManageChildPageContent() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Central de Missões de {child.name}</CardTitle>
+                            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Central de Missões de {child.name}</CardTitle>
                             <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
                         </div>
                         <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)}>
@@ -1019,6 +1019,9 @@ function ManageChildPageContent() {
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
+                    <Button onClick={() => router.push('/dashboard/missions')} variant="outline" className="shadow-sm">
+                        <ExternalLink className="mr-2 h-4 w-4" /> Ir para a Central de Missões (Catálogo)
+                    </Button>
                     {filteredMissions.length === 0 ? (
                       <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                           <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
