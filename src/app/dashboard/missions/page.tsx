@@ -311,7 +311,7 @@ export default function MissionsHubPage() {
                             </div>
                           )}
                         </div>
-                        <div className="border-t pt-3 mt-3">
+                        <div className="border-t pt-3 mt-3 min-h-[5rem]">
                             <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
                             {assignedChildren.length > 0 ? (
                                 <div className="flex items-center space-x-2">

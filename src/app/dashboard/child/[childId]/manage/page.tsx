@@ -524,12 +524,12 @@ export default function ManageChildPage() {
         <Card key={instance.id} className={`shadow-sm flex flex-col transition-all`}>
             <CardHeader>
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-lg">{instance.title}</CardTitle>
+                    <CardTitle className="text-xl">{instance.title}</CardTitle>
                     <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs">
                         {getMissionStatusText(instance.status)}
                     </Badge>
                 </div>
-                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-3">{instance.description}</CardDescription>}
             </CardHeader>
             <CardContent className="space-y-3 flex-grow text-sm">
                 {categoryDetails && (
@@ -568,23 +568,25 @@ export default function ManageChildPage() {
                         Progresso: {Object.keys(instance.completionLog || {}).length} / {instance.recurrenceRule.count}
                     </div>
                 )}
-                <div className="space-y-1 border-t pt-3 mt-3 text-xs text-muted-foreground">
-                    <div className="flex items-center">
-                        <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
-                        Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                <div className="border-t pt-3 mt-3 min-h-[5rem]">
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                        <div className="flex items-center">
+                            <CalendarDays className="h-3.5 w-3.5 mr-1.5" />
+                            Atribuída em: {new Date((instance.assignedAt as any).seconds * 1000).toLocaleDateString()}
+                        </div>
+                        {instance.dueDate && (
+                            <div className="flex items-center font-medium text-destructive/80">
+                                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
+                            </div>
+                        )}
+                        {instance.status === 'completed' && instance.updatedAt && (
+                            <div className="flex items-center font-medium text-green-600">
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                Concluída em: {new Date((instance.updatedAt as any).seconds * 1000).toLocaleDateString()}
+                            </div>
+                        )}
                     </div>
-                    {instance.dueDate && (
-                        <div className="flex items-center font-medium text-destructive/80">
-                            <Clock className="h-3.5 w-3.5 mr-1.5" />
-                            Vence em: {new Date((instance.dueDate as any).seconds * 1000).toLocaleDateString()}
-                        </div>
-                    )}
-                    {instance.status === 'completed' && instance.updatedAt && (
-                        <div className="flex items-center font-medium text-green-600">
-                            <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                            Concluída em: {new Date((instance.updatedAt as any).seconds * 1000).toLocaleDateString()}
-                        </div>
-                    )}
                 </div>
             </CardContent>
             <CardFooter>
