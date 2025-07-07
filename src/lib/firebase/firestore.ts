@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry } from '@/lib/types';
 import { heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -1722,4 +1722,47 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
     await batch.commit();
 };
 
-    
+// --- School Schedule ---
+
+export const getSchoolScheduleForContext = async (ownerId: string, familyId: string | null): Promise<SchoolScheduleEntry[]> => {
+  let q;
+  if (familyId && familyId !== 'my-space') {
+    q = query(collection(db, 'schoolSchedules'), where('familyId', '==', familyId));
+  } else {
+    q = query(collection(db, 'schoolSchedules'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+  }
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolScheduleEntry));
+};
+
+export const getSchoolScheduleForChild = async (childId: string): Promise<SchoolScheduleEntry[]> => {
+    const q = query(collection(db, 'schoolSchedules'), where('childId', '==', childId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolScheduleEntry));
+}
+
+export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<SchoolScheduleEntry> => {
+  const newEntryRef = doc(collection(db, 'schoolSchedules'));
+  const now = serverTimestamp() as Timestamp;
+  const newEntry: SchoolScheduleEntry = {
+    id: newEntryRef.id,
+    ...entryData,
+    createdAt: now,
+    updatedAt: now,
+  };
+  await setDoc(newEntryRef, newEntry);
+  return newEntry;
+};
+
+export const updateSchoolScheduleEntry = async (entryId: string, updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>): Promise<void> => {
+  const entryRef = doc(db, 'schoolSchedules', entryId);
+  await updateDoc(entryRef, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  });
+};
+
+export const deleteSchoolScheduleEntry = async (entryId: string): Promise<void> => {
+  const entryRef = doc(db, 'schoolSchedules', entryId);
+  await deleteDoc(entryRef);
+};

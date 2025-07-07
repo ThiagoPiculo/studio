@@ -32,6 +32,7 @@ const pathTranslations: { [key: string]: string } = {
   ideas: 'Ideias',
   suggest: 'Sugerir com IA',
   tasks: 'Tarefas',
+  'school-schedule': 'Agenda Escolar',
   child: 'child' // placeholder for logic
 };
 

@@ -4,13 +4,13 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails } from '@/lib/types';
-import { rewardCategories, missionCategories } from '@/lib/types';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
+import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -50,6 +50,7 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import Link from 'next/link';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -67,6 +68,7 @@ function ManageChildPageContent() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
+  const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
@@ -108,10 +110,11 @@ function ManageChildPageContent() {
     if (!childId) return;
     setIsLoading(true);
     try {
-      const [profile, missions, rewards] = await Promise.all([
+      const [profile, missions, rewards, schedule] = await Promise.all([
         getChildProfileById(childId),
         getMissionInstancesByChild(childId),
         getChildRewardInstancesByChild(childId),
+        getSchoolScheduleForChild(childId),
       ]);
 
       if (profile) {
@@ -124,6 +127,7 @@ function ManageChildPageContent() {
             if (a.status === 'redeemed' && b.status === 'disabled') return 1;
             return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
         }));
+        setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
       } else {
         toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi.", variant: "destructive" });
         router.push('/dashboard/heroes');
@@ -820,10 +824,11 @@ function ManageChildPageContent() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 gap-2 h-auto md:grid-cols-5 lg:grid-cols-5 lg:h-10 bg-muted/50 p-1 rounded-lg">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Central de Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-green-500" />Recompensas</TabsTrigger>
+          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><School className="mr-2 h-4 w-4 text-gray-500" />Agenda Escolar</TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Conquistas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
         </TabsList>
@@ -1190,6 +1195,44 @@ function ManageChildPageContent() {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="school-schedule">
+            <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle>Agenda Escolar de {child.name}</CardTitle>
+                    <CardDescription>Veja o horário de aulas da semana.</CardDescription>
+                    <Button asChild variant="outline" className="w-fit">
+                        <Link href="/dashboard/school-schedule">
+                            <Edit3 className="mr-2 h-4 w-4" /> Gerenciar Agenda Completa
+                        </Link>
+                    </Button>
+                </CardHeader>
+                <CardContent>
+                    {schoolSchedule.length === 0 ? (
+                        <p className="text-muted-foreground">Nenhuma aula cadastrada na agenda escolar.</p>
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {weekdays.map(day => {
+                                const dayEntries = schoolSchedule.filter(e => e.dayOfWeek === day);
+                                if (dayEntries.length === 0) return null;
+                                return (
+                                    <div key={day}>
+                                        <h3 className="font-semibold mb-2">{weekdayLabels[day].long}</h3>
+                                        <ul className="space-y-2">
+                                            {dayEntries.map(entry => (
+                                                <li key={entry.id} className="p-3 rounded-md border" style={{ borderLeftColor: entry.color, borderLeftWidth: '4px' }}>
+                                                    <p className="font-semibold">{entry.subject}</p>
+                                                    <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+        </TabsContent>
           <TabsContent value="badges" className="space-y-6">
             <Dialog open={isAboutBadgesOpen} onOpenChange={setIsAboutBadgesOpen}>
               <Card className="shadow-md">
@@ -1435,5 +1478,6 @@ export default function ManageChildPage() {
     
 
     
+
 
 

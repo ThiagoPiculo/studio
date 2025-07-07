@@ -12,7 +12,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, School } from 'lucide-react';
 import { FamilyContextSwitcher } from './FamilyContextSwitcher';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
@@ -62,6 +62,12 @@ export function AppSidebar() {
                         <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda" isActive={pathname.startsWith('/dashboard/agenda')}>
                             <CalendarDays className="text-chart-1" />
                             <span>Agenda</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Agenda Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
+                            <School className="text-chart-5"/>
+                            <span>Agenda Escolar</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>

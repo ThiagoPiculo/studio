@@ -1,5 +1,4 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
 import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, School, HeartPulse, Smile, Users, Banknote, Leaf, Bike } from 'lucide-react';
@@ -90,7 +89,7 @@ export const missionCategories = [
 export type MissionCategory = typeof missionCategories[number]['id'];
 export type MissionCategoryDetails = typeof missionCategories[number];
 
-export const weekdays = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as const;
+export const weekdays = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 export type Weekday = typeof weekdays[number];
 export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
   SU: { long: 'Domingo', short: 'Dom' },
@@ -241,6 +240,20 @@ export interface Dream {
   imageUrl?: string;
   createdAt: Timestamp;
   achievedAt?: Timestamp;
+}
+
+export interface SchoolScheduleEntry {
+  id: string;
+  childId: string;
+  ownerId: string;
+  familyId: string | null;
+  subject: string;
+  dayOfWeek: Weekday;
+  startTime: string; // "HH:mm" format
+  endTime: string;   // "HH:mm" format
+  color: string;
+  createdAt: Timestamp;
+  updatedAt: Timestamp;
 }
 
 // Context types
