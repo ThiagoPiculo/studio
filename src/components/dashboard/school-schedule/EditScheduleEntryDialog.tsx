@@ -22,7 +22,7 @@ const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
   dayOfWeek: z.enum(weekdays),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, "Use o formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
 }).refine(data => data.startTime < data.endTime, {
   message: "O horário final deve ser depois do inicial.",
