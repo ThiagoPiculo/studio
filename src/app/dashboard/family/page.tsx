@@ -675,7 +675,7 @@ function FamilyPageContent() {
                     {ownedChildren.length > 0 && (
                         <>
                             <Separator className="my-1 w-full" />
-                            <p className="text-xs text-muted-foreground self-start">Herois:</p>
+                            <p className="text-xs text-muted-foreground self-start">Criador dos Herois:</p>
                             <div className="flex flex-wrap justify-center gap-2">
                                 {ownedChildren.map(child => (
                                     <TooltipProvider key={child.id} delayDuration={100}>
