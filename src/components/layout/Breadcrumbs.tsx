@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
@@ -47,8 +47,15 @@ export function Breadcrumbs() {
   const params = useParams();
   const [breadcrumbs, setBreadcrumbs] = useState<Breadcrumb[]>([]);
 
+  // We stringify the params object to create a stable dependency for useEffect.
+  // This prevents the "params are being enumerated" error with Next.js App Router's proxy object.
+  const paramsString = useMemo(() => JSON.stringify(params), [params]);
+
   useEffect(() => {
     const generateBreadcrumbs = async () => {
+      // We parse the stringified params back into an object for use.
+      const currentParams = JSON.parse(paramsString);
+
       const pathSegments = pathname.split('/').filter(Boolean);
       
       const crumbPromises = pathSegments.map(async (segment, index) => {
@@ -57,19 +64,19 @@ export function Breadcrumbs() {
         const isLoading = false;
         
         // This is a dynamic segment, so we fetch data
-        if (params.childId && segment === params.childId) {
+        if (currentParams.childId && segment === currentParams.childId) {
             const child = await getChildProfileById(segment);
             return { label: child?.name || "Herói", href, isLoading: !child };
         }
-        if (params.missionId && segment === params.missionId) {
+        if (currentParams.missionId && segment === currentParams.missionId) {
              const mission = await getMissionTemplateById(segment);
              return { label: mission?.title || "Missão", href, isLoading: !mission };
         }
-        if (params.templateId && segment === params.templateId) {
+        if (currentParams.templateId && segment === currentParams.templateId) {
              const template = await getRewardTemplateById(segment);
              return { label: template?.title || "Recompensa", href, isLoading: !template };
         }
-        if (params.rewardId && segment === params.rewardId) {
+        if (currentParams.rewardId && segment === currentParams.rewardId) {
              const template = await getRewardTemplateById(segment);
              return { label: template?.title || "Recompensa", href, isLoading: !template };
         }
@@ -89,7 +96,7 @@ export function Breadcrumbs() {
     if (pathname.startsWith('/dashboard')) {
         generateBreadcrumbs();
     }
-  }, [pathname, params]);
+  }, [pathname, paramsString]);
 
   if (!pathname.startsWith('/dashboard')) return null;
 
