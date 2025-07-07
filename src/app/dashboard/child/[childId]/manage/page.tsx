@@ -1059,7 +1059,11 @@ export default function ManageChildPage() {
                                     isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
                                   )}>
                                       {isEarned ? (
-                                        <Medal className="absolute top-2 right-2 h-6 w-6 text-amber-500 fill-amber-400 drop-shadow-lg" />
+                                        <Medal
+                                          className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
+                                          color={badge.color}
+                                          fill={badge.color}
+                                        />
                                       ) : (
                                         <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
                                       )}

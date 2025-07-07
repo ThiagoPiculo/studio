@@ -28,9 +28,15 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Consistência e Hábitos",
         items: [
-            { id: 'guardiao_rotina', title: 'Guardião da Rotina', description: 'Complete a mesma missão por 7 dias seguidos para valorizar sua persistência.', icon: Repeat, color: '#2dd4bf' },
-            { id: 'semana_perfeita', title: 'Semana Perfeita', description: 'Complete todas as missões agendadas por 7 dias consecutivos. Uma prova de total dedicação!', icon: Trophy, color: '#facc15' },
-            { id: 'mestre_persistencia', title: 'Mestre da Persistência', description: 'Uma medalha rara! Complete a mesma missão por 30 dias seguidos.', icon: Gem, color: '#f472b6' },
+            { id: 'guardiao_rotina_bronze', title: 'Guardião da Rotina (Bronze)', description: 'Complete a mesma missão por 2 dias seguidos.', icon: Repeat, color: '#CD7F32' },
+            { id: 'guardiao_rotina_prata', title: 'Guardião da Rotina (Prata)', description: 'Complete a mesma missão por 4 dias seguidos.', icon: Repeat, color: '#C0C0C0' },
+            { id: 'guardiao_rotina_ouro', title: 'Guardião da Rotina (Ouro)', description: 'Complete a mesma missão por 6 dias seguidos.', icon: Repeat, color: '#FFD700' },
+            { id: 'semana_perfeita_bronze', title: 'Semana Perfeita (Bronze)', description: 'Complete todas as missões agendadas por 7 dias consecutivos.', icon: Trophy, color: '#CD7F32' },
+            { id: 'semana_perfeita_prata', title: 'Semana Perfeita (Prata)', description: 'Complete todas as missões agendadas por 15 dias consecutivos.', icon: Trophy, color: '#C0C0C0' },
+            { id: 'semana_perfeita_ouro', title: 'Semana Perfeita (Ouro)', description: 'Complete todas as missões agendadas por 21 dias consecutivos.', icon: Trophy, color: '#FFD700' },
+            { id: 'mestre_persistencia_bronze', title: 'Mestre da Persistência (Bronze)', description: 'Complete a mesma missão por 30 dias seguidos.', icon: Gem, color: '#CD7F32' },
+            { id: 'mestre_persistencia_prata', title: 'Mestre da Persistência (Prata)', description: 'Complete a mesma missão por 45 dias seguidos.', icon: Gem, color: '#C0C0C0' },
+            { id: 'mestre_persistencia_ouro', title: 'Mestre da Persistência (Ouro)', description: 'Complete a mesma missão por 60 dias seguidos.', icon: Gem, color: '#FFD700' },
         ]
     },
     {

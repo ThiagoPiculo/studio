@@ -22,7 +22,7 @@ import {
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType } from '@/lib/types';
 import { heroColors } from '../hero-colors';
-import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays } from 'date-fns';
+import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
@@ -1204,70 +1204,79 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
         finalBadgeSet.add('aventureiro_nato');
     }
 
-    // Check for streaks
-    let foundRoutineGuard = false;
-    let foundPersistenceMaster = false;
+    // Check for single-mission streaks
+    let longestStreakForAnyMission = 0;
     for (const instance of allInstances) {
-        if (foundRoutineGuard && foundPersistenceMaster) break; // Optimization
-
         const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a,b) => a.getTime() - b.getTime());
-        if (completionDates.length >= 7) {
-            let consecutiveDays = 0;
-            let lastDate: Date | null = null;
-            for (const currentDate of completionDates) {
-                if (lastDate && differenceInDays(currentDate, lastDate) === 1) {
-                    consecutiveDays++;
+        if (completionDates.length > 1) { // Need at least 2 for a streak
+            let currentMissionLongestStreak = 1;
+            let currentStreak = 1;
+            for (let i = 1; i < completionDates.length; i++) {
+                if (differenceInDays(completionDates[i], completionDates[i-1]) === 1) {
+                    currentStreak++;
                 } else {
-                    consecutiveDays = 1; // Start new streak
+                    currentStreak = 1; // Reset streak
                 }
-                lastDate = currentDate;
-                if (!foundRoutineGuard && consecutiveDays >= 7) {
-                    finalBadgeSet.add('guardiao_rotina');
-                    foundRoutineGuard = true;
+                if (currentStreak > currentMissionLongestStreak) {
+                    currentMissionLongestStreak = currentStreak;
                 }
-                if (!foundPersistenceMaster && consecutiveDays >= 30) {
-                    finalBadgeSet.add('mestre_persistencia');
-                    foundPersistenceMaster = true;
-                }
+            }
+            if (currentMissionLongestStreak > longestStreakForAnyMission) {
+                longestStreakForAnyMission = currentMissionLongestStreak;
             }
         }
     }
+
+    // Guardião da Rotina
+    if (longestStreakForAnyMission >= 2) finalBadgeSet.add('guardiao_rotina_bronze');
+    if (longestStreakForAnyMission >= 4) finalBadgeSet.add('guardiao_rotina_prata');
+    if (longestStreakForAnyMission >= 6) finalBadgeSet.add('guardiao_rotina_ouro');
+
+    // Mestre da Persistência
+    if (longestStreakForAnyMission >= 30) finalBadgeSet.add('mestre_persistencia_bronze');
+    if (longestStreakForAnyMission >= 45) finalBadgeSet.add('mestre_persistencia_prata');
+    if (longestStreakForAnyMission >= 60) finalBadgeSet.add('mestre_persistencia_ouro');
     
     // Check for "Semana Perfeita"
+    let longestPerfectStreak = 0;
+    let currentPerfectStreak = 0;
+    let missionsInCurrentStreak = 0;
     const today = startOfDay(new Date());
-    let foundPerfectWeek = false;
-    // Check starting from the last 30 days to keep it reasonably performant
-    for (let i = 0; i < 30; i++) { 
-        if (foundPerfectWeek) break;
+
+    for (let i = 0; i < 60; i++) {
+        const checkDate = subDays(today, i);
+        const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
         
-        const windowStart = subDays(today, i + 6);
-        let isPerfectWindow = true;
-        let missionsInWindow = 0; // Track if there are any missions in this window
-
-        for (let j = 0; j < 7; j++) {
-            const checkDate = addDays(windowStart, j);
-            const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
-            
-            if (scheduledMissions.length > 0) {
-                missionsInWindow += scheduledMissions.length;
-                const allCompleted = scheduledMissions.every(inst => {
-                    const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
-                    return inst.completionLog && inst.completionLog[dateKey];
-                });
-
-                if (!allCompleted) {
-                    isPerfectWindow = false; // If any scheduled mission is not complete, the window is not perfect.
-                    break;
-                }
+        let isDayPerfect = true;
+        if (scheduledMissions.length > 0) {
+            missionsInCurrentStreak++;
+            const allCompleted = scheduledMissions.every(inst => {
+                const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
+                return inst.completionLog && inst.completionLog[dateKey];
+            });
+            if (!allCompleted) {
+                isDayPerfect = false;
             }
         }
 
-        // A window is only truly perfect if the streak was not broken AND there was at least one mission in it.
-        if (isPerfectWindow && missionsInWindow > 0) {
-            finalBadgeSet.add('semana_perfeita');
-            foundPerfectWeek = true;
+        if (isDayPerfect) {
+            currentPerfectStreak++;
+        } else {
+            if (missionsInCurrentStreak > 0 && currentPerfectStreak > longestPerfectStreak) {
+                longestPerfectStreak = currentPerfectStreak;
+            }
+            currentPerfectStreak = 0;
+            missionsInCurrentStreak = 0;
         }
     }
+
+    if (missionsInCurrentStreak > 0 && currentPerfectStreak > longestPerfectStreak) {
+        longestPerfectStreak = currentPerfectStreak;
+    }
+    
+    if (longestPerfectStreak >= 7) finalBadgeSet.add('semana_perfeita_bronze');
+    if (longestPerfectStreak >= 15) finalBadgeSet.add('semana_perfeita_prata');
+    if (longestPerfectStreak >= 21) finalBadgeSet.add('semana_perfeita_ouro');
 
     // 3. Compare and update
     const newlyAwardedBadges = [...finalBadgeSet].filter(badgeId => !currentBadgeIds.has(badgeId));
