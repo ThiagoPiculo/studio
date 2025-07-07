@@ -139,6 +139,7 @@ export default function HeroesPage() {
     
     const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
     const xpInCurrentLevel = currentXp - xpForCurrentLevel;
+    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
     
     const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
 
