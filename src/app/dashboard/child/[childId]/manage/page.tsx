@@ -41,10 +41,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict } from 'date-fns';
+import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
+import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -84,9 +84,16 @@ export default function ManageChildPage() {
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
   
+  // Badge states
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [isResettingProgress, setIsResettingProgress] = useState(false);
   const [isAboutBadgesOpen, setIsAboutBadgesOpen] = useState(false);
+  const [badgeProgress, setBadgeProgress] = useState({
+    longestSingleMissionStreak: 0,
+    longestPerfectStreak: 0,
+  });
+  const [isCalculatingProgress, setIsCalculatingProgress] = useState(true);
+
 
   const periodIcons = {
     Manhã: Sun,
@@ -136,6 +143,76 @@ export default function ManageChildPage() {
       router.push('/dashboard/heroes');
     }
   }, [childId, fetchData, router]);
+  
+  useEffect(() => {
+    if (!missionInstances || missionInstances.length === 0) {
+      setIsCalculatingProgress(false);
+      return;
+    }
+    
+    setIsCalculatingProgress(true);
+
+    // SINGLE MISSION STREAK CALC
+    let overallLongestStreak = 0;
+    missionInstances.forEach(instance => {
+        const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a, b) => a.getTime() - b.getTime());
+        if (completionDates.length === 0) return;
+
+        let currentStreak = 1;
+        let longestStreakForThisMission = 1;
+        for (let i = 1; i < completionDates.length; i++) {
+            if (differenceInDays(completionDates[i], completionDates[i-1]) === 1) {
+                currentStreak++;
+            } else if (differenceInDays(completionDates[i], completionDates[i-1]) > 1) {
+                currentStreak = 1; // Reset if there's a gap
+            }
+            if (currentStreak > longestStreakForThisMission) {
+                longestStreakForThisMission = currentStreak;
+            }
+        }
+        if (longestStreakForThisMission > overallLongestStreak) {
+            overallLongestStreak = longestStreakForThisMission;
+        }
+    });
+
+    // PERFECT STREAK CALC
+    let longestPerfectStreak = 0;
+    let currentPerfectStreak = 0;
+    const today = startOfDay(new Date());
+
+    const allCompletionDates = new Set(missionInstances.flatMap(inst => Object.keys(inst.completionLog || {})));
+    if (allCompletionDates.size > 0) {
+        const sortedDates = Array.from(allCompletionDates).map(d => startOfDay(new Date(d))).sort((a, b) => a.getTime() - b.getTime());
+        const firstDate = sortedDates[0];
+        const daysInInterval = eachDayOfInterval({ start: firstDate, end: today });
+
+        for (const checkDate of daysInInterval) {
+            const scheduledMissions = missionInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
+            if (scheduledMissions.length > 0) {
+                const allCompleted = scheduledMissions.every(inst => isMissionCompletedForDate(inst, checkDate));
+                if (allCompleted) {
+                    currentPerfectStreak++;
+                } else {
+                    if (currentPerfectStreak > longestPerfectStreak) {
+                        longestPerfectStreak = currentPerfectStreak;
+                    }
+                    currentPerfectStreak = 0;
+                }
+            }
+        }
+        if (currentPerfectStreak > longestPerfectStreak) {
+            longestPerfectStreak = currentPerfectStreak;
+        }
+    }
+
+    setBadgeProgress({
+        longestSingleMissionStreak: overallLongestStreak,
+        longestPerfectStreak: longestPerfectStreak,
+    });
+    
+    setIsCalculatingProgress(false);
+  }, [missionInstances]);
+
 
   // Derived data using useMemo for reactivity and performance
   const stats = useMemo(() => {
@@ -449,8 +526,17 @@ export default function ManageChildPage() {
   const renderBadge = (badge: BadgeType) => {
     if (!child) return null;
     const isEarned = child.earnedBadgeIds?.includes(badge.id);
-    const isProgressive = badge.id.includes('_bronze') || badge.id.includes('_prata') || badge.id.includes('_ouro');
-    const medalColor = isProgressive ? badge.color : '#FFD700';
+    const isConsistencyBadge = !!badge.progressType;
+
+    let currentProgress = 0;
+    if (isConsistencyBadge && !isEarned) {
+      if (badge.progressType === 'singleMissionStreak') {
+        currentProgress = badgeProgress.longestSingleMissionStreak;
+      } else if (badge.progressType === 'perfectStreak') {
+        currentProgress = badgeProgress.longestPerfectStreak;
+      }
+    }
+    const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
 
     return (
       <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
@@ -461,7 +547,7 @@ export default function ManageChildPage() {
             {isEarned ? (
               <Medal
                 className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
-                color={medalColor}
+                color={badge.color}
               />
             ) : (
               <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
@@ -475,17 +561,34 @@ export default function ManageChildPage() {
                     !isEarned && "opacity-30"
                 )} />
             </div>
-            <div className="flex-grow h-24 flex flex-col justify-center">
+            <div className="flex-grow h-24 flex flex-col justify-center w-full">
                 <p className={cn(
                     "text-sm font-semibold",
                     isEarned ? 'text-foreground' : 'text-muted-foreground'
                 )}>{badge.title}</p>
-                <p className={cn(
-                    "text-xs text-muted-foreground mt-1",
-                    !isEarned && "opacity-70"
-                )}>
-                    {badge.description}
-                </p>
+                
+                {isConsistencyBadge && !isEarned ? (
+                  <div className="mt-2 space-y-1">
+                    {isCalculatingProgress ? (
+                      <>
+                        <Skeleton className="h-2 w-full" />
+                        <Skeleton className="h-3 w-1/2 mx-auto" />
+                      </>
+                    ) : (
+                      <>
+                        <Progress value={progressPercentage} className="h-2" />
+                        <p className="text-xs text-muted-foreground">{currentProgress} de {badge.goal} dias</p>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <p className={cn(
+                      "text-xs text-muted-foreground mt-1",
+                      !isEarned && "opacity-70"
+                  )}>
+                      {badge.description}
+                  </p>
+                )}
             </div>
         </div>
       </DialogTrigger>
