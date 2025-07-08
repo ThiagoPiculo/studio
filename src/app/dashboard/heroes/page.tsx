@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle, Target } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle, Target, ArrowRight } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -244,7 +244,7 @@ export default function HeroesPage() {
                         <Settings className="ml-1.5 h-4 w-4" />
                     </Button>
                   </Link>
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 mt-2">
                      <Avatar
                         className="h-16 w-16 text-2xl shadow-sm ring-2 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
                         style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
