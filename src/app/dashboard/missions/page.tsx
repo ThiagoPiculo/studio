@@ -318,11 +318,6 @@ export default function MissionsHubPage() {
                 const CategoryIconComponent = categoryDetails?.icon;
                 const assignedChildren = assignmentsByTemplate.get(template.id) || [];
                 
-                const scheduleDate = getDateObject(template.isRecurring ? template.startDate : template.dueDate);
-                const time = scheduleDate ? formatDateFns(scheduleDate, 'HH:mm') : null;
-                const period = scheduleDate ? getPeriodOfDay(scheduleDate) : null;
-                const PeriodIcon = period ? periodIcons[period] : null;
-
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
@@ -359,26 +354,6 @@ export default function MissionsHubPage() {
                        <div className="flex items-center text-sm text-muted-foreground">
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
-                        </div>
-                        <div className="space-y-1">
-                          <div className="flex items-center text-sm text-muted-foreground">
-                              <Repeat className="h-5 w-5 mr-1.5 text-purple-500 shrink-0" />
-                              <span className="truncate">{formatRecurrenceSummary(template)}{time ? `, às ${time}` : ''}</span>
-                          </div>
-                          {period && PeriodIcon && (
-                            <div className={cn("flex items-center text-sm font-medium",
-                                period === 'Manhã' && "text-yellow-700 dark:text-yellow-400",
-                                period === 'Tarde' && "text-orange-700 dark:text-orange-400",
-                                period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
-                            )}>
-                                <PeriodIcon className={cn("h-5 w-5 mr-1.5 shrink-0", 
-                                    period === 'Manhã' && "text-yellow-500",
-                                    period === 'Tarde' && "text-orange-500",
-                                    period === 'Noite' && "text-indigo-500"
-                                )} />
-                                <span>{period}</span>
-                            </div>
-                          )}
                         </div>
                         <div className="border-t pt-3 mt-3 min-h-[5rem]">
                             <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
@@ -528,7 +503,7 @@ export default function MissionsHubPage() {
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
                 className="bg-destructive hover:bg-destructive/90"
-                disabled={isProcessingAction}
+                disabled={isProcessingAction || (assignedChildrenForDeletion.length > 0 && !alsoDeleteInstances)}
               >
                 {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {alsoDeleteInstances ? "Excluir Tudo" : "Excluir do Catálogo"}
