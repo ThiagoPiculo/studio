@@ -27,7 +27,10 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info, Sun, CloudSun, Moon, AlertTriangle } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -49,6 +52,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Target } from 'lucide-react';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -314,9 +318,9 @@ export default function MissionsHubPage() {
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
-                      <div className="flex items-center gap-3 pr-2">
-                        {template.emoji && <span className="text-2xl">{template.emoji}</span>}
-                        <CardTitle className="text-xl">
+                      <div className="flex items-start gap-3 pr-2 min-h-14">
+                        {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
+                        <CardTitle className="text-xl line-clamp-2">
                           {template.title}
                         </CardTitle>
                       </div>
