@@ -239,8 +239,9 @@ export default function HeroesPage() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <Link href={`/dashboard/child/${child.id}/manage`} className="absolute top-2 right-2 z-10">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/10">
-                      <Settings className="h-5 w-5 text-muted-foreground group-hover:text-primary" />
+                    <Button variant="ghost" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
+                        Ver mural
+                        <Settings className="ml-1.5 h-4 w-4" />
                     </Button>
                   </Link>
                   <div className="flex items-center gap-4">
@@ -293,7 +294,7 @@ export default function HeroesPage() {
                               const eventTime = getDateObject(mission.startDate || mission.dueDate);
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                               const popoverId = `${mission.id}-${today}`;
-                              const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
+                              const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
                               
                               return (
                                 <li key={mission.id}>
