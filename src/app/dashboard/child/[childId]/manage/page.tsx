@@ -580,7 +580,7 @@ function ManageChildPageContent() {
                 color={badge.color}
               />
             ) : (
-              <Lock className="absolute top-3 right-3 h-5 w-5 text-muted-foreground/60" />
+              <Lock className="absolute top-3 right-3 h-5 w-5 text-destructive" />
             )}
             <div className={cn(
               "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
@@ -1478,5 +1478,7 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
+
+    
 
     
