@@ -45,11 +45,10 @@ import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { formatRecurrenceSummary, getPeriodOfDay, getDateObject } from '@/lib/calendar-utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { format as formatDateFns } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -72,12 +71,6 @@ export default function MissionsHubPage() {
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
   const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
-
-  const periodIcons = {
-    Manhã: Sun,
-    Tarde: CloudSun,
-    Noite: Moon,
-  };
 
   useEffect(() => {
     if (!user) {
@@ -322,78 +315,84 @@ export default function MissionsHubPage() {
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
                       <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2 pr-2">
-                          <CardTitle className="text-xl flex items-baseline gap-2">
-                              {template.emoji && <span>{template.emoji}</span>}
-                              <span>{template.title}</span>
+                        <div className="flex items-center gap-3 pr-2">
+                           {template.emoji && <span className="text-2xl">{template.emoji}</span>}
+                          <CardTitle className="text-xl">
+                            {template.title}
                           </CardTitle>
                         </div>
                         <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
                             {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                         </Badge>
                       </div>
-                      {template.description && (
-                        <CardDescription className="text-sm pt-1 line-clamp-3">{template.description}</CardDescription>
-                      )}
                     </CardHeader>
-                    <CardContent className="space-y-3 flex-grow">
-                      {categoryDetails && (
-                        <div className="flex items-center">
-                          <span className={`mr-2 p-1.5 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                            {CategoryIconComponent && <CategoryIconComponent className={`h-5 w-5 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                          </span>
-                          <Badge variant="outline" className={categoryDetails.colorClasses}>
-                            {categoryDetails.label}
-                          </Badge>
+                    <CardContent className="flex flex-col flex-grow p-6 pt-0">
+                      <div className="space-y-2">
+                        {categoryDetails && (
+                          <div className="flex items-center gap-2">
+                            {CategoryIconComponent && <CategoryIconComponent className="h-4 w-4 text-muted-foreground" />}
+                            <Badge variant="outline" className={categoryDetails.colorClasses}>
+                              {categoryDetails.label}
+                            </Badge>
+                          </div>
+                        )}
+                        <div className="flex items-center text-sm text-muted-foreground">
+                          <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
+                          Recompensa: {template.starsReward} estrelas
                         </div>
-                      )}
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
-                        Recompensa: {template.starsReward} estrelas
-                      </div>
-                       <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-muted-foreground">
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
                         </div>
-                        <div className="border-t pt-3 mt-3 min-h-[5rem]">
-                            <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
-                            {assignedChildren.length > 0 ? (
-                                <div className="flex items-center space-x-2">
-                                    <div className="flex -space-x-2">
-                                        {assignedChildren.slice(0, 5).map(child => (
-                                            <TooltipProvider key={child.id} delayDuration={100}>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Avatar
-                                                          className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                                        >
-                                                            <AvatarImage src={child.avatar} alt={child.name} />
-                                                            <AvatarFallback
-                                                              className="text-xs"
-                                                              style={{ backgroundColor: child.color }}
-                                                            >
-                                                                {getInitials(child.name)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{child.name}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        ))}
-                                    </div>
-                                    {assignedChildren.length > 5 && (
-                                        <span className="text-xs font-medium text-muted-foreground">
-                                            + {assignedChildren.length - 5}
-                                        </span>
-                                    )}
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
-                            )}
+                      </div>
+
+                      <div className="flex-grow" />
+
+                      <div className="pt-4">
+                        <Separator className="mb-3" />
+                        <div className="space-y-2">
+                           <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                              <Users className="h-4 w-4" />
+                              Atribuído a:
+                          </h4>
+                          {assignedChildren.length > 0 ? (
+                              <div className="flex items-center space-x-2">
+                                  <div className="flex -space-x-2">
+                                      {assignedChildren.slice(0, 5).map(child => (
+                                          <TooltipProvider key={child.id} delayDuration={100}>
+                                              <Tooltip>
+                                                  <TooltipTrigger asChild>
+                                                      <Avatar
+                                                        className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                      >
+                                                          <AvatarImage src={child.avatar} alt={child.name} />
+                                                          <AvatarFallback
+                                                            className="text-xs"
+                                                            style={{ backgroundColor: child.color }}
+                                                          >
+                                                              {getInitials(child.name)}
+                                                          </AvatarFallback>
+                                                      </Avatar>
+                                                  </TooltipTrigger>
+                                                  <TooltipContent>
+                                                      <p>{child.name}</p>
+                                                  </TooltipContent>
+                                              </Tooltip>
+                                          </TooltipProvider>
+                                      ))}
+                                  </div>
+                                  {assignedChildren.length > 5 && (
+                                      <span className="text-xs font-medium text-muted-foreground">
+                                          + {assignedChildren.length - 5}
+                                      </span>
+                                  )}
+                              </div>
+                          ) : (
+                              <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
+                          )}
                         </div>
+                      </div>
                     </CardContent>
                     <CardFooter className="flex items-center gap-2 pt-4">
                       <Button
@@ -482,7 +481,6 @@ export default function MissionsHubPage() {
                                     </Avatar>
                                     <div>
                                         <p className="font-medium text-sm">{child.name}</p>
-                                        <p className="text-xs text-muted-foreground">{instance ? formatRecurrenceSummary(instance) : 'Agendamento único'}</p>
                                     </div>
                                 </div>
                             );
@@ -524,5 +522,3 @@ export default function MissionsHubPage() {
     </div>
   );
 }
-
-    
