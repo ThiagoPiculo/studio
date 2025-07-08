@@ -227,13 +227,17 @@ export function formatRecurrenceSummary(mission: RecurrenceSummarySource): strin
           summary = 'Diariamente';
         }
     } else if (haveSameElements(rule.byDay, weekdaysArr)) {
-        summary = `${summary} nos dias de semana`;
+        summary = 'Dias de semana';
     } else if (haveSameElements(rule.byDay, weekendsArr)) {
-        summary = `${summary} nos fins de semana`;
+        summary = 'Fins de semana';
     } else {
       const orderedSelectedDays = allWeekdays.filter(day => rule.byDay!.includes(day));
       const translatedDays = orderedSelectedDays.map(day => weekdayLabels[day].short).join(', ');
-      summary += ` em ${translatedDays}`;
+      if (rule.interval === 1) {
+        summary = translatedDays;
+      } else {
+        summary += ` em ${translatedDays}`;
+      }
     }
   }
 
