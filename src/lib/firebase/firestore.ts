@@ -1010,6 +1010,22 @@ export const deleteMissionTemplate = async (templateId: string): Promise<void> =
   await deleteDoc(templateRef);
 };
 
+export const deleteMissionTemplateAndInstances = async (templateId: string): Promise<void> => {
+  const batch = writeBatch(db);
+
+  const templateRef = doc(db, 'missionTemplates', templateId);
+  batch.delete(templateRef);
+
+  const instancesQuery = query(collection(db, 'missionInstances'), where('templateId', '==', templateId));
+  const instancesSnapshot = await getDocs(instancesQuery);
+  instancesSnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  
+  await batch.commit();
+};
+
+
 export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, familyId?: string | null): Promise<MissionTemplate[]> => {
   let q;
   if (familyId && familyId !== 'my-space') {
@@ -1035,7 +1051,7 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates'>,
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates' | 'emoji'>,
   templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -1085,7 +1101,7 @@ export const getMissionInstancesByChild = async (childId: string): Promise<Missi
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
 };
 
-export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward'>>): Promise<void> => {
+export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'emoji'>>): Promise<void> => {
   const instanceRef = doc(db, 'missionInstances', instanceId);
   await updateDoc(instanceRef, {
     ...updates,

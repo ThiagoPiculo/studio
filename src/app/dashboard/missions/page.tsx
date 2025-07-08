@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info, Sun, CloudSun, Moon } from 'lucide-react';
+import { Target, PlusCircle, Star as StarIcon, PackageSearch, Loader2, Edit3, Trash2, Lightbulb, BadgeCheck, Repeat, Users, Info, Sun, CloudSun, Moon, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -35,6 +35,7 @@ import {
   deleteMissionTemplate,
   getChildProfilesForAttribution,
   getMissionInstancesForContext,
+  deleteMissionTemplateAndInstances,
 } from '@/lib/firebase/firestore';
 import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
@@ -47,6 +48,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatRecurrenceSummary, getPeriodOfDay, getDateObject } from '@/lib/calendar-utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format as formatDateFns } from 'date-fns';
+import { Checkbox } from '@/components/ui/checkbox';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -62,6 +64,7 @@ export default function MissionsHubPage() {
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
+  const [alsoDeleteInstances, setAlsoDeleteInstances] = useState(false);
   
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
@@ -147,14 +150,20 @@ export default function MissionsHubPage() {
     if (!templateToDelete) return;
     setIsProcessingAction(true);
     try {
-      await deleteMissionTemplate(templateToDelete.id);
-      setMissionTemplates(prev => prev.filter(rt => rt.id !== templateToDelete.id));
-      toast({ title: "Missão Arquivada!", description: `A missão "${templateToDelete.title}" foi removida do catálogo.` });
+      if (alsoDeleteInstances) {
+        await deleteMissionTemplateAndInstances(templateToDelete.id);
+        toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
+      } else {
+        await deleteMissionTemplate(templateToDelete.id);
+        toast({ title: "Missão Removida do Catálogo!", description: `A missão "${templateToDelete.title}" foi removida. As atribuições existentes não foram afetadas.` });
+      }
+      refetchAllData();
     } catch (error) {
       console.error("Error deleting mission template:", error);
-      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão do catálogo.", variant: "destructive" });
+      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
     } finally {
       setTemplateToDelete(null);
+      setAlsoDeleteInstances(false);
       setIsProcessingAction(false);
     }
   };
@@ -172,13 +181,24 @@ export default function MissionsHubPage() {
     setIsAssignDialogOpen(true);
   };
 
-  const refetchInstances = () => {
+  const refetchAllData = () => {
     if (user) {
+      setIsLoading(true);
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      getMissionInstancesForContext(user.uid, familyIdToQuery)
-        .then(instances => setMissionInstances(instances.filter(i => i.status === 'pending')));
+      Promise.all([
+        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getMissionInstancesForContext(user.uid, familyIdToQuery)
+      ]).then(([templates, children, instances]) => {
+        setMissionTemplates(templates);
+        setChildren(children);
+        setMissionInstances(instances.filter(i => i.status === 'pending'));
+      }).catch(err => console.error("Error refetching instances:", err))
+      .finally(() => setIsLoading(false));
     }
   };
+
+  const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
 
   return (
     <div className="space-y-8">
@@ -307,16 +327,6 @@ export default function MissionsHubPage() {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <div className="flex items-center gap-2 pr-2">
-                           <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger>
-                                  {template.isRecurring ? <Repeat className="h-5 w-5 text-muted-foreground flex-shrink-0" /> : <Target className="h-5 w-5 text-muted-foreground flex-shrink-0" />}
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{template.isRecurring ? 'Missão Recorrente' : 'Missão Única'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
                           <CardTitle className="text-xl flex items-baseline gap-2">
                               {template.emoji && <span>{template.emoji}</span>}
                               <span>{template.title}</span>
@@ -461,16 +471,58 @@ export default function MissionsHubPage() {
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar Exclusão</AlertDialogTitle>
+              <AlertDialogTitle>Excluir Missão do Catálogo</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja excluir a missão "{templateToDelete.title}" do catálogo? As missões já atribuídas com base neste item do catálogo não serão afetadas, mas você não poderá usá-la para novas atribuições.
+                Tem certeza que deseja remover a missão "{templateToDelete.title}"?
               </AlertDialogDescription>
             </AlertDialogHeader>
+
+            {assignedChildrenForDeletion.length > 0 && (
+                <div className="my-4 space-y-3">
+                    <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+                        <AlertTriangle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
+                        <div>
+                            <h4 className="font-semibold text-destructive">Atenção: Missão em uso!</h4>
+                            <p className="text-xs text-destructive/90">Esta missão está atualmente atribuída aos seguintes heróis:</p>
+                        </div>
+                    </div>
+                    <ScrollArea className="h-32 rounded-md border p-2">
+                        <div className="space-y-2">
+                        {assignedChildrenForDeletion.map(child => {
+                            const instance = missionInstances.find(inst => inst.templateId === templateToDelete.id && inst.childId === child.id);
+                            return (
+                                <div key={child.id} className="flex items-center gap-2">
+                                     <Avatar className="h-8 w-8">
+                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                        <AvatarFallback className="text-xs" style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+                                    </Avatar>
+                                    <div>
+                                        <p className="font-medium text-sm">{child.name}</p>
+                                        <p className="text-xs text-muted-foreground">{instance ? formatRecurrenceSummary(instance) : 'Agendamento único'}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                        </div>
+                    </ScrollArea>
+                    <div className="flex items-center space-x-2 mt-2 p-2 rounded-md bg-muted/50">
+                        <Checkbox id="delete-instances-checkbox" checked={alsoDeleteInstances} onCheckedChange={(checked) => setAlsoDeleteInstances(!!checked)} />
+                        <Label htmlFor="delete-instances-checkbox" className="text-xs font-normal text-foreground cursor-pointer">
+                            Sim, também remover esta missão da agenda de todos os heróis listados.
+                        </Label>
+                    </div>
+                </div>
+            )}
+            
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setTemplateToDelete(null)} disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction}>
+              <AlertDialogCancel onClick={() => { setTemplateToDelete(null); setAlsoDeleteInstances(false); }} disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={isProcessingAction || (assignedChildrenForDeletion.length > 0 && !alsoDeleteInstances)}
+              >
                 {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sim, Excluir Missão
+                {alsoDeleteInstances ? "Excluir Tudo" : "Excluir do Catálogo"}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -482,10 +534,7 @@ export default function MissionsHubPage() {
           template={templateToAssign}
           isOpen={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          onAssigned={() => {
-            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
-            refetchInstances();
-          }}
+          onAssigned={refetchAllData}
         />
       )}
     </div>
