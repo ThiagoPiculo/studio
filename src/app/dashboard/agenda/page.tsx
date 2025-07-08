@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -522,9 +522,9 @@ function AgendaPageContent() {
                                     ) : (
                                       <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                     )}
-                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-1", isCompleted && "line-through")}>{formattedTime}</span>
+                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5", isCompleted && "line-through")}>{formattedTime}</span>
                                     {showEmoji && event.data.emoji && <span className="text-lg mr-1.5">{event.data.emoji}</span>}
-                                    <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
+                                    <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-2">
@@ -706,7 +706,7 @@ function AgendaPageContent() {
                                             <Square className="h-3 w-3 inline-block mr-1 text-primary shrink-0" />
                                           )}
                                           <span className={cn("font-semibold text-foreground/80 mr-1", isCompleted && "line-through")}>{formattedTime}</span>
-                                          <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
+                                          <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-2">
@@ -750,6 +750,9 @@ function AgendaPageContent() {
 
   return (
     <>
+      <Button variant="outline" onClick={() => router.back()} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+      </Button>
       <div className="space-y-6">
         <Card>
           <CardHeader>
