@@ -14,21 +14,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getMissionTemplateById, updateMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
-import { missionCategories, weekdays } from '@/lib/types'; 
-import { Loader2, Target, Save, ArrowLeft, Star as StarIcon, BadgeCheck } from 'lucide-react';
-import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
-import { Timestamp } from 'firebase/firestore';
-
-const recurrenceRuleSchema = z.object({
-  freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
-  interval: z.coerce.number().min(1),
-  byDay: z.array(z.enum(weekdays)).optional(),
-  endDate: z.date().optional().nullable(),
-  count: z.coerce.number().min(1).optional().nullable(),
-}).nullable();
-
+import { useFamily } from '@/contexts/FamilyContext';
+import { 
+  getMissionTemplateById, 
+  updateMissionTemplate,
+  getMissionInstancesForContext,
+  getChildProfilesForAttribution,
+} from '@/lib/firebase/firestore';
+import type { MissionCategory, MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types';
+import { missionCategories } from '@/lib/types'; 
+import { Loader2, Target, Save, ArrowLeft, Star as StarIcon, BadgeCheck, Users, ArrowRight } from 'lucide-react';
+import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -40,36 +37,6 @@ const missionTemplateFormSchema = z.object({
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
   status: z.enum(['active', 'archived']).default('active'),
-  
-  isRecurring: z.boolean().default(false),
-  startDate: z.date().optional().nullable(),
-  dueDate: z.date().optional().nullable(),
-  recurrenceRule: recurrenceRuleSchema,
-}).superRefine((data, ctx) => {
-    if (data.isRecurring) {
-        if (!data.startDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de início é obrigatória para missões recorrentes.",
-                path: ["startDate"],
-            });
-        }
-        if (data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de fim da recorrência não pode ser anterior à data de início.",
-                path: ['recurrenceRule.endDate'],
-            });
-        }
-    } else {
-        if (!data.dueDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de prazo é obrigatória para missões únicas.",
-                path: ["dueDate"],
-            });
-        }
-    }
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -80,10 +47,14 @@ export default function EditMissionTemplatePage() {
   const params = useParams();
   const missionId = params.missionId as string;
   const { user } = useAuth();
+  const { currentContext } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [missionTemplate, setMissionTemplate] = useState<MissionTemplate | null>(null);
+  
+  const [assignedChildren, setAssignedChildren] = useState<ChildProfile[]>([]);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
   const form = useForm<MissionTemplateFormValues>({
     resolver: zodResolver(missionTemplateFormSchema),
@@ -95,12 +66,10 @@ export default function EditMissionTemplatePage() {
       starsReward: 5,
       xpReward: 10,
       status: 'active',
-      isRecurring: false,
-      startDate: null,
-      dueDate: null,
-      recurrenceRule: null,
     },
   });
+
+  const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
   useEffect(() => {
     if (!missionId || !user) {
@@ -116,15 +85,6 @@ export default function EditMissionTemplatePage() {
         const fetchedTemplate = await getMissionTemplateById(missionId);
         if (fetchedTemplate) {
           setMissionTemplate(fetchedTemplate);
-          
-          let initialRecurrenceRule = null;
-          if (fetchedTemplate.recurrenceRule) {
-            initialRecurrenceRule = {
-              ...fetchedTemplate.recurrenceRule,
-              endDate: fetchedTemplate.recurrenceRule.endDate?.toDate() ?? null
-            }
-          }
-
           form.reset({
             title: fetchedTemplate.title,
             emoji: fetchedTemplate.emoji || '',
@@ -133,10 +93,6 @@ export default function EditMissionTemplatePage() {
             starsReward: fetchedTemplate.starsReward,
             xpReward: fetchedTemplate.xpReward,
             status: fetchedTemplate.status,
-            isRecurring: !!fetchedTemplate.isRecurring,
-            startDate: fetchedTemplate.startDate?.toDate() || null,
-            dueDate: fetchedTemplate.dueDate?.toDate() || null,
-            recurrenceRule: initialRecurrenceRule,
           });
         } else {
           toast({ title: "Missão não encontrada", variant: "destructive" });
@@ -150,8 +106,42 @@ export default function EditMissionTemplatePage() {
         setIsFetchingData(false);
       }
     };
+    
+    const fetchAssignments = async () => {
+        setIsLoadingAssignments(true);
+        try {
+            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+            const [allChildren, allInstances] = await Promise.all([
+                getChildProfilesForAttribution(user.uid, currentContext),
+                getMissionInstancesForContext(user.uid, familyIdToQuery)
+            ]);
+            
+            const childrenMap = new Map(allChildren.map(child => [child.id, child]));
+            
+            const assignedChildIds = new Set<string>();
+            allInstances.forEach(instance => {
+                if (instance.templateId === missionId) {
+                    assignedChildIds.add(instance.childId);
+                }
+            });
+            
+            const childrenWithAssignment = Array.from(assignedChildIds)
+                .map(childId => childrenMap.get(childId))
+                .filter((child): child is ChildProfile => !!child)
+                .sort((a,b) => a.name.localeCompare(b.name));
+                
+            setAssignedChildren(childrenWithAssignment);
+        } catch (error) {
+            console.error("Error fetching assignments:", error);
+            toast({ title: "Erro ao buscar atribuições", variant: "destructive" });
+        } finally {
+            setIsLoadingAssignments(false);
+        }
+    };
+
     fetchMissionTemplateData();
-  }, [missionId, user, router, toast, form]);
+    fetchAssignments();
+  }, [missionId, user, router, toast, form, currentContext]);
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user || !missionTemplate) {
@@ -161,7 +151,7 @@ export default function EditMissionTemplatePage() {
     setIsLoading(true);
 
     try {
-      const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId'>> = {
+      const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId' | 'isRecurring' | 'startDate' | 'dueDate' | 'recurrenceRule'>> = {
           title: values.title,
           emoji: values.emoji,
           description: values.description,
@@ -169,14 +159,6 @@ export default function EditMissionTemplatePage() {
           starsReward: values.starsReward,
           xpReward: values.xpReward,
           status: values.status,
-          isRecurring: values.isRecurring,
-          // Se for recorrente, salve startDate e a regra. Senão, salve dueDate.
-          startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
-          dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
-          recurrenceRule: values.isRecurring && values.recurrenceRule ? {
-            ...values.recurrenceRule,
-            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
-          } : null,
       };
 
       await updateMissionTemplate(missionTemplate.id, updatePayload);
@@ -340,8 +322,6 @@ export default function EditMissionTemplatePage() {
                 )}
               />
 
-              <RecurrenceControl />
-
               <FormField
                 control={form.control}
                 name="status"
@@ -382,6 +362,52 @@ export default function EditMissionTemplatePage() {
               </div>
             </form>
           </Form>
+        </CardContent>
+      </Card>
+      
+      <Card className="mt-8 shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Em Uso Por
+          </CardTitle>
+          <CardDescription>
+              Esta missão está atualmente atribuída aos seguintes heróis. Para editar o agendamento de um herói, use o botão de gerenciamento.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoadingAssignments ? (
+            <div className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              <span>Carregando atribuições...</span>
+            </div>
+          ) : assignedChildren.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Esta missão não está atribuída a nenhum herói no momento.</p>
+          ) : (
+            <div className="space-y-3">
+              {assignedChildren.map(child => (
+                <div key={child.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                      <Avatar
+                        className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                      >
+                          <AvatarImage src={child.avatar} alt={child.name} />
+                          <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                              {getInitials(child.name)}
+                          </AvatarFallback>
+                      </Avatar>
+                      <p className="font-semibold">{child.name}</p>
+                  </div>
+                  <Link href={`/dashboard/child/${child.id}/manage?tab=missions`} passHref>
+                      <Button variant="outline" size="sm">
+                          Gerenciar Agendamento <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
