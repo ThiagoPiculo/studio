@@ -509,7 +509,7 @@ function AgendaPageContent() {
                                   <button 
                                       data-mission-id={popoverId}
                                       disabled={isProcessingAction === event.data.id} 
-                                      className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
+                                      className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                         "hover:bg-accent/50",
                                         isCompleted && "text-muted-foreground/70",
                                         highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
@@ -522,8 +522,8 @@ function AgendaPageContent() {
                                     ) : (
                                       <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                     )}
-                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left", isCompleted && "line-through")}>{formattedTime}</span>
-                                    {showEmoji && event.data.emoji && <span className="text-lg">{event.data.emoji}</span>}
+                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-1", isCompleted && "line-through")}>{formattedTime}</span>
+                                    {showEmoji && event.data.emoji && <span className="text-lg mr-1.5">{event.data.emoji}</span>}
                                     <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
