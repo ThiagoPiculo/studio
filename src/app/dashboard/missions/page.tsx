@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -206,7 +207,7 @@ export default function MissionsHubPage() {
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
                   <Target className="mr-3 h-8 w-8 text-primary" />
-                  Central de Missões
+                  Mural de Missões
                 </CardTitle>
                 <CardDescription>
                   {templatesDescription}

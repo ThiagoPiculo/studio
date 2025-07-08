@@ -836,7 +836,7 @@ function ManageChildPageContent() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
-          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Central de Missões</TabsTrigger>
+          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Mural de Missões</TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-green-500" />Recompensas</TabsTrigger>
           <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><School className="mr-2 h-4 w-4 text-gray-500" />Agenda Escolar</TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Conquistas</TabsTrigger>
@@ -877,7 +877,7 @@ function ManageChildPageContent() {
                     className="w-full"
                     onClick={() => handleTabChange('missions')}
                   >
-                    Explorar Central de Missões
+                    Explorar Mural de Missões
                   </Button>
                 </CardFooter>
               </Card>
@@ -1000,7 +1000,7 @@ function ManageChildPageContent() {
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Central de Missões de {child.name}</CardTitle>
+                            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Mural de Missões de {child.name}</CardTitle>
                             <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
                         </div>
                         <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)}>
@@ -1031,7 +1031,7 @@ function ManageChildPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-6">
                     <Button onClick={() => router.push('/dashboard/missions')} variant="outline" className="shadow-sm">
-                        <ExternalLink className="mr-2 h-4 w-4" /> Ir para a Central de Missões (Catálogo)
+                        <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Mural de Missões (Catálogo)
                     </Button>
                     {filteredMissions.length === 0 ? (
                       <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
