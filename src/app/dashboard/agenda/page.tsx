@@ -51,10 +51,6 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
   return 'night';
 };
 
-const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
-    return missionCategories.find(cat => cat.id === categoryId);
-};
-
 function AgendaPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
@@ -455,7 +451,7 @@ function AgendaPageContent() {
     return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
   });
 
-  const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
+  const renderEventListForPeriod = (events: CalendarEvent[], day: Date, showEmoji: boolean) => {
     const eventsByChild = events.reduce((acc, event) => {
         const childId = event.data.childId;
         if (!acc[childId]) acc[childId] = [];
@@ -501,8 +497,6 @@ function AgendaPageContent() {
                         const isCompleted = isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                        const categoryDetails = getMissionCategoryDetails(event.data.category);
-                        const CategoryIcon = categoryDetails?.icon;
                         return(
                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
                             <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
@@ -523,7 +517,7 @@ function AgendaPageContent() {
                                   >
                                       {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
                                       <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
-                                      {CategoryIcon && <CategoryIcon className="h-4 w-4 mr-2 shrink-0 text-muted-foreground" />}
+                                      {showEmoji && event.data.emoji && <span className="text-lg mr-2">{event.data.emoji}</span>}
                                       <span className="flex-1 truncate">{event.title}</span>
                                   </button>
                               </PopoverTrigger>
@@ -574,6 +568,7 @@ function AgendaPageContent() {
     };
   
     const finalGridClass = isMobile ? 'grid-cols-1' : gridClasses[dateRangeFilter];
+    const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
 
     return (
       <div className={cn("grid gap-4", finalGridClass)}>
@@ -599,19 +594,19 @@ function AgendaPageContent() {
                       {dayEvents.morning.length > 0 && (
                         <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
-                          {renderEventListForPeriod(dayEvents.morning, day)}
+                          {renderEventListForPeriod(dayEvents.morning, day, showEmojiInGrid)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
                         <div className={cn("space-y-2", "bg-orange-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
-                           {renderEventListForPeriod(dayEvents.afternoon, day)}
+                           {renderEventListForPeriod(dayEvents.afternoon, day, showEmojiInGrid)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
                         <div className={cn("space-y-2", "bg-indigo-500/5 p-3 rounded-lg")}>
                           <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
-                           {renderEventListForPeriod(dayEvents.night, day)}
+                           {renderEventListForPeriod(dayEvents.night, day, showEmojiInGrid)}
                         </div>
                       )}
                     </CardContent>
@@ -678,8 +673,6 @@ function AgendaPageContent() {
                         const isCompleted = isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                        const categoryDetails = getMissionCategoryDetails(event.data.category);
-                        const CategoryIcon = categoryDetails?.icon;
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
@@ -700,7 +693,6 @@ function AgendaPageContent() {
                                           )}
                                         >
                                           {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                          {CategoryIcon && <CategoryIcon className="h-3 w-3 inline-block mr-1 text-muted-foreground shrink-0" />}
                                           <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
                                           <span className="flex-1 truncate">{event.title}</span>
                                       </button>
@@ -737,6 +729,7 @@ function AgendaPageContent() {
   const renderContent = () => {
     switch(dateRangeFilter) {
       case 'month':
+      case 'week':
         return renderCalendarView();
       default:
         return renderGridView();

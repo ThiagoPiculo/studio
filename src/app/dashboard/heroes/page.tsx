@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -7,8 +8,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle, Target } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
-import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry, MissionCategoryDetails } from "@/lib/types";
-import { missionCategories } from "@/lib/types";
+import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
     getMissionTemplatesByOwnerOrFamily,
@@ -29,10 +29,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Toggle } from "@/components/ui/toggle";
-
-const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
-    return missionCategories.find(cat => cat.id === categoryId);
-};
 
 export default function HeroesPage() {
   const { user, loading } = useAuth();
@@ -298,8 +294,6 @@ export default function HeroesPage() {
                               const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                               const popoverId = `${mission.id}-${today}`;
                               const href = `/dashboard/agenda?focus_date=${today}&open_popover=${popoverId}`;
-                              const categoryDetails = getMissionCategoryDetails(mission.category);
-                              const CategoryIcon = categoryDetails?.icon;
                               
                               return (
                                 <li key={mission.id}>
@@ -316,7 +310,7 @@ export default function HeroesPage() {
                                         <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
                                       )}
                                       <span className="font-mono text-[11px] w-10">{formattedTime}</span>
-                                      {mission.emoji && <span className="text-sm">{mission.emoji}</span>}
+                                      {mission.emoji && <span className="text-sm mr-1">{mission.emoji}</span>}
                                       <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
                                       </span>

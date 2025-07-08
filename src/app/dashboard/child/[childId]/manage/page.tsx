@@ -645,7 +645,6 @@ function ManageChildPageContent() {
 
   const renderMissionCard = (instance: MissionInstance) => {
     const categoryDetails = getMissionCategoryDetails(instance.category);
-    const CategoryIconComponent = categoryDetails?.icon;
       
     const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
     const time = scheduleDate ? format(scheduleDate, 'HH:mm') : null;
@@ -668,9 +667,6 @@ function ManageChildPageContent() {
             <CardContent className="space-y-2 flex-grow text-xs p-4 pt-0">
                 {categoryDetails && (
                     <div className="flex items-center">
-                        <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                            {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                        </span>
                         <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
                             {categoryDetails.label}
                         </Badge>
@@ -704,7 +700,7 @@ function ManageChildPageContent() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
+                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
