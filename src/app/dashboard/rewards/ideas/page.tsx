@@ -82,7 +82,7 @@ export default function RewardIdeasPage() {
     return (
         <div className="space-y-8 pb-10">
             <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para o Catálogo
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Mural de Recompensas
             </Button>
             <Card className="shadow-lg">
                 <CardHeader>

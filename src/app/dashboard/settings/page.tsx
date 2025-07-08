@@ -367,7 +367,7 @@ export default function SettingsPage() {
                             <SelectItem value="heroes">Cartões de Mini Herois</SelectItem>
                             <SelectItem value="agenda">Agenda dos Herois</SelectItem>
                             <SelectItem value="missions">Mural de Missões</SelectItem>
-                            <SelectItem value="rewards">Recompensas</SelectItem>
+                            <SelectItem value="rewards">Mural de Recompensas</SelectItem>
                             <SelectItem value="achievements">Conquistas</SelectItem>
                             <SelectItem value="family">Alianças</SelectItem>
                         </SelectContent>

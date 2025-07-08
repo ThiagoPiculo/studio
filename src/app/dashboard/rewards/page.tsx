@@ -154,7 +154,7 @@ export default function RewardTemplatesHubPage() {
     return availableContexts.find(f => f.id === currentContext)?.name || `Família ${currentContext}`;
   }, [availableContexts, currentContext]);
 
-  const templatesDescription = `Catálogo de itens para recompensa em ${currentContextName}. Crie recompensas que podem ser atribuídas aos seus Mini Herois.`;
+  const templatesDescription = `Mural de recompensas para ${currentContextName}. Crie e gerencie itens que podem ser atribuídos aos seus Mini Herois.`;
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete) return;
@@ -233,7 +233,7 @@ export default function RewardTemplatesHubPage() {
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
                   <PackagePlus className="mr-3 h-8 w-8 text-primary" />
-                  Central de Recompensas
+                  Mural de Recompensas
                 </CardTitle>
                 <CardDescription>
                   {templatesDescription}

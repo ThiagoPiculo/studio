@@ -837,7 +837,7 @@ function ManageChildPageContent() {
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-10 bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Mural de Missões</TabsTrigger>
-          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-green-500" />Recompensas</TabsTrigger>
+          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-green-500" />Mural de Recompensas</TabsTrigger>
           <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><School className="mr-2 h-4 w-4 text-gray-500" />Agenda Escolar</TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Conquistas</TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
@@ -920,7 +920,7 @@ function ManageChildPageContent() {
                       setInstanceStatusFilter('redeemed');
                     }}
                   >
-                    Explorar Recompensas
+                    Explorar Mural
                   </Button>
                 </CardFooter>
               </Card>
@@ -1051,7 +1051,7 @@ function ManageChildPageContent() {
           <TabsContent value="rewards">
             <Card className="shadow-md">
               <CardHeader>
-                <CardTitle>Recompensas Atribuídas a {child.name}</CardTitle>
+                <CardTitle>Mural de Recompensas de {child.name}</CardTitle>
                 <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
                 <div className="pt-4">
                   <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
@@ -1081,7 +1081,7 @@ function ManageChildPageContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Catálogo (Atribuir Novas)
+                  <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Mural de Recompensas
                 </Button>
                 {filteredChildRewards.length === 0 ? (
                   <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">

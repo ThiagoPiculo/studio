@@ -75,9 +75,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/rewards" tooltip="Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
+                         <SidebarMenuButton href="/dashboard/rewards" tooltip="Mural de Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
                             <Gift className="text-chart-2" />
-                            <span>Recompensas</span>
+                            <span>Mural de Recompensas</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>

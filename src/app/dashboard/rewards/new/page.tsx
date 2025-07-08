@@ -163,7 +163,7 @@ function CreateRewardTemplatePageContent() {
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
         <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Mural de Recompensas
         </Button>
         <Link href="/dashboard/rewards/ideas">
           <Button variant="secondary">

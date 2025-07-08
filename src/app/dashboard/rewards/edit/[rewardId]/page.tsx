@@ -168,7 +168,7 @@ export default function EditRewardTemplatePage() {
      return (
       <div className="flex flex-col justify-center items-center min-h-screen">
         <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
-        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar para o Catálogo</Button>
+        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar ao Mural de Recompensas</Button>
       </div>
     );
   }
@@ -177,7 +177,7 @@ export default function EditRewardTemplatePage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para o Catálogo
+        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar ao Mural de Recompensas
       </Button>
       <Card className="shadow-xl">
         <CardHeader>
