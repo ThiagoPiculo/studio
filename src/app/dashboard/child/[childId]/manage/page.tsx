@@ -102,6 +102,7 @@ function ManageChildPageContent() {
   const [badgeProgress, setBadgeProgress] = useState({
     longestSingleMissionStreak: 0,
     longestPerfectStreak: 0,
+    missionWithLongestStreak: null as MissionInstance | null,
   });
   const [isCalculatingProgress, setIsCalculatingProgress] = useState(true);
 
@@ -167,6 +168,7 @@ function ManageChildPageContent() {
 
     // SINGLE MISSION STREAK CALC
     let overallLongestStreak = 0;
+    let missionWithStreak: MissionInstance | null = null;
     missionInstances.forEach(instance => {
         const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a, b) => a.getTime() - b.getTime());
         if (completionDates.length === 0) return;
@@ -185,6 +187,7 @@ function ManageChildPageContent() {
         }
         if (longestStreakForThisMission > overallLongestStreak) {
             overallLongestStreak = longestStreakForThisMission;
+            missionWithStreak = instance;
         }
     });
 
@@ -221,6 +224,7 @@ function ManageChildPageContent() {
     setBadgeProgress({
         longestSingleMissionStreak: overallLongestStreak,
         longestPerfectStreak: longestPerfectStreak,
+        missionWithLongestStreak: missionWithStreak,
     });
     
     setIsCalculatingProgress(false);
@@ -1281,6 +1285,15 @@ function ManageChildPageContent() {
                             {selectedBadge.description}
                           </DialogDescription>
                         </DialogHeader>
+                        {selectedBadge.progressType === 'singleMissionStreak' && badgeProgress.missionWithLongestStreak && (
+                          <div className="mt-2 text-center border-t pt-4">
+                              <p className="text-sm text-muted-foreground">Missão com a maior sequência atual:</p>
+                              <p className="font-semibold text-foreground flex items-center justify-center gap-2 mt-1">
+                                  {badgeProgress.missionWithLongestStreak.emoji && <span>{badgeProgress.missionWithLongestStreak.emoji}</span>}
+                                  <span>{badgeProgress.missionWithLongestStreak.title}</span>
+                              </p>
+                          </div>
+                        )}
                         <div className="text-center pt-2">
                           {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
                               <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">

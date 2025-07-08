@@ -42,7 +42,7 @@ export default function AchievementsPage() {
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [badgeProgress, setBadgeProgress] = useState<Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }>>({});
+  const [badgeProgress, setBadgeProgress] = useState<Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; missionWithLongestStreak: MissionInstance | null; }>>({});
   
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(true);
@@ -83,13 +83,14 @@ export default function AchievementsPage() {
     }
     
     setIsCalculating(true);
-    const newBadgeProgress: Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; }> = {};
+    const newBadgeProgress: Record<string, { longestSingleMissionStreak: number; longestPerfectStreak: number; missionWithLongestStreak: MissionInstance | null; }> = {};
 
     allChildren.forEach(child => {
       const childInstances = missionInstances.filter(inst => inst.childId === child.id);
       
       // SINGLE MISSION STREAK CALC
       let overallLongestStreak = 0;
+      let missionWithStreak: MissionInstance | null = null;
       childInstances.forEach(instance => {
           const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a, b) => a.getTime() - b.getTime());
           if (completionDates.length === 0) return;
@@ -108,6 +109,7 @@ export default function AchievementsPage() {
           }
           if (longestStreakForThisMission > overallLongestStreak) {
               overallLongestStreak = longestStreakForThisMission;
+              missionWithStreak = instance;
           }
       });
 
@@ -143,6 +145,7 @@ export default function AchievementsPage() {
       newBadgeProgress[child.id] = {
           longestSingleMissionStreak: overallLongestStreak,
           longestPerfectStreak: longestPerfectStreak,
+          missionWithLongestStreak: missionWithStreak,
       };
     });
     
