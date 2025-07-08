@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -42,7 +41,6 @@ export default function HeroesPage() {
   const searchParams = useSearchParams();
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
   
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
@@ -55,11 +53,6 @@ export default function HeroesPage() {
 
   const totalBadgesCount = allBadgesMap.size;
   
-  const children = useMemo(() => {
-    if (selectedChildrenIds.length === 0) return allChildren;
-    return allChildren.filter(child => selectedChildrenIds.includes(child.id));
-  }, [allChildren, selectedChildrenIds]);
-
   useEffect(() => {
     const initialLoad = searchParams.get('initial_load');
 
@@ -195,58 +188,6 @@ export default function HeroesPage() {
           </Link>
         </div>
 
-        {allChildren.length > 1 && (
-            <Card className="mb-6 shadow-md">
-                <CardHeader>
-                    <CardTitle className="text-lg">Filtro de Herois</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-wrap items-center gap-2">
-                        <Toggle
-                            size="sm"
-                            variant="outline"
-                            pressed={selectedChildrenIds.length === 0}
-                            onPressedChange={(pressed) => {
-                                if (pressed) {
-                                    setSelectedChildrenIds([])
-                                }
-                            }}
-                            className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                        >
-                            Todos
-                        </Toggle>
-                        {allChildren.map(child => {
-                            const isPressed = selectedChildrenIds.includes(child.id);
-                            return (
-                                <Toggle
-                                    key={child.id}
-                                    size="sm"
-                                    className={cn(
-                                        "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
-                                        isPressed
-                                          ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
-                                          : 'opacity-70 hover:opacity-100'
-                                    )}
-                                    style={{ backgroundColor: child.color }}
-                                    pressed={isPressed}
-                                    onPressedChange={(pressed) => {
-                                        const otherIds = selectedChildrenIds.filter(id => id !== child.id);
-                                        if (pressed) {
-                                            setSelectedChildrenIds([...otherIds, child.id]);
-                                        } else {
-                                            setSelectedChildrenIds(otherIds);
-                                        }
-                                    }}
-                                >
-                                    {child.name}
-                                </Toggle>
-                            )
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
-        )}
-
         {isLoadingChildren ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
@@ -265,17 +206,9 @@ export default function HeroesPage() {
               </Link>
             </CardContent>
           </Card>
-        ) : children.length === 0 ? (
-            <Card className="text-center py-10 shadow-md">
-                <CardContent>
-                    <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">Nenhum Herói Selecionado</h3>
-                    <p className="text-muted-foreground">Use o filtro acima para selecionar um ou mais heróis para visualizar.</p>
-                </CardContent>
-            </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {children.map((child) => {
+            {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               const todaysMissions = missionInstances
                 .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
