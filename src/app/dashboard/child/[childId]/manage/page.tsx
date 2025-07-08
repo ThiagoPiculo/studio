@@ -656,7 +656,10 @@ function ManageChildPageContent() {
         <Card key={instance.id} className="shadow-sm flex flex-col transition-all h-full">
             <CardHeader className="p-4">
                 <div className="flex justify-between items-start">
-                    <CardTitle className="text-base font-semibold leading-tight pr-2">{instance.title}</CardTitle>
+                    <CardTitle className="text-base font-semibold leading-tight pr-2 flex items-center gap-2">
+                      {instance.emoji && <span className="text-xl">{instance.emoji}</span>}
+                      <span>{instance.title}</span>
+                    </CardTitle>
                     <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs whitespace-nowrap">
                         {getMissionStatusText(instance.status)}
                     </Badge>

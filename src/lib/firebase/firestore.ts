@@ -977,6 +977,7 @@ export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id
   const newTemplate: MissionTemplate = {
     id: newTemplateRef.id,
     ...templateData,
+    emoji: templateData.emoji || '',
     isRecurring: !!templateData.isRecurring,
     recurrenceRule: templateData.recurrenceRule || null,
     status: 'active',
@@ -1048,6 +1049,7 @@ export const addMissionInstance = async (
     familyId: instanceData.familyId || null,
     title: templateSnapshot.title,
     description: templateSnapshot.description || '',
+    emoji: templateSnapshot.emoji || '',
     category: templateSnapshot.category,
     starsReward: templateSnapshot.starsReward,
     xpReward: templateSnapshot.xpReward,

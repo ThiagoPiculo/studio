@@ -29,6 +29,7 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Toggle } from "@/components/ui/toggle";
 
 const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
     return missionCategories.find(cat => cat.id === categoryId);
@@ -39,8 +40,9 @@ export default function HeroesPage() {
   const { currentContext } = useFamily();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
   
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
@@ -52,6 +54,11 @@ export default function HeroesPage() {
   const [isRedirecting, setIsRedirecting] = useState(true);
 
   const totalBadgesCount = allBadgesMap.size;
+  
+  const children = useMemo(() => {
+    if (selectedChildrenIds.length === 0) return allChildren;
+    return allChildren.filter(child => selectedChildrenIds.includes(child.id));
+  }, [allChildren, selectedChildrenIds]);
 
   useEffect(() => {
     const initialLoad = searchParams.get('initial_load');
@@ -95,7 +102,7 @@ export default function HeroesPage() {
           getSchoolScheduleForContext(user.uid, familyIdToQuery)
         ]);
         
-        setChildren(childProfiles);
+        setAllChildren(childProfiles);
         setMissionTemplates(missionTpls);
         setRewardTemplates(rewardTpls);
         setMissionInstances(missionInsts);
@@ -104,7 +111,7 @@ export default function HeroesPage() {
 
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
-        setChildren([]);
+        setAllChildren([]);
         setMissionTemplates([]);
         setRewardTemplates([]);
         setMissionInstances([]);
@@ -163,7 +170,7 @@ export default function HeroesPage() {
     );
   }
   
-  const hasChildren = children.length > 0;
+  const hasChildren = allChildren.length > 0;
   const hasMissions = missionTemplates.length > 0;
   const hasRewards = rewardTemplates.length > 0;
   const showGuide = !isLoadingGuideData && (!hasChildren || !hasMissions || !hasRewards);
@@ -179,7 +186,7 @@ export default function HeroesPage() {
             hasRewards={hasRewards}
           />
       )}
-
+      
       <section>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-headline">Cartões de Mini Herois</h2>
@@ -187,12 +194,65 @@ export default function HeroesPage() {
             <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Cartão</Button>
           </Link>
         </div>
+
+        {allChildren.length > 1 && (
+            <Card className="mb-6 shadow-md">
+                <CardHeader>
+                    <CardTitle className="text-lg">Filtro de Herois</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <Toggle
+                            size="sm"
+                            variant="outline"
+                            pressed={selectedChildrenIds.length === 0}
+                            onPressedChange={(pressed) => {
+                                if (pressed) {
+                                    setSelectedChildrenIds([])
+                                }
+                            }}
+                            className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                        >
+                            Todos
+                        </Toggle>
+                        {allChildren.map(child => {
+                            const isPressed = selectedChildrenIds.includes(child.id);
+                            return (
+                                <Toggle
+                                    key={child.id}
+                                    size="sm"
+                                    className={cn(
+                                        "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
+                                        isPressed
+                                          ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
+                                          : 'opacity-70 hover:opacity-100'
+                                    )}
+                                    style={{ backgroundColor: child.color }}
+                                    pressed={isPressed}
+                                    onPressedChange={(pressed) => {
+                                        const otherIds = selectedChildrenIds.filter(id => id !== child.id);
+                                        if (pressed) {
+                                            setSelectedChildrenIds([...otherIds, child.id]);
+                                        } else {
+                                            setSelectedChildrenIds(otherIds);
+                                        }
+                                    }}
+                                >
+                                    {child.name}
+                                </Toggle>
+                            )
+                        })}
+                    </div>
+                </CardContent>
+            </Card>
+        )}
+
         {isLoadingChildren ? (
           <div className="flex justify-center items-center h-40">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
             Carregando Cartões...
           </div>
-        ) : children.length === 0 ? (
+        ) : allChildren.length === 0 ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
@@ -205,6 +265,14 @@ export default function HeroesPage() {
               </Link>
             </CardContent>
           </Card>
+        ) : children.length === 0 ? (
+            <Card className="text-center py-10 shadow-md">
+                <CardContent>
+                    <Users className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">Nenhum Herói Selecionado</h3>
+                    <p className="text-muted-foreground">Use o filtro acima para selecionar um ou mais heróis para visualizar.</p>
+                </CardContent>
+            </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {children.map((child) => {

@@ -32,6 +32,7 @@ const recurrenceRuleSchema = z.object({
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
+  emoji: z.string().max(2, { message: "O emoji deve ter no máximo 2 caracteres." }).optional().default(''),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional().default(''),
   category: z.custom<MissionCategory>((val) => missionCategories.map(rc => rc.id).includes(val as MissionCategory) , {
     message: "Selecione uma categoria válida.",
@@ -88,6 +89,7 @@ export default function EditMissionTemplatePage() {
     resolver: zodResolver(missionTemplateFormSchema),
     defaultValues: {
       title: '',
+      emoji: '',
       description: '',
       category: undefined, 
       starsReward: 5,
@@ -125,6 +127,7 @@ export default function EditMissionTemplatePage() {
 
           form.reset({
             title: fetchedTemplate.title,
+            emoji: fetchedTemplate.emoji || '',
             description: fetchedTemplate.description || '',
             category: fetchedTemplate.category,
             starsReward: fetchedTemplate.starsReward,
@@ -160,6 +163,7 @@ export default function EditMissionTemplatePage() {
     try {
       const updatePayload: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId'| 'familyId'>> = {
           title: values.title,
+          emoji: values.emoji,
           description: values.description,
           category: values.category,
           starsReward: values.starsReward,
@@ -232,21 +236,36 @@ export default function EditMissionTemplatePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título da Missão</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Arrumar a cama" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
+              <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 items-end">
+                  <FormField
+                    control={form.control}
+                    name="emoji"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Emoji</FormLabel>
+                        <FormControl>
+                          <Input className="w-16 h-10 text-center text-xl p-0" maxLength={2} {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título da Missão</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Arrumar a cama" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+
+               <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
@@ -273,7 +292,6 @@ export default function EditMissionTemplatePage() {
                     </FormItem>
                   )}
                 />
-              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <FormField

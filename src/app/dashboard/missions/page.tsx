@@ -317,7 +317,10 @@ export default function MissionsHubPage() {
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
-                          <CardTitle className="text-xl">{template.title}</CardTitle>
+                          <CardTitle className="text-xl flex items-baseline gap-2">
+                              {template.emoji && <span>{template.emoji}</span>}
+                              <span>{template.title}</span>
+                          </CardTitle>
                         </div>
                         <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
                             {template.status === 'active' ? 'Ativa' : 'Arquivada'}

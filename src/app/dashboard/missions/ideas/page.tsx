@@ -85,6 +85,7 @@ export default function MissionIdeasPage() {
     const handleUseIdea = (idea: PredefinedMissionIdea) => {
         const queryParams = new URLSearchParams();
         queryParams.append('title', idea.title);
+        queryParams.append('emoji', idea.emoji);
         queryParams.append('category', idea.suggestedAppCategory);
         queryParams.append('starsReward', String(idea.starsReward));
         queryParams.append('xpReward', String(idea.xpReward));
