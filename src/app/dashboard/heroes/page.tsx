@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, CircleDot, Medal, Lock, CheckCircle, Target, ArrowRight } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, Circle, Medal, Lock, CheckCircle, Target, ArrowRight } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -239,7 +239,7 @@ export default function HeroesPage() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <Link href={`/dashboard/child/${child.id}/manage`} className="absolute top-2 right-2 z-10">
-                    <Button variant="ghost" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
+                    <Button variant="outline" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
                         Ver mural
                         <Settings className="ml-1.5 h-4 w-4" />
                     </Button>
@@ -300,7 +300,7 @@ export default function HeroesPage() {
                                 <li key={mission.id}>
                                   <Link href={href} className="block">
                                     <div className={cn(
-                                      "text-xs flex items-center gap-1 p-1.5 rounded-md transition-colors",
+                                      "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
                                       isCompleted 
                                         ? "bg-green-500/10 text-muted-foreground" 
                                         : "bg-background hover:bg-accent/50",
@@ -308,9 +308,9 @@ export default function HeroesPage() {
                                       {isCompleted ? (
                                         <CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" />
                                       ) : (
-                                        <CircleDot className="h-3.5 w-3.5 text-primary shrink-0" />
+                                        <Circle className="h-3.5 w-3.5 text-primary shrink-0" />
                                       )}
-                                      <span className="font-mono text-[11px] w-10">{formattedTime}</span>
+                                      <span className="font-semibold text-foreground/80 w-12 text-left">{formattedTime}</span>
                                       {mission.emoji && <span className="text-sm mr-1">{mission.emoji}</span>}
                                       <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
