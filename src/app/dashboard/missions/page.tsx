@@ -519,7 +519,7 @@ export default function MissionsHubPage() {
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
                 className="bg-destructive hover:bg-destructive/90"
-                disabled={isProcessingAction || (assignedChildrenForDeletion.length > 0 && !alsoDeleteInstances)}
+                disabled={isProcessingAction}
               >
                 {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {alsoDeleteInstances ? "Excluir Tudo" : "Excluir do Catálogo"}
