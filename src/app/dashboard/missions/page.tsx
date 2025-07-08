@@ -314,16 +314,11 @@ export default function MissionsHubPage() {
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-3 pr-2">
-                           {template.emoji && <span className="text-2xl">{template.emoji}</span>}
-                          <CardTitle className="text-xl">
-                            {template.title}
-                          </CardTitle>
-                        </div>
-                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
-                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                        </Badge>
+                      <div className="flex items-center gap-3 pr-2">
+                        {template.emoji && <span className="text-2xl">{template.emoji}</span>}
+                        <CardTitle className="text-xl">
+                          {template.title}
+                        </CardTitle>
                       </div>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow p-6 pt-0">
@@ -351,10 +346,15 @@ export default function MissionsHubPage() {
                       <div className="pt-4">
                         <Separator className="mb-3" />
                         <div className="space-y-2">
-                           <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                              <Users className="h-4 w-4" />
-                              Atribuído a:
-                          </h4>
+                          <div className="flex justify-between items-center">
+                              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                                <Users className="h-4 w-4" />
+                                Atribuído a:
+                              </h4>
+                              <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
+                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                              </Badge>
+                          </div>
                           {assignedChildren.length > 0 ? (
                               <div className="flex items-center space-x-2">
                                   <div className="flex -space-x-2">
