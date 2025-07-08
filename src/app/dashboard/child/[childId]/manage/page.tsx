@@ -193,9 +193,9 @@ function ManageChildPageContent() {
     let currentPerfectStreak = 0;
     const today = startOfDay(new Date());
 
-    const allCompletionDates = new Set(missionInstances.flatMap(inst => Object.keys(inst.completionLog || {})));
+    const allCompletionDates = new Set(missionInstances.flatMap(inst => Object.keys(inst.completionLog || {})).map(d => startOfDay(new Date(d))));
     if (allCompletionDates.size > 0) {
-        const sortedDates = Array.from(allCompletionDates).map(d => startOfDay(new Date(d))).sort((a, b) => a.getTime() - b.getTime());
+        const sortedDates = Array.from(allCompletionDates).sort((a, b) => a.getTime() - b.getTime());
         const firstDate = sortedDates[0];
         const daysInInterval = eachDayOfInterval({ start: firstDate, end: today });
 
@@ -672,14 +672,22 @@ function ManageChildPageContent() {
                         </Badge>
                     </div>
                 )}
-                <div className="flex flex-col gap-1">
+                 <div className="space-y-1">
                     <div className="flex items-center text-muted-foreground font-medium">
                         <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
                         <span className="truncate">{formatRecurrenceSummary(instance)}{time ? `, às ${time}` : ''}</span>
                     </div>
                     {period && PeriodIcon && (
-                        <div className="flex items-center text-muted-foreground font-medium pl-6">
-                            <PeriodIcon className="h-3.5 w-3.5 mr-1.5 text-gray-500 shrink-0" />
+                        <div className={cn("flex items-center font-medium",
+                            period === 'Manhã' && "text-yellow-700 dark:text-yellow-400",
+                            period === 'Tarde' && "text-orange-700 dark:text-orange-400",
+                            period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
+                        )}>
+                            <PeriodIcon className={cn("h-4 w-4 mr-1.5 shrink-0", 
+                                period === 'Manhã' && "text-yellow-500",
+                                period === 'Tarde' && "text-orange-500",
+                                period === 'Noite' && "text-indigo-500"
+                            )} />
                             <span>{period}</span>
                         </div>
                     )}
@@ -1457,3 +1465,5 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
+
+    

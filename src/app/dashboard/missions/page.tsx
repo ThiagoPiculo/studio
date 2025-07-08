@@ -49,6 +49,7 @@ import { formatRecurrenceSummary, getPeriodOfDay, getDateObject } from '@/lib/ca
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { format as formatDateFns } from 'date-fns';
 import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -359,14 +360,22 @@ export default function MissionsHubPage() {
                           <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
                           Experiência (XP): {template.xpReward}
                         </div>
-                        <div className="flex flex-col gap-1">
+                        <div className="space-y-1">
                           <div className="flex items-center text-sm text-muted-foreground">
                               <Repeat className="h-5 w-5 mr-1.5 text-purple-500 shrink-0" />
                               <span className="truncate">{formatRecurrenceSummary(template)}{time ? `, às ${time}` : ''}</span>
                           </div>
                           {period && PeriodIcon && (
-                            <div className="flex items-center text-sm text-muted-foreground pl-[26px]">
-                                <PeriodIcon className="h-4 w-4 mr-1.5 text-gray-500 shrink-0" />
+                            <div className={cn("flex items-center text-sm font-medium",
+                                period === 'Manhã' && "text-yellow-700 dark:text-yellow-400",
+                                period === 'Tarde' && "text-orange-700 dark:text-orange-400",
+                                period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
+                            )}>
+                                <PeriodIcon className={cn("h-5 w-5 mr-1.5 shrink-0", 
+                                    period === 'Manhã' && "text-yellow-500",
+                                    period === 'Tarde' && "text-orange-500",
+                                    period === 'Noite' && "text-indigo-500"
+                                )} />
                                 <span>{period}</span>
                             </div>
                           )}
@@ -540,3 +549,5 @@ export default function MissionsHubPage() {
     </div>
   );
 }
+
+    
