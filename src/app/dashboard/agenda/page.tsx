@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckCircle, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -466,7 +466,7 @@ function AgendaPageContent() {
     });
 
     return (
-      <ul className="space-y-6">
+      <ul className="space-y-4">
         {sortedChildIds.map(childId => {
           const child = childrenMap.get(childId);
           if (!child) return null;
@@ -491,7 +491,7 @@ function AgendaPageContent() {
                 >
                     {child.name}
                 </div>
-                <ul className="mt-2 space-y-2 border-l-2 pl-4" style={{ borderColor: child.color }}>
+                <ul className="mt-2 space-y-1 border-l-2 pl-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = isMissionCompletedForDate(event.data, day);
@@ -511,14 +511,20 @@ function AgendaPageContent() {
                                       disabled={isProcessingAction === event.data.id} 
                                       className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                         "hover:bg-accent/50",
-                                        isCompleted && "line-through text-muted-foreground/70",
+                                        isCompleted && "text-muted-foreground/70",
                                         highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
                                       )}
                                   >
-                                      {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : isCompleted && <CheckCircle className="h-4 w-4 inline-block mr-2 text-green-500" />}
-                                      <span className="font-semibold text-foreground/80 mr-2 w-12 text-left">{formattedTime}</span>
-                                      {showEmoji && event.data.emoji && <span className="text-lg mr-2">{event.data.emoji}</span>}
-                                      <span className="flex-1 truncate">{event.title}</span>
+                                    {isProcessingAction === event.data.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin inline-block mr-2 shrink-0" />
+                                    ) : isCompleted ? (
+                                      <CheckSquare className="h-4 w-4 inline-block mr-2 text-green-500 shrink-0" />
+                                    ) : (
+                                      <Square className="h-4 w-4 inline-block mr-2 text-primary shrink-0" />
+                                    )}
+                                    <span className={cn("font-semibold text-foreground/80 mr-2 w-12 text-left", isCompleted && "line-through")}>{formattedTime}</span>
+                                    {showEmoji && event.data.emoji && <span className="text-lg mr-2">{event.data.emoji}</span>}
+                                    <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
                               <PopoverContent className="w-auto p-2">
@@ -526,7 +532,7 @@ function AgendaPageContent() {
                                     {isCompleted ? (
                                       <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                     ) : (
-                                      <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                      <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                     )}
                                     <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                     <Separator />
@@ -686,15 +692,21 @@ function AgendaPageContent() {
                                       <button 
                                           data-mission-id={popoverId}
                                           disabled={isProcessingAction === event.data.id} 
-                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-baseline", 
+                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                             "hover:bg-accent/50",
-                                            isCompleted && "line-through text-muted-foreground/70",
+                                            isCompleted && "text-muted-foreground/70",
                                             highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
                                           )}
                                         >
-                                          {isProcessingAction === event.data.id ? <Loader2 className="h-3 w-3 animate-spin inline-block mr-1" /> : isCompleted && <CheckCircle className="h-3 w-3 inline-block mr-1 text-green-500" />}
-                                          <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
-                                          <span className="flex-1 truncate">{event.title}</span>
+                                          {isProcessingAction === event.data.id ? (
+                                            <Loader2 className="h-3 w-3 animate-spin inline-block mr-1 shrink-0" />
+                                          ) : isCompleted ? (
+                                            <CheckSquare className="h-3 w-3 inline-block mr-1 text-green-500 shrink-0" />
+                                          ) : (
+                                            <Square className="h-3 w-3 inline-block mr-1 text-primary shrink-0" />
+                                          )}
+                                          <span className={cn("font-semibold text-foreground/80 mr-1", isCompleted && "line-through")}>{formattedTime}</span>
+                                          <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-auto p-2">
@@ -702,7 +714,7 @@ function AgendaPageContent() {
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                           <Separator/>
