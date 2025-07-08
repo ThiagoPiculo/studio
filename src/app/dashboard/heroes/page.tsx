@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, School, Medal, Lock, CheckCircle, Target, ArrowRight, Square, CheckSquare } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckCircle, Target, ArrowRight, Square, CheckSquare } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -282,7 +282,7 @@ export default function HeroesPage() {
                    <Tabs defaultValue="missions" className="w-full">
                       <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
                           <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
-                          <TabsTrigger value="school" className="text-xs gap-1.5"><School className="h-4 w-4"/>Escola Hoje</TabsTrigger>
+                          <TabsTrigger value="school" className="text-xs gap-1.5"><NotebookPen className="h-4 w-4"/>Escola Hoje</TabsTrigger>
                       </TabsList>
                       <TabsContent value="missions" className="mt-2">
                         <ScrollArea className="h-[145px] w-full">

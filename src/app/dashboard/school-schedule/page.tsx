@@ -13,7 +13,7 @@ import { getDayToWeekday, parseTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { School, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle } from 'lucide-react';
+import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -411,7 +411,7 @@ function SchoolSchedulePageContent() {
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <School className="h-8 w-8 text-primary" />
+                <NotebookPen className="h-8 w-8 text-primary" />
                 Agenda Escolar
               </CardTitle>
               <CardDescription>

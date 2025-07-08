@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -11,7 +12,7 @@ import {
     SidebarFooter,
     SidebarTrigger
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, School, Medal } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
@@ -63,7 +64,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Agenda Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
-                            <School className="text-chart-5"/>
+                            <NotebookPen className="text-chart-5"/>
                             <span>Agenda Escolar</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
