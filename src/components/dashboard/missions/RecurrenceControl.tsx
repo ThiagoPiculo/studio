@@ -230,14 +230,14 @@ export function RecurrenceControl() {
               <FormLabel>Data de Início da Recorrência</FormLabel>
               <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
                <FormDescription className="text-xs">
-                <div className="flex items-center gap-1">
-                    <span>A hora aqui define o período na agenda:</span>
-                    <div className="flex items-center gap-2 text-muted-foreground/80 ml-1">
-                      <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" />Manhã</span>
-                      <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" />Tarde</span>
-                      <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" />Noite</span>
+                    <div className="flex items-center gap-3">
+                        <span>A hora define o período na agenda:</span>
+                        <div className="flex items-center gap-2 text-muted-foreground/80">
+                            <span className="flex items-center gap-1 font-medium text-yellow-700 dark:text-yellow-400"><Sun className="h-3.5 w-3.5 text-yellow-500" />Manhã</span>
+                            <span className="flex items-center gap-1 font-medium text-orange-700 dark:text-orange-400"><CloudSun className="h-3.5 w-3.5 text-orange-500" />Tarde</span>
+                            <span className="flex items-center gap-1 font-medium text-indigo-700 dark:text-indigo-400"><Moon className="h-3.5 w-3.5 text-indigo-500" />Noite</span>
+                        </div>
                     </div>
-                </div>
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -252,10 +252,10 @@ export function RecurrenceControl() {
                     Personalizar...
                 </Button>
             </div>
-            {activeMode === 'custom' && (
-                 <p className="text-xs text-muted-foreground text-center pt-1">
-                    Regra atual: {formatRecurrenceSummary({ isRecurring, recurrenceRule })}
-                </p>
+            {isRecurring && recurrenceRule && (
+              <p className="text-sm text-muted-foreground text-center pt-2">
+                {formatRecurrenceSummary({ isRecurring, recurrenceRule })}
+              </p>
             )}
             <RecurrenceDialog 
                 isOpen={isDialogOpen}
@@ -276,12 +276,12 @@ export function RecurrenceControl() {
                   <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
                   <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
                    <FormDescription className="text-xs">
-                    <div className="flex items-center gap-1">
-                        <span>Para missões únicas, esta é a data de vencimento. A hora define o período na agenda:</span>
-                        <div className="flex items-center gap-2 text-muted-foreground/80 ml-1">
-                        <span className="flex items-center gap-1"><Sun className="h-3.5 w-3.5" />Manhã</span>
-                        <span className="flex items-center gap-1"><CloudSun className="h-3.5 w-3.5" />Tarde</span>
-                        <span className="flex items-center gap-1"><Moon className="h-3.5 w-3.5" />Noite</span>
+                    <div className="flex items-center gap-3">
+                        <span>A hora define o período na agenda:</span>
+                        <div className="flex items-center gap-2 text-muted-foreground/80">
+                            <span className="flex items-center gap-1 font-medium text-yellow-700 dark:text-yellow-400"><Sun className="h-3.5 w-3.5 text-yellow-500" />Manhã</span>
+                            <span className="flex items-center gap-1 font-medium text-orange-700 dark:text-orange-400"><CloudSun className="h-3.5 w-3.5 text-orange-500" />Tarde</span>
+                            <span className="flex items-center gap-1 font-medium text-indigo-700 dark:text-indigo-400"><Moon className="h-3.5 w-3.5 text-indigo-500" />Noite</span>
                         </div>
                     </div>
                   </FormDescription>
