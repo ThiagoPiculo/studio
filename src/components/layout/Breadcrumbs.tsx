@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useMemo } from 'react';
@@ -23,7 +22,7 @@ const pathTranslations: { [key: string]: string } = {
   family: 'Aliança',
   missions: 'Mural de Missões',
   rewards: 'Mural de Recompensas',
-  achievements: 'Conquistas',
+  achievements: 'Mural de Conquistas',
   profile: 'Meu Perfil',
   settings: 'Configurações',
   onboarding: 'Adicionar Herói',

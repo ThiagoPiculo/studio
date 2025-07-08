@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -81,9 +80,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/achievements" tooltip="Conquistas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                        <SidebarMenuButton href="/dashboard/achievements" tooltip="Mural de Conquistas" isActive={pathname.startsWith('/dashboard/achievements')}>
                             <Medal className="text-amber-500"/>
-                            <span>Conquistas</span>
+                            <span>Mural de Conquistas</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
