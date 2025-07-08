@@ -466,7 +466,7 @@ function AgendaPageContent() {
     });
 
     return (
-      <ul className="space-y-4">
+      <ul className="space-y-3">
         {sortedChildIds.map(childId => {
           const child = childrenMap.get(childId);
           if (!child) return null;
@@ -491,7 +491,7 @@ function AgendaPageContent() {
                 >
                     {child.name}
                 </div>
-                <ul className="mt-2 space-y-1 border-l-2 pl-4" style={{ borderColor: child.color }}>
+                <ul className="mt-2 border-l-2 pl-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = isMissionCompletedForDate(event.data, day);
@@ -509,21 +509,21 @@ function AgendaPageContent() {
                                   <button 
                                       data-mission-id={popoverId}
                                       disabled={isProcessingAction === event.data.id} 
-                                      className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
+                                      className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
                                         "hover:bg-accent/50",
                                         isCompleted && "text-muted-foreground/70",
                                         highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
                                       )}
                                   >
                                     {isProcessingAction === event.data.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin inline-block mr-2 shrink-0" />
+                                      <Loader2 className="h-4 w-4 animate-spin inline-block shrink-0" />
                                     ) : isCompleted ? (
-                                      <CheckSquare className="h-4 w-4 inline-block mr-2 text-green-500 shrink-0" />
+                                      <CheckSquare className="h-4 w-4 inline-block text-green-500 shrink-0" />
                                     ) : (
-                                      <Square className="h-4 w-4 inline-block mr-2 text-primary shrink-0" />
+                                      <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                     )}
-                                    <span className={cn("font-semibold text-foreground/80 mr-2 w-12 text-left", isCompleted && "line-through")}>{formattedTime}</span>
-                                    {showEmoji && event.data.emoji && <span className="text-lg mr-2">{event.data.emoji}</span>}
+                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left", isCompleted && "line-through")}>{formattedTime}</span>
+                                    {showEmoji && event.data.emoji && <span className="text-lg">{event.data.emoji}</span>}
                                     <span className={cn("flex-1 truncate", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
