@@ -16,23 +16,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate, RecurrenceRule } from '@/lib/types';
-import { missionCategories, weekdays } from '@/lib/types'; 
+import type { MissionCategory, MissionTemplate } from '@/lib/types';
+import { missionCategories } from '@/lib/types'; 
 import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
-import { RecurrenceControl } from '@/components/dashboard/missions/RecurrenceControl';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
-import { Timestamp } from 'firebase/firestore';
 
-const recurrenceRuleSchema = z.object({
-  freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
-  interval: z.coerce.number().min(1),
-  byDay: z.array(z.enum(weekdays)).optional(),
-  endDate: z.date().optional().nullable(),
-  count: z.coerce.number().min(1).optional().nullable(),
-}).nullable();
-
-
+// Schema simplified to remove all scheduling fields
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   emoji: z.string().max(2, { message: "O emoji deve ter no máximo 2 caracteres." }).optional().default(''),
@@ -42,36 +32,6 @@ const missionTemplateFormSchema = z.object({
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
-  
-  isRecurring: z.boolean().default(false),
-  startDate: z.date().optional().nullable(),
-  dueDate: z.date().optional().nullable(),
-  recurrenceRule: recurrenceRuleSchema,
-}).superRefine((data, ctx) => {
-    if (data.isRecurring) {
-        if (!data.startDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de início é obrigatória para missões recorrentes.",
-                path: ["startDate"],
-            });
-        }
-        if (data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de fim da recorrência não pode ser anterior à data de início.",
-                path: ['recurrenceRule.endDate'],
-            });
-        }
-    } else {
-        if (!data.dueDate) {
-            ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de prazo é obrigatória para missões únicas.",
-                path: ["dueDate"],
-            });
-        }
-    }
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -106,10 +66,6 @@ function CreateMissionTemplatePageContent() {
       category: resolvedInitialCategory, 
       starsReward: starsParam ? parseInt(starsParam, 10) : 5,
       xpReward: xpParam ? parseInt(xpParam, 10) : 10,
-      isRecurring: false,
-      startDate: null,
-      dueDate: null,
-      recurrenceRule: null,
     },
   });
 
@@ -130,14 +86,11 @@ function CreateMissionTemplatePageContent() {
         category: values.category,
         starsReward: values.starsReward,
         xpReward: values.xpReward,
-        isRecurring: values.isRecurring,
-        // Se for recorrente, salve startDate e a regra. Senão, salve dueDate.
-        startDate: values.isRecurring && values.startDate ? Timestamp.fromDate(values.startDate) : null,
-        dueDate: !values.isRecurring && values.dueDate ? Timestamp.fromDate(values.dueDate) : null,
-        recurrenceRule: values.isRecurring && values.recurrenceRule ? {
-            ...values.recurrenceRule,
-            endDate: values.recurrenceRule.endDate ? Timestamp.fromDate(values.recurrenceRule.endDate) : null,
-        } : null
+        // Scheduling is now handled at assignment, so create a simple, non-recurring default.
+        isRecurring: false,
+        startDate: null,
+        dueDate: null,
+        recurrenceRule: null,
       };
       
       const createdTemplate = await addMissionTemplate(templateDataPayload);
@@ -298,8 +251,6 @@ function CreateMissionTemplatePageContent() {
                   </FormItem>
                 )}
               />
-
-              <RecurrenceControl />
               
               <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
                 {isLoading ? (
