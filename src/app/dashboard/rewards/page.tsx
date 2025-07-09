@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate, getChildProfilesForAttribution, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
@@ -232,7 +232,7 @@ export default function RewardTemplatesHubPage() {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
-                  <PackagePlus className="mr-3 h-8 w-8 text-primary" />
+                  <Gift className="mr-3 h-8 w-8 text-primary" />
                   Mural de Recompensas
                 </CardTitle>
                 <CardDescription>
