@@ -77,8 +77,13 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
 
 // --- Child Profile ---
 export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>, contextId?: string): Promise<ChildProfile> => {
-  const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
-  const randomColor = heroColors[Math.floor(Math.random() * heroColors.length)];
+  const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Find the first available color
+  const existingChildren = await getChildProfilesByOwner(ownerId);
+  const usedColors = new Set(existingChildren.map(child => child.color));
+  const availableColor = heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
+
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
   const newChild: ChildProfile = {
@@ -95,7 +100,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     xp: 0,
     level: 1,
     accessCode,
-    color: randomColor,
+    color: availableColor,
     createdAt: now,
     updatedAt: now,
     familyId: contextId && contextId !== 'my-space' ? contextId : null,
