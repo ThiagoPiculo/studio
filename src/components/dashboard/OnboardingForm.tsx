@@ -448,7 +448,9 @@ export function OnboardingForm() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar Horário Escolar?</AlertDialogTitle>
             <AlertDialogDescription>
-              Você definiu o turno escolar como <strong>{schoolShiftLabel}</strong>, das <strong>{formData?.schoolShiftStart}</strong> às <strong>{formData?.schoolShiftEnd}</strong>. Este horário está correto?
+              Turno Escolar: <strong>{schoolShiftLabel}</strong>, das <strong>{formData?.schoolShiftStart}</strong> às <strong>{formData?.schoolShiftEnd}</strong>.
+              <br/><br/>
+              Este horário está correto?
               <br/>
               <span className="text-xs text-muted-foreground mt-2 block">Você poderá alterar isso mais tarde na tela da Agenda Escolar.</span>
             </AlertDialogDescription>
