@@ -76,7 +76,7 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>, contextId?: string): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString(); // Generate 6-digit code
   const randomColor = heroColors[Math.floor(Math.random() * heroColors.length)];
   const newChildRef = doc(collection(db, 'children'));
@@ -98,7 +98,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
     color: randomColor,
     createdAt: now,
     updatedAt: now,
-    familyId: null,
+    familyId: contextId && contextId !== 'my-space' ? contextId : null,
   };
   await setDoc(newChildRef, newChild);
   return newChild;

@@ -1,3 +1,4 @@
+
 "use client";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -16,6 +17,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useFamily } from "@/contexts/FamilyContext";
 import { addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, Calendar as CalendarIcon, Check, X } from "lucide-react";
@@ -49,6 +51,7 @@ const onboardingSchema = z.object({
   childGender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
   }),
+  contextId: z.string(),
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable'], {
       required_error: "Por favor, selecione o turno escolar.",
   }),
@@ -88,6 +91,7 @@ export function OnboardingForm() {
   const router = useRouter();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { currentContext, availableContexts } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
@@ -102,11 +106,17 @@ export function OnboardingForm() {
       childName: "",
       childBirthDate: undefined,
       childGender: undefined,
+      contextId: currentContext,
       schoolShift: 'afternoon',
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:00',
     },
   });
+  
+  // Sync default context if it changes while form is mounted
+  useEffect(() => {
+    form.setValue('contextId', currentContext);
+  }, [currentContext, form]);
 
   const watchedSchoolShift = form.watch('schoolShift');
 
@@ -159,7 +169,7 @@ export function OnboardingForm() {
         schoolShift: values.schoolShift,
         schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : '',
         schoolShiftEnd: values.schoolShift !== 'not_applicable' ? values.schoolShiftEnd : '',
-      });
+      }, values.contextId);
       toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
       router.push("/dashboard/heroes"); 
     } catch (error: any) {
@@ -297,43 +307,72 @@ export function OnboardingForm() {
               )}
               />
           </div>
+          
+          <div className="space-y-6">
+            <FormField
+              control={form.control}
+              name="childGender"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
+                    >
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="boy" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Menino</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="girl" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Menina</FormLabel>
+                      </FormItem>
+                      <FormItem className="flex items-center space-x-2 space-y-0">
+                        <FormControl>
+                          <RadioGroupItem value="not-informed" />
+                        </FormControl>
+                        <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                      </FormItem>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          <FormField
-            control={form.control}
-            name="childGender"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
-                  >
-                    <FormItem className="flex items-center space-x-2 space-y-0">
+            {availableContexts.length > 1 && (
+              <FormField
+                control={form.control}
+                name="contextId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adicionar a qual espaço?</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <RadioGroupItem value="boy" />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um espaço..." />
+                        </SelectTrigger>
                       </FormControl>
-                      <FormLabel className="font-normal">Menino</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="girl" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Menina</FormLabel>
-                    </FormItem>
-                    <FormItem className="flex items-center space-x-2 space-y-0">
-                      <FormControl>
-                        <RadioGroupItem value="not-informed" />
-                      </FormControl>
-                      <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                    </FormItem>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                      <SelectContent>
+                        {availableContexts.map(context => (
+                          <SelectItem key={context.id} value={context.id}>
+                            {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="md:col-span-1">
