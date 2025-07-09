@@ -36,8 +36,8 @@ import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRe
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 
-type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
-type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
+export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
+export type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
 
 interface CalendarEvent {
   date: Date;
@@ -892,14 +892,14 @@ function AgendaPageContent() {
                            <Label className="font-semibold px-1">Período do Dia</Label>
                            <ToggleGroup type="single" variant="outline" value={timePeriodFilter} onValueChange={(v) => v && handleFilterChange('period', v)} className="flex-wrap justify-start">
                               <ToggleGroupItem value="all" aria-label="Todos">Todos</ToggleGroupItem>
-                              <ToggleGroupItem value="morning" aria-label="Manhã" className="data-[state=on]:bg-yellow-500/10 data-[state=on]:text-yellow-700 dark:data-[state=on]:text-yellow-400 data-[state=on]:border-yellow-500/30">
-                                <Sun className="h-4 w-4 mr-2" />Manhã
+                              <ToggleGroupItem value="morning" aria-label="Manhã" className="text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10 data-[state=on]:bg-yellow-500/10 data-[state=on]:border-yellow-500/30">
+                                <Sun className="h-4 w-4 mr-2 text-yellow-500" />Manhã
                               </ToggleGroupItem>
-                              <ToggleGroupItem value="afternoon" aria-label="Tarde" className="data-[state=on]:bg-orange-500/10 data-[state=on]:text-orange-700 dark:data-[state=on]:text-orange-400 data-[state=on]:border-orange-500/30">
-                                <CloudSun className="h-4 w-4 mr-2" />Tarde
+                              <ToggleGroupItem value="afternoon" aria-label="Tarde" className="text-orange-700 dark:text-orange-400 hover:bg-orange-500/10 data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500/30">
+                                <CloudSun className="h-4 w-4 mr-2 text-orange-500" />Tarde
                               </ToggleGroupItem>
-                              <ToggleGroupItem value="night" aria-label="Noite" className="data-[state=on]:bg-indigo-500/10 data-[state=on]:text-indigo-700 dark:data-[state=on]:text-indigo-400 data-[state=on]:border-indigo-500/30">
-                                <Moon className="h-4 w-4 mr-2" />Noite
+                              <ToggleGroupItem value="night" aria-label="Noite" className="text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 data-[state=on]:bg-indigo-500/10 data-[state=on]:border-indigo-500/30">
+                                <Moon className="h-4 w-4 mr-2 text-indigo-500" />Noite
                               </ToggleGroupItem>
                            </ToggleGroup>
                       </div>
