@@ -310,8 +310,8 @@ export default function HeroesPage() {
                                       ) : (
                                         <Square className="h-3.5 w-3.5 text-primary shrink-0" />
                                       )}
-                                      <span className="font-semibold text-foreground/80 w-12 text-left">{formattedTime}</span>
-                                      {mission.emoji && <span className="text-sm mr-1">{mission.emoji}</span>}
+                                      <span className="font-semibold text-foreground/80">{formattedTime}</span>
+                                      {mission.emoji && <span className="text-sm">{mission.emoji}</span>}
                                       <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                         {mission.title}
                                       </span>
