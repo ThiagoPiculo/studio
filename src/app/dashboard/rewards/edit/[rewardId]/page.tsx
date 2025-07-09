@@ -21,7 +21,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getRewardTemplateById, updateRewardTemplate } from '@/lib/firebase/firestore'; // MUDADO
 import type { RewardCategory, RewardTemplate } from '@/lib/types'; // MUDADO
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Package, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Gift, Save, ArrowLeft } from 'lucide-react';
 
 // Schema for RewardTemplate
 const rewardTemplateFormSchema = z.object({
@@ -182,7 +182,7 @@ export default function EditRewardTemplatePage() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <Package className="h-10 w-10 text-primary" />
+            <Gift className="h-10 w-10 text-primary" />
             <div>
               <CardTitle className="text-3xl font-headline">Editar Recompensa</CardTitle>
               <CardDescription className="text-md">
