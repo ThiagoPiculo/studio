@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, PackagePlus, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import Link from 'next/link';
 
@@ -174,7 +174,7 @@ function CreateRewardTemplatePageContent() {
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
-            <PackagePlus className="h-10 w-10 text-primary" />
+            <Gift className="h-10 w-10 text-primary" />
             <div>
               <CardTitle className="text-3xl font-headline">Criar Recompensa para Mini Herois</CardTitle>
               <CardDescription className="text-md">
@@ -293,7 +293,7 @@ function CreateRewardTemplatePageContent() {
                 {isLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <PackagePlus className="mr-2 h-4 w-4" />
+                  <Gift className="mr-2 h-4 w-4" />
                 )}
                 Criar Recompensa
               </Button>
