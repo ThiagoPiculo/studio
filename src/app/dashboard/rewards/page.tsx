@@ -439,9 +439,6 @@ export default function RewardTemplatesHubPage() {
                     <CardHeader>
                       <div className="flex justify-between items-start">
                         <CardTitle className="text-xl">{template.title}</CardTitle>
-                        <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                        </Badge>
                       </div>
                       {template.description && (
                         <CardDescription className="text-sm pt-1 line-clamp-3">{template.description}</CardDescription>
@@ -467,7 +464,12 @@ export default function RewardTemplatesHubPage() {
                         Tipo: {template.isMaterial ? "Material" : "Não Material"}
                       </div>
                       <div className="border-t pt-3 mt-3">
-                            <h4 className="text-xs font-semibold text-muted-foreground mb-2 flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
+                            <div className="flex justify-between items-center mb-2">
+                                <h4 className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5"><Users className="h-3.5 w-3.5" />Atribuído a:</h4>
+                                <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
+                                    {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                </Badge>
+                            </div>
                             {assignedChildren.length > 0 ? (
                                 <div className="flex items-center space-x-2">
                                     <div className="flex -space-x-2">
