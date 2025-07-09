@@ -868,9 +868,9 @@ function AgendaPageContent() {
                                   <Label className="font-semibold">Período do Dia</Label>
                                   <RadioGroup value={timePeriodFilter} onValueChange={(value) => handleFilterChange('period', value)} className="space-y-1">
                                       <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="m-period-all" /><Label htmlFor="m-period-all" className="font-normal cursor-pointer">Todos</Label></div>
-                                      <div className="flex items-center space-x-2"><RadioGroupItem value="morning" id="m-period-morning" /><Label htmlFor="m-period-morning" className="font-normal flex items-center gap-2 cursor-pointer"><Sun className="h-4 w-4" />Manhã</Label></div>
-                                      <div className="flex items-center space-x-2"><RadioGroupItem value="afternoon" id="m-period-afternoon" /><Label htmlFor="m-period-afternoon" className="font-normal flex items-center gap-2 cursor-pointer"><CloudSun className="h-4 w-4" />Tarde</Label></div>
-                                      <div className="flex items-center space-x-2"><RadioGroupItem value="night" id="m-period-night" /><Label htmlFor="m-period-night" className="font-normal flex items-center gap-2 cursor-pointer"><Moon className="h-4 w-4" />Noite</Label></div>
+                                      <div className="flex items-center space-x-2"><RadioGroupItem value="morning" id="m-period-morning" /><Label htmlFor="m-period-morning" className="font-normal flex items-center gap-2 cursor-pointer text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" />Manhã</Label></div>
+                                      <div className="flex items-center space-x-2"><RadioGroupItem value="afternoon" id="m-period-afternoon" /><Label htmlFor="m-period-afternoon" className="font-normal flex items-center gap-2 cursor-pointer text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</Label></div>
+                                      <div className="flex items-center space-x-2"><RadioGroupItem value="night" id="m-period-night" /><Label htmlFor="m-period-night" className="font-normal flex items-center gap-2 cursor-pointer text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" />Noite</Label></div>
                                   </RadioGroup>
                               </div>
                           </div>
@@ -892,9 +892,15 @@ function AgendaPageContent() {
                            <Label className="font-semibold px-1">Período do Dia</Label>
                            <ToggleGroup type="single" variant="outline" value={timePeriodFilter} onValueChange={(v) => v && handleFilterChange('period', v)} className="flex-wrap justify-start">
                               <ToggleGroupItem value="all" aria-label="Todos">Todos</ToggleGroupItem>
-                              <ToggleGroupItem value="morning" aria-label="Manhã"><Sun className="h-4 w-4 mr-2" />Manhã</ToggleGroupItem>
-                              <ToggleGroupItem value="afternoon" aria-label="Tarde"><CloudSun className="h-4 w-4 mr-2" />Tarde</ToggleGroupItem>
-                              <ToggleGroupItem value="night" aria-label="Noite"><Moon className="h-4 w-4 mr-2" />Noite</ToggleGroupItem>
+                              <ToggleGroupItem value="morning" aria-label="Manhã" className="data-[state=on]:bg-yellow-500/10 data-[state=on]:text-yellow-700 dark:data-[state=on]:text-yellow-400 data-[state=on]:border-yellow-500/30">
+                                <Sun className="h-4 w-4 mr-2" />Manhã
+                              </ToggleGroupItem>
+                              <ToggleGroupItem value="afternoon" aria-label="Tarde" className="data-[state=on]:bg-orange-500/10 data-[state=on]:text-orange-700 dark:data-[state=on]:text-orange-400 data-[state=on]:border-orange-500/30">
+                                <CloudSun className="h-4 w-4 mr-2" />Tarde
+                              </ToggleGroupItem>
+                              <ToggleGroupItem value="night" aria-label="Noite" className="data-[state=on]:bg-indigo-500/10 data-[state=on]:text-indigo-700 dark:data-[state=on]:text-indigo-400 data-[state=on]:border-indigo-500/30">
+                                <Moon className="h-4 w-4 mr-2" />Noite
+                              </ToggleGroupItem>
                            </ToggleGroup>
                       </div>
                   </div>
