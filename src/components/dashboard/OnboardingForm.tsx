@@ -18,7 +18,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, Calendar as CalendarIcon } from "lucide-react";
+import { Loader2, UserPlus, Calendar as CalendarIcon, Check, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -29,6 +29,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
@@ -82,15 +93,18 @@ export function OnboardingForm() {
   const [dateInput, setDateInput] = useState<string>("");
   const [month, setMonth] = useState<Date>(new Date());
 
+  const [isConfirming, setIsConfirming] = useState(false);
+  const [formData, setFormData] = useState<OnboardingFormValues | null>(null);
+
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
       childName: "",
       childBirthDate: undefined,
       childGender: undefined,
-      schoolShift: 'not_applicable',
-      schoolShiftStart: '',
-      schoolShiftEnd: '',
+      schoolShift: 'afternoon',
+      schoolShiftStart: '13:00',
+      schoolShiftEnd: '17:00',
     },
   });
 
@@ -118,11 +132,24 @@ export function OnboardingForm() {
     }
   };
 
-  const onSubmit = async (values: OnboardingFormValues) => {
+  const handleFormSubmit = (values: OnboardingFormValues) => {
+    if (values.schoolShift !== 'not_applicable') {
+      setFormData(values);
+      setIsConfirming(true);
+    } else {
+      handleConfirmSubmission(values);
+    }
+  };
+
+  const handleConfirmSubmission = async (values: OnboardingFormValues | null) => {
+    if (!values) return;
+    setIsConfirming(false);
+    
     if (!user) {
       toast({ title: "Erro de Autenticação", description: "Você precisa estar logado para adicionar uma criança. Por favor, faça login novamente.", variant: "destructive" });
       return;
     }
+    
     setIsLoading(true);
     try {
       await addChildProfile(user.uid, { 
@@ -144,6 +171,7 @@ export function OnboardingForm() {
       });
     } finally {
       setIsLoading(false);
+      setFormData(null);
     }
   };
 
@@ -159,213 +187,243 @@ export function OnboardingForm() {
     }
     return digits;
   };
+  
+  const schoolShiftLabel = schoolShifts.find(s => s.id === formData?.schoolShift)?.label;
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <FormField
+    <>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+              <FormField
+              control={form.control}
+              name="childName"
+              render={({ field }) => (
+                  <FormItem>
+                  <FormLabel>Nome ou Apelido da Criança</FormLabel>
+                  <FormControl>
+                      <Input placeholder="Ex: Flip Gato" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                  </FormItem>
+              )}
+              />
+
+              <FormField
+              control={form.control}
+              name="childBirthDate"
+              render={({ field }) => (
+                  <FormItem className="flex flex-col">
+                  <FormLabel>Data de Nascimento</FormLabel>
+                  <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                      if (open) {
+                          setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                      }
+                      setIsCalendarOpen(open);
+                      }}>
+                      <PopoverTrigger asChild>
+                      <FormControl>
+                          <Button
+                          variant={"outline"}
+                          className={cn(
+                              "w-full pl-3 text-left font-normal",
+                              !field.value && "text-muted-foreground"
+                          )}
+                          >
+                          {field.value ? (
+                              format(field.value, "PPP", { locale: ptBR })
+                          ) : (
+                              <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                      </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                      <div className="p-2 border-b">
+                          <Input
+                              placeholder="Digite a data: dd/mm/aaaa"
+                              value={dateInput}
+                              onChange={(e) => {
+                              const maskedValue = handleDateMask(e.target.value);
+                              setDateInput(maskedValue);
+                              if (maskedValue.length === 10) {
+                                  const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                  if (isValid(parsedDate)) {
+                                  field.onChange(parsedDate);
+                                  setMonth(parsedDate);
+                                  }
+                              }
+                              }}
+                              onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                  if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                  field.onChange(date);
+                                  setMonth(date);
+                                  setIsCalendarOpen(false);
+                                  } else {
+                                  toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                  }
+                              }
+                              }}
+                          />
+                      </div>
+                      <Calendar
+                          locale={ptBR}
+                          mode="single"
+                          month={month}
+                          onMonthChange={setMonth}
+                          selected={field.value}
+                          onSelect={(date) => {
+                          field.onChange(date);
+                          if (date) {
+                              setDateInput(format(date, 'dd/MM/yyyy'));
+                              setMonth(date);
+                          }
+                          setIsCalendarOpen(false);
+                          }}
+                          disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                          }
+                          initialFocus
+                          weekStartsOn={1}
+                      />
+                      </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                  </FormItem>
+              )}
+              />
+          </div>
+
+          <FormField
             control={form.control}
-            name="childName"
+            name="childGender"
             render={({ field }) => (
-                <FormItem>
-                <FormLabel>Nome da Criança</FormLabel>
+              <FormItem className="space-y-3">
+                <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
                 <FormControl>
-                    <Input placeholder="Flip Gato" {...field} />
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
+                  >
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="boy" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Menino</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="girl" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Menina</FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="not-informed" />
+                      </FormControl>
+                      <FormLabel className="font-normal">Prefiro não informar</FormLabel>
+                    </FormItem>
+                  </RadioGroup>
                 </FormControl>
                 <FormMessage />
-                </FormItem>
+              </FormItem>
             )}
-            />
-
-            <FormField
-            control={form.control}
-            name="childBirthDate"
-            render={({ field }) => (
-                <FormItem className="flex flex-col">
-                <FormLabel>Data de Nascimento</FormLabel>
-                <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                    if (open) {
-                        setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                    }
-                    setIsCalendarOpen(open);
-                    }}>
-                    <PopoverTrigger asChild>
-                    <FormControl>
-                        <Button
-                        variant={"outline"}
-                        className={cn(
-                            "w-full pl-3 text-left font-normal",
-                            !field.value && "text-muted-foreground"
-                        )}
-                        >
-                        {field.value ? (
-                            format(field.value, "PPP", { locale: ptBR })
-                        ) : (
-                            <span>Escolha uma data</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                        </Button>
-                    </FormControl>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                    <div className="p-2 border-b">
-                        <Input
-                            placeholder="Digite a data: dd/mm/aaaa"
-                            value={dateInput}
-                            onChange={(e) => {
-                            const maskedValue = handleDateMask(e.target.value);
-                            setDateInput(maskedValue);
-                            if (maskedValue.length === 10) {
-                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                if (isValid(parsedDate)) {
-                                field.onChange(parsedDate);
-                                setMonth(parsedDate);
-                                }
-                            }
-                            }}
-                            onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                                e.preventDefault();
-                                const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                                if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                field.onChange(date);
-                                setMonth(date);
-                                setIsCalendarOpen(false);
-                                } else {
-                                toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                                }
-                            }
-                            }}
-                        />
-                    </div>
-                    <Calendar
-                        locale={ptBR}
-                        mode="single"
-                        month={month}
-                        onMonthChange={setMonth}
-                        selected={field.value}
-                        onSelect={(date) => {
-                        field.onChange(date);
-                        if (date) {
-                            setDateInput(format(date, 'dd/MM/yyyy'));
-                            setMonth(date);
-                        }
-                        setIsCalendarOpen(false);
-                        }}
-                        disabled={(date) =>
-                        date > new Date() || date < new Date("1900-01-01")
-                        }
-                        initialFocus
-                        weekStartsOn={1}
-                    />
-                    </PopoverContent>
-                </Popover>
-                <FormMessage />
-                </FormItem>
-            )}
-            />
-        </div>
-
-        <FormField
-          control={form.control}
-          name="childGender"
-          render={({ field }) => (
-            <FormItem className="space-y-3">
-              <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                  className="flex flex-col space-y-2 pt-1 sm:flex-row sm:space-y-0 sm:space-x-4 sm:items-center"
-                >
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="boy" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menino</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="girl" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Menina</FormLabel>
-                  </FormItem>
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <RadioGroupItem value="not-informed" />
-                    </FormControl>
-                    <FormLabel className="font-normal">Prefiro não informar</FormLabel>
-                  </FormItem>
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-            <div className="md:col-span-1">
-                <FormField
-                    control={form.control}
-                    name="schoolShift"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Turno Escolar</FormLabel>
-                            <Select onValueChange={handleShiftChange} value={field.value}>
-                                <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecione..."/>
-                                    </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                    {schoolShifts.map(shift => (
-                                        <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-            </div>
-            {watchedSchoolShift !== 'not_applicable' && (
-                <>
-                    <FormField
-                        control={form.control}
-                        name="schoolShiftStart"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Início do Turno</FormLabel>
-                                <FormControl><TimePicker {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="schoolShiftEnd"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Fim do Turno</FormLabel>
-                                <FormControl><TimePicker {...field} /></FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </>
-            )}
-        </div>
-        
-        <Button type="submit" className="w-full shadow-clay hover:shadow-clay-hover active:shadow-clay-inset rounded-xl h-12 text-lg" disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <UserPlus className="mr-2 h-4 w-4" />
-          )}
-          Adicionar Mini Heroi
-        </Button>
-      </form>
-    </Form>
+          />
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+              <div className="md:col-span-1">
+                  <FormField
+                      control={form.control}
+                      name="schoolShift"
+                      render={({ field }) => (
+                          <FormItem>
+                              <FormLabel>Turno Escolar</FormLabel>
+                              <Select onValueChange={handleShiftChange} value={field.value}>
+                                  <FormControl>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder="Selecione..."/>
+                                      </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                      {schoolShifts.map(shift => (
+                                          <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                                      ))}
+                                  </SelectContent>
+                              </Select>
+                              <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+              </div>
+              {watchedSchoolShift !== 'not_applicable' && (
+                  <>
+                      <FormField
+                          control={form.control}
+                          name="schoolShiftStart"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Início do Turno</FormLabel>
+                                  <FormControl><TimePicker {...field} /></FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                      <FormField
+                          control={form.control}
+                          name="schoolShiftEnd"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Fim do Turno</FormLabel>
+                                  <FormControl><TimePicker {...field} /></FormControl>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                  </>
+              )}
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-2 pt-4">
+            <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading} className="w-full sm:w-auto">
+              Cancelar
+            </Button>
+            <Button type="submit" className="w-full sm:flex-grow shadow-clay hover:shadow-clay-hover active:shadow-clay-inset rounded-xl h-12 text-lg" disabled={isLoading}>
+              {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <UserPlus className="mr-2 h-4 w-4" />
+              )}
+              Adicionar Mini Heroi
+            </Button>
+          </div>
+        </form>
+      </Form>
+      
+      <AlertDialog open={isConfirming} onOpenChange={setIsConfirming}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar Horário Escolar?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você definiu o turno escolar como <strong>{schoolShiftLabel}</strong>, das <strong>{formData?.schoolShiftStart}</strong> às <strong>{formData?.schoolShiftEnd}</strong>. Este horário está correto?
+              <br/>
+              <span className="text-xs text-muted-foreground mt-2 block">Você poderá alterar isso mais tarde na tela da Agenda Escolar.</span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setFormData(null)}>
+                <X className="mr-2 h-4 w-4" /> Não, Corrigir
+            </AlertDialogCancel>
+            <AlertDialogAction onClick={() => handleConfirmSubmission(formData)}>
+                <Check className="mr-2 h-4 w-4" /> Sim, Seguir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
