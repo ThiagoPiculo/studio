@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -180,7 +179,7 @@ export default function HeroesPage() {
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-headline">Cartões de Mini Herois</h2>
           <Link href="/dashboard/onboarding">
-            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Adicionar Novo Cartão</Button>
+            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Mini Heroi</Button>
           </Link>
         </div>
 
