@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckCircle, Target, ArrowRight, Square, CheckSquare } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square } from "lucide-react";
 import { useEffect, useState, useMemo } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -366,7 +366,7 @@ export default function HeroesPage() {
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
-                            <CheckCircle className="h-5 w-5 text-chart-2" />
+                            <CheckSquare className="h-5 w-5 text-chart-2" />
                             <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
                             <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                             <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
