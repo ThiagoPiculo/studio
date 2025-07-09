@@ -32,6 +32,28 @@ function AppLogo() {
     )
 }
 
+const IdCardIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      {...props}
+    >
+      <rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect>
+      <circle cx="8.5" cy="8.5" r="1.5"></circle>
+      <line x1="13" y1="13" x2="19" y2="13"></line>
+      <line x1="13" y1="17" x2="19" y2="17"></line>
+      <line x1="13" y1="9" x2="17" y2="9"></line>
+    </svg>
+);
+
+
 export function AppSidebar() {
     const pathname = usePathname();
 
@@ -52,7 +74,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/heroes" tooltip="Cartão de Mini Herois" isActive={pathname.startsWith('/dashboard/heroes') || pathname === '/dashboard/onboarding' || pathname.startsWith('/dashboard/child')}>
-                            <Rocket className="text-primary"/>
+                            <IdCardIcon className="text-primary"/>
                             <span>Cartão de Mini Herois</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
