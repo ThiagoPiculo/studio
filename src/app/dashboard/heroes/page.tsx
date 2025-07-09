@@ -375,7 +375,7 @@ export default function HeroesPage() {
                     </Link>
                     <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
-                            <Gift className="h-5 w-5 text-chart-2" />
+                            <Gift className="h-5 w-5 text-chart-1" />
                             <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
                             <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                             <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
