@@ -1,4 +1,3 @@
-
 "use client";
 
 import {
@@ -79,9 +78,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda dos Herois" isActive={pathname.startsWith('/dashboard/agenda')}>
+                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Agenda de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
                             <CalendarDays className="text-chart-1" />
-                            <span>Agenda dos Herois</span>
+                            <span>Agenda de Missões</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>

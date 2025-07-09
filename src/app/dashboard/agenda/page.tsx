@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -499,7 +498,7 @@ function AgendaPageContent() {
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                         return(
-                        <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center gap-2">
+                        <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
                             <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
                               setActivePopover(isOpen ? popoverId : null);
                               if (!isOpen) {
@@ -761,7 +760,7 @@ function AgendaPageContent() {
                   <div>
                       <CardTitle className="text-3xl font-headline flex items-center gap-2 whitespace-nowrap">
                           <CalendarIcon className="h-8 w-8 text-primary" />
-                          Agenda dos Herois
+                          Agenda de Missões
                       </CardTitle>
                       <CardDescription>
                           Planeje e visualize as missões da sua equipe.
