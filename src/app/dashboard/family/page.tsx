@@ -36,11 +36,13 @@ import {
   resendJoinRequestNotification,
   deleteChildProfile,
   updateFamilyMemberRole,
-  requestAllianceOwnership
+  requestAllianceOwnership,
+  getPendingInvitationsForFamily,
+  cancelFamilyInvitation
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -80,6 +82,7 @@ function FamilyPageContent() {
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
 
   const [invitations, setInvitations] = useState<FamilyInvitation[]>([]);
+  const [sentInvitations, setSentInvitations] = useState<FamilyInvitation[]>([]);
   const [pendingRequests, setPendingRequests] = useState<FamilyInvitation[]>([]);
   const [isLoadingInvitations, setIsLoadingInvitations] = useState(false);
   const [isProcessingInvitationAction, setIsProcessingInvitationAction] = useState<string | null>(null);
@@ -122,18 +125,26 @@ function FamilyPageContent() {
 
   const fetchFamilyData = async (familyId: string) => {
     try {
-      const [details, members, children, requests, memberships] = await Promise.all([
+      const isOwner = user?.uid === (await getFamilyById(familyId))?.ownerId;
+
+      const promises = [
         getFamilyById(familyId),
         getFamilyMembers(familyId),
         getChildProfilesByFamily(familyId),
-        user?.uid === (await getFamilyById(familyId))?.ownerId ? getPendingJoinRequestsForFamily(familyId) : Promise.resolve([]),
+        isOwner ? getPendingJoinRequestsForFamily(familyId) : Promise.resolve([]),
         getFamilyMemberships(familyId),
-      ]);
-      setFamilyDetails(details);
-      setFamilyMembers(members);
-      setFamilyMemberships(memberships);
-      setChildrenInFamily(children);
-      setJoinRequests(requests);
+        isOwner ? getPendingInvitationsForFamily(familyId) : Promise.resolve([]),
+      ];
+
+      const [details, members, children, requests, memberships, sentInvites] = await Promise.all(promises);
+      
+      setFamilyDetails(details as Family | null);
+      setFamilyMembers(members as UserProfile[]);
+      setFamilyMemberships(memberships as FamilyMembership[]);
+      setChildrenInFamily(children as ChildProfile[]);
+      setJoinRequests(requests as FamilyInvitation[]);
+      setSentInvitations(sentInvites as FamilyInvitation[]);
+
     } catch (error) {
       console.error("Error fetching family data:", error);
       toast({ title: "Erro ao Carregar Aliança", description: "Não foi possível buscar os dados da aliança. Voltando para seu espaço pessoal.", variant: "destructive" });
@@ -153,6 +164,7 @@ function FamilyPageContent() {
       setFamilyMembers([]);
       setChildrenInFamily([]);
       setJoinRequests([]);
+      setSentInvitations([]);
       
       setIsLoadingInvitations(true);
       getPendingActionsForUser(user.uid)
@@ -271,6 +283,8 @@ function FamilyPageContent() {
       await createFamilyInvitation(currentContext, user.uid, user.name || 'Um amigo', inviteEmail.trim());
       toast({ title: "Convite Enviado!", description: `Um convite para a aventura foi enviado para ${inviteEmail.trim()}.` });
       setInviteEmail('');
+      // Refetch data to show pending invitation
+      fetchFamilyData(currentContext);
     } catch (error: any) {
       if (error.message === "Este usuário já é um membro da aliança.") {
         toast({
@@ -290,6 +304,20 @@ function FamilyPageContent() {
       }
     } finally {
       setIsProcessingEmailInvite(false);
+    }
+  };
+  
+  const handleCancelInvitation = async (invitationId: string) => {
+    setIsProcessingInvitationAction(invitationId);
+    try {
+        await cancelFamilyInvitation(invitationId);
+        toast({ title: "Convite Cancelado", description: "O convite foi removido com sucesso." });
+        setSentInvitations(prev => prev.filter(inv => inv.id !== invitationId));
+    } catch (error: any) {
+        console.error("Error canceling invitation:", error);
+        toast({ title: "Erro ao Cancelar", description: error.message, variant: "destructive" });
+    } finally {
+        setIsProcessingInvitationAction(null);
     }
   };
 
@@ -638,12 +666,12 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent className="space-y-3">
               {joinRequests.map(req => (
-                <div key={req.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
-                  <div>
-                    <p className="font-semibold">{req.inviterName}</p>
-                    <p className="text-sm text-muted-foreground">{req.inviteeEmail}</p>
+                <div key={req.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-card gap-2">
+                  <div className="min-w-0">
+                    <p className="font-semibold truncate">{req.inviterName}</p>
+                    <p className="text-sm text-muted-foreground truncate">{req.inviteeEmail}</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 self-end sm:self-center">
                     <Button 
                       size="sm" 
                       variant="ghost" 
@@ -669,6 +697,34 @@ function FamilyPageContent() {
             </CardContent>
           </Card>
         ))}
+
+        {isOwner && sentInvitations.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Convites Enviados Pendentes</CardTitle>
+              <CardDescription>Estes são os convites que você enviou por e-mail e que ainda não foram aceitos.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {sentInvitations.map(invite => (
+                <div key={invite.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-card gap-2">
+                  <p className="font-semibold truncate">{invite.inviteeEmail}</p>
+                  <div className="flex items-center gap-2 self-end sm:self-center">
+                    <Badge variant="secondary" className="whitespace-nowrap"><Hourglass className="mr-1.5 h-3.5 w-3.5"/>Pendente</Badge>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => handleCancelInvitation(invite.id)}
+                      disabled={isProcessingInvitationAction === invite.id}
+                    >
+                       {isProcessingInvitationAction === invite.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
+                       Cancelar
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
             <CardHeader>
@@ -702,7 +758,7 @@ function FamilyPageContent() {
                                       <p className="text-sm text-muted-foreground">Nível: {child.level} - {child.stars} Estrelas</p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-shrink-0">
                                   <Link href={`/dashboard/child/${child.id}/manage`}>
                                       <Button variant="outline" size="sm">
                                           Gerenciar <Settings className="ml-2 h-4 w-4" />
@@ -1166,12 +1222,12 @@ function FamilyPageContent() {
           </CardHeader>
           <CardContent className="space-y-3">
             {invitations.map(invite => (
-              <div key={invite.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
+              <div key={invite.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-card gap-2">
                 <div>
                   <p className="font-semibold">Aliança {invite.familyName}</p>
                   <p className="text-sm text-muted-foreground">Convidado por: {invite.inviterName}</p>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 self-end sm:self-center">
                   <Button 
                     size="sm" 
                     variant="ghost" 
@@ -1206,12 +1262,12 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent className="space-y-3">
               {pendingRequests.map(req => (
-                <div key={req.id} className="flex items-center justify-between p-3 border rounded-md bg-card">
+                <div key={req.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-card gap-2">
                   <div>
                     <p className="font-semibold">Aliança {req.familyName}</p>
                     <p className="text-sm text-muted-foreground">Pedido enviado para aprovação</p>
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-end sm:self-center">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                          <Button variant="secondary" size="sm">

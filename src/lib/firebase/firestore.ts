@@ -663,6 +663,23 @@ export const getPendingActionsForUser = async (userId: string): Promise<FamilyIn
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
 };
 
+export const getPendingInvitationsForFamily = async (familyId: string): Promise<FamilyInvitation[]> => {
+    const q = query(
+        collection(db, 'familyInvitations'),
+        where('familyId', '==', familyId),
+        where('type', '==', 'invite'),
+        where('status', '==', 'pending'),
+        orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+};
+
+export const cancelFamilyInvitation = async (invitationId: string): Promise<void> => {
+    const invitationRef = doc(db, 'familyInvitations', invitationId);
+    await deleteDoc(invitationRef);
+};
+
 
 export const acceptFamilyInvitation = async (invitationId: string, userId: string): Promise<Family> => {
   const invitationRef = doc(db, 'familyInvitations', invitationId);
