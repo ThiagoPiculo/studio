@@ -33,6 +33,7 @@ import {
   approveJoinRequest,
   declineJoinRequest,
   resendJoinRequestNotification,
+  deleteChildProfile,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
 import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send } from 'lucide-react';
@@ -457,7 +458,7 @@ function FamilyPageContent() {
       }
   };
 
-  const handleConfirmRemoveChild = async () => {
+  const handleRemoveChildFromFamily = async () => {
     if (!childToRemove) return;
     setIsRemovingChild(true);
     try {
@@ -472,6 +473,23 @@ function FamilyPageContent() {
         setChildToRemove(null);
     }
   };
+
+  const handleDeleteChildPermanently = async () => {
+    if (!childToRemove) return;
+    setIsRemovingChild(true);
+    try {
+        await deleteChildProfile(childToRemove.id);
+        setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
+        toast({ title: "Perfil de Heroi Arquivado", description: `O perfil de ${childToRemove.name} e todos os seus dados foram excluídos permanentemente.` });
+    } catch (error: any) {
+        console.error("Error deleting child profile permanently:", error);
+        toast({ title: "Erro ao Excluir", description: error.message, variant: "destructive" });
+    } finally {
+        setIsRemovingChild(false);
+        setChildToRemove(null);
+    }
+  };
+
 
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
@@ -812,23 +830,35 @@ function FamilyPageContent() {
         )}
 
         {childToRemove && (
-          <AlertDialog open={!!childToRemove} onOpenChange={() => setChildToRemove(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Remover {childToRemove.name} da Aliança?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza? {childToRemove.name} será movido(a) de volta para o "Meu Espaço" do responsável que o cadastrou e não será mais gerenciado por esta aliança. Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isRemovingChild}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmRemoveChild} className="bg-destructive hover:bg-destructive/90" disabled={isRemovingChild}>
-                {isRemovingChild && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Sim, Remover
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-          </AlertDialog>
+          <Dialog open={!!childToRemove} onOpenChange={() => setChildToRemove(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Remover {childToRemove.name} da Aliança?</DialogTitle>
+                <DialogDescription>
+                  Escolha como você deseja remover {childToRemove.name}.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4 space-y-4">
+                  <Button variant="outline" onClick={handleRemoveChildFromFamily} className="w-full justify-start text-left h-auto p-4" disabled={isRemovingChild}>
+                    <Home className="mr-4 h-5 w-5 text-primary flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">Mover para Meu Espaço</p>
+                      <p className="text-xs text-muted-foreground">O herói volta para o espaço pessoal do seu criador. Nenhum progresso será perdido.</p>
+                    </div>
+                  </Button>
+                   <Button variant="destructive" onClick={handleDeleteChildPermanently} className="w-full justify-start text-left h-auto p-4" disabled={isRemovingChild}>
+                    <Trash2 className="mr-4 h-5 w-5 flex-shrink-0" />
+                    <div>
+                      <p className="font-semibold">Excluir de Todos os Espaços</p>
+                      <p className="text-xs text-muted-foreground">Ação irreversível. O perfil e todos os dados (missões, progresso) serão apagados para sempre.</p>
+                    </div>
+                  </Button>
+              </div>
+              <DialogFooter>
+                  <Button variant="ghost" onClick={() => setChildToRemove(null)} disabled={isRemovingChild}>Cancelar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         )}
         
         <Dialog open={isAddChildDialogOpen} onOpenChange={setIsAddChildDialogOpen}>
