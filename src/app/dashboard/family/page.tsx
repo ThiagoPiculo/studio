@@ -658,7 +658,6 @@ function FamilyPageContent() {
                 )}
             </CardContent>
           </Card>
-          
           <Card>
             <CardHeader>
               <CardTitle className="whitespace-nowrap">Membros Responsáveis</CardTitle>
