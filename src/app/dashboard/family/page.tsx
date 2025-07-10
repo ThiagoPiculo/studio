@@ -666,15 +666,15 @@ function FamilyPageContent() {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
                       <div key={member.uid} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12 text-xl border-2 border-primary">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
                             <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                             <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                           </Avatar>
-                          <div className='overflow-hidden'>
+                          <div className='flex-grow min-w-0 space-y-1'>
                             <p className="font-semibold truncate">{member.name}</p>
                             <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2">
                               {member.uid === familyDetails.ownerId ? (
                                 <Badge variant="secondary" className="text-xs">Proprietário</Badge>
                               ) : (
@@ -708,7 +708,7 @@ function FamilyPageContent() {
                            <TooltipProvider>
                               <Tooltip>
                                   <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setMemberToRemove(member)}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 flex-shrink-0" onClick={() => setMemberToRemove(member)}>
                                           <Trash2 className="h-4 w-4" />
                                       </Button>
                                   </TooltipTrigger>
@@ -1137,3 +1137,4 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
