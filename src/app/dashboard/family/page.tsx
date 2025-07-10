@@ -607,9 +607,8 @@ function FamilyPageContent() {
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Aliança
                     </div>
-                    <Button variant="secondary" size="sm" onClick={handleOpenAddChildDialog}>
-                      <Users className="mr-2 h-4 w-4" />
-                      Adicionar Membro Infantil
+                    <Button onClick={handleOpenAddChildDialog} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                        <UserPlus className="mr-2 h-4 w-4" /> Adicionar Mini Heroi
                     </Button>
                 </CardTitle>
                 <CardDescription>Gerencie o perfil de cada Mini Heroi da sua aliança.</CardDescription>
