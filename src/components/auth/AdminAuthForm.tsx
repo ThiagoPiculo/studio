@@ -99,7 +99,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             }
           }
         } else {
-          toast({ title: "Sua Central de Missões Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
+          toast({ title: "Sua Central de Comando Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
         router.push("/dashboard/heroes?initial_load=true");
       }
@@ -111,7 +111,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
       if (mode === "login") {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
              title = "Ops! Chave secreta errada...";
-             description = "Parece que a combinação de e-mail e senha não abriu o portal. Tente de novo ou, se for sua primeira vez, crie sua central de missões!";
+             description = "Parece que a combinação de e-mail e senha não abriu o portal. Tente de novo ou, se for sua primeira vez, crie sua central de comando!";
         } else if (error.message) {
             description = error.message;
         }
@@ -229,7 +229,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
           ) : (
             <UserPlus className="mr-2 h-4 w-4" />
           )}
-          {mode === "login" ? "Acessar o Comando" : "Montar Central de Missões"}
+          {mode === "login" ? "Acessar o Comando" : "Montar Central de Comando"}
         </Button>
       </form>
       <div className="relative my-6">
