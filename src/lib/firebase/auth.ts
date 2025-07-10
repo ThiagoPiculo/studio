@@ -8,6 +8,9 @@ import {
   updateProfile,
   sendPasswordResetEmail,
   signInWithCustomToken,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  deleteUser,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -70,6 +73,29 @@ export const signOut = async (): Promise<void> => {
 export const resetPassword = async (email: string): Promise<void> => {
   await sendPasswordResetEmail(auth, email);
 };
+
+// Delete User Account
+export const deleteUserAccount = async (password: string): Promise<void> => {
+  const user = auth.currentUser;
+  if (!user || !user.email) {
+    throw new Error("Usuário não está logado ou e-mail não encontrado.");
+  }
+
+  // Create credential for re-authentication
+  const credential = EmailAuthProvider.credential(user.email, password);
+
+  // Re-authenticate user
+  await reauthenticateWithCredential(user, credential);
+
+  // If re-authentication is successful, delete the user
+  // NOTE: This only deletes the Firebase Auth user. Associated Firestore data
+  // (profiles, missions, etc.) should be deleted via a Cloud Function for security
+  // and completeness, triggered by the user deletion event.
+  await deleteUser(user);
+
+  // The onAuthStateChanged listener in AuthContext will handle redirecting the user.
+};
+
 
 // Child Login with Access Code (Simulated - calls a backend function ideally)
 // This function represents the client-side initiation.

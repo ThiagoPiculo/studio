@@ -10,10 +10,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw, CalendarOff, Shield } from 'lucide-react';
-import { updateProfile as updateAuthProfile } from 'firebase/auth';
+import { updateProfile as updateAuthProfile, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
-import { resetPassword } from '@/lib/firebase/auth';
+import { resetPassword, deleteUserAccount } from '@/lib/firebase/auth';
 import { getChildProfilesByOwner, getChildProfilesByFamily, getFamilyMembers, resetSelectedChildrenProgress, resetSchedulesForChildren, getUserProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile, UserProfile } from '@/lib/types';
 import {
@@ -36,7 +36,7 @@ import { cn } from '@/lib/utils';
 
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const { availableContexts } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
@@ -57,6 +57,9 @@ export default function ProfilePage() {
   const [allContextChildren, setAllContextChildren] = useState<ChildProfile[]>([]);
   const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
   const [isLoadingDialogData, setIsLoadingDialogData] = useState(true);
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
 
   useEffect(() => {
@@ -215,12 +218,42 @@ export default function ProfilePage() {
     }
   };
   
-  const handleDeleteAccount = () => {
-    toast({
-        title: "Função em Desenvolvimento",
-        description: "A exclusão de conta será implementada em breve. Por enquanto, se desejar excluir sua conta, entre em contato com o suporte.",
-        duration: 8000,
-    });
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    // Prompt for password
+    const password = prompt("Para sua segurança, por favor, insira sua senha para confirmar a exclusão da conta.");
+    if (password === null) { // User clicked cancel
+      return;
+    }
+    if (!password) {
+      toast({ title: "Senha necessária", description: "A senha é obrigatória para excluir a conta.", variant: "destructive" });
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    try {
+      await deleteUserAccount(password);
+      toast({ title: "Conta Excluída", description: "Sua conta foi excluída permanentemente. Sentiremos sua falta!" });
+      // The logout is handled inside deleteUserAccount which will trigger the AuthProvider to redirect.
+    } catch (error: any) {
+      let description = "Ocorreu um erro ao excluir a conta.";
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "A senha informada está incorreta. A exclusão foi cancelada.";
+      } else if (error.code === 'auth/requires-recent-login') {
+        description = "Sua sessão expirou. Por favor, faça login novamente e tente excluir sua conta mais uma vez.";
+         // Force logout so user has to log in again with fresh credentials
+        await logout();
+      }
+      toast({
+        title: "Falha na Exclusão",
+        description: description,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setIsDeleteConfirmOpen(false);
+    }
   };
   
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
@@ -458,7 +491,7 @@ export default function ProfilePage() {
              <div className="space-y-1">
                 <h4 className="font-semibold">Excluir Conta Permanentemente</h4>
                 <p className="text-sm text-muted-foreground">Isso removerá sua conta de Mestre e todos os dados associados (perfis de crianças, missões, etc.) de forma permanente.</p>
-                <AlertDialog>
+                <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="w-full sm:w-auto shadow-sm">
                             <Trash2 className="mr-2 h-4 w-4" /> Excluir Minha Conta
@@ -468,15 +501,14 @@ export default function ProfilePage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Você tem certeza ABSOLUTA?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação é final e não pode ser desfeita. Todos os seus dados, incluindo perfis de crianças, missões, recompensas e progresso, serão <span className="font-bold">excluídos permanentemente</span>.
-                                <br/><br/>
-                                Por segurança, ao confirmar, enviaremos um e-mail com o passo final para a exclusão.
+                                Esta ação é final e não pode ser desfeita. Para confirmar a exclusão, por favor, insira sua senha abaixo. Todos os seus dados, incluindo perfis de crianças, missões e recompensas, serão **excluídos permanentemente**.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90">
-                                Entendi, quero excluir
+                            <AlertDialogCancel onClick={() => setIsDeleteConfirmOpen(false)} disabled={isDeletingAccount}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingAccount}>
+                                {isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Confirmar Exclusão
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

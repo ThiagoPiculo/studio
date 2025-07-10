@@ -54,6 +54,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 }
               } else {
                 // For email/password, if doc doesn't exist, user is effectively not fully logged in for app purposes
+                // This can also happen right after a user is deleted, before the redirect.
+                console.log("User document does not exist for UID:", firebaseUser.uid);
                 setUser(null);
                 setLoading(false);
               }
@@ -102,8 +104,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await signOut(auth);
-      // onAuthStateChanged will handle setting user to null and loading to false
+      await firebaseSignOut(auth);
+      // onAuthStateChanged will set user to null. The useEffect in DashboardLayout
+      // will then redirect to /auth/login.
       router.push('/auth/login');
     } catch (error) {
       console.error("Error signing out:", error);
