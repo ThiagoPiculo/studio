@@ -607,7 +607,7 @@ function FamilyPageContent() {
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Aliança
                     </div>
-                    <Button variant="outline" size="sm" onClick={handleOpenAddChildDialog}>
+                    <Button variant="secondary" size="sm" onClick={handleOpenAddChildDialog}>
                       <Users className="mr-2 h-4 w-4" />
                       Adicionar Membro Infantil
                     </Button>
