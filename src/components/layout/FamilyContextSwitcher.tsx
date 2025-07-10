@@ -27,7 +27,7 @@ export function FamilyContextSwitcher() {
   
   if (isLoading) {
     return (
-      <Button variant="outline" className="w-[220px] justify-start h-9" disabled>
+      <Button variant="secondary" className="w-[220px] justify-start h-9" disabled>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Carregando...
       </Button>
@@ -43,7 +43,7 @@ export function FamilyContextSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="w-full max-w-[240px] justify-between h-9">
+        <Button variant="secondary" className="w-full max-w-[240px] justify-between h-9">
           <div className="flex items-center gap-2 truncate">
             {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <LinkIcon className="h-4 w-4 shrink-0 text-chart-4" />}
             <span className="truncate text-sm font-medium">{getDisplayName(currentContextData)}</span>
