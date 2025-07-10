@@ -653,6 +653,7 @@ function FamilyPageContent() {
                 )}
             </CardContent>
           </Card>
+          
           <Card>
             <CardHeader>
               <CardTitle>Membros Responsáveis</CardTitle>
@@ -660,7 +661,7 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent>
               {sortedMembers.length > 0 ? (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
@@ -703,20 +704,18 @@ function FamilyPageContent() {
                           </div>
                         </div>
                         {isOwner && member.uid !== user?.uid && (
-                          <div className="flex-shrink-0">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setMemberToRemove(member)}>
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Remover {member.name}</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
-                          </div>
+                           <TooltipProvider>
+                              <Tooltip>
+                                  <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setMemberToRemove(member)}>
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                      <p>Remover {member.name}</p>
+                                  </TooltipContent>
+                              </Tooltip>
+                          </TooltipProvider>
                         )}
                       </div>
                     );
@@ -867,7 +866,7 @@ function FamilyPageContent() {
                       <Trash2 className="h-6 w-6 flex-shrink-0" />
                       <div className="flex-grow">
                           <p className="font-semibold">Excluir de Todos os Espaços</p>
-                          <p className="text-sm text-destructive-foreground/90">Ação irreversível. O perfil e todos os dados serão apagados para sempre.</p>
+                          <p className="text-sm text-destructive-foreground/90">Ação irreversível. O perfil e todos os seus dados serão apagados para sempre.</p>
                       </div>
                   </div>
               </div>
