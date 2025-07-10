@@ -619,7 +619,7 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent>
                 {childrenInFamily.length > 0 ? (
-                    <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {childrenInFamily.map(child => (
                             <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                                 <div className="flex items-center gap-4">
@@ -660,8 +660,8 @@ function FamilyPageContent() {
         
         <Card>
             <CardHeader>
-              <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
-              <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
+                <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
+                <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
             <CardContent>
               {sortedMembers.length > 0 ? (
@@ -669,13 +669,13 @@ function FamilyPageContent() {
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
-                       <div key={member.uid} className="flex items-start gap-4 p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
-                        <div className="flex-grow flex items-center gap-3 min-w-0">
+                       <div key={member.uid} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
+                        <div className="flex items-center gap-3 flex-grow min-w-0">
                             <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
                               <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                               <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                             </Avatar>
-                            <div className='flex-grow min-w-0 space-y-1.5'>
+                            <div className='flex-grow min-w-0 space-y-1'>
                               <p className="font-semibold truncate">{member.name}</p>
                               <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -779,7 +779,7 @@ function FamilyPageContent() {
                 </Button>
               </div>
             </CardContent>
-          </Card>
+        </Card>
         
         {memberToRemove && (
           <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
@@ -787,15 +787,15 @@ function FamilyPageContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Remover {memberToRemove.name} da Aliança?</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
-                  <span>
+                  <div>
                     Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
-                  </span>
-                  <span>
+                  </div>
+                  <div>
                     Ao confirmar, ele(a) perderá o acesso à aliança.
-                  </span>
+                  </div>
                   {childrenOfMemberToRemove.length > 0 && (
                     <div className="pt-2">
-                      <span className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</span>
+                      <div className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</div>
                       <ul className="list-disc pl-5 mt-1 text-muted-foreground">
                         {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
                       </ul>
@@ -1156,3 +1156,4 @@ export default function FamilyPage() {
 
 
 
+    
