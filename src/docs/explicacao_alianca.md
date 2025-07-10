@@ -43,12 +43,11 @@ Para permitir uma colaboração rica e segura, o sistema de Aliança implementa 
     -   `children`: Cada perfil de criança tem um campo `familyId`, que a associa a uma Aliança.
     -   `familyInvitations`: Gerencia os convites e pedidos de entrada, com status (`pending`, `accepted`) e tipo (`invite`, `request`).
 
--   **Fluxo de Solicitação de Propriedade:**
-    1.  Um `Co-Owner` clica no botão "Solicitar Propriedade".
-    2.  A função `requestAllianceOwnership` é chamada.
-    3.  A função verifica a permissão do solicitante.
-    4.  Uma notificação do tipo `alliance_ownership_request` é criada para o `Owner` atual.
-    5.  A lógica de aprovação/recusa (não implementada nesta etapa) seria acionada a partir desta notificação, exigindo uma transação segura no Firestore para garantir a troca atômica de papéis e do campo `ownerId` no documento da família.
+-   **Fluxo de Transferência de Propriedade:**
+    1. O proprietário atual decide transferir a liderança para outro membro.
+    2. Uma função segura `transferFamilyOwnership` é chamada, executando uma transação atômica no Firestore.
+    3. A transação atualiza o `ownerId` no documento da `families`.
+    4. A mesma transação atualiza o `role` do novo proprietário para `Owner` e o do antigo para `Co-Owner` nos documentos de `familyMemberships`.
 
 -   **Remoção de Membros e Propriedade de Heróis:**
     -   Quando um membro é removido, a lógica foi alterada para ser mais robusta:

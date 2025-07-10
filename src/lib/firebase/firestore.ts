@@ -649,6 +649,40 @@ export const regenerateFamilyInviteCode = async (familyId: string, currentUserId
     return newInviteCode;
 };
 
+export const transferFamilyOwnership = async (familyId: string, currentOwnerId: string, newOwnerId: string): Promise<void> => {
+  return runTransaction(db, async (transaction) => {
+    const familyRef = doc(db, 'families', familyId);
+    const familySnap = await transaction.get(familyRef);
+
+    if (!familySnap.exists() || familySnap.data().ownerId !== currentOwnerId) {
+      throw new Error("Apenas o proprietário atual pode transferir a propriedade.");
+    }
+
+    const oldOwnerMembershipQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId), where('userId', '==', currentOwnerId));
+    const oldOwnerMembershipSnap = await getDocs(oldOwnerMembershipQuery);
+    if (oldOwnerMembershipSnap.empty) {
+      throw new Error("Associação do proprietário antigo não encontrada.");
+    }
+    const oldOwnerMembershipRef = oldOwnerMembershipSnap.docs[0].ref;
+
+    const newOwnerMembershipQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId), where('userId', '==', newOwnerId));
+    const newOwnerMembershipSnap = await getDocs(newOwnerMembershipQuery);
+    if (newOwnerMembershipSnap.empty) {
+      throw new Error("Associação do novo proprietário não encontrada.");
+    }
+    const newOwnerMembershipRef = newOwnerMembershipSnap.docs[0].ref;
+
+    // 1. Update family document
+    transaction.update(familyRef, { ownerId: newOwnerId });
+
+    // 2. Update new owner's role
+    transaction.update(newOwnerMembershipRef, { role: 'Owner' });
+
+    // 3. Update old owner's role
+    transaction.update(oldOwnerMembershipRef, { role: 'Co-Owner' });
+  });
+};
+
 
 // --- Family Invitations ---
 

@@ -39,11 +39,12 @@ import {
   requestAllianceOwnership,
   getPendingInvitationsForFamily,
   cancelFamilyInvitation,
-  resendFamilyInvitationNotification
+  resendFamilyInvitationNotification,
+  transferFamilyOwnership,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack, Crown } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -114,6 +115,7 @@ function FamilyPageContent() {
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isRequestingOwnership, setIsRequestingOwnership] = useState(false);
+  const [isTransferringOwnership, setIsTransferringOwnership] = useState(false);
 
 
   useEffect(() => {
@@ -448,6 +450,22 @@ function FamilyPageContent() {
     } finally {
         setIsManagingMember(false);
         setMemberToManage(null);
+    }
+  };
+  
+  const handleConfirmOwnershipTransfer = async () => {
+    if (!user || !familyDetails || !memberToManage) return;
+    setIsTransferringOwnership(true);
+    try {
+        await transferFamilyOwnership(familyDetails.id, user.uid, memberToManage.uid);
+        toast({ title: "Propriedade Transferida!", description: `${memberToManage.name} é o novo proprietário da aliança.` });
+        fetchFamilyData(currentContext); // Re-fetch to update roles and UI state
+    } catch (error: any) {
+        console.error("Error transferring ownership:", error);
+        toast({ title: "Erro ao Transferir", description: error.message, variant: "destructive" });
+    } finally {
+        setIsTransferringOwnership(false);
+        setMemberToManage(null); // Close the manage dialog
     }
   };
 
@@ -825,7 +843,7 @@ function FamilyPageContent() {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     const membership = familyMemberships.find(m => m.userId === member.uid);
                     const roleLabel = familyRoles.find(r => r.id === membership?.role)?.label || 'Desconhecido';
-                    const canManage = (isOwner || isCoOwner) && member.uid !== user?.uid && membership?.role !== 'Owner';
+                    const canManage = isOwner && member.uid !== user?.uid;
 
                     return (
                        <div key={member.uid} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
@@ -945,44 +963,60 @@ function FamilyPageContent() {
                     <DialogTitle>Gerenciar {memberToManage.name}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                  <div>
-                    <Label className="font-semibold">Alterar Papel</Label>
-                    <RadioGroup value={selectedRole} onValueChange={(v) => setSelectedRole(v as FamilyRole)} className="mt-2 space-y-2">
-                      {familyRoles.map(role => {
-                        // O proprietário não pode ser rebaixado através desta UI
-                        if (role.id === 'Owner') return null;
-                        
-                        return (
-                          <Label 
-                              key={role.id}
-                              htmlFor={`role-${role.id}`}
-                              className={cn(
-                                  "flex items-start gap-4 rounded-lg border p-4 transition-all cursor-pointer",
-                                  selectedRole === role.id ? "border-primary ring-2 ring-primary/50" : "border-border hover:bg-muted/50"
-                              )}
-                          >
-                              <RadioGroupItem value={role.id} id={`role-${role.id}`} className="mt-1" />
-                              <div className="flex-grow">
-                                  <p className="font-semibold text-foreground">{role.label}</p>
-                                  <p className="text-sm text-muted-foreground">{role.description}</p>
-                              </div>
-                          </Label>
-                        )
-                      })}
-                    </RadioGroup>
-                  </div>
-                  <Button onClick={handleConfirmRoleChange} disabled={isManagingMember} className="w-full">
-                      {isManagingMember ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
-                      Salvar Papel
-                  </Button>
+                    <div>
+                        <Label className="font-semibold">Alterar Papel</Label>
+                        <RadioGroup value={selectedRole} onValueChange={(v) => setSelectedRole(v as FamilyRole)} className="mt-2 space-y-2">
+                            {familyRoles.map(role => {
+                                if (role.id === 'Owner') return null;
+                                return (
+                                <Label key={role.id} htmlFor={`role-${role.id}`} className={cn("flex items-start gap-4 rounded-lg border p-4 transition-all cursor-pointer", selectedRole === role.id ? "border-primary ring-2 ring-primary/50" : "border-border hover:bg-muted/50")}>
+                                    <RadioGroupItem value={role.id} id={`role-${role.id}`} className="mt-1" />
+                                    <div className="flex-grow">
+                                    <p className="font-semibold text-foreground">{role.label}</p>
+                                    <p className="text-sm text-muted-foreground">{role.description}</p>
+                                    </div>
+                                </Label>
+                                )
+                            })}
+                        </RadioGroup>
+                    </div>
+                    <Button onClick={handleConfirmRoleChange} disabled={isManagingMember} className="w-full">
+                        {isManagingMember ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                        Salvar Papel
+                    </Button>
+                    <Separator />
 
-                  <Separator />
-
-                  <div className="space-y-2">
-                      <h4 className="font-semibold text-destructive">Remover Membro</h4>
+                    <div className="space-y-2">
+                      <h4 className="font-semibold text-destructive">Ações Críticas</h4>
                       <AlertDialog>
                           <AlertDialogTrigger asChild>
                               <Button variant="destructive" className="w-full" disabled={isManagingMember}>
+                                  <Crown className="mr-2 h-4 w-4" /> Tornar Proprietário da Aliança
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Transferir Propriedade?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        <p>
+                                            Você está prestes a transferir a propriedade da Aliança para <span className="font-semibold text-foreground">{memberToManage.name}</span>. Você se tornará um Co-Proprietário e perderá suas permissões de dono.
+                                        </p>
+                                        <p className="mt-2 font-bold text-destructive">Esta ação é irreversível.</p>
+                                    </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel disabled={isTransferringOwnership}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleConfirmOwnershipTransfer} className="bg-destructive hover:bg-destructive/90" disabled={isTransferringOwnership}>
+                                      {isTransferringOwnership && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                      Sim, Transferir
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isManagingMember}>
                                   <UserX className="mr-2 h-4 w-4" /> Remover {memberToManage.name}
                               </Button>
                           </AlertDialogTrigger>
@@ -1017,7 +1051,7 @@ function FamilyPageContent() {
                               </AlertDialogFooter>
                           </AlertDialogContent>
                       </AlertDialog>
-                  </div>
+                    </div>
                 </div>
             </DialogContent>
           </Dialog>
