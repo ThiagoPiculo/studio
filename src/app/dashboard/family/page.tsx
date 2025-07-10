@@ -656,7 +656,7 @@ function FamilyPageContent() {
           
           <Card>
             <CardHeader>
-              <CardTitle>Membros Responsáveis</CardTitle>
+              <CardTitle className="whitespace-nowrap">Membros Responsáveis</CardTitle>
               <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -671,9 +671,10 @@ function FamilyPageContent() {
                             <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                             <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                           </Avatar>
-                          <div>
-                            <span className="font-semibold">{member.name}</span>
-                            <div className="flex items-center gap-2">
+                          <div className='overflow-hidden'>
+                            <p className="font-semibold truncate">{member.name}</p>
+                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                            <div className="flex items-center gap-2 mt-1">
                               {member.uid === familyDetails.ownerId ? (
                                 <Badge variant="secondary" className="text-xs">Proprietário</Badge>
                               ) : (
