@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -43,6 +44,8 @@ import { Separator } from "../ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
+import { useFamily } from "@/contexts/FamilyContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -100,6 +103,9 @@ interface EditChildProfileFormProps {
 
 export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, isDeleting, onResetProgress, isResetting }: EditChildProfileFormProps) {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const { currentContext } = useFamily();
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
@@ -165,7 +171,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
 
   useEffect(() => {
     const fetchAuxiliaryData = async () => {
-        if (!child) {
+        if (!child || !user) {
             setIsLoadingColors(false);
             setIsLoadingOwner(false);
             return;
@@ -175,13 +181,15 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         setIsLoadingOwner(true);
 
         try {
-            // Fetch used colors
+            // Fetch used colors within the correct context
             let otherChildren: ChildProfile[] = [];
-            if (child.familyId) {
-                otherChildren = await getChildProfilesByFamily(child.familyId);
+            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+            if (familyIdToQuery) {
+                otherChildren = await getChildProfilesByFamily(familyIdToQuery);
             } else {
-                otherChildren = await getChildProfilesByOwner(child.ownerId);
+                otherChildren = await getChildProfilesByOwner(user.uid);
             }
+
             const colors = otherChildren
                 .filter(c => c.id !== child.id) 
                 .map(c => c.color);
@@ -203,7 +211,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
         }
     };
     fetchAuxiliaryData();
-  }, [child]);
+  }, [child, user, currentContext]);
 
 
   const onSubmit = async (data: ProfileFormValues) => {
