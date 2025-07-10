@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -108,9 +109,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/family" tooltip="Aliança e Colaboradores" isActive={pathname.startsWith('/dashboard/family')}>
+                         <SidebarMenuButton href="/dashboard/family" tooltip="Aliança de Herois" isActive={pathname.startsWith('/dashboard/family')}>
                             <LinkIcon className="text-chart-4" />
-                            <span>Aliança e Colaboradores</span>
+                            <span>Aliança de Herois</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

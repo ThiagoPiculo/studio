@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -368,7 +369,7 @@ export default function SettingsPage() {
                             <SelectItem value="missions">Mural de Missões</SelectItem>
                             <SelectItem value="rewards">Mural de Recompensas</SelectItem>
                             <SelectItem value="achievements">Mural de Conquistas</SelectItem>
-                            <SelectItem value="family">Alianças</SelectItem>
+                            <SelectItem value="family">Aliança de Herois</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
