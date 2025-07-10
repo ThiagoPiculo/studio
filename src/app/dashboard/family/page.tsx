@@ -60,7 +60,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -645,7 +645,7 @@ function FamilyPageContent() {
                     </form>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-3xl font-headline">Aliança de Herois: {familyDetails.name}</CardTitle>
+                      <CardTitle className="text-3xl font-headline">{familyDetails.name}</CardTitle>
                       {isOwner && (
                         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
                           <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
@@ -946,29 +946,30 @@ function FamilyPageContent() {
                 </DialogHeader>
                 <div className="py-4 space-y-4">
                   <div>
-                      <Label htmlFor="role-select">Alterar Papel</Label>
-                      <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as FamilyRole)}>
-                          <SelectTrigger id="role-select" className="w-full mt-1">
-                              <SelectValue placeholder="Selecione um papel..." />
-                          </SelectTrigger>
-                          <SelectContent>
-                              {familyRoles.map(role => (
-                                  <SelectItem key={role.id} value={role.id}>
-                                      <TooltipProvider>
-                                          <Tooltip>
-                                              <TooltipTrigger className="flex items-center justify-between w-full">
-                                                  <span>{role.label}</span>
-                                                  <Info className="h-4 w-4 ml-2 text-muted-foreground"/>
-                                              </TooltipTrigger>
-                                              <TooltipContent>
-                                                  <p>{role.description}</p>
-                                              </TooltipContent>
-                                          </Tooltip>
-                                      </TooltipProvider>
-                                  </SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
+                    <Label className="font-semibold">Alterar Papel</Label>
+                    <RadioGroup value={selectedRole} onValueChange={(v) => setSelectedRole(v as FamilyRole)} className="mt-2 space-y-2">
+                      {familyRoles.map(role => {
+                        // O proprietário não pode ser rebaixado através desta UI
+                        if (role.id === 'Owner') return null;
+                        
+                        return (
+                          <Label 
+                              key={role.id}
+                              htmlFor={`role-${role.id}`}
+                              className={cn(
+                                  "flex items-start gap-4 rounded-lg border p-4 transition-all cursor-pointer",
+                                  selectedRole === role.id ? "border-primary ring-2 ring-primary/50" : "border-border hover:bg-muted/50"
+                              )}
+                          >
+                              <RadioGroupItem value={role.id} id={`role-${role.id}`} className="mt-1" />
+                              <div className="flex-grow">
+                                  <p className="font-semibold text-foreground">{role.label}</p>
+                                  <p className="text-sm text-muted-foreground">{role.description}</p>
+                              </div>
+                          </Label>
+                        )
+                      })}
+                    </RadioGroup>
                   </div>
                   <Button onClick={handleConfirmRoleChange} disabled={isManagingMember} className="w-full">
                       {isManagingMember ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
