@@ -380,7 +380,7 @@ function FamilyPageContent() {
     try {
       await removeFamilyMember(familyDetails.id, memberToRemove.uid, user.uid);
       setFamilyMembers(prev => prev.filter(m => m.uid !== memberToRemove.uid));
-      toast({ title: "Membro Iniciou Nova Jornada", description: `${memberToRemove.name} não faz mais parte da equipe e seguiu para uma aventura solo.` });
+      toast({ title: "Membro Iniciou Nova Jornada", description: `${memberToRemove.name} não faz mais parte da equipe.` });
     } catch (error: any) {
       console.error("Error removing member:", error);
       toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
@@ -605,8 +605,7 @@ function FamilyPageContent() {
           </Card>
         ))}
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
+        <Card>
             <CardHeader>
                 <CardTitle className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -665,17 +664,17 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent>
               {sortedMembers.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
-                       <div key={member.uid} className="flex items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
-                        <div className="flex items-center gap-3 flex-grow min-w-0">
+                       <div key={member.uid} className="flex items-start p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
+                        <div className="flex items-start gap-3 flex-grow min-w-0">
                             <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
                               <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                               <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                             </Avatar>
-                            <div className='flex-grow min-w-0 space-y-1'>
+                            <div className='flex-grow min-w-0 space-y-1.5'>
                               <p className="font-semibold truncate">{member.name}</p>
                               <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                               <div className="flex items-center gap-2 flex-wrap">
@@ -780,43 +779,6 @@ function FamilyPageContent() {
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        <Card className="border-destructive bg-destructive/5">
-            <CardHeader>
-              <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isProcessing}>
-                    {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
-                    {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isOwner 
-                        ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
-                        : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
-                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Sim, {isOwner ? "Excluir" : "Sair"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
-              <p className="text-xs text-destructive/80 mt-2">
-                  {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
-              </p>
-            </CardContent>
-        </Card>
         
         {memberToRemove && (
           <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
@@ -828,11 +790,11 @@ function FamilyPageContent() {
                         Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
                     </p>
                     <p>
-                        Ao confirmar, ele(a) perderá o acesso compartilhado.
+                        Ao confirmar, ele(a) perderá o acesso à aliança.
                     </p>
                     {childrenOfMemberToRemove.length > 0 && (
                         <div className="pt-2">
-                            <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) serão movidos para o seu "Meu Espaço" pessoal:</p>
+                            <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</p>
                             <ul className="list-disc pl-5 mt-1 text-muted-foreground">
                                 {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
                             </ul>
@@ -957,6 +919,42 @@ function FamilyPageContent() {
                 )}
             </DialogContent>
         </Dialog>
+
+        <Card className="border-destructive bg-destructive/5">
+            <CardHeader>
+              <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" disabled={isProcessing}>
+                    {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
+                    {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {isOwner 
+                        ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
+                        : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
+                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      Sim, {isOwner ? "Excluir" : "Sair"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+              <p className="text-xs text-destructive/80 mt-2">
+                  {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
+              </p>
+            </CardContent>
+        </Card>
       </div>
     );
   }
@@ -1154,4 +1152,5 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
 

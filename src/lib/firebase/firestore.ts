@@ -590,17 +590,46 @@ export const updateFamilyName = async (familyId: string, ownerId: string, newNam
   });
 };
 
-export const removeFamilyMember = async (familyId: string, userIdToRemove: string, currentUserId: string): Promise<void> => {
+export const removeFamilyMember = async (familyId: string, userIdToRemove: string, ownerId: string): Promise<void> => {
     const familyRef = doc(db, 'families', familyId);
     const familySnap = await getDoc(familyRef);
-    if (!familySnap.exists() || familySnap.data().ownerId !== currentUserId) {
+
+    // Security check: ensure the current user is the owner
+    if (!familySnap.exists() || familySnap.data().ownerId !== ownerId) {
         throw new Error("Apenas o proprietário pode remover membros.");
     }
-    if (userIdToRemove === currentUserId) {
+    // Prevent owner from removing themselves
+    if (userIdToRemove === ownerId) {
         throw new Error("O proprietário não pode remover a si mesmo.");
     }
 
-    await leaveFamily(userIdToRemove, familyId);
+    const batch = writeBatch(db);
+
+    // 1. Find and delete the user's membership document
+    const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userIdToRemove), where('familyId', '==', familyId));
+    const membershipSnapshot = await getDocs(membershipQuery);
+    if (!membershipSnapshot.empty) {
+        const membershipDocRef = membershipSnapshot.docs[0].ref;
+        batch.delete(membershipDocRef);
+    } else {
+        // If no membership found, we can just log it and continue, as the end goal is achieved.
+        console.warn(`Membership for user ${userIdToRemove} in family ${familyId} not found. Cannot delete.`);
+    }
+
+    // 2. Find all children owned by the user being removed AND in the current family
+    const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userIdToRemove), where('familyId', '==', familyId));
+    const childrenSnapshot = await getDocs(childrenQuery);
+    
+    // 3. For each of these children, reassign ownership to the family owner
+    childrenSnapshot.forEach(childDoc => {
+        batch.update(childDoc.ref, { 
+            ownerId: ownerId, // Transfer ownership to the family owner
+            updatedAt: serverTimestamp() 
+        });
+    });
+
+    // 4. Commit all batched writes
+    await batch.commit();
 };
 
 export const regenerateFamilyInviteCode = async (familyId: string, currentUserId: string): Promise<string> => {
