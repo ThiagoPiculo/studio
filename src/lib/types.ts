@@ -7,7 +7,7 @@ import type { HeroColor } from './hero-colors';
 
 export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family';
 
-export type NotificationType = 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone';
+export type NotificationType = 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone' | 'alliance_ownership_request';
 
 export type NotificationPreferences = {
   [key in NotificationType]?: boolean;
@@ -66,11 +66,21 @@ export interface Family {
   updatedAt?: Timestamp;
 }
 
+export const familyRoles = [
+    { id: 'Owner', label: 'Proprietário', description: 'Controle total. Convida e remove membros, muda papéis e gerencia a aliança.'},
+    { id: 'Co-Owner', label: 'Co-Proprietário', description: 'Pode gerenciar membros (exceto o proprietário) e solicitar a propriedade da aliança.' },
+    { id: 'Guardian', label: 'Guardião', description: 'Gerencia missões e o progresso dos heróis. Ideal para pais e avós.' },
+    { id: 'Mentor', label: 'Mentor', description: 'Acesso de visualização para incentivar, sem poder de edição. Ideal para irmãos mais velhos.' },
+    { id: 'Specialist', label: 'Especialista', description: 'Acesso de leitura para acompanhamento profissional (ex: terapeutas).' },
+] as const;
+
+export type FamilyRole = typeof familyRoles[number]['id'];
+
 export interface FamilyMembership {
   id: string; // Document ID
   familyId: string;
   userId: string; // UID of the Collaborator
-  role: 'Collaborator' | 'MasterUser'; // Role in the family
+  role: FamilyRole;
   joinedAt: Timestamp;
 }
 

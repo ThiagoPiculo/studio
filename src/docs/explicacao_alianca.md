@@ -1,40 +1,57 @@
 
-# Visão do Produto: A Estratégia por Trás da "Aliança"
+# Arquitetura e Visão de Produto: O Sistema de "Aliança"
 
-Este documento detalha as razões estratégicas para a substituição do termo "Família" por "Aliança" no ecossistema Mini Herois. A mudança vai além da semântica; é uma decisão de branding, posicionamento e experiência do usuário.
+Este documento detalha as decisões técnicas e de produto por trás do sistema de colaboração, agora chamado "Aliança".
 
-## 1. De Funcional para Emocional: O Propósito da Palavra
+## 1. Por Que "Aliança"?
 
-O termo original, "Família Compartilhada", era funcional. Descrevia a logística de ter múltiplos cuidadores acessando os mesmos dados. No entanto, era um termo técnico, frio e que não capturava a essência do que estamos construindo.
+A substituição do termo "Família" por "Aliança" é uma decisão estratégica de branding, posicionamento e experiência do usuário.
 
-**"Aliança"**, por outro lado, descreve uma **missão**. É um pacto voluntário, uma união de forças em torno de um objetivo comum e nobre: guiar e apoiar a jornada de desenvolvimento das crianças.
+-   **Alinhamento com a Narrativa Heroica:** "Aliança" evoca um pacto voluntário em torno de um objetivo nobre: guiar o desenvolvimento das crianças. Os adultos não são meros administradores; são membros de uma aliança de apoio ao Mini Heroi.
+-   **Inclusividade e Neutralidade:** O termo é mais inclusivo do que "família", abrangendo diversas configurações de cuidado (pais separados, avós, tios, babás) sem carregar o peso emocional que a palavra "família" pode ter em certos contextos.
+-   **Clareza de Papéis:** Facilita a definição de papéis como "Colaborador da Aliança", que é mais claro e empoderador do que "membro da família compartilhada".
 
-*   **Alinhamento com a Narrativa Heroica:** No universo das grandes histórias, herois formam alianças para enfrentar desafios e alcançar grandes feitos. Ao adotar este termo, inserimos os pais e cuidadores diretamente na narrativa. Eles não são apenas "administradores de uma conta"; eles se tornam **membros fundadores da "Aliança de Apoio ao Mini Heroi"**. Isso cria uma conexão emocional imediata com a missão do aplicativo e valoriza o papel do adulto como um mentor e aliado.
-*   **Tom Emocional Positivo:** "Aliança" é uma palavra forte, que evoca confiança, união, cooperação e apoio mútuo. Ela remove a conotação de uma estrutura familiar tradicional ou rígida, abrindo espaço para todas as configurações de cuidado que existem no mundo moderno.
+## 2. Estrutura de Papéis (Role-Based Access Control - RBAC)
 
-## 2. Impacto Estratégico na Experiência do Usuário e Inclusividade
+Para permitir uma colaboração rica e segura, o sistema de Aliança implementa um RBAC (Controle de Acesso Baseado em Papéis) com a seguinte hierarquia:
 
-A mudança de nome reforça os pilares do Mini Herois, especialmente ao lidar com as diversas e complexas dinâmicas familiares atuais.
+-   👑 **Owner (Proprietário):**
+    -   **Definição:** O fundador da Aliança. Existe apenas um por Aliança.
+    -   **Permissões:** Controle total. Pode convidar/remover qualquer membro, alterar o papel de qualquer membro (exceto o seu próprio), transferir a propriedade e excluir a Aliança.
 
-### Cenário de Co-parentalidade (Pais Separados)
+-   🛡️ **Co-Owner (Co-Proprietário):**
+    -   **Definição:** O "braço direito" do Proprietário, com poderes administrativos.
+    -   **Permissões:** Pode convidar e remover `Guardians`, `Mentors` e `Specialists`. Não pode remover o `Owner` ou outros `Co-Owners`. Pode solicitar a transferência de propriedade da Aliança.
 
-Este é o cenário onde o termo "Aliança" demonstra seu maior poder. Para pais que vivem em lares separados, a palavra "família" pode carregar um peso emocional ou não representar mais a estrutura atual.
+-   ❤️ **Guardian (Guardião):**
+    -   **Definição:** O colaborador principal do dia a dia. Este é o antigo papel de "Collaborator".
+    -   **Permissões:** Foco total nos Mini Herois. Pode criar, atribuir e gerenciar missões e recompensas. Não possui permissões administrativas sobre a Aliança.
 
-*   **Foco no Objetivo Comum:** "Aliança" foca no que realmente importa: **o compromisso compartilhado com o bem-estar dos filhos**.
-*   **Neutralidade e Colaboração:** É um termo neutro e positivo. Ele materializa a mensagem de "eduquem juntos, mesmo vivendo separados", transformando um potencial ponto de atrito em um ato de cooperação. Formar uma "Aliança" é um passo proativo em direção a uma co-parentalidade harmoniosa.
+-   🧑‍🏫 **Mentor:**
+    -   **Definição:** Um papel de incentivo com acesso limitado.
+    -   **Permissões:** Acesso de **leitura** à agenda e progresso dos heróis. Não pode editar, criar ou concluir tarefas. Ideal para irmãos mais velhos ou familiares que querem acompanhar.
 
-### Famílias Estendidas e Redes de Apoio
+-   🧐 **Specialist (Especialista):**
+    -   **Definição:** Um observador profissional com acesso restrito a dados.
+    -   **Permissões:** Acesso de **leitura** aos dados de progresso e conclusão de missões. Não pode fazer alterações. Ideal para terapeutas, psicopedagogos, etc.
 
-O conceito de "Aliança" vai além dos pais. Um Usuário Master pode convidar outros cuidadores importantes na vida da criança — como avós, tios, padrinhos ou babás — para se juntarem.
+## 3. Implementação Técnica
 
-*   **Clareza de Papéis:** O título **"Colaborador da Aliança"** é muito mais claro, respeitoso e empoderador do que "Membro da Família Compartilhada", definindo com precisão o papel de apoio daquela pessoa dentro do ecossistema do aplicativo.
+-   **Coleções no Firestore:**
+    -   `families`: Armazena os dados da Aliança (`name`, `ownerId`, etc.).
+    -   `familyMemberships`: Documentos que ligam um `userId` a uma `familyId` e definem seu `role` (ex: `Owner`, `Guardian`). Esta é a fonte da verdade para permissões.
+    -   `children`: Cada perfil de criança tem um campo `familyId`, que a associa a uma Aliança.
+    -   `familyInvitations`: Gerencia os convites e pedidos de entrada, com status (`pending`, `accepted`) e tipo (`invite`, `request`).
 
-## 3. A Perspectiva do Mini Heroi: Fortalecendo a Rede de Apoio
+-   **Fluxo de Solicitação de Propriedade:**
+    1.  Um `Co-Owner` clica no botão "Solicitar Propriedade".
+    2.  A função `requestAllianceOwnership` é chamada.
+    3.  A função verifica a permissão do solicitante.
+    4.  Uma notificação do tipo `alliance_ownership_request` é criada para o `Owner` atual.
+    5.  A lógica de aprovação/recusa (não implementada nesta etapa) seria acionada a partir desta notificação, exigindo uma transação segura no Firestore para garantir a troca atômica de papéis e do campo `ownerId` no documento da família.
 
-Para uma criança, a linguagem importa ainda mais.
-
-*   **Narrativa Mágica e Segura:** É muito mais impactante para uma criança saber que todos os seus cuidadores fazem parte da **"Aliança do Heroi [Nome da Criança]"** do que simplesmente entender que eles estão em um "grupo".
-*   **Reforço Positivo:** Isso reforça a ideia de que ela não está sozinha em suas missões. Existe um time de super-herois adultos, unidos e organizados, torcendo e trabalhando por ela. Essa percepção fortalece a confiança da criança em sua rede de apoio e torna a jornada de aprendizado de hábitos uma aventura ainda mais segura e emocionante.
-
----
-**Conclusão:** A transição para "Aliança" é uma decisão estratégica que eleva a marca, melhora a experiência do usuário por ser mais inclusiva e emocionalmente ressonante, e integra perfeitamente a funcionalidade central do produto à sua narrativa heroica.
+-   **Remoção de Membros e Propriedade de Heróis:**
+    -   Quando um membro é removido, a lógica foi alterada para ser mais robusta:
+    -   Os perfis de Mini Herois que foram **criados por esse membro** não são mais movidos para seu espaço pessoal.
+    -   Em vez disso, o campo `ownerId` desses perfis de criança é **transferido para o `ownerId` da Aliança**.
+    -   Isso garante que o progresso e os perfis criados para a equipe permaneçam com a equipe, mesmo após a saída de um colaborador.

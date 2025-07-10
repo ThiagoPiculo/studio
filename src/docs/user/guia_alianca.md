@@ -1,39 +1,51 @@
 
-# Guia do Usuário: O que é uma Aliança?
+# Guia do Usuário: O que é uma Aliança e Seus Papéis?
 
-No Mini Herois, uma **Aliança** é o seu time de confiança! É um espaço compartilhado onde você pode convidar outro pai, mãe, avós ou qualquer outro responsável para gerenciar as missões e recompensas dos Mini Herois juntos.
+No Mini Herois, uma **Aliança** é o seu time de confiança! É um espaço compartilhado onde você pode convidar outros responsáveis para gerenciar as missões e recompensas dos Mini Herois juntos, garantindo que todos estejam na mesma página.
 
-Formar uma Aliança é a maneira perfeita de unir forças e garantir que todos os cuidadores estejam na mesma página, trabalhando em equipe pelo desenvolvimento das crianças.
+Para que a colaboração seja segura e organizada, existem diferentes papéis dentro da Aliança, cada um com seus superpoderes:
 
-## Por que formar uma Aliança?
+---
 
-*   **Visão Unificada:** Todos os membros da Aliança veem a mesma lista de missões, recompensas e o progresso dos Mini Herois.
-*   **Colaboração Fácil:** Qualquer membro pode criar novas missões, atribuí-las e dar como "concluídas", facilitando a rotina, mesmo que os cuidadores não estejam no mesmo lugar.
-*   **Ideal para Co-parentalidade:** Perfeito para pais que vivem em lares diferentes manterem a consistência na rotina dos filhos.
+### 👑 **Proprietário (Owner)**
+O fundador e líder máximo da Aliança.
 
-## Como Funciona?
+*   **Superpoderes:**
+    *   **Controle Total:** Pode convidar e remover qualquer membro da equipe.
+    *   **Gestão de Papéis:** É o único que pode definir ou alterar o papel dos outros membros.
+    *   **Administração Final:** Pode excluir a Aliança permanentemente, se necessário.
 
-### Criando sua Própria Aliança
+### 🛡️ **Co-Proprietário (Co-Owner)**
+O braço direito do Proprietário, com poderes de gestão da equipe.
 
-Se você quer ser o fundador de uma nova equipe, o processo é simples:
+*   **Superpoderes:**
+    *   **Gerenciar Colaboradores:** Pode convidar e remover membros com papéis de Guardião, Mentor ou Especialista.
+    *   **Solicitar Propriedade:** Pode enviar um pedido ao Proprietário atual para se tornar o novo líder da Aliança.
 
-1.  Vá para a seção **"Aliança"** no menu principal.
-2.  Escolha a opção **"Criar Sua Própria Aliança"**.
-3.  Dê um nome divertido e heroico para sua Aliança (Ex: "Aliança Aventura", "Equipe Fantástica").
-4.  Pronto! Sua Aliança está criada. Agora você pode convidar outros membros.
+### ❤️ **Guardião (Guardian)**
+O colaborador focado no dia a dia dos Mini Herois. Este é o papel padrão para novos membros.
 
-### Entrando em uma Aliança Existente
+*   **Superpoderes:**
+    *   **Gestão de Conteúdo:** Pode criar, editar, atribuir e marcar missões e recompensas como concluídas.
+    *   **Acompanhamento:** Acompanha de perto o progresso e a jornada dos heróis.
+    *   **Ideal para:** Pais, mães, avós, tios e qualquer cuidador principal.
 
-Se você foi convidado para se juntar a uma equipe, você precisará de um **Código de Convite** de 6 dígitos.
+### 🧑‍🏫 **Mentor**
+Um incentivador com acesso de visualização, perfeito para um irmão mais velho ou um parente próximo.
 
-1.  Vá para a seção **"Aliança"** no menu principal.
-2.  Escolha a opção **"Entrar em uma Aliança"**.
-3.  Digite o código de 6 dígitos que você recebeu.
-4.  Clique em "Entrar" e você fará parte da equipe!
+*   **Superpoderes:**
+    *   **Visualizar e Incentivar:** Pode ver a agenda de missões e o progresso do herói para dar apoio e celebrar conquistas.
+    *   **Acesso Limitado:** Não pode criar, editar ou marcar missões como concluídas.
 
-## Papéis na Aliança
+### 🧐 **Especialista (Specialist)**
+Um observador profissional com acesso de leitura, focado em análise.
 
-*   **Proprietário:** A pessoa que criou a Aliança. Tem controle total, incluindo a capacidade de remover outros membros.
-*   **Colaborador:** Um membro convidado que pode ajudar a gerenciar missões e recompensas.
+*   **Superpoderes:**
+    *   **Acesso de Leitura:** Pode visualizar os dados de progresso e conclusão de missões.
+    *   **Apoio Profissional:** Ideal para terapeutas, psicólogos ou psicopedagogos que usam os dados como ferramenta de acompanhamento. Não pode fazer nenhuma alteração no sistema.
 
-Formar uma Aliança é dar um passo importante para transformar a rotina em uma grande aventura compartilhada. Boa jornada, herois!
+---
+
+### Como Convidar?
+
+Use o e-mail para convidar quem já tem conta ou o código/link de convite para novos usuários e para quem precisa de aprovação. Cada método tem suas vantagens, e você pode escolher o melhor para cada situação!

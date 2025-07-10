@@ -15,6 +15,7 @@ import {
   createFamily, 
   joinFamilyByInviteCode, 
   getFamilyById, 
+  getFamilyMemberships,
   getFamilyMembers, 
   leaveFamily, 
   deleteFamily, 
@@ -34,9 +35,12 @@ import {
   declineJoinRequest,
   resendJoinRequestNotification,
   deleteChildProfile,
+  updateFamilyMemberRole,
+  requestAllianceOwnership
 } from '@/lib/firebase/firestore';
-import type { Family, UserProfile, FamilyInvitation, ChildProfile } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send } from 'lucide-react';
+import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
+import { familyRoles } from '@/lib/types';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -53,6 +57,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -62,6 +67,7 @@ function FamilyPageContent() {
   
   const [isClient, setIsClient] = useState(false);
   const [familyDetails, setFamilyDetails] = useState<Family | null>(null);
+  const [familyMemberships, setFamilyMemberships] = useState<FamilyMembership[]>([]);
   const [familyMembers, setFamilyMembers] = useState<UserProfile[]>([]);
   const [childrenInFamily, setChildrenInFamily] = useState<ChildProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,8 +90,9 @@ function FamilyPageContent() {
   const [isProcessingJoinRequest, setIsProcessingJoinRequest] = useState<string | null>(null);
 
 
-  const [memberToRemove, setMemberToRemove] = useState<UserProfile | null>(null);
-  const [isRemovingMember, setIsRemovingMember] = useState(false);
+  const [memberToManage, setMemberToManage] = useState<UserProfile | null>(null);
+  const [isManagingMember, setIsManagingMember] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<FamilyRole | ''>('');
 
   const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
   const [isRemovingChild, setIsRemovingChild] = useState(false);
@@ -99,6 +106,8 @@ function FamilyPageContent() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [familyNameInput, setFamilyNameInput] = useState('');
   const [isUpdatingName, setIsUpdatingName] = useState(false);
+  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
+  const [isRequestingOwnership, setIsRequestingOwnership] = useState(false);
 
 
   useEffect(() => {
@@ -113,14 +122,16 @@ function FamilyPageContent() {
 
   const fetchFamilyData = async (familyId: string) => {
     try {
-      const [details, members, children, requests] = await Promise.all([
+      const [details, members, children, requests, memberships] = await Promise.all([
         getFamilyById(familyId),
         getFamilyMembers(familyId),
         getChildProfilesByFamily(familyId),
         user?.uid === (await getFamilyById(familyId))?.ownerId ? getPendingJoinRequestsForFamily(familyId) : Promise.resolve([]),
+        getFamilyMemberships(familyId),
       ]);
       setFamilyDetails(details);
       setFamilyMembers(members);
+      setFamilyMemberships(memberships);
       setChildrenInFamily(children);
       setJoinRequests(requests);
     } catch (error) {
@@ -374,21 +385,57 @@ function FamilyPageContent() {
     }
   };
 
-  const handleConfirmRemoveMember = async () => {
-    if (!user || !familyDetails || !memberToRemove) return;
-    setIsRemovingMember(true);
+  const handleOpenManageMemberDialog = (member: UserProfile) => {
+    const membership = familyMemberships.find(m => m.userId === member.uid);
+    setMemberToManage(member);
+    setSelectedRole(membership?.role || '');
+  };
+
+  const handleConfirmRoleChange = async () => {
+    if (!user || !familyDetails || !memberToManage || !selectedRole) return;
+    setIsManagingMember(true);
     try {
-      await removeFamilyMember(familyDetails.id, memberToRemove.uid, user.uid);
-      setFamilyMembers(prev => prev.filter(m => m.uid !== memberToRemove.uid));
-      toast({ title: "Membro Iniciou Nova Jornada", description: `${memberToRemove.name} não faz mais parte da equipe.` });
+        await updateFamilyMemberRole(familyDetails.id, memberToManage.uid, selectedRole, user.uid);
+        toast({ title: "Papel Atualizado!", description: `O papel de ${memberToManage.name} foi alterado para ${selectedRole}.` });
+        fetchFamilyData(currentContext);
+    } catch (error: any) {
+        console.error("Error updating member role:", error);
+        toast({ title: "Erro ao atualizar papel", description: error.message, variant: "destructive" });
+    } finally {
+        setIsManagingMember(false);
+        setMemberToManage(null);
+    }
+  };
+
+  const handleConfirmRemoveMember = async () => {
+    if (!user || !familyDetails || !memberToManage) return;
+    setIsManagingMember(true);
+    try {
+      await removeFamilyMember(familyDetails.id, memberToManage.uid, user.uid);
+      setFamilyMembers(prev => prev.filter(m => m.uid !== memberToManage.uid));
+      toast({ title: "Membro Iniciou Nova Jornada", description: `${memberToManage.name} não faz mais parte da equipe.` });
     } catch (error: any) {
       console.error("Error removing member:", error);
       toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
     } finally {
-      setIsRemovingMember(false);
-      setMemberToRemove(null);
+      setIsManagingMember(false);
+      setMemberToManage(null);
     }
   };
+
+  const handleRequestOwnership = async () => {
+    if (!user || !familyDetails || !familyDetails.ownerId) return;
+    setIsRequestingOwnership(true);
+    try {
+      await requestAllianceOwnership(familyDetails.id, user.uid);
+      toast({ title: 'Pedido Enviado!', description: 'Um pedido de transferência de propriedade foi enviado ao proprietário atual da aliança.' });
+    } catch (error: any) {
+      console.error("Error requesting ownership:", error);
+      toast({ title: "Erro ao Solicitar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsRequestingOwnership(false);
+    }
+  }
   
   const handleAction = async (action: 'leave' | 'delete') => {
     if (!user || currentContext === 'my-space') return;
@@ -495,22 +542,30 @@ function FamilyPageContent() {
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
   const sortedMembers = useMemo(() => {
-    if (!familyDetails) return familyMembers;
+    if (!familyDetails) return [];
     return [...familyMembers].sort((a, b) => {
-      if (a.uid === familyDetails.ownerId) return -1;
-      if (b.uid === familyDetails.ownerId) return 1;
+      const membershipA = familyMemberships.find(m => m.userId === a.uid);
+      const membershipB = familyMemberships.find(m => m.userId === b.uid);
+      if (membershipA?.role === 'Owner') return -1;
+      if (membershipB?.role === 'Owner') return 1;
+      if (membershipA?.role === 'Co-Owner') return -1;
+      if (membershipB?.role === 'Co-Owner') return 1;
       return (a.name || '').localeCompare(b.name || '');
     });
-  }, [familyMembers, familyDetails]);
+  }, [familyMembers, familyDetails, familyMemberships]);
 
   const userAlliances = useMemo(() => {
     return availableContexts.filter(c => c.id !== 'my-space');
   }, [availableContexts]);
 
   const childrenOfMemberToRemove = useMemo(() => {
-    if (!memberToRemove) return [];
-    return childrenInFamily.filter(child => child.ownerId === memberToRemove.uid);
-  }, [memberToRemove, childrenInFamily]);
+    if (!memberToManage) return [];
+    return childrenInFamily.filter(child => child.ownerId === memberToManage.uid);
+  }, [memberToManage, childrenInFamily]);
+
+  const currentUserMembership = useMemo(() => {
+    return familyMemberships.find(m => m.userId === user?.uid);
+  }, [familyMemberships, user]);
   
   if (!isClient || isLoading) {
     return <Loading />;
@@ -518,6 +573,8 @@ function FamilyPageContent() {
 
   if (currentContext !== 'my-space' && familyDetails) {
     const isOwner = user?.uid === familyDetails.ownerId;
+    const isCoOwner = currentUserMembership?.role === 'Co-Owner';
+
     return (
       <div className="space-y-8">
         <Card className="shadow-lg">
@@ -561,6 +618,14 @@ function FamilyPageContent() {
               </Button>
             </div>
           </CardHeader>
+          {isCoOwner && (
+            <CardFooter>
+              <Button onClick={handleRequestOwnership} disabled={isRequestingOwnership}>
+                {isRequestingOwnership ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Shield className="mr-2 h-4 w-4"/>}
+                Solicitar Propriedade da Aliança
+              </Button>
+            </CardFooter>
+          )}
         </Card>
         
         {isOwner && (isLoadingJoinRequests ? (
@@ -640,10 +705,10 @@ function FamilyPageContent() {
                                 <div className="flex items-center gap-2">
                                   <Link href={`/dashboard/child/${child.id}/manage`}>
                                       <Button variant="outline" size="sm">
-                                          Gerenciar <ArrowRight className="ml-2 h-4 w-4" />
+                                          Gerenciar <Settings className="ml-2 h-4 w-4" />
                                       </Button>
                                   </Link>
-                                  {isOwner && (
+                                  {(isOwner || isCoOwner) && (
                                     <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToRemove(child)}>
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -660,7 +725,12 @@ function FamilyPageContent() {
         
         <Card>
             <CardHeader>
-                <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
+                    <Button variant="link" className="p-0 h-auto" onClick={() => setIsHelpDialogOpen(true)}>
+                        <Info className="mr-2 h-4 w-4"/> Como usar os convites?
+                    </Button>
+                </div>
                 <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -668,6 +738,10 @@ function FamilyPageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
+                    const membership = familyMemberships.find(m => m.userId === member.uid);
+                    const roleLabel = familyRoles.find(r => r.id === membership?.role)?.label || 'Desconhecido';
+                    const canManage = (isOwner || isCoOwner) && member.uid !== user?.uid && membership?.role !== 'Owner';
+
                     return (
                        <div key={member.uid} className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
                         <div className="flex items-center gap-3 flex-grow min-w-0">
@@ -679,11 +753,7 @@ function FamilyPageContent() {
                               <p className="font-semibold truncate">{member.name}</p>
                               <p className="text-xs text-muted-foreground truncate">{member.email}</p>
                               <div className="flex items-center gap-2 flex-wrap">
-                                {member.uid === familyDetails.ownerId ? (
-                                  <Badge variant="secondary" className="text-xs">Proprietário</Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-xs">Colaborador</Badge>
-                                )}
+                                  <Badge variant="secondary" className="text-xs">{roleLabel}</Badge>
                                 {ownedChildren.length > 0 && (
                                   <div className="flex -space-x-2">
                                     {ownedChildren.map(child => (
@@ -708,16 +778,16 @@ function FamilyPageContent() {
                               </div>
                             </div>
                         </div>
-                        {isOwner && member.uid !== user?.uid && (
+                        {canManage && (
                            <TooltipProvider>
                               <Tooltip>
                                   <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10 flex-shrink-0" onClick={() => setMemberToRemove(member)}>
-                                          <Trash2 className="h-4 w-4" />
+                                      <Button variant="outline" size="icon" className="h-8 w-8 flex-shrink-0" onClick={() => handleOpenManageMemberDialog(member)}>
+                                          <Settings className="h-4 w-4" />
                                       </Button>
                                   </TooltipTrigger>
                                   <TooltipContent>
-                                      <p>Remover {member.name}</p>
+                                      <p>Gerenciar {member.name}</p>
                                   </TooltipContent>
                               </Tooltip>
                           </TooltipProvider>
@@ -735,7 +805,7 @@ function FamilyPageContent() {
               <h3 className="text-md font-semibold mb-3">Adicionar Novo Colaborador</h3>
               <form onSubmit={handleSendInvitation} className="space-y-4">
                   <Label htmlFor="invite-email" className="text-xs text-muted-foreground">Adicione por e-mail de usuário já cadastrado</Label>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <Input
                         id="invite-email"
                         type="email"
@@ -747,7 +817,7 @@ function FamilyPageContent() {
                     />
                     <Button type="submit" disabled={isProcessingEmailInvite} className="shrink-0">
                         {isProcessingEmailInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
-                        <span className="hidden sm:inline ml-2">Convidar</span>
+                        <span className="sm:inline ml-2">Convidar</span>
                     </Button>
                   </div>
               </form>
@@ -763,16 +833,18 @@ function FamilyPageContent() {
               </div>
               <div className='space-y-2'>
                 <Label className='text-xs text-muted-foreground'>Compartilhar Código de Convite</Label>
-                <div className="flex items-center gap-2">
-                    <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-                    <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
-                        <Copy className="h-5 w-5" />
-                    </Button>
-                    {isOwner && (
-                    <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
-                        {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-                    </Button>
-                    )}
+                <div className="flex flex-col sm:flex-row items-stretch gap-2">
+                    <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest text-center sm:text-left" />
+                    <div className="flex gap-2 justify-center">
+                        <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
+                            <Copy className="h-5 w-5" />
+                        </Button>
+                        {isOwner && (
+                        <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
+                            {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                        </Button>
+                        )}
+                    </div>
                 </div>
                 <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
                     <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
@@ -781,37 +853,86 @@ function FamilyPageContent() {
             </CardContent>
         </Card>
         
-        {memberToRemove && (
-          <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Remover {memberToRemove.name} da Aliança?</AlertDialogTitle>
-                <AlertDialogDescription className="space-y-2">
+        {memberToManage && (
+          <Dialog open={!!memberToManage} onOpenChange={() => setMemberToManage(null)}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Gerenciar {memberToManage.name}</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-4">
                   <div>
-                    Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
+                      <Label htmlFor="role-select">Alterar Papel</Label>
+                      <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as FamilyRole)}>
+                          <SelectTrigger id="role-select" className="w-full mt-1">
+                              <SelectValue placeholder="Selecione um papel..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                              {familyRoles.map(role => (
+                                  <SelectItem key={role.id} value={role.id}>
+                                      <TooltipProvider>
+                                          <Tooltip>
+                                              <TooltipTrigger className="flex items-center justify-between w-full">
+                                                  <span>{role.label}</span>
+                                                  <Info className="h-4 w-4 ml-2 text-muted-foreground"/>
+                                              </TooltipTrigger>
+                                              <TooltipContent>
+                                                  <p>{role.description}</p>
+                                              </TooltipContent>
+                                          </Tooltip>
+                                      </TooltipProvider>
+                                  </SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
                   </div>
-                  <div>
-                    Ao confirmar, ele(a) perderá o acesso à aliança.
+                  <Button onClick={handleConfirmRoleChange} disabled={isManagingMember} className="w-full">
+                      {isManagingMember ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4"/>}
+                      Salvar Papel
+                  </Button>
+
+                  <Separator />
+
+                  <div className="space-y-2">
+                      <h4 className="font-semibold text-destructive">Remover Membro</h4>
+                      <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                              <Button variant="destructive" className="w-full" disabled={isManagingMember}>
+                                  <UserX className="mr-2 h-4 w-4" /> Remover {memberToManage.name}
+                              </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                              <AlertDialogHeader>
+                                  <AlertDialogTitle>Remover {memberToManage.name} da Aliança?</AlertDialogTitle>
+                                  <AlertDialogDescription className="space-y-2">
+                                      <div>
+                                          Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToManage.name}</span> (<span className="text-muted-foreground">{memberToManage.email}</span>) da sua aliança.
+                                      </div>
+                                      <div>
+                                          Ao confirmar, ele(a) perderá o acesso à aliança.
+                                      </div>
+                                      {childrenOfMemberToRemove.length > 0 && (
+                                        <div className="pt-2">
+                                          <div className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</div>
+                                          <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                            {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
+                                          </ul>
+                                        </div>
+                                      )}
+                                  </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                  <AlertDialogCancel disabled={isManagingMember}>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handleConfirmRemoveMember} className="bg-destructive hover:bg-destructive/90" disabled={isManagingMember}>
+                                      {isManagingMember && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                      Sim, Remover
+                                  </AlertDialogAction>
+                              </AlertDialogFooter>
+                          </AlertDialogContent>
+                      </AlertDialog>
                   </div>
-                  {childrenOfMemberToRemove.length > 0 && (
-                    <div className="pt-2">
-                      <div className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</div>
-                      <ul className="list-disc pl-5 mt-1 text-muted-foreground">
-                        {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
-                      </ul>
-                    </div>
-                  )}
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel disabled={isRemovingMember}>Cancelar</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmRemoveMember} className="bg-destructive hover:bg-destructive/90" disabled={isRemovingMember}>
-                  {isRemovingMember && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Sim, Remover
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </div>
+            </DialogContent>
+          </Dialog>
         )}
 
         {childToRemove && (
@@ -921,36 +1042,72 @@ function FamilyPageContent() {
             </DialogContent>
         </Dialog>
 
+        <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Como Convidar um Colaborador para sua Aliança</DialogTitle>
+                </DialogHeader>
+                <div className="py-4 space-y-4 text-sm text-muted-foreground">
+                    <p>Você tem duas maneiras de adicionar um novo responsável à sua equipe.</p>
+                    <Separator />
+                    <div>
+                        <h4 className="font-semibold text-foreground">Opção 1: Convite por E-mail (Mais Fácil)</h4>
+                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong className="text-foreground">O que você faz:</strong> Digite o e-mail do colaborador e clique no botão de convite.</li>
+                            <li><strong className="text-foreground">O que ele(a) faz:</strong> O colaborador receberá uma notificação dentro do app para aceitar o convite e entrará na Aliança instantaneamente.</li>
+                            <li><strong className="text-foreground">Requisito:</strong> Este método funciona apenas se a pessoa <span className="font-bold">já tiver uma conta</span> no Mini Herois.</li>
+                        </ul>
+                    </div>
+                    <Separator />
+                    <div>
+                        <h4 className="font-semibold text-foreground">Opção 2: Convite por Código ou Link</h4>
+                        <ul className="list-disc pl-5 mt-1 space-y-1">
+                            <li><strong className="text-foreground">O que você faz:</strong> Copie o código de 6 dígitos ou o link de convite direto e envie para a pessoa.</li>
+                            <li><strong className="text-foreground">O que ele(a) faz:</strong>
+                                <ul className="list-circle pl-5 mt-1">
+                                    <li>Se já tem conta, deve usar o código na seção "Entrar em uma Aliança".</li>
+                                    <li>Se não tem conta, o link direto o levará para o cadastro, já com o convite incluso.</li>
+                                </ul>
+                            </li>
+                            <li><strong className="text-foreground">Aprovação necessária:</strong> Após o colaborador usar o código/link, você receberá um pedido na sua tela de Aliança para aprovar a entrada dele.</li>
+                        </ul>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+
         <Card className="border-destructive bg-destructive/5">
             <CardHeader>
               <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
             </CardHeader>
             <CardContent>
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" disabled={isProcessing}>
-                    {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
-                    {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isOwner 
-                        ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
-                        : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
-                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                      Sim, {isOwner ? "Excluir" : "Sair"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="destructive" disabled={isProcessing} className="w-full">
+                      {isOwner ? <Trash2 className="mr-2 h-4 w-4" /> : <LogOut className="mr-2 h-4 w-4" />}
+                      {isOwner ? "Excluir Aliança" : "Sair da Aliança"}
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {isOwner 
+                          ? "Esta ação não pode ser desfeita. Isso excluirá permanentemente a aliança, removerá todos os membros e desvinculará todas as crianças associadas." 
+                          : "Você sairá desta aliança. Suas crianças deixarão de ser gerenciadas em conjunto com este grupo."}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => handleAction(isOwner ? 'delete' : 'leave')} className="bg-destructive hover:bg-destructive/90">
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Sim, {isOwner ? "Excluir" : "Sair"}
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
               <p className="text-xs text-destructive/80 mt-2">
                   {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
               </p>
@@ -1153,7 +1310,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
-
-
-    
