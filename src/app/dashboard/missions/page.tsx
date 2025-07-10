@@ -302,10 +302,10 @@ export default function MissionsHubPage() {
             <p className="text-destructive text-center py-10">{error}</p>
           ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-              <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Tente limpar os filtros ou <Link href="/dashboard/missions/new" className="text-primary hover:underline">crie uma nova missão</Link>.
+                Tente outro filtro ou <Link href="/dashboard/missions/new" className="text-primary hover:underline">crie uma nova missão</Link>.
               </p>
             </div>
           ) : (
