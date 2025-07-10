@@ -109,7 +109,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
       if (mode === "login") {
         description = "E-mail ou senha incorretos. Verifique seus dados e tente novamente. Se o problema persistir, tente redefinir sua senha.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-             description = "E-mail ou senha inválidos. Verifique seus dados e tente novamente.";
+             description = "E-mail ou senha inválidos. Verifique seus dados e tente novamente. Se o problema persistir, tente redefinir sua senha.";
         } else if (error.message) {
             description = error.message;
         }
