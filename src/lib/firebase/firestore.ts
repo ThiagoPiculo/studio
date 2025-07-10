@@ -680,6 +680,27 @@ export const cancelFamilyInvitation = async (invitationId: string): Promise<void
     await deleteDoc(invitationRef);
 };
 
+export const resendFamilyInvitationNotification = async (invitationId: string): Promise<void> => {
+    const invitationRef = doc(db, 'familyInvitations', invitationId);
+    const invitationSnap = await getDoc(invitationRef);
+
+    if (!invitationSnap.exists() || invitationSnap.data().status !== 'pending') {
+        throw new Error("Convite inválido ou já processado.");
+    }
+
+    const invite = invitationSnap.data() as FamilyInvitation;
+    await updateDoc(invitationRef, { createdAt: serverTimestamp() }); // Update timestamp to show it's recent
+    
+    await addNotification({
+      userId: invite.inviteeId,
+      type: 'alliance_join_request', // This type is fine for a reminder
+      title: `Lembrete de Convite`,
+      description: `${invite.inviterName} está aguardando você na aliança "${invite.familyName}".`,
+      href: '/dashboard/family',
+      relatedContextId: invite.familyId,
+    });
+};
+
 
 export const acceptFamilyInvitation = async (invitationId: string, userId: string): Promise<Family> => {
   const invitationRef = doc(db, 'familyInvitations', invitationId);

@@ -38,11 +38,12 @@ import {
   updateFamilyMemberRole,
   requestAllianceOwnership,
   getPendingInvitationsForFamily,
-  cancelFamilyInvitation
+  cancelFamilyInvitation,
+  resendFamilyInvitationNotification
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -60,6 +61,8 @@ import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -318,6 +321,19 @@ function FamilyPageContent() {
         toast({ title: "Erro ao Cancelar", description: error.message, variant: "destructive" });
     } finally {
         setIsProcessingInvitationAction(null);
+    }
+  };
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setIsProcessingInvitationAction(invitationId);
+    try {
+      await resendFamilyInvitationNotification(invitationId);
+      toast({ title: "Notificação Reenviada!", description: "O convite foi reenviado ao destinatário." });
+    } catch (error: any) {
+       console.error("Error resending invitation:", error);
+       toast({ title: "Erro ao Reenviar", description: error.message, variant: "destructive" });
+    } finally {
+      setIsProcessingInvitationAction(null);
     }
   };
 
@@ -629,7 +645,7 @@ function FamilyPageContent() {
                     </form>
                   ) : (
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-3xl font-headline">Aliança: {familyDetails.name}</CardTitle>
+                      <CardTitle className="text-3xl font-headline">Aliança de Herois: {familyDetails.name}</CardTitle>
                       {isOwner && (
                         <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
                           <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
@@ -706,10 +722,23 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent className="space-y-3">
               {sentInvitations.map(invite => (
-                <div key={invite.id} className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 border rounded-md bg-card gap-2">
-                  <p className="font-semibold truncate">{invite.inviteeEmail}</p>
+                <div key={invite.id} className="flex flex-col sm:flex-row items-center justify-between p-3 border rounded-md bg-card gap-4">
+                  <div>
+                      <p className="font-semibold truncate">{invite.inviteeEmail}</p>
+                      <p className="text-xs text-muted-foreground">
+                          Pendente há {formatDistanceToNowStrict(invite.createdAt.toDate(), { locale: ptBR })}
+                      </p>
+                  </div>
                   <div className="flex items-center gap-2 self-end sm:self-center">
-                    <Badge variant="secondary" className="whitespace-nowrap"><Hourglass className="mr-1.5 h-3.5 w-3.5"/>Pendente</Badge>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleResendInvitation(invite.id)}
+                      disabled={isProcessingInvitationAction === invite.id}
+                    >
+                       {isProcessingInvitationAction === invite.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <SendToBack className="mr-2 h-4 w-4" />}
+                       Reenviar
+                    </Button>
                     <Button
                       size="sm"
                       variant="destructive"
@@ -1184,7 +1213,7 @@ function FamilyPageContent() {
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
                   <LinkIcon className="mr-3 h-8 w-8 text-primary" />
-                  Alianças de Herois
+                  Aliança de Herois
                 </CardTitle>
                 <CardDescription>
                   Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
@@ -1278,7 +1307,7 @@ function FamilyPageContent() {
                           <AlertDialogHeader>
                               <AlertDialogTitle>Aguardando Aprovação do Heroi Mestre</AlertDialogTitle>
                               <AlertDialogDescription>
-                                  Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança e Colaboradores" na conta dele(a) para aprovar sua entrada.
+                                  Enviamos um pedido para o proprietário da aliança. Para acelerar, você pode contatá-lo(a) diretamente e pedir para que verifique as notificações ou a seção "Aliança de Herois" na conta dele(a) para aprovar sua entrada.
                               </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
