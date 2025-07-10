@@ -839,18 +839,18 @@ function FamilyPageContent() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-4">
-                  <Button variant="outline" onClick={handleRemoveChildFromFamily} className="w-full justify-start text-left h-auto p-4" disabled={isRemovingChild}>
-                    <Home className="mr-4 h-5 w-5 text-primary flex-shrink-0" />
-                    <div>
+                  <Button variant="outline" onClick={handleRemoveChildFromFamily} className="w-full justify-start h-auto p-4 items-center" disabled={isRemovingChild}>
+                    <Home className="mr-4 h-6 w-6 text-primary flex-shrink-0" />
+                    <div className="text-left">
                       <p className="font-semibold">Mover para Meu Espaço</p>
                       <p className="text-xs text-muted-foreground">O herói volta para o espaço pessoal do seu criador. Nenhum progresso será perdido.</p>
                     </div>
                   </Button>
-                   <Button variant="destructive" onClick={handleDeleteChildPermanently} className="w-full justify-start text-left h-auto p-4" disabled={isRemovingChild}>
-                    <Trash2 className="mr-4 h-5 w-5 flex-shrink-0" />
-                    <div>
+                   <Button variant="destructive" onClick={handleDeleteChildPermanently} className="w-full justify-start h-auto p-4 items-center" disabled={isRemovingChild}>
+                    <Trash2 className="mr-4 h-6 w-6 flex-shrink-0" />
+                    <div className="text-left">
                       <p className="font-semibold">Excluir de Todos os Espaços</p>
-                      <p className="text-xs text-muted-foreground">Ação irreversível. O perfil e todos os dados (missões, progresso) serão apagados para sempre.</p>
+                      <p className="text-xs text-destructive-foreground/80">Ação irreversível. O perfil e todos os dados serão apagados para sempre.</p>
                     </div>
                   </Button>
               </div>
