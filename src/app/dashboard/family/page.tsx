@@ -607,7 +607,7 @@ function FamilyPageContent() {
                     <div className="flex items-center gap-2">
                         <Sparkles className="h-6 w-6 text-primary"/>Mini Herois da Aliança
                     </div>
-                    <Button onClick={handleOpenAddChildDialog} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                    <Button onClick={handleOpenAddChildDialog} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset bg-primary text-primary-foreground">
                         <UserPlus className="mr-2 h-4 w-4" /> Adicionar Mini Heroi
                     </Button>
                 </CardTitle>
@@ -658,66 +658,73 @@ function FamilyPageContent() {
               <CardTitle>Membros Responsáveis</CardTitle>
               <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
-            <CardContent className="flex flex-wrap gap-4">
-              {sortedMembers.map(member => {
-                 const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
-                return (
-                  <div key={member.uid} className="relative group flex flex-col items-center gap-2 p-4 rounded-lg border bg-card text-center w-full sm:w-48">
-                    {isOwner && member.uid !== user?.uid && (
-                      <div className="absolute top-1 right-1">
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 opacity-20 group-hover:opacity-100 transition-opacity">
-                                    <MoreVertical className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
-                                    <UserX className="mr-2 h-4 w-4" /> Remover Membro
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    )}
-                    <Avatar className="h-16 w-16 text-2xl border-2 border-primary">
-                      <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
-                      <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                    </Avatar>
-                    <span className="font-semibold text-sm">{member.name}</span>
-                    {member.uid === familyDetails.ownerId ? (
-                        <Badge variant="secondary" className="text-xs">Proprietário</Badge>
-                    ) : (
-                        <Badge variant="outline" className="text-xs">Colaborador</Badge>
-                    )}
-
-                    {ownedChildren.length > 0 && (
-                        <>
-                            <Separator className="my-1 w-full" />
-                            <p className="text-xs text-muted-foreground self-start">Criador dos Herois:</p>
-                            <div className="flex flex-wrap justify-center gap-2">
-                                {ownedChildren.map(child => (
+            <CardContent>
+              {sortedMembers.length > 0 ? (
+                <div className="space-y-4">
+                  {sortedMembers.map(member => {
+                    const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
+                    return (
+                      <div key={member.uid} className="relative group flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                        <div className="flex items-center gap-4">
+                          <Avatar className="h-12 w-12 text-xl border-2 border-primary">
+                            <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
+                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <span className="font-semibold">{member.name}</span>
+                            <div className="flex items-center gap-2">
+                              {member.uid === familyDetails.ownerId ? (
+                                <Badge variant="secondary" className="text-xs">Proprietário</Badge>
+                              ) : (
+                                <Badge variant="outline" className="text-xs">Colaborador</Badge>
+                              )}
+                              {ownedChildren.length > 0 && (
+                                <div className="flex -space-x-2">
+                                  {ownedChildren.map(child => (
                                     <TooltipProvider key={child.id} delayDuration={100}>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Link href={`/dashboard/child/${child.id}/manage`}>
-                                                    <Avatar className="h-8 w-8 ring-1 ring-background">
-                                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                                        <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                                    </Avatar>
-                                                </Link>
-                                            </TooltipTrigger>
-                                            <TooltipContent>
-                                                <p>{child.name}</p>
-                                            </TooltipContent>
-                                        </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Link href={`/dashboard/child/${child.id}/manage`}>
+                                            <Avatar className="h-6 w-6 ring-1 ring-background">
+                                              <AvatarImage src={child.avatar} alt={child.name} />
+                                              <AvatarFallback style={{ backgroundColor: child.color }} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                          </Link>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <p>Criador(a) de {child.name}</p>
+                                        </TooltipContent>
+                                      </Tooltip>
                                     </TooltipProvider>
-                                ))}
+                                  ))}
+                                </div>
+                              )}
                             </div>
-                        </>
-                    )}
-                  </div>
-                )
-              })}
+                          </div>
+                        </div>
+                        {isOwner && member.uid !== user?.uid && (
+                          <div className="flex-shrink-0">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
+                                  <UserX className="mr-2 h-4 w-4" /> Remover Membro
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-muted-foreground text-center py-4">Apenas você está nesta aliança por enquanto.</p>
+              )}
             </CardContent>
           </Card>
         </div>
