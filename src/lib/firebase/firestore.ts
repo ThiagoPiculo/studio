@@ -20,7 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { heroColors } from '../hero-colors';
+import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
@@ -81,12 +81,21 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   
   const familyId = contextId && contextId !== 'my-space' ? contextId : null;
   
-  // Find the first available color within the correct context.
+  // Find available colors based on context and gender
   const existingChildren = familyId ? await getChildProfilesByFamily(familyId) : await getChildProfilesByOwner(ownerId);
   const usedColors = new Set(existingChildren.map(child => child.color));
-  
-  // Find the first available color, or loop back and pick a random one if all are taken.
-  const availableColor = heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
+
+  let colorPalette;
+  if (childData.gender === 'boy') {
+    colorPalette = boyColors;
+  } else if (childData.gender === 'girl') {
+    colorPalette = girlColors;
+  } else {
+    colorPalette = heroColors; // Use all colors if not specified
+  }
+
+  const availableColor = colorPalette.find(color => !usedColors.has(color)) || heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
+
 
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
