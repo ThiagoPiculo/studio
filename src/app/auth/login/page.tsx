@@ -85,6 +85,9 @@ export default function LoginPage() {
                   <AlertDialogTitle>Recuperar Senha</AlertDialogTitle>
                   <AlertDialogDescription>
                     Não se preocupe, acontece com os melhores heróis! Digite seu e-mail abaixo e enviaremos um link para você criar uma nova senha.
+                    <br />
+                    <br />
+                    <strong className="font-semibold">Se não encontrar o e-mail, dê uma olhadinha na sua caixa de spam!</strong>
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <div className="grid gap-2 py-2">
