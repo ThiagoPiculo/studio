@@ -687,9 +687,9 @@ function FamilyPageContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {childrenInFamily.map(child => (
                             <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-4 min-w-0">
                                     <Avatar
-                                      className="h-12 w-12 text-xl ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                      className="h-12 w-12 text-xl ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
                                       style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
                                     >
                                         <AvatarImage src={child.avatar} alt={child.name} />
@@ -697,8 +697,8 @@ function FamilyPageContent() {
                                             {getInitials(child.name)}
                                         </AvatarFallback>
                                     </Avatar>
-                                    <div>
-                                      <span className="font-semibold">{child.name}</span>
+                                    <div className="min-w-0">
+                                      <span className="font-semibold truncate block">{child.name}</span>
                                       <p className="text-sm text-muted-foreground">Nível: {child.level} - {child.stars} Estrelas</p>
                                     </div>
                                 </div>
