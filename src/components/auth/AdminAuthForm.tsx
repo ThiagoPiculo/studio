@@ -105,11 +105,13 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);
+      let title = `${mode === "login" ? "Falha no Login" : "Falha no Cadastro"}`;
       let description = "Ocorreu um erro inesperado. Por favor, tente novamente.";
+
       if (mode === "login") {
-        description = "E-mail ou senha incorretos. Verifique seus dados e tente novamente. Se o problema persistir, tente redefinir sua senha.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-             description = "E-mail ou senha inválidos. Verifique seus dados e tente novamente. Se o problema persistir, tente redefinir sua senha.";
+             title = "Ops! Chave secreta errada...";
+             description = "Parece que a combinação de e-mail e senha não abriu o portal. Tente de novo ou, se for sua primeira vez, crie sua central de missões!";
         } else if (error.message) {
             description = error.message;
         }
@@ -121,7 +123,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         }
       }
       toast({
-        title: `${mode === "login" ? "Falha no Login" : "Falha no Cadastro"}`,
+        title: title,
         description: description,
         variant: "destructive",
       });
