@@ -664,7 +664,7 @@ function FamilyPageContent() {
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
-                      <div key={member.uid} className="relative group flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                      <div key={member.uid} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12 text-xl border-2 border-primary">
                             <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
@@ -704,18 +704,18 @@ function FamilyPageContent() {
                         </div>
                         {isOwner && member.uid !== user?.uid && (
                           <div className="flex-shrink-0">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem className="text-destructive focus:text-destructive-foreground focus:bg-destructive" onClick={() => setMemberToRemove(member)}>
-                                  <UserX className="mr-2 h-4 w-4" /> Remover Membro
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/70 hover:text-destructive hover:bg-destructive/10" onClick={() => setMemberToRemove(member)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Remover {member.name}</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
                           </div>
                         )}
                       </div>
@@ -726,60 +726,59 @@ function FamilyPageContent() {
                 <p className="text-muted-foreground text-center py-4">Apenas você está nesta aliança por enquanto.</p>
               )}
             </CardContent>
+            <Separator className="my-4" />
+            <CardContent>
+              <h3 className="text-md font-semibold mb-3">Adicionar Novo Colaborador</h3>
+              <form onSubmit={handleSendInvitation} className="space-y-4">
+                  <Label htmlFor="invite-email" className="text-xs text-muted-foreground">Adicione por e-mail de usuário já cadastrado</Label>
+                  <div className="flex gap-2">
+                    <Input
+                        id="invite-email"
+                        type="email"
+                        placeholder="email.do.responsavel@exemplo.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
+                        required
+                        disabled={isProcessingEmailInvite}
+                    />
+                    <Button type="submit" disabled={isProcessingEmailInvite} className="shrink-0">
+                        {isProcessingEmailInvite ? <Loader2 className="h-4 w-4 animate-spin" /> : <UserPlus className="h-4 w-4" />}
+                        <span className="hidden sm:inline ml-2">Convidar</span>
+                    </Button>
+                  </div>
+              </form>
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">
+                    Ou
+                  </span>
+                </div>
+              </div>
+              <div className='space-y-2'>
+                <Label className='text-xs text-muted-foreground'>Compartilhar Código de Convite</Label>
+                <div className="flex items-center gap-2">
+                    <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
+                    <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
+                        <Copy className="h-5 w-5" />
+                    </Button>
+                    {isOwner && (
+                    <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
+                        {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
+                    </Button>
+                    )}
+                </div>
+                <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
+                    <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
+                </Button>
+              </div>
+            </CardContent>
           </Card>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card>
-             <CardHeader>
-              <CardTitle>Adicionar Colaborador</CardTitle>
-              <CardDescription>Adicione um usuário já cadastrado pelo e-mail para colaborar na gestão da aliança.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form onSubmit={handleSendInvitation} className="space-y-4">
-                      <Input
-                          type="email"
-                          placeholder="email.do.responsavel@exemplo.com"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
-                          required
-                          disabled={isProcessingEmailInvite}
-                      />
-                      <Button type="submit" disabled={isProcessingEmailInvite}>
-                          {isProcessingEmailInvite ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                          Adicionar por email de usuário cadastrado
-                      </Button>
-                  </form>
-                  <div className="relative my-6">
-                    <div className="absolute inset-0 flex items-center">
-                      <span className="w-full border-t" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        Ou
-                      </span>
-                    </div>
-                  </div>
-                  <div className='space-y-2'>
-                    <Label className='text-muted-foreground'>Compartilhar Código de Convite</Label>
-                    <div className="flex items-center gap-2">
-                        <Input value={familyDetails.inviteCode} readOnly className="text-xl font-mono tracking-widest" />
-                        <Button onClick={handleCopyCode} variant="outline" size="icon" aria-label="Copiar código">
-                            <Copy className="h-5 w-5" />
-                        </Button>
-                        {isOwner && (
-                        <Button onClick={handleRegenerateCode} variant="outline" size="icon" aria-label="Regenerar código" disabled={isRegeneratingCode}>
-                            {isRegeneratingCode ? <Loader2 className="h-5 w-5 animate-spin" /> : <RefreshCw className="h-5 w-5" />}
-                        </Button>
-                        )}
-                    </div>
-                    <Button onClick={handleCopyInviteLink} variant="link" className="p-0 h-auto text-sm mt-4">
-                        <LinkIcon className="mr-2 h-4 w-4"/> Copiar link de convite direto
-                    </Button>
-                  </div>
-            </CardContent>
-          </Card>
-          <Card className="border-destructive bg-destructive/5">
+        <Card className="border-destructive bg-destructive/5">
             <CardHeader>
               <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
             </CardHeader>
@@ -813,8 +812,7 @@ function FamilyPageContent() {
                   {isOwner ? "Esta é uma ação permanente e afetará todos os membros." : "Você pode se juntar novamente mais tarde com um novo código de convite."}
               </p>
             </CardContent>
-          </Card>
-        </div>
+        </Card>
         
         {memberToRemove && (
           <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
