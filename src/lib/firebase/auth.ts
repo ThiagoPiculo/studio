@@ -4,7 +4,7 @@ import {
   signInWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
-  signOut as firebaseSignOut,
+  signOut,
   updateProfile,
   sendPasswordResetEmail,
   signInWithCustomToken,
@@ -65,12 +65,13 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
 };
 
 // Sign Out
-export const signOut = async (): Promise<void> => {
-  await firebaseSignOut(auth);
+export const logout = async (): Promise<void> => {
+  await signOut(auth);
 };
 
 // Password Reset
 export const resetPassword = async (email: string): Promise<void> => {
+  auth.languageCode = 'pt-BR';
   await sendPasswordResetEmail(auth, email);
 };
 
