@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await firebaseSignOut(auth);
+      await signOut(auth);
       // onAuthStateChanged will set user to null. The useEffect in DashboardLayout
       // will then redirect to /auth/login.
       router.push('/auth/login');
