@@ -506,6 +506,11 @@ function FamilyPageContent() {
   const userAlliances = useMemo(() => {
     return availableContexts.filter(c => c.id !== 'my-space');
   }, [availableContexts]);
+
+  const childrenOfMemberToRemove = useMemo(() => {
+    if (!memberToRemove) return [];
+    return childrenInFamily.filter(child => child.ownerId === memberToRemove.uid);
+  }, [memberToRemove, childrenInFamily]);
   
   if (!isClient || isLoading) {
     return <Loading />;
@@ -661,48 +666,48 @@ function FamilyPageContent() {
             </CardHeader>
             <CardContent>
               {sortedMembers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
-                      <div key={member.uid} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
-                            <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
-                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                          </Avatar>
-                          <div className='flex-grow min-w-0 space-y-1'>
-                            <p className="font-semibold truncate">{member.name}</p>
-                            <p className="text-xs text-muted-foreground truncate">{member.email}</p>
-                            <div className="flex items-center gap-2">
-                              {member.uid === familyDetails.ownerId ? (
-                                <Badge variant="secondary" className="text-xs">Proprietário</Badge>
-                              ) : (
-                                <Badge variant="outline" className="text-xs">Colaborador</Badge>
-                              )}
-                              {ownedChildren.length > 0 && (
-                                <div className="flex -space-x-2">
-                                  {ownedChildren.map(child => (
-                                    <TooltipProvider key={child.id} delayDuration={100}>
-                                      <Tooltip>
-                                        <TooltipTrigger asChild>
-                                          <Link href={`/dashboard/child/${child.id}/manage`}>
-                                            <Avatar className="h-6 w-6 ring-1 ring-background">
-                                              <AvatarImage src={child.avatar} alt={child.name} />
-                                              <AvatarFallback style={{ backgroundColor: child.color }} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                            </Avatar>
-                                          </Link>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                          <p>Criador(a) de {child.name}</p>
-                                        </TooltipContent>
-                                      </Tooltip>
-                                    </TooltipProvider>
-                                  ))}
-                                </div>
-                              )}
+                       <div key={member.uid} className="flex items-center p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
+                        <div className="flex items-center gap-3 flex-grow min-w-0">
+                            <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
+                              <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
+                              <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                            </Avatar>
+                            <div className='flex-grow min-w-0 space-y-1'>
+                              <p className="font-semibold truncate">{member.name}</p>
+                              <p className="text-xs text-muted-foreground truncate">{member.email}</p>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {member.uid === familyDetails.ownerId ? (
+                                  <Badge variant="secondary" className="text-xs">Proprietário</Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-xs">Colaborador</Badge>
+                                )}
+                                {ownedChildren.length > 0 && (
+                                  <div className="flex -space-x-2">
+                                    {ownedChildren.map(child => (
+                                      <TooltipProvider key={child.id} delayDuration={100}>
+                                        <Tooltip>
+                                          <TooltipTrigger asChild>
+                                            <Link href={`/dashboard/child/${child.id}/manage`}>
+                                              <Avatar className="h-6 w-6 ring-1 ring-background">
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback style={{ backgroundColor: child.color }} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                              </Avatar>
+                                            </Link>
+                                          </TooltipTrigger>
+                                          <TooltipContent>
+                                            <p>Criador(a) de {child.name}</p>
+                                          </TooltipContent>
+                                        </Tooltip>
+                                      </TooltipProvider>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                          </div>
                         </div>
                         {isOwner && member.uid !== user?.uid && (
                            <TooltipProvider>
@@ -818,9 +823,22 @@ function FamilyPageContent() {
           <AlertDialog open={!!memberToRemove} onOpenChange={() => setMemberToRemove(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Remover {memberToRemove.name}?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Tem certeza que deseja remover {memberToRemove.name} da aliança? Ele(a) perderá o acesso compartilhado às crianças. As crianças que ele(a) criou voltarão para o seu "Meu Espaço" pessoal.
+                <AlertDialogTitle>Remover {memberToRemove.name} da Aliança?</AlertDialogTitle>
+                <AlertDialogDescription className="space-y-2">
+                    <p>
+                        Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
+                    </p>
+                    <p>
+                        Ao confirmar, ele(a) perderá o acesso compartilhado.
+                    </p>
+                    {childrenOfMemberToRemove.length > 0 && (
+                        <div className="pt-2">
+                            <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) serão movidos para o seu "Meu Espaço" pessoal:</p>
+                            <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
+                            </ul>
+                        </div>
+                    )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
