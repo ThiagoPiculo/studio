@@ -903,22 +903,24 @@ function FamilyPageContent() {
                           <AlertDialogContent>
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Remover {memberToManage.name} da Aliança?</AlertDialogTitle>
-                                  <AlertDialogDescription className="space-y-2">
-                                      <div>
-                                          Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToManage.name}</span> (<span className="text-muted-foreground">{memberToManage.email}</span>) da sua aliança.
-                                      </div>
-                                      <div>
-                                          Ao confirmar, ele(a) perderá o acesso à aliança.
-                                      </div>
-                                      {childrenOfMemberToRemove.length > 0 && (
-                                        <div className="pt-2">
-                                          <div className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</div>
-                                          <ul className="list-disc pl-5 mt-1 text-muted-foreground">
-                                            {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
-                                          </ul>
+                                    <AlertDialogDescription asChild>
+                                        <div className="space-y-2">
+                                            <p>
+                                                Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToManage.name}</span> (<span className="text-muted-foreground">{memberToManage.email}</span>) da sua aliança.
+                                            </p>
+                                            <p>
+                                                Ao confirmar, ele(a) perderá o acesso à aliança.
+                                            </p>
+                                            {childrenOfMemberToRemove.length > 0 && (
+                                                <div className="pt-2">
+                                                    <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</p>
+                                                    <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                                                        {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
+                                                    </ul>
+                                                </div>
+                                            )}
                                         </div>
-                                      )}
-                                  </AlertDialogDescription>
+                                    </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                   <AlertDialogCancel disabled={isManagingMember}>Cancelar</AlertDialogCancel>
