@@ -30,6 +30,7 @@ const notificationIcons: { [key in Notification['type']]: React.ElementType } = 
   new_level: Award,
   new_badge: Award,
   alliance_join_request: UserPlus,
+  alliance_ownership_request: UserPlus,
   alliance_join_approved: UserPlus,
   mission_assigned: PlusCircle,
   mission_completed: CheckCircle,
@@ -41,6 +42,7 @@ const notificationTypeMap: { [key in Notification['type']]: string } = {
     new_level: 'system',
     new_badge: 'system',
     alliance_join_request: 'alliance',
+    alliance_ownership_request: 'alliance',
     alliance_join_approved: 'alliance',
     mission_assigned: 'missions',
     mission_completed: 'missions',
@@ -143,14 +145,18 @@ export function Notifications() {
   }, [notifications, typeFilter, childFilter, readStatusFilter]);
   
   const handleNotificationClick = (notification: Notification) => {
-    // If the notification has a related context and it's different from the current one
+    // Ação especial para convites: nunca mudar o contexto, apenas navegar.
+    if (notification.type === 'alliance_join_request') {
+      router.push(notification.href);
+      return;
+    }
+    
+    // Se a notificação tem um contexto diferente do atual, muda o contexto primeiro
     if (notification.relatedContextId && notification.relatedContextId !== currentContext) {
-      // Set the pending navigation state which the useEffect will watch
       setPendingNavigation({ href: notification.href, contextId: notification.relatedContextId });
-      // Trigger the context switch
       setCurrentContext(notification.relatedContextId);
     } else {
-      // If no context switch is needed, navigate immediately
+      // Se não precisa de mudança de contexto, navega imediatamente.
       router.push(notification.href);
     }
   };
