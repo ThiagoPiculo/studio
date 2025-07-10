@@ -656,10 +656,11 @@ function FamilyPageContent() {
                     <p className="text-muted-foreground text-center py-4">Ainda não há Mini Herois nesta aliança. Clique em "Adicionar" acima para começar.</p>
                 )}
             </CardContent>
-          </Card>
-          <Card>
+        </Card>
+        
+        <Card>
             <CardHeader>
-              <CardTitle className="whitespace-nowrap">Membros Responsáveis</CardTitle>
+              <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
               <CardDescription>Veja os colaboradores e os Mini Herois que cada um gerencia.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -668,8 +669,8 @@ function FamilyPageContent() {
                   {sortedMembers.map(member => {
                     const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
                     return (
-                       <div key={member.uid} className="flex items-start p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
-                        <div className="flex items-start gap-3 flex-grow min-w-0">
+                       <div key={member.uid} className="flex items-start gap-4 p-3 border rounded-lg hover:bg-muted/30 transition-colors min-w-0">
+                        <div className="flex-grow flex items-center gap-3 min-w-0">
                             <Avatar className="h-12 w-12 text-xl border-2 border-primary flex-shrink-0">
                               <AvatarImage src={member.avatarUrl || `https://placehold.co/128x128.png?text=${getInitials(member.name)}`} alt={member.name || 'Membro'} />
                               <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
@@ -786,20 +787,20 @@ function FamilyPageContent() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Remover {memberToRemove.name} da Aliança?</AlertDialogTitle>
                 <AlertDialogDescription className="space-y-2">
-                    <p>
-                        Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
-                    </p>
-                    <p>
-                        Ao confirmar, ele(a) perderá o acesso à aliança.
-                    </p>
-                    {childrenOfMemberToRemove.length > 0 && (
-                        <div className="pt-2">
-                            <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</p>
-                            <ul className="list-disc pl-5 mt-1 text-muted-foreground">
-                                {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
-                            </ul>
-                        </div>
-                    )}
+                  <span>
+                    Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToRemove.name}</span> (<span className="text-muted-foreground">{memberToRemove.email}</span>) da sua aliança.
+                  </span>
+                  <span>
+                    Ao confirmar, ele(a) perderá o acesso à aliança.
+                  </span>
+                  {childrenOfMemberToRemove.length > 0 && (
+                    <div className="pt-2">
+                      <span className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</span>
+                      <ul className="list-disc pl-5 mt-1 text-muted-foreground">
+                        {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
+                      </ul>
+                    </div>
+                  )}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
@@ -1152,5 +1153,6 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
 
 
