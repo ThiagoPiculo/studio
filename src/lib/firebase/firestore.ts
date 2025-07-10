@@ -19,7 +19,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db } from './config';
-import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday } from '@/lib/types';
+import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -334,7 +334,7 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
     id: newMembershipRef.id,
     familyId: newFamily.id,
     userId: ownerId,
-    role: 'MasterUser',
+    role: 'Owner',
     joinedAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newMembershipRef, ownerMembership);
@@ -481,7 +481,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
     id: newMembershipRef.id,
     familyId: family.id,
     userId,
-    role: 'Collaborator',
+    role: 'Guardian',
     joinedAt: serverTimestamp() as Timestamp,
   };
   await setDoc(newMembershipRef, newMembership);
@@ -509,6 +509,12 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
           });
       });
   await Promise.all(notificationPromises);
+};
+
+export const getFamilyMemberships = async (familyId: string): Promise<FamilyMembership[]> => {
+  const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
+  const membershipsSnapshot = await getDocs(membershipsQuery);
+  return membershipsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyMembership));
 };
 
 export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]> => {
@@ -683,7 +689,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
     id: newMembershipRef.id,
     familyId: familyId,
     userId: userId,
-    role: 'Collaborator',
+    role: 'Guardian',
     joinedAt: serverTimestamp() as Timestamp,
   };
   batch.set(newMembershipRef, newMembership);
@@ -758,7 +764,7 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
       id: newMembershipRef.id,
       familyId: familyId,
       userId: userId,
-      role: 'Collaborator',
+      role: 'Guardian',
       joinedAt: serverTimestamp() as Timestamp,
     };
     transaction.set(newMembershipRef, newMembership);
@@ -813,6 +819,47 @@ export const resendJoinRequestNotification = async (requestId: string): Promise<
     href: '/dashboard/family',
     relatedContextId: request.familyId,
   });
+};
+
+export const updateFamilyMemberRole = async (familyId: string, userId: string, newRole: FamilyRole, currentUserId: string): Promise<void> => {
+    const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userId), where('familyId', '==', familyId));
+    const membershipSnapshot = await getDocs(membershipQuery);
+    if(membershipSnapshot.empty) {
+        throw new Error("Membro não encontrado na aliança.");
+    }
+    const membershipRef = membershipSnapshot.docs[0].ref;
+    
+    // Additional security checks can be added here using Firestore security rules,
+    // but a client-side check is a good first line of defense.
+    const family = await getFamilyById(familyId);
+    if(family?.ownerId !== currentUserId) {
+        throw new Error("Apenas o proprietário da aliança pode alterar papéis.");
+    }
+
+    await updateDoc(membershipRef, { role: newRole });
+};
+
+export const requestAllianceOwnership = async (familyId: string, requesterId: string): Promise<void> => {
+    const family = await getFamilyById(familyId);
+    if (!family || !family.ownerId) {
+        throw new Error("Aliança ou proprietário não encontrado.");
+    }
+    if (family.ownerId === requesterId) {
+        throw new Error("Você já é o proprietário.");
+    }
+    const requesterProfile = await getUserProfile(requesterId);
+    if (!requesterProfile) {
+        throw new Error("Perfil do solicitante não encontrado.");
+    }
+
+    await addNotification({
+        userId: family.ownerId,
+        type: 'alliance_ownership_request',
+        title: 'Pedido de Transferência de Propriedade',
+        description: `${requesterProfile.name} está solicitando a propriedade da aliança "${family.name}".`,
+        href: `/dashboard/family`, // Link to family page to manage
+        relatedContextId: familyId,
+    });
 };
 
 
