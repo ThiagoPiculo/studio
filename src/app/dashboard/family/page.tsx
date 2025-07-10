@@ -52,6 +52,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { cn } from '@/lib/utils';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -839,20 +840,32 @@ function FamilyPageContent() {
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-4">
-                  <Button variant="outline" onClick={handleRemoveChildFromFamily} className="w-full justify-start h-auto p-4 items-center" disabled={isRemovingChild}>
-                    <Home className="mr-4 h-6 w-6 text-primary flex-shrink-0" />
-                    <div className="text-left">
-                      <p className="font-semibold">Mover para Meu Espaço</p>
-                      <p className="text-xs text-muted-foreground">O herói volta para o espaço pessoal do seu criador. Nenhum progresso será perdido.</p>
-                    </div>
-                  </Button>
-                   <Button variant="destructive" onClick={handleDeleteChildPermanently} className="w-full justify-start h-auto p-4 items-center" disabled={isRemovingChild}>
-                    <Trash2 className="mr-4 h-6 w-6 flex-shrink-0" />
-                    <div className="text-left">
-                      <p className="font-semibold">Excluir de Todos os Espaços</p>
-                      <p className="text-xs text-destructive-foreground/80">Ação irreversível. O perfil e todos os dados serão apagados para sempre.</p>
-                    </div>
-                  </Button>
+                  <div
+                      onClick={() => !isRemovingChild && handleRemoveChildFromFamily()}
+                      className={cn(
+                          "flex items-center gap-4 rounded-lg border p-4 transition-all cursor-pointer",
+                          isRemovingChild ? "opacity-50 cursor-not-allowed" : "hover:bg-muted/50"
+                      )}
+                  >
+                      <Home className="h-6 w-6 text-primary flex-shrink-0" />
+                      <div className="flex-grow">
+                          <p className="font-semibold text-foreground">Mover para Meu Espaço</p>
+                          <p className="text-sm text-muted-foreground">O herói volta para o espaço pessoal do seu criador. Nenhum progresso será perdido.</p>
+                      </div>
+                  </div>
+                  <div
+                      onClick={() => !isRemovingChild && handleDeleteChildPermanently()}
+                      className={cn(
+                          "flex items-center gap-4 rounded-lg p-4 transition-all cursor-pointer bg-destructive/90 text-destructive-foreground hover:bg-destructive",
+                           isRemovingChild && "opacity-50 cursor-not-allowed"
+                      )}
+                  >
+                      <Trash2 className="h-6 w-6 flex-shrink-0" />
+                      <div className="flex-grow">
+                          <p className="font-semibold">Excluir de Todos os Espaços</p>
+                          <p className="text-sm text-destructive-foreground/90">Ação irreversível. O perfil e todos os dados serão apagados para sempre.</p>
+                      </div>
+                  </div>
               </div>
               <DialogFooter>
                   <Button variant="ghost" onClick={() => setChildToRemove(null)} disabled={isRemovingChild}>Cancelar</Button>
