@@ -46,7 +46,10 @@ export function useUserRole(): UserRoleInfo {
       return;
     }
     
-    const membership = familyMemberships.find(m => m.userId === user.uid && m.familyId === currentContext);
+    // Safety check for familyMemberships array
+    const membership = familyMemberships && Array.isArray(familyMemberships)
+      ? familyMemberships.find(m => m.userId === user.uid && m.familyId === currentContext)
+      : undefined;
     
     if (membership) {
         const userRole = membership.role;
@@ -72,5 +75,3 @@ export function useUserRole(): UserRoleInfo {
   
   return userRoleInfo;
 }
-
-    
