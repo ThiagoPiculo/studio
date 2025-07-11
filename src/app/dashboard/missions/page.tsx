@@ -53,10 +53,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Target } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
+  const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -222,7 +224,7 @@ export default function MissionsHubPage() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-4">
             <Link href="/dashboard/missions/new">
-              <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
                 <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
               </Button>
             </Link>
@@ -293,7 +295,7 @@ export default function MissionsHubPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {isLoading || isRoleLoading ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <p className="ml-3 text-muted-foreground">Carregando missões...</p>
@@ -402,7 +404,7 @@ export default function MissionsHubPage() {
                       <Button
                         variant="default"
                         className="w-full"
-                        disabled={isProcessingAction || template.status === 'archived'}
+                        disabled={isProcessingAction || template.status === 'archived' || !canEdit}
                         onClick={() => handleOpenAssignDialog(template)}
                       >
                         <Users className="mr-2 h-4 w-4" /> Atribuir
@@ -414,7 +416,7 @@ export default function MissionsHubPage() {
                               variant="outline"
                               size="icon"
                               onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}
-                              disabled={isProcessingAction}
+                              disabled={isProcessingAction || !canEdit}
                               className="flex-shrink-0"
                             >
                               <Edit3 className="h-4 w-4" />
@@ -433,7 +435,7 @@ export default function MissionsHubPage() {
                               variant="outline"
                               size="icon"
                               onClick={() => setTemplateToDelete(template)}
-                              disabled={isProcessingAction}
+                              disabled={isProcessingAction || !canEdit}
                               className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />

@@ -43,6 +43,7 @@ import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardD
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const starCostFilterOptions = [
   { value: 'all', label: 'Qualquer Custo' },
@@ -56,6 +57,7 @@ const starCostFilterOptions = [
 export default function RewardTemplatesHubPage() {
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
+  const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -248,7 +250,7 @@ export default function RewardTemplatesHubPage() {
           </CardHeader>
           <CardContent className="flex flex-wrap gap-4">
             <Link href="/dashboard/rewards/new">
-              <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
                 <PlusCircle className="mr-2 h-5 w-5" /> Criar nova recompensa
               </Button>
             </Link>
@@ -412,7 +414,7 @@ export default function RewardTemplatesHubPage() {
             </AccordionItem>
           </Accordion>
 
-          {isLoading ? (
+          {isLoading || isRoleLoading ? (
             <div className="flex justify-center items-center py-10">
               <Loader2 className="h-12 w-12 animate-spin text-primary" />
               <p className="ml-3 text-muted-foreground">Carregando recompensas...</p>
@@ -513,7 +515,7 @@ export default function RewardTemplatesHubPage() {
                         variant="default"
                         className="w-full"
                         onClick={() => handleOpenAssignDialog(template)}
-                        disabled={isProcessingAction || template.status === 'archived'}
+                        disabled={isProcessingAction || template.status === 'archived' || !canEdit}
                       >
                         <Users className="mr-2 h-4 w-4" /> Atribuir
                       </Button>
@@ -524,7 +526,7 @@ export default function RewardTemplatesHubPage() {
                               variant="outline"
                               size="icon"
                               onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)}
-                              disabled={isProcessingAction}
+                              disabled={isProcessingAction || !canEdit}
                               className="flex-shrink-0"
                             >
                               <Edit3 className="h-4 w-4" />
@@ -543,7 +545,7 @@ export default function RewardTemplatesHubPage() {
                               variant="outline"
                               size="icon"
                               onClick={() => setTemplateToDelete(template)}
-                              disabled={isProcessingAction}
+                              disabled={isProcessingAction || !canEdit}
                               className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
                             >
                               <Trash2 className="h-4 w-4" />

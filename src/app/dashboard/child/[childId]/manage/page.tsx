@@ -51,6 +51,7 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -64,6 +65,7 @@ function ManageChildPageContent() {
   const pathname = usePathname();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const childId = params.childId as string;
 
   // Primary data states
@@ -628,7 +630,7 @@ function ManageChildPageContent() {
     );
   };
 
-  if (isLoading) {
+  if (isLoading || isRoleLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -739,7 +741,7 @@ function ManageChildPageContent() {
                                     variant="destructive"
                                     className="h-9 w-9"
                                     onClick={() => setMissionToDelete(instance)}
-                                    disabled={isDeleting}
+                                    disabled={isDeleting || !canEdit}
                                 >
                                     <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -824,7 +826,7 @@ function ManageChildPageContent() {
                   variant="outline" 
                   size="sm"
                   onClick={handleRegenerateAccessCode} 
-                  disabled={isRegeneratingCode}
+                  disabled={isRegeneratingCode || !canEdit}
                   className="shadow-sm"
                 >
                   {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
@@ -1006,7 +1008,7 @@ function ManageChildPageContent() {
                             <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Mural de Missões de {child.name}</CardTitle>
                             <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
                         </div>
-                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)}>
+                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)} disabled={!canEdit}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
                         </Button>
                     </div>
@@ -1143,7 +1145,7 @@ function ManageChildPageContent() {
                             )}
                           </CardContent>
                           <CardFooter>
-                            {instance.status !== 'redeemed' ? (
+                            {instance.status !== 'redeemed' && canEdit ? (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                   <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
@@ -1180,7 +1182,7 @@ function ManageChildPageContent() {
                               </DropdownMenu>
                             ) : (
                               <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
-                                <CheckCircle className="mr-2 h-4 w-4" /> Recompensa Já Resgatada
+                                <CheckCircle className="mr-2 h-4 w-4" /> {instance.status === 'redeemed' ? 'Recompensa Já Resgatada' : 'Ações Indisponíveis'}
                               </Button>
                             )}
                           </CardFooter>
@@ -1389,6 +1391,7 @@ function ManageChildPageContent() {
                   isDeleting={isDeleting}
                   onResetProgress={() => user && resetChildProgress(user.uid, child.id).then(fetchData)}
                   isResetting={isResettingProgress}
+                  canEdit={canEdit}
                 />
               </CardContent>
             </Card>
@@ -1481,3 +1484,4 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
+

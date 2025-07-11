@@ -19,6 +19,7 @@ import { getRewardTemplateById, updateRewardTemplate } from '@/lib/firebase/fire
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, Save, ArrowLeft } from 'lucide-react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -39,6 +40,7 @@ export default function EditRewardTemplatePage() {
   const params = useParams();
   const templateId = params.templateId as string;
   const { user } = useAuth();
+  const { canEdit, isLoading: isRoleLoading } = useUserRole();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -144,8 +146,17 @@ export default function EditRewardTemplatePage() {
       setIsLoading(false);
     }
   };
+  
+  useEffect(() => {
+    if (!canEdit) {
+      Object.keys(form.getValues()).forEach(key => {
+        form.control.getFieldState(key as keyof RewardTemplateFormValues).isTouched &&
+        form.control.setReadOnly(true);
+      });
+    }
+  }, [canEdit, form]);
 
-  if (isFetchingData) {
+  if (isFetchingData || isRoleLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -183,142 +194,146 @@ export default function EditRewardTemplatePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <fieldset disabled={!canEdit} className="space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título da Recompensa</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Uma tarde de jogos" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="category"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Categoria</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Selecione uma categoria..." />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {rewardCategories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                <div className="flex items-center">
+                                  {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
+                                  <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                                    {category.label}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="starsCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Custo em Estrelas</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ex: 50" {...field} />
+                        </FormControl>
+                        <FormDescription>
+                          Quantas estrelas o Mini Heroi precisa.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isMaterial"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30 h-full">
+                        <div className="space-y-0.5">
+                          <FormLabel>Item material?</FormLabel>
+                          <FormDescription>
+                            É um objeto físico?
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={form.getValues('category') === 'material_items' || !canEdit}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <FormField
                   control={form.control}
-                  name="title"
+                  name="description"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Título da Recompensa</FormLabel>
+                      <FormLabel>Descrição (Opcional)</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Uma tarde de jogos" {...field} />
+                        <Textarea
+                          placeholder="Detalhes sobre a recompensa."
+                          className="resize-none"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                
                 <FormField
                   control={form.control}
-                  name="category"
+                  name="status"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categoria</FormLabel>
+                      <FormLabel>Status da Recompensa</FormLabel>
                       <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma categoria..." />
+                            <SelectValue placeholder="Selecione o status da recompensa..." />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          {rewardCategories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                               <div className="flex items-center">
-                                 {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
-                                <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
-                                  {category.label}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="active">Ativa (pode ser atribuída)</SelectItem>
+                          <SelectItem value="archived">Arquivada (não pode ser atribuída)</SelectItem>
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="starsCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custo em Estrelas</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ex: 50" {...field} />
-                      </FormControl>
                       <FormDescription>
-                        Quantas estrelas o Mini Heroi precisa.
+                        Recompensas ativas podem ser atribuídas a crianças. Recompensas arquivadas não aparecerão para novas atribuições.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="isMaterial"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30 h-full">
-                      <div className="space-y-0.5">
-                        <FormLabel>Item material?</FormLabel>
-                        <FormDescription>
-                          É um objeto físico?
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={form.getValues('category') === 'material_items'}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detalhes sobre a recompensa."
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                
+                {canEdit && (
+                  <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isFetchingData}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Save className="mr-2 h-4 w-4" />
+                    )}
+                    Salvar Alterações na Recompensa
+                  </Button>
                 )}
-              />
-
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status da Recompensa</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione o status da recompensa..." />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="active">Ativa (pode ser atribuída)</SelectItem>
-                        <SelectItem value="archived">Arquivada (não pode ser atribuída)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                     <FormDescription>
-                      Recompensas ativas podem ser atribuídas a crianças. Recompensas arquivadas não aparecerão para novas atribuições.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isFetchingData}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Salvar Alterações na Recompensa
-              </Button>
+              </fieldset>
             </form>
           </Form>
         </CardContent>
