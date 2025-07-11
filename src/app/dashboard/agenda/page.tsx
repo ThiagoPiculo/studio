@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -309,10 +310,12 @@ function AgendaPageContent() {
   };
   
   const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
+    if (!user) return;
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        const result = await completeMissionInstance(missionInstance.id, date);
+        const actor = { id: user.uid, name: user.name };
+        const result = await completeMissionInstance(missionInstance.id, date, actor);
         if (result) {
             toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
         } else {
@@ -329,10 +332,12 @@ function AgendaPageContent() {
   };
 
   const handleUndoCompletion = async (missionInstance: MissionInstance, date: Date) => {
+    if (!user) return;
     setIsProcessingAction(missionInstance.id);
     setActivePopover(null);
     try {
-        const result = await reactivateMissionInstance(missionInstance.id, date);
+        const actor = { id: user.uid, name: user.name };
+        const result = await reactivateMissionInstance(missionInstance.id, date, actor);
         if (result) {
             toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
         } else {

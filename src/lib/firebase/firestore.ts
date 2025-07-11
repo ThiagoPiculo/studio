@@ -29,7 +29,8 @@ import { isMissionScheduledForDate } from '../calendar-utils';
 // --- Notifications Helper ---
 const createAndDispatchNotifications = async (
   childId: string,
-  notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'>
+  notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'>,
+  actor?: { id: string; name: string | null }
 ): Promise<void> => {
   const child = await getChildProfileById(childId);
   if (!child) return;
@@ -48,6 +49,8 @@ const createAndDispatchNotifications = async (
       ...notificationPayload,
       userId,
       relatedContextId: child.familyId || null,
+      actorId: actor?.id,
+      actorName: actor?.name
     });
   });
 
@@ -499,7 +502,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   const notificationPromises = existingMembers
       .filter(member => member.uid !== userId)
       .map(member => {
-          return addNotification({
+          return addNotification({ // Using the simpler addNotification here
               userId: member.uid,
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
@@ -1059,7 +1062,7 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
   });
 };
 
-export const redeemChildRewardInstance = async (instanceId: string, childId: string): Promise<void> => {
+export const redeemChildRewardInstance = async (instanceId: string, childId: string, actor: { id: string, name: string | null }): Promise<void> => {
   const instanceRef = doc(db, 'childRewardInstances', instanceId);
   const childRef = doc(db, 'children', childId);
 
@@ -1103,14 +1106,22 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
 
   const instanceData = finalInstanceSnap.data() as ChildRewardInstance;
   const childData = finalChildSnap.data() as ChildProfile;
+  
+  const description = actor.id === childId 
+      ? `${childData.name} resgatou: "${instanceData.title}".` 
+      : `${actor.name || 'Um responsável'} resgatou "${instanceData.title}" para ${childData.name}.`;
 
-  await createAndDispatchNotifications(childId, {
+  await createAndDispatchNotifications(
+    childId, 
+    {
       type: 'reward_redeemed',
       title: 'Recompensa Resgatada!',
-      description: `${childData.name} resgatou: "${instanceData.title}".`,
+      description: description,
       href: `/dashboard/child/${childId}/manage`,
       relatedChildId: childId,
-  });
+    },
+    actor
+  );
 };
 
 export const deleteChildRewardInstance = async (instanceId: string): Promise<void> => {
@@ -1513,7 +1524,11 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     }
 };
 
-export const completeMissionInstance = async (missionInstanceId: string, completionDate: Date): Promise<ChildProfile | null> => {
+export const completeMissionInstance = async (
+  missionInstanceId: string,
+  completionDate: Date,
+  actor: { id: string; name: string | null }
+): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
     const calculateXpForNextLevel = (level: number): number => {
@@ -1593,14 +1608,19 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
     if (updatedChildProfile) {
       const missionData = (await getDoc(missionRef)).data() as MissionInstance;
       
-      // Notification for mission completion
-      await createAndDispatchNotifications(missionData.childId, {
-          type: 'mission_completed',
-          title: `Missão Cumprida!`,
-          description: `${updatedChildProfile.name} concluiu: "${missionData.title}" (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).`,
-          href: `/dashboard/child/${missionData.childId}/manage`,
-          relatedChildId: missionData.childId
-      });
+      const description = `${actor.name || 'Alguém'} marcou "${missionData.title}" como concluída para ${updatedChildProfile.name} (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).`;
+
+      await createAndDispatchNotifications(
+          missionData.childId,
+          {
+              type: 'mission_completed',
+              title: `Missão Cumprida!`,
+              description: description,
+              href: `/dashboard/child/${missionData.childId}/manage`,
+              relatedChildId: missionData.childId
+          },
+          actor
+      );
 
       // Notification for level up
       if ((updatedChildProfile as any).didLevelUp) {
@@ -1618,7 +1638,11 @@ export const completeMissionInstance = async (missionInstanceId: string, complet
     return updatedChildProfile;
 };
 
-export const reactivateMissionInstance = async (missionInstanceId: string, dateToUndo?: Date): Promise<ChildProfile | null> => {
+export const reactivateMissionInstance = async (
+  missionInstanceId: string,
+  dateToUndo: Date,
+  actor: { id: string; name: string | null }
+): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
 
     const updatedChildProfile = await runTransaction(db, async (transaction) => {
@@ -1629,17 +1653,10 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         
         const missionData = missionSnap.data() as MissionInstance;
         
-        if (dateToUndo) {
-             const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
-             if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
-                console.warn("No completion found for this date to undo.");
-                return null;
-             }
-        } else {
-             if (missionData.status !== 'completed') {
-                console.warn("Mission is not completed, cannot reactivate.");
-                return null;
-            }
+        const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
+        if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
+            console.warn("No completion found for this date to undo.");
+            return null;
         }
 
         const childRef = doc(db, 'children', missionData.childId);
@@ -1662,17 +1679,9 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
         const missionUpdates: any = {
             status: 'pending',
             updatedAt: serverTimestamp(),
+            [`completionLog.${completionDateKey}`]: deleteField(),
+            completionCount: Math.max(0, Object.keys(missionData.completionLog || {}).length - 1),
         };
-
-        if (dateToUndo) {
-            const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
-            missionUpdates[`completionLog.${completionDateKey}`] = deleteField();
-            missionUpdates.completionCount = Math.max(0, Object.keys(missionData.completionLog || {}).length - 1);
-        } else {
-            // Legacy undo
-             missionUpdates.completionCount = 0;
-             missionUpdates.completionLog = {};
-        }
         
         transaction.update(missionRef, missionUpdates);
 
@@ -1685,17 +1694,19 @@ export const reactivateMissionInstance = async (missionInstanceId: string, dateT
 
     if (updatedChildProfile) {
         const missionData = (await getDoc(missionRef)).data() as MissionInstance;
-        const description = dateToUndo 
-            ? `A conclusão da missão "${missionData.title}" para ${updatedChildProfile.name} (ref. a ${formatDateFns(dateToUndo, 'dd/MM/yyyy')}) foi revertida.`
-            : `A conclusão da missão "${missionData.title}" para ${updatedChildProfile.name} foi revertida.`;
+        const description = `${actor.name || 'Alguém'} desfez a conclusão da missão "${missionData.title}" para ${updatedChildProfile.name} (ref. a ${formatDateFns(dateToUndo, 'dd/MM/yyyy')}).`;
         
-        await createAndDispatchNotifications(missionData.childId, {
-            type: 'mission_completion_undone',
-            title: 'Ação Desfeita',
-            description,
-            href: `/dashboard/child/${missionData.childId}/manage`,
-            relatedChildId: missionData.childId,
-        });
+        await createAndDispatchNotifications(
+            missionData.childId,
+            {
+                type: 'mission_completion_undone',
+                title: 'Ação Desfeita',
+                description,
+                href: `/dashboard/child/${missionData.childId}/manage`,
+                relatedChildId: missionData.childId,
+            },
+            actor
+        );
         
         await recalculateAndSyncBadges(updatedChildProfile.id);
     }

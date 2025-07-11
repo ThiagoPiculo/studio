@@ -50,6 +50,7 @@ import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, Dialog
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
+import { useAuth } from '@/contexts/AuthContext';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -62,6 +63,7 @@ function ManageChildPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { toast } = useToast();
+  const { user } = useAuth();
   const childId = params.childId as string;
 
   // Primary data states
@@ -368,13 +370,13 @@ function ManageChildPageContent() {
   };
 
   const handleResetProgress = async () => {
-    if (!child) return;
+    if (!child || !user) return;
     setIsResettingProgress(true);
     try {
-      await resetChildProgress(child.id);
+      await resetChildProgress(user.uid, child.id);
       await fetchData(); // Re-fetch all data to update the UI
       toast({ title: "Progresso Redefinido!", description: `Os dados de ${child.name} foram zerados com sucesso.` });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error resetting child progress:", error);
       toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso.", variant: "destructive" });
     } finally {
@@ -454,10 +456,11 @@ function ManageChildPageContent() {
 
 
   const handleMarkAsRedeemed = async () => {
-    if (!instanceToManage || !child) return;
+    if (!instanceToManage || !child || !user) return;
     setIsDeleting(true);
     try {
-      await redeemChildRewardInstance(instanceToManage.id, child.id);
+      const actor = { id: user.uid, name: user.name };
+      await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
       await fetchData();
       toast({ title: "Conquista Desbloqueada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error: any) {
@@ -1384,7 +1387,7 @@ function ManageChildPageContent() {
                   onProfileUpdate={handleProfileUpdate}
                   onDeleteProfile={handleDeleteProfile}
                   isDeleting={isDeleting}
-                  onResetProgress={handleResetProgress}
+                  onResetProgress={() => user && resetChildProgress(user.uid, child.id).then(fetchData)}
                   isResetting={isResettingProgress}
                 />
               </CardContent>

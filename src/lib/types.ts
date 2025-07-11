@@ -333,4 +333,6 @@ export interface Notification {
   createdAt: Timestamp;
   relatedChildId?: string; // Optional, if it's about a specific child
   relatedContextId?: string | null;
+  actorId?: string; // Optional, who performed the action
+  actorName?: string | null; // Optional, name of the actor
 }
