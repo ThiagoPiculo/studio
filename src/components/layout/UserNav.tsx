@@ -12,12 +12,17 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
-import { LogOut, UserCircle, Rocket, Settings } from "lucide-react";
+import { useFamily } from "@/contexts/FamilyContext";
+import { useUserRole } from "@/hooks/useUserRole";
+import { familyRoles } from "@/lib/types";
+import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
+  const { currentContext, availableContexts } = useFamily();
+  const { role } = useUserRole();
 
   const handleLogout = async () => {
     await logout();
@@ -27,6 +32,12 @@ export function UserNav() {
   const displayEmail = isChildAuthenticated ? `Código de Acesso: ${childProfile?.accessCode}` : user?.email;
   const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; 
   const avatarColor = isChildAuthenticated ? childProfile?.color : undefined;
+  
+  const currentAlliance = currentContext !== 'my-space' 
+    ? availableContexts.find(c => c.id === currentContext)
+    : null;
+    
+  const roleLabel = role ? familyRoles.find(r => r.id === role)?.label : null;
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -65,6 +76,18 @@ export function UserNav() {
             <p className="text-sm font-medium leading-none">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
             {displayEmail && <p className="text-xs leading-none text-muted-foreground">{displayEmail}</p>}
           </div>
+          {currentAlliance && roleLabel && (
+            <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
+                <div className="flex items-center gap-1.5">
+                    <LinkIcon className="h-3 w-3" />
+                    <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
+                </div>
+                 <div className="flex items-center gap-1.5">
+                    <Shield className="h-3 w-3" />
+                    <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
+                </div>
+            </div>
+          )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
