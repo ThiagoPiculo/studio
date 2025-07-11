@@ -30,7 +30,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
-  emoji: z.string().max(2, { message: "O emoji deve ter no máximo 2 caracteres." }).optional().default(''),
+  emoji: z.string().max(4, { message: "O emoji deve ter no máximo 4 caracteres." }).optional().default(''),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional().default(''),
   category: z.custom<MissionCategory>((val) => missionCategories.map(rc => rc.id).includes(val as MissionCategory) , {
     message: "Selecione uma categoria válida.",
@@ -244,7 +244,7 @@ export default function EditMissionTemplatePage() {
                         <FormItem>
                           <FormLabel>Emoji</FormLabel>
                           <FormControl>
-                            <Input className="w-16 h-10 text-center text-xl p-0" maxLength={2} {...field} />
+                            <Input className="w-16 h-10 text-center text-xl p-0" maxLength={4} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
