@@ -2,7 +2,7 @@
 "use client";
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, from 'react';
 import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
@@ -14,25 +14,29 @@ interface EnrichedContext {
     role?: FamilyRole;
 }
 
-const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
+const FamilyContext = React.createContext<FamilyContextType | undefined>(undefined);
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
-  const [currentContext, setCurrentContextState] = useState<'my-space' | string>('my-space');
-  const [availableContexts, setAvailableContextsState] = useState<EnrichedContext[]>([{ id: 'my-space', name: 'Meu Espaço' }]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>('my-space');
+  const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
+  const [isLoading, setIsLoading] = React.useState(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (user) {
       setIsLoading(true);
-      const initialContexts = [{ id: 'my-space', name: 'Meu Espaço' }];
+      const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }];
       
       const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
       
-      const unsubscribeMemberships = onSnapshot(membershipsQuery, async (snapshot) => {
+      const unsubscribeMemberships = onSnapshot(membershipsQuery, (snapshot) => {
         const memberships = snapshot.docs.map(doc => doc.data() as FamilyMembership);
+        
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
+            if (!initialContexts.some(c => c.id === currentContext)) {
+              setCurrentContextState('my-space');
+            }
             setIsLoading(false);
             return;
         }
@@ -42,7 +46,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
         const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
         
-        onSnapshot(familiesQuery, (familiesSnapshot) => {
+        const unsubscribeFamilies = onSnapshot(familiesQuery, (familiesSnapshot) => {
             const familyContexts = familiesSnapshot.docs.map(doc => {
                 const family = doc.data() as Family;
                 return { 
@@ -54,25 +58,27 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             
             const allContexts = [...initialContexts, ...familyContexts];
             
-            const uniqueContexts = allContexts.filter((context, index, self) =>
-                index === self.findIndex((c) => (c.id === context.id))
-            );
-            
-            setAvailableContextsState(uniqueContexts);
+            setAvailableContextsState(allContexts);
 
-            const preferredContext = user.settings?.initialContext;
-            if (preferredContext && uniqueContexts.some(c => c.id === preferredContext)) {
-              setCurrentContextState(preferredContext);
-            } else if (!uniqueContexts.some(c => c.id === currentContext)) {
-              // If current context is no longer valid, reset to my-space
-              setCurrentContextState('my-space');
+            // Logic to set the current context safely
+            const preferredContextId = user.settings?.initialContext || 'my-space';
+            if (allContexts.some(c => c.id === preferredContextId)) {
+                if (currentContext !== preferredContextId) {
+                    setCurrentContextState(preferredContextId);
+                }
+            } else if (!allContexts.some(c => c.id === currentContext)) {
+                // If the current context is no longer available (e.g., user left family), reset to a safe default
+                setCurrentContextState('my-space');
             }
+            
             setIsLoading(false);
         }, (error) => {
             console.error("Error fetching families:", error);
             setAvailableContextsState(initialContexts);
             setIsLoading(false);
         });
+        
+        return () => unsubscribeFamilies();
 
       }, (error) => {
         console.error("Error fetching family memberships:", error);
@@ -86,28 +92,32 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
     } else {
       setCurrentContextState('my-space');
-      setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço' }]);
+      setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
       setIsLoading(false);
     }
-  }, [user, currentContext]);
+  }, [user]);
 
-  const setCurrentContext = (context: 'my-space' | string) => {
-    setCurrentContextState(context);
+  const setCurrentContext = (contextId: 'my-space' | string) => {
+    setCurrentContextState(contextId);
   };
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
   };
+  
+  const currentRole = React.useMemo(() => {
+    return availableContexts.find(c => c.id === currentContext)?.role || null;
+  }, [currentContext, availableContexts]);
 
   return (
-    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading }}>
+    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole }}>
       {children}
     </FamilyContext.Provider>
   );
 };
 
 export const useFamily = (): FamilyContextType => {
-  const context = useContext(FamilyContext);
+  const context = React.useContext(FamilyContext);
   if (context === undefined) {
     throw new Error('useFamily must be used within a FamilyProvider');
   }

@@ -305,9 +305,10 @@ export type ThemeContextType = {
 export type FamilyContextType = {
   currentContext: 'my-space' | string; // 'my-space' or familyId
   setCurrentContext: (context: 'my-space' | string) => void;
-  availableContexts: { id: string; name: string }[];
-  setAvailableContexts: (contexts: { id: string; name: string }[]) => void;
+  availableContexts: { id: string; name: string; role?: FamilyRole | 'Personal' }[];
+  setAvailableContexts: (contexts: { id: string; name: string; role?: FamilyRole | 'Personal' }[]) => void;
   isLoading: boolean;
+  currentRole: FamilyRole | 'Personal' | null;
 };
 
 export type AuthContextType = {
@@ -333,6 +334,6 @@ export interface Notification {
   createdAt: Timestamp;
   relatedChildId?: string; // Optional, if it's about a specific child
   relatedContextId?: string | null;
-  actorId?: string; // Optional, who performed the action
+  actorId?: string | null; // Optional, who performed the action
   actorName?: string | null; // Optional, name of the actor
 }
