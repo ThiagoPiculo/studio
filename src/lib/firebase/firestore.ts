@@ -1,4 +1,5 @@
 
+
 import {
   collection,
   doc,
@@ -49,8 +50,8 @@ const createAndDispatchNotifications = async (
       ...notificationPayload,
       userId,
       relatedContextId: child.familyId || null,
-      actorId: actor?.id,
-      actorName: actor?.name
+      actorId: actor?.id || null, // Ensure actorId is null, not undefined
+      actorName: actor?.name || null // Ensure actorName is null, not undefined
     });
   });
 
@@ -1878,13 +1879,22 @@ export const addNotification = async (notificationData: Omit<Notification, 'id' 
     }
 
     const newNotificationRef = doc(collection(db, 'notifications'));
-    const newNotification: Omit<Notification, 'id'> = {
-        ...notificationData,
-        isRead: false,
-        createdAt: serverTimestamp() as Timestamp,
+    const dataToWrite: Omit<Notification, 'id'> = {
+      ...notificationData,
+      isRead: false,
+      createdAt: serverTimestamp() as Timestamp,
     };
-    await setDoc(newNotificationRef, newNotification);
+    
+    // Remove null/undefined fields to avoid Firestore errors
+    Object.keys(dataToWrite).forEach(key => {
+        if ((dataToWrite as any)[key] === null || (dataToWrite as any)[key] === undefined) {
+            delete (dataToWrite as any)[key];
+        }
+    });
+
+    await setDoc(newNotificationRef, dataToWrite);
 };
+
 
 export const getUserNotifications = (
   userId: string,
