@@ -344,7 +344,7 @@ function FamilyPageContent() {
     setIsProcessingInvitationAction(invitation.id);
     try {
       const family = await acceptFamilyInvitation(invitation.id, user.uid);
-      const newContext = { id: family.id, name: `Aliança: ${family.name}` };
+      const newContext = { id: family.id, name: `Aliança de Herois: ${family.name}` };
       if(!availableContexts.find(c => c.id === newContext.id)){
         setAvailableContexts([...availableContexts, newContext]);
       }
@@ -695,7 +695,7 @@ function FamilyPageContent() {
         ) : joinRequests.length > 0 && (
           <Card className="border-accent bg-accent/5">
             <CardHeader>
-              <CardTitle>Pedidos para Entrar na Aliança</CardTitle>
+              <CardTitle>Pedidos para Entrar na Aliança de Herois</CardTitle>
               <CardDescription>Os usuários abaixo usaram o código de convite e aguardam sua aprovação.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -998,10 +998,9 @@ function FamilyPageContent() {
                               <AlertDialogHeader>
                                   <AlertDialogTitle>Transferir Propriedade?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        <p>
-                                            Você está prestes a transferir a propriedade da Aliança para <span className="font-semibold text-foreground">{memberToManage.name}</span>. Você se tornará um Co-Proprietário e perderá suas permissões de dono.
-                                        </p>
-                                        <p className="mt-2 font-bold text-destructive">Esta ação é irreversível.</p>
+                                        Você está prestes a transferir a propriedade da Aliança para <span className="font-semibold text-foreground">{memberToManage.name}</span>. Você se tornará um Co-Proprietário e perderá suas permissões de dono.
+                                        <br/><br/>
+                                        <strong className="text-destructive">Esta ação é irreversível.</strong>
                                     </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -1025,15 +1024,15 @@ function FamilyPageContent() {
                                   <AlertDialogTitle>Remover {memberToManage.name} da Aliança?</AlertDialogTitle>
                                     <AlertDialogDescription asChild>
                                         <div className="space-y-2">
-                                            <p>
+                                            <div>
                                                 Você está prestes a remover o colaborador <span className="font-semibold text-foreground">{memberToManage.name}</span> (<span className="text-muted-foreground">{memberToManage.email}</span>) da sua aliança.
-                                            </p>
-                                            <p>
+                                            </div>
+                                            <div>
                                                 Ao confirmar, ele(a) perderá o acesso à aliança.
-                                            </p>
+                                            </div>
                                             {childrenOfMemberToRemove.length > 0 && (
                                                 <div className="pt-2">
-                                                    <p className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</p>
+                                                    <div className="font-semibold text-foreground">Os seguintes Mini Herois criados por ele(a) permanecerão na aliança sob sua propriedade:</div>
                                                     <ul className="list-disc pl-5 mt-1 text-muted-foreground">
                                                         {childrenOfMemberToRemove.map(child => <li key={child.id}>{child.name}</li>)}
                                                     </ul>
@@ -1167,7 +1166,7 @@ function FamilyPageContent() {
         <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Como Convidar um Colaborador para sua Aliança</DialogTitle>
+                    <DialogTitle>Como Convidar um Colaborador para sua Aliança de Herois</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 space-y-4 text-sm text-muted-foreground">
                     <p>Você tem duas maneiras de adicionar um novo responsável à sua equipe.</p>
@@ -1266,7 +1265,7 @@ function FamilyPageContent() {
                   {userAlliances.map(alliance => (
                     <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
                       <LinkIcon className="mr-2 h-4 w-4" />
-                      <span>{`Aliança: ${alliance.name}`}</span>
+                      <span>{`Aliança de Herois: ${alliance.name}`}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -1364,7 +1363,7 @@ function FamilyPageContent() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança</CardTitle>
+                <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança de Herois</CardTitle>
                 <CardDescription>Dê um nome para sua aliança e convide outros responsáveis.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
@@ -1386,7 +1385,7 @@ function FamilyPageContent() {
           </Card>
           <Card>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
+                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança de Herois</CardTitle>
                 <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
