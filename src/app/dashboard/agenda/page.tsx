@@ -9,6 +9,7 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails } from '@/lib/types';
@@ -55,6 +56,7 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
 function AgendaPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
+  const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -136,7 +138,7 @@ function AgendaPageContent() {
     if (!user) return;
     try {
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      const instances = await getMissionInstancesForContext(user.uid, familyIdToQuery);
+      const instances = await getMissionInstancesForContext(user, familyIdToQuery);
       setMissionInstances(instances);
     } catch (error) {
       console.error("Error refetching mission instances:", error);
@@ -158,7 +160,7 @@ function AgendaPageContent() {
 
         const [fetchedChildren, fetchedInstances] = await Promise.all([
             getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, familyIdToQuery)
+            getMissionInstancesForContext(user, familyIdToQuery)
         ]);
         
         setChildren(fetchedChildren);
@@ -504,7 +506,7 @@ function AgendaPageContent() {
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                         return(
                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
-                            <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
+                            <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
                               setActivePopover(isOpen ? popoverId : null);
                               if (!isOpen) {
                                 setHighlightedMissionId(null);
@@ -513,7 +515,7 @@ function AgendaPageContent() {
                               <PopoverTrigger asChild>
                                   <button 
                                       data-mission-id={popoverId}
-                                      disabled={isProcessingAction === event.data.id} 
+                                      disabled={isProcessingAction === event.data.id || isRoleLoading} 
                                       className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                         "hover:bg-accent/50",
                                         isCompleted && "text-muted-foreground/70",
@@ -687,7 +689,7 @@ function AgendaPageContent() {
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
-                              <Popover open={activePopover === popoverId} onOpenChange={(isOpen) => {
+                              <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
                                 setActivePopover(isOpen ? popoverId : null);
                                 if (!isOpen) {
                                   setHighlightedMissionId(null);
@@ -696,7 +698,7 @@ function AgendaPageContent() {
                                   <PopoverTrigger asChild>
                                       <button 
                                           data-mission-id={popoverId}
-                                          disabled={isProcessingAction === event.data.id} 
+                                          disabled={isProcessingAction === event.data.id || isRoleLoading} 
                                           className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                             "hover:bg-accent/50",
                                             isCompleted && "text-muted-foreground/70",
@@ -741,7 +743,7 @@ function AgendaPageContent() {
     );
   };
   
-  if (isLoading) return <Loading />;
+  if (isLoading || isRoleLoading) return <Loading />;
 
   const renderContent = () => {
     switch(dateRangeFilter) {
@@ -789,10 +791,12 @@ function AgendaPageContent() {
                         <Button variant="outline" className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
                             <Target className="mr-2 h-4 w-4" /> Missões de Hoje
                         </Button>
-                        <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon">
-                            <PlusCircle className="h-4 w-4" />
-                            <span className="sr-only">Adicionar Missão</span>
-                        </Button>
+                        {canEdit && (
+                            <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon">
+                                <PlusCircle className="h-4 w-4" />
+                                <span className="sr-only">Adicionar Missão</span>
+                            </Button>
+                        )}
                       </div>
                   </div>
               </div>
@@ -992,3 +996,7 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
+
+    
