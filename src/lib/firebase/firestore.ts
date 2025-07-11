@@ -333,9 +333,8 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   };
   await setDoc(newFamilyRef, newFamily);
 
-  const newMembershipRef = doc(collection(db, 'familyMemberships'));
-  const ownerMembership: FamilyMembership = {
-    id: newMembershipRef.id,
+  const newMembershipRef = doc(db, 'familyMemberships', `${ownerId}_${newFamily.id}`);
+  const ownerMembership: Omit<FamilyMembership, 'id'> = {
     familyId: newFamily.id,
     userId: ownerId,
     role: 'Owner',
@@ -369,12 +368,9 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     throw new Error("Você não pode convidar a si mesmo ou o proprietário da aliança.");
   }
 
-  const existingMembershipQuery = query(collection(db, 'familyMemberships'),
-    where('familyId', '==', family.id),
-    where('userId', '==', invitee.uid)
-  );
-  const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
-  if (!existingMembershipSnapshot.empty) {
+  const existingMembershipRef = doc(db, 'familyMemberships', `${invitee.uid}_${family.id}`);
+  const existingMembershipSnapshot = await getDoc(existingMembershipRef);
+  if (existingMembershipSnapshot.exists()) {
     throw new Error("Este usuário já é um membro da aliança.");
   }
   
@@ -470,19 +466,15 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   }
 
 
-  const existingMembershipQuery = query(collection(db, 'familyMemberships'),
-    where('familyId', '==', family.id),
-    where('userId', '==', userId)
-  );
-  const existingMembershipSnapshot = await getDocs(existingMembershipQuery);
-  if (!existingMembershipSnapshot.empty) {
+  const existingMembershipRef = doc(db, 'familyMemberships', `${userId}_${family.id}`);
+  const existingMembershipSnapshot = await getDoc(existingMembershipRef);
+  if (existingMembershipSnapshot.exists()) {
     console.log('User is already a member of this family.');
     return;
   }
 
-  const newMembershipRef = doc(collection(db, 'familyMemberships'));
-  const newMembership: FamilyMembership = {
-    id: newMembershipRef.id,
+  const newMembershipRef = doc(db, 'familyMemberships', `${userId}_${family.id}`);
+  const newMembership: Omit<FamilyMembership, 'id'> = {
     familyId: family.id,
     userId,
     role: 'Guardian',
@@ -544,14 +536,9 @@ export const leaveFamily = async (userId: string, familyId: string): Promise<voi
   const batch = writeBatch(db);
 
   // 1. Find and delete the user's membership document
-  const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userId), where('familyId', '==', familyId));
-  const membershipSnapshot = await getDocs(membershipQuery);
-  if (!membershipSnapshot.empty) {
-    const membershipDocRef = membershipSnapshot.docs[0].ref;
-    batch.delete(membershipDocRef);
-  } else {
-    throw new Error("Membership not found.");
-  }
+  const membershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
+  batch.delete(membershipRef);
+
 
   // 2. Find all children owned by this user within this family and reset their familyId
   const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', familyId));
@@ -616,15 +603,9 @@ export const removeFamilyMember = async (familyId: string, userIdToRemove: strin
     const batch = writeBatch(db);
 
     // 1. Find and delete the user's membership document
-    const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userIdToRemove), where('familyId', '==', familyId));
-    const membershipSnapshot = await getDocs(membershipQuery);
-    if (!membershipSnapshot.empty) {
-        const membershipDocRef = membershipSnapshot.docs[0].ref;
-        batch.delete(membershipDocRef);
-    } else {
-        // If no membership found, we can just log it and continue, as the end goal is achieved.
-        console.warn(`Membership for user ${userIdToRemove} in family ${familyId} not found. Cannot delete.`);
-    }
+    const membershipRef = doc(db, 'familyMemberships', `${userIdToRemove}_${familyId}`);
+    batch.delete(membershipRef);
+
 
     // 2. Find all children owned by the user being removed AND in the current family
     const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userIdToRemove), where('familyId', '==', familyId));
@@ -662,19 +643,14 @@ export const transferFamilyOwnership = async (familyId: string, currentOwnerId: 
       throw new Error("Apenas o proprietário atual pode transferir a propriedade.");
     }
 
-    const oldOwnerMembershipQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId), where('userId', '==', currentOwnerId));
-    const oldOwnerMembershipSnap = await getDocs(oldOwnerMembershipQuery);
-    if (oldOwnerMembershipSnap.empty) {
-      throw new Error("Associação do proprietário antigo não encontrada.");
-    }
-    const oldOwnerMembershipRef = oldOwnerMembershipSnap.docs[0].ref;
+    const oldOwnerMembershipRef = doc(db, 'familyMemberships', `${currentOwnerId}_${familyId}`);
+    const newOwnerMembershipRef = doc(db, 'familyMemberships', `${newOwnerId}_${familyId}`);
 
-    const newOwnerMembershipQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId), where('userId', '==', newOwnerId));
-    const newOwnerMembershipSnap = await getDocs(newOwnerMembershipQuery);
-    if (newOwnerMembershipSnap.empty) {
-      throw new Error("Associação do novo proprietário não encontrada.");
+    // Ensure the new owner is actually a member
+    const newOwnerMembershipSnap = await transaction.get(newOwnerMembershipRef);
+    if (!newOwnerMembershipSnap.exists()) {
+        throw new Error("O usuário alvo precisa ser um membro da aliança para se tornar proprietário.");
     }
-    const newOwnerMembershipRef = newOwnerMembershipSnap.docs[0].ref;
 
     // 1. Update family document
     transaction.update(familyRef, { ownerId: newOwnerId });
@@ -760,9 +736,8 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   batch.update(invitationRef, { status: 'accepted' });
 
   // 2. Create new membership
-  const newMembershipRef = doc(collection(db, 'familyMemberships'));
-  const newMembership: FamilyMembership = {
-    id: newMembershipRef.id,
+  const newMembershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
+  const newMembership: Omit<FamilyMembership, 'id'> = {
     familyId: familyId,
     userId: userId,
     role: 'Guardian',
@@ -821,8 +796,11 @@ export const getPendingJoinRequestsForFamily = async (familyId: string): Promise
 
 export const approveJoinRequest = async (invitationId: string, approverId: string): Promise<void> => {
   const invitationRef = doc(db, 'familyInvitations', invitationId);
-  const familyId = (await getDoc(invitationRef)).data()?.familyId;
-  const userId = (await getDoc(invitationRef)).data()?.inviteeId;
+  const invitationData = (await getDoc(invitationRef)).data();
+
+  if (!invitationData) throw new Error("Pedido não encontrado.");
+
+  const { familyId, inviteeId } = invitationData;
 
   await runTransaction(db, async (transaction) => {
     const invitationSnap = await transaction.get(invitationRef);
@@ -835,18 +813,17 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
     }
 
     // Add membership
-    const newMembershipRef = doc(collection(db, 'familyMemberships'));
-    const newMembership: FamilyMembership = {
-      id: newMembershipRef.id,
+    const newMembershipRef = doc(db, 'familyMemberships', `${inviteeId}_${familyId}`);
+    const newMembership: Omit<FamilyMembership, 'id'> = {
       familyId: familyId,
-      userId: userId,
+      userId: inviteeId,
       role: 'Guardian',
       joinedAt: serverTimestamp() as Timestamp,
     };
     transaction.set(newMembershipRef, newMembership);
 
     // Update children's familyId
-    const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
+    const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', inviteeId), where('familyId', '==', null));
     const childrenSnapshot = await getDocs(childrenQuery);
     childrenSnapshot.forEach(childDoc => {
       transaction.update(childDoc.ref, { familyId: familyId, updatedAt: serverTimestamp() });
@@ -898,15 +875,8 @@ export const resendJoinRequestNotification = async (requestId: string): Promise<
 };
 
 export const updateFamilyMemberRole = async (familyId: string, userId: string, newRole: FamilyRole, currentUserId: string): Promise<void> => {
-    const membershipQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userId), where('familyId', '==', familyId));
-    const membershipSnapshot = await getDocs(membershipQuery);
-    if(membershipSnapshot.empty) {
-        throw new Error("Membro não encontrado na aliança.");
-    }
-    const membershipRef = membershipSnapshot.docs[0].ref;
+    const membershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
     
-    // Additional security checks can be added here using Firestore security rules,
-    // but a client-side check is a good first line of defense.
     const family = await getFamilyById(familyId);
     if(family?.ownerId !== currentUserId) {
         throw new Error("Apenas o proprietário da aliança pode alterar papéis.");

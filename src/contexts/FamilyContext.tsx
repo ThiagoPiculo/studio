@@ -3,17 +3,23 @@
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { FamilyContextType, Family, FamilyMembership } from '@/lib/types';
+import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, onSnapshot, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+
+interface EnrichedContext {
+    id: string;
+    name: string;
+    role?: FamilyRole;
+}
 
 const FamilyContext = createContext<FamilyContextType | undefined>(undefined);
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [currentContext, setCurrentContextState] = useState<'my-space' | string>('my-space');
-  const [availableContexts, setAvailableContextsState] = useState<{ id: string; name: string }[]>([{ id: 'my-space', name: 'Meu Espaço' }]);
+  const [availableContexts, setAvailableContextsState] = useState<EnrichedContext[]>([{ id: 'my-space', name: 'Meu Espaço' }]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -21,52 +27,61 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       const initialContexts = [{ id: 'my-space', name: 'Meu Espaço' }];
       
-      const ownedFamiliesQuery = query(collection(db, 'families'), where('ownerId', '==', user.uid));
-      const unsubscribeOwned = onSnapshot(ownedFamiliesQuery, async (snapshot) => {
-        const ownedFamilies = snapshot.docs.map(doc => ({ id: doc.id, name: (doc.data() as Family).name }));
-        
-        const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
-        const membershipsSnapshot = await getDocs(membershipsQuery);
-        const memberFamilyIds = membershipsSnapshot.docs.map(doc => (doc.data() as FamilyMembership).familyId);
-
-        let collaboratorFamilies: {id: string, name: string}[] = [];
-        if (memberFamilyIds.length > 0) {
-            const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', memberFamilyIds));
-            const familiesSnapshot = await getDocs(familiesQuery);
-            collaboratorFamilies = familiesSnapshot.docs.map(doc => ({ id: doc.id, name: (doc.data() as Family).name }));
-        }
-        
-        const allContexts = [
-            ...initialContexts, 
-            ...ownedFamilies,
-            ...collaboratorFamilies
-        ];
-        
-        const uniqueContexts = allContexts.filter((context, index, self) =>
-            index === self.findIndex((c) => (
-                c.id === context.id
-            ))
-        );
-
-        setAvailableContextsState(uniqueContexts);
-
-        const preferredContext = user.settings?.initialContext;
-        if (preferredContext && uniqueContexts.some(c => c.id === preferredContext)) {
-          setCurrentContextState(preferredContext);
-        } else {
-          // If no preference or preference is invalid, default to my-space
-          setCurrentContextState('my-space');
+      const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
+      
+      const unsubscribeMemberships = onSnapshot(membershipsQuery, async (snapshot) => {
+        const memberships = snapshot.docs.map(doc => doc.data() as FamilyMembership);
+        if (memberships.length === 0) {
+            setAvailableContextsState(initialContexts);
+            setIsLoading(false);
+            return;
         }
 
-        setIsLoading(false);
+        const familyIds = memberships.map(m => m.familyId);
+        const familyRoles = new Map(memberships.map(m => [m.familyId, m.role]));
+
+        const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
+        
+        onSnapshot(familiesQuery, (familiesSnapshot) => {
+            const familyContexts = familiesSnapshot.docs.map(doc => {
+                const family = doc.data() as Family;
+                return { 
+                    id: doc.id, 
+                    name: family.name,
+                    role: familyRoles.get(doc.id)
+                };
+            });
+            
+            const allContexts = [...initialContexts, ...familyContexts];
+            
+            const uniqueContexts = allContexts.filter((context, index, self) =>
+                index === self.findIndex((c) => (c.id === context.id))
+            );
+            
+            setAvailableContextsState(uniqueContexts);
+
+            const preferredContext = user.settings?.initialContext;
+            if (preferredContext && uniqueContexts.some(c => c.id === preferredContext)) {
+              setCurrentContextState(preferredContext);
+            } else if (!uniqueContexts.some(c => c.id === currentContext)) {
+              // If current context is no longer valid, reset to my-space
+              setCurrentContextState('my-space');
+            }
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching families:", error);
+            setAvailableContextsState(initialContexts);
+            setIsLoading(false);
+        });
+
       }, (error) => {
-        console.error("Error fetching family contexts:", error);
+        console.error("Error fetching family memberships:", error);
         setAvailableContextsState(initialContexts); 
         setIsLoading(false);
       });
 
       return () => {
-        unsubscribeOwned();
+        unsubscribeMemberships();
       };
 
     } else {
@@ -74,13 +89,13 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço' }]);
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, currentContext]);
 
   const setCurrentContext = (context: 'my-space' | string) => {
     setCurrentContextState(context);
   };
 
-  const setAvailableContexts = (contexts: { id: string; name: string }[]) => {
+  const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
   };
 

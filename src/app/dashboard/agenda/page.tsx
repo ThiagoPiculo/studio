@@ -138,7 +138,7 @@ function AgendaPageContent() {
     if (!user) return;
     try {
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      const instances = await getMissionInstancesForContext(user, familyIdToQuery);
+      const instances = await getMissionInstancesForContext(user.uid, familyIdToQuery);
       setMissionInstances(instances);
     } catch (error) {
       console.error("Error refetching mission instances:", error);
@@ -160,7 +160,7 @@ function AgendaPageContent() {
 
         const [fetchedChildren, fetchedInstances] = await Promise.all([
             getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user, familyIdToQuery)
+            getMissionInstancesForContext(user.uid, familyIdToQuery)
         ]);
         
         setChildren(fetchedChildren);
@@ -996,7 +996,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
-
-    
