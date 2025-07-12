@@ -845,7 +845,7 @@ function ManageChildPageContent() {
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-blue-500" />Mural de Recompensas</TabsTrigger>
           <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><NotebookPen className="mr-2 h-4 w-4 text-chart-5" />Agenda Escolar</TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Mural de Conquistas</TabsTrigger>
-          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
+          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md" disabled={!canEdit}><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
         </TabsList>
         
         <div className="mt-4">

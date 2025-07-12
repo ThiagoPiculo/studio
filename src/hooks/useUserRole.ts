@@ -1,6 +1,5 @@
 
 import { useMemo } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { FamilyRole } from '@/lib/types';
 
@@ -14,21 +13,25 @@ export type UserRoleInfo = {
 const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
 
 export function useUserRole(): UserRoleInfo {
-  const { loading: authLoading } = useAuth();
-  const { currentRole, isLoading: familyLoading } = useFamily();
+  const { currentContext, currentRole, isLoading } = useFamily();
   
-  const isLoading = authLoading || familyLoading;
-
   const userRoleInfo = useMemo<UserRoleInfo>(() => {
     if (isLoading) {
       return { role: null, canEdit: false, canViewOnly: false, isLoading: true };
     }
 
-    if (!currentRole) {
-      return { role: null, canEdit: false, canViewOnly: false, isLoading: false };
+    // Explicitly check for 'my-space' first.
+    if (currentContext === 'my-space') {
+      return {
+        role: 'Personal',
+        canEdit: true,
+        canViewOnly: false,
+        isLoading: false,
+      };
     }
-
-    const canEdit = currentRole === 'Personal' || editableRoles.includes(currentRole as FamilyRole);
+    
+    // If not in 'my-space', we are in a family context.
+    const canEdit = !!currentRole && editableRoles.includes(currentRole as FamilyRole);
     
     return {
       role: currentRole,
@@ -37,7 +40,7 @@ export function useUserRole(): UserRoleInfo {
       isLoading: false,
     };
     
-  }, [currentRole, isLoading]);
+  }, [currentContext, currentRole, isLoading]);
   
   return userRoleInfo;
 }

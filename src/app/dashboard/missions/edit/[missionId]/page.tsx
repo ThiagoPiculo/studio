@@ -220,7 +220,7 @@ export default function EditMissionTemplatePage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <fieldset disabled={!canEdit} className="space-y-8">
+              <fieldset disabled={!canEdit} className="space-y-8 group">
                 <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 items-end">
                     <FormField
                       control={form.control}
