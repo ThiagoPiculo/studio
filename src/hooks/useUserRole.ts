@@ -20,7 +20,8 @@ export function useUserRole(): UserRoleInfo {
       return { role: null, canEdit: false, canViewOnly: false, isLoading: true };
     }
 
-    // Explicitly check for 'my-space' first.
+    // This is the critical fix.
+    // If the context is 'my-space', editing is ALWAYS allowed, regardless of roles in other families.
     if (currentContext === 'my-space') {
       return {
         role: 'Personal',
@@ -30,7 +31,7 @@ export function useUserRole(): UserRoleInfo {
       };
     }
     
-    // If not in 'my-space', we are in a family context.
+    // Only if we are NOT in 'my-space', we check the role within the alliance.
     const canEdit = !!currentRole && editableRoles.includes(currentRole as FamilyRole);
     
     return {
