@@ -72,21 +72,21 @@ export function UserNav() {
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
-            {displayEmail && <p className="text-xs leading-none text-muted-foreground">{displayEmail}</p>}
-          </div>
-          {currentAlliance && roleLabel && (
-            <div className="mt-2 text-xs text-muted-foreground border-t pt-2">
+          {currentAlliance && roleLabel ? (
+            <div className="text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                     <LinkIcon className="h-3 w-3" />
                     <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
                 </div>
-                 <div className="flex items-center gap-1.5">
+                 <div className="flex items-center gap-1.5 mt-1">
                     <Shield className="h-3 w-3" />
                     <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
                 </div>
             </div>
+          ) : (
+             <div className="text-xs text-muted-foreground">
+                <p>Você está no seu espaço pessoal.</p>
+             </div>
           )}
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
