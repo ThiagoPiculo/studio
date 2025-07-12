@@ -144,21 +144,6 @@ export default function EditMissionTemplatePage() {
     fetchMissionTemplateData();
     fetchAssignments();
   }, [missionId, user, router, toast, form, currentContext]);
-  
-  useEffect(() => {
-    if (!isRoleLoading && !canEdit) {
-        Object.keys(form.getValues()).forEach(key => {
-            const field = form.control.getFieldState(key as any);
-            if (field.isTouched) {
-                // This is a simple way to disable the form visually
-                // A more robust solution would involve a read-only prop on each field
-                const elements = document.getElementsByName(key);
-                elements.forEach(el => el.setAttribute('disabled', 'true'));
-            }
-        });
-    }
-  }, [canEdit, isRoleLoading, form]);
-
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user || !missionTemplate) {

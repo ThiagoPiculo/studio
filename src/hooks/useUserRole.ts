@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { FamilyRole } from '@/lib/types';
@@ -17,35 +17,27 @@ export function useUserRole(): UserRoleInfo {
   const { loading: authLoading } = useAuth();
   const { currentRole, isLoading: familyLoading } = useFamily();
   
-  const [userRoleInfo, setUserRoleInfo] = useState<UserRoleInfo>({
-    role: null,
-    canEdit: false,
-    canViewOnly: false,
-    isLoading: true,
-  });
+  const isLoading = authLoading || familyLoading;
 
-  useEffect(() => {
-    const isLoading = authLoading || familyLoading;
+  const userRoleInfo = useMemo<UserRoleInfo>(() => {
     if (isLoading) {
-      setUserRoleInfo({ role: null, canEdit: false, canViewOnly: false, isLoading: true });
-      return;
+      return { role: null, canEdit: false, canViewOnly: false, isLoading: true };
     }
 
     if (!currentRole) {
-      setUserRoleInfo({ role: null, canEdit: false, canViewOnly: false, isLoading: false });
-      return;
+      return { role: null, canEdit: false, canViewOnly: false, isLoading: false };
     }
 
     const canEdit = currentRole === 'Personal' || editableRoles.includes(currentRole as FamilyRole);
     
-    setUserRoleInfo({
+    return {
       role: currentRole,
       canEdit: canEdit,
       canViewOnly: !canEdit,
       isLoading: false,
-    });
+    };
     
-  }, [currentRole, authLoading, familyLoading]);
+  }, [currentRole, isLoading]);
   
   return userRoleInfo;
 }

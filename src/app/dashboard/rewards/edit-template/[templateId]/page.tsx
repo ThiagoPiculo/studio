@@ -146,15 +146,6 @@ export default function EditRewardTemplatePage() {
       setIsLoading(false);
     }
   };
-  
-  useEffect(() => {
-    if (!canEdit) {
-      Object.keys(form.getValues()).forEach(key => {
-        form.control.getFieldState(key as keyof RewardTemplateFormValues).isTouched &&
-        form.control.setReadOnly(true);
-      });
-    }
-  }, [canEdit, form]);
 
   if (isFetchingData || isRoleLoading) {
     return (

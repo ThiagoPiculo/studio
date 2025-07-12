@@ -442,7 +442,7 @@ function SchoolSchedulePageContent() {
                 </Select>
                  <Popover>
                     <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon" disabled={!canEdit}>
+                        <Button variant="outline" size="icon">
                             <Settings2 className="h-4 w-4" />
                         </Button>
                     </PopoverTrigger>
@@ -473,7 +473,7 @@ function SchoolSchedulePageContent() {
                           {selectedChildId && (
                               <div className="space-y-2">
                                   <Label className="font-semibold">Turno Escolar</Label>
-                                  <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start">
+                                  <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
                                       <Edit className="mr-2 h-4 w-4" />
                                       Editar Turno do Herói
                                   </Button>
