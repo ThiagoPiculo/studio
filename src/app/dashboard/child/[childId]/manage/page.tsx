@@ -3,13 +3,13 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -51,7 +51,9 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { ScrollArea } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import { useUserRole } from '@/hooks/useUserRole';
+import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -65,6 +67,7 @@ function ManageChildPageContent() {
   const pathname = usePathname();
   const { toast } = useToast();
   const { user } = useAuth();
+  const { currentContext, availableContexts, setCurrentContext } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const childId = params.childId as string;
 
@@ -78,6 +81,9 @@ function ManageChildPageContent() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isRegeneratingCode, setIsRegeneratingCode] = useState(false);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
+  const [isMoving, setIsMoving] = useState(false);
   
   const activeTab = searchParams.get('tab') || 'overview';
   
@@ -123,8 +129,21 @@ function ManageChildPageContent() {
     if (!childId) return;
     setIsLoading(true);
     try {
-      const [profile, missions, rewards, schedule] = await Promise.all([
-        getChildProfileById(childId),
+      const profile = await getChildProfileById(childId);
+      
+      // Context validation
+      const childContextId = profile?.familyId || 'my-space';
+      if (profile && childContextId !== currentContext) {
+        toast({
+          title: "Contexto Atualizado",
+          description: `O heroi ${profile.name} não pertence a este espaço. Redirecionando...`,
+          variant: "default",
+        });
+        router.push('/dashboard/heroes');
+        return;
+      }
+      
+      const [missions, rewards, schedule] = await Promise.all([
         getMissionInstancesByChild(childId),
         getChildRewardInstancesByChild(childId),
         getSchoolScheduleForChild(childId),
@@ -151,16 +170,17 @@ function ManageChildPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [childId, router, toast]);
+  }, [childId, router, toast, currentContext]);
 
-  // Initial data fetch
+
+  // Initial data fetch and context validation effect
   useEffect(() => {
     if (childId) {
       fetchData();
     } else {
       router.push('/dashboard/heroes');
     }
-  }, [childId, fetchData, router]);
+  }, [childId, fetchData, currentContext]); // Added currentContext to re-trigger on context change
   
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -383,6 +403,32 @@ function ManageChildPageContent() {
       toast({ title: "Erro ao Redefinir", description: "Não foi possível redefinir o progresso.", variant: "destructive" });
     } finally {
       setIsResettingProgress(false);
+    }
+  };
+
+  const handleMoveHeroi = async () => {
+    if (!user || !child || !selectedMoveContext) {
+      toast({ title: 'Erro', description: 'Dados insuficientes para mover o heroi.', variant: 'destructive' });
+      return;
+    }
+    setIsMoving(true);
+    try {
+      const newFamilyId = selectedMoveContext === 'my-space' ? null : selectedMoveContext;
+      await moveChildToNewContext(child.id, newFamilyId, user.uid);
+      
+      toast({
+        title: 'Heroi Movido com Sucesso!',
+        description: `${child.name} agora pertence a um novo espaço.`,
+      });
+      // Update global context to reflect the change
+      setCurrentContext(selectedMoveContext);
+      setIsMoveDialogOpen(false);
+      onProfileUpdate(); // Refetch data on parent page
+    } catch (error: any) {
+      console.error("Error moving child profile:", error);
+      toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsMoving(false);
     }
   };
 
@@ -629,6 +675,10 @@ function ManageChildPageContent() {
       </DialogTrigger>
     );
   };
+  
+  const moveTargetContexts = useMemo(() => {
+    return availableContexts.filter(c => c.id !== (child?.familyId || 'my-space'));
+  }, [availableContexts, child]);
 
   if (isLoading || isRoleLoading) {
     return (
@@ -1381,18 +1431,69 @@ function ManageChildPageContent() {
             <Card className="shadow-md">
               <CardHeader>
                 <CardTitle>Editar Perfil de {child.name}</CardTitle>
-                <CardDescription>Atualize as informações da criança e configurações.</CardDescription>
+                <CardDescription>Atualize as informações do Mini Heroi e configurações.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <EditChildProfileForm 
                   child={child} 
                   onProfileUpdate={handleProfileUpdate}
-                  onDeleteProfile={handleDeleteProfile}
-                  isDeleting={isDeleting}
-                  onResetProgress={() => user && resetChildProgress(user.uid, child.id).then(fetchData)}
-                  isResetting={isResettingProgress}
-                  canEdit={canEdit}
                 />
+                <Separator className="my-8" />
+                <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+                  <h3 className="font-semibold text-lg text-destructive">Zona de Perigo</h3>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isDeleting || isResettingProgress || isMoving}>
+                            <RotateCcw className="mr-2 h-4 w-4" />
+                            Redefinir Progresso
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Redefinir o progresso de {child.name}?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Esta ação é irreversível. Todas as estrelas, XP, níveis, missões concluídas e recompensas resgatadas serão zeradas. O perfil voltará ao estado inicial.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel disabled={isResettingProgress}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingProgress}>
+                                  {isResettingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Sim, Redefinir
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setIsMoveDialogOpen(true)} disabled={isDeleting || isResettingProgress || isMoving || moveTargetContexts.length === 0}>
+                        <Move className="mr-2 h-4 w-4" />
+                        Mover Heroi
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button type="button" variant="destructive" className="w-full" disabled={isDeleting || isResettingProgress || isMoving}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir Perfil
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso, agenda).
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Sim, Excluir Perfil
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1473,6 +1574,39 @@ function ManageChildPageContent() {
           </AlertDialogContent>
         </AlertDialog>
       )}
+
+      <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mover {child.name} para outro espaço</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao mover, todas as missões, recompensas, progresso e agenda escolar do Mini Heroi serão movidos juntos. Selecione o novo espaço que irá gerenciar este perfil.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="py-4">
+            <Select onValueChange={setSelectedMoveContext} value={selectedMoveContext}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um destino..." />
+              </SelectTrigger>
+              <SelectContent>
+                {moveTargetContexts.map(context => (
+                  <SelectItem key={context.id} value={context.id}>
+                    {context.id === 'my-space' ? 'Meu Espaço Pessoal' : `Aliança: ${context.name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleMoveHeroi} disabled={isMoving || !selectedMoveContext}>
+              {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Confirmar Movimentação
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
 }
@@ -1484,4 +1618,3 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
-

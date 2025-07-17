@@ -16,35 +16,22 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile, moveChildToNewContext } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, Trash2, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Move } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
 import { format, parse, isValid, differenceInYears } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Timestamp } from "firebase/firestore";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { heroColors } from "@/lib/hero-colors";
 import { ColorSelector } from "./ColorSelector";
 import { Skeleton } from "../ui/skeleton";
-import { Separator } from "../ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
-import { useFamily } from "@/contexts/FamilyContext";
 import { useAuth } from "@/contexts/AuthContext";
 
 const profileFormSchema = z.object({
@@ -95,17 +82,11 @@ type ProfileFormValues = z.infer<typeof profileFormSchema>;
 interface EditChildProfileFormProps {
   child: ChildProfile;
   onProfileUpdate: () => void;
-  onDeleteProfile: () => void;
-  isDeleting: boolean;
-  onResetProgress: () => void;
-  isResetting: boolean;
-  canEdit: boolean;
 }
 
-export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, isDeleting, onResetProgress, isResetting, canEdit }: EditChildProfileFormProps) {
+export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { availableContexts, setCurrentContext } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -117,11 +98,6 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
 
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [isLoadingOwner, setIsLoadingOwner] = useState(true);
-  
-  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
-  const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
-  const [isMoving, setIsMoving] = useState(false);
-
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -250,31 +226,6 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
     }
   };
 
-  const handleMoveHeroi = async () => {
-    if (!user || !child || !selectedMoveContext) {
-      toast({ title: 'Erro', description: 'Dados insuficientes para mover o heroi.', variant: 'destructive' });
-      return;
-    }
-    setIsMoving(true);
-    try {
-      const newFamilyId = selectedMoveContext === 'my-space' ? null : selectedMoveContext;
-      await moveChildToNewContext(child.id, newFamilyId, user.uid);
-      
-      toast({
-        title: 'Heroi Movido com Sucesso!',
-        description: `${child.name} agora pertence a um novo espaço.`,
-      });
-      // Update global context to reflect the change
-      setCurrentContext(selectedMoveContext);
-      setIsMoveDialogOpen(false);
-      onProfileUpdate(); // Refetch data on parent page
-    } catch (error: any) {
-      console.error("Error moving child profile:", error);
-      toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
-    } finally {
-      setIsMoving(false);
-    }
-  };
 
   const calculateAge = (birthDate: Date | undefined): number | null => {
     if (!birthDate) return null;
@@ -296,18 +247,14 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
 
   const watchedBirthDate = form.watch("birthDate");
   const calculatedAge = calculateAge(watchedBirthDate);
-
-  const moveTargetContexts = useMemo(() => {
-    return availableContexts.filter(c => c.id !== (child.familyId || 'my-space'));
-  }, [availableContexts, child]);
-
+  
   const isOwner = user?.uid === child.ownerId;
 
   return (
     <>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!canEdit} className="space-y-6 group">
+        <fieldset disabled={!isOwner} className="space-y-6 group">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
                 <FormField
                   control={form.control}
@@ -504,8 +451,6 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
                     </>
                 )}
             </div>
-            
-            <Separator/>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
               <FormField
@@ -557,9 +502,9 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
               </div>
             </div>
 
-            {canEdit && (
+            {isOwner && (
               <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
-                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isDeleting}>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
                     {isLoading ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     ) : (
@@ -571,97 +516,7 @@ export function EditChildProfileForm({ child, onProfileUpdate, onDeleteProfile, 
             )}
         </fieldset>
       </form>
-      <Separator className="my-8" />
-      <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-        <h3 className="font-semibold text-lg text-destructive flex items-center gap-2"><AlertTriangle/> Zona de Perigo</h3>
-        <p className="text-sm text-destructive/90">As ações abaixo são irreversíveis e devem ser usadas com cuidado. Apenas o criador do perfil pode executá-las.</p>
-        <div className="flex flex-col sm:flex-row gap-2">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={!isOwner || isResetting || isDeleting || isMoving}>
-                  <RotateCcw className="mr-2 h-4 w-4" />
-                  Redefinir Progresso
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Redefinir o progresso de {child.name}?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Esta ação é irreversível. Todas as estrelas, XP, níveis, missões concluídas e recompensas resgatadas serão zeradas. O perfil voltará ao estado inicial.
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isResetting}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={onResetProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResetting}>
-                        {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Sim, Redefinir
-                    </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setIsMoveDialogOpen(true)} disabled={!isOwner || isResetting || isDeleting || isMoving || moveTargetContexts.length === 0}>
-              <Move className="mr-2 h-4 w-4" />
-              Mover Heroi
-            </Button>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button type="button" variant="destructive" className="w-full" disabled={!isOwner || isDeleting || isLoading || isResetting || isMoving}>
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  Excluir Perfil
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso, agenda).
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-                  <AlertDialogAction onClick={onDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
-                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sim, Excluir Perfil
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-        </div>
-      </div>
     </Form>
-
-    <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Mover {child.name} para outro espaço</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ao mover, todas as missões, recompensas, progresso e agenda escolar do Mini Heroi serão movidos juntos.
-              Selecione o novo espaço que irá gerenciar este perfil.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <div className="py-4">
-            <Select onValueChange={setSelectedMoveContext} value={selectedMoveContext}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecione um destino..." />
-              </SelectTrigger>
-              <SelectContent>
-                {moveTargetContexts.map(context => (
-                  <SelectItem key={context.id} value={context.id}>
-                    {context.id === 'my-space' ? 'Meu Espaço Pessoal' : `Aliança: ${context.name}`}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleMoveHeroi} disabled={isMoving || !selectedMoveContext}>
-              {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Confirmar Movimentação
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
