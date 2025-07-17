@@ -536,8 +536,14 @@ function SchoolSchedulePageContent() {
           {children.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground p-4">
               <AlertCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
-              <p className="font-semibold">Nenhum herói encontrado.</p>
-              <p>Você precisa cadastrar um herói antes de montar a agenda escolar.</p>
+              <p className="font-semibold">Nenhum Mini Heroi encontrado.</p>
+              <p className="mb-4">Você precisa cadastrar um herói antes de montar a agenda escolar.</p>
+              <Link href="/dashboard/onboarding">
+                <Button>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Cadastrar Novo Mini Heroi
+                </Button>
+              </Link>
             </div>
           ) : !selectedChildId ? (
             <div className="text-center py-10 text-muted-foreground p-4">

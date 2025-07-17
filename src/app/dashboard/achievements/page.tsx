@@ -13,7 +13,7 @@ import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/cale
 import { differenceInDays, eachDayOfInterval, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Medal, ArrowRight, Gem, Trophy } from "lucide-react";
+import { Medal, ArrowRight, Gem, Trophy, PlusCircle } from "lucide-react";
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -291,7 +291,12 @@ export default function AchievementsPage() {
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 <p>Nenhum herói encontrado neste contexto para exibir as conquistas.</p>
-                <p className="text-sm mt-2">Vá para <Link href="/dashboard/onboarding" className="text-primary hover:underline">Adicionar Herói</Link> para começar.</p>
+                <Link href="/dashboard/onboarding" passHref>
+                  <Button variant="link" className="p-0 h-auto mt-2">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Vá para Adicionar Heroi para começar.
+                  </Button>
+                </Link>
               </CardContent>
             </Card>
           ) : children.length === 0 ? (

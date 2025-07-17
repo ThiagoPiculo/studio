@@ -427,7 +427,7 @@ export default function RewardTemplatesHubPage() {
               <p className="text-lg text-muted-foreground">Nenhuma recompensa encontrada com os filtros atuais.</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Tente ajustar os filtros ou{" "}
-                <Link href="/dashboard/rewards/new" className="text-primary hover:underline">crie uma nova recompensa</Link>.
+                <Link href="/dashboard/rewards/new" className="text-primary hover:underline font-semibold">crie uma nova recompensa</Link>.
               </p>
             </div>
           ) : (

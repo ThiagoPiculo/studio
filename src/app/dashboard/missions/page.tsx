@@ -307,7 +307,7 @@ export default function MissionsHubPage() {
               <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Tente outro filtro ou <Link href="/dashboard/missions/new" className="text-primary hover:underline">crie uma nova missão</Link>.
+                Tente outro filtro ou <Link href="/dashboard/missions/new" className="text-primary hover:underline font-semibold">crie uma nova missão</Link>.
               </p>
             </div>
           ) : (

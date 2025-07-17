@@ -145,7 +145,7 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
             <PackageSearch className="h-10 w-10 mx-auto mb-2 text-primary" />
             <p className='font-semibold'>Nenhuma missão ativa no catálogo.</p>
             <Link href="/dashboard/missions/new">
-                <Button variant="link" className="p-0 h-auto">Crie uma nova missão para começar.</Button>
+                <Button variant="link" className="p-0 h-auto font-semibold">Crie uma nova missão para começar.</Button>
             </Link>
           </div>
         ) : (
