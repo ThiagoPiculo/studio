@@ -1,3 +1,4 @@
+
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -6,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
@@ -27,56 +28,30 @@ import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Toggle } from "@/components/ui/toggle";
+import Loading from "./loading";
 
-export default function HeroesPage() {
-  const { user, loading } = useAuth();
+function HeroesPageContent() {
+  const { user } = useAuth();
   const { currentContext } = useFamily();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   
+  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
-
-  const [isLoadingGuideData, setIsLoadingGuideData] = useState(true);
-  const [isRedirecting, setIsRedirecting] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   const totalBadgesCount = allBadgesMap.size;
-  
-  useEffect(() => {
-    const initialLoad = searchParams.get('initial_load');
-
-    if (!loading && user) {
-      if (initialLoad === 'true') {
-        const initialPage = user.settings?.initialPage || 'agenda';
-        if (initialPage !== 'heroes') {
-          router.replace(`/dashboard/${initialPage}`);
-        } else {
-          router.replace('/dashboard/heroes');
-          setIsRedirecting(false);
-        }
-      } else {
-        setIsRedirecting(false);
-      }
-    } else if (!loading && !user) {
-      setIsRedirecting(false);
-    }
-  }, [user, loading, router, searchParams]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       if (!user) {
-        setIsLoadingChildren(false);
-        setIsLoadingGuideData(false);
+        setIsLoading(false);
         return
       };
-      setIsLoadingChildren(true);
-      setIsLoadingGuideData(true);
+      setIsLoading(true);
 
       try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
@@ -106,19 +81,18 @@ export default function HeroesPage() {
         setRewardInstances([]);
         setScheduleEntries([]);
       } finally {
-        setIsLoadingChildren(false);
-        setIsLoadingGuideData(false);
+        setIsLoading(false);
       }
     };
 
     fetchDashboardData();
   }, [user, currentContext]);
-  
+
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-  
+
   const calculateAge = (birthDate: Timestamp): number => {
     if (!birthDate) return 0;
     const today = new Date();
@@ -149,19 +123,14 @@ export default function HeroesPage() {
     return { progressPercentage, xpRemaining: xpForNextLevel - currentXp, xpForNextLevel };
   };
 
-  if (loading || isRedirecting) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-        Carregando...
-      </div>
-    );
+  if (isLoading) {
+    return <Loading />;
   }
-  
+
   const hasChildren = allChildren.length > 0;
   const hasMissions = missionTemplates.length > 0;
   const hasRewards = rewardTemplates.length > 0;
-  const showGuide = !isLoadingGuideData && (!hasChildren || !hasMissions || !hasRewards);
+  const showGuide = !isLoading && (!hasChildren || !hasMissions || !hasRewards);
 
   const today = format(new Date(), 'yyyy-MM-dd');
 
@@ -183,16 +152,11 @@ export default function HeroesPage() {
           </Link>
         </div>
 
-        {isLoadingChildren ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
-            Carregando Cartões...
-          </div>
-        ) : allChildren.length === 0 ? (
+        {allChildren.length === 0 ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum Cartão de Herói Ainda!</h3>
+              <h3 className="text-xl font-semibold mb-2">Nenhum Cartão de Heroi Ainda!</h3>
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro cartão da criança.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
@@ -327,7 +291,7 @@ export default function HeroesPage() {
                             </>
                            ) : (
                              <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                               Dia de descanso do herói!
+                               Dia de descanso do heroi!
                              </p>
                            )}
                           </ul>
@@ -399,3 +363,42 @@ export default function HeroesPage() {
     </div>
   );
 }
+
+export default function HeroesPage() {
+  const { loading: authLoading } = useAuth();
+  const [isRedirecting, setIsRedirecting] = useState(true);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const initialLoad = searchParams.get('initial_load');
+
+    if (!authLoading) {
+      if (initialLoad === 'true') {
+        const userSettings = JSON.parse(localStorage.getItem('user_settings') || '{}');
+        const initialPage = userSettings?.initialPage || 'agenda';
+        
+        if (initialPage !== 'heroes') {
+          router.replace(`/dashboard/${initialPage}`);
+        } else {
+          router.replace('/dashboard/heroes'); 
+          setIsRedirecting(false);
+        }
+      } else {
+        setIsRedirecting(false);
+      }
+    }
+  }, [authLoading, router, searchParams]);
+  
+  if (authLoading || isRedirecting) {
+      return <Loading />;
+  }
+  
+  return (
+      <Suspense fallback={<Loading />}>
+          <HeroesPageContent />
+      </Suspense>
+  )
+}
+
+    
