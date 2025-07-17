@@ -422,7 +422,6 @@ function ManageChildPageContent() {
       });
       // Update global context to reflect the change
       setCurrentContext(selectedMoveContext);
-      setIsMoveDialogOpen(false);
       onProfileUpdate(); // Refetch data on parent page
     } catch (error: any) {
       console.error("Error moving child profile:", error);
@@ -834,28 +833,6 @@ function ManageChildPageContent() {
                 <span className="font-semibold">Nível: {child.level}</span>
                 <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
                 <span className="font-semibold">XP: {child.xp}</span>
-              </div>
-              <div className="mt-4 border-t border-border/20 pt-4 flex flex-col sm:flex-row flex-wrap justify-center sm:justify-start gap-x-6 gap-y-2">
-                <div className="flex items-center gap-1.5 text-sm font-medium" title="Missões">
-                    <CheckSquare className="h-4 w-4 text-green-500" />
-                    <span>
-                        <span className="font-bold text-foreground">{stats.completedMissions}</span>
-                        <span className="text-muted-foreground"> Completas</span>
-                        <span className="mx-2 text-muted-foreground">|</span>
-                        <span className="font-bold text-foreground">{stats.pendingMissions}</span>
-                        <span className="text-muted-foreground"> Pendentes</span>
-                    </span>
-                </div>
-                <div className="flex items-center gap-1.5 text-sm font-medium" title="Recompensas">
-                    <Trophy className="h-4 w-4 text-orange-500" />
-                    <span>
-                        <span className="font-bold text-foreground">{stats.availableRewards}</span>
-                        <span className="text-muted-foreground"> Disponíveis</span>
-                        <span className="mx-2 text-muted-foreground">|</span>
-                        <span className="font-bold text-foreground">{stats.rewardsRedeemed}</span>
-                        <span className="text-muted-foreground"> Resgatadas</span>
-                    </span>
-                </div>
               </div>
               <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
                 <div className="flex items-center gap-2">
@@ -1612,3 +1589,5 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
+
+    
