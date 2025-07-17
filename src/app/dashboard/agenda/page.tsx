@@ -757,9 +757,6 @@ function AgendaPageContent() {
 
   return (
     <>
-      <Button variant="outline" onClick={() => router.back()} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-      </Button>
       <div className="space-y-6">
         <Card>
           <CardHeader>

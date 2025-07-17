@@ -810,12 +810,6 @@ function ManageChildPageContent() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => router.back()} className="shadow-sm">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
-      </div>
-
       <Card className="shadow-xl overflow-hidden">
         <CardHeader className="bg-gradient-to-r from-primary/20 via-background to-accent/10 p-6">
           <div className="flex flex-col sm:flex-row items-center gap-6">

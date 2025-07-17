@@ -116,16 +116,6 @@ function CreateMissionTemplatePageContent() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
-      <div className="flex flex-wrap gap-2 justify-between items-center mb-4">
-        <Button variant="outline" onClick={() => router.back()}>
-          <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
-        </Button>
-        <Link href="/dashboard/missions/ideas">
-          <Button variant="secondary">
-            <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
-          </Button>
-        </Link>
-      </div>
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
@@ -210,7 +200,7 @@ function CreateMissionTemplatePageContent() {
                         <Input type="number" placeholder="Ex: 5" {...field} />
                       </FormControl>
                        <FormDescription>
-                        Estrelas que o herói ganha.
+                        Estrelas que o heroi ganha.
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
