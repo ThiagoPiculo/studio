@@ -295,7 +295,7 @@ export const resetSchedulesForChildren = async (currentUserId: string, childIds:
     const childRef = doc(db, 'children', childId);
     const childSnap = await getDoc(childRef);
     if (!childSnap.exists() || childSnap.data().ownerId !== currentUserId) {
-      throw new Error(`Permissão negada para o herói com ID ${childId}. Você não é o proprietário.`);
+      throw new Error(`Permissão negada para o heroi com ID ${childId}. Você não é o proprietário.`);
     }
   }
 
@@ -317,6 +317,48 @@ export const resetSchedulesForChildren = async (currentUserId: string, childIds:
   }
 
   await batch.commit();
+};
+
+export const moveChildToNewContext = async (childId: string, newFamilyId: string | null, currentUserId: string): Promise<void> => {
+  const childRef = doc(db, 'children', childId);
+  
+  return runTransaction(db, async (transaction) => {
+    const childSnap = await transaction.get(childRef);
+    if (!childSnap.exists()) {
+      throw new Error("Perfil do Mini Heroi não encontrado.");
+    }
+    if (childSnap.data().ownerId !== currentUserId) {
+      throw new Error("Apenas o proprietário do perfil pode movê-lo.");
+    }
+
+    const batch = writeBatch(db);
+
+    // 1. Update Child Profile
+    batch.update(childRef, { familyId: newFamilyId, updatedAt: serverTimestamp() });
+
+    // 2. Update Mission Instances
+    const missionQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
+    const missionSnapshot = await getDocs(missionQuery);
+    missionSnapshot.forEach(doc => {
+      batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
+    });
+
+    // 3. Update Reward Instances
+    const rewardQuery = query(collection(db, 'childRewardInstances'), where('childId', '==', childId));
+    const rewardSnapshot = await getDocs(rewardQuery);
+    rewardSnapshot.forEach(doc => {
+      batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
+    });
+
+    // 4. Update School Schedule
+    const scheduleQuery = query(collection(db, 'schoolSchedules'), where('childId', '==', childId));
+    const scheduleSnapshot = await getDocs(scheduleQuery);
+    scheduleSnapshot.forEach(doc => {
+      batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
+    });
+
+    await batch.commit();
+  });
 };
 
 
