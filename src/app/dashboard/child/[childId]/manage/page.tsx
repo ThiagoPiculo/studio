@@ -55,6 +55,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -98,6 +99,8 @@ function ManageChildPageContent() {
   // Mission-specific states
   const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
   const [isAddMissionDialogOpen, setIsAddMissionDialogOpen] = useState(false);
+  const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
+  const [isAssignMissionDialogOpen, setIsAssignMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
   
   // Reward-specific states
@@ -372,25 +375,64 @@ function ManageChildPageContent() {
   };
   
   const handleManageInAgenda = (instance: MissionInstance) => {
-    const today = new Date();
-    // Prioritize today if the mission is scheduled for today, otherwise find the next logical date.
-    const isForToday = isMissionScheduledForDate(instance, today);
-    const targetDate = isForToday ? today : (instance.startDate?.toDate() || instance.dueDate?.toDate());
+      // If the mission has no schedule, open the edit dialog instead.
+      if (!instance.isRecurring && !instance.dueDate) {
+          toast({ title: "Missão sem agendamento", description: "Defina um prazo ou uma recorrência para esta missão." });
+          setInstanceToEdit(instance);
+          setIsAssignMissionDialogOpen(true);
+          return;
+      }
 
-    if (!targetDate) {
-      toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
-      return;
-    }
-    
-    const year = targetDate.getFullYear();
-    const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-    const day = targetDate.getDate().toString().padStart(2, '0');
-    const dateString = `${year}-${month}-${day}`;
-    
-    const popoverId = `${instance.id}-${dateString}`;
+      const today = new Date();
+      let targetDate: Date | null | undefined = null;
 
-    router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
+      // Priority 1: Check if it's scheduled for today
+      if (isMissionScheduledForDate(instance, today)) {
+          targetDate = today;
+      }
+
+      // Priority 2: Find the next future occurrence
+      if (!targetDate) {
+          const futureDates = eachDayOfInterval({ start: addDays(today, 1), end: addDays(today, 90) });
+          for (const futureDate of futureDates) {
+              if (isMissionScheduledForDate(instance, futureDate)) {
+                  targetDate = futureDate;
+                  break;
+              }
+          }
+      }
+
+      // Priority 3: Find the most recent past occurrence (within last 30 days)
+      if (!targetDate) {
+          const pastDates = eachDayOfInterval({ start: subDays(today, 30), end: subDays(today, 1) }).reverse();
+          for (const pastDate of pastDates) {
+              if (isMissionScheduledForDate(instance, pastDate)) {
+                  targetDate = pastDate;
+                  break;
+              }
+          }
+      }
+
+      // Final fallback to start/due date if no occurrence is found in the near past/future
+      if (!targetDate) {
+          targetDate = instance.startDate?.toDate() || instance.dueDate?.toDate();
+      }
+      
+      if (!targetDate) {
+          toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
+          return;
+      }
+      
+      const year = targetDate.getFullYear();
+      const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+      const day = targetDate.getDate().toString().padStart(2, '0');
+      const dateString = `${year}-${month}-${day}`;
+      
+      const popoverId = `${instance.id}-${dateString}`;
+
+      router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
   };
+
 
   const handleResetProgress = async () => {
     if (!child || !user) return;
@@ -814,7 +856,7 @@ function ManageChildPageContent() {
     <div className="space-y-6 pb-8">
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                 <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left flex-grow">
                   <Avatar
                     className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
@@ -1480,6 +1522,22 @@ function ManageChildPageContent() {
             onMissionAdded={fetchData}
         />
       )}
+      
+      {instanceToEdit && (
+        <AssignMissionDialog
+          template={null}
+          instanceToEdit={instanceToEdit}
+          occurrenceDate={new Date()}
+          isOpen={isAssignMissionDialogOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) { 
+              setInstanceToEdit(null);
+            }
+            setIsAssignMissionDialogOpen(isOpen);
+          }}
+          onAssigned={fetchData}
+        />
+      )}
 
       <AlertDialog open={!!missionToDelete} onOpenChange={(isOpen) => !isOpen && setMissionToDelete(null)}>
         <AlertDialogContent>
@@ -1594,6 +1652,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
