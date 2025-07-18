@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db, storage } from './config';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
@@ -2033,5 +2033,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string): Promise<void> 
   const entryRef = doc(db, 'schoolSchedules', entryId);
   await deleteDoc(entryRef);
 };
+
 
 
