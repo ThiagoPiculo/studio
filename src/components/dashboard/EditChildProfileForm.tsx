@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -18,7 +19,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -34,6 +35,10 @@ import { TimePicker } from "./school-schedule/TimePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useUserRole } from "@/hooks/useUserRole";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -101,10 +106,14 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [isLoadingOwner, setIsLoadingOwner] = useState(true);
 
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(child.avatar || null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // States for image cropping modal
+  const [crop, setCrop] = useState<Crop>();
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -137,26 +146,86 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     }
   }, [child, form]);
 
-  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-      
-      setIsUploadingAvatar(true);
-      try {
-        await uploadAvatarAndUpdateProfile(child.id, file);
-        toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
-        onProfileUpdate(); // Refetch data on parent to update avatar everywhere
-      } catch (error) {
-        toast({ title: "Erro no Upload", description: "Não foi possível enviar a imagem.", variant: "destructive" });
-        setAvatarFile(null);
-        setAvatarPreview(child.avatar || null); // Revert preview on error
-      } finally {
-        setIsUploadingAvatar(false);
-      }
+   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setImageSrc(reader.result as string));
+      reader.readAsDataURL(event.target.files[0]);
     }
   };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    const aspect = 1; // 1:1 aspect ratio
+    setCrop(centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height), width, height));
+  };
+
+  const getCroppedImg = (image: HTMLImageElement, crop: Crop): Promise<File> => {
+    const canvas = document.createElement('canvas');
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = crop.width;
+    canvas.height = crop.height;
+    const ctx = canvas.getContext('2d');
+
+    if (!ctx) {
+        return Promise.reject(new Error('Canvas context is not available'));
+    }
+
+    const pixelRatio = window.devicePixelRatio;
+    canvas.width = crop.width * pixelRatio;
+    canvas.height = crop.height * pixelRatio;
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = 'high';
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width,
+      crop.height
+    );
+
+    return new Promise((resolve, reject) => {
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Canvas is empty'));
+            return;
+          }
+          const file = new File([blob], "avatar.png", { type: "image/png" });
+          resolve(file);
+        },
+        'image/png',
+        1
+      );
+    });
+  };
+
+  const handleCropAndUpload = async () => {
+    if (!crop || !imgRef.current) return;
+    setIsUploadingAvatar(true);
+    try {
+        const croppedFile = await getCroppedImg(imgRef.current, crop);
+        await uploadAvatarAndUpdateProfile(child.id, croppedFile);
+        toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
+        onProfileUpdate();
+    } catch (error) {
+        console.error("Error cropping and uploading:", error);
+        toast({ title: "Erro no Upload", description: "Não foi possível enviar a imagem.", variant: "destructive" });
+    } finally {
+        setIsUploadingAvatar(false);
+        setImageSrc(null);
+        if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    }
+  }
+
 
   const handleShiftChange = (value: string) => {
     form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
@@ -278,9 +347,40 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!canEdit} className="space-y-6 group">
+    <>
+      <Dialog open={!!imageSrc} onOpenChange={(open) => !open && setImageSrc(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Recortar Foto do Herói</DialogTitle>
+                <DialogDescription>
+                    Ajuste a imagem para criar o avatar perfeito.
+                </DialogDescription>
+            </DialogHeader>
+            {imageSrc && (
+                <div className="flex justify-center my-4">
+                    <ReactCrop
+                        crop={crop}
+                        onChange={c => setCrop(c)}
+                        aspect={1}
+                        circularCrop
+                    >
+                        <img ref={imgRef} src={imageSrc} onLoad={onImageLoad} alt="Recorte" style={{ maxHeight: '70vh' }} />
+                    </ReactCrop>
+                </div>
+            )}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setImageSrc(null)} disabled={isUploadingAvatar}>Cancelar</Button>
+                <Button onClick={handleCropAndUpload} disabled={isUploadingAvatar}>
+                    {isUploadingAvatar ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar Avatar
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <fieldset disabled={!canEdit} className="space-y-6 group">
             <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
               <div className="relative group flex-shrink-0">
                 <Avatar className="h-28 w-28 text-4xl shadow-md ring-4 ring-offset-2 ring-primary ring-offset-background">
@@ -564,8 +664,9 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
                   </Button>
               </div>
             )}
-        </fieldset>
-      </form>
-    </Form>
+          </fieldset>
+        </form>
+      </Form>
+    </>
   );
 }
