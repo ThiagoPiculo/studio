@@ -844,17 +844,37 @@ function ManageChildPageContent() {
                       {child.accessCode}
                     </span>
                   </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleRegenerateAccessCode} 
-                    disabled={isRegeneratingCode || !canEdit}
-                    className="shadow-sm h-8"
-                  >
-                    {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                    Regenerar
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button 
+                          variant="outline" 
+                          size="icon"
+                          onClick={handleRegenerateAccessCode} 
+                          disabled={isRegeneratingCode || !canEdit}
+                          className="shadow-sm h-9 w-9"
+                        >
+                          {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                          <span className="sr-only">Regenerar código</span>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Regenerar Código de Acesso</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
               </div>
+            </div>
+            
+            <div className="px-4 pb-2 pt-4">
+                <div className="flex justify-between text-xs text-muted-foreground font-medium mb-1">
+                    <span>Progresso Nv. {child.level}</span>
+                    <span>{child.xp} / {xpForNextLevel} XP</span>
+                </div>
+                <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                <p className="text-right text-xs text-muted-foreground mt-1">
+                  Faltam {xpRemaining > 0 ? xpRemaining : 0} XP para o próximo nível!
+                </p>
             </div>
         </div>
       </Card>
@@ -871,21 +891,6 @@ function ManageChildPageContent() {
         
         <div className="mt-4">
           <TabsContent value="overview" className="space-y-6">
-             <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle className="text-lg">Progresso para o Próximo Nível</CardTitle>
-                <CardDescription>
-                  {child.xp} / {xpForNextLevel} XP
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Progress value={progressPercentage} className="h-4" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                <p className="text-right text-sm text-muted-foreground mt-2">
-                  Faltam {xpRemaining > 0 ? xpRemaining : 0} XP para o próximo nível!
-                </p>
-              </CardContent>
-            </Card>
-
             <ScrollArea className="w-full">
               <div className="flex gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
                 <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
@@ -1553,3 +1558,4 @@ export default function ManageChildPage() {
     
 
     
+
