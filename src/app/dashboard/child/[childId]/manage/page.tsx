@@ -48,7 +48,7 @@ import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -810,53 +810,53 @@ function ManageChildPageContent() {
   return (
     <div className="space-y-6 pb-8">
       <Card className="shadow-xl overflow-hidden">
-        <CardHeader className="bg-gradient-to-r from-primary/20 via-background to-accent/10 p-6">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <Avatar
-              className="h-28 w-28 text-5xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
-              style={{ '--ring-color': child.color } as React.CSSProperties}
-            >
-              <AvatarImage src={child.avatar} alt={child.name} />
-              <AvatarFallback
-                className="font-bold"
-                style={{ backgroundColor: child.color }}
+        <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5">
+            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
+              <Avatar
+                className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
+                style={{ '--ring-color': child.color } as React.CSSProperties}
               >
-                {getInitials(child.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="text-center sm:text-left flex-grow">
-              <CardTitle className="text-4xl font-headline text-primary">{child.name}</CardTitle>
-              <CardDescription className="text-base mt-1">
-                {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
-              </CardDescription>
-               <div className="mt-2 flex items-center justify-center sm:justify-start space-x-4 text-sm">
-                <span className="font-semibold">Nível: {child.level}</span>
-                <span className="font-semibold text-accent flex items-center"><StarIcon className="inline-block h-4 w-4 mr-1 fill-accent" /> {child.stars}</span>
-                <span className="font-semibold">XP: {child.xp}</span>
-              </div>
-              <div className="mt-4 flex items-center justify-center sm:justify-start gap-4 flex-wrap">
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground align-middle">
-                    <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código:
-                  </span>
-                  <span className="text-xl font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                    {child.accessCode}
-                  </span>
-                </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={handleRegenerateAccessCode} 
-                  disabled={isRegeneratingCode || !canEdit}
-                  className="shadow-sm"
+                <AvatarImage src={child.avatar} alt={child.name} />
+                <AvatarFallback
+                  className="font-bold"
+                  style={{ backgroundColor: child.color }}
                 >
-                  {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-                  Regenerar
-                </Button>
+                  {getInitials(child.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-grow">
+                <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
+                </CardDescription>
+                <div className="mt-3 flex items-center justify-center sm:justify-start gap-4 text-sm font-semibold">
+                    <div className="flex items-center gap-1.5"><Badge variant="secondary">Nível {child.level}</Badge></div>
+                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400"><StarIcon className="h-4 w-4 fill-current"/>{child.stars}</div>
+                    <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400"><BadgeCheck className="h-4 w-4"/>{child.xp} XP</div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground align-middle">
+                      <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código:
+                    </span>
+                    <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                      {child.accessCode}
+                    </span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={handleRegenerateAccessCode} 
+                    disabled={isRegeneratingCode || !canEdit}
+                    className="shadow-sm h-8"
+                  >
+                    {isRegeneratingCode ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
+                    Regenerar
+                  </Button>
               </div>
             </div>
-          </div>
-        </CardHeader>
+        </div>
       </Card>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
@@ -886,91 +886,51 @@ function ManageChildPageContent() {
               </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              <Card className="shadow-sm flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
-                  <CheckSquare className="h-5 w-5 text-green-500" />
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{stats.completedMissions}</div>
-                  <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTabChange('missions')}
-                  >
-                    Explorar Mural de Missões
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card className="shadow-sm flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
-                  <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{stats.starsEarned}</div>
-                  <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
-                </CardContent>
-                 <CardFooter>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTabChange('missions')}
-                  >
-                    Ver Histórico de Ganhos
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card className="shadow-sm flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
-                  <Trophy className="h-5 w-5 text-orange-500" />
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
-                  <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => {
-                      handleTabChange('rewards');
-                      setInstanceStatusFilter('redeemed');
-                    }}
-                  >
-                    Explorar Mural de Recompensas
-                  </Button>
-                </CardFooter>
-              </Card>
-              <Card className="shadow-sm flex flex-col">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Conquistas Desbloqueadas</CardTitle>
-                  <Medal className="h-5 w-5 text-blue-500" />
-                </CardHeader>
-                <CardContent className="flex-grow">
-                  <div className="text-2xl font-bold">{stats.earnedBadges}</div>
-                  <p className="text-xs text-muted-foreground">Total de conquistas desbloqueadas</p>
-                </CardContent>
-                <CardFooter>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full"
-                    onClick={() => handleTabChange('badges')}
-                  >
-                    Ver Mural de Conquistas
-                  </Button>
-                </CardFooter>
-              </Card>
-            </div>
+            <ScrollArea className="w-full">
+              <div className="flex gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
+                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
+                    <CheckSquare className="h-5 w-5 text-green-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.completedMissions}</div>
+                    <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
+                    <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.starsEarned}</div>
+                    <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
+                    <Trophy className="h-5 w-5 text-orange-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
+                    <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
+                  </CardContent>
+                </Card>
+                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Conquistas Desbloqueadas</CardTitle>
+                    <Medal className="h-5 w-5 text-blue-500" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold">{stats.earnedBadges}</div>
+                    <p className="text-xs text-muted-foreground">Total de medalhas ganhas</p>
+                  </CardContent>
+                </Card>
+              </div>
+              <ScrollBar orientation="horizontal" />
+            </ScrollArea>
             
             <Card className="shadow-md">
               <CardHeader>
@@ -1589,5 +1549,7 @@ export default function ManageChildPage() {
         </Suspense>
     )
 }
+
+    
 
     
