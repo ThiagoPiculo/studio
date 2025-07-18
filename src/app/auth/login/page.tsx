@@ -31,7 +31,7 @@ export default function LoginPage() {
           <p className="mt-2 text-center text-sm text-muted-foreground">
             É um Mini Heroi?{' '}
             <Link href="/child-login" className="font-medium text-primary hover:underline">
-              Acesse o Portal Heroico
+              Entre e complete missões
             </Link>
           </p>
         </CardContent>
