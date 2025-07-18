@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX, NotebookPen } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX, NotebookPen, PlusCircle } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
