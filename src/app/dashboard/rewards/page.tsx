@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, Fragment } from 'react';
@@ -30,7 +31,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, Loader2, MoreHorizontal, Edit3, Trash2, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate, getChildProfilesForAttribution, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
@@ -423,7 +424,7 @@ export default function RewardTemplatesHubPage() {
             <p className="text-destructive text-center py-10">{error}</p>
           ) : filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg mt-6">
-              <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+              <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground">Nenhuma recompensa encontrada com os filtros atuais.</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Tente ajustar os filtros ou{" "}

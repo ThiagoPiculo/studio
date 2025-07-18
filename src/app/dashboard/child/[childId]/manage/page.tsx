@@ -10,7 +10,7 @@ import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -794,7 +794,7 @@ function ManageChildPageContent() {
                         </div>
                     )}
                 </div>
-                 <div className="border-t pt-2 mt-2">
+                <div className="border-t pt-2 mt-2">
                     <div className="space-y-1 text-xs text-muted-foreground">
                        {instance.status === 'completed' && instance.updatedAt && (
                             <div className="flex items-center font-medium text-green-600">
@@ -854,57 +854,57 @@ function ManageChildPageContent() {
   return (
     <div className="space-y-6 pb-8">
       <Card className="shadow-xl overflow-hidden">
-        <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left flex-grow">
-                  <Avatar
-                    className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
-                    style={{ '--ring-color': child.color } as React.CSSProperties}
-                  >
-                    <AvatarImage src={child.avatar} alt={child.name} />
-                    <AvatarFallback
-                      className="font-bold"
-                      style={{ backgroundColor: child.color }}
-                    >
-                      {getInitials(child.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-grow">
-                      <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
-                      <CardDescription className="text-base mt-1">
-                          {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
-                      </CardDescription>
-                  </div>
-                </div>
-                <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
-                  <span className="text-sm text-muted-foreground align-middle">
+        <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
+            <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
+                <span className="text-sm text-muted-foreground align-middle">
                     Chave Secreta do Heroi:
-                  </span>
-                  <div className="flex items-center gap-2">
-                      <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                        {child.accessCode}
-                      </span>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="icon"
-                              onClick={handleRegenerateAccessCode} 
-                              disabled={isRegeneratingCode || !canEdit}
-                              className="shadow-sm h-9 w-9"
-                            >
-                              {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Regenerar Chave Secreta</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                  </div>
+                </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                      {child.accessCode}
+                    </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={handleRegenerateAccessCode} 
+                            disabled={isRegeneratingCode || !canEdit}
+                            className="shadow-sm h-9 w-9"
+                          >
+                            {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Regenerar Chave Secreta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                 </div>
             </div>
+
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
+              <Avatar
+                className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background flex-shrink-0"
+                style={{ '--ring-color': child.color } as React.CSSProperties}
+              >
+                <AvatarImage src={child.avatar} alt={child.name} />
+                <AvatarFallback
+                  className="font-bold"
+                  style={{ backgroundColor: child.color }}
+                >
+                  {getInitials(child.name)}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-grow">
+                  <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
+                  <CardDescription className="text-base mt-1">
+                      {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
+                  </CardDescription>
+              </div>
+            </div>
+            
             <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
               <span className="text-sm text-muted-foreground align-middle">
                   Chave Secreta:
@@ -931,26 +931,29 @@ function ManageChildPageContent() {
                   </Tooltip>
               </TooltipProvider>
             </div>
+            
             <div className="mt-4 flex flex-col gap-4 font-semibold">
-                <div className="flex flex-wrap items-center gap-4">
-                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                        <StarIcon className="h-6 w-6 fill-current"/>
-                        <span className="text-xl font-bold">{child.stars}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                        <BadgeCheck className="h-6 w-6"/>
-                        <span className="text-xl font-bold">{child.xp}</span>
-                        <span className="text-sm">XP</span>
+                <div className="flex items-end justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                          <StarIcon className="h-7 w-7 fill-current"/>
+                          <span className="text-2xl font-bold">{child.stars}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                          <BadgeCheck className="h-7 w-7"/>
+                          <span className="text-2xl font-bold">{child.xp}</span>
+                          <span className="text-sm font-normal">XP</span>
+                      </div>
+                  </div>
+                   <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-sm">Nível {child.level}</Badge>
                     </div>
                 </div>
                 <div className="w-full">
-                    <div className="flex justify-between items-baseline mb-1">
-                        <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
-                        <span className="text-xs text-muted-foreground">
-                            {child.xp} / {xpForNextLevel} XP (faltam {xpRemaining} para o próximo nível)
-                        </span>
-                    </div>
-                    <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                    <Progress value={progressPercentage} className="h-2.5" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                    <p className="text-xs text-muted-foreground text-right mt-1">
+                        {xpRemaining} XP para o próximo nível
+                    </p>
                 </div>
             </div>
         </div>
@@ -1103,7 +1106,7 @@ function ManageChildPageContent() {
                     </Button>
                     {filteredMissions.length === 0 ? (
                       <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                          <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                          <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                           <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
                           <p className="text-sm text-muted-foreground mt-1">Tente outro filtro ou clique em "Adicionar Nova Missão" para começar a jornada!</p>
                       </div>
@@ -1153,7 +1156,7 @@ function ManageChildPageContent() {
                 </Button>
                 {filteredChildRewards.length === 0 ? (
                   <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-lg text-muted-foreground">
                       {childRewards.length === 0 
                         ? `${child.name} ainda não tem recompensas atribuídas.`
@@ -1651,6 +1654,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
