@@ -198,35 +198,38 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                             role="combobox"
                                                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                                                         >
-                                                            {field.value || "Selecione uma matéria..."}
+                                                            {field.value ? (
+                                                                <div className="flex items-center">
+                                                                    <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: form.getValues('color') }}></div>
+                                                                    {field.value}
+                                                                </div>
+                                                            ) : "Selecione uma matéria..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={8}>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={5}>
                                                     <Command>
-                                                        <CommandInput placeholder="Buscar matéria..." onValueChange={(val) => form.setValue('subject', val)} />
-                                                        <CommandList>
-                                                          <ScrollArea className="max-h-40">
-                                                              <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                              <CommandGroup>
-                                                                  {orderedSubjects.map((subject) => (
-                                                                      <CommandItem
-                                                                          value={subject.label}
-                                                                          key={subject.label}
-                                                                          onSelect={() => {
-                                                                              form.setValue("subject", subject.label);
-                                                                              form.setValue("color", subject.color);
-                                                                              setIsComboboxOpen(false);
-                                                                          }}
-                                                                      >
-                                                                          <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
-                                                                          {subject.label}
-                                                                          <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
-                                                                      </CommandItem>
-                                                                  ))}
-                                                              </CommandGroup>
-                                                          </ScrollArea>
+                                                        <CommandInput placeholder="Buscar matéria..." />
+                                                        <CommandList className="max-h-40">
+                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {orderedSubjects.map((subject) => (
+                                                                    <CommandItem
+                                                                        value={subject.label}
+                                                                        key={subject.label}
+                                                                        onSelect={() => {
+                                                                            form.setValue("subject", subject.label);
+                                                                            form.setValue("color", subject.color);
+                                                                            setIsComboboxOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
+                                                                        {subject.label}
+                                                                        <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
