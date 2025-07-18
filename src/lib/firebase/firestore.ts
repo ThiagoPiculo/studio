@@ -1598,7 +1598,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
             title: 'Missão Desatribuída',
             description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
             href: `/dashboard/child/${childId}/manage?tab=missions`,
-            relatedChildId: childId,
+            relatedChildId: instanceData.childId,
         });
     }
 };
@@ -2175,7 +2175,7 @@ export const getSchoolScheduleForChild = async (childId: string): Promise<School
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolScheduleEntry));
 }
 
-export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>): Promise<SchoolScheduleEntry> => {
+export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
   const newEntryRef = doc(collection(db, 'schoolSchedules'));
   const now = serverTimestamp() as Timestamp;
   const newEntry: SchoolScheduleEntry = {
@@ -2185,12 +2185,25 @@ export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry
     updatedAt: now,
   };
   await setDoc(newEntryRef, newEntry);
+
+  if (newEntry.familyId) {
+    const child = await getChildProfileById(newEntry.childId);
+    await createAllianceNotification(newEntry.familyId, actor, {
+        type: 'school_schedule_entry_created',
+        title: 'Aula Adicionada à Agenda',
+        description: `${actor.name} adicionou "${newEntry.subject}" para ${child?.name}.`,
+        href: `/dashboard/school-schedule`,
+        relatedChildId: newEntry.childId,
+    });
+  }
+
   return newEntry;
 };
 
 export const addRecurringSchoolEntry = async (
     baseEntry: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt' | 'dayOfWeek'>, 
-    days: Weekday[]
+    days: Weekday[],
+    actor: UserProfile
 ): Promise<void> => {
     const batch = writeBatch(db);
     const now = serverTimestamp() as Timestamp;
@@ -2207,21 +2220,59 @@ export const addRecurringSchoolEntry = async (
     });
 
     await batch.commit();
+
+    if (baseEntry.familyId) {
+        const child = await getChildProfileById(baseEntry.childId);
+        await createAllianceNotification(baseEntry.familyId, actor, {
+            type: 'school_schedule_entry_created',
+            title: 'Intervalo Adicionado',
+            description: `${actor.name} adicionou o intervalo de ${baseEntry.startTime} às ${baseEntry.endTime} para ${child?.name}.`,
+            href: `/dashboard/school-schedule`,
+            relatedChildId: baseEntry.childId
+        });
+    }
 }
 
-export const updateSchoolScheduleEntry = async (entryId: string, updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>): Promise<void> => {
+export const updateSchoolScheduleEntry = async (entryId: string, updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>, actor: UserProfile): Promise<void> => {
   const entryRef = doc(db, 'schoolSchedules', entryId);
+  
+  const originalSnap = await getDoc(entryRef);
+  if (!originalSnap.exists()) return;
+  const originalData = originalSnap.data() as SchoolScheduleEntry;
+
   await updateDoc(entryRef, {
     ...updates,
     updatedAt: serverTimestamp(),
   });
+
+  if (originalData.familyId) {
+    const child = await getChildProfileById(originalData.childId);
+    await createAllianceNotification(originalData.familyId, actor, {
+        type: 'school_schedule_entry_updated',
+        title: 'Aula Atualizada',
+        description: `${actor.name} atualizou a aula de "${updates.subject || originalData.subject}" para ${child?.name}.`,
+        href: `/dashboard/school-schedule`,
+        relatedChildId: originalData.childId
+    });
+  }
 };
 
-export const deleteSchoolScheduleEntry = async (entryId: string): Promise<void> => {
+export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProfile): Promise<void> => {
   const entryRef = doc(db, 'schoolSchedules', entryId);
+  const originalSnap = await getDoc(entryRef);
+  if (!originalSnap.exists()) return;
+  const originalData = originalSnap.data() as SchoolScheduleEntry;
+  
   await deleteDoc(entryRef);
+
+  if (originalData.familyId) {
+    const child = await getChildProfileById(originalData.childId);
+    await createAllianceNotification(originalData.familyId, actor, {
+        type: 'school_schedule_entry_deleted',
+        title: 'Aula Removida',
+        description: `${actor.name} removeu a aula de "${originalData.subject}" do horário de ${child?.name}.`,
+        href: `/dashboard/school-schedule`,
+        relatedChildId: originalData.childId
+    });
+  }
 };
-
-
-
-

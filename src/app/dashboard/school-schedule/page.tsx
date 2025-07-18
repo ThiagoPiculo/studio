@@ -328,7 +328,7 @@ function SchoolSchedulePageContent() {
     if (!entryToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteSchoolScheduleEntry(entryToDelete, user);
+      await deleteSchoolScheduleEntry(entryToDelete.id, user);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
       fetchData();
     } catch (error) {
@@ -670,6 +670,3 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
-
-
-
