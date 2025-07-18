@@ -831,20 +831,22 @@ function ManageChildPageContent() {
                   {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
                 </CardDescription>
                 
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 items-center gap-x-6 gap-y-2 text-sm font-semibold">
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-amber-600 dark:text-amber-400">
-                      <StarIcon className="h-6 w-6 fill-current"/>
-                      <span className="text-xl font-bold">{child.stars}</span>
+                 <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-x-6 gap-y-4 font-semibold">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                            <StarIcon className="h-6 w-6 fill-current"/>
+                            <span className="text-xl font-bold">{child.stars}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                            <BadgeCheck className="h-6 w-6"/>
+                            <span className="text-xl font-bold">{child.xp}</span>
+                            <span className="text-sm">XP</span>
+                        </div>
                     </div>
-                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-blue-600 dark:text-blue-400">
-                      <BadgeCheck className="h-6 w-6"/>
-                      <span className="text-xl font-bold">{child.xp}</span>
-                      <span className="text-sm">XP</span>
-                    </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto flex-grow max-w-xs">
                         <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
                         <div className="flex-grow">
-                           <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                            <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
                         </div>
                     </div>
                 </div>
@@ -1561,6 +1563,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
