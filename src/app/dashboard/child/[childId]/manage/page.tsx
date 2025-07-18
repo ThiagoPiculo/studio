@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -829,11 +830,25 @@ function ManageChildPageContent() {
                 <CardDescription className="text-base mt-1">
                   {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
                 </CardDescription>
-                <div className="mt-3 flex items-center justify-center sm:justify-start gap-4 text-sm font-semibold">
-                    <div className="flex items-center gap-1.5"><Badge variant="secondary">Nível {child.level}</Badge></div>
-                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400"><StarIcon className="h-4 w-4 fill-current"/>{child.stars}</div>
-                    <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400"><BadgeCheck className="h-4 w-4"/>{child.xp} XP</div>
+                
+                <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 items-center gap-x-6 gap-y-2 text-sm font-semibold">
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-amber-600 dark:text-amber-400">
+                      <StarIcon className="h-6 w-6 fill-current"/>
+                      <span className="text-xl font-bold">{child.stars}</span>
+                    </div>
+                    <div className="flex items-center justify-center sm:justify-start gap-1.5 text-blue-600 dark:text-blue-400">
+                      <BadgeCheck className="h-6 w-6"/>
+                      <span className="text-xl font-bold">{child.xp}</span>
+                      <span className="text-sm">XP</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
+                        <div className="flex-grow">
+                           <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                        </div>
+                    </div>
                 </div>
+
               </div>
               <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
                   <div className="flex items-center gap-2">
@@ -854,7 +869,6 @@ function ManageChildPageContent() {
                             className="shadow-sm h-9 w-9"
                           >
                             {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                            <span className="sr-only">Regenerar código</span>
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent>
@@ -864,17 +878,6 @@ function ManageChildPageContent() {
                     </TooltipProvider>
                   </div>
               </div>
-            </div>
-            
-            <div className="px-4 pb-2 pt-4">
-                <div className="flex justify-between text-xs text-muted-foreground font-medium mb-1">
-                    <span>Progresso Nv. {child.level}</span>
-                    <span>{child.xp} / {xpForNextLevel} XP</span>
-                </div>
-                <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                <p className="text-right text-xs text-muted-foreground mt-1">
-                  Faltam {xpRemaining > 0 ? xpRemaining : 0} XP para o próximo nível!
-                </p>
             </div>
         </div>
       </Card>
@@ -1558,5 +1561,6 @@ export default function ManageChildPage() {
     
 
     
+
 
 
