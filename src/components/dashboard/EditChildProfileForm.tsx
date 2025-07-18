@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -34,6 +33,7 @@ import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useUserRole } from "@/hooks/useUserRole";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -88,6 +88,7 @@ interface EditChildProfileFormProps {
 export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { canEdit } = useUserRole();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -193,7 +194,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
         const currentChildContextId = child.familyId || 'my-space';
 
         try {
-            // Fetch used colors within the correct context
             let otherChildren: ChildProfile[] = [];
             const familyIdToQuery = currentChildContextId === 'my-space' ? null : currentChildContextId;
 
@@ -214,7 +214,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
         }
 
         try {
-            // Fetch owner profile
             const ownerProfile = await getUserProfile(child.ownerId);
             setOwner(ownerProfile);
         } catch(error) {
@@ -276,134 +275,147 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const watchedBirthDate = form.watch("birthDate");
   const calculatedAge = calculateAge(watchedBirthDate);
   
-  const isOwner = user?.uid === child.ownerId;
   const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
   return (
-    <>
-    <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
-        <div className="relative group flex-shrink-0">
-          <Avatar className="h-28 w-28 text-4xl shadow-md ring-4 ring-offset-2 ring-primary ring-offset-background">
-            <AvatarImage src={avatarPreview || undefined} alt={child.name} />
-            <AvatarFallback 
-              className="font-bold"
-              style={{ backgroundColor: child.color }}
-            >{getInitials(child.name)}</AvatarFallback>
-          </Avatar>
-          {isUploadingAvatar && (
-            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
-              <Loader2 className="h-8 w-8 text-white animate-spin" />
-            </div>
-          )}
-          {isOwner && (
-            <Button
-              type="button"
-              variant="secondary"
-              size="icon"
-              className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploadingAvatar}
-            >
-              <Camera className="h-4 w-4" />
-            </Button>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png, image/jpeg, image/webp"
-            className="hidden"
-            onChange={handleAvatarChange}
-          />
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start flex-grow w-full">
-            <FormItem>
-              <FormLabel>Nome do Mini Heroi</FormLabel>
-              <FormControl>
-                  <Input placeholder="Nome do Mini Heroi" {...form.register("name")} disabled={!isOwner} />
-              </FormControl>
-              <FormMessage>{form.formState.errors.name?.message}</FormMessage>
-            </FormItem>
-            <FormItem className="flex flex-col">
-              <FormLabel>Data de Nascimento</FormLabel>
-              <div className="flex items-center gap-4">
-                  <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                  if (open) {
-                      setDateInput(form.getValues("birthDate") ? format(form.getValues("birthDate"), 'dd/MM/yyyy') : "");
-                  }
-                  setIsCalendarOpen(open);
-                  }}>
-                  <PopoverTrigger asChild>
-                      <FormControl>
-                      <Button
-                          variant={"outline"}
-                          className={cn(
-                          "w-full pl-3 text-left font-normal",
-                          !watchedBirthDate && "text-muted-foreground"
-                          )}
-                          disabled={!isOwner}
-                      >
-                          {watchedBirthDate ? (
-                          format(watchedBirthDate, "PPP", { locale: ptBR })
-                          ) : (
-                          <span>Escolha uma data</span>
-                          )}
-                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                      </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                      <div className="p-2 border-b">
-                      <Input
-                          placeholder="Digite: dd/mm/aaaa"
-                          value={dateInput}
-                          onChange={(e) => {
-                              const maskedValue = handleDateMask(e.target.value);
-                              setDateInput(maskedValue);
-                              if (maskedValue.length === 10) {
-                              const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                              if (isValid(parsedDate)) {
-                                  form.setValue("birthDate", parsedDate, { shouldValidate: true });
-                                  setMonth(parsedDate);
-                              }
-                              }
-                          }}
-                          />
-                      </div>
-                      <Calendar
-                      locale={ptBR}
-                      mode="single"
-                      month={month}
-                      onMonthChange={setMonth}
-                      selected={watchedBirthDate}
-                      onSelect={(date) => {
-                          if (date) {
-                            form.setValue("birthDate", date, { shouldValidate: true });
-                            setDateInput(format(date, 'dd/MM/yyyy'));
-                            setMonth(date);
-                          }
-                          setIsCalendarOpen(false);
-                      }}
-                      disabled={(date) =>
-                          date > new Date() || date < new Date("1900-01-01")
-                      }
-                      initialFocus
-                      weekStartsOn={1}
-                      />
-                  </PopoverContent>
-                  </Popover>
-                  {calculatedAge !== null && (
-                  <div className="text-sm text-muted-foreground whitespace-nowrap">
-                      ({calculatedAge} anos)
-                  </div>
-                  )}
-              </div>
-              <FormMessage>{form.formState.errors.birthDate?.message}</FormMessage>
-              </FormItem>
-        </div>
-    </div>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <fieldset disabled={!isOwner} className="space-y-6 group">
+        <fieldset disabled={!canEdit} className="space-y-6 group">
+            <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
+              <div className="relative group flex-shrink-0">
+                <Avatar className="h-28 w-28 text-4xl shadow-md ring-4 ring-offset-2 ring-primary ring-offset-background">
+                  <AvatarImage src={avatarPreview || undefined} alt={child.name} />
+                  <AvatarFallback 
+                    className="font-bold"
+                    style={{ backgroundColor: child.color }}
+                  >{getInitials(child.name)}</AvatarFallback>
+                </Avatar>
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  </div>
+                )}
+                {canEdit && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="icon"
+                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingAvatar}
+                  >
+                    <Camera className="h-4 w-4" />
+                  </Button>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                  disabled={!canEdit}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start flex-grow w-full">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Nome do Mini Heroi</FormLabel>
+                        <FormControl>
+                            <Input placeholder="Nome do Mini Heroi" {...field} />
+                        </FormControl>
+                        <FormMessage/>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="birthDate"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Data de Nascimento</FormLabel>
+                        <div className="flex items-center gap-4">
+                          <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                          if (open) {
+                              setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                          }
+                          setIsCalendarOpen(open);
+                          }}>
+                          <PopoverTrigger asChild>
+                              <FormControl>
+                              <Button
+                                  variant={"outline"}
+                                  className={cn(
+                                  "w-full pl-3 text-left font-normal",
+                                  !field.value && "text-muted-foreground"
+                                  )}
+                              >
+                                  {field.value ? (
+                                  format(field.value, "PPP", { locale: ptBR })
+                                  ) : (
+                                  <span>Escolha uma data</span>
+                                  )}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                              </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                              <div className="p-2 border-b">
+                              <Input
+                                  placeholder="Digite: dd/mm/aaaa"
+                                  value={dateInput}
+                                  onChange={(e) => {
+                                      const maskedValue = handleDateMask(e.target.value);
+                                      setDateInput(maskedValue);
+                                      if (maskedValue.length === 10) {
+                                      const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                      if (isValid(parsedDate)) {
+                                          field.onChange(parsedDate);
+                                          setMonth(parsedDate);
+                                      }
+                                      }
+                                  }}
+                                  />
+                              </div>
+                              <Calendar
+                              locale={ptBR}
+                              mode="single"
+                              month={month}
+                              onMonthChange={setMonth}
+                              selected={field.value}
+                              onSelect={(date) => {
+                                  if (date) {
+                                    field.onChange(date);
+                                    setDateInput(format(date, 'dd/MM/yyyy'));
+                                    setMonth(date);
+                                  }
+                                  setIsCalendarOpen(false);
+                              }}
+                              disabled={(date) =>
+                                  date > new Date() || date < new Date("1900-01-01")
+                              }
+                              initialFocus
+                              weekStartsOn={1}
+                              />
+                          </PopoverContent>
+                          </Popover>
+                          {calculatedAge !== null && (
+                          <div className="text-sm text-muted-foreground whitespace-nowrap">
+                              ({calculatedAge} anos)
+                          </div>
+                          )}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+              </div>
+            </div>
+
             <FormField
               control={form.control}
               name="gender"
@@ -540,7 +552,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
               </div>
             </div>
 
-            {isOwner && (
+            {canEdit && (
               <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
                   <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
                     {isLoading ? (
@@ -555,6 +567,5 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
         </fieldset>
       </form>
     </Form>
-    </>
   );
 }
