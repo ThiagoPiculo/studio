@@ -522,7 +522,7 @@ function SchoolSchedulePageContent() {
                                   <ToggleGroupItem
                                       key={day}
                                       value={day}
-                                      className="h-8 w-8 p-0"
+                                      className="h-9 px-3"
                                       aria-label={weekdayLabels[day].long}
                                   >
                                       {weekdayLabels[day].short}
