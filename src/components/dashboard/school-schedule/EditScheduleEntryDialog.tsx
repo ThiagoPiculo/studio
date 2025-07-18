@@ -27,6 +27,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 
 
+const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
   dayOfWeek: z.enum(weekdays),
@@ -40,7 +42,6 @@ const scheduleEntrySchema = z.object({
 
 type FormValues = z.infer<typeof scheduleEntrySchema>;
 
-const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
