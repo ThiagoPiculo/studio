@@ -32,7 +32,7 @@ function RegisterPageContent() {
           <p className="mt-6 text-center text-sm text-muted-foreground">
             Já possui uma conta?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Acesse sua central
+              Fazer login no Mini Herois
             </Link>
           </p>
         </CardContent>
