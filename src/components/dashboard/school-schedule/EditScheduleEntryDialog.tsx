@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -71,6 +72,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [child, setChild] = useState<ChildProfile | null>(null);
+    const [isComboboxOpen, setIsComboboxOpen] = useState(false);
+
 
     const form = useForm<FormValues>({
         resolver: zodResolver(scheduleEntrySchema),
@@ -206,7 +209,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     render={({ field }) => (
                                         <FormItem className="flex flex-col">
                                             <FormLabel>Matéria</FormLabel>
-                                            <Popover>
+                                            <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
                                                 <PopoverTrigger asChild>
                                                     <FormControl>
                                                         <Button
@@ -223,21 +226,24 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." onValueChange={(val) => form.setValue('subject', val)} />
                                                         <CommandList>
-                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {subjectOptions.map((option) => (
-                                                                    <CommandItem
-                                                                        value={option.label}
-                                                                        key={option.value}
-                                                                        onSelect={() => {
-                                                                            form.setValue("subject", option.label)
-                                                                        }}
-                                                                    >
-                                                                        <Check className={cn("mr-2 h-4 w-4", option.label.toLowerCase() === field.value.toLowerCase() ? "opacity-100" : "opacity-0")} />
-                                                                        {option.label}
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
+                                                            <ScrollArea className="max-h-40">
+                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {subjectOptions.map((option) => (
+                                                                        <CommandItem
+                                                                            value={option.label}
+                                                                            key={option.value}
+                                                                            onSelect={() => {
+                                                                                form.setValue("subject", option.label);
+                                                                                setIsComboboxOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            <Check className={cn("mr-2 h-4 w-4", option.label.toLowerCase() === field.value.toLowerCase() ? "opacity-100" : "opacity-0")} />
+                                                                            {option.label}
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </ScrollArea>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
