@@ -131,7 +131,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
 
         if (hadAssignmentInitially && !hasAssignmentNow) {
             // Remove assignment
-            promises.push(deleteChildRewardInstancesByTemplateAndChild(template.id, childId));
+            promises.push(deleteChildRewardInstancesByTemplateAndChild(user, template.id, childId));
             removedCount++;
         } else if (!hadAssignmentInitially && hasAssignmentNow) {
             // Add assignment
@@ -141,7 +141,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
               ownerId: child.ownerId,
               familyId: child.familyId || null,
             };
-            promises.push(addChildRewardInstance(instanceData, template));
+            promises.push(addChildRewardInstance(user, instanceData, template));
             addedCount++;
         }
     }

@@ -47,7 +47,9 @@ const createAndDispatchNotifications = async (
     userIdsToNotify = [child.ownerId];
   }
 
-  const notificationPromises = userIdsToNotify.map(userId => {
+  const notificationPromises = userIdsToNotify
+    .filter(userId => userId !== actor?.id) // Don't notify the person who made the action
+    .map(userId => {
     return addNotification({
       ...notificationPayload,
       userId,
@@ -58,6 +60,24 @@ const createAndDispatchNotifications = async (
   });
 
   await Promise.all(notificationPromises);
+};
+
+const createAllianceNotification = async (
+    familyId: string,
+    actor: { id: string; name: string | null },
+    notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId' | 'relatedContextId' | 'actorId' | 'actorName'>
+) => {
+    const members = await getFamilyMembers(familyId);
+    const notificationPromises = members
+        .filter(member => member.uid !== actor.id) // Exclude the actor
+        .map(member => addNotification({
+            ...notificationPayload,
+            userId: member.uid,
+            relatedContextId: familyId,
+            actorId: actor.id,
+            actorName: actor.name,
+        }));
+    await Promise.all(notificationPromises);
 };
 
 
@@ -979,7 +999,7 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
 
 
 // --- Reward Templates (Catálogo de Recompensas) ---
-export const addRewardTemplate = async (templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
+export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
   const newTemplateRef = doc(collection(db, 'rewardTemplates'));
   const now = serverTimestamp() as Timestamp;
   const newTemplate: RewardTemplate = {
@@ -990,6 +1010,17 @@ export const addRewardTemplate = async (templateData: Omit<RewardTemplate, 'id' 
     updatedAt: now,
   };
   await setDoc(newTemplateRef, newTemplate);
+
+  // Notify alliance members if applicable
+  if (templateData.familyId) {
+    await createAllianceNotification(templateData.familyId, actor, {
+      type: 'template_created',
+      title: 'Nova Recompensa no Catálogo!',
+      description: `${actor.name} adicionou a recompensa: "${newTemplate.title}".`,
+      href: '/dashboard/rewards',
+    });
+  }
+
   return newTemplate;
 };
 
@@ -1002,17 +1033,43 @@ export const getRewardTemplateById = async (templateId: string): Promise<RewardT
   return null;
 };
 
-export const updateRewardTemplate = async (templateId: string, updates: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
+export const updateRewardTemplate = async (actor: UserProfile, templateId: string, updates: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
   const templateRef = doc(db, 'rewardTemplates', templateId);
+  const templateSnap = await getDoc(templateRef);
+  if (!templateSnap.exists()) throw new Error("Template not found");
+  const familyId = templateSnap.data().familyId;
+
   await updateDoc(templateRef, {
     ...updates,
     updatedAt: serverTimestamp() as Timestamp,
   });
+
+  if (familyId) {
+    await createAllianceNotification(familyId, actor, {
+      type: 'template_updated',
+      title: 'Recompensa Atualizada',
+      description: `${actor.name} atualizou a recompensa: "${updates.title || templateSnap.data().title}".`,
+      href: `/dashboard/rewards/edit-template/${templateId}`,
+    });
+  }
 };
 
-export const deleteRewardTemplate = async (templateId: string): Promise<void> => {
+export const deleteRewardTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
   const templateRef = doc(db, 'rewardTemplates', templateId);
+  const templateSnap = await getDoc(templateRef);
+  if (!templateSnap.exists()) return;
+  const templateData = templateSnap.data();
+  
   await deleteDoc(templateRef);
+
+  if (templateData.familyId) {
+    await createAllianceNotification(templateData.familyId, actor, {
+      type: 'template_deleted',
+      title: 'Recompensa Removida do Catálogo',
+      description: `${actor.name} removeu a recompensa: "${templateData.title}".`,
+      href: '/dashboard/rewards',
+    });
+  }
 };
 
 export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyId?: string | null): Promise<RewardTemplate[]> => {
@@ -1029,6 +1086,7 @@ export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyI
 
 // --- Child Reward Instances (Recompensas Atribuídas) ---
 export const addChildRewardInstance = async (
+  actor: UserProfile,
   instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'>,
   templateSnapshot: RewardTemplate
 ): Promise<ChildRewardInstance> => {
@@ -1052,6 +1110,18 @@ export const addChildRewardInstance = async (
     updatedAt: now,
   };
   await setDoc(newInstanceRef, newInstance);
+
+  if (newInstance.familyId) {
+    const child = await getChildProfileById(newInstance.childId);
+    await createAllianceNotification(newInstance.familyId, actor, {
+        type: 'instance_assigned',
+        title: 'Recompensa Atribuída',
+        description: `${actor.name} atribuiu "${newInstance.title}" para ${child?.name || 'um herói'}.`,
+        href: `/dashboard/child/${newInstance.childId}/manage?tab=rewards`,
+        relatedChildId: newInstance.childId
+    });
+  }
+
   return newInstance;
 };
 
@@ -1102,7 +1172,7 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
   });
 };
 
-export const redeemChildRewardInstance = async (instanceId: string, childId: string, actor: { id: string, name: string | null }): Promise<void> => {
+export const redeemChildRewardInstance = async (instanceId: string, childId: string, actor: { id: string; name: string | null }): Promise<void> => {
   const instanceRef = doc(db, 'childRewardInstances', instanceId);
   const childRef = doc(db, 'children', childId);
 
@@ -1157,19 +1227,34 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
       type: 'reward_redeemed',
       title: 'Recompensa Resgatada!',
       description: description,
-      href: `/dashboard/child/${childId}/manage`,
+      href: `/dashboard/child/${childId}/manage?tab=rewards`,
       relatedChildId: childId,
     },
     actor
   );
 };
 
-export const deleteChildRewardInstance = async (instanceId: string): Promise<void> => {
+export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: string): Promise<void> => {
   const instanceRef = doc(db, 'childRewardInstances', instanceId);
+  const instanceSnap = await getDoc(instanceRef);
+  if (!instanceSnap.exists()) return;
+  const instanceData = instanceSnap.data() as ChildRewardInstance;
+
   await deleteDoc(instanceRef);
+
+  if (instanceData.familyId) {
+    const child = await getChildProfileById(instanceData.childId);
+    await createAllianceNotification(instanceData.familyId, actor, {
+        type: 'instance_unassigned',
+        title: 'Recompensa Desatribuída',
+        description: `${actor.name} removeu a atribuição de "${instanceData.title}" para ${child?.name || 'um herói'}.`,
+        href: `/dashboard/child/${instanceData.childId}/manage?tab=rewards`,
+        relatedChildId: instanceData.childId
+    });
+  }
 };
 
-export const deleteChildRewardInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<void> => {
+export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
     const q = query(
         collection(db, 'childRewardInstances'),
         where('templateId', '==', templateId),
@@ -1184,11 +1269,23 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (templateId: s
         batch.delete(doc.ref);
     });
     await batch.commit();
+
+    const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
+     if (instanceData.familyId) {
+        const child = await getChildProfileById(instanceData.childId);
+        await createAllianceNotification(instanceData.familyId, actor, {
+            type: 'instance_unassigned',
+            title: 'Recompensa Desatribuída',
+            description: `${actor.name} removeu a atribuição de "${instanceData.title}" para ${child?.name || 'um herói'}.`,
+            href: `/dashboard/child/${instanceData.childId}/manage?tab=rewards`,
+            relatedChildId: instanceData.childId
+        });
+    }
 };
 
 
 // --- Mission Templates (Catálogo de Missões) ---
-export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
+export const addMissionTemplate = async (actor: UserProfile, templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
   const newTemplateRef = doc(collection(db, 'missionTemplates'));
   const now = serverTimestamp() as Timestamp;
   const newTemplate: MissionTemplate = {
@@ -1202,6 +1299,16 @@ export const addMissionTemplate = async (templateData: Omit<MissionTemplate, 'id
     updatedAt: now,
   };
   await setDoc(newTemplateRef, newTemplate);
+
+  if (templateData.familyId) {
+    await createAllianceNotification(templateData.familyId, actor, {
+        type: 'template_created',
+        title: 'Nova Missão no Catálogo!',
+        description: `${actor.name} adicionou a missão: "${newTemplate.title}".`,
+        href: '/dashboard/missions',
+    });
+  }
+
   return newTemplate;
 };
 
@@ -1214,23 +1321,52 @@ export const getMissionTemplateById = async (templateId: string): Promise<Missio
   return null;
 };
 
-export const updateMissionTemplate = async (templateId: string, updates: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
+export const updateMissionTemplate = async (actor: UserProfile, templateId: string, updates: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
   const templateRef = doc(db, 'missionTemplates', templateId);
+  const templateSnap = await getDoc(templateRef);
+  if (!templateSnap.exists()) throw new Error("Template not found");
+  const familyId = templateSnap.data().familyId;
+  
   await updateDoc(templateRef, {
     ...updates,
     updatedAt: serverTimestamp() as Timestamp,
   });
+
+   if (familyId) {
+    await createAllianceNotification(familyId, actor, {
+      type: 'template_updated',
+      title: 'Missão Atualizada',
+      description: `${actor.name} atualizou a missão: "${updates.title || templateSnap.data().title}".`,
+      href: `/dashboard/missions/edit/${templateId}`,
+    });
+  }
 };
 
-export const deleteMissionTemplate = async (templateId: string): Promise<void> => {
+export const deleteMissionTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
   const templateRef = doc(db, 'missionTemplates', templateId);
+  const templateSnap = await getDoc(templateRef);
+  if (!templateSnap.exists()) return;
+  const templateData = templateSnap.data();
+
   await deleteDoc(templateRef);
+  
+   if (templateData.familyId) {
+    await createAllianceNotification(templateData.familyId, actor, {
+      type: 'template_deleted',
+      title: 'Missão Removida do Catálogo',
+      description: `${actor.name} removeu a missão: "${templateData.title}".`,
+      href: '/dashboard/missions',
+    });
+  }
 };
 
-export const deleteMissionTemplateAndInstances = async (templateId: string): Promise<void> => {
-  const batch = writeBatch(db);
-
+export const deleteMissionTemplateAndInstances = async (actor: UserProfile, templateId: string): Promise<void> => {
   const templateRef = doc(db, 'missionTemplates', templateId);
+  const templateSnap = await getDoc(templateRef);
+  if (!templateSnap.exists()) return;
+  const templateData = templateSnap.data();
+
+  const batch = writeBatch(db);
   batch.delete(templateRef);
 
   const instancesQuery = query(collection(db, 'missionInstances'), where('templateId', '==', templateId));
@@ -1240,6 +1376,15 @@ export const deleteMissionTemplateAndInstances = async (templateId: string): Pro
   });
   
   await batch.commit();
+
+   if (templateData.familyId) {
+    await createAllianceNotification(templateData.familyId, actor, {
+      type: 'template_deleted',
+      title: 'Missão e Agendamentos Removidos',
+      description: `${actor.name} removeu a missão "${templateData.title}" e todos os seus agendamentos do catálogo e da agenda dos heróis.`,
+      href: '/dashboard/missions',
+    });
+  }
 };
 
 
@@ -1268,6 +1413,7 @@ export const getMissionInstancesForContext = async (ownerId: string, familyId: s
 };
 
 export const addMissionInstance = async (
+  actor: UserProfile,
   instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates' | 'emoji'>,
   templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
@@ -1298,6 +1444,18 @@ export const addMissionInstance = async (
     exceptionDates: {},
   };
   await setDoc(newInstanceRef, newInstance);
+
+  if (newInstance.familyId) {
+    const child = await getChildProfileById(newInstance.childId);
+    await createAllianceNotification(newInstance.familyId, actor, {
+        type: 'instance_assigned',
+        title: 'Missão Atribuída',
+        description: `${actor.name} atribuiu "${newInstance.title}" para ${child?.name || 'um herói'}.`,
+        href: `/dashboard/agenda?child_id=${newInstance.childId}`,
+        relatedChildId: newInstance.childId
+    });
+  }
+
   return newInstance;
 };
 
@@ -1368,9 +1526,24 @@ export const updateMissionInstancesByTemplateAndChild = async (
 };
 
 
-export const deleteMissionInstance = async (instanceId: string): Promise<void> => {
+export const deleteMissionInstance = async (actor: UserProfile, instanceId: string): Promise<void> => {
     const instanceRef = doc(db, 'missionInstances', instanceId);
+    const instanceSnap = await getDoc(instanceRef);
+    if (!instanceSnap.exists()) return;
+    const instanceData = instanceSnap.data() as MissionInstance;
+    
     await deleteDoc(instanceRef);
+
+    if (instanceData.familyId) {
+        const child = await getChildProfileById(instanceData.childId);
+        await createAllianceNotification(instanceData.familyId, actor, {
+            type: 'instance_unassigned',
+            title: 'Missão Desatribuída',
+            description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
+            href: `/dashboard/child/${instanceData.childId}/manage?tab=missions`,
+            relatedChildId: instanceData.childId,
+        });
+    }
 };
 
 export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date): Promise<void> => {
@@ -1398,7 +1571,7 @@ export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date
 };
 
 
-export const deleteMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<void> => {
+export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
     const q = query(
         collection(db, 'missionInstances'),
         where('templateId', '==', templateId),
@@ -1408,11 +1581,26 @@ export const deleteMissionInstancesByTemplateAndChild = async (templateId: strin
     if (querySnapshot.empty) {
         return; // Nothing to delete
     }
+
+    const instanceData = querySnapshot.docs[0].data() as MissionInstance;
+    const familyId = instanceData.familyId;
+
     const batch = writeBatch(db);
     querySnapshot.forEach(doc => {
         batch.delete(doc.ref);
     });
     await batch.commit();
+    
+    if (familyId) {
+        const child = await getChildProfileById(childId);
+        await createAllianceNotification(familyId, actor, {
+            type: 'instance_unassigned',
+            title: 'Missão Desatribuída',
+            description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
+            href: `/dashboard/child/${childId}/manage?tab=missions`,
+            relatedChildId: childId,
+        });
+    }
 };
 
 export const recalculateAndSyncBadges = async (childId: string): Promise<void> => {
@@ -1557,7 +1745,7 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
                 type: 'new_badge',
                 title: 'Nova Conquista Desbloqueada!',
                 description: `${childProfile.name} ganhou a conquista: "${badge.title}"!`,
-                href: `/dashboard/child/${childId}/manage`,
+                href: `/dashboard/child/${childId}/manage?tab=badges`,
                 relatedChildId: childId,
             });
         }
@@ -1656,7 +1844,7 @@ export const completeMissionInstance = async (
               type: 'mission_completed',
               title: `Missão Cumprida!`,
               description: description,
-              href: `/dashboard/child/${missionData.childId}/manage`,
+              href: `/dashboard/child/${missionData.childId}/manage?tab=missions`,
               relatedChildId: missionData.childId
           },
           actor
@@ -1742,7 +1930,7 @@ export const reactivateMissionInstance = async (
                 type: 'mission_completion_undone',
                 title: 'Ação Desfeita',
                 description,
-                href: `/dashboard/child/${missionData.childId}/manage`,
+                href: `/dashboard/child/${missionData.childId}/manage?tab=missions`,
                 relatedChildId: missionData.childId,
             },
             actor
@@ -2033,6 +2221,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string): Promise<void> 
   const entryRef = doc(db, 'schoolSchedules', entryId);
   await deleteDoc(entryRef);
 };
+
 
 
 

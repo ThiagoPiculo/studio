@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -102,6 +102,51 @@ const notificationSettingsConfig: {
             title: "Desativar alertas de Novos Membros?",
             description: "Você não saberá quando novos colaboradores se juntarem à sua aliança para gerenciar os herois."
         }
+      }
+    ]
+  },
+  {
+    category: "Gestão do Catálogo",
+    items: [
+      {
+        key: 'template_created',
+        icon: PlusCircle,
+        label: "Nova Missão/Recompensa Criada",
+        description: "Quando um colaborador adiciona um novo item ao catálogo da aliança.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novos itens adicionados ao catálogo." }
+      },
+      {
+        key: 'template_updated',
+        icon: Edit3,
+        label: "Missão/Recompensa Atualizada",
+        description: "Quando um item do catálogo da aliança é modificado.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nos itens do catálogo." }
+      },
+      {
+        key: 'template_deleted',
+        icon: Trash2,
+        label: "Missão/Recompensa Removida",
+        description: "Quando um item é removido do catálogo da aliança.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de itens do catálogo." }
+      },
+    ]
+  },
+  {
+    category: "Gestão de Atribuições",
+    items: [
+      {
+        key: 'instance_assigned',
+        icon: UserCheck,
+        label: "Atividade Atribuída a Herói",
+        description: "Quando uma missão ou recompensa é atribuída a um herói na aliança.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado quando atividades forem atribuídas." }
+      },
+      {
+        key: 'instance_unassigned',
+        icon: UserX,
+        label: "Atribuição Removida de Herói",
+        description: "Quando uma atribuição de missão/recompensa é removida de um herói.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado quando atribuições forem removidas." }
       }
     ]
   }

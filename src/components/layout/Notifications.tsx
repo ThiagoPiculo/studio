@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2 } from 'lucide-react';
+import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -36,6 +36,11 @@ const notificationIcons: { [key in Notification['type']]: React.ElementType } = 
   mission_completed: CheckCircle,
   reward_redeemed: CheckCircle,
   mission_completion_undone: Undo2,
+  template_created: PlusCircle,
+  template_updated: Edit3,
+  template_deleted: Trash2,
+  instance_assigned: UserCheck,
+  instance_unassigned: UserX,
 };
 
 const notificationTypeMap: { [key in Notification['type']]: string } = {
@@ -48,6 +53,11 @@ const notificationTypeMap: { [key in Notification['type']]: string } = {
     mission_completed: 'missions',
     reward_redeemed: 'rewards',
     mission_completion_undone: 'missions',
+    template_created: 'management',
+    template_updated: 'management',
+    template_deleted: 'management',
+    instance_assigned: 'management',
+    instance_unassigned: 'management',
 };
 
 const notificationCategoryLabels: { [key: string]: string } = {
@@ -56,6 +66,7 @@ const notificationCategoryLabels: { [key: string]: string } = {
     rewards: 'Recompensas',
     system: 'Sistema',
     alliance: 'Aliança',
+    management: 'Gestão',
 };
 
 export function Notifications() {

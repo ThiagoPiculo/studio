@@ -1,13 +1,28 @@
 
+
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, Heart, Smile, Users, Banknote, Leaf, Bike } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, Heart, Smile, Users, Banknote, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
 export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family';
 
-export type NotificationType = 'new_level' | 'new_badge' | 'alliance_join_request' | 'alliance_join_approved' | 'mission_assigned' | 'reward_redeemed' | 'mission_completed' | 'mission_completion_undone' | 'alliance_ownership_request';
+export type NotificationType = 
+    | 'new_level' 
+    | 'new_badge' 
+    | 'alliance_join_request' 
+    | 'alliance_join_approved' 
+    | 'mission_assigned' 
+    | 'reward_redeemed' 
+    | 'mission_completed' 
+    | 'mission_completion_undone' 
+    | 'alliance_ownership_request'
+    | 'template_created'
+    | 'template_updated'
+    | 'template_deleted'
+    | 'instance_assigned'
+    | 'instance_unassigned';
 
 export type NotificationPreferences = {
   [key in NotificationType]?: boolean;

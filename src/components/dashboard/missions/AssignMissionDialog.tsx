@@ -332,7 +332,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   };
 
   const handleAssignSubmit = async (data: AssignmentFormValues) => {
-    if (!currentTemplate) return;
+    if (!currentTemplate || !user) return;
     setIsProcessing(true);
 
     const promises: Promise<any>[] = [];
@@ -348,7 +348,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
 
       if (hadAssignmentInitially && !hasAssignmentNow) {
         // Remove assignment
-        promises.push(deleteMissionInstancesByTemplateAndChild(currentTemplate.id, childId));
+        promises.push(deleteMissionInstancesByTemplateAndChild(user, currentTemplate.id, childId));
         removedCount++;
       } else if (!hadAssignmentInitially && hasAssignmentNow) {
         // Add assignment
@@ -359,7 +359,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
           ownerId: child.ownerId,
           familyId: child.familyId || null,
         };
-        promises.push(addMissionInstance(instanceData, finalTemplatePayload));
+        promises.push(addMissionInstance(user, instanceData, finalTemplatePayload));
         addedCount++;
       }
     }
