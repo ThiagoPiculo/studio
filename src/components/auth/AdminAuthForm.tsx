@@ -18,9 +18,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
-import { signInAdmin, signUpAdmin, signInWithGoogle } from "@/lib/firebase/auth";
+import { signInAdmin, signUpAdmin, signInWithGoogle, resetPassword } from "@/lib/firebase/auth";
 import { joinFamilyByInviteCode } from "@/lib/firebase/firestore";
 import type { UserProfile } from "@/lib/types";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
+import { Label } from "../ui/label";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Endereço de e-mail inválido." }),
@@ -47,6 +49,8 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [isResetting, setIsResetting] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
 
   const formSchema = mode === "login" ? loginSchema : registerSchema;
   type FormValues = z.infer<typeof formSchema>;
@@ -74,6 +78,37 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     
     return `${article} ${info.name} está ${adjective} para novas aventuras.`;
   }
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+      toast({
+        title: "E-mail necessário",
+        description: "Por favor, insira seu e-mail para enviarmos o link de recuperação.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsResetting(true);
+    try {
+      await resetPassword(resetEmail);
+      toast({
+        title: "Link Enviado!",
+        description: "Enviamos um link para o seu e-mail para que você possa criar uma nova senha.",
+      });
+    } catch (error: any) {
+        let description = "Ocorreu um erro. Verifique o e-mail digitado ou tente novamente mais tarde.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+            description = "Não encontramos uma conta com este e-mail. Verifique se o e-mail está correto.";
+        }
+        toast({
+            title: "Erro ao enviar e-mail",
+            description,
+            variant: "destructive",
+        });
+    } finally {
+      setIsResetting(false);
+    }
+  };
 
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
@@ -154,7 +189,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         {mode === "register" && (
           <FormField
             control={form.control}
@@ -198,6 +233,44 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
                 </div>
               </FormControl>
               <FormMessage />
+               {mode === 'login' && (
+                <div className="mt-1 text-right">
+                    <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="link" className="text-sm p-0 h-auto text-primary">Eita, esqueci minha senha?</Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                        <AlertDialogTitle>Recuperar Senha</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Não se preocupe, acontece com os melhores heróis! Digite seu e-mail abaixo e enviaremos um link para você criar uma nova senha.
+                            <br />
+                            <br />
+                            <strong className="font-semibold">Se não encontrar o e-mail, dê uma olhadinha na sua caixa de spam!</strong>
+                        </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <div className="grid gap-2 py-2">
+                        <Label htmlFor="email-reset">Seu e-mail de acesso</Label>
+                        <Input
+                            id="email-reset"
+                            type="email"
+                            placeholder="mestre@miniherois.com"
+                            value={resetEmail}
+                            onChange={(e) => setResetEmail(e.target.value)}
+                            required
+                        />
+                        </div>
+                        <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isResetting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handlePasswordReset} disabled={isResetting}>
+                            {isResetting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Enviar Link de Recuperação
+                        </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+               )}
             </FormItem>
           )}
         />
@@ -221,35 +294,37 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             )}
           />
         )}
-        <Button type="submit" className="w-full rounded-xl text-lg h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" disabled={isLoading}>
-          {isLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : mode === "login" ? (
-            <LogIn className="mr-2 h-4 w-4" />
-          ) : (
-            <UserPlus className="mr-2 h-4 w-4" />
-          )}
-          {mode === "login" ? "Acessar o Comando" : "Montar Central de Comando"}
-        </Button>
+        <div className="space-y-4 pt-4">
+            <Button type="submit" className="w-full rounded-xl text-lg h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" disabled={isLoading}>
+            {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : mode === "login" ? (
+                <LogIn className="mr-2 h-4 w-4" />
+            ) : (
+                <UserPlus className="mr-2 h-4 w-4" />
+            )}
+            {mode === "login" ? "Acessar o Comando" : "Montar Central de Comando"}
+            </Button>
+            <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">
+                    Ou entre com um clique
+                </span>
+                </div>
+            </div>
+            <Button variant="outline" className="w-full rounded-xl h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" onClick={handleGoogleSignIn} disabled={isLoading}>
+                {isLoading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
+                )}
+                Google
+            </Button>
+        </div>
       </form>
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-card px-2 text-muted-foreground">
-            Ou entre com um clique
-          </span>
-        </div>
-      </div>
-      <Button variant="outline" className="w-full rounded-xl h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" onClick={handleGoogleSignIn} disabled={isLoading}>
-        {isLoading ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-        )}
-        Google
-      </Button>
     </Form>
   );
 }
