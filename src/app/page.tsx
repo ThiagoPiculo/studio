@@ -38,7 +38,7 @@ export default function WelcomePage() {
                     <CardTitle className="text-2xl font-semibold font-headline">Sou Responsável</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
-                    Crie missões personalizadas, defina recompensas e acompanhe o progresso dos seus Mini Herois. Gerencie a Aliança Familiar completa.
+                    Crie missões, defina recompensas e guie a jornada da sua equipe de herois.
                 </CardDescription>
                 <Link href="/auth/login" passHref>
                     <Button size="lg" className="w-full rounded-xl text-lg shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
@@ -54,7 +54,7 @@ export default function WelcomePage() {
                     <CardTitle className="text-2xl font-semibold font-headline">Sou um Mini Heroi</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
-                    Complete missões divertidas, ganhe estrelas ⭐, suba de nível 🚀 e desbloqueie conquistas incríveis! Sua jornada heroica começa aqui.
+                    Complete missões, ganhe estrelas e desbloqueie recompensas. Sua jornada de heroi começa aqui.
                 </CardDescription>
                 <Link href="/child-login" passHref>
                     <Button size="lg" className="w-full rounded-xl text-lg shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
