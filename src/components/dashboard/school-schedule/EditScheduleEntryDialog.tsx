@@ -208,27 +208,28 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={5}>
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
-                                                        <CommandList className="max-h-40">
-                                                           <div className="overflow-y-auto">
-                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {orderedSubjects.map((subject) => (
-                                                                        <CommandItem
-                                                                            value={subject.label}
-                                                                            key={subject.label}
-                                                                            onSelect={() => {
-                                                                                form.setValue("subject", subject.label);
-                                                                                form.setValue("color", subject.color);
-                                                                                setIsComboboxOpen(false);
-                                                                            }}
-                                                                        >
-                                                                            <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
-                                                                            {subject.label}
-                                                                            <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </div>
+                                                        <CommandList>
+                                                          <div className="max-h-40 overflow-y-auto">
+                                                              <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                              <CommandGroup>
+                                                                  {orderedSubjects.map((subject) => (
+                                                                      <CommandItem
+                                                                          value={subject.label}
+                                                                          key={subject.label}
+                                                                          onSelect={() => {
+                                                                              form.setValue("subject", subject.label);
+                                                                              form.setValue("color", subject.color);
+                                                                              setIsComboboxOpen(false);
+                                                                          }}
+                                                                          style={{ backgroundColor: `${subject.color}40` }}
+                                                                          className="text-foreground hover:!bg-primary/30"
+                                                                      >
+                                                                          {subject.label}
+                                                                          <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
+                                                                      </CommandItem>
+                                                                  ))}
+                                                              </CommandGroup>
+                                                          </div>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
