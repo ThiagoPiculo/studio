@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,6 +10,8 @@ interface TimePickerProps {
   onChange: (value: string) => void;
   className?: string;
 }
+
+const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
 
 export function TimePicker({ value, onChange, className }: TimePickerProps) {
   const { hour, minute } = React.useMemo(() => {
@@ -46,7 +49,7 @@ export function TimePicker({ value, onChange, className }: TimePickerProps) {
           <SelectValue placeholder="Min." />
         </SelectTrigger>
         <SelectContent>
-          {['00', '15', '30', '45'].map(m => (
+          {minuteOptions.map(m => (
             <SelectItem key={m} value={m}>{m}</SelectItem>
           ))}
         </SelectContent>
