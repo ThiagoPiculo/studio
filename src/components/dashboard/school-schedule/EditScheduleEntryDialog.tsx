@@ -194,13 +194,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                             variant="outline"
                                                             role="combobox"
                                                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                                            style={{
+                                                                backgroundColor: field.value ? `${form.getValues('color')}40` : undefined,
+                                                                borderColor: field.value ? `${form.getValues('color')}` : undefined
+                                                            }}
                                                         >
-                                                            {field.value ? (
-                                                                <div className="flex items-center">
-                                                                    <div className="w-4 h-4 rounded-full mr-2" style={{ backgroundColor: form.getValues('color') }}></div>
-                                                                    {field.value}
-                                                                </div>
-                                                            ) : "Selecione uma matéria..."}
+                                                            {field.value || "Selecione uma matéria..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </FormControl>
@@ -209,7 +208,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
                                                         <CommandList>
-                                                          <div className="max-h-40 overflow-y-auto">
+                                                            <div className="max-h-40 overflow-y-auto">
                                                               <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                               <CommandGroup>
                                                                   {orderedSubjects.map((subject) => (
@@ -224,12 +223,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                           style={{ backgroundColor: `${subject.color}40` }}
                                                                           className="text-foreground hover:!bg-primary/30"
                                                                       >
+                                                                          <Check className={cn("mr-2 h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
                                                                           {subject.label}
-                                                                          <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
                                                                       </CommandItem>
                                                                   ))}
                                                               </CommandGroup>
-                                                          </div>
+                                                            </div>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
@@ -275,7 +274,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
-                                        <AlertDialog>
+                                        <AlertDialog onOpenChange={onOpenChange}>
                                             <AlertDialogTrigger asChild>
                                                 <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
