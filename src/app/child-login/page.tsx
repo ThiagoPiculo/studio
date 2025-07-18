@@ -38,7 +38,7 @@ export default function ChildLoginPage() {
           <p className="mt-8 text-center text-sm text-muted-foreground">
             É um pai/mãe/responsável?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Acesse sua central
+              Fazer login no Mini Herois
             </Link>
           </p>
         </CardContent>
