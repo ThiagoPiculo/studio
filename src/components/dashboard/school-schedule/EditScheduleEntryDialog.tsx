@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -12,10 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { weekdayLabels, schoolSubjects, allWeekdays } from '@/lib/types';
+import { schoolSubjects, allWeekdays, weekdayLabels } from '@/lib/types';
 import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -23,7 +22,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { Timestamp } from 'firebase/firestore';
 import { DialogClose } from '@radix-ui/react-dialog';
 
 
@@ -57,7 +55,6 @@ interface EditScheduleEntryDialogProps {
 
 export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, child, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
-    const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [isComboboxOpen, setIsComboboxOpen] = useState(false);
@@ -193,9 +190,13 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                         <Button
                                                             variant="outline"
                                                             role="combobox"
-                                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                                            className={cn(
+                                                                "w-full justify-between font-semibold",
+                                                                !field.value && "text-muted-foreground",
+                                                                field.value && "text-white"
+                                                            )}
                                                             style={{
-                                                                backgroundColor: field.value ? `${form.getValues('color')}BF` : undefined,
+                                                                backgroundColor: field.value ? form.getValues('color') : undefined,
                                                             }}
                                                         >
                                                             {field.value || "Selecione uma matéria..."}
@@ -207,26 +208,28 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
                                                         <CommandList>
-                                                            <ScrollArea className="max-h-40">
-                                                              <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                              <CommandGroup>
-                                                                  {orderedSubjects.map((subject) => (
-                                                                      <CommandItem
-                                                                          value={subject.label}
-                                                                          key={subject.label}
-                                                                          onSelect={() => {
-                                                                              form.setValue("subject", subject.label);
-                                                                              form.setValue("color", subject.color);
-                                                                              setIsComboboxOpen(false);
-                                                                          }}
-                                                                          style={{ backgroundColor: `${subject.color}BF` }}
-                                                                          className="text-foreground hover:!bg-primary/30"
-                                                                      >
-                                                                          <Check className={cn("mr-2 h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
-                                                                          {subject.label}
-                                                                      </CommandItem>
-                                                                  ))}
-                                                              </CommandGroup>
+                                                            <ScrollArea className="h-auto max-h-40">
+                                                              <div className="overflow-y-auto">
+                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {orderedSubjects.map((subject) => (
+                                                                        <CommandItem
+                                                                            value={subject.label}
+                                                                            key={subject.label}
+                                                                            onSelect={() => {
+                                                                                form.setValue("subject", subject.label);
+                                                                                form.setValue("color", subject.color);
+                                                                                setIsComboboxOpen(false);
+                                                                            }}
+                                                                            style={{ backgroundColor: `${subject.color}` }}
+                                                                            className="text-white font-semibold cursor-pointer hover:!bg-opacity-80"
+                                                                        >
+                                                                            <Check className={cn("mr-2 h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
+                                                                            {subject.label}
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                              </div>
                                                             </ScrollArea>
                                                         </CommandList>
                                                     </Command>
@@ -273,10 +276,28 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
-                                        <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={onDelete} disabled={isProcessing}>
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Excluir
-                                        </Button>
+                                        <AlertDialog onOpenChange={(open) => !open && onDelete()}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Excluir
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Excluir Aula?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                        Tem certeza que deseja remover a aula de "{entryToEdit.subject}" do horário?
+                                                    </AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">
+                                                        Sim, Excluir
+                                                    </AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
                                     )}
                                    </div>
                                    <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">
