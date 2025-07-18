@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { weekdayLabels, schoolSubjects, allWeekdays } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry, getChildProfileById, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -50,17 +50,16 @@ interface EditScheduleEntryDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onSave: () => void;
   entryToEdit?: SchoolScheduleEntry | null;
-  childId: string;
+  child: ChildProfile | null;
   showRecessHint?: boolean;
   onDelete: () => void;
 }
 
-export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
+export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, child, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
     const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [child, setChild] = useState<ChildProfile | null>(null);
     const [isComboboxOpen, setIsComboboxOpen] = useState(false);
 
 
@@ -74,12 +73,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             color: '#93C5FD',
         }
     });
-
-    useEffect(() => {
-        if (isOpen && childId) {
-            getChildProfileById(childId).then(setChild);
-        }
-    }, [isOpen, childId]);
 
     useEffect(() => {
         if (entryToEdit) {
@@ -108,7 +101,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     }, [entryToEdit, form, child]);
 
     const onSubmit = async (data: FormValues) => {
-        if (!user || !childId) {
+        if (!user || !child) {
             toast({ title: 'Erro de autenticação ou dados.', variant: 'destructive' });
             return;
         }
@@ -126,23 +119,19 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     startTime: payload.startTime,
                     endTime: payload.endTime,
                     color: payload.color,
-                    childId,
-                    ownerId: user.uid,
-                    familyId: currentContext === 'my-space' ? null : currentContext,
+                    childId: child.id,
                 };
-                await addRecurringSchoolEntry(user, baseEntry, daysToRepeat);
+                await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
             } else if (entryToEdit && entryToEdit.id) {
-                await updateSchoolScheduleEntry(user, entryToEdit.id, payload);
+                await updateSchoolScheduleEntry(entryToEdit.id, payload, user);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
                 const newEntryData = {
                     ...payload,
-                    childId,
-                    ownerId: user.uid,
-                    familyId: currentContext === 'my-space' ? null : currentContext,
+                    childId: child.id,
                 };
-                await addSchoolScheduleEntry(user, newEntryData);
+                await addSchoolScheduleEntry(newEntryData, user);
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
             }
             onSave();
@@ -154,6 +143,17 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             setIsProcessing(false);
         }
     };
+    
+    const { minHour, maxHour } = useMemo(() => {
+        if (child && child.schoolShiftStart && child.schoolShiftEnd && child.schoolShift !== 'not_applicable') {
+            return {
+                minHour: parseInt(child.schoolShiftStart.split(':')[0], 10),
+                maxHour: parseInt(child.schoolShiftEnd.split(':')[0], 10)
+            };
+        }
+        return { minHour: undefined, maxHour: undefined };
+    }, [child]);
+
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -163,7 +163,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                         <DialogHeader className="px-6 pt-6">
                             <DialogTitle>{entryToEdit && entryToEdit.id ? 'Editar Aula' : 'Adicionar Nova Aula'}</DialogTitle>
                             <DialogDescription>
-                                Preencha os detalhes da aula para o horário escolar.
+                                Preencha os detalhes da aula para o horário escolar de {child?.name}.
                             </DialogDescription>
                         </DialogHeader>
 
@@ -195,8 +195,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                             role="combobox"
                                                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                                                             style={{
-                                                                backgroundColor: field.value ? `${form.getValues('color')}40` : undefined,
-                                                                borderColor: field.value ? `${form.getValues('color')}` : undefined
+                                                                backgroundColor: field.value ? `${form.getValues('color')}BF` : undefined,
                                                             }}
                                                         >
                                                             {field.value || "Selecione uma matéria..."}
@@ -208,7 +207,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
                                                         <CommandList>
-                                                            <div className="max-h-40 overflow-y-auto">
+                                                            <ScrollArea className="max-h-40">
                                                               <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                               <CommandGroup>
                                                                   {orderedSubjects.map((subject) => (
@@ -220,7 +219,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                               form.setValue("color", subject.color);
                                                                               setIsComboboxOpen(false);
                                                                           }}
-                                                                          style={{ backgroundColor: `${subject.color}40` }}
+                                                                          style={{ backgroundColor: `${subject.color}BF` }}
                                                                           className="text-foreground hover:!bg-primary/30"
                                                                       >
                                                                           <Check className={cn("mr-2 h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
@@ -228,7 +227,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                       </CommandItem>
                                                                   ))}
                                                               </CommandGroup>
-                                                            </div>
+                                                            </ScrollArea>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
@@ -258,14 +257,14 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     <FormField control={form.control} name="startTime" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Início</FormLabel>
-                                            <FormControl><TimePicker {...field} /></FormControl>
+                                            <FormControl><TimePicker {...field} minHour={minHour} maxHour={maxHour} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
                                     <FormField control={form.control} name="endTime" render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Fim</FormLabel>
-                                            <FormControl><TimePicker {...field} /></FormControl>
+                                            <FormControl><TimePicker {...field} minHour={minHour} maxHour={maxHour} /></FormControl>
                                             <FormMessage />
                                         </FormItem>
                                     )} />
@@ -274,28 +273,10 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Excluir
-                                                </Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Excluir Aula?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                        Tem certeza que deseja remover a aula de "{entryToEdit.subject}" do horário? Esta ação não pode ser desfeita.
-                                                    </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">
-                                                        Sim, Excluir Aula
-                                                    </AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
+                                        <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" onClick={onDelete} disabled={isProcessing}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </Button>
                                     )}
                                    </div>
                                    <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">

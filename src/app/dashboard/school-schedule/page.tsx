@@ -328,7 +328,7 @@ function SchoolSchedulePageContent() {
     if (!entryToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteSchoolScheduleEntry(user, entryToDelete.id);
+      await deleteSchoolScheduleEntry(entryToDelete, user);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
       fetchData();
     } catch (error) {
@@ -619,7 +619,7 @@ function SchoolSchedulePageContent() {
           onOpenChange={setIsEntryDialogOpen}
           onSave={fetchData}
           entryToEdit={entryToEdit}
-          childId={selectedChildId}
+          child={selectedChild}
           showRecessHint={!hasRecess}
           onDelete={() => {
             if (entryToEdit) {
@@ -670,5 +670,6 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
+
 
 
