@@ -476,10 +476,10 @@ function ManageChildPageContent() {
 
   
   const handleDeleteMissionInstance = async () => {
-    if (!missionToDelete) return;
+    if (!missionToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteMissionInstance(missionToDelete.id);
+      await deleteMissionInstance(user, missionToDelete.id);
       await fetchData();
       toast({
         title: "Missão Removida",
@@ -581,10 +581,10 @@ function ManageChildPageContent() {
   };
   
   const handleDeleteInstance = async () => {
-    if (!instanceToManage) return;
+    if (!instanceToManage || !user) return;
     setIsDeleting(true);
     try {
-      await deleteChildRewardInstance(instanceToManage.id);
+      await deleteChildRewardInstance(user, instanceToManage.id);
       await fetchData();
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
@@ -1069,7 +1069,6 @@ function ManageChildPageContent() {
                     <div className="flex items-center justify-between">
                         <div>
                             <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Mural de Missões de {child.name}</CardTitle>
-                            <CardDescription>Acompanhe, aprove ou atribua novas missões para {child.name}.</CardDescription>
                         </div>
                         <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)} disabled={!canEdit}>
                             <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
@@ -1651,6 +1650,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
