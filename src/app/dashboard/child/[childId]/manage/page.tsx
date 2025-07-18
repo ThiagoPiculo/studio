@@ -971,9 +971,8 @@ function ManageChildPageContent() {
         
         <div className="mt-4">
           <TabsContent value="overview" className="space-y-6">
-            <ScrollArea className="w-full">
-              <div className="flex gap-4 pb-4 md:grid md:grid-cols-2 lg:grid-cols-4">
-                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <Card className="shadow-sm flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
                     <CheckSquare className="h-5 w-5 text-green-500" />
@@ -983,7 +982,7 @@ function ManageChildPageContent() {
                     <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
                   </CardContent>
                 </Card>
-                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                <Card className="shadow-sm flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
                     <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
@@ -993,7 +992,7 @@ function ManageChildPageContent() {
                     <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
                   </CardContent>
                 </Card>
-                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                <Card className="shadow-sm flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
                     <Trophy className="h-5 w-5 text-orange-500" />
@@ -1003,7 +1002,7 @@ function ManageChildPageContent() {
                     <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
                   </CardContent>
                 </Card>
-                <Card className="shadow-sm flex flex-col w-64 md:w-auto flex-shrink-0">
+                <Card className="shadow-sm flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Conquistas Desbloqueadas</CardTitle>
                     <Medal className="h-5 w-5 text-blue-500" />
@@ -1014,8 +1013,6 @@ function ManageChildPageContent() {
                   </CardContent>
                 </Card>
               </div>
-              <ScrollBar orientation="horizontal" />
-            </ScrollArea>
             
             <Card className="shadow-md">
               <CardHeader>
@@ -1654,6 +1651,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
