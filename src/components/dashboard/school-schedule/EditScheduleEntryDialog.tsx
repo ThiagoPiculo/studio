@@ -11,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Save, Info } from 'lucide-react';
+import { Loader2, Save, Info, Trash2 } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels } from '@/lib/types';
 import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry, getChildProfileById } from '@/lib/firebase/firestore';
@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
@@ -51,9 +52,10 @@ interface EditScheduleEntryDialogProps {
   entryToEdit?: SchoolScheduleEntry | null;
   childId: string;
   showRecessHint?: boolean;
+  onDelete: () => void;
 }
 
-export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false }: EditScheduleEntryDialogProps) {
+export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
     const { currentContext } = useFamily();
     const { toast } = useToast();
@@ -256,12 +258,42 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 </FormItem>
                             )} />
                         </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button></DialogClose>
-                            <Button type="submit" disabled={isProcessing}>
-                                {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Salvar
-                            </Button>
+                        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full">
+                           <div>
+                            {entryToEdit && entryToEdit.id && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="destructive" disabled={isProcessing}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Excluir
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Excluir Aula?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                Tem certeza que deseja remover a aula de "{entryToEdit.subject}" do horário? Esta ação não pode ser desfeita.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                            <AlertDialogAction onClick={onDelete} className="bg-destructive hover:bg-destructive/90">
+                                                Sim, Excluir Aula
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+                           </div>
+                           <div className="flex flex-col-reverse sm:flex-row sm:space-x-2">
+                                <DialogClose asChild>
+                                    <Button type="button" variant="outline" disabled={isProcessing}>Cancelar</Button>
+                                </DialogClose>
+                                <Button type="submit" disabled={isProcessing}>
+                                    {isProcessing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Salvar
+                                </Button>
+                           </div>
                         </DialogFooter>
                     </form>
                 </Form>

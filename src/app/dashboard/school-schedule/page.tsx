@@ -336,6 +336,7 @@ function SchoolSchedulePageContent() {
     } finally {
       setIsDeleting(false);
       setEntryToDelete(null);
+      setIsEntryDialogOpen(false); // Close edit dialog if delete is triggered from there
     }
   };
   
@@ -387,18 +388,17 @@ function SchoolSchedulePageContent() {
                         <div
                             key={entry.id}
                             className={cn(
-                                "absolute p-2 rounded-lg shadow-sm group border flex items-center justify-center",
+                                "absolute p-2 rounded-lg shadow-sm group border flex items-center justify-center overflow-hidden",
                                 canEdit && "cursor-pointer",
                                 !useColors && "bg-primary/10 border-primary/20"
                             )}
                             style={entryStyle}
                             onClick={(e) => { e.stopPropagation(); if (canEdit) handleEditClick(entry); }}
                         >
-                            <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-gray-800" : "text-primary")}>{entry.subject}</p>
+                            <p className={cn("font-bold text-sm truncate text-center text-gray-800")}>{entry.subject}</p>
                             {canEdit && (
-                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 md:opacity-100 md:bg-white/30 md:rounded-full transition-opacity flex gap-1">
-                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-gray-800 hover:bg-black/20 hover:text-white" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-gray-800 hover:bg-black/20 hover:text-white" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
+                                <div className="absolute bottom-1 right-1 opacity-100 bg-white/30 rounded-full transition-opacity flex gap-1">
+                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-800 hover:bg-black/20 hover:text-white" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
                                 </div>
                             )}
                         </div>
@@ -415,6 +415,8 @@ function SchoolSchedulePageContent() {
         {visibleWeekdays.map(day => {
             const dayEntries = inBoundsSchedule.filter(entry => entry.dayOfWeek === day);
             const hasEntries = dayEntries.length > 0;
+            const topOffsetMinutes = timeSlots.length > 0 ? parseTime(timeSlots[0]) : 0;
+            const totalHeight = timeSlots.length * 24; // 24px per slot
             
             return (
                 <div key={day} data-day={day}>
@@ -422,7 +424,7 @@ function SchoolSchedulePageContent() {
                         {weekdayLabels[day].long}
                         {day === getDayToWeekday[new Date().getDay()] && <Badge variant="secondary">Hoje</Badge>}
                     </h3>
-                    <div className="relative border rounded-lg p-2 min-h-[100px]">
+                    <div className="relative border rounded-lg p-2 min-h-[100px]" style={{height: `${totalHeight}px`}}>
                       {hasEntries ? (
                           <DayColumnContent day={day} />
                       ) : (
@@ -583,9 +585,6 @@ function SchoolSchedulePageContent() {
                            <Button variant="outline" size="sm" onClick={() => handleEditClick(entry)} disabled={!canEdit}>
                               <Edit className="mr-2 h-4 w-4" /> Editar
                            </Button>
-                            <Button variant="outline" size="sm" className="text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setEntryToDelete(entry)} disabled={!canEdit}>
-                                <Trash2 className="mr-2 h-4 w-4" /> Excluir
-                            </Button>
                         </div>
                     </div>
                 ))}
@@ -620,6 +619,7 @@ function SchoolSchedulePageContent() {
           entryToEdit={entryToEdit}
           childId={selectedChildId}
           showRecessHint={!hasRecess}
+          onDelete={() => setEntryToDelete(entryToEdit)}
         />
       )}
 
@@ -664,3 +664,4 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
+
