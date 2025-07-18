@@ -226,24 +226,22 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." onValueChange={(val) => form.setValue('subject', val)} />
                                                         <CommandList>
-                                                            <ScrollArea className="max-h-40">
-                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {subjectOptions.map((option) => (
-                                                                        <CommandItem
-                                                                            value={option.label}
-                                                                            key={option.value}
-                                                                            onSelect={() => {
-                                                                                form.setValue("subject", option.label);
-                                                                                setIsComboboxOpen(false);
-                                                                            }}
-                                                                        >
-                                                                            <Check className={cn("mr-2 h-4 w-4", option.label.toLowerCase() === field.value.toLowerCase() ? "opacity-100" : "opacity-0")} />
-                                                                            {option.label}
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </ScrollArea>
+                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {subjectOptions.map((option) => (
+                                                                    <CommandItem
+                                                                        value={option.label}
+                                                                        key={option.value}
+                                                                        onSelect={() => {
+                                                                            form.setValue("subject", option.label);
+                                                                            setIsComboboxOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <Check className={cn("mr-2 h-4 w-4", option.label.toLowerCase() === field.value.toLowerCase() ? "opacity-100" : "opacity-0")} />
+                                                                        {option.label}
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
