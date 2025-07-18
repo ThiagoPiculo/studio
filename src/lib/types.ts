@@ -282,6 +282,30 @@ export interface Dream {
   achievedAt?: Timestamp;
 }
 
+export const schoolSubjects = [
+    { label: "Recreio/Intervalo", color: '#adb5bd' },
+    { label: "Artes", color: '#f9a8d4' },
+    { label: "Biologia", color: '#a7f3d0' },
+    { label: "Ciências", color: '#a7f3d0' },
+    { label: "Educação Física", color: '#fca5a5' },
+    { label: "Espanhol", color: '#fdb462' },
+    { label: "Filosofia", color: '#c4b5fd' },
+    { label: "Física", color: '#93c5fd' },
+    { label: "Geografia", color: '#93c5fd' },
+    { label: "História", color: '#93c5fd' },
+    { label: "Informática", color: '#93c5fd' },
+    { label: "Inglês", color: '#fdb462' },
+    { label: "Japonês", color: '#fdb462' },
+    { label: "Literatura", color: '#fca5a5' },
+    { label: "Matemática", color: '#93c5fd' },
+    { label: "Música", color: '#f9a8d4' },
+    { label: "Português", color: '#fca5a5' },
+    { label: "Química", color: '#a7f3d0' },
+    { label: "Redação", color: '#fca5a5' },
+    { label: "Sociologia", color: '#c4b5fd' },
+] as const;
+
+
 export interface SchoolScheduleEntry {
   id: string;
   childId: string;

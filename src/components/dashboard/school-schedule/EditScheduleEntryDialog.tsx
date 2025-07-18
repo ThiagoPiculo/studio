@@ -14,8 +14,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { weekdays, weekdayLabels } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry, getChildProfileById } from '@/lib/firebase/firestore';
+import { weekdays, weekdayLabels, schoolSubjects } from '@/lib/types';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, getChildProfileById } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -39,22 +39,6 @@ const scheduleEntrySchema = z.object({
 });
 
 type FormValues = z.infer<typeof scheduleEntrySchema>;
-
-const subjectColors = [
-    '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4', '#868e96'
-];
-
-const schoolSubjects = [
-    "Recreio/Intervalo", "Português", "Matemática", "Ciências", "História", "Geografia", "Inglês", 
-    "Educação Física", "Artes", "Música", "Redação", "Espanhol", "Informática",
-    "Filosofia", "Sociologia", "Química", "Física", "Biologia"
-];
-
-const subjectOptions = schoolSubjects.map(subject => ({
-    value: subject.toLowerCase(),
-    label: subject,
-}));
-
 
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
@@ -82,23 +66,15 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             dayOfWeek: 'MO',
             startTime: '08:00',
             endTime: '09:00',
-            color: subjectColors[0],
+            color: '#93C5FD', // Default blue color
         }
     });
-    
+
     useEffect(() => {
         if (isOpen && childId) {
             getChildProfileById(childId).then(setChild);
         }
     }, [isOpen, childId]);
-
-    const watchedSubject = form.watch('subject');
-
-    useEffect(() => {
-        if (watchedSubject === 'Recreio/Intervalo') {
-            form.setValue('color', '#868e96');
-        }
-    }, [watchedSubject, form]);
 
     useEffect(() => {
         if (entryToEdit) {
@@ -107,7 +83,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 dayOfWeek: entryToEdit.dayOfWeek,
                 startTime: entryToEdit.startTime,
                 endTime: entryToEdit.endTime,
-                color: entryToEdit.subject === 'Recreio/Intervalo' ? '#868e96' : entryToEdit.color,
+                color: entryToEdit.color,
             });
         } else {
              const defaultStartTime = child?.schoolShiftStart || '08:00';
@@ -121,7 +97,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 dayOfWeek: 'MO',
                 startTime: defaultStartTime,
                 endTime: defaultEndTime,
-                color: subjectColors[Math.floor(Math.random() * subjectColors.length)],
+                color: '#93C5FD',
             });
         }
     }, [entryToEdit, form, child]);
@@ -137,9 +113,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             const isCreatingNewRecess = data.subject === 'Recreio/Intervalo' && !(entryToEdit && entryToEdit.id);
             
             const payload = { ...data };
-            if (payload.subject === 'Recreio/Intervalo') {
-                payload.color = '#868e96';
-            }
 
             if (isCreatingNewRecess && isWeekday) {
                 const daysToRepeat: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
@@ -217,31 +190,35 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                             role="combobox"
                                                             className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                                                         >
-                                                            {field.value ? schoolSubjects.find(s => s.toLowerCase() === field.value.toLowerCase()) || field.value : "Selecione ou digite uma matéria"}
+                                                            {field.value || "Selecione uma matéria..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                         </Button>
                                                     </FormControl>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={8}>
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." onValueChange={(val) => form.setValue('subject', val)} />
                                                         <CommandList>
-                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {subjectOptions.map((option) => (
-                                                                    <CommandItem
-                                                                        value={option.label}
-                                                                        key={option.value}
-                                                                        onSelect={() => {
-                                                                            form.setValue("subject", option.label);
-                                                                            setIsComboboxOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <Check className={cn("mr-2 h-4 w-4", option.label.toLowerCase() === field.value.toLowerCase() ? "opacity-100" : "opacity-0")} />
-                                                                        {option.label}
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
+                                                          <ScrollArea className="max-h-40">
+                                                              <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                              <CommandGroup>
+                                                                  {schoolSubjects.map((subject) => (
+                                                                      <CommandItem
+                                                                          value={subject.label}
+                                                                          key={subject.label}
+                                                                          onSelect={() => {
+                                                                              form.setValue("subject", subject.label);
+                                                                              form.setValue("color", subject.color);
+                                                                              setIsComboboxOpen(false);
+                                                                          }}
+                                                                      >
+                                                                          <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
+                                                                          {subject.label}
+                                                                          <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
+                                                                      </CommandItem>
+                                                                  ))}
+                                                              </CommandGroup>
+                                                          </ScrollArea>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
@@ -253,41 +230,20 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )}
                                 />
-                                <div className="grid grid-cols-2 gap-4">
-                                    <FormField control={form.control} name="dayOfWeek" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Dia da Semana</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value}>
-                                                <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {weekdays.map(day => (
-                                                        <SelectItem key={day} value={day}>{weekdayLabels[day].long}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                     <FormField control={form.control} name="color" render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Cor</FormLabel>
-                                            <Select onValueChange={field.onChange} value={field.value} disabled={form.watch('subject') === 'Recreio/Intervalo'}>
-                                                <FormControl><SelectTrigger style={{backgroundColor: field.value}}><SelectValue /></SelectTrigger></FormControl>
-                                                <SelectContent>
-                                                    {subjectColors.map(color => (
-                                                        <SelectItem key={color} value={color}>
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="h-4 w-4 rounded-full" style={{backgroundColor: color}}></div>
-                                                                {color}
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )} />
-                                </div>
+                                <FormField control={form.control} name="dayOfWeek" render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Dia da Semana</FormLabel>
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                                            <SelectContent>
+                                                {weekdays.map(day => (
+                                                    <SelectItem key={day} value={day}>{weekdayLabels[day].long}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <FormMessage />
+                                    </FormItem>
+                                )} />
                                 <div className="grid grid-cols-2 gap-4">
                                     <FormField control={form.control} name="startTime" render={({ field }) => (
                                         <FormItem>
@@ -309,7 +265,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     {entryToEdit && entryToEdit.id && (
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button type="button" variant="destructive" disabled={isProcessing}>
+                                                <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
                                                     Excluir
                                                 </Button>
