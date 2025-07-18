@@ -211,9 +211,13 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     setIsUploadingAvatar(true);
     try {
         const croppedFile = await getCroppedImg(imgRef.current, crop);
-        await uploadAvatarAndUpdateProfile(child.id, croppedFile);
+        const newUrl = await uploadAvatarAndUpdateProfile(child.id, croppedFile);
+        
+        // Update UI immediately with the new URL
+        setAvatarPreview(newUrl);
+
         toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
-        onProfileUpdate();
+        onProfileUpdate(); // Fetch other data in background
     } catch (error) {
         console.error("Error cropping and uploading:", error);
         toast({ title: "Erro no Upload", description: "Não foi possível enviar a imagem.", variant: "destructive" });

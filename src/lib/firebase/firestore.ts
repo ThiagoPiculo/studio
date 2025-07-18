@@ -128,7 +128,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
-export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<void> => {
+export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<string> => {
   if (!childId) throw new Error("Child ID is required.");
   if (!file) throw new Error("File is required.");
   
@@ -147,6 +147,8 @@ export const uploadAvatarAndUpdateProfile = async (childId: string, file: File):
     avatar: downloadURL,
     updatedAt: serverTimestamp(),
   });
+  
+  return downloadURL; // Return the URL
 };
 
 export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
