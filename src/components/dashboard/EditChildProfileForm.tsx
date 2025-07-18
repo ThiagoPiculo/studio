@@ -15,11 +15,11 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { useState, useEffect, useMemo } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -33,6 +33,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
 import { useAuth } from "@/contexts/AuthContext";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
@@ -99,6 +100,11 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [isLoadingOwner, setIsLoadingOwner] = useState(true);
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(child.avatar || null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -124,10 +130,32 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       schoolShiftEnd: child.schoolShiftEnd || '',
       color: child.color || heroColors[0],
     });
+    setAvatarPreview(child.avatar || null);
     if (child.birthDate) {
       setMonth(child.birthDate.toDate());
     }
   }, [child, form]);
+
+  const handleAvatarChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setAvatarFile(file);
+      setAvatarPreview(URL.createObjectURL(file));
+      
+      setIsUploadingAvatar(true);
+      try {
+        await uploadAvatarAndUpdateProfile(child.id, file);
+        toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
+        onProfileUpdate(); // Refetch data on parent to update avatar everywhere
+      } catch (error) {
+        toast({ title: "Erro no Upload", description: "Não foi possível enviar a imagem.", variant: "destructive" });
+        setAvatarFile(null);
+        setAvatarPreview(child.avatar || null); // Revert preview on error
+      } finally {
+        setIsUploadingAvatar(false);
+      }
+    }
+  };
 
   const handleShiftChange = (value: string) => {
     form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
@@ -249,123 +277,133 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const calculatedAge = calculateAge(watchedBirthDate);
   
   const isOwner = user?.uid === child.ownerId;
+  const getInitials = (name: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
   return (
     <>
+    <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
+        <div className="relative group flex-shrink-0">
+          <Avatar className="h-28 w-28 text-4xl shadow-md ring-4 ring-offset-2 ring-primary ring-offset-background">
+            <AvatarImage src={avatarPreview || undefined} alt={child.name} />
+            <AvatarFallback 
+              className="font-bold"
+              style={{ backgroundColor: child.color }}
+            >{getInitials(child.name)}</AvatarFallback>
+          </Avatar>
+          {isUploadingAvatar && (
+            <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+              <Loader2 className="h-8 w-8 text-white animate-spin" />
+            </div>
+          )}
+          {isOwner && (
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
+              className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isUploadingAvatar}
+            >
+              <Camera className="h-4 w-4" />
+            </Button>
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start flex-grow w-full">
+            <FormItem>
+              <FormLabel>Nome do Mini Heroi</FormLabel>
+              <FormControl>
+                  <Input placeholder="Nome do Mini Heroi" {...form.register("name")} disabled={!isOwner} />
+              </FormControl>
+              <FormMessage>{form.formState.errors.name?.message}</FormMessage>
+            </FormItem>
+            <FormItem className="flex flex-col">
+              <FormLabel>Data de Nascimento</FormLabel>
+              <div className="flex items-center gap-4">
+                  <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                  if (open) {
+                      setDateInput(form.getValues("birthDate") ? format(form.getValues("birthDate"), 'dd/MM/yyyy') : "");
+                  }
+                  setIsCalendarOpen(open);
+                  }}>
+                  <PopoverTrigger asChild>
+                      <FormControl>
+                      <Button
+                          variant={"outline"}
+                          className={cn(
+                          "w-full pl-3 text-left font-normal",
+                          !watchedBirthDate && "text-muted-foreground"
+                          )}
+                          disabled={!isOwner}
+                      >
+                          {watchedBirthDate ? (
+                          format(watchedBirthDate, "PPP", { locale: ptBR })
+                          ) : (
+                          <span>Escolha uma data</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                      </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                      <div className="p-2 border-b">
+                      <Input
+                          placeholder="Digite: dd/mm/aaaa"
+                          value={dateInput}
+                          onChange={(e) => {
+                              const maskedValue = handleDateMask(e.target.value);
+                              setDateInput(maskedValue);
+                              if (maskedValue.length === 10) {
+                              const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                              if (isValid(parsedDate)) {
+                                  form.setValue("birthDate", parsedDate, { shouldValidate: true });
+                                  setMonth(parsedDate);
+                              }
+                              }
+                          }}
+                          />
+                      </div>
+                      <Calendar
+                      locale={ptBR}
+                      mode="single"
+                      month={month}
+                      onMonthChange={setMonth}
+                      selected={watchedBirthDate}
+                      onSelect={(date) => {
+                          if (date) {
+                            form.setValue("birthDate", date, { shouldValidate: true });
+                            setDateInput(format(date, 'dd/MM/yyyy'));
+                            setMonth(date);
+                          }
+                          setIsCalendarOpen(false);
+                      }}
+                      disabled={(date) =>
+                          date > new Date() || date < new Date("1900-01-01")
+                      }
+                      initialFocus
+                      weekStartsOn={1}
+                      />
+                  </PopoverContent>
+                  </Popover>
+                  {calculatedAge !== null && (
+                  <div className="text-sm text-muted-foreground whitespace-nowrap">
+                      ({calculatedAge} anos)
+                  </div>
+                  )}
+              </div>
+              <FormMessage>{form.formState.errors.birthDate?.message}</FormMessage>
+              </FormItem>
+        </div>
+    </div>
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <fieldset disabled={!isOwner} className="space-y-6 group">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                      <FormItem>
-                      <FormLabel>Nome do Mini Heroi</FormLabel>
-                      <FormControl>
-                          <Input placeholder="Nome do Mini Heroi" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="birthDate"
-                  render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                      <FormLabel>Data de Nascimento</FormLabel>
-                      <div className="flex items-center gap-4">
-                          <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                          if (open) {
-                              setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                          }
-                          setIsCalendarOpen(open);
-                          }}>
-                          <PopoverTrigger asChild>
-                              <FormControl>
-                              <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                  )}
-                              >
-                                  {field.value ? (
-                                  format(field.value, "PPP", { locale: ptBR })
-                                  ) : (
-                                  <span>Escolha uma data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                              </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-2 border-b">
-                              <Input
-                                  placeholder="Digite: dd/mm/aaaa"
-                                  value={dateInput}
-                                  onChange={(e) => {
-                                      const maskedValue = handleDateMask(e.target.value);
-                                      setDateInput(maskedValue);
-                                      if (maskedValue.length === 10) {
-                                      const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                      if (isValid(parsedDate)) {
-                                          field.onChange(parsedDate);
-                                          setMonth(parsedDate);
-                                      }
-                                      }
-                                  }}
-                                  onKeyDown={(e) => {
-                                      if (e.key === 'Enter') {
-                                      e.preventDefault();
-                                      const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                                      if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                          field.onChange(date);
-                                          setMonth(date);
-                                          setIsCalendarOpen(false);
-                                      } else {
-                                          toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                                      }
-                                      }
-                                  }}
-                                  />
-                              </div>
-                              <Calendar
-                              locale={ptBR}
-                              mode="single"
-                              month={month}
-                              onMonthChange={setMonth}
-                              selected={field.value}
-                              onSelect={(date) => {
-                                  field.onChange(date);
-                                  if (date) {
-                                  setDateInput(format(date, 'dd/MM/yyyy'));
-                                  setMonth(date);
-                                  }
-                                  setIsCalendarOpen(false);
-                              }}
-                              disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                              weekStartsOn={1}
-                              />
-                          </PopoverContent>
-                          </Popover>
-                          {calculatedAge !== null && (
-                          <div className="text-sm text-muted-foreground whitespace-nowrap">
-                              ({calculatedAge} anos)
-                          </div>
-                          )}
-                      </div>
-                      <FormMessage />
-                      </FormItem>
-                  )}
-                />
-            </div>
-            
             <FormField
               control={form.control}
               name="gender"

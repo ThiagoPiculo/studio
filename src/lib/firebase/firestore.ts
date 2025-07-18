@@ -19,7 +19,9 @@ import {
   deleteField,
   onSnapshot,
 } from 'firebase/firestore';
-import { db } from './config';
+import { db, storage } from './config';
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
@@ -124,6 +126,27 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   };
   await setDoc(newChildRef, newChild);
   return newChild;
+};
+
+export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<void> => {
+  if (!childId) throw new Error("Child ID is required.");
+  if (!file) throw new Error("File is required.");
+  
+  // Create a storage reference
+  const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
+  
+  // Upload the file
+  const snapshot = await uploadBytes(storageRef, file);
+  
+  // Get the download URL
+  const downloadURL = await getDownloadURL(snapshot.ref);
+  
+  // Update the child's profile in Firestore
+  const childRef = doc(db, 'children', childId);
+  await updateDoc(childRef, {
+    avatar: downloadURL,
+    updatedAt: serverTimestamp(),
+  });
 };
 
 export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
@@ -2008,4 +2031,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string): Promise<void> 
   const entryRef = doc(db, 'schoolSchedules', entryId);
   await deleteDoc(entryRef);
 };
+
 
