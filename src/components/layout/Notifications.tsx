@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,6 +41,9 @@ const notificationIcons: { [key in Notification['type']]: React.ElementType } = 
   template_deleted: Trash2,
   instance_assigned: UserCheck,
   instance_unassigned: UserX,
+  school_schedule_entry_created: NotebookPen,
+  school_schedule_entry_updated: Edit3,
+  school_schedule_entry_deleted: Trash2,
 };
 
 const notificationTypeMap: { [key in Notification['type']]: string } = {
@@ -58,6 +61,9 @@ const notificationTypeMap: { [key in Notification['type']]: string } = {
     template_deleted: 'management',
     instance_assigned: 'management',
     instance_unassigned: 'management',
+    school_schedule_entry_created: 'management',
+    school_schedule_entry_updated: 'management',
+    school_schedule_entry_deleted: 'management',
 };
 
 const notificationCategoryLabels: { [key: string]: string } = {

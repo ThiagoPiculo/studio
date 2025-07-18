@@ -325,10 +325,10 @@ function SchoolSchedulePageContent() {
   };
 
   const handleDeleteConfirm = async () => {
-    if (!entryToDelete) return;
+    if (!entryToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteSchoolScheduleEntry(entryToDelete.id);
+      await deleteSchoolScheduleEntry(user, entryToDelete.id);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
       fetchData();
     } catch (error) {
@@ -621,7 +621,11 @@ function SchoolSchedulePageContent() {
           entryToEdit={entryToEdit}
           childId={selectedChildId}
           showRecessHint={!hasRecess}
-          onDelete={() => setEntryToDelete(entryToEdit)}
+          onDelete={() => {
+            if (entryToEdit) {
+              setEntryToDelete(entryToEdit);
+            }
+          }}
         />
       )}
 
@@ -666,4 +670,5 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
+
 

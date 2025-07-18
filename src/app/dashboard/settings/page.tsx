@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
+import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX, NotebookPen } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -148,6 +148,32 @@ const notificationSettingsConfig: {
         description: "Quando uma atribuição de missão/recompensa é removida de um herói.",
         confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado quando atribuições forem removidas." }
       }
+    ]
+  },
+  {
+    category: "Agenda Escolar",
+    items: [
+        {
+            key: 'school_schedule_entry_created',
+            icon: PlusCircle,
+            label: "Aula Adicionada",
+            description: "Quando um colaborador adiciona uma nova aula na agenda escolar.",
+            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novas aulas na agenda." }
+        },
+        {
+            key: 'school_schedule_entry_updated',
+            icon: Edit3,
+            label: "Aula Atualizada",
+            description: "Quando um colaborador modifica uma aula existente na agenda escolar.",
+            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nas aulas." }
+        },
+        {
+            key: 'school_schedule_entry_deleted',
+            icon: Trash2,
+            label: "Aula Removida",
+            description: "Quando um colaborador remove uma aula da agenda escolar.",
+            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de aulas." }
+        },
     ]
   }
 ];

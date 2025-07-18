@@ -130,10 +130,10 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
-                await addRecurringSchoolEntry(baseEntry, daysToRepeat);
+                await addRecurringSchoolEntry(user, baseEntry, daysToRepeat);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
             } else if (entryToEdit && entryToEdit.id) {
-                await updateSchoolScheduleEntry(entryToEdit.id, payload);
+                await updateSchoolScheduleEntry(user, entryToEdit.id, payload);
                 toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
                 const newEntryData = {
@@ -142,7 +142,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
-                await addSchoolScheduleEntry(newEntryData);
+                await addSchoolScheduleEntry(user, newEntryData);
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
             }
             onSave();
@@ -274,7 +274,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
-                                        <AlertDialog onOpenChange={onOpenChange}>
+                                        <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
