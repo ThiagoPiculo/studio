@@ -1597,7 +1597,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
             type: 'instance_unassigned',
             title: 'Missão Desatribuída',
             description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
-            href: `/dashboard/child/${childId}/manage?tab=missions`,
+            href: `/dashboard/child/${instanceData.childId}/manage?tab=missions`,
             relatedChildId: instanceData.childId,
         });
     }
@@ -2016,7 +2016,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2205,6 +2205,24 @@ export const addRecurringSchoolEntry = async (
     days: Weekday[],
     actor: UserProfile
 ): Promise<void> => {
+    // Permission check: ensure actor can edit for this child
+    const child = await getChildProfileById(baseEntry.childId);
+    if (!child) throw new Error("Criança não encontrada.");
+
+    if (child.familyId) {
+        // In a family context, check if the actor is part of that family
+        const membershipRef = doc(db, 'familyMemberships', `${actor.uid}_${child.familyId}`);
+        const membershipSnap = await getDoc(membershipRef);
+        if (!membershipSnap.exists()) {
+            throw new Error("Você não tem permissão para editar a agenda nesta aliança.");
+        }
+    } else {
+        // In a personal context, only the owner can edit
+        if (child.ownerId !== actor.uid) {
+            throw new Error("Apenas o proprietário do herói pode editar a agenda no espaço pessoal.");
+        }
+    }
+
     const batch = writeBatch(db);
     const now = serverTimestamp() as Timestamp;
 
@@ -2222,11 +2240,10 @@ export const addRecurringSchoolEntry = async (
     await batch.commit();
 
     if (baseEntry.familyId) {
-        const child = await getChildProfileById(baseEntry.childId);
         await createAllianceNotification(baseEntry.familyId, actor, {
             type: 'school_schedule_entry_created',
             title: 'Intervalo Adicionado',
-            description: `${actor.name} adicionou o intervalo de ${baseEntry.startTime} às ${baseEntry.endTime} para ${child?.name}.`,
+            description: `${actor.name} adicionou o intervalo de ${baseEntry.startTime} às ${baseEntry.endTime} para ${child.name}.`,
             href: `/dashboard/school-schedule`,
             relatedChildId: baseEntry.childId
         });

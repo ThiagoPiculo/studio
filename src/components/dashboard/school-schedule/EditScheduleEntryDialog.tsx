@@ -17,11 +17,12 @@ import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEn
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
-import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Timestamp } from 'firebase/firestore';
 
 
 const scheduleEntrySchema = z.object({
@@ -206,7 +207,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={5}>
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
-                                                         <ScrollArea className="h-auto max-h-40">
+                                                         <ScrollArea className="h-40">
                                                             <div className="overflow-y-auto">
                                                                 <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                                 <CommandGroup>
@@ -269,7 +270,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )} />
                                 </div>
-                                
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
