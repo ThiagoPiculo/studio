@@ -12,9 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info } from 'lucide-react';
-import type { SchoolScheduleEntry, Weekday } from '@/lib/types';
+import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { weekdays, weekdayLabels } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry, getChildProfileById } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -58,6 +58,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [child, setChild] = useState<ChildProfile | null>(null);
 
     const form = useForm<FormValues>({
         resolver: zodResolver(scheduleEntrySchema),
@@ -69,6 +70,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             color: subjectColors[0],
         }
     });
+    
+    useEffect(() => {
+        if (isOpen && childId) {
+            getChildProfileById(childId).then(setChild);
+        }
+    }, [isOpen, childId]);
 
     const watchedSubject = form.watch('subject');
 
@@ -88,15 +95,21 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 color: entryToEdit.subject === 'Recreio/Intervalo' ? '#868e96' : entryToEdit.color,
             });
         } else {
+             const defaultStartTime = child?.schoolShiftStart || '08:00';
+             const [startHourStr, startMinuteStr] = defaultStartTime.split(':');
+             const startHour = parseInt(startHourStr, 10);
+             const endHour = startHour + 1;
+             const defaultEndTime = `${endHour.toString().padStart(2, '0')}:${startMinuteStr}`;
+
             form.reset({
                 subject: '',
                 dayOfWeek: 'MO',
-                startTime: '08:00',
-                endTime: '09:00',
+                startTime: defaultStartTime,
+                endTime: defaultEndTime,
                 color: subjectColors[Math.floor(Math.random() * subjectColors.length)],
             });
         }
-    }, [entryToEdit, form]);
+    }, [entryToEdit, form, child]);
 
     const onSubmit = async (data: FormValues) => {
         if (!user || !childId) {

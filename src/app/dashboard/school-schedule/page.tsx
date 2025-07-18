@@ -146,7 +146,7 @@ function SchoolSchedulePageContent() {
     let startHour = 7;
     let endHour = 19;
     
-    if (child?.schoolShiftStart && child?.schoolShiftEnd) {
+    if (child?.schoolShiftStart && child?.schoolShiftEnd && child.schoolShift !== 'not_applicable') {
         startHour = parseInt(child.schoolShiftStart.split(':')[0], 10);
         const endHourRaw = parseInt(child.schoolShiftEnd.split(':')[0], 10);
         const endMinutesRaw = parseInt(child.schoolShiftEnd.split(':')[1], 10);
@@ -413,35 +413,23 @@ function SchoolSchedulePageContent() {
   const mobileLayout = (
     <div className="space-y-4">
         {visibleWeekdays.map(day => {
-            const dayEntries = inBoundsSchedule
-                .filter(entry => entry.dayOfWeek === day)
-                .sort((a,b) => a.startTime.localeCompare(b.startTime));
+            const dayEntries = inBoundsSchedule.filter(entry => entry.dayOfWeek === day);
+            const hasEntries = dayEntries.length > 0;
             
-            if (dayEntries.length === 0) return null;
-
             return (
-                <div key={day}>
+                <div key={day} data-day={day}>
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                         {weekdayLabels[day].long}
                         {day === getDayToWeekday[new Date().getDay()] && <Badge variant="secondary">Hoje</Badge>}
                     </h3>
-                    <div className="space-y-2">
-                        {dayEntries.map(entry => (
-                             <button
-                                key={entry.id}
-                                disabled={!canEdit}
-                                onClick={() => handleEditClick(entry)}
-                                className="w-full text-left p-3 rounded-md border flex items-center gap-3 disabled:cursor-default"
-                                style={{ borderLeftColor: useColors ? entry.color : 'hsl(var(--border))', borderLeftWidth: '4px' }}
-                            >
-                                <div className="w-16 flex-shrink-0 text-muted-foreground">
-                                    <p className="font-mono text-sm">{entry.startTime}</p>
-                                    <p className="font-mono text-xs">{entry.endTime}</p>
-                                </div>
-                                <p className="font-semibold flex-grow">{entry.subject}</p>
-                                {canEdit && <Edit className="h-4 w-4 text-muted-foreground" />}
-                            </button>
-                        ))}
+                    <div className="relative border rounded-lg p-2 min-h-[100px]">
+                      {hasEntries ? (
+                          <DayColumnContent day={day} />
+                      ) : (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                              <p className="text-sm text-muted-foreground">Nenhuma aula agendada.</p>
+                          </div>
+                      )}
                     </div>
                 </div>
             )
