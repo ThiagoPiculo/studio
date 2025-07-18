@@ -28,7 +28,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Label } from '@/components/ui/label';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Checkbox } from '@/components/ui/checkbox';
 import Loading from './loading';
 import { Timestamp } from 'firebase/firestore';
 import { Switch } from '@/components/ui/switch';
@@ -511,24 +511,25 @@ function SchoolSchedulePageContent() {
                         <div className="grid gap-4">
                           <div className="space-y-2">
                               <Label className="font-semibold">Exibir Dias da Semana</Label>
-                              <ToggleGroup
-                                  type="multiple"
-                                  variant="outline"
-                                  value={visibleWeekdays}
-                                  onValueChange={(value) => handleVisibleDaysChange(value as Weekday[])}
-                                  className="flex flex-wrap justify-start gap-1"
-                              >
+                               <div className="space-y-2">
                                   {allWeekdays.map(day => (
-                                  <ToggleGroupItem
-                                      key={day}
-                                      value={day}
-                                      className="h-9 px-3"
-                                      aria-label={weekdayLabels[day].long}
-                                  >
-                                      {weekdayLabels[day].short}
-                                  </ToggleGroupItem>
+                                    <div key={day} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`day-select-${day}`}
+                                        checked={visibleWeekdays.includes(day)}
+                                        onCheckedChange={(checked) => {
+                                          const newDays = checked
+                                            ? [...visibleWeekdays, day]
+                                            : visibleWeekdays.filter(d => d !== day);
+                                          handleVisibleDaysChange(newDays);
+                                        }}
+                                      />
+                                      <Label htmlFor={`day-select-${day}`} className="font-normal cursor-pointer w-full">
+                                        {weekdayLabels[day].long}
+                                      </Label>
+                                    </div>
                                   ))}
-                              </ToggleGroup>
+                                </div>
                           </div>
                           {selectedChildId && <Separator />}
                           {selectedChildId && (
