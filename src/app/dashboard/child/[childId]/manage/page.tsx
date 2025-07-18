@@ -838,31 +838,31 @@ function ManageChildPageContent() {
               <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground align-middle">
-                      <ShieldCheck className="mr-1 h-4 w-4 inline-block text-primary relative -top-px" /> Código:
+                      Chave Secreta do Heroi:
                     </span>
                     <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
                       {child.accessCode}
                     </span>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            onClick={handleRegenerateAccessCode} 
+                            disabled={isRegeneratingCode || !canEdit}
+                            className="shadow-sm h-9 w-9"
+                          >
+                            {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            <span className="sr-only">Regenerar código</span>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Regenerar Chave Secreta</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button 
-                          variant="outline" 
-                          size="icon"
-                          onClick={handleRegenerateAccessCode} 
-                          disabled={isRegeneratingCode || !canEdit}
-                          className="shadow-sm h-9 w-9"
-                        >
-                          {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          <span className="sr-only">Regenerar código</span>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>Regenerar Código de Acesso</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
               </div>
             </div>
             
@@ -1558,4 +1558,5 @@ export default function ManageChildPage() {
     
 
     
+
 
