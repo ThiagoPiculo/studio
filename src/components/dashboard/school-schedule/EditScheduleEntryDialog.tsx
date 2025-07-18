@@ -14,13 +14,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { weekdays, weekdayLabels, schoolSubjects } from '@/lib/types';
-import { addSchoolScheduleEntry, updateSchoolScheduleEntry, getChildProfileById } from '@/lib/firebase/firestore';
+import { weekdayLabels, schoolSubjects } from '@/lib/types';
+import { addSchoolScheduleEntry, updateSchoolScheduleEntry, getChildProfileById, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -40,6 +40,8 @@ const scheduleEntrySchema = z.object({
 
 type FormValues = z.infer<typeof scheduleEntrySchema>;
 
+const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -49,6 +51,11 @@ interface EditScheduleEntryDialogProps {
   showRecessHint?: boolean;
   onDelete: () => void;
 }
+
+const orderedSubjects = [
+  ...schoolSubjects.filter(s => s.label === "Recreio/Intervalo"),
+  ...schoolSubjects.filter(s => s.label !== "Recreio/Intervalo").sort((a, b) => a.label.localeCompare(b.label))
+];
 
 export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
@@ -66,7 +73,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
             dayOfWeek: 'MO',
             startTime: '08:00',
             endTime: '09:00',
-            color: '#93C5FD', // Default blue color
+            color: '#93C5FD',
         }
     });
 
@@ -97,7 +104,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 dayOfWeek: 'MO',
                 startTime: defaultStartTime,
                 endTime: defaultEndTime,
-                color: '#93C5FD',
+                color: schoolSubjects.find(s => s.label === "Português")?.color || '#93C5FD',
             });
         }
     }, [entryToEdit, form, child]);
@@ -168,7 +175,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     <Info className="h-4 w-4 text-primary" />
                                     <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
                                     <AlertDescription className="text-primary/90">
-                                        Comece cadastrando o "Recreio/Intervalo" em um dia útil. Isso adicionará o intervalo para toda a semana de uma só vez!
+                                        Comece cadastrando o "Recreio/Intervalo". Isso adicionará o intervalo para toda a semana de uma só vez!
                                     </AlertDescription>
                                 </Alert>
                             </div>
@@ -202,7 +209,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                           <ScrollArea className="max-h-40">
                                                               <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                               <CommandGroup>
-                                                                  {schoolSubjects.map((subject) => (
+                                                                  {orderedSubjects.map((subject) => (
                                                                       <CommandItem
                                                                           value={subject.label}
                                                                           key={subject.label}
@@ -260,6 +267,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )} />
                                 </div>
+                                
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
