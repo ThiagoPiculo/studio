@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry, updateChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
 import { allWeekdays, weekdayLabels } from '@/lib/types';
-import { getDayToWeekday, parseTime } from '@/lib/calendar-utils';
+import { getDayToWeekday, parseTime, format as formatTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -38,6 +38,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { EditShiftDialog } from '@/components/dashboard/school-schedule/EditShiftDialog';
 import { useUserRole } from '@/hooks/useUserRole';
+import { format } from 'date-fns';
 
 const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
@@ -388,14 +389,15 @@ function SchoolSchedulePageContent() {
                         <div
                             key={entry.id}
                             className={cn(
-                                "absolute p-2 rounded-lg shadow-sm group border flex items-center justify-center overflow-hidden",
+                                "absolute p-2 rounded-lg shadow-sm group border flex flex-col items-center justify-center overflow-hidden",
                                 canEdit && "cursor-pointer",
                                 !useColors && "bg-primary/10 border-primary/20"
                             )}
                             style={entryStyle}
                             onClick={(e) => { e.stopPropagation(); if (canEdit) handleEditClick(entry); }}
                         >
-                            <p className={cn("font-bold text-sm truncate text-center text-gray-800")}>{entry.subject}</p>
+                            <p className="font-bold text-sm text-center text-gray-800 leading-tight">{entry.subject}</p>
+                            {isMobile && <p className="font-mono text-xs text-gray-700/80">{entry.startTime}</p>}
                             {canEdit && (
                                 <div className="absolute bottom-1 right-1 opacity-100 bg-white/30 rounded-full transition-opacity flex gap-1">
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-800 hover:bg-black/20 hover:text-white" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>

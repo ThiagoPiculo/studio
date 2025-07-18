@@ -1,20 +1,18 @@
 
-
 "use client";
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { weekdayLabels, schoolSubjects } from '@/lib/types';
+import { weekdayLabels, schoolSubjects, allWeekdays } from '@/lib/types';
 import { addSchoolScheduleEntry, updateSchoolScheduleEntry, getChildProfileById, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -25,13 +23,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { Timestamp } from 'firebase/firestore';
+import { DialogClose } from '@radix-ui/react-dialog';
 
-
-const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
-  dayOfWeek: z.enum(weekdays),
+  dayOfWeek: z.enum(allWeekdays),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
@@ -42,6 +40,10 @@ const scheduleEntrySchema = z.object({
 
 type FormValues = z.infer<typeof scheduleEntrySchema>;
 
+const orderedSubjects = [
+  ...schoolSubjects.filter(s => s.label === "Recreio/Intervalo"),
+  ...schoolSubjects.filter(s => s.label !== "Recreio/Intervalo").sort((a, b) => a.label.localeCompare(b.label))
+];
 
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
@@ -52,11 +54,6 @@ interface EditScheduleEntryDialogProps {
   showRecessHint?: boolean;
   onDelete: () => void;
 }
-
-const orderedSubjects = [
-  ...schoolSubjects.filter(s => s.label === "Recreio/Intervalo"),
-  ...schoolSubjects.filter(s => s.label !== "Recreio/Intervalo").sort((a, b) => a.label.localeCompare(b.label))
-];
 
 export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, childId, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
@@ -212,24 +209,26 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
                                                         <CommandList className="max-h-40">
-                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {orderedSubjects.map((subject) => (
-                                                                    <CommandItem
-                                                                        value={subject.label}
-                                                                        key={subject.label}
-                                                                        onSelect={() => {
-                                                                            form.setValue("subject", subject.label);
-                                                                            form.setValue("color", subject.color);
-                                                                            setIsComboboxOpen(false);
-                                                                        }}
-                                                                    >
-                                                                        <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
-                                                                        {subject.label}
-                                                                        <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
+                                                           <div className="overflow-y-auto">
+                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {orderedSubjects.map((subject) => (
+                                                                        <CommandItem
+                                                                            value={subject.label}
+                                                                            key={subject.label}
+                                                                            onSelect={() => {
+                                                                                form.setValue("subject", subject.label);
+                                                                                form.setValue("color", subject.color);
+                                                                                setIsComboboxOpen(false);
+                                                                            }}
+                                                                        >
+                                                                            <div className="w-4 h-4 rounded-full mr-2 flex-shrink-0" style={{ backgroundColor: subject.color }}></div>
+                                                                            {subject.label}
+                                                                            <Check className={cn("ml-auto h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </div>
                                                         </CommandList>
                                                     </Command>
                                                 </PopoverContent>
@@ -247,7 +246,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         <Select onValueChange={field.onChange} value={field.value}>
                                             <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                                             <SelectContent>
-                                                {weekdays.map(day => (
+                                                {allWeekdays.map(day => (
                                                     <SelectItem key={day} value={day}>{weekdayLabels[day].long}</SelectItem>
                                                 ))}
                                             </SelectContent>
