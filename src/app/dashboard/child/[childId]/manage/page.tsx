@@ -718,9 +718,11 @@ function ManageChildPageContent() {
                       {instance.emoji && <span className="text-xl">{instance.emoji}</span>}
                       <span>{instance.title}</span>
                     </CardTitle>
-                    <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs whitespace-nowrap">
-                        {getMissionStatusText(instance.status)}
-                    </Badge>
+                    {instance.status !== 'pending' && (
+                        <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs whitespace-nowrap">
+                            {getMissionStatusText(instance.status)}
+                        </Badge>
+                    )}
                 </div>
             </CardHeader>
             <CardContent className="space-y-2 flex-grow text-xs p-4 pt-0">
@@ -751,7 +753,7 @@ function ManageChildPageContent() {
                         </div>
                     )}
                 </div>
-                 <div className="border-t pt-2 mt-2 min-h-[4rem]">
+                 <div className="border-t pt-2 mt-2">
                     <div className="space-y-1 text-xs text-muted-foreground">
                        {instance.status === 'completed' && instance.updatedAt && (
                             <div className="flex items-center font-medium text-green-600">
@@ -812,106 +814,104 @@ function ManageChildPageContent() {
     <div className="space-y-6 pb-8">
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5">
-            <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left">
-              <Avatar
-                className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
-                style={{ '--ring-color': child.color } as React.CSSProperties}
-              >
-                <AvatarImage src={child.avatar} alt={child.name} />
-                <AvatarFallback
-                  className="font-bold"
-                  style={{ backgroundColor: child.color }}
-                >
-                  {getInitials(child.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex-grow">
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
-                    <CardDescription className="text-base mt-1">
-                      {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
-                    </CardDescription>
-                  </div>
-                  <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
-                    <span className="text-sm text-muted-foreground align-middle">
-                      Chave Secreta do Heroi:
-                    </span>
-                    <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                      {child.accessCode}
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            onClick={handleRegenerateAccessCode} 
-                            disabled={isRegeneratingCode || !canEdit}
-                            className="shadow-sm h-9 w-9"
-                          >
-                            {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Regenerar Chave Secreta</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4 text-center sm:text-left flex-grow">
+                  <Avatar
+                    className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
+                    style={{ '--ring-color': child.color } as React.CSSProperties}
+                  >
+                    <AvatarImage src={child.avatar} alt={child.name} />
+                    <AvatarFallback
+                      className="font-bold"
+                      style={{ backgroundColor: child.color }}
+                    >
+                      {getInitials(child.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-grow">
+                      <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
+                      <CardDescription className="text-base mt-1">
+                          {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
+                      </CardDescription>
                   </div>
                 </div>
-                
-                 <div className="mt-4 flex flex-col gap-4 font-semibold">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                            <StarIcon className="h-6 w-6 fill-current"/>
-                            <span className="text-xl font-bold">{child.stars}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                            <BadgeCheck className="h-6 w-6"/>
-                            <span className="text-xl font-bold">{child.xp}</span>
-                            <span className="text-sm">XP</span>
-                        </div>
-                    </div>
-                    <div className="w-full">
-                        <div className="flex justify-between items-baseline mb-1">
-                            <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                                {child.xp} / {xpForNextLevel} XP (faltam {xpRemaining} para o próximo nível)
-                            </span>
-                        </div>
-                        <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                    </div>
+                <div className="hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
+                  <span className="text-sm text-muted-foreground align-middle">
+                    Chave Secreta do Heroi:
+                  </span>
+                  <div className="flex items-center gap-2">
+                      <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                        {child.accessCode}
+                      </span>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={handleRegenerateAccessCode} 
+                              disabled={isRegeneratingCode || !canEdit}
+                              className="shadow-sm h-9 w-9"
+                            >
+                              {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Regenerar Chave Secreta</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                  </div>
                 </div>
-
-              </div>
             </div>
-             <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
-                <span className="text-sm text-muted-foreground align-middle">
-                    Chave Secreta:
-                </span>
-                <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                    {child.accessCode}
-                </span>
-                <TooltipProvider>
-                    <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button 
-                        variant="ghost" 
-                        size="icon"
-                        onClick={handleRegenerateAccessCode} 
-                        disabled={isRegeneratingCode || !canEdit}
-                        className="shadow-sm h-9 w-9"
-                        >
-                        {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Regenerar Chave Secreta</p>
-                    </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+            <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
+              <span className="text-sm text-muted-foreground align-middle">
+                  Chave Secreta:
+              </span>
+              <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                  {child.accessCode}
+              </span>
+              <TooltipProvider>
+                  <Tooltip>
+                  <TooltipTrigger asChild>
+                      <Button 
+                      variant="ghost" 
+                      size="icon"
+                      onClick={handleRegenerateAccessCode} 
+                      disabled={isRegeneratingCode || !canEdit}
+                      className="shadow-sm h-9 w-9"
+                      >
+                      {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                      </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                      <p>Regenerar Chave Secreta</p>
+                  </TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
+            </div>
+            <div className="mt-4 flex flex-col gap-4 font-semibold">
+                <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                        <StarIcon className="h-6 w-6 fill-current"/>
+                        <span className="text-xl font-bold">{child.stars}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                        <BadgeCheck className="h-6 w-6"/>
+                        <span className="text-xl font-bold">{child.xp}</span>
+                        <span className="text-sm">XP</span>
+                    </div>
                 </div>
+                <div className="w-full">
+                    <div className="flex justify-between items-baseline mb-1">
+                        <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
+                        <span className="text-xs text-muted-foreground">
+                            {child.xp} / {xpForNextLevel} XP (faltam {xpRemaining} para o próximo nível)
+                        </span>
+                    </div>
+                    <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                </div>
+            </div>
         </div>
       </Card>
 
@@ -1594,6 +1594,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
