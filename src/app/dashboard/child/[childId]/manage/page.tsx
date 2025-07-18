@@ -375,62 +375,62 @@ function ManageChildPageContent() {
   };
   
   const handleManageInAgenda = (instance: MissionInstance) => {
-      // If the mission has no schedule, open the edit dialog instead.
-      if (!instance.isRecurring && !instance.dueDate) {
-          toast({ title: "Missão sem agendamento", description: "Defina um prazo ou uma recorrência para esta missão." });
-          setInstanceToEdit(instance);
-          setIsAssignMissionDialogOpen(true);
-          return;
-      }
+    // If the mission has no schedule, open the edit dialog instead.
+    if (!instance.isRecurring && !instance.dueDate) {
+        toast({ title: "Missão sem agendamento", description: "Defina um prazo ou uma recorrência para esta missão." });
+        setInstanceToEdit(instance);
+        setIsAssignMissionDialogOpen(true);
+        return;
+    }
 
-      const today = new Date();
-      let targetDate: Date | null | undefined = null;
+    const today = new Date();
+    let targetDate: Date | null | undefined = null;
 
-      // Priority 1: Check if it's scheduled for today
-      if (isMissionScheduledForDate(instance, today)) {
-          targetDate = today;
-      }
+    // Priority 1: Check if it's scheduled for today
+    if (isMissionScheduledForDate(instance, today)) {
+        targetDate = today;
+    }
 
-      // Priority 2: Find the next future occurrence
-      if (!targetDate) {
-          const futureDates = eachDayOfInterval({ start: addDays(today, 1), end: addDays(today, 90) });
-          for (const futureDate of futureDates) {
-              if (isMissionScheduledForDate(instance, futureDate)) {
-                  targetDate = futureDate;
-                  break;
-              }
-          }
-      }
+    // Priority 2: Find the next future occurrence
+    if (!targetDate) {
+        const futureDates = eachDayOfInterval({ start: addDays(today, 1), end: addDays(today, 90) });
+        for (const futureDate of futureDates) {
+            if (isMissionScheduledForDate(instance, futureDate)) {
+                targetDate = futureDate;
+                break;
+            }
+        }
+    }
 
-      // Priority 3: Find the most recent past occurrence (within last 30 days)
-      if (!targetDate) {
-          const pastDates = eachDayOfInterval({ start: subDays(today, 30), end: subDays(today, 1) }).reverse();
-          for (const pastDate of pastDates) {
-              if (isMissionScheduledForDate(instance, pastDate)) {
-                  targetDate = pastDate;
-                  break;
-              }
-          }
-      }
+    // Priority 3: Find the most recent past occurrence (within last 30 days)
+    if (!targetDate) {
+        const pastDates = eachDayOfInterval({ start: subDays(today, 30), end: subDays(today, 1) }).reverse();
+        for (const pastDate of pastDates) {
+            if (isMissionScheduledForDate(instance, pastDate)) {
+                targetDate = pastDate;
+                break;
+            }
+        }
+    }
 
-      // Final fallback to start/due date if no occurrence is found in the near past/future
-      if (!targetDate) {
-          targetDate = instance.startDate?.toDate() || instance.dueDate?.toDate();
-      }
-      
-      if (!targetDate) {
-          toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
-          return;
-      }
-      
-      const year = targetDate.getFullYear();
-      const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
-      const day = targetDate.getDate().toString().padStart(2, '0');
-      const dateString = `${year}-${month}-${day}`;
-      
-      const popoverId = `${instance.id}-${dateString}`;
+    // Final fallback to start/due date if no occurrence is found in the near past/future
+    if (!targetDate) {
+        targetDate = instance.startDate?.toDate() || instance.dueDate?.toDate();
+    }
+    
+    if (!targetDate) {
+        toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
+        return;
+    }
+    
+    const year = targetDate.getFullYear();
+    const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = targetDate.getDate().toString().padStart(2, '0');
+    const dateString = `${year}-${month}-${day}`;
+    
+    const popoverId = `${instance.id}-${dateString}`;
 
-      router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
+    router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
   };
 
 
@@ -811,7 +811,7 @@ function ManageChildPageContent() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
+                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
@@ -1652,6 +1652,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
