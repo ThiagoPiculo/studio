@@ -379,7 +379,7 @@ function SchoolSchedulePageContent() {
                     };
                     
                     if (useColors) {
-                        entryStyle.backgroundColor = `${entry.color}80`;
+                        entryStyle.backgroundColor = `${entry.color}BF`; // Use 75% opacity for better text contrast
                         entryStyle.borderColor = entry.color;
                     }
 
@@ -394,11 +394,11 @@ function SchoolSchedulePageContent() {
                             style={entryStyle}
                             onClick={(e) => { e.stopPropagation(); if (canEdit) handleEditClick(entry); }}
                         >
-                            <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-white [text-shadow:1px_1px_1px_#00000050]" : "text-primary")}>{entry.subject}</p>
+                            <p className={cn("font-bold text-sm truncate text-center", useColors ? "text-gray-800" : "text-primary")}>{entry.subject}</p>
                             {canEdit && (
-                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
-                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-white hover:bg-white/20" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 md:opacity-100 md:bg-white/30 md:rounded-full transition-opacity flex gap-1">
+                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-gray-800 hover:bg-black/20 hover:text-white" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
+                                    <Button size="icon" variant="ghost" className={cn("h-6 w-6", useColors ? "text-gray-800 hover:bg-black/20 hover:text-white" : "text-primary hover:bg-primary/20")} onClick={(e) => {e.stopPropagation(); setEntryToDelete(entry)}}><Trash2 className="h-3 w-3"/></Button>
                                 </div>
                             )}
                         </div>
