@@ -10,7 +10,7 @@ import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, ShieldCheck, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, PackageSearch, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -760,11 +760,6 @@ function ManageChildPageContent() {
                       {instance.emoji && <span className="text-xl">{instance.emoji}</span>}
                       <span>{instance.title}</span>
                     </CardTitle>
-                    {instance.status !== 'pending' && (
-                        <Badge variant={getMissionStatusBadgeVariant(instance.status)} className="capitalize text-xs whitespace-nowrap">
-                            {getMissionStatusText(instance.status)}
-                        </Badge>
-                    )}
                 </div>
             </CardHeader>
             <CardContent className="space-y-2 flex-grow text-xs p-4 pt-0">
@@ -777,7 +772,11 @@ function ManageChildPageContent() {
                 )}
                  <div className="space-y-1">
                     <div className="flex items-center text-muted-foreground font-medium">
-                        <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
+                        {instance.isRecurring ? (
+                          <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
+                        ) : (
+                          <Target className="h-4 w-4 mr-1.5 text-chart-2 shrink-0" />
+                        )}
                         <span className="truncate">{formatRecurrenceSummary(instance)}{time ? `, às ${time}` : ''}</span>
                     </div>
                     {period && PeriodIcon && (
@@ -1652,6 +1651,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
