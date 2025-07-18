@@ -35,7 +35,7 @@ export default function WelcomePage() {
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
                         <Crown className="h-9 w-9 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
                     </div>
-                    <CardTitle className="text-2xl font-semibold">Sou Responsável</CardTitle>
+                    <CardTitle className="text-2xl font-semibold font-headline">Sou Responsável</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
                     Crie missões personalizadas, defina recompensas e acompanhe o progresso dos seus Mini Herois. Gerencie a Aliança Familiar completa.
@@ -51,7 +51,7 @@ export default function WelcomePage() {
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 group">
                         <Heart className="h-9 w-9 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
                     </div>
-                    <CardTitle className="text-2xl font-semibold">Sou um Mini Heroi</CardTitle>
+                    <CardTitle className="text-2xl font-semibold font-headline">Sou um Mini Heroi</CardTitle>
                 </CardHeader>
                 <CardDescription className="text-base text-muted-foreground mb-6">
                     Complete missões divertidas, ganhe estrelas ⭐, suba de nível 🚀 e desbloqueie conquistas incríveis! Sua jornada heroica começa aqui.
