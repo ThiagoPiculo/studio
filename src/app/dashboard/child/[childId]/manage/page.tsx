@@ -826,34 +826,14 @@ function ManageChildPageContent() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-grow">
-                <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
-                <CardDescription className="text-base mt-1">
-                  {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
-                </CardDescription>
-                
-                 <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-x-6 gap-y-4 font-semibold">
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                            <StarIcon className="h-6 w-6 fill-current"/>
-                            <span className="text-xl font-bold">{child.stars}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                            <BadgeCheck className="h-6 w-6"/>
-                            <span className="text-xl font-bold">{child.xp}</span>
-                            <span className="text-sm">XP</span>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto flex-grow max-w-xs">
-                        <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
-                        <div className="flex-grow">
-                            <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                        </div>
-                    </div>
-                </div>
-
-              </div>
-              <div className="flex flex-col items-center sm:items-end gap-2 shrink-0">
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
+                    <CardDescription className="text-base mt-1">
+                      {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
+                    </CardDescription>
+                  </div>
+                  <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
                     <span className="text-sm text-muted-foreground align-middle">
                       Chave Secreta do Heroi:
                     </span>
@@ -864,7 +844,7 @@ function ManageChildPageContent() {
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Button 
-                            variant="outline" 
+                            variant="ghost" 
                             size="icon"
                             onClick={handleRegenerateAccessCode} 
                             disabled={isRegeneratingCode || !canEdit}
@@ -879,8 +859,59 @@ function ManageChildPageContent() {
                       </Tooltip>
                     </TooltipProvider>
                   </div>
+                </div>
+                
+                 <div className="mt-4 flex flex-col gap-4 font-semibold">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
+                            <StarIcon className="h-6 w-6 fill-current"/>
+                            <span className="text-xl font-bold">{child.stars}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                            <BadgeCheck className="h-6 w-6"/>
+                            <span className="text-xl font-bold">{child.xp}</span>
+                            <span className="text-sm">XP</span>
+                        </div>
+                    </div>
+                    <div className="w-full">
+                        <div className="flex justify-between items-baseline mb-1">
+                            <Badge variant="secondary" className="text-xs">Nível {child.level}</Badge>
+                            <span className="text-xs text-muted-foreground">
+                                {child.xp} / {xpForNextLevel} XP (faltam {xpRemaining} para o próximo nível)
+                            </span>
+                        </div>
+                        <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
+                    </div>
+                </div>
+
               </div>
             </div>
+             <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
+                <span className="text-sm text-muted-foreground align-middle">
+                    Chave Secreta:
+                </span>
+                <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                    {child.accessCode}
+                </span>
+                <TooltipProvider>
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                        variant="ghost" 
+                        size="icon"
+                        onClick={handleRegenerateAccessCode} 
+                        disabled={isRegeneratingCode || !canEdit}
+                        className="shadow-sm h-9 w-9"
+                        >
+                        {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Regenerar Chave Secreta</p>
+                    </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+                </div>
         </div>
       </Card>
 
@@ -1563,6 +1594,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
