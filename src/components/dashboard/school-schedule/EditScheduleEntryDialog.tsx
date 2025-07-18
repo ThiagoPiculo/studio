@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,12 +17,11 @@ import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEn
 import { useAuth } from '@/contexts/AuthContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
-import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { DialogClose } from '@radix-ui/react-dialog';
 
 
 const scheduleEntrySchema = z.object({
@@ -207,9 +206,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={5}>
                                                     <Command>
                                                         <CommandInput placeholder="Buscar matéria..." />
-                                                        <CommandList>
-                                                            <ScrollArea className="h-auto max-h-40">
-                                                              <div className="overflow-y-auto">
+                                                         <ScrollArea className="h-auto max-h-40">
+                                                            <div className="overflow-y-auto">
                                                                 <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                                 <CommandGroup>
                                                                     {orderedSubjects.map((subject) => (
@@ -229,9 +227,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                         </CommandItem>
                                                                     ))}
                                                                 </CommandGroup>
-                                                              </div>
-                                                            </ScrollArea>
-                                                        </CommandList>
+                                                            </div>
+                                                        </ScrollArea>
                                                     </Command>
                                                 </PopoverContent>
                                             </Popover>
@@ -276,7 +273,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
-                                        <AlertDialog onOpenChange={(open) => !open && onDelete()}>
+                                        <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button type="button" variant="ghost" className="text-destructive hover:text-destructive hover:bg-destructive/10" disabled={isProcessing}>
                                                     <Trash2 className="mr-2 h-4 w-4" />
