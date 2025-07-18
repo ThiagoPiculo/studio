@@ -237,7 +237,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
                 <div className="mt-1 text-right">
                     <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="link" className="text-sm p-0 h-auto text-primary">Eita, esqueci minha senha?</Button>
+                        <Button type="button" variant="link" className="text-sm p-0 h-auto text-primary">Eita, esqueci minha senha?</Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -303,7 +303,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             ) : (
                 <UserPlus className="mr-2 h-4 w-4" />
             )}
-            {mode === "login" ? "Acessar o Comando" : "Montar Central de Comando"}
+            {mode === "login" ? "Acessar o Comando" : "Criar Conta"}
             </Button>
             <div className="relative">
                 <div className="absolute inset-0 flex items-center">
