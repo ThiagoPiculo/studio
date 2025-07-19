@@ -23,22 +23,23 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogHeader,
-  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
+import { heroColors } from '@/lib/hero-colors';
 
 
 const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
   dayOfWeek: z.enum(allWeekdays),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, "Use o formato HH:mm.").refine((val) => {
+      const [h, m] = val.split(':').map(Number);
+      return h < 24;
+  }, "Hora inválida."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
 }).refine(data => data.startTime < data.endTime, {
   message: "O horário final deve ser depois do inicial.",
@@ -68,6 +69,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+    const [subjectInputValue, setSubjectInputValue] = useState("");
 
 
     const form = useForm<FormValues>({
@@ -216,9 +218,13 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                 </PopoverTrigger>
                                                 <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                                     <Command>
-                                                        <CommandInput placeholder="Buscar matéria..." />
-                                                        <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                        <ScrollArea className="max-h-40">
+                                                        <CommandInput 
+                                                            placeholder="Buscar matéria..."
+                                                            value={subjectInputValue}
+                                                            onValueChange={setSubjectInputValue}
+                                                        />
+                                                        <CommandList>
+                                                            <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
                                                             <CommandGroup>
                                                                 {orderedSubjects.map((subject) => (
                                                                     <CommandItem
@@ -227,6 +233,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                         onSelect={() => {
                                                                             form.setValue("subject", subject.label);
                                                                             form.setValue("color", subject.color);
+                                                                            setSubjectInputValue("");
                                                                             setIsPopoverOpen(false);
                                                                         }}
                                                                     >
@@ -234,8 +241,25 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                         {subject.label}
                                                                     </CommandItem>
                                                                 ))}
+                                                                {subjectInputValue && !orderedSubjects.some(s => s.label.toLowerCase() === subjectInputValue.toLowerCase()) && (
+                                                                     <CommandItem
+                                                                        value={subjectInputValue}
+                                                                        onSelect={() => {
+                                                                            form.setValue("subject", subjectInputValue);
+                                                                            const usedColors = orderedSubjects.map(s => s.color);
+                                                                            const availableColors = heroColors.filter(c => !usedColors.includes(c));
+                                                                            const randomColor = availableColors.length > 0 ? availableColors[Math.floor(Math.random() * availableColors.length)] : heroColors[Math.floor(Math.random() * heroColors.length)];
+                                                                            form.setValue("color", randomColor);
+                                                                            setSubjectInputValue("");
+                                                                            setIsPopoverOpen(false);
+                                                                        }}
+                                                                      >
+                                                                         <Check className="mr-2 h-4 w-4 opacity-0" />
+                                                                         Criar: "{subjectInputValue}"
+                                                                      </CommandItem>
+                                                                )}
                                                             </CommandGroup>
-                                                        </ScrollArea>
+                                                        </CommandList>
                                                     </Command>
                                                 </PopoverContent>
                                             </Popover>
