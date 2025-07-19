@@ -13,7 +13,7 @@ import { getDayToWeekday, parseTime, format as formatTime } from '@/lib/calendar
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle } from 'lucide-react';
+import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle, Target } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -168,6 +168,18 @@ function SchoolSchedulePageContent() {
     setTimeSlots(newSlots);
   }, [selectedChildId, children]);
   
+  const handleScrollToToday = () => {
+    if (scrollRef.current) {
+      const today = new Date().getDay();
+      const todayWeekday = getDayToWeekday[today];
+      const targetElement = scrollRef.current.querySelector(`[data-day="${todayWeekday}"]`);
+      if (targetElement) {
+        targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  };
+
+
   useEffect(() => {
     if (isMobile && scrollRef.current && visibleWeekdays.length > 0) {
       const today = new Date().getDay();
@@ -389,15 +401,18 @@ function SchoolSchedulePageContent() {
                         <div
                             key={entry.id}
                             className={cn(
-                                "absolute p-2 rounded-lg shadow-sm group border flex flex-col items-center justify-center overflow-hidden",
+                                "absolute p-2 rounded-lg shadow-sm group border flex flex-col justify-center overflow-hidden",
                                 canEdit && "cursor-pointer",
-                                !useColors && "bg-primary/10 border-primary/20"
+                                !useColors && "bg-primary/10 border-primary/20",
+                                isMobile ? "items-start" : "items-center"
                             )}
                             style={entryStyle}
                             onClick={(e) => { e.stopPropagation(); if (canEdit) handleEditClick(entry); }}
                         >
-                            <p className="font-bold text-sm text-center text-gray-800 leading-tight">{entry.subject}</p>
+                          <div className={cn("flex gap-2 items-center", isMobile ? "flex-row" : "flex-col")}>
                             {isMobile && <p className="font-mono text-xs text-gray-700/80">{entry.startTime}</p>}
+                            <p className="font-bold text-sm text-center text-gray-800 leading-tight">{entry.subject}</p>
+                          </div>
                             {canEdit && (
                                 <div className="absolute bottom-1 right-1 opacity-100 bg-white/30 rounded-full transition-opacity flex gap-1">
                                     <Button size="icon" variant="ghost" className="h-6 w-6 text-gray-800 hover:bg-black/20 hover:text-white" onClick={(e) => {e.stopPropagation(); handleEditClick(entry)}}><Edit className="h-3 w-3"/></Button>
@@ -413,7 +428,7 @@ function SchoolSchedulePageContent() {
   if (isLoading || isRoleLoading) return <Loading />;
   
   const mobileLayout = (
-    <div className="space-y-4">
+    <div ref={scrollRef} className="space-y-4">
         {visibleWeekdays.map(day => {
             const dayEntries = inBoundsSchedule.filter(entry => entry.dayOfWeek === day);
             const hasEntries = dayEntries.length > 0;
@@ -490,6 +505,11 @@ function SchoolSchedulePageContent() {
               </CardDescription>
             </div>
             <div className="flex flex-wrap items-center gap-2 justify-end">
+                {isMobile && (
+                  <Button onClick={handleScrollToToday} variant="outline" className="w-full sm:w-auto">
+                    <Target className="mr-2 h-4 w-4" /> Ir para Hoje
+                  </Button>
+                )}
                 <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
                     <SelectTrigger className="w-full sm:w-[240px]">
                         <div className="flex items-center gap-2">
