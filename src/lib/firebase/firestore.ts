@@ -29,6 +29,8 @@ import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
 
+const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+
 // --- Notifications Helper ---
 const createAndDispatchNotifications = async (
   childId: string,
@@ -1264,12 +1266,6 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
     if (querySnapshot.empty) {
         return; // Nothing to delete
     }
-    const batch = writeBatch(db);
-    querySnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-    });
-    await batch.commit();
-
     const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
      if (instanceData.familyId) {
         const child = await getChildProfileById(instanceData.childId);
@@ -1347,7 +1343,7 @@ export const deleteMissionTemplate = async (actor: UserProfile, templateId: stri
   const templateSnap = await getDoc(templateRef);
   if (!templateSnap.exists()) return;
   const templateData = templateSnap.data();
-
+  
   await deleteDoc(templateRef);
   
    if (templateData.familyId) {
@@ -2016,7 +2012,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2210,11 +2206,15 @@ export const addRecurringSchoolEntry = async (
     if (!child) throw new Error("Criança não encontrada.");
 
     if (child.familyId) {
-        // In a family context, check if the actor is part of that family
+        // In a family context, check if the actor has an editing role in that family
         const membershipRef = doc(db, 'familyMemberships', `${actor.uid}_${child.familyId}`);
         const membershipSnap = await getDoc(membershipRef);
         if (!membershipSnap.exists()) {
-            throw new Error("Você não tem permissão para editar a agenda nesta aliança.");
+            throw new Error("Você não é membro desta aliança.");
+        }
+        const membership = membershipSnap.data() as FamilyMembership;
+        if (!editableRoles.includes(membership.role)) {
+            throw new Error("Seu papel na aliança não permite editar a agenda escolar.");
         }
     } else {
         // In a personal context, only the owner can edit
@@ -2293,3 +2293,4 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
