@@ -24,7 +24,6 @@ import {
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogDescription,
-  AlertDialogFooter
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -39,10 +38,7 @@ const scheduleEntrySchema = z.object({
   subject: z.string().min(2, { message: "O nome da matéria deve ter pelo menos 2 caracteres." }),
   dayOfWeek: z.enum(allWeekdays),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, "Use o formato HH:mm.").refine((val) => {
-      const [h, m] = val.split(':').map(Number);
-      return h < 24;
-  }, "Hora inválida."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Use o formato HH:mm."),
   color: z.string().regex(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, "Cor inválida."),
 }).refine(data => data.startTime < data.endTime, {
   message: "O horário final deve ser depois do inicial.",
@@ -133,7 +129,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     color: payload.color,
                     childId: child.id,
                     ownerId: child.ownerId,
-                    familyId: child.familyId || null,
+                    familyId: currentContext === 'my-space' ? null : currentContext,
                 };
                 await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
@@ -188,7 +184,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                         {showRecessHint && !entryToEdit && (
                             <div className="px-6 pt-4">
                                 <Alert variant="default" className="border-primary/20 bg-primary/5">
-                                    <Info className="h-4 w-4 text-primary" />
+                                    <Info className="mr-2 h-4 w-4 text-primary" />
                                     <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
                                     <AlertDescription className="text-primary/90">
                                         Comece cadastrando o "Recreio/Intervalo". Isso adicionará o intervalo para toda a semana de uma só vez!
