@@ -576,8 +576,8 @@ function AgendaPageContent() {
     const gridClasses = {
         day: 'grid-cols-1',
         '3days': 'grid-cols-1 md:grid-cols-3',
-        week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7',
-        workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
+        week: 'grid-cols-1 md:grid-cols-7', // Changed: Mobile will be 1, Desktop 7
+        workweek: 'grid-cols-1 md:grid-cols-5',
     };
   
     const finalGridClass = gridClasses[dateRangeFilter];
@@ -746,14 +746,12 @@ function AgendaPageContent() {
   if (isLoading || isRoleLoading) return <Loading />;
 
   const renderContent = () => {
-    switch(dateRangeFilter) {
-      case 'month':
+    // On mobile, the 'week' view should also be rendered by `renderGridView`
+    // which now uses a responsive grid-cols-1 for smaller screens
+    if (dateRangeFilter === 'month') {
         return renderCalendarView();
-      case 'week':
-        return isMobile ? renderGridView() : renderCalendarView();
-      default:
-        return renderGridView();
     }
+    return renderGridView();
   }
 
   return (
