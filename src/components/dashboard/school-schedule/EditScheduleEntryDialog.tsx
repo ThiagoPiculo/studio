@@ -8,7 +8,6 @@ import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Save, Info, Trash2, Check, ChevronsUpDown } from 'lucide-react';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
@@ -30,6 +29,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
 import { heroColors } from '@/lib/hero-colors';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 const scheduleEntrySchema = z.object({
@@ -270,7 +270,10 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )}
                                 />
-                                <FormField control={form.control} name="dayOfWeek" render={({ field }) => (
+                                <FormField
+                                    control={form.control}
+                                    name="dayOfWeek"
+                                    render={({ field }) => (
                                     <FormItem>
                                         <FormLabel>Dia da Semana</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value}>
