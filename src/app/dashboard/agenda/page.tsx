@@ -580,7 +580,7 @@ function AgendaPageContent() {
         workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5',
     };
   
-    const finalGridClass = isMobile ? 'grid-cols-1' : gridClasses[dateRangeFilter];
+    const finalGridClass = gridClasses[dateRangeFilter];
     const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
 
     return (
@@ -748,8 +748,9 @@ function AgendaPageContent() {
   const renderContent = () => {
     switch(dateRangeFilter) {
       case 'month':
-      case 'week':
         return renderCalendarView();
+      case 'week':
+        return isMobile ? renderGridView() : renderCalendarView();
       default:
         return renderGridView();
     }
