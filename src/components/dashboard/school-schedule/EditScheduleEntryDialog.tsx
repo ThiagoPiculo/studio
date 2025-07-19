@@ -24,6 +24,8 @@ import {
   AlertDialogContent,
   AlertDialogHeader,
   AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -207,8 +209,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                         <Button
                                                           variant="outline"
                                                           role="combobox"
-                                                          className={cn("w-full justify-between font-semibold text-white", !field.value && "text-muted-foreground")}
-                                                          style={{ backgroundColor: form.getValues('color') }}
+                                                          className={cn("w-full justify-between font-semibold", !field.value && "text-muted-foreground")}
+                                                          style={field.value ? { backgroundColor: `${form.getValues('color')}BF`, borderColor: form.getValues('color'), color: 'white' } : {}}
                                                         >
                                                             {field.value ? field.value : "Selecione ou digite uma matéria..."}
                                                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -246,7 +248,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                                         onSelect={() => {
                                                                             form.setValue("subject", subjectInputValue);
                                                                             const usedColors = orderedSubjects.map(s => s.color);
-                                                                            const availableColors = heroColors.filter(c => !usedColors.includes(c));
+                                                                            const availableColors = heroColors.filter(c => !usedColors.includes(c as any));
                                                                             const randomColor = availableColors.length > 0 ? availableColors[Math.floor(Math.random() * availableColors.length)] : heroColors[Math.floor(Math.random() * heroColors.length)];
                                                                             form.setValue("color", randomColor);
                                                                             setSubjectInputValue("");
