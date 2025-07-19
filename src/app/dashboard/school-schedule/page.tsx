@@ -410,7 +410,7 @@ function SchoolSchedulePageContent() {
                             onClick={(e) => { e.stopPropagation(); if (canEdit) handleEditClick(entry); }}
                         >
                           <div className={cn("flex gap-2 items-center", isMobile ? "flex-row" : "flex-col")}>
-                            {isMobile && <p className="font-mono text-xs text-gray-700/80">{entry.startTime}</p>}
+                            {isMobile && <p className="font-mono text-sm text-gray-700/80">{entry.startTime}</p>}
                             <p className="font-bold text-sm text-center text-gray-800 leading-tight">{entry.subject}</p>
                           </div>
                             {canEdit && (
@@ -504,11 +504,65 @@ function SchoolSchedulePageContent() {
                 Visualize e gerencie os horários de aula dos seus heróis.
               </CardDescription>
             </div>
-            <div className="flex flex-wrap items-center gap-2 justify-end">
+            <div className="flex flex-col sm:flex-row items-center gap-2">
                 {isMobile && (
-                  <Button onClick={handleScrollToToday} variant="outline" className="w-full sm:w-auto">
-                    <Target className="mr-2 h-4 w-4" /> Ir para Hoje
-                  </Button>
+                    <div className="grid grid-cols-2 gap-2 w-full">
+                        <Button onClick={handleScrollToToday} variant="outline" className="w-full">
+                            <Target className="mr-2 h-4 w-4" /> Ir para Hoje
+                        </Button>
+                         <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-full">
+                                    <Settings2 className="mr-2 h-4 w-4" /> Configs
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-4">
+                               <div className="grid gap-4">
+                                  <div className="space-y-2">
+                                      <Label className="font-semibold">Exibir Dias da Semana</Label>
+                                      <div className="space-y-2">
+                                          {allWeekdays.map(day => (
+                                            <div key={day} className="flex items-center space-x-2">
+                                              <Checkbox
+                                                id={`day-select-${day}-mobile`}
+                                                checked={visibleWeekdays.includes(day)}
+                                                onCheckedChange={(checked) => {
+                                                  const newDays = checked
+                                                    ? [...visibleWeekdays, day]
+                                                    : visibleWeekdays.filter(d => d !== day);
+                                                  handleVisibleDaysChange(newDays);
+                                                }}
+                                              />
+                                              <Label htmlFor={`day-select-${day}-mobile`} className="font-normal cursor-pointer w-full">
+                                                {weekdayLabels[day].long}
+                                              </Label>
+                                            </div>
+                                          ))}
+                                      </div>
+                                  </div>
+                                  {selectedChildId && <Separator />}
+                                  {selectedChildId && (
+                                      <div className="space-y-2">
+                                          <Label className="font-semibold">Turno Escolar</Label>
+                                          <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
+                                              <Edit className="mr-2 h-4 w-4" />
+                                              Editar Turno do Herói
+                                          </Button>
+                                      </div>
+                                  )}
+                                  <Separator />
+                                  <div className="flex items-center justify-between">
+                                    <Label htmlFor="use-colors-switch-mobile" className="font-semibold pr-4">Usar Cores</Label>
+                                    <Switch
+                                        id="use-colors-switch-mobile"
+                                        checked={useColors}
+                                        onCheckedChange={setUseColors}
+                                    />
+                                  </div>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                 )}
                 <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
                     <SelectTrigger className="w-full sm:w-[240px]">
@@ -525,58 +579,60 @@ function SchoolSchedulePageContent() {
                         ))}
                     </SelectContent>
                 </Select>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <Settings2 className="h-4 w-4" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-4">
-                        <div className="grid gap-4">
-                          <div className="space-y-2">
-                              <Label className="font-semibold">Exibir Dias da Semana</Label>
-                               <div className="space-y-2">
-                                  {allWeekdays.map(day => (
-                                    <div key={day} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`day-select-${day}`}
-                                        checked={visibleWeekdays.includes(day)}
-                                        onCheckedChange={(checked) => {
-                                          const newDays = checked
-                                            ? [...visibleWeekdays, day]
-                                            : visibleWeekdays.filter(d => d !== day);
-                                          handleVisibleDaysChange(newDays);
-                                        }}
-                                      />
-                                      <Label htmlFor={`day-select-${day}`} className="font-normal cursor-pointer w-full">
-                                        {weekdayLabels[day].long}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
-                          </div>
-                          {selectedChildId && <Separator />}
-                          {selectedChildId && (
+                {!isMobile && (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <Settings2 className="h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-4">
+                            <div className="grid gap-4">
                               <div className="space-y-2">
-                                  <Label className="font-semibold">Turno Escolar</Label>
-                                  <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Editar Turno do Herói
-                                  </Button>
+                                  <Label className="font-semibold">Exibir Dias da Semana</Label>
+                                   <div className="space-y-2">
+                                      {allWeekdays.map(day => (
+                                        <div key={day} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`day-select-${day}`}
+                                            checked={visibleWeekdays.includes(day)}
+                                            onCheckedChange={(checked) => {
+                                              const newDays = checked
+                                                ? [...visibleWeekdays, day]
+                                                : visibleWeekdays.filter(d => d !== day);
+                                              handleVisibleDaysChange(newDays);
+                                            }}
+                                          />
+                                          <Label htmlFor={`day-select-${day}`} className="font-normal cursor-pointer w-full">
+                                            {weekdayLabels[day].long}
+                                          </Label>
+                                        </div>
+                                      ))}
+                                    </div>
                               </div>
-                          )}
-                          <Separator />
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
-                            <Switch
-                                id="use-colors-switch"
-                                checked={useColors}
-                                onCheckedChange={setUseColors}
-                            />
-                           </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
+                              {selectedChildId && <Separator />}
+                              {selectedChildId && (
+                                  <div className="space-y-2">
+                                      <Label className="font-semibold">Turno Escolar</Label>
+                                      <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Editar Turno do Herói
+                                      </Button>
+                                  </div>
+                              )}
+                              <Separator />
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
+                                <Switch
+                                    id="use-colors-switch"
+                                    checked={useColors}
+                                    onCheckedChange={setUseColors}
+                                />
+                               </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                )}
               <Button onClick={handleAddClick} disabled={!selectedChildId || !canEdit}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 + Aula
