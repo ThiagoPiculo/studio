@@ -26,10 +26,9 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogFooter,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Timestamp } from 'firebase/firestore';
@@ -68,6 +67,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
 
     const form = useForm<FormValues>({
@@ -141,6 +141,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     childId: child.id,
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
+                    createdAt: new Timestamp(0,0), // Will be replaced by server
+                    updatedAt: new Timestamp(0,0), // Will be replaced by server
                 };
                 await addSchoolScheduleEntry(newEntryData, user);
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
@@ -198,42 +200,45 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     render={({ field }) => (
                                         <FormItem>
                                             <FormLabel>Matéria</FormLabel>
-                                            <Select
-                                                onValueChange={(value) => {
-                                                    const selectedSubject = orderedSubjects.find(s => s.label === value);
-                                                    if (selectedSubject) {
-                                                        form.setValue("subject", selectedSubject.label, { shouldValidate: true });
-                                                        form.setValue("color", selectedSubject.color, { shouldValidate: true });
-                                                    }
-                                                }}
-                                                value={field.value}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger
-                                                        className={cn(
-                                                            "w-full justify-between font-semibold text-white",
-                                                            !field.value && "text-muted-foreground",
-                                                        )}
-                                                        style={{
-                                                            backgroundColor: form.getValues('color'),
-                                                        }}
-                                                    >
-                                                        <SelectValue placeholder="Selecione uma matéria..." />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {orderedSubjects.map((subject) => (
-                                                        <SelectItem
-                                                            key={subject.label}
-                                                            value={subject.label}
-                                                            style={{ backgroundColor: `${subject.color}` }}
-                                                            className="text-white font-semibold cursor-pointer hover:!bg-opacity-80 focus:bg-opacity-80"
+                                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                                <PopoverTrigger asChild>
+                                                    <FormControl>
+                                                        <Button
+                                                          variant="outline"
+                                                          role="combobox"
+                                                          className={cn("w-full justify-between font-semibold text-white", !field.value && "text-muted-foreground")}
+                                                          style={{ backgroundColor: form.getValues('color') }}
                                                         >
-                                                            {subject.label}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                                            {field.value ? field.value : "Selecione ou digite uma matéria..."}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </FormControl>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                    <Command>
+                                                        <CommandInput placeholder="Buscar matéria..." />
+                                                        <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
+                                                        <ScrollArea className="max-h-40">
+                                                            <CommandGroup>
+                                                                {orderedSubjects.map((subject) => (
+                                                                    <CommandItem
+                                                                        value={subject.label}
+                                                                        key={subject.label}
+                                                                        onSelect={() => {
+                                                                            form.setValue("subject", subject.label);
+                                                                            form.setValue("color", subject.color);
+                                                                            setIsPopoverOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <Check className={cn("mr-2 h-4 w-4", field.value === subject.label ? "opacity-100" : "opacity-0")} />
+                                                                        {subject.label}
+                                                                    </CommandItem>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </ScrollArea>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
                                             {form.watch('subject') === 'Recreio/Intervalo' && (
                                                 <FormDescription>Selecione um dia útil para adicionar o intervalo na semana toda.</FormDescription>
                                             )}
@@ -271,7 +276,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )} />
                                 </div>
-                                
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
