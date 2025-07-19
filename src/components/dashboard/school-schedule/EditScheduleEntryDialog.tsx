@@ -15,6 +15,7 @@ import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
 import { schoolSubjects, allWeekdays, weekdayLabels } from '@/lib/types';
 import { addSchoolScheduleEntry, updateSchoolScheduleEntry, addRecurringSchoolEntry } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter } from "@/components/ui/alert-dialog";
@@ -55,6 +56,7 @@ interface EditScheduleEntryDialogProps {
 
 export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToEdit, child, showRecessHint = false, onDelete }: EditScheduleEntryDialogProps) {
     const { user } = useAuth();
+    const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
     const [isComboboxOpen, setIsComboboxOpen] = useState(false);
@@ -117,6 +119,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     endTime: payload.endTime,
                     color: payload.color,
                     childId: child.id,
+                    ownerId: child.ownerId,
+                    familyId: child.familyId || null,
                 };
                 await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
@@ -127,6 +131,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                 const newEntryData = {
                     ...payload,
                     childId: child.id,
+                    ownerId: user.uid,
+                    familyId: currentContext === 'my-space' ? null : currentContext,
                 };
                 await addSchoolScheduleEntry(newEntryData, user);
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
@@ -191,9 +197,8 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                                             variant="outline"
                                                             role="combobox"
                                                             className={cn(
-                                                                "w-full justify-between font-semibold",
+                                                                "w-full justify-between font-semibold text-white",
                                                                 !field.value && "text-muted-foreground",
-                                                                field.value && "text-white"
                                                             )}
                                                             style={{
                                                                 backgroundColor: field.value ? form.getValues('color') : undefined,
