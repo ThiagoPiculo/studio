@@ -1,16 +1,14 @@
-
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -56,6 +54,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
@@ -108,6 +107,11 @@ function ManageChildPageContent() {
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
+
+  // School Schedule States
+  const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
+  const [entryToEdit, setEntryToEdit] = useState<SchoolScheduleEntry | null>(null);
+  const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
   
   // Badge states
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
@@ -594,6 +598,27 @@ function ManageChildPageContent() {
       setIsDeleting(false);
       setIsDeleteInstanceConfirmOpen(false);
       setInstanceToManage(null);
+    }
+  };
+
+  const handleEditEntry = (entry: SchoolScheduleEntry) => {
+    setEntryToEdit(entry);
+    setIsEntryDialogOpen(true);
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete || !user) return;
+    setIsDeleting(true);
+    try {
+      await deleteSchoolScheduleEntry(entryToDelete.id, user);
+      toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
+      fetchData(); // Refetch data to update the UI
+    } catch (error) {
+      console.error("Error deleting school schedule entry:", error);
+      toast({ title: "Erro ao remover aula", variant: 'destructive' });
+    } finally {
+      setIsDeleting(false);
+      setEntryToDelete(null);
     }
   };
 
@@ -1259,30 +1284,59 @@ function ManageChildPageContent() {
           <TabsContent value="school-schedule">
             <Card className="shadow-md">
                 <CardHeader>
-                    <CardTitle>Agenda Escolar de {child.name}</CardTitle>
-                    <CardDescription>Veja o horário de aulas da semana.</CardDescription>
-                    <Button asChild variant="outline" className="w-fit">
-                        <Link href="/dashboard/school-schedule">
-                            <Edit3 className="mr-2 h-4 w-4" /> Gerenciar Agenda Completa
-                        </Link>
-                    </Button>
+                    <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
+                        <div>
+                            <CardTitle>Agenda Escolar de {child.name}</CardTitle>
+                            <CardDescription>Veja o horário de aulas da semana.</CardDescription>
+                        </div>
+                        <div className="flex gap-2 w-full sm:w-auto">
+                            <Button asChild variant="outline" className="w-full sm:w-auto flex-1">
+                                <Link href="/dashboard/school-schedule">
+                                    <ExternalLink className="mr-2 h-4 w-4" /> Ver Agenda Completa
+                                </Link>
+                            </Button>
+                            {canEdit && (
+                                <Button
+                                  variant="default"
+                                  className="w-full sm:w-auto flex-1"
+                                  onClick={() => { setEntryToEdit(null); setIsEntryDialogOpen(true); }}
+                                >
+                                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Aula
+                                </Button>
+                            )}
+                        </div>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     {schoolSchedule.length === 0 ? (
-                        <p className="text-muted-foreground">Nenhuma aula cadastrada na agenda escolar.</p>
+                        <p className="text-muted-foreground p-4 text-center">Nenhuma aula cadastrada na agenda escolar.</p>
                     ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {weekdays.map(day => {
                                 const dayEntries = schoolSchedule.filter(e => e.dayOfWeek === day);
                                 if (dayEntries.length === 0) return null;
                                 return (
-                                    <div key={day}>
+                                    <div key={day} className="space-y-3">
                                         <h3 className="font-semibold mb-2">{weekdayLabels[day].long}</h3>
                                         <ul className="space-y-2">
                                             {dayEntries.map(entry => (
-                                                <li key={entry.id} className="p-3 rounded-md border" style={{ borderLeftColor: entry.color, borderLeftWidth: '4px' }}>
-                                                    <p className="font-semibold">{entry.subject}</p>
-                                                    <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                                                <li key={entry.id} className="group p-3 rounded-md border" style={{ borderLeftColor: entry.color, borderLeftWidth: '4px' }}>
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <p className="font-semibold">{entry.subject}</p>
+                                                            <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                                                        </div>
+                                                        {canEdit && (
+                                                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}>
+                                                              <Edit className="h-4 w-4" />
+                                                            </Button>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}>
+                                                              <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                          </div>
+                                                        )}
+                                                    </div>
                                                 </li>
                                             ))}
                                         </ul>
@@ -1537,6 +1591,46 @@ function ManageChildPageContent() {
         />
       )}
 
+      {entryToEdit !== null && (
+          <EditScheduleEntryDialog
+            isOpen={isEntryDialogOpen}
+            onOpenChange={setIsEntryDialogOpen}
+            onSave={() => {
+              fetchData();
+              setIsEntryDialogOpen(false);
+              setEntryToEdit(null);
+            }}
+            entryToEdit={entryToEdit}
+            child={child}
+            onDelete={() => {
+              if (entryToEdit) {
+                setEntryToDelete(entryToEdit);
+                setIsEntryDialogOpen(false);
+              }
+            }}
+          />
+      )}
+
+      {entryToDelete && (
+        <AlertDialog open={!!entryToDelete} onOpenChange={() => setEntryToDelete(null)}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Aula?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tem certeza que deseja remover a aula de "{entryToDelete.subject}" do horário?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteEntry} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                        {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                        Sim, Excluir
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      )}
+
       <AlertDialog open={!!missionToDelete} onOpenChange={(isOpen) => !isOpen && setMissionToDelete(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
@@ -1650,6 +1744,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
