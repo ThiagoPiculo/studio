@@ -18,7 +18,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { TimePicker } from './TimePicker';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogFooter } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -59,7 +68,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
     const { currentContext } = useFamily();
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isComboboxOpen, setIsComboboxOpen] = useState(false);
 
 
     const form = useForm<FormValues>({
@@ -188,56 +196,44 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                     control={form.control}
                                     name="subject"
                                     render={({ field }) => (
-                                        <FormItem className="flex flex-col">
+                                        <FormItem>
                                             <FormLabel>Matéria</FormLabel>
-                                            <Popover open={isComboboxOpen} onOpenChange={setIsComboboxOpen}>
-                                                <PopoverTrigger asChild>
-                                                    <FormControl>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className={cn(
-                                                                "w-full justify-between font-semibold text-white",
-                                                                !field.value && "text-muted-foreground",
-                                                            )}
-                                                            style={{
-                                                                backgroundColor: field.value ? form.getValues('color') : undefined,
-                                                            }}
+                                            <Select
+                                                onValueChange={(value) => {
+                                                    const selectedSubject = orderedSubjects.find(s => s.label === value);
+                                                    if (selectedSubject) {
+                                                        form.setValue("subject", selectedSubject.label, { shouldValidate: true });
+                                                        form.setValue("color", selectedSubject.color, { shouldValidate: true });
+                                                    }
+                                                }}
+                                                value={field.value}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger
+                                                        className={cn(
+                                                            "w-full justify-between font-semibold text-white",
+                                                            !field.value && "text-muted-foreground",
+                                                        )}
+                                                        style={{
+                                                            backgroundColor: form.getValues('color'),
+                                                        }}
+                                                    >
+                                                        <SelectValue placeholder="Selecione uma matéria..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {orderedSubjects.map((subject) => (
+                                                        <SelectItem
+                                                            key={subject.label}
+                                                            value={subject.label}
+                                                            style={{ backgroundColor: `${subject.color}` }}
+                                                            className="text-white font-semibold cursor-pointer hover:!bg-opacity-80 focus:bg-opacity-80"
                                                         >
-                                                            {field.value || "Selecione uma matéria..."}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </FormControl>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0" sideOffset={5}>
-                                                    <Command>
-                                                        <CommandInput placeholder="Buscar matéria..." />
-                                                         <ScrollArea className="h-40">
-                                                            <div className="overflow-y-auto">
-                                                                <CommandEmpty>Nenhuma matéria encontrada.</CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {orderedSubjects.map((subject) => (
-                                                                        <CommandItem
-                                                                            value={subject.label}
-                                                                            key={subject.label}
-                                                                            onSelect={() => {
-                                                                                form.setValue("subject", subject.label);
-                                                                                form.setValue("color", subject.color);
-                                                                                setIsComboboxOpen(false);
-                                                                            }}
-                                                                            style={{ backgroundColor: `${subject.color}` }}
-                                                                            className="text-white font-semibold cursor-pointer hover:!bg-opacity-80"
-                                                                        >
-                                                                            <Check className={cn("mr-2 h-4 w-4", subject.label === field.value ? "opacity-100" : "opacity-0")} />
-                                                                            {subject.label}
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </div>
-                                                        </ScrollArea>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
+                                                            {subject.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                             {form.watch('subject') === 'Recreio/Intervalo' && (
                                                 <FormDescription>Selecione um dia útil para adicionar o intervalo na semana toda.</FormDescription>
                                             )}
@@ -275,6 +271,7 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                                         </FormItem>
                                     )} />
                                 </div>
+                                
                                 <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
                                    <div>
                                     {entryToEdit && entryToEdit.id && (
