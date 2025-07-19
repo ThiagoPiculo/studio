@@ -41,15 +41,23 @@ As fontes são configuradas em `tailwind.config.ts` e importadas em `src/app/lay
 - O espaçamento (padding, margin, gap) é aplicado usando as classes utilitárias do Tailwind CSS (ex: `p-4`, `m-2`, `space-y-4`).
 - A abordagem "utility-first" do Tailwind garante consistência e rapidez no desenvolvimento de layouts.
 
-## 5. Bordas, Raio e Sombras
+## 5. Responsividade e Mobile-First
+
+O aplicativo deve ser totalmente funcional e esteticamente agradável em todos os tamanhos de tela, de celulares a desktops. Para alcançar isso, seguimos uma abordagem **Mobile-First**.
+
+-   **Grids Responsivos:** Todos os layouts em grade (grid) devem ser responsivos por padrão. As classes devem primeiro definir o layout para a menor tela (mobile, tipicamente uma única coluna) e, em seguida, usar os prefixos de breakpoint do Tailwind (`sm:`, `md:`, `lg:`, `xl:`) para ajustar o número de colunas em telas maiores.
+-   **Exemplo Prático:** Para uma lista que deve ter 1 coluna no celular, 2 em tablets e 4 em desktops, a classe correta seria: `grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4`. Isso evita que layouts fixos (como `grid-cols-4`) quebrem a interface em telas menores.
+-   **Componentes Adaptativos:** Quando apropriado, componentes podem mudar sua aparência ou comportamento com base no tamanho da tela. Por exemplo, um `Popover` no desktop pode se tornar uma `Drawer` no mobile para uma melhor experiência com o teclado virtual. O hook `useIsMobile` está disponível para facilitar essa lógica.
+
+## 6. Bordas, Raio e Sombras
 
 - **Raio da Borda (`--radius`):** `1.25rem`. Um raio bem generoso que define a aparência suave e moderna dos componentes.
 - **Sombras (Claymorphism):** O aplicativo utiliza um efeito de sombra personalizado chamado `shadow-clay` (e suas variações `hover` e `inset`). Este estilo, por vezes chamado de "claymorphism" ou Neumorfismo suave, cria a ilusão de que os elementos são extrudados do fundo, como se fossem de argila macia, reforçando a estética tátil e amigável da interface.
 
-## 6. Componentes
+## 7. Componentes
 
 - **Biblioteca Principal:** ShadCN UI. Os componentes são adicionados ao projeto (em `src/components/ui`) e estilizados através das variáveis CSS e classes do Tailwind.
 
-## 7. Iconografia
+## 8. Iconografia
 
 - **Biblioteca de Ícones:** `lucide-react`. Escolhida por seu design limpo, leve e consistente, que complementa a estética geral do aplicativo.
