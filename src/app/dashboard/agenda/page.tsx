@@ -573,16 +573,58 @@ function AgendaPageContent() {
       );
     }
     
+    // Updated responsive grid classes
     const gridClasses = {
         day: 'grid-cols-1',
         '3days': 'grid-cols-1 md:grid-cols-3',
-        week: 'grid-cols-1 md:grid-cols-7', // Changed: Mobile will be 1, Desktop 7
-        workweek: 'grid-cols-1 md:grid-cols-5',
+        week: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7', // More responsive steps
+        workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5',
     };
   
     const finalGridClass = gridClasses[dateRangeFilter];
     const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
 
+    // Different rendering logic for mobile vs desktop for 'week' view
+    if (isMobile && dateRangeFilter === 'week') {
+        return (
+            <div className="space-y-4">
+                {days.map(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
+                    const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+                    return (
+                        <div key={dateKey}>
+                             <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
+                                {format(day, "EEEE, dd", { locale: ptBR })}
+                                {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
+                            </h2>
+                            <Card className="shadow-sm">
+                                {!hasEventsForDay ? (
+                                    <CardContent className="p-4 text-center text-sm text-muted-foreground">
+                                        Nenhuma missão.
+                                    </CardContent>
+                                ) : (
+                                    <CardContent className="p-4 space-y-4">
+                                        {dayEvents.morning.length > 0 && (
+                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
+                                        )}
+                                        {dayEvents.afternoon.length > 0 && (
+                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
+                                        )}
+                                        {dayEvents.night.length > 0 && (
+                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
+                                        )}
+                                    </CardContent>
+                                )}
+                            </Card>
+                        </div>
+                    );
+                })}
+            </div>
+        );
+    }
+    
+    // Desktop rendering for all views
     return (
       <div className={cn("grid gap-4", finalGridClass)}>
         {days.map(day => {
@@ -746,8 +788,6 @@ function AgendaPageContent() {
   if (isLoading || isRoleLoading) return <Loading />;
 
   const renderContent = () => {
-    // On mobile, the 'week' view should also be rendered by `renderGridView`
-    // which now uses a responsive grid-cols-1 for smaller screens
     if (dateRangeFilter === 'month') {
         return renderCalendarView();
     }
@@ -992,3 +1032,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
