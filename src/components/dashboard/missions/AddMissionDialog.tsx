@@ -107,7 +107,7 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
             ownerId: child.ownerId,
             familyId: child.familyId || null,
         };
-        return addMissionInstance(instanceData, template);
+        return addMissionInstance(user, instanceData, template);
       });
 
       await Promise.all(assignmentPromises);
