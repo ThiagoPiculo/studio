@@ -585,42 +585,45 @@ function AgendaPageContent() {
     const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
 
     // Different rendering logic for mobile vs desktop for 'week' view
-    if (isMobile && dateRangeFilter === 'week') {
+    if (isMobile && (dateRangeFilter === 'week' || dateRangeFilter === 'workweek')) {
         return (
-            <div className="space-y-4">
-                {days.map(day => {
-                    const dateKey = format(day, 'yyyy-MM-dd');
-                    const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-                    const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-                    return (
-                        <div key={dateKey}>
-                             <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                {format(day, "EEEE, dd", { locale: ptBR })}
-                                {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
-                            </h2>
-                            <Card className="shadow-sm">
-                                {!hasEventsForDay ? (
-                                    <CardContent className="p-4 text-center text-sm text-muted-foreground">
-                                        Nenhuma missão.
-                                    </CardContent>
-                                ) : (
-                                    <CardContent className="p-4 space-y-4">
-                                        {dayEvents.morning.length > 0 && (
-                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
-                                        )}
-                                        {dayEvents.afternoon.length > 0 && (
-                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
-                                        )}
-                                        {dayEvents.night.length > 0 && (
-                                            <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
-                                        )}
-                                    </CardContent>
-                                )}
-                            </Card>
-                        </div>
-                    );
-                })}
-            </div>
+            <ScrollArea className="w-full">
+                <div className="flex pb-4 gap-4" style={{ width: `${days.length * 80}vw`, minWidth: '100%'}}>
+                    {days.map(day => {
+                        const dateKey = format(day, 'yyyy-MM-dd');
+                        const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
+                        const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+                        return (
+                            <div key={dateKey} className="w-[75vw] flex-shrink-0 space-y-2">
+                                 <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
+                                    {format(day, "EEEE, dd", { locale: ptBR })}
+                                    {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
+                                </h2>
+                                <Card className="shadow-sm flex-1">
+                                    {!hasEventsForDay ? (
+                                        <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
+                                            Nenhuma missão.
+                                        </CardContent>
+                                    ) : (
+                                        <CardContent className="p-4 space-y-4">
+                                            {dayEvents.morning.length > 0 && (
+                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
+                                            )}
+                                            {dayEvents.afternoon.length > 0 && (
+                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
+                                            )}
+                                            {dayEvents.night.length > 0 && (
+                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
+                                            )}
+                                        </CardContent>
+                                    )}
+                                </Card>
+                            </div>
+                        );
+                    })}
+                </div>
+                <ScrollBar orientation="horizontal" />
+            </ScrollArea>
         );
     }
     
@@ -799,43 +802,42 @@ function AgendaPageContent() {
       <div className="space-y-6">
         <Card>
           <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div>
-                      <CardTitle className="text-3xl font-headline flex items-center gap-2 whitespace-nowrap">
-                          <CalendarIcon className="h-8 w-8 text-primary" />
-                          Agenda de Missões
-                      </CardTitle>
-                      <CardDescription>
-                          Planeje e visualize as missões da sua equipe.
-                      </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                  <CalendarIcon className="h-8 w-8 text-primary" />
+                  Agenda de Missões
+                </CardTitle>
+                <CardDescription>
+                  Planeje e visualize as missões da sua equipe.
+                </CardDescription>
+              </div>
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                  <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                          <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <h2 className="text-sm font-medium text-center w-full sm:w-auto capitalize px-2">
+                          {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                      </h2>
+                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                          <ChevronRight className="h-4 w-4" />
+                      </Button>
                   </div>
-                  <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 sm:gap-4">
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
-                            <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" onClick={handleToday}>Hoje</Button>
-                        <h2 className="text-sm font-medium text-center w-auto capitalize whitespace-nowrap px-2">
-                            {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                        </h2>
-                        <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
-                            <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" className="border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
-                            <Target className="mr-2 h-4 w-4" /> Missões de Hoje
-                        </Button>
-                        {canEdit && (
-                            <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon">
-                                <PlusCircle className="h-4 w-4" />
-                                <span className="sr-only">Adicionar Missão</span>
-                            </Button>
-                        )}
-                      </div>
+                  <div className="flex gap-2">
+                      <Button variant="outline" onClick={handleToday} className="hidden sm:inline-flex">Hoje</Button>
+                      <Button variant="outline" className="flex-1 border-primary/20 bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary" onClick={handleShowTodayMissions}>
+                          <Target className="mr-2 h-4 w-4" /> Missões de Hoje
+                      </Button>
+                      {canEdit && (
+                          <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon" className="shrink-0">
+                              <PlusCircle className="h-4 w-4" />
+                              <span className="sr-only">Adicionar Missão</span>
+                          </Button>
+                      )}
                   </div>
               </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Separator className="mb-4" />
@@ -1032,5 +1034,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
