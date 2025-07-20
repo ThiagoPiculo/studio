@@ -138,7 +138,7 @@ function CreateRewardTemplatePageContent() {
         familyId: currentContext === 'my-space' ? null : currentContext,
       };
       
-      const createdTemplate = await addRewardTemplate(templateDataPayload);
+      const createdTemplate = await addRewardTemplate(user, templateDataPayload);
       toast({
         title: 'Tesouro Adicionado!',
         description: `A recompensa "${createdTemplate.title}" foi adicionada ao catálogo de prêmios.`,

@@ -123,7 +123,7 @@ export default function EditRewardTemplatePage() {
         status: values.status,
       };
       
-      await updateRewardTemplate(rewardTemplate.id, updatePayload);
+      await updateRewardTemplate(user, rewardTemplate.id, updatePayload);
 
       let toastDescription = `A recompensa "${values.title}" foi atualizada com sucesso.`;
       if (originalStatus === 'archived' && values.status === 'active') {

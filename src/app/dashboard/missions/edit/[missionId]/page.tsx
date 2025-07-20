@@ -163,7 +163,7 @@ export default function EditMissionTemplatePage() {
           status: values.status,
       };
 
-      await updateMissionTemplate(missionTemplate.id, updatePayload);
+      await updateMissionTemplate(user, missionTemplate.id, updatePayload);
 
       toast({
         title: 'Missão Atualizada!',

@@ -147,14 +147,14 @@ export default function MissionsHubPage() {
   }, [missionTemplates, recurrenceFilter]);
 
   const handleDeleteConfirm = async () => {
-    if (!templateToDelete) return;
+    if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
     try {
       if (alsoDeleteInstances) {
-        await deleteMissionTemplateAndInstances(templateToDelete.id);
+        await deleteMissionTemplateAndInstances(user, templateToDelete.id);
         toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
       } else {
-        await deleteMissionTemplate(templateToDelete.id);
+        await deleteMissionTemplate(user, templateToDelete.id);
         toast({ title: "Missão Removida do Catálogo!", description: `A missão "${templateToDelete.title}" foi removida. As atribuições existentes não foram afetadas.` });
       }
       refetchAllData();

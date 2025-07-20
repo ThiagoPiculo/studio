@@ -93,7 +93,7 @@ function CreateMissionTemplatePageContent() {
         recurrenceRule: null,
       };
       
-      const createdTemplate = await addMissionTemplate(templateDataPayload);
+      const createdTemplate = await addMissionTemplate(user, templateDataPayload);
       toast({
         title: 'Missão Adicionada ao Catálogo!',
         description: `A missão "${createdTemplate.title}" está pronta para ser atribuída.`,
