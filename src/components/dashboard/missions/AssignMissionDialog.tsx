@@ -24,7 +24,6 @@ import {
   getActiveMissionInstancesByTemplate,
   updateRecurringMissionInstance,
   deleteMissionInstancesByTemplateAndChild,
-  getMissionTemplateById,
   getChildProfileById,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle } from 'lucide-react';
@@ -155,33 +154,39 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     }
   }, [user, effectiveTemplate, currentContext, toast]);
   
-  // This effect now decides the initial view
   useEffect(() => {
-    if (isOpen) {
-      if (instanceToEdit) {
-        // Mode: Editing an existing instance
-        const childBeingEdited = children.find(c => c.id === instanceToEdit.childId);
-        if (!childBeingEdited) {
-          getChildProfileById(instanceToEdit.childId).then(child => {
-            if(child) {
-              setChildren([child]);
-              setSelectedChild(child);
+    const initialize = async () => {
+        if (instanceToEdit) {
+            setIsLoading(true);
+            try {
+                const child = await getChildProfileById(instanceToEdit.childId);
+                if (child) {
+                    setChildren([child]);
+                    setSelectedChild(child);
+                    prepareScheduleForm(instanceToEdit);
+                    setView('schedule');
+                } else {
+                    toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
+                    onOpenChange(false);
+                }
+            } catch (error) {
+                toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
+                onOpenChange(false);
+            } finally {
+                setIsLoading(false);
             }
-          })
-        } else {
-           setSelectedChild(childBeingEdited);
+        } else if (template) {
+            await fetchData();
+            setView('list');
         }
-        prepareScheduleForm(instanceToEdit);
-        setView('schedule');
-      } else {
-        // Mode: Assigning a new template
-        fetchData();
-        setView('list');
-      }
+    };
+    
+    if (isOpen) {
+        initialize();
     } else {
-      resetDialogState();
+        resetDialogState();
     }
-  }, [isOpen, instanceToEdit, children]);
+  }, [isOpen, instanceToEdit, template, fetchData, onOpenChange, resetDialogState, toast]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
@@ -414,3 +419,5 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     </>
   );
 }
+
+    
