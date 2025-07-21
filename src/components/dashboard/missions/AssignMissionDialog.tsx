@@ -21,7 +21,7 @@ import type { MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types
 import {
   getChildProfilesForAttribution,
   addMissionInstance,
-  getActiveChildMissionInstancesByTemplate,
+  getActiveMissionInstancesByTemplate,
   updateRecurringMissionInstance,
   deleteMissionInstancesByTemplateAndChild,
   getMissionTemplateById
@@ -135,7 +135,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     try {
       const [fetchedChildren, activeInstances] = await Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getActiveChildMissionInstancesByTemplate(template.id, currentContext)
+        getActiveMissionInstancesByTemplate(template.id, currentContext)
       ]);
       setChildren(fetchedChildren);
       const assignmentsMap = activeInstances.reduce((acc, instance) => {
@@ -245,6 +245,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
           toast({ title: "Missão Agendada!", description: `${template.title} foi agendada para ${selectedChild.name}.` });
       }
       fetchData();
+      onAssigned?.();
       resetDialogState();
     } catch (error) {
       console.error("Error saving assignment:", error);

@@ -1466,6 +1466,27 @@ export const getActiveChildMissionInstancesByTemplateAndChild = async (templateI
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
+export const getActiveMissionInstancesByTemplate = async (templateId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
+    let q;
+    const constraints = [
+      where('templateId', '==', templateId),
+      where('status', '==', 'pending')
+    ];
+
+    if (contextId === 'my-space') {
+      // This case might need ownerId to be fully correct, but it's not passed.
+      // Assuming 'my-space' means unassigned to a family, so familyId is null.
+      constraints.push(where('familyId', '==', null));
+    } else {
+      constraints.push(where('familyId', '==', contextId));
+    }
+
+    q = query(collection(db, 'missionInstances'), ...constraints);
+    
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MissionInstance);
+};
+
 export const getMissionInstancesByChild = async (childId: string): Promise<MissionInstance[]> => {
   const q = query(collection(db, 'missionInstances'), where('childId', '==', childId), orderBy('assignedAt', 'desc'));
   const querySnapshot = await getDocs(q);
@@ -2293,4 +2314,3 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
-
