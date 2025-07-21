@@ -17,7 +17,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types';
+import type { MissionTemplate, ChildProfile, MissionInstance, SchoolShift } from '@/lib/types';
 import {
   getChildProfilesForAttribution,
   addMissionInstance,
@@ -27,7 +27,7 @@ import {
   getChildProfileById,
   getActiveMissionInstancesByTemplate
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle } from 'lucide-react';
+import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle, NotebookPen } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
@@ -40,6 +40,7 @@ import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceD
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 const recurrenceRuleSchema = z.object({
   freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
@@ -90,6 +91,13 @@ interface AssignMissionDialogProps {
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
 }
+
+const schoolShiftMap: Record<SchoolShift, string> = {
+    morning: 'Manhã',
+    afternoon: 'Tarde',
+    full_time: 'Integral',
+    not_applicable: 'Não se aplica'
+};
 
 export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
@@ -348,31 +356,47 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     );
   };
   
-  const renderScheduleView = () => (
-    <FormProvider {...form}>
-       <form id="schedule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
-        <RecurrenceControl />
-        <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
-            <div>
-              {(instanceToEdit || existingAssignments[selectedChild!.id]) && (
-                  <Button type="button" variant="destructive" onClick={handleUnassign} disabled={isProcessing || !canEdit}>
-                      <XCircle className="mr-2 h-4 w-4" /> Desatribuir
-                  </Button>
+  const renderScheduleView = () => {
+    const shiftLabel = selectedChild?.schoolShift ? schoolShiftMap[selectedChild.schoolShift] : null;
+
+    return (
+      <FormProvider {...form}>
+        <form id="schedule-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-4">
+          <div className="flex items-center justify-center p-2 rounded-md bg-muted/50 text-xs text-muted-foreground gap-2">
+              <NotebookPen className="h-4 w-4 shrink-0" />
+              {selectedChild?.schoolShift && selectedChild.schoolShift !== 'not_applicable' ? (
+                  <p>
+                      Turno Escolar: <strong>{shiftLabel} ({selectedChild.schoolShiftStart} - {selectedChild.schoolShiftEnd})</strong>
+                  </p>
+              ) : (
+                   <Link href={`/dashboard/child/${selectedChild?.id}/manage?tab=edit`} className="hover:underline text-primary font-semibold">
+                      Lembrete: defina o turno escolar do herói →
+                   </Link>
               )}
-            </div>
-            <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => instanceToEdit ? onOpenChange(false) : setView('list')}>
-                  {instanceToEdit ? 'Cancelar' : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
-                </Button>
-                <Button type="submit" disabled={isProcessing || !canEdit}>
-                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                    Salvar Agenda
-                </Button>
-            </div>
-        </DialogFooter>
-      </form>
-    </FormProvider>
-  );
+          </div>
+          <RecurrenceControl />
+          <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
+              <div>
+                {(instanceToEdit || existingAssignments[selectedChild!.id]) && (
+                    <Button type="button" variant="destructive" onClick={handleUnassign} disabled={isProcessing || !canEdit}>
+                        <XCircle className="mr-2 h-4 w-4" /> Desatribuir
+                    </Button>
+                )}
+              </div>
+              <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">
+                  <Button type="button" variant="outline" onClick={() => instanceToEdit ? onOpenChange(false) : setView('list')}>
+                    {instanceToEdit ? 'Cancelar' : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
+                  </Button>
+                  <Button type="submit" disabled={isProcessing || !canEdit}>
+                      {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Salvar Agenda
+                  </Button>
+              </div>
+          </DialogFooter>
+        </form>
+      </FormProvider>
+    );
+  };
 
   return (
     <>
