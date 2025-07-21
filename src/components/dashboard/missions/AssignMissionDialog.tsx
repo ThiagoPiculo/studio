@@ -37,6 +37,8 @@ import { Form } from '@/components/ui/form';
 import { RecurrenceControl } from './RecurrenceControl';
 import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceDialog';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { useUserRole } from '@/hooks/useUserRole';
+import { format } from 'date-fns';
 
 const recurrenceRuleSchema = z.object({
   freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
@@ -81,19 +83,23 @@ export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
 interface AssignMissionDialogProps {
   template: MissionTemplate | null;
+  instanceToEdit?: MissionInstance | null;
+  occurrenceDate?: Date | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
 }
 
-export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
+  const { canEdit } = useUserRole();
   const { toast } = useToast();
+
+  const effectiveTemplate = template || instanceToEdit;
 
   const [view, setView] = useState<'list' | 'schedule'>('list');
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
-  const [activeInstance, setActiveInstance] = useState<MissionInstance | null>(null);
 
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [existingAssignments, setExistingAssignments] = useState<Record<string, MissionInstance>>({});
@@ -123,17 +129,16 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   const resetDialogState = useCallback(() => {
       setView('list');
       setSelectedChild(null);
-      setActiveInstance(null);
       form.reset({});
   }, [form]);
 
   const fetchData = useCallback(async () => {
-    if (!user || !template) return;
+    if (!user || !effectiveTemplate) return;
     setIsLoading(true);
     try {
       const [fetchedChildren, activeInstances] = await Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getActiveMissionInstancesByTemplate(template.id, currentContext)
+        getActiveMissionInstancesByTemplate(effectiveTemplate.templateId || effectiveTemplate.id, currentContext)
       ]);
       setChildren(fetchedChildren);
       const assignmentsMap = activeInstances.reduce((acc, instance) => {
@@ -147,20 +152,40 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     } finally {
       setIsLoading(false);
     }
-  }, [user, template, currentContext, toast]);
-
+  }, [user, effectiveTemplate, currentContext, toast]);
+  
+  // This effect now decides the initial view
   useEffect(() => {
     if (isOpen) {
-      fetchData();
+      if (instanceToEdit) {
+        // Mode: Editing an existing instance
+        const childBeingEdited = children.find(c => c.id === instanceToEdit.childId);
+        if (!childBeingEdited) {
+          getChildProfileById(instanceToEdit.childId).then(child => {
+            if(child) {
+              setChildren([child]);
+              setSelectedChild(child);
+            }
+          })
+        } else {
+           setSelectedChild(childBeingEdited);
+        }
+        prepareScheduleForm(instanceToEdit);
+        setView('schedule');
+      } else {
+        // Mode: Assigning a new template
+        fetchData();
+        setView('list');
+      }
     } else {
       resetDialogState();
     }
-  }, [isOpen, fetchData, resetDialogState]);
+  }, [isOpen, instanceToEdit, children]);
+
 
   const handleSelectChild = (child: ChildProfile) => {
     const existingInstance = existingAssignments[child.id];
     setSelectedChild(child);
-    setActiveInstance(existingInstance || null);
     
     if (existingInstance && existingInstance.isRecurring) {
         setIsRecurrenceEditModalOpen(true);
@@ -173,18 +198,18 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
       setIsRecurrenceEditModalOpen(false);
       setRecurrenceEditMode(mode);
-      prepareScheduleForm(activeInstance);
+      prepareScheduleForm(existingAssignments[selectedChild!.id]);
       setView('schedule');
   };
 
   const prepareScheduleForm = (instance: MissionInstance | null) => {
-    const source = instance || template;
+    const source = instance || effectiveTemplate;
     if (!source) return;
 
     let startDate = source.startDate?.toDate() ?? null;
     let dueDate = source.dueDate?.toDate() ?? new Date();
 
-    if(!instance) { // If creating new, default to today
+    if(!instance) {
         const today = new Date();
         startDate = source.isRecurring ? today : null;
         dueDate = !source.isRecurring ? today : new Date();
@@ -204,7 +229,6 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
             endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null) 
         };
     } else if (source.isRecurring) {
-        // Default to daily if it's recurring but has no rule
         initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
     }
 
@@ -212,11 +236,12 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   };
   
   const handleUnassign = async () => {
-    if (!user || !template || !selectedChild) return;
+    if (!user || !effectiveTemplate || !selectedChild) return;
+    const templateId = effectiveTemplate.templateId || effectiveTemplate.id;
     setIsProcessing(true);
     try {
-      await deleteMissionInstancesByTemplateAndChild(user, template.id, selectedChild.id);
-      toast({ title: "Missão Desatribuída", description: `${template.title} foi removida de ${selectedChild.name}.` });
+      await deleteMissionInstancesByTemplateAndChild(user, templateId, selectedChild.id);
+      toast({ title: "Missão Desatribuída", description: `${effectiveTemplate.title} foi removida de ${selectedChild.name}.` });
       fetchData();
       resetDialogState();
     } catch (error) {
@@ -229,29 +254,37 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
 
 
   const onSubmit = async (data: AssignmentFormValues) => {
-    if (!user || !template || !selectedChild) return;
+    if (!user || !effectiveTemplate || !selectedChild) return;
     setIsProcessing(true);
     
     try {
-      if (activeInstance) {
-          const occurrenceDate = activeInstance.isRecurring ? activeInstance.startDate?.toDate() : activeInstance.dueDate?.toDate();
-          if (!occurrenceDate) throw new Error("Data da ocorrência não encontrada para edição.");
-          await updateRecurringMissionInstance(activeInstance.id, recurrenceEditMode, data, occurrenceDate);
+      const existingInstance = instanceToEdit || existingAssignments[selectedChild.id];
+
+      if (existingInstance) {
+          const editDate = occurrenceDate || existingInstance.startDate?.toDate() || existingInstance.dueDate?.toDate();
+          if (!editDate) throw new Error("Data da ocorrência não encontrada para edição.");
+          
+          await updateRecurringMissionInstance(existingInstance.id, recurrenceEditMode, data, editDate);
           toast({ title: "Agendamento Atualizado!" });
       } else {
-          const finalTemplatePayload = { ...template, ...data };
+          const finalTemplatePayload = { ...effectiveTemplate, ...data };
           const instanceData = {
-              templateId: template.id,
+              templateId: effectiveTemplate.id,
               childId: selectedChild.id,
               ownerId: selectedChild.ownerId,
               familyId: selectedChild.familyId || null,
           };
           await addMissionInstance(user, instanceData, finalTemplatePayload);
-          toast({ title: "Missão Agendada!", description: `${template.title} foi agendada para ${selectedChild.name}.` });
+          toast({ title: "Missão Agendada!", description: `${effectiveTemplate.title} foi agendada para ${selectedChild.name}.` });
       }
-      fetchData();
       onAssigned?.();
-      resetDialogState();
+      // If we are in edit mode, just close the dialog. Otherwise, reset for next assignment.
+      if(instanceToEdit){
+         onOpenChange(false);
+      } else {
+        fetchData();
+        resetDialogState();
+      }
     } catch (error) {
       console.error("Error saving assignment:", error);
       toast({ title: "Erro ao salvar agendamento", variant: "destructive" });
@@ -293,6 +326,7 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
           variant={isAssigned ? "secondary" : "default"}
           size="sm"
           onClick={() => handleSelectChild(child)}
+          disabled={!canEdit}
         >
           {isAssigned ? <Edit className="mr-2 h-4 w-4" /> : <CalendarDays className="mr-2 h-4 w-4" />}
           {isAssigned ? "Editar Agenda" : "Agendar"}
@@ -307,17 +341,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         <RecurrenceControl />
         <DialogFooter className="flex-col-reverse sm:flex-row sm:justify-between w-full pt-4">
             <div>
-              {activeInstance && (
-                  <Button type="button" variant="destructive" onClick={handleUnassign} disabled={isProcessing}>
+              {(instanceToEdit || existingAssignments[selectedChild!.id]) && (
+                  <Button type="button" variant="destructive" onClick={handleUnassign} disabled={isProcessing || !canEdit}>
                       <XCircle className="mr-2 h-4 w-4" /> Desatribuir
                   </Button>
               )}
             </div>
             <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">
-                <Button type="button" variant="outline" onClick={() => setView('list')}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+                <Button type="button" variant="outline" onClick={() => instanceToEdit ? onOpenChange(false) : setView('list')}>
+                  {instanceToEdit ? 'Cancelar' : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
                 </Button>
-                <Button type="submit" disabled={isProcessing}>
+                <Button type="submit" disabled={isProcessing || !canEdit}>
                     {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                     Salvar Agenda
                 </Button>
@@ -329,20 +363,17 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={(open) => {
-        if (!open) resetDialogState();
-        onOpenChange(open);
-      }}>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
               <Target className="h-6 w-6 text-primary" />
-              Agendar Missão
+              {instanceToEdit ? 'Editar Missão' : 'Agendar Missão'}
             </DialogTitle>
             <DialogDescription>
               {view === 'list' 
-                ? `Selecione um herói para agendar a missão "${template?.title}".` 
-                : `Configure o agendamento de "${template?.title}" para ${selectedChild?.name}.`
+                ? `Selecione um herói para agendar a missão "${effectiveTemplate?.title}".` 
+                : `Configure o agendamento de "${effectiveTemplate?.title}" para ${selectedChild?.name}.`
               }
             </DialogDescription>
           </DialogHeader>
@@ -370,13 +401,13 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
         </DialogContent>
       </Dialog>
       
-      {activeInstance && (
+      {selectedChild && existingAssignments[selectedChild.id] && (
          <EditRecurrenceDialog 
             isOpen={isRecurrenceEditModalOpen}
             onOpenChange={setIsRecurrenceEditModalOpen}
             onSelect={handleRecurrenceEditSelect}
-            missionInstance={activeInstance}
-            occurrenceDate={activeInstance.startDate?.toDate() || activeInstance.dueDate?.toDate() || new Date()}
+            missionInstance={existingAssignments[selectedChild.id]}
+            occurrenceDate={occurrenceDate || existingAssignments[selectedChild.id].startDate?.toDate() || new Date()}
          />
       )}
     </>
