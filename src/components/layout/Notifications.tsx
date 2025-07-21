@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen } from 'lucide-react';
+import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -77,7 +77,7 @@ const notificationCategoryLabels: { [key: string]: string } = {
 
 export function Notifications() {
   const { user } = useAuth();
-  const { currentContext, setCurrentContext } = useFamily();
+  const { currentContext, setCurrentContext, availableContexts } = useFamily();
   const router = useRouter();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -254,6 +254,8 @@ export function Notifications() {
                     filteredNotifications.map(notification => {
                         const Icon = notificationIcons[notification.type] || Bell;
                         const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
+                        const context = availableContexts.find(c => c.id === notification.relatedContextId);
+                        
                         return (
                            <DropdownMenuItem
                               key={notification.id}
@@ -270,7 +272,18 @@ export function Notifications() {
                                 <div className={`grid gap-1 flex-grow ${notification.isRead ? 'opacity-70' : ''}`}>
                                   <p className="text-sm font-medium leading-tight">{notification.title}</p>
                                   <p className="text-sm text-muted-foreground leading-snug">{notification.description}</p>
-                                  <p className="text-xs text-muted-foreground">{timeAgo}</p>
+                                  <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                    <span>{timeAgo}</span>
+                                    {context && (
+                                        <>
+                                            <span>·</span>
+                                            <span className="flex items-center gap-1.5">
+                                                <LinkIcon className="h-3 w-3" />
+                                                {context.name}
+                                            </span>
+                                        </>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             </DropdownMenuItem>
