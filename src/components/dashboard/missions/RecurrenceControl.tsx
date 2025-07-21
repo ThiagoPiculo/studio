@@ -1,10 +1,11 @@
+
 "use client"
 
 import * as React from "react"
 import { useFormContext } from "react-hook-form"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Settings2, Sun, CloudSun, Moon } from "lucide-react"
+import { Calendar as CalendarIcon, Settings2, Sun, CloudSun, Moon, Clock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -16,20 +17,15 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { RecurrenceDialog } from './RecurrenceDialog';
 import { formatRecurrenceSummary } from "@/lib/calendar-utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
+import { TimePicker } from "./TimePicker"
 
-// Helper to set a default time based on the period of day
-const setTimeForPeriod = (date: Date, period: 'morning' | 'afternoon' | 'night'): Date => {
-    let hours = 9; // Default to morning
-    if (period === 'afternoon') hours = 14;
-    if (period === 'night') hours = 20;
-    
-    const newDate = new Date(date);
-    newDate.setHours(hours, 0, 0, 0);
-    return newDate;
-}
+const periodTimeRanges = {
+    morning: { start: 6, end: 11, default: '09:00' },
+    afternoon: { start: 12, end: 17, default: '14:00' },
+    night: { start: 18, end: 22, default: '20:00' },
+};
 
-// Helper to get the period from a date object
-const getPeriodFromDate = (date: Date | null | undefined): string => {
+const getPeriodFromDate = (date: Date | null | undefined): 'morning' | 'afternoon' | 'night' => {
     if (!date) return 'morning'; // Default period
     const hour = date.getHours();
     if (hour >= 12 && hour < 18) return 'afternoon';
@@ -43,32 +39,53 @@ export function RecurrenceControl() {
   const recurrenceRule: RecurrenceRule | null = watch('recurrenceRule');
   const [isRecurrenceDialogOpen, setIsRecurrenceDialogOpen] = React.useState(false);
   
-  // State to manage the visual period selection
   const currentStartDate = watch('startDate');
   const currentDueDate = watch('dueDate');
+
   const [selectedPeriod, setSelectedPeriod] = React.useState<'morning' | 'afternoon' | 'night'>(
     getPeriodFromDate(isRecurring ? currentStartDate : currentDueDate)
   );
+  
+  const updateDateTime = (date: Date, period: 'morning' | 'afternoon' | 'night', time?: string) => {
+      const [hour, minute] = (time || periodTimeRanges[period].default).split(':').map(Number);
+      const newDate = new Date(date);
+      newDate.setHours(hour, minute, 0, 0);
+      return newDate;
+  };
 
   const handleDateChange = (date: Date | undefined, fieldName: 'startDate' | 'dueDate') => {
     if (date) {
-        const dateWithTime = setTimeForPeriod(date, selectedPeriod);
-        setValue(fieldName, dateWithTime, { shouldValidate: true });
+        const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
+        const currentTime = getValues(fieldToUpdate) ? format(getValues(fieldToUpdate), 'HH:mm') : undefined;
+        const newDateTime = updateDateTime(date, selectedPeriod, currentTime);
+        setValue(fieldName, newDateTime, { shouldValidate: true });
     }
   };
   
   const handlePeriodChange = (period: 'morning' | 'afternoon' | 'night') => {
-    if (!period) return; // Don't do anything if the same button is clicked again
+    if (!period) return;
     setSelectedPeriod(period);
-    // Update the existing date with the new time
     const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
     const currentDate = getValues(fieldToUpdate) as Date | null;
     if (currentDate) {
-        const newDateWithTime = setTimeForPeriod(currentDate, period);
-        setValue(fieldToUpdate, newDateWithTime, { shouldValidate: true });
+        const newDateTime = updateDateTime(currentDate, period);
+        setValue(fieldToUpdate, newDateTime, { shouldValidate: true });
     }
   };
 
+  const handleTimeChange = (time: string) => {
+      const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
+      const currentDate = getValues(fieldToUpdate) as Date | null;
+      if (currentDate) {
+          const [hour, minute] = time.split(':').map(Number);
+          const newDateTime = new Date(currentDate);
+          newDateTime.setHours(hour, minute);
+          setValue(fieldToUpdate, newDateTime, { shouldValidate: true });
+      }
+  }
+
+  const timeValue = format(isRecurring ? currentStartDate || new Date() : currentDueDate || new Date(), 'HH:mm');
+  const timeRange = periodTimeRanges[selectedPeriod];
 
   return (
     <div className="space-y-6 rounded-lg border p-4">
@@ -88,15 +105,20 @@ export function RecurrenceControl() {
                     checked={field.value}
                     onCheckedChange={(checked) => {
                     field.onChange(checked);
-                    // Reset fields when switching
+                    const newPeriod = getPeriodFromDate(checked ? currentStartDate : currentDueDate);
+                    const defaultTime = periodTimeRanges[newPeriod].default;
+                    const newDate = new Date();
+                    const [hour, minute] = defaultTime.split(':').map(Number);
+                    newDate.setHours(hour, minute, 0, 0);
+
                     if (checked) {
                         setValue('dueDate', null, { shouldValidate: true });
-                        setValue('startDate', new Date(), { shouldValidate: true });
+                        setValue('startDate', newDate, { shouldValidate: true });
                         setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
                     } else {
                         setValue('startDate', null, { shouldValidate: true });
                         setValue('recurrenceRule', null, { shouldValidate: true });
-                        setValue('dueDate', new Date(), { shouldValidate: true });
+                        setValue('dueDate', newDate, { shouldValidate: true });
                     }
                     }}
                 />
@@ -111,19 +133,18 @@ export function RecurrenceControl() {
                 type="single"
                 value={selectedPeriod}
                 onValueChange={handlePeriodChange}
-                className="grid grid-cols-3"
+                className="grid grid-cols-3 gap-2"
             >
-                <ToggleGroupItem value="morning" aria-label="Manhã" className="flex-col h-auto gap-1 py-2">
-                    <Sun className="h-5 w-5"/> Manhã
+                <ToggleGroupItem value="morning" aria-label="Manhã" className="flex-col h-auto gap-1 py-2 data-[state=on]:bg-yellow-500/10 data-[state=on]:border-yellow-500/30 data-[state=on]:text-yellow-700">
+                    <Sun className="h-5 w-5 text-yellow-500"/> Manhã
                 </ToggleGroupItem>
-                <ToggleGroupItem value="afternoon" aria-label="Tarde" className="flex-col h-auto gap-1 py-2">
-                    <CloudSun className="h-5 w-5"/> Tarde
+                <ToggleGroupItem value="afternoon" aria-label="Tarde" className="flex-col h-auto gap-1 py-2 data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500/30 data-[state=on]:text-orange-700">
+                    <CloudSun className="h-5 w-5 text-orange-500"/> Tarde
                 </ToggleGroupItem>
-                <ToggleGroupItem value="night" aria-label="Noite" className="flex-col h-auto gap-1 py-2">
-                    <Moon className="h-5 w-5"/> Noite
+                <ToggleGroupItem value="night" aria-label="Noite" className="flex-col h-auto gap-1 py-2 data-[state=on]:bg-indigo-500/10 data-[state=on]:border-indigo-500/30 data-[state=on]:text-indigo-700">
+                    <Moon className="h-5 w-5 text-indigo-500"/> Noite
                 </ToggleGroupItem>
             </ToggleGroup>
-            <FormDescription className="text-xs text-center">Isso define um horário padrão para ordenar as missões na agenda.</FormDescription>
         </div>
 
         {isRecurring ? (
@@ -134,19 +155,22 @@ export function RecurrenceControl() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Data de Início da Recorrência</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data de início</span>}
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'startDate')} initialFocus locale={ptBR} weekStartsOn={1} />
-                                </PopoverContent>
-                            </Popover>
+                             <div className="grid grid-cols-2 gap-2">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'startDate')} initialFocus locale={ptBR} weekStartsOn={1} />
+                                    </PopoverContent>
+                                </Popover>
+                                <TimePicker value={timeValue} onChange={handleTimeChange} minHour={timeRange.start} maxHour={timeRange.end} minuteStep={5} />
+                             </div>
                             <FormMessage />
                         </FormItem>
                     )}
@@ -172,20 +196,23 @@ export function RecurrenceControl() {
                     name="dueDate"
                     render={({ field }) => (
                          <FormItem>
-                            <FormLabel>Data da Missão Única</FormLabel>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                            <CalendarIcon className="mr-2 h-4 w-4" />
-                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data do prazo</span>}
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'dueDate')} initialFocus locale={ptBR} weekStartsOn={1} />
-                                </PopoverContent>
-                            </Popover>
+                            <FormLabel>Data e Hora da Missão</FormLabel>
+                            <div className="grid grid-cols-2 gap-2">
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'dueDate')} initialFocus locale={ptBR} weekStartsOn={1} />
+                                    </PopoverContent>
+                                </Popover>
+                                <TimePicker value={timeValue} onChange={handleTimeChange} minHour={timeRange.start} maxHour={timeRange.end} minuteStep={5} />
+                            </div>
                             <FormMessage />
                         </FormItem>
                     )}
