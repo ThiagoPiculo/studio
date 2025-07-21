@@ -73,7 +73,7 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
     };
     await setDoc(userDocRef, userProfile);
     
-    // Pre-populate the reward templates for the new user
+    // Pre-populate the reward templates for the new user from Google Sign In
     await populateInitialRewardTemplates(user.uid);
 
     return userProfile;

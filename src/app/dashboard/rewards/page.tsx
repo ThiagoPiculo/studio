@@ -1,8 +1,7 @@
 
-
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -25,7 +24,8 @@ import {
   getRewardTemplatesByOwnerOrFamily, 
   deleteRewardTemplate,
   getChildProfilesForAttribution,
-  getChildRewardInstancesForContext
+  getChildRewardInstancesForContext,
+  populateInitialRewardTemplates
 } from '@/lib/firebase/firestore';
 import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance, UserProfile } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
@@ -52,6 +52,7 @@ export default function RewardsHubPage() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPopulating, setIsPopulating] = useState(false);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -60,7 +61,7 @@ export default function RewardsHubPage() {
 
   const rewardMode = user?.settings?.rewardMode || 'automatic';
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
@@ -73,7 +74,19 @@ export default function RewardsHubPage() {
         getChildProfilesForAttribution(user.uid, currentContext),
         getChildRewardInstancesForContext(user.uid, familyIdToQuery)
       ]);
-      setRewardTemplates(templates);
+      
+      // Check for existing users with no templates
+      if (templates.length === 0 && children.length > 0) {
+        setIsPopulating(true);
+        await populateInitialRewardTemplates(user.uid);
+        // Refetch after populating
+        const newTemplates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+        setRewardTemplates(newTemplates);
+        setIsPopulating(false);
+      } else {
+        setRewardTemplates(templates);
+      }
+      
       setChildren(children);
       setRewardInstances(instances.filter(i => i.status === 'active'));
     } catch (err) {
@@ -82,11 +95,12 @@ export default function RewardsHubPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [user, currentContext, toast]);
+
 
   useEffect(() => {
     fetchData();
-  }, [user, currentContext]);
+  }, [fetchData]);
   
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
@@ -165,14 +179,36 @@ export default function RewardsHubPage() {
               <div className="flex justify-center mb-4">
                 <Loader2 className="h-16 w-16 text-primary animate-spin" />
               </div>
-              <p className="text-lg text-muted-foreground font-semibold">Populando seu catálogo inicial...</p>
+              <p className="text-lg text-muted-foreground font-semibold">Carregando a lojinha...</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                  Buscando as melhores recompensas para seus heróis.
+              </p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+  
+  if (isPopulating) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-48 w-full" />
+        <Card>
+           <CardHeader>
+             <Skeleton className="h-6 w-1/2" />
+          </CardHeader>
+           <CardContent className="text-center py-10">
+              <div className="flex justify-center mb-4">
+                <Loader2 className="h-16 w-16 text-primary animate-spin" />
+              </div>
+              <p className="text-lg text-muted-foreground font-semibold">Preparando seu catálogo inicial...</p>
               <p className="text-sm text-muted-foreground mt-1">
                   As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
               </p>
             </CardContent>
         </Card>
       </div>
-    );
+    )
   }
 
   const renderRewardCard = (template: RewardTemplate) => {
