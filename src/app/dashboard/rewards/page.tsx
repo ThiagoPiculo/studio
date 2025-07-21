@@ -42,6 +42,8 @@ import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 import { getInitials } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
@@ -49,6 +51,7 @@ export default function RewardsHubPage() {
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [children, setChildren] = useState<ChildProfile[]>([]);
@@ -77,11 +80,9 @@ export default function RewardsHubPage() {
         getChildRewardInstancesForContext(user.uid, familyIdToQuery)
       ]);
       
-      // Check for existing users with no templates and at least one child
       if (templates.length === 0 && children.length > 0) {
         setIsPopulating(true);
         await populateInitialRewardTemplates(user.uid);
-        // Refetch after populating
         const newTemplates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
         setRewardTemplates(newTemplates);
         setIsPopulating(false);
@@ -117,7 +118,6 @@ export default function RewardsHubPage() {
         grouped[category].sort((a, b) => a.starsCost - b.starsCost);
     }
 
-    // Return as an array of categories with items, ordered by our predefined category order
     return rewardCategories
         .map(categoryInfo => ({
             ...categoryInfo,
@@ -138,7 +138,6 @@ export default function RewardsHubPage() {
               title: "Modo de Estratégia Atualizado!",
               description: `Você agora está no modo ${newMode === 'automatic' ? 'Automático' : 'Manual'}.`
           });
-          // The AuthProvider's onSnapshot will update the user state automatically.
       } catch (error) {
           console.error("Failed to update reward mode:", error);
           toast({ title: "Erro ao salvar", description: "Não foi possível alterar sua estratégia de recompensas.", variant: "destructive"});
@@ -301,7 +300,7 @@ export default function RewardsHubPage() {
     );
   };
   
-  const renderCatalogView = (
+  const renderCatalogView = () => (
       <Accordion type="multiple" defaultValue={groupedAndSortedTemplates.map(g => g.id)} className="w-full space-y-4">
         {groupedAndSortedTemplates.map(group => {
             const GroupIcon = group.icon;
@@ -323,7 +322,7 @@ export default function RewardsHubPage() {
                         {group.items.map(renderRewardCard)}
                     </div>
                   </AccordionContent>
-                </section>
+                </AccordionItem>
             );
         })}
       </Accordion>
@@ -336,7 +335,7 @@ export default function RewardsHubPage() {
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div>
                       <CardTitle className="text-3xl font-headline flex items-center">
-                          <Sparkles className="mr-3 h-8 w-8 text-primary" />
+                          <Gift className="mr-3 h-8 w-8 text-primary" />
                           Lojinha de Recompensas
                       </CardTitle>
                       <CardDescription>
@@ -352,7 +351,7 @@ export default function RewardsHubPage() {
           </CardHeader>
       </Card>
       
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion type="single" collapsible className="w-full" defaultValue={isMobile ? undefined : "strategy"}>
         <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
           <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
             <div className="flex items-center gap-4">
@@ -396,7 +395,7 @@ export default function RewardsHubPage() {
         </CardHeader>
         <CardContent>
             {groupedAndSortedTemplates.length > 0 ? (
-                renderCatalogView
+                renderCatalogView()
             ) : (
                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                     <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
