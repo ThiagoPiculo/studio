@@ -30,7 +30,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -228,6 +228,11 @@ export default function MissionsHubPage() {
             </div>
           </CardHeader>
           <CardContent className="flex flex-wrap gap-4">
+            <Link href="/dashboard/agenda">
+              <Button variant="outline" className="w-full sm:w-auto">
+                <CalendarDays className="mr-2 h-5 w-5" /> Ver Agenda de Missões
+              </Button>
+            </Link>
             <Link href="/dashboard/missions/new">
               <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
                 <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
