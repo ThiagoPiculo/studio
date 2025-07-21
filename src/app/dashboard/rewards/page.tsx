@@ -235,8 +235,8 @@ export default function RewardTemplatesHubPage() {
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
-                  <Gift className="mr-3 h-8 w-8 text-primary" />
-                  Mural de Recompensas
+                  <Sparkles className="mr-3 h-8 w-8 text-primary" />
+                  Lojinha de Recompensas
                 </CardTitle>
                 <CardDescription>
                   {templatesDescription}
@@ -257,7 +257,7 @@ export default function RewardTemplatesHubPage() {
             </Link>
             <Link href="/dashboard/rewards/ideas">
               <Button variant="secondary" className="w-full sm:w-auto">
-                <Sparkles className="mr-2 h-5 w-5" /> Ver Ideias de Recompensas
+                <Gift className="mr-2 h-5 w-5" /> Ver Ideias de Recompensas
               </Button>
             </Link>
           </CardContent>
@@ -304,7 +304,7 @@ export default function RewardTemplatesHubPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Recompensas do Catálogo</CardTitle>
+          <CardTitle>Catálogo de Recompensas</CardTitle>
           <CardDescription>Abaixo estão as recompensas que você já adicionou para o contexto de <span className="font-semibold text-primary">{currentContextName}</span>.</CardDescription>
         </CardHeader>
         <CardContent>
