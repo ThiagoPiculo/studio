@@ -15,11 +15,15 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRewardTemplateById, updateRewardTemplate } from '@/lib/firebase/firestore';
-import type { RewardCategory, RewardTemplate } from '@/lib/types';
+import { getRewardTemplateById, updateRewardTemplate, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
+import type { RewardCategory, RewardTemplate, ChildRewardInstance, ChildProfile } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, Save, ArrowLeft } from 'lucide-react';
+import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useFamily } from '@/contexts/FamilyContext';
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getInitials } from '@/lib/utils';
+import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -41,11 +45,14 @@ export default function EditRewardTemplatePage() {
   const templateId = params.templateId as string;
   const { user } = useAuth();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
 
+  const [assignedChildren, setAssignedChildren] = useState<ChildProfile[]>([]);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const form = useForm<RewardTemplateFormValues>({
     resolver: zodResolver(rewardTemplateFormSchema),
@@ -59,7 +66,7 @@ export default function EditRewardTemplatePage() {
     },
   });
 
-  useEffect(() => {
+  const fetchRewardTemplateData = async () => {
     if (!templateId || !user) {
       setIsFetchingData(false);
       if(!user) router.push('/auth/login');
@@ -67,34 +74,57 @@ export default function EditRewardTemplatePage() {
       return;
     }
 
-    const fetchRewardTemplateData = async () => {
-      setIsFetchingData(true);
-      try {
-        const fetchedTemplate = await getRewardTemplateById(templateId);
-        if (fetchedTemplate) {
-          setRewardTemplate(fetchedTemplate);
-          form.reset({
-            title: fetchedTemplate.title,
-            description: fetchedTemplate.description || '',
-            category: fetchedTemplate.category,
-            starsCost: fetchedTemplate.starsCost,
-            isMaterial: fetchedTemplate.isMaterial,
-            status: fetchedTemplate.status,
-          });
-        } else {
-          toast({ title: "Recompensa não encontrada", variant: "destructive" });
-          router.push('/dashboard/rewards');
-        }
-      } catch (error) {
-        console.error("Error fetching reward template:", error);
-        toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
+    setIsFetchingData(true);
+    try {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      const [fetchedTemplate, allInstances, allChildren] = await Promise.all([
+          getRewardTemplateById(templateId),
+          getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+          getChildProfilesForAttribution(user.uid, currentContext)
+      ]);
+
+      if (fetchedTemplate) {
+        setRewardTemplate(fetchedTemplate);
+        form.reset({
+          title: fetchedTemplate.title,
+          description: fetchedTemplate.description || '',
+          category: fetchedTemplate.category,
+          starsCost: fetchedTemplate.starsCost,
+          isMaterial: fetchedTemplate.isMaterial,
+          status: fetchedTemplate.status,
+        });
+
+        const childrenMap = new Map(allChildren.map(child => [child.id, child]));
+        const assignedChildIds = new Set<string>();
+        allInstances.forEach(instance => {
+            if (instance.templateId === templateId) {
+                assignedChildIds.add(instance.childId);
+            }
+        });
+        const childrenWithAssignment = Array.from(assignedChildIds)
+            .map(childId => childrenMap.get(childId))
+            .filter((child): child is ChildProfile => !!child)
+            .sort((a,b) => a.name.localeCompare(b.name));
+        setAssignedChildren(childrenWithAssignment);
+
+      } else {
+        toast({ title: "Recompensa não encontrada", variant: "destructive" });
         router.push('/dashboard/rewards');
-      } finally {
-        setIsFetchingData(false);
       }
-    };
+    } catch (error) {
+      console.error("Error fetching reward template:", error);
+      toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
+      router.push('/dashboard/rewards');
+    } finally {
+      setIsFetchingData(false);
+    }
+  };
+
+
+  useEffect(() => {
     fetchRewardTemplateData();
-  }, [templateId, user, router, toast, form]);
+  }, [templateId, user, router, toast, form, currentContext]);
+
 
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
@@ -325,12 +355,56 @@ export default function EditRewardTemplatePage() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter>
-            <p className="text-xs text-muted-foreground">
-                Alterações aqui afetam a recompensa base do catálogo. A lógica para propagar alterações para recompensas já atribuídas será implementada futuramente.
-            </p>
-        </CardFooter>
       </Card>
+
+       <Card className="mt-8 shadow-xl">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-primary" />
+              Atribuído a
+          </CardTitle>
+          <CardDescription>
+              Esta recompensa está atualmente atribuída aos seguintes heróis.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {assignedChildren.length === 0 ? (
+            <p className="text-muted-foreground text-sm">Esta recompensa não está atribuída a nenhum herói.</p>
+          ) : (
+            <div className="space-y-3">
+              {assignedChildren.map(child => (
+                <div key={child.id} className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-3">
+                      <Avatar
+                        className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                      >
+                          <AvatarImage src={child.avatar} alt={child.name} />
+                          <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                              {getInitials(child.name)}
+                          </AvatarFallback>
+                      </Avatar>
+                      <p className="font-semibold">{child.name}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+         <CardFooter>
+            <Button variant="outline" onClick={() => setIsAssignDialogOpen(true)} disabled={!canEdit}>
+                Gerenciar Atribuições <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+         </CardFooter>
+      </Card>
+      {rewardTemplate && (
+         <AssignRewardDialog
+          template={rewardTemplate}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={fetchRewardTemplateData}
+        />
+      )}
     </div>
   );
 }
