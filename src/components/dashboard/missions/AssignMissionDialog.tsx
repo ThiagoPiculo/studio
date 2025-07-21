@@ -36,6 +36,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { RecurrenceControl } from './RecurrenceControl';
 import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceDialog';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const recurrenceRuleSchema = z.object({
   freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
@@ -80,8 +81,6 @@ export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 
 interface AssignMissionDialogProps {
   template: MissionTemplate | null;
-  instanceToEdit?: MissionInstance | null; // This is now handled differently, but kept for signature consistency
-  occurrenceDate?: Date | null; // This is now handled differently
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
@@ -101,7 +100,6 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // New states for recurrence editing flow
   const [isRecurrenceEditModalOpen, setIsRecurrenceEditModalOpen] = useState(false);
   const [recurrenceEditMode, setRecurrenceEditMode] = useState<EditRecurrenceMode>('all');
   
@@ -164,13 +162,9 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     setSelectedChild(child);
     setActiveInstance(existingInstance || null);
     
-    // Determine which date to use for the recurrence edit modal
-    const occurrenceDate = existingInstance?.isRecurring ? (existingInstance.startDate?.toDate() || new Date()) : (existingInstance?.dueDate?.toDate() || new Date());
-    
     if (existingInstance && existingInstance.isRecurring) {
         setIsRecurrenceEditModalOpen(true);
     } else {
-        // If not recurring, or creating new, go straight to schedule view
         prepareScheduleForm(existingInstance || null);
         setView('schedule');
     }
@@ -187,10 +181,19 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     const source = instance || template;
     if (!source) return;
 
+    let startDate = source.startDate?.toDate() ?? null;
+    let dueDate = source.dueDate?.toDate() ?? new Date();
+
+    if(!instance) { // If creating new, default to today
+        const today = new Date();
+        startDate = source.isRecurring ? today : null;
+        dueDate = !source.isRecurring ? today : new Date();
+    }
+
     const initialValues: AssignmentFormValues = {
         isRecurring: !!source.isRecurring,
-        startDate: source.startDate?.toDate() ?? null,
-        dueDate: source.dueDate?.toDate() ?? new Date(),
+        startDate: startDate,
+        dueDate: dueDate,
         recurrenceRule: null,
     };
 
@@ -200,7 +203,11 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
             ...rule, 
             endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null) 
         };
+    } else if (source.isRecurring) {
+        // Default to daily if it's recurring but has no rule
+        initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
     }
+
     form.reset(initialValues);
   };
   
@@ -227,13 +234,11 @@ export function AssignMissionDialog({ template, isOpen, onOpenChange, onAssigned
     
     try {
       if (activeInstance) {
-          // Editing existing instance
           const occurrenceDate = activeInstance.isRecurring ? activeInstance.startDate?.toDate() : activeInstance.dueDate?.toDate();
           if (!occurrenceDate) throw new Error("Data da ocorrência não encontrada para edição.");
           await updateRecurringMissionInstance(activeInstance.id, recurrenceEditMode, data, occurrenceDate);
           toast({ title: "Agendamento Atualizado!" });
       } else {
-          // Creating new instance
           const finalTemplatePayload = { ...template, ...data };
           const instanceData = {
               templateId: template.id,

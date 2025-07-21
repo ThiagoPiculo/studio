@@ -1,11 +1,10 @@
-
 "use client"
 
 import * as React from "react"
 import { useFormContext } from "react-hook-form"
-import { format, setHours, setMinutes, setSeconds, parse, isValid, getDay } from "date-fns"
+import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Clock, Settings2, Sun, CloudSun, Moon } from "lucide-react"
+import { Calendar as CalendarIcon, Settings2, Sun, CloudSun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -14,283 +13,185 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import type { RecurrenceRule } from "@/lib/types"
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RecurrenceDialog } from './RecurrenceDialog';
-import { formatRecurrenceSummary, getDayToWeekday } from "@/lib/calendar-utils";
+import { formatRecurrenceSummary } from "@/lib/calendar-utils";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 
-interface DateTimePickerProps {
-  value: Date | null | undefined;
-  onChange: (date: Date | undefined) => void;
-  label: string;
+// Helper to set a default time based on the period of day
+const setTimeForPeriod = (date: Date, period: 'morning' | 'afternoon' | 'night'): Date => {
+    let hours = 9; // Default to morning
+    if (period === 'afternoon') hours = 14;
+    if (period === 'night') hours = 20;
+    
+    const newDate = new Date(date);
+    newDate.setHours(hours, 0, 0, 0);
+    return newDate;
 }
 
-const DateTimePicker: React.FC<DateTimePickerProps> = ({ value, onChange, label }) => {
-  const [isOpen, setIsOpen] = React.useState(false);
-  const [tempDate, setTempDate] = React.useState<Date | undefined>(undefined);
-
-  // When popover opens, sync tempDate with the external value, snapping minutes
-  React.useEffect(() => {
-    if (isOpen) {
-      let initialDate: Date | undefined = undefined;
-      if (value && isValid(value)) {
-        const minutes = value.getMinutes();
-        const roundedMinutes = Math.round(minutes / 15) * 15;
-        if (roundedMinutes === 60) {
-            // Handle rounding up to the next hour
-            initialDate = setHours(setMinutes(value, 0), value.getHours() + 1);
-        } else {
-            initialDate = setMinutes(value, roundedMinutes);
-        }
-      } else {
-        // Default to today at 9:00 if no value is provided
-        initialDate = setSeconds(setMinutes(setHours(new Date(), 9), 0), 0);
-      }
-      setTempDate(initialDate);
-    }
-  }, [isOpen, value]);
-
-  const handleConfirm = () => {
-    onChange(tempDate);
-    setIsOpen(false);
-  };
-
-  const handleDateSelect = (selectedDate: Date | undefined) => {
-    if (!selectedDate) {
-      setTempDate(undefined);
-      return;
-    }
-    const currentHours = tempDate ? tempDate.getHours() : 9; // Default to 9 AM
-    const currentMinutes = tempDate ? tempDate.getMinutes() : 0;
-    let newDate = setHours(selectedDate, currentHours);
-    newDate = setMinutes(newDate, currentMinutes);
-    newDate = setSeconds(newDate, 0);
-    setTempDate(newDate);
-  };
-
-  const handleHourChange = (hour: string) => {
-    const newHour = parseInt(hour, 10);
-    if (!isNaN(newHour)) {
-        const baseDate = tempDate || new Date(); // If no date, use now
-        const newDate = setHours(baseDate, newHour);
-        setTempDate(newDate);
-    }
-  };
-
-  const handleMinuteChange = (minute: string) => {
-    const newMinute = parseInt(minute, 10);
-    if (!isNaN(newMinute)) {
-        const baseDate = tempDate || new Date(); // If no date, use now
-        const newDate = setMinutes(baseDate, newMinute);
-        setTempDate(newDate);
-    }
-  };
-
-  return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground"
-          )}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value && isValid(value) ? format(value, "PPP, HH:mm", { locale: ptBR }) : <span>{label}</span>}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
-        <Calendar
-          mode="single"
-          selected={tempDate}
-          onSelect={handleDateSelect}
-          initialFocus
-          locale={ptBR}
-          weekStartsOn={1}
-        />
-        <div className="flex items-center justify-between p-3 border-t border-border">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <Label>Horário</Label>
-            <div className="flex items-center gap-1">
-              <Select
-                value={tempDate ? format(tempDate, "HH") : undefined}
-                onValueChange={handleHourChange}
-              >
-                <SelectTrigger className="w-[70px] h-8">
-                  <SelectValue placeholder="Hora" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Array.from({ length: 24 }).map((_, i) => {
-                    const hour = i.toString().padStart(2, '0');
-                    return <SelectItem key={hour} value={hour}>{hour}</SelectItem>
-                  })}
-                </SelectContent>
-              </Select>
-              <span>:</span>
-              <Select
-                value={tempDate ? format(tempDate, "mm") : undefined}
-                onValueChange={handleMinuteChange}
-              >
-                <SelectTrigger className="w-[70px] h-8">
-                  <SelectValue placeholder="Min" />
-                </SelectTrigger>
-                <SelectContent>
-                  {['00', '15', '30', '45'].map(minute => (
-                    <SelectItem key={minute} value={minute}>{minute}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <Button size="sm" onClick={handleConfirm}>OK</Button>
-        </div>
-      </PopoverContent>
-    </Popover>
-  );
+// Helper to get the period from a date object
+const getPeriodFromDate = (date: Date | null | undefined): string => {
+    if (!date) return 'morning'; // Default period
+    const hour = date.getHours();
+    if (hour >= 12 && hour < 18) return 'afternoon';
+    if (hour >= 18) return 'night';
+    return 'morning';
 }
-
 
 export function RecurrenceControl() {
-  const { control, watch, setValue } = useFormContext();
+  const { control, watch, setValue, getValues } = useFormContext();
   const isRecurring = watch('isRecurring');
   const recurrenceRule: RecurrenceRule | null = watch('recurrenceRule');
-  const startDate: Date | null = watch('startDate');
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isRecurrenceDialogOpen, setIsRecurrenceDialogOpen] = React.useState(false);
+  
+  // State to manage the visual period selection
+  const currentStartDate = watch('startDate');
+  const currentDueDate = watch('dueDate');
+  const [selectedPeriod, setSelectedPeriod] = React.useState<'morning' | 'afternoon' | 'night'>(
+    getPeriodFromDate(isRecurring ? currentStartDate : currentDueDate)
+  );
 
-  const setDaily = () => {
-    setValue('recurrenceRule', { freq: 'DAILY', interval: 1, endDate: null, count: null }, { shouldValidate: true });
+  const handleDateChange = (date: Date | undefined, fieldName: 'startDate' | 'dueDate') => {
+    if (date) {
+        const dateWithTime = setTimeForPeriod(date, selectedPeriod);
+        setValue(fieldName, dateWithTime, { shouldValidate: true });
+    }
   };
   
-  const setWeekly = () => {
-    if (!startDate) {
-        // Validation will catch this, so we just set a basic weekly rule.
-        // The user must select a start date for the form to be valid.
-        setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, endDate: null, count: null }, { shouldValidate: true });
-        return;
+  const handlePeriodChange = (period: 'morning' | 'afternoon' | 'night') => {
+    if (!period) return; // Don't do anything if the same button is clicked again
+    setSelectedPeriod(period);
+    // Update the existing date with the new time
+    const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
+    const currentDate = getValues(fieldToUpdate) as Date | null;
+    if (currentDate) {
+        const newDateWithTime = setTimeForPeriod(currentDate, period);
+        setValue(fieldToUpdate, newDateWithTime, { shouldValidate: true });
     }
-    const dayOfWeek = getDayToWeekday[getDay(startDate)];
-    setValue('recurrenceRule', { freq: 'WEEKLY', interval: 1, byDay: [dayOfWeek], endDate: null, count: null }, { shouldValidate: true });
   };
-  
-  let activeMode: 'daily' | 'weekly' | 'custom' | null = null;
-  if (recurrenceRule) {
-    if (recurrenceRule.freq === 'DAILY' && recurrenceRule.interval === 1 && !recurrenceRule.byDay && !recurrenceRule.endDate && !recurrenceRule.count) {
-      activeMode = 'daily';
-    } else if (
-      recurrenceRule.freq === 'WEEKLY' &&
-      recurrenceRule.interval === 1 &&
-      (!recurrenceRule.endDate && !recurrenceRule.count)
-    ) {
-      activeMode = 'weekly';
-    } else {
-      activeMode = 'custom';
-    }
-  }
+
 
   return (
     <div className="space-y-6 rounded-lg border p-4">
-      <FormField
-        control={control}
-        name="isRecurring"
-        render={({ field }) => (
-          <FormItem className="flex flex-row items-center justify-between">
-            <div className='space-y-1'>
-                <FormLabel>Repetir Missão</FormLabel>
-                <FormDescription className="text-xs">
-                    Defina se a missão ocorre uma única vez ou se repete.
-                </FormDescription>
-            </div>
-            <FormControl>
-              <Switch
-                checked={field.value}
-                onCheckedChange={(checked) => {
-                  field.onChange(checked);
-                  if (!checked) {
-                    setValue('recurrenceRule', null, { shouldValidate: true });
-                    setValue('startDate', null, { shouldValidate: true });
-                  } else {
-                    setValue('dueDate', null, { shouldValidate: true });
-                    setDaily(); // Default to daily when turned on
-                  }
-                }}
-              />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-
-    {isRecurring && (
-      <div className="space-y-4 animate-in fade-in duration-300">
         <FormField
-          control={control}
-          name="startDate"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Data de Início da Recorrência</FormLabel>
-              <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora de início" />
-               <FormDescription className="text-xs">
-                    <div className="flex items-center gap-3">
-                        <span>A hora define o período na agenda:</span>
-                        <div className="flex items-center gap-2 text-muted-foreground/80">
-                            <span className="flex items-center gap-1 font-medium text-yellow-700 dark:text-yellow-400"><Sun className="h-3.5 w-3.5 text-yellow-500" />Manhã</span>
-                            <span className="flex items-center gap-1 font-medium text-orange-700 dark:text-orange-400"><CloudSun className="h-3.5 w-3.5 text-orange-500" />Tarde</span>
-                            <span className="flex items-center gap-1 font-medium text-indigo-700 dark:text-indigo-400"><Moon className="h-3.5 w-3.5 text-indigo-500" />Noite</span>
-                        </div>
-                    </div>
-              </FormDescription>
-              <FormMessage />
+            control={control}
+            name="isRecurring"
+            render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between">
+                <div className='space-y-1'>
+                    <FormLabel>Repetir Missão</FormLabel>
+                    <FormDescription className="text-xs">
+                        Defina se a missão ocorre uma única vez ou se repete.
+                    </FormDescription>
+                </div>
+                <FormControl>
+                <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                    field.onChange(checked);
+                    // Reset fields when switching
+                    if (checked) {
+                        setValue('dueDate', null, { shouldValidate: true });
+                        setValue('startDate', new Date(), { shouldValidate: true });
+                        setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
+                    } else {
+                        setValue('startDate', null, { shouldValidate: true });
+                        setValue('recurrenceRule', null, { shouldValidate: true });
+                        setValue('dueDate', new Date(), { shouldValidate: true });
+                    }
+                    }}
+                />
+                </FormControl>
             </FormItem>
-          )}
-        />
-          <div className="space-y-2">
-            <Label>Regra de Repetição</Label>
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button type="button" variant={activeMode === 'daily' ? "secondary" : "outline"} onClick={setDaily}>Diário</Button>
-                <Button type="button" variant={activeMode === 'weekly' ? "secondary" : "outline"} onClick={setWeekly} disabled={!startDate}>Semanal</Button>
-                <Button type="button" variant={activeMode === 'custom' ? "secondary" : "outline"} onClick={() => setIsDialogOpen(true)}>
-                    Personalizar...
-                </Button>
-            </div>
-            {isRecurring && recurrenceRule && (
-              <p className="text-sm text-muted-foreground text-center pt-2">
-                {formatRecurrenceSummary({ isRecurring, recurrenceRule })}
-              </p>
             )}
-            <RecurrenceDialog 
-                isOpen={isDialogOpen}
-                onOpenChange={setIsDialogOpen}
-                initialRule={recurrenceRule}
-                onSave={(newRule) => setValue('recurrenceRule', newRule, { shouldValidate: true })}
-            />
-          </div>
-      </div>
-    )}
-    {!isRecurring && (
-        <div className="space-y-4 animate-in fade-in duration-300">
-            <FormField
-              control={control}
-              name="dueDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Data e Hora da Missão (Prazo)</FormLabel>
-                  <DateTimePicker value={field.value} onChange={field.onChange} label="Escolha data e hora do prazo" />
-                   <FormDescription className="text-xs">
-                    <div className="flex items-center gap-3">
-                        <span>A hora define o período na agenda:</span>
-                        <div className="flex items-center gap-2 text-muted-foreground/80">
-                            <span className="flex items-center gap-1 font-medium text-yellow-700 dark:text-yellow-400"><Sun className="h-3.5 w-3.5 text-yellow-500" />Manhã</span>
-                            <span className="flex items-center gap-1 font-medium text-orange-700 dark:text-orange-400"><CloudSun className="h-3.5 w-3.5 text-orange-500" />Tarde</span>
-                            <span className="flex items-center gap-1 font-medium text-indigo-700 dark:text-indigo-400"><Moon className="h-3.5 w-3.5 text-indigo-500" />Noite</span>
-                        </div>
-                    </div>
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        />
+        
+        <div className="space-y-2">
+            <Label>Período do Dia</Label>
+            <ToggleGroup
+                type="single"
+                value={selectedPeriod}
+                onValueChange={handlePeriodChange}
+                className="grid grid-cols-3"
+            >
+                <ToggleGroupItem value="morning" aria-label="Manhã" className="flex-col h-auto gap-1 py-2">
+                    <Sun className="h-5 w-5"/> Manhã
+                </ToggleGroupItem>
+                <ToggleGroupItem value="afternoon" aria-label="Tarde" className="flex-col h-auto gap-1 py-2">
+                    <CloudSun className="h-5 w-5"/> Tarde
+                </ToggleGroupItem>
+                <ToggleGroupItem value="night" aria-label="Noite" className="flex-col h-auto gap-1 py-2">
+                    <Moon className="h-5 w-5"/> Noite
+                </ToggleGroupItem>
+            </ToggleGroup>
+            <FormDescription className="text-xs text-center">Isso define um horário padrão para ordenar as missões na agenda.</FormDescription>
         </div>
-    )}
+
+        {isRecurring ? (
+            <div className="space-y-4 animate-in fade-in duration-300">
+                <FormField
+                    control={control}
+                    name="startDate"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Data de Início da Recorrência</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data de início</span>}
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'startDate')} initialFocus locale={ptBR} weekStartsOn={1} />
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <div className="space-y-2">
+                    <Label>Regra de Repetição</Label>
+                    <Button type="button" variant="outline" className="w-full justify-between" onClick={() => setIsRecurrenceDialogOpen(true)}>
+                        <span className="truncate pr-2">{formatRecurrenceSummary({ isRecurring, recurrenceRule })}</span>
+                        <Settings2 className="h-4 w-4 flex-shrink-0" />
+                    </Button>
+                    <RecurrenceDialog 
+                        isOpen={isRecurrenceDialogOpen}
+                        onOpenChange={setIsRecurrenceDialogOpen}
+                        initialRule={recurrenceRule}
+                        onSave={(newRule) => setValue('recurrenceRule', newRule, { shouldValidate: true })}
+                    />
+                </div>
+            </div>
+        ) : (
+            <div className="space-y-4 animate-in fade-in duration-300">
+                <FormField
+                    control={control}
+                    name="dueDate"
+                    render={({ field }) => (
+                         <FormItem>
+                            <FormLabel>Data da Missão Única</FormLabel>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data do prazo</span>}
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'dueDate')} initialFocus locale={ptBR} weekStartsOn={1} />
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+        )}
     </div>
   )
 }
