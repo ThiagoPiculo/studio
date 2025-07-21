@@ -101,6 +101,28 @@ export default function RewardsHubPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
+
+  const groupedAndSortedTemplates = useMemo(() => {
+    const grouped: Record<string, RewardTemplate[]> = {};
+    rewardTemplates.forEach(template => {
+        if (!grouped[template.category]) {
+            grouped[template.category] = [];
+        }
+        grouped[template.category].push(template);
+    });
+
+    for (const category in grouped) {
+        grouped[category].sort((a, b) => a.starsCost - b.starsCost);
+    }
+
+    // Return as an array of categories with items, ordered by our predefined category order
+    return rewardCategories
+        .map(categoryInfo => ({
+            ...categoryInfo,
+            items: grouped[categoryInfo.id] || []
+        }))
+        .filter(group => group.items.length > 0);
+  }, [rewardTemplates]);
   
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
@@ -281,6 +303,27 @@ export default function RewardsHubPage() {
       </Card>
     );
   };
+  
+  const renderCatalogView = (
+      <div className="space-y-8">
+        {groupedAndSortedTemplates.map(group => {
+            const GroupIcon = group.icon;
+            return (
+                <section key={group.userCategory} aria-labelledby={`category-title-${group.id}`}>
+                    <div className="flex items-center gap-3 mb-4">
+                        <GroupIcon className="h-8 w-8 text-primary" />
+                        <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
+                            {group.userCategory}
+                        </h2>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {group.items.map(renderRewardCard)}
+                    </div>
+                </section>
+            );
+        })}
+      </div>
+  );
 
   return (
     <div className="space-y-8 pb-10">
@@ -330,51 +373,38 @@ export default function RewardsHubPage() {
           </CardContent>
       </Card>
 
-      {rewardMode === 'manual' ? (
-        <Card>
-            <CardHeader>
-                <CardTitle>Catálogo de Recompensas</CardTitle>
-                <CardDescription>No modo manual, você cria e atribui cada recompensa. Estas são as que você já criou.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                 {rewardTemplates.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {rewardTemplates.map(renderRewardCard)}
-                    </div>
-                 ) : (
-                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                        <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                        <p className="text-lg text-muted-foreground">Seu catálogo de recompensas está vazio.</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            Clique em "Criar Nova Recompensa" para começar a adicionar prêmios.
-                        </p>
-                    </div>
-                 )}
-            </CardContent>
-        </Card>
-      ) : (
-        <Card>
-            <CardHeader>
-                <CardTitle>Catálogo de Recompensas Automáticas</CardTitle>
-                <CardDescription>Esta é a lista de recompensas que o sistema usará para sugerir e notificar você. Gerencie as atribuições para ajustar a experiência.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                {rewardTemplates.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {rewardTemplates.map(renderRewardCard)}
-                    </div>
-                ) : (
-                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                        <Loader2 className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
-                        <p className="text-lg text-muted-foreground">Populando seu catálogo inicial...</p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                           As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
-                        </p>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-      )}
+      <Card>
+        <CardHeader>
+            <CardTitle>Catálogo de Recompensas</CardTitle>
+            <CardDescription>
+                {rewardMode === 'automatic'
+                    ? "Esta é a lista de recompensas que o sistema usará para sugerir e notificar você. Gerencie as atribuições para ajustar a experiência."
+                    : "No modo manual, você cria e atribui cada recompensa. Estas são as que você já criou."
+                }
+            </CardDescription>
+        </CardHeader>
+        <CardContent>
+            {groupedAndSortedTemplates.length > 0 ? (
+                renderCatalogView
+            ) : rewardMode === 'automatic' ? (
+                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                    <Loader2 className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
+                    <p className="text-lg text-muted-foreground">Populando seu catálogo inicial...</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
+                    </p>
+                </div>
+            ) : (
+                <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                    <p className="text-lg text-muted-foreground">Seu catálogo de recompensas está vazio.</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Clique em "Criar Nova Recompensa" para começar a adicionar prêmios.
+                    </p>
+                </div>
+            )}
+        </CardContent>
+      </Card>
 
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
