@@ -24,7 +24,8 @@ import {
   getActiveMissionInstancesByTemplate,
   updateRecurringMissionInstance,
   deleteMissionInstancesByTemplateAndChild,
-  getMissionTemplateById
+  getMissionTemplateById,
+  getChildProfileById,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
