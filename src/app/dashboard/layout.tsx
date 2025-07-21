@@ -27,6 +27,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       }
     }
   }, [user, loading, router, isChildAuthenticated]);
+  
+  const handleBackClick = () => {
+    // Check if there is history to go back to.
+    // window.history.length <= 2 means the user landed directly on a dashboard page
+    // (e.g., from an external link or new tab), so "back" would take them off-site.
+    if (window.history.length <= 2) {
+      router.push('/dashboard/heroes'); // Navigate to a safe default page
+    } else {
+      router.back();
+    }
+  };
 
 
   if (loading) {
@@ -55,7 +66,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                   <ArrowLeft className="h-4 w-4" />
                   <span className="sr-only">Voltar</span>
                 </Button>
