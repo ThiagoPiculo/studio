@@ -17,7 +17,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
-import { Gift, PlusCircle, Star as StarIcon, Loader2, Edit3, Trash2, ArrowRight, Users, Info, PackageSearch } from 'lucide-react';
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -40,6 +43,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
+import { getInitials } from '@/lib/utils';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
@@ -158,11 +162,6 @@ export default function RewardsHubPage() {
     });
     return assignments;
   }, [rewardInstances, childrenMap]);
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; 
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
 
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
@@ -309,7 +308,7 @@ export default function RewardsHubPage() {
         {groupedAndSortedTemplates.map(group => {
             const GroupIcon = group.icon;
             return (
-                <section key={group.userCategory} aria-labelledby={`category-title-${group.id}`}>
+                <section key={group.id} aria-labelledby={`category-title-${group.id}`}>
                     <div className="flex items-center gap-3 mb-4">
                         <GroupIcon className="h-8 w-8 text-primary" />
                         <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
