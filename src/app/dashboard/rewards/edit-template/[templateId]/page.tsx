@@ -160,7 +160,7 @@ export default function EditRewardTemplatePage() {
      return (
       <div className="flex flex-col justify-center items-center min-h-screen">
         <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
-        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar ao Mural de Recompensas</Button>
+        <Button onClick={() => router.push('/dashboard/rewards')}>Voltar para a Lojinha</Button>
       </div>
     );
   }

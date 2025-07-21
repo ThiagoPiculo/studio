@@ -29,6 +29,7 @@ import { Loader2, Users, AlertCircle, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface AssignRewardDialogProps {
   template: RewardTemplate | null;
@@ -39,6 +40,7 @@ interface AssignRewardDialogProps {
 
 export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned }: AssignRewardDialogProps) {
   const { user } = useAuth();
+  const { canEdit } = useUserRole();
   const { currentContext, availableContexts } = useFamily();
   const { toast } = useToast();
 
@@ -182,7 +184,10 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             <Label
               key={child.id}
               htmlFor={childId}
-              className="flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20 cursor-pointer"
+              className={cn(
+                "flex items-center justify-between p-3 rounded-md border bg-card hover:bg-muted/20",
+                canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-70"
+              )}
             >
             <div className="flex items-center space-x-3">
                 <Avatar
@@ -204,6 +209,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
               id={childId}
               checked={!!selectedChildren[child.id]}
               onCheckedChange={(checked) => handleChildSelection(child.id, !!checked)}
+              disabled={!canEdit}
             />
             </Label>
         )
@@ -263,7 +269,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
           </DialogClose>
           <Button 
             onClick={handleAssign} 
-            disabled={isAssigning || isLoadingChildren}
+            disabled={isAssigning || isLoadingChildren || !canEdit}
           >
             {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Users className="mr-2 h-4 w-4" />}
             Confirmar Alterações
