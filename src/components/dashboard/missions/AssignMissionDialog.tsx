@@ -21,11 +21,11 @@ import type { MissionTemplate, ChildProfile, MissionInstance } from '@/lib/types
 import {
   getChildProfilesForAttribution,
   addMissionInstance,
-  getActiveMissionInstancesByTemplate,
   updateRecurringMissionInstance,
   deleteMissionInstancesByTemplateAndChild,
   getMissionTemplateById,
   getChildProfileById,
+  getActiveMissionInstancesByTemplate
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -160,8 +160,8 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     const initialize = async () => {
         if (instanceToEdit) {
             setIsLoading(true);
+            setEffectiveTemplate(instanceToEdit);
             try {
-                // Since we are editing, we don't need all children, just the one being edited.
                 const child = await getChildProfileById(instanceToEdit.childId);
                 if (child) {
                     setChildren([child]);
@@ -180,7 +180,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             }
         } else if (template) {
             setEffectiveTemplate(template);
-            await fetchData();
+            fetchData();
             setView('list');
         }
     };
