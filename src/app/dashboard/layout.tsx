@@ -17,9 +17,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, loading, isChildAuthenticated, logout } = useAuth();
+  const { user, loading, isChildAuthenticated } = useAuth();
   const router = useRouter();
-  const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -28,24 +27,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       }
     }
   }, [user, loading, router, isChildAuthenticated]);
-  
-  const handleBackClick = () => {
-    // Check if the referrer is outside the dashboard scope.
-    // This is a simple check; more robust checks might be needed for complex routing.
-    const isPreviousPageOutsideDashboard = document.referrer && !document.referrer.includes('/dashboard');
-
-    if (isPreviousPageOutsideDashboard) {
-      setIsConfirmingLogout(true);
-    } else {
-      router.back();
-    }
-  };
-
-  const handleConfirmLogout = async () => {
-    await logout();
-    // logout function already handles redirecting to login page.
-    setIsConfirmingLogout(false);
-  };
 
 
   if (loading) {
@@ -67,23 +48,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   return (
     <>
-      <AlertDialog open={isConfirmingLogout} onOpenChange={setIsConfirmingLogout}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza que deseja sair?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Ao voltar, você sairá da sua sessão no Mini Herois. Você precisará fazer login novamente para continuar.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmLogout} className="bg-destructive hover:bg-destructive/90">
-              Sair
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
@@ -91,7 +55,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
                 <SidebarTrigger className="md:hidden" />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
+                <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => router.back()}>
                   <ArrowLeft className="h-4 w-4" />
                   <span className="sr-only">Voltar</span>
                 </Button>
