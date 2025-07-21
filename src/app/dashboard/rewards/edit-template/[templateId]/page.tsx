@@ -15,7 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRewardTemplateById, updateRewardTemplate, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
+import { getRewardTemplateById, updateRewardTemplate, getChildRewardInstancesForContext, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate, ChildRewardInstance, ChildProfile } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
