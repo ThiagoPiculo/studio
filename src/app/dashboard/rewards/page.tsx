@@ -16,9 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -79,7 +77,7 @@ export default function RewardsHubPage() {
         getChildRewardInstancesForContext(user.uid, familyIdToQuery)
       ]);
       
-      // Check for existing users with no templates
+      // Check for existing users with no templates and at least one child
       if (templates.length === 0 && children.length > 0) {
         setIsPopulating(true);
         await populateInitialRewardTemplates(user.uid);
@@ -191,7 +189,7 @@ export default function RewardsHubPage() {
   if (isLoading || isRoleLoading) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
         <Card>
            <CardHeader>
              <Skeleton className="h-6 w-1/2" />
@@ -213,7 +211,7 @@ export default function RewardsHubPage() {
   if (isPopulating) {
     return (
       <div className="space-y-6">
-        <Skeleton className="h-48 w-full" />
+        <Skeleton className="h-32 w-full" />
         <Card>
            <CardHeader>
              <Skeleton className="h-6 w-1/2" />
@@ -236,11 +234,11 @@ export default function RewardsHubPage() {
     const categoryDetails = getCategoryDetails(template.category);
     const assignedChildren = assignmentsByTemplate.get(template.id) || [];
     return (
-      <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
+      <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
         <CardHeader>
           <div className="flex items-center gap-2">
-            {categoryDetails?.icon && <categoryDetails.icon className="h-5 w-5 text-muted-foreground" />}
-            <CardTitle className="text-xl line-clamp-2">{template.title}</CardTitle>
+            {categoryDetails?.icon && <categoryDetails.icon className="h-4 w-4 text-muted-foreground" />}
+            <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
           </div>
           {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
         </CardHeader>
@@ -304,24 +302,31 @@ export default function RewardsHubPage() {
   };
   
   const renderCatalogView = (
-      <div className="space-y-8">
+      <Accordion type="multiple" defaultValue={groupedAndSortedTemplates.map(g => g.id)} className="w-full space-y-4">
         {groupedAndSortedTemplates.map(group => {
             const GroupIcon = group.icon;
             return (
-                <section key={group.id} aria-labelledby={`category-title-${group.id}`}>
-                    <div className="flex items-center gap-3 mb-4">
+                <AccordionItem value={group.id} key={group.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                  <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                     <div className="flex items-center gap-4">
                         <GroupIcon className="h-8 w-8 text-primary" />
-                        <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
-                            {group.userCategory}
-                        </h2>
+                        <div>
+                            <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
+                                {group.userCategory}
+                            </h2>
+                             <p className="text-sm text-muted-foreground font-normal mt-1">{group.description}</p>
+                        </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 pt-0">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
                         {group.items.map(renderRewardCard)}
                     </div>
+                  </AccordionContent>
                 </section>
             );
         })}
-      </div>
+      </Accordion>
   );
 
   return (
@@ -331,7 +336,7 @@ export default function RewardsHubPage() {
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
                   <div>
                       <CardTitle className="text-3xl font-headline flex items-center">
-                          <Gift className="mr-3 h-8 w-8 text-primary" />
+                          <Sparkles className="mr-3 h-8 w-8 text-primary" />
                           Lojinha de Recompensas
                       </CardTitle>
                       <CardDescription>
@@ -346,31 +351,38 @@ export default function RewardsHubPage() {
               </div>
           </CardHeader>
       </Card>
-
-      <Card>
-          <CardHeader>
-              <CardTitle>Estratégia de Recompensas</CardTitle>
-              <CardDescription>Escolha como as recompensas são disponibilizadas para seus heróis.</CardDescription>
-          </CardHeader>
-          <CardContent>
-              <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as 'automatic' | 'manual')} className="space-y-2">
-                  <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
-                       <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
-                       <div className="flex-grow">
-                          <p className="font-semibold text-foreground">Automático (Recomendado)</p>
-                          <p className="text-sm text-muted-foreground">O app sugere recompensas e notifica você para aprová-las quando a criança atingir as estrelas necessárias. Menos trabalho para você!</p>
-                       </div>
-                  </Label>
-                   <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
-                       <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
-                       <div className="flex-grow">
-                           <p className="font-semibold text-foreground">Manual</p>
-                           <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
-                       </div>
-                  </Label>
-              </RadioGroup>
-          </CardContent>
-      </Card>
+      
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+          <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+            <div className="flex items-center gap-4">
+              <Info className="h-8 w-8 text-primary" />
+              <div>
+                  <h2 className="text-2xl font-headline font-bold">Estratégia de Recompensas</h2>
+                  <p className="text-sm text-muted-foreground font-normal mt-1">Escolha como as recompensas são disponibilizadas para seus heróis.</p>
+              </div>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="p-6 pt-0">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+              <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
+                    <RadioGroupItem value="automatic" id="mode-auto" checked={rewardMode === 'automatic'} onClick={() => handleRewardModeChange('automatic')} className="mt-1" />
+                    <div className="flex-grow">
+                      <p className="font-semibold text-foreground">Automático (Recomendado)</p>
+                      <p className="text-sm text-muted-foreground">O app sugere recompensas e notifica você para aprová-las quando a criança atingir as estrelas necessárias. Menos trabalho para você!</p>
+                    </div>
+              </Label>
+                <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
+                    <RadioGroupItem value="manual" id="mode-manual" checked={rewardMode === 'manual'} onClick={() => handleRewardModeChange('manual')} className="mt-1" />
+                    <div className="flex-grow">
+                        <p className="font-semibold text-foreground">Manual</p>
+                        <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
+                    </div>
+              </Label>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <Card>
         <CardHeader>
@@ -385,14 +397,6 @@ export default function RewardsHubPage() {
         <CardContent>
             {groupedAndSortedTemplates.length > 0 ? (
                 renderCatalogView
-            ) : rewardMode === 'automatic' ? (
-                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                    <Loader2 className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
-                    <p className="text-lg text-muted-foreground">Populando seu catálogo inicial...</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
-                    </p>
-                </div>
             ) : (
                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                     <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
