@@ -216,9 +216,14 @@ export default function MissionsHubPage() {
                 </CardDescription>
               </div>
               <DialogTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0">
-                    <Info className="mr-2 h-4 w-4" /> Sobre Missões
-                </Button>
+                  <Button 
+                    variant="link" 
+                    className="p-0 h-auto sm:variant-outline sm:w-auto sm:flex-shrink-0 sm:p-2 sm:h-10 text-sm"
+                  >
+                    <Info className="mr-2 h-4 w-4" /> 
+                    <span className="sm:hidden">O que são as missões?</span>
+                    <span className="hidden sm:inline">Sobre Missões</span>
+                  </Button>
               </DialogTrigger>
             </div>
           </CardHeader>
