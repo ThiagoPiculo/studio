@@ -43,7 +43,7 @@ export function TimePicker({ value, onChange, className, minHour = 0, maxHour = 
   return (
     <div className={cn("grid grid-cols-2 gap-2", className)}>
       <Select value={hour} onValueChange={handleHourChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full h-10">
           <SelectValue placeholder="Hora" />
         </SelectTrigger>
         <SelectContent>
@@ -53,7 +53,7 @@ export function TimePicker({ value, onChange, className, minHour = 0, maxHour = 
         </SelectContent>
       </Select>
       <Select value={minute} onValueChange={handleMinuteChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full h-10">
           <SelectValue placeholder="Min." />
         </SelectTrigger>
         <SelectContent>

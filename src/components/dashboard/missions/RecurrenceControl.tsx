@@ -5,7 +5,7 @@ import * as React from "react"
 import { useFormContext } from "react-hook-form"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { Calendar as CalendarIcon, Settings2, Sun, CloudSun, Moon, Clock } from "lucide-react"
+import { Calendar as CalendarIcon, Settings2, Sun, CloudSun, Moon } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
@@ -68,7 +68,6 @@ export function RecurrenceControl() {
     const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
     const currentDate = getValues(fieldToUpdate) as Date | null;
     if (currentDate) {
-        // When changing period, reset time to the new period's default
         const newDateTime = updateDateTime(currentDate, period);
         setValue(fieldToUpdate, newDateTime, { shouldValidate: true });
     }
@@ -87,6 +86,9 @@ export function RecurrenceControl() {
 
   const timeValue = format(isRecurring ? currentStartDate || new Date() : currentDueDate || new Date(), 'HH:mm');
   const timeRange = periodTimeRanges[selectedPeriod];
+
+  const dateField = isRecurring ? "startDate" : "dueDate";
+  const dateLabel = isRecurring ? "Data de Início da Recorrência" : "Data da Missão";
 
   return (
     <div className="space-y-6 rounded-lg border p-4">
@@ -149,75 +151,47 @@ export function RecurrenceControl() {
             <p className="text-xs text-muted-foreground text-center">{timeRange.label}</p>
         </div>
 
-        {isRecurring ? (
-            <div className="space-y-4 animate-in fade-in duration-300">
-                <FormField
-                    control={control}
-                    name="startDate"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Data de Início da Recorrência</FormLabel>
-                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'startDate')} initialFocus locale={ptBR} weekStartsOn={1} />
-                                    </PopoverContent>
-                                </Popover>
-                                <TimePicker value={timeValue} onChange={handleTimeChange} minHour={timeRange.start} maxHour={timeRange.end} minuteStep={5} />
-                             </div>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <div className="space-y-2">
-                    <Label>Regra de Repetição</Label>
-                    <Button type="button" variant="outline" className="w-full justify-between" onClick={() => setIsRecurrenceDialogOpen(true)}>
-                        <span className="truncate pr-2">{formatRecurrenceSummary({ isRecurring, recurrenceRule })}</span>
-                        <Settings2 className="h-4 w-4 flex-shrink-0" />
-                    </Button>
-                    <RecurrenceDialog 
-                        isOpen={isRecurrenceDialogOpen}
-                        onOpenChange={setIsRecurrenceDialogOpen}
-                        initialRule={recurrenceRule}
-                        onSave={(newRule) => setValue('recurrenceRule', newRule, { shouldValidate: true })}
-                    />
-                </div>
-            </div>
-        ) : (
-            <div className="space-y-4 animate-in fade-in duration-300">
-                <FormField
-                    control={control}
-                    name="dueDate"
-                    render={({ field }) => (
-                         <FormItem>
-                            <FormLabel>Data e Hora da Missão</FormLabel>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
-                                                <CalendarIcon className="mr-2 h-4 w-4" />
-                                                {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, 'dueDate')} initialFocus locale={ptBR} weekStartsOn={1} />
-                                    </PopoverContent>
-                                </Popover>
-                                <TimePicker value={timeValue} onChange={handleTimeChange} minHour={timeRange.start} maxHour={timeRange.end} minuteStep={5} />
-                            </div>
-                            <FormMessage />
-                        </FormItem>
-                    )}
+        <div className="space-y-2 animate-in fade-in duration-300">
+            <FormField
+                control={control}
+                name={dateField}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{dateLabel}</FormLabel>
+                         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px] gap-2 items-center">
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !field.value && "text-muted-foreground")}>
+                                            <CalendarIcon className="mr-2 h-4 w-4" />
+                                            {field.value ? format(field.value, "PPP", { locale: ptBR }) : <span>Escolha a data</span>}
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={(d) => handleDateChange(d, dateField)} initialFocus locale={ptBR} weekStartsOn={1} />
+                                </PopoverContent>
+                            </Popover>
+                            <TimePicker value={timeValue} onChange={handleTimeChange} minHour={timeRange.start} maxHour={timeRange.end} minuteStep={5} />
+                         </div>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+        
+        {isRecurring && (
+            <div className="space-y-2 animate-in fade-in duration-300">
+                <Label>Regra de Repetição</Label>
+                <Button type="button" variant="outline" className="w-full justify-between" onClick={() => setIsRecurrenceDialogOpen(true)}>
+                    <span className="truncate pr-2">{formatRecurrenceSummary({ isRecurring, recurrenceRule })}</span>
+                    <Settings2 className="h-4 w-4 flex-shrink-0" />
+                </Button>
+                <RecurrenceDialog 
+                    isOpen={isRecurrenceDialogOpen}
+                    onOpenChange={setIsRecurrenceDialogOpen}
+                    initialRule={recurrenceRule}
+                    onSave={(newRule) => setValue('recurrenceRule', newRule, { shouldValidate: true })}
                 />
             </div>
         )}
