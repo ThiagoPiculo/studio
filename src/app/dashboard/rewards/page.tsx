@@ -157,7 +157,20 @@ export default function RewardsHubPage() {
     return (
       <div className="space-y-6">
         <Skeleton className="h-48 w-full" />
-        <Skeleton className="h-64 w-full" />
+        <Card>
+           <CardHeader>
+             <Skeleton className="h-6 w-1/2" />
+          </CardHeader>
+           <CardContent className="text-center py-10">
+              <div className="flex justify-center mb-4">
+                <Loader2 className="h-16 w-16 text-primary animate-spin" />
+              </div>
+              <p className="text-lg text-muted-foreground font-semibold">Populando seu catálogo inicial...</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                  As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
+              </p>
+            </CardContent>
+        </Card>
       </div>
     );
   }

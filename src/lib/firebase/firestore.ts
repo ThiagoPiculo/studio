@@ -28,6 +28,7 @@ import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, diffe
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
+import { predefinedRewardGroups } from '../predefined-reward-ideas';
 
 const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
 
@@ -1001,6 +1002,32 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
 
 
 // --- Reward Templates (Catálogo de Recompensas) ---
+export const populateInitialRewardTemplates = async (userId: string): Promise<void> => {
+  const batch = writeBatch(db);
+  const now = serverTimestamp();
+
+  predefinedRewardGroups.forEach(group => {
+    group.items.forEach(idea => {
+      const newTemplateRef = doc(collection(db, 'rewardTemplates'));
+      const templateData: Omit<RewardTemplate, 'id'> = {
+        ownerId: userId,
+        familyId: null,
+        title: idea.title,
+        description: idea.description || '',
+        category: idea.suggestedAppCategory,
+        starsCost: idea.starsCost || 50,
+        isMaterial: idea.isMaterialSuggestion || false,
+        status: 'active',
+        createdAt: now as Timestamp,
+        updatedAt: now as Timestamp,
+      };
+      batch.set(newTemplateRef, templateData);
+    });
+  });
+
+  await batch.commit();
+};
+
 export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
   const newTemplateRef = doc(collection(db, 'rewardTemplates'));
   const now = serverTimestamp() as Timestamp;
@@ -1484,7 +1511,7 @@ export const getActiveMissionInstancesByTemplate = async (templateId: string, co
     q = query(collection(db, 'missionInstances'), ...constraints);
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MissionInstance);
+    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
 };
 
 export const getMissionInstancesByChild = async (childId: string): Promise<MissionInstance[]> => {

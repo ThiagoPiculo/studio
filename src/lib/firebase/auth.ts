@@ -68,7 +68,7 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
       createdAt: serverTimestamp() as any,
       settings: {
         initialPage: 'heroes',
-        rewardMode: 'automatic', // Default to automatic mode for new users
+        rewardMode: 'automatic',
       },
     };
     await setDoc(userDocRef, userProfile);
