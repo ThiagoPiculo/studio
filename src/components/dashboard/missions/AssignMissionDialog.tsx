@@ -24,6 +24,7 @@ import {
   getActiveMissionInstancesByTemplate,
   updateRecurringMissionInstance,
   deleteMissionInstancesByTemplateAndChild,
+  getMissionTemplateById,
   getChildProfileById,
 } from '@/lib/firebase/firestore';
 import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle } from 'lucide-react';
@@ -96,7 +97,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const { canEdit } = useUserRole();
   const { toast } = useToast();
 
-  const effectiveTemplate = template || instanceToEdit;
+  const [effectiveTemplate, setEffectiveTemplate] = useState<MissionTemplate | MissionInstance | null>(template || instanceToEdit);
 
   const [view, setView] = useState<'list' | 'schedule'>('list');
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
@@ -136,9 +137,10 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     if (!user || !effectiveTemplate) return;
     setIsLoading(true);
     try {
+      const templateId = 'templateId' in effectiveTemplate ? effectiveTemplate.templateId : effectiveTemplate.id;
       const [fetchedChildren, activeInstances] = await Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getActiveMissionInstancesByTemplate(effectiveTemplate.templateId || effectiveTemplate.id, currentContext)
+        getActiveMissionInstancesByTemplate(templateId, currentContext)
       ]);
       setChildren(fetchedChildren);
       const assignmentsMap = activeInstances.reduce((acc, instance) => {
@@ -159,6 +161,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
         if (instanceToEdit) {
             setIsLoading(true);
             try {
+                // Since we are editing, we don't need all children, just the one being edited.
                 const child = await getChildProfileById(instanceToEdit.childId);
                 if (child) {
                     setChildren([child]);
@@ -176,6 +179,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
                 setIsLoading(false);
             }
         } else if (template) {
+            setEffectiveTemplate(template);
             await fetchData();
             setView('list');
         }
@@ -209,9 +213,9 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   };
 
   const prepareScheduleForm = (instance: MissionInstance | null) => {
+    if (!effectiveTemplate) return;
     const source = instance || effectiveTemplate;
-    if (!source) return;
-
+    
     let startDate = source.startDate?.toDate() ?? null;
     let dueDate = source.dueDate?.toDate() ?? new Date();
 
@@ -243,7 +247,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   
   const handleUnassign = async () => {
     if (!user || !effectiveTemplate || !selectedChild) return;
-    const templateId = effectiveTemplate.templateId || effectiveTemplate.id;
+    const templateId = 'templateId' in effectiveTemplate ? effectiveTemplate.templateId : effectiveTemplate.id;
     setIsProcessing(true);
     try {
       await deleteMissionInstancesByTemplateAndChild(user, templateId, selectedChild.id);
@@ -273,18 +277,21 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
           await updateRecurringMissionInstance(existingInstance.id, recurrenceEditMode, data, editDate);
           toast({ title: "Agendamento Atualizado!" });
       } else {
-          const finalTemplatePayload = { ...effectiveTemplate, ...data };
+          // Asserting that effectiveTemplate is a MissionTemplate here, as this branch is for new assignments
+          if (!('ownerId' in effectiveTemplate)) throw new Error("Cannot assign from an instance.");
+
           const instanceData = {
               templateId: effectiveTemplate.id,
               childId: selectedChild.id,
               ownerId: selectedChild.ownerId,
               familyId: selectedChild.familyId || null,
           };
-          await addMissionInstance(user, instanceData, finalTemplatePayload);
+          const finalSchedulePayload = { ...effectiveTemplate, ...data };
+          await addMissionInstance(user, instanceData, finalSchedulePayload);
           toast({ title: "Missão Agendada!", description: `${effectiveTemplate.title} foi agendada para ${selectedChild.name}.` });
       }
       onAssigned?.();
-      // If we are in edit mode, just close the dialog. Otherwise, reset for next assignment.
+      
       if(instanceToEdit){
          onOpenChange(false);
       } else {
@@ -379,7 +386,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             <DialogDescription>
               {view === 'list' 
                 ? `Selecione um herói para agendar a missão "${effectiveTemplate?.title}".` 
-                : `Configure o agendamento de "${effectiveTemplate?.title}" para ${selectedChild?.name}.`
+                : <>Configure o agendamento de <strong className="text-foreground">"{effectiveTemplate?.title}"</strong> para <strong className="text-foreground">{selectedChild?.name}</strong>.</>
               }
             </DialogDescription>
           </DialogHeader>
@@ -419,5 +426,3 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     </>
   );
 }
-
-    

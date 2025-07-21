@@ -20,9 +20,9 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
 import { TimePicker } from "./TimePicker"
 
 const periodTimeRanges = {
-    morning: { start: 6, end: 11, default: '09:00' },
-    afternoon: { start: 12, end: 17, default: '14:00' },
-    night: { start: 18, end: 22, default: '20:00' },
+    morning: { start: 6, end: 11, default: '09:00', label: 'Manhã (06:00 - 11:59)' },
+    afternoon: { start: 12, end: 17, default: '14:00', label: 'Tarde (12:00 - 17:59)' },
+    night: { start: 18, end: 22, default: '19:00', label: 'Noite (18:00 - 22:59)' },
 };
 
 const getPeriodFromDate = (date: Date | null | undefined): 'morning' | 'afternoon' | 'night' => {
@@ -56,7 +56,7 @@ export function RecurrenceControl() {
   const handleDateChange = (date: Date | undefined, fieldName: 'startDate' | 'dueDate') => {
     if (date) {
         const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
-        const currentTime = getValues(fieldToUpdate) ? format(getValues(fieldToUpdate), 'HH:mm') : undefined;
+        const currentTime = getValues(fieldToUpdate) ? format(getValues(fieldToUpdate), 'HH:mm') : periodTimeRanges[selectedPeriod].default;
         const newDateTime = updateDateTime(date, selectedPeriod, currentTime);
         setValue(fieldName, newDateTime, { shouldValidate: true });
     }
@@ -68,6 +68,7 @@ export function RecurrenceControl() {
     const fieldToUpdate = isRecurring ? 'startDate' : 'dueDate';
     const currentDate = getValues(fieldToUpdate) as Date | null;
     if (currentDate) {
+        // When changing period, reset time to the new period's default
         const newDateTime = updateDateTime(currentDate, period);
         setValue(fieldToUpdate, newDateTime, { shouldValidate: true });
     }
@@ -145,6 +146,7 @@ export function RecurrenceControl() {
                     <Moon className="h-5 w-5 text-indigo-500"/> Noite
                 </ToggleGroupItem>
             </ToggleGroup>
+            <p className="text-xs text-muted-foreground text-center">{timeRange.label}</p>
         </div>
 
         {isRecurring ? (
@@ -155,7 +157,7 @@ export function RecurrenceControl() {
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel>Data de Início da Recorrência</FormLabel>
-                             <div className="grid grid-cols-2 gap-2">
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
@@ -197,7 +199,7 @@ export function RecurrenceControl() {
                     render={({ field }) => (
                          <FormItem>
                             <FormLabel>Data e Hora da Missão</FormLabel>
-                            <div className="grid grid-cols-2 gap-2">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                 <Popover>
                                     <PopoverTrigger asChild>
                                         <FormControl>
