@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -13,7 +13,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails } from '@/lib/types';
-import { missionCategories } from '@/lib/types';
+import { missionCategories, weekdays } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -25,7 +25,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { Toggle } from '@/components/ui/toggle';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -43,6 +43,7 @@ export type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
 interface CalendarEvent {
   date: Date;
   title: string;
+  type: 'mission' | 'school';
   data: MissionInstance;
 }
 
@@ -232,9 +233,11 @@ function AgendaPageContent() {
   }, [currentDate, dateRangeFilter]);
 
   const eventsByDate = useMemo(() => {
-    const instancesToProcess = selectedChildrenIds.length === 0 
-      ? missionInstances 
-      : missionInstances.filter(inst => selectedChildrenIds.includes(inst.childId));
+    const childrenToProcess = selectedChildrenIds.length === 0 
+      ? children 
+      : children.filter(c => selectedChildrenIds.includes(c.id));
+      
+    const instancesToProcess = missionInstances.filter(inst => childrenToProcess.some(c => c.id === inst.childId));
 
     const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }> = {};
     const daysInView = eachDayOfInterval(viewInterval);
@@ -244,6 +247,7 @@ function AgendaPageContent() {
         acc[dateKey] = { morning: [], afternoon: [], night: [] };
     });
 
+    // Process Mission Instances
     instancesToProcess.forEach(instance => {
       const eventTimeSource = instance.startDate?.toDate() || instance.dueDate?.toDate();
       if (!eventTimeSource) return;
@@ -261,6 +265,7 @@ function AgendaPageContent() {
           const event: CalendarEvent = {
             date: day,
             title: instance.title,
+            type: 'mission',
             data: instance,
           };
           
@@ -269,8 +274,52 @@ function AgendaPageContent() {
       });
     });
 
+    // Process School Events
+    childrenToProcess.forEach(child => {
+        if (child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
+            daysInView.forEach(day => {
+                const dayOfWeek = day.getDay(); // 0=Sun, 1=Mon, ...
+                if (dayOfWeek >= 1 && dayOfWeek <= 5) { // Only on weekdays
+                    const dateKey = format(day, 'yyyy-MM-dd');
+
+                    const createSchoolEvent = (time: string, title: string): CalendarEvent => {
+                        const [hour, minute] = time.split(':').map(Number);
+                        const eventDate = new Date(day);
+                        eventDate.setHours(hour, minute);
+                        
+                        return {
+                            date: eventDate,
+                            title: title,
+                            type: 'school',
+                            data: { // Synthetic data
+                                id: `school-${child.id}-${title}-${dateKey}`,
+                                childId: child.id,
+                                title: title,
+                                category: 'school',
+                                startDate: { toDate: () => eventDate } as any,
+                            } as any,
+                        };
+                    };
+                    
+                    const startEvent = createSchoolEvent(child.schoolShiftStart, 'Entrada na Escola');
+                    const endEvent = createSchoolEvent(child.schoolShiftEnd, 'Saída da Escola');
+
+                    const startPeriod = getPeriodForDate(startEvent.date);
+                    const endPeriod = getPeriodForDate(endEvent.date);
+
+                    if (timePeriodFilter === 'all' || timePeriodFilter === startPeriod) {
+                        acc[dateKey][startPeriod].push(startEvent);
+                    }
+                    if (timePeriodFilter === 'all' || timePeriodFilter === endPeriod) {
+                        acc[dateKey][endPeriod].push(endEvent);
+                    }
+                }
+            });
+        }
+    });
+
     return acc;
-  }, [viewInterval, missionInstances, selectedChildrenIds, timePeriodFilter]);
+  }, [viewInterval, missionInstances, selectedChildrenIds, timePeriodFilter, children]);
 
   const createUrlWithNewDate = (newDate: Date) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -501,9 +550,20 @@ function AgendaPageContent() {
                 <ul className="mt-2 border-l-2 pl-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-                        const isCompleted = isMissionCompletedForDate(event.data, day);
+                        const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                        
+                        if (event.type === 'school') {
+                            return (
+                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex items-center p-1 -m-1">
+                                    <NotebookPen className="h-4 w-4 inline-block text-gray-500 shrink-0" />
+                                    <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5">{formattedTime}</span>
+                                    <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
+                                </li>
+                            )
+                        }
+
                         return(
                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
                             <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
@@ -728,9 +788,23 @@ function AgendaPageContent() {
                         const child = childrenMap.get(event.data.childId);
                         if (!child) return null;
                         const popoverId = `${event.data.id}-${dateKey}`;
-                        const isCompleted = isMissionCompletedForDate(event.data, day);
+                        const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+
+                        if (event.type === 'school') {
+                           return (
+                                <li key={event.data.id} className="text-xs flex items-start gap-1.5 p-1 -m-1">
+                                    <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
+                                    <div className="w-full text-left leading-tight flex items-center">
+                                        <NotebookPen className="h-3 w-3 inline-block mr-1 text-gray-500 shrink-0" />
+                                        <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
+                                        <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
+                                    </div>
+                                </li>
+                           )
+                        }
+
                         return (
                           <li key={event.data.id} className="text-xs flex items-start gap-1.5">
                               <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
