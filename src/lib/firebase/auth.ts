@@ -15,6 +15,7 @@ import {
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 import type { UserProfile, ChildProfile } from '@/lib/types';
+import { populateInitialRewardTemplates } from './firestore';
 
 // Admin Sign Up
 export const signUpAdmin = async (name: string, email: string, password: string): Promise<UserProfile> => {
@@ -27,8 +28,16 @@ export const signUpAdmin = async (name: string, email: string, password: string)
     email: user.email,
     name: name,
     createdAt: serverTimestamp() as any,
+    settings: {
+      initialPage: 'heroes',
+      rewardMode: 'automatic', // Default to automatic mode for new users
+    },
   };
   await setDoc(doc(db, 'users', user.uid), userProfile);
+  
+  // Pre-populate the reward templates for the new user
+  await populateInitialRewardTemplates(user.uid);
+
   return userProfile;
 };
 
@@ -57,8 +66,16 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
       email: user.email,
       name: user.displayName,
       createdAt: serverTimestamp() as any,
+      settings: {
+        initialPage: 'heroes',
+        rewardMode: 'automatic', // Default to automatic mode for new users
+      },
     };
     await setDoc(userDocRef, userProfile);
+    
+    // Pre-populate the reward templates for the new user
+    await populateInitialRewardTemplates(user.uid);
+
     return userProfile;
   }
   return userDocSnap.data() as UserProfile;

@@ -7,6 +7,7 @@ import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
 export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family';
+export type RewardMode = 'automatic' | 'manual';
 
 export type NotificationType = 
     | 'new_level' 
@@ -22,7 +23,10 @@ export type NotificationType =
     | 'template_updated'
     | 'template_deleted'
     | 'instance_assigned'
-    | 'instance_unassigned';
+    | 'instance_unassigned'
+    | 'school_schedule_entry_created'
+    | 'school_schedule_entry_updated'
+    | 'school_schedule_entry_deleted';
 
 export type NotificationPreferences = {
   [key in NotificationType]?: boolean;
@@ -32,6 +36,7 @@ export interface UserSettings {
   initialPage: InitialPage;
   initialContext?: string;
   notifications?: Partial<NotificationPreferences>;
+  rewardMode?: RewardMode;
 }
 
 export interface UserProfile {

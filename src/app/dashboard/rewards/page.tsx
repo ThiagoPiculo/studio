@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo, Fragment } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -16,26 +16,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
-} from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, Loader2, Edit3, Trash2, ArrowRight, Users, Filter, Search, Tag, Coins, Info, CheckCircle, PackageSearch } from 'lucide-react';
+import { Label } from '@/components/ui/label';
+import { Gift, PlusCircle, Star as StarIcon, Loader2, Edit3, Trash2, ArrowRight, Users, Info, PackageSearch } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getRewardTemplatesByOwnerOrFamily, deleteRewardTemplate, getChildProfilesForAttribution, getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, PredefinedRewardIdea } from '@/lib/types';
+import { 
+  getRewardTemplatesByOwnerOrFamily, 
+  deleteRewardTemplate,
+  getChildProfilesForAttribution,
+  getChildRewardInstancesForContext
+} from '@/lib/firebase/firestore';
+import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance, UserProfile } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -44,9 +36,10 @@ import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardD
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserRole } from '@/hooks/useUserRole';
-import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
-import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import { db } from '@/lib/firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Separator } from '@/components/ui/separator';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
@@ -56,59 +49,111 @@ export default function RewardsHubPage() {
   const router = useRouter();
 
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
-  const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
-  
-  const userTemplatesLoaded = useMemo(() => new Set(rewardTemplates.map(t => t.title.trim().toLowerCase())), [rewardTemplates]);
 
-  useEffect(() => {
+  const rewardMode = user?.settings?.rewardMode || 'automatic';
+
+  const fetchData = async () => {
     if (!user) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-      .then(setRewardTemplates)
-      .catch(err => {
-        console.error("Error fetching reward templates:", err);
-        toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
-      })
-      .finally(() => setIsLoading(false));
-  }, [user, currentContext, toast]);
+    try {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      const [templates, children, instances] = await Promise.all([
+        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getChildRewardInstancesForContext(user.uid, familyIdToQuery)
+      ]);
+      setRewardTemplates(templates);
+      setChildren(children);
+      setRewardInstances(instances.filter(i => i.status === 'active'));
+    } catch (err) {
+      console.error("Error fetching rewards data:", err);
+      toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
+  useEffect(() => {
+    fetchData();
+  }, [user, currentContext]);
+  
+  const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
+      if (!user) return;
+      
+      const userDocRef = doc(db, 'users', user.uid);
+      try {
+          await updateDoc(userDocRef, {
+              'settings.rewardMode': newMode
+          });
+          toast({
+              title: "Modo de Estratégia Atualizado!",
+              description: `Você agora está no modo ${newMode === 'automatic' ? 'Automático' : 'Manual'}.`
+          });
+          // The AuthProvider's onSnapshot will update the user state automatically.
+      } catch (error) {
+          console.error("Failed to update reward mode:", error);
+          toast({ title: "Erro ao salvar", description: "Não foi possível alterar sua estratégia de recompensas.", variant: "destructive"});
+      }
+  };
+
+  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
+
+  const assignmentsByTemplate = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    rewardInstances.forEach(instance => {
+      const child = childrenMap.get(instance.childId);
+      if (child) {
+        const existing = assignments.get(instance.templateId) || [];
+        if (!existing.find(c => c.id === child.id)) {
+          assignments.set(instance.templateId, [...existing, child]);
+        }
+      }
+    });
+    return assignments;
+  }, [rewardInstances, childrenMap]);
+
+  const getInitials = (name?: string | null) => {
+    if (!name) return "MH"; 
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
+  };
 
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
 
-  const handleUseIdea = (idea: PredefinedRewardIdea) => {
-    const queryParams = new URLSearchParams();
-    queryParams.append('title', idea.title);
-    if (idea.description) {
-        queryParams.append('description', idea.description);
+  const handleDeleteConfirm = async () => {
+    if (!templateToDelete || !user) return;
+    setIsProcessingAction(true);
+    try {
+      await deleteRewardTemplate(user, templateToDelete.id);
+      toast({ title: "Recompensa Removida do Catálogo!", description: `A recompensa "${templateToDelete.title}" foi removida.` });
+      fetchData();
+    } catch (error) {
+      console.error("Error deleting reward template:", error);
+      toast({ title: "Erro ao Excluir Recompensa", description: "Não foi possível remover a recompensa.", variant: "destructive" });
+    } finally {
+      setTemplateToDelete(null);
+      setIsProcessingAction(false);
     }
-    queryParams.append('category', idea.suggestedAppCategory);
-    if (idea.isMaterialSuggestion !== undefined) {
-        queryParams.append('isMaterial', String(idea.isMaterialSuggestion));
-    }
-    if (idea.starsCost) {
-        queryParams.append('starsCost', String(idea.starsCost));
-    }
-    router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
   };
 
-  const currentContextName = useMemo(() => {
-    if (currentContext === 'my-space') return "seu Espaço Pessoal";
-    return `a Aliança "${availableContexts.find(f => f.id === currentContext)?.name || 'Desconhecida'}"`;
-  }, [availableContexts, currentContext]);
-
-  if (isLoading) {
+  const handleOpenAssignDialog = (template: RewardTemplate) => {
+    setTemplateToAssign(template);
+    setIsAssignDialogOpen(true);
+  };
+  
+  if (isLoading || isRoleLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-48 w-full" />
@@ -117,133 +162,199 @@ export default function RewardsHubPage() {
     );
   }
 
+  const renderRewardCard = (template: RewardTemplate) => {
+    const categoryDetails = getCategoryDetails(template.category);
+    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
+    return (
+      <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            {categoryDetails?.icon && <categoryDetails.icon className="h-5 w-5 text-muted-foreground" />}
+            <CardTitle className="text-xl line-clamp-2">{template.title}</CardTitle>
+          </div>
+          {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
+        </CardHeader>
+        <CardContent className="flex flex-col flex-grow p-6 pt-0">
+          <div className="space-y-2">
+            <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+          </div>
+          <div className="flex-grow" />
+          {rewardMode === 'manual' && (
+            <div className="pt-4">
+              <Separator className="mb-3" />
+              <div className="space-y-2">
+                <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                  <Users className="h-4 w-4" /> Atribuído a:
+                </h4>
+                {assignedChildren.length > 0 ? (
+                  <div className="flex -space-x-2">
+                    {assignedChildren.slice(0, 5).map(child => (
+                      <TooltipProvider key={child.id} delayDuration={100}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Avatar className="h-8 w-8 border-2 border-background">
+                              <AvatarImage src={child.avatar} alt={child.name} />
+                              <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                            </Avatar>
+                          </TooltipTrigger>
+                          <TooltipContent><p>{child.name}</p></TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    ))}
+                    {assignedChildren.length > 5 && <span className="text-xs font-medium text-muted-foreground pl-3 self-center">+ {assignedChildren.length - 5}</span>}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">Ninguém no momento.</p>
+                )}
+              </div>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex items-center gap-2">
+           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit}>
+                <Users className="mr-2 h-4 w-4" /> {rewardMode === 'automatic' ? 'Gerenciar' : 'Atribuir'}
+            </Button>
+            <TooltipProvider>
+                <Tooltip><TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
+                        <Edit3 className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+                <Tooltip><TooltipTrigger asChild>
+                    <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                        <Trash2 className="h-4 w-4" />
+                    </Button>
+                </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
+            </TooltipProvider>
+        </CardFooter>
+      </Card>
+    );
+  };
+
   return (
     <div className="space-y-8 pb-10">
-      <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
-        <Card className="shadow-lg">
+      <Card className="shadow-lg">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-              <div>
-                <CardTitle className="text-3xl font-headline flex items-center">
-                  <Gift className="mr-3 h-8 w-8 text-primary" />
-                  Lojinha de Recompensas
-                </CardTitle>
-                <CardDescription>
-                  Inspire-se, crie e gerencie as recompensas para {currentContextName}.
-                </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                  <div>
+                      <CardTitle className="text-3xl font-headline flex items-center">
+                          <Gift className="mr-3 h-8 w-8 text-primary" />
+                          Lojinha de Recompensas
+                      </CardTitle>
+                      <CardDescription>
+                          Inspire-se, crie e gerencie as recompensas para o seu espaço.
+                      </CardDescription>
+                  </div>
+                  <Link href="/dashboard/rewards/new">
+                      <Button className="w-full sm:w-auto" disabled={!canEdit}>
+                          <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
+                      </Button>
+                  </Link>
               </div>
-              <DialogTrigger asChild>
-                <Button variant="outline" className="w-full sm:w-auto flex-shrink-0">
-                  <Info className="mr-2 h-5 w-5" /> Sobre Recompensas
-                </Button>
-              </DialogTrigger>
-            </div>
           </CardHeader>
-        </Card>
-
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-              <Gift className="h-6 w-6 text-primary" />
-              O Poder das Recompensas
-            </DialogTitle>
-            <DialogDescription className="pt-2">
-              As recompensas são a parte fundamental da jornada no Mini Herois. Elas são o grande prêmio no final da aventura, o "tesouro" que os herois ganham com seu esforço.
-            </DialogDescription>
-          </DialogHeader>
-           <CardContent className="max-h-[60vh] overflow-y-auto -mx-6 px-6">
-            <div className="space-y-3 text-sm text-muted-foreground pb-4">
-              <p>Pense nelas como a motivação principal para as crianças. O sistema funciona com uma lógica simples e poderosa:</p>
-              <p><strong>Esforço Gera Valor:</strong> Ao completar as missões do dia a dia (as tarefas), a criança ganha Estrelas (⭐). Essas estrelas são a "moeda" do nosso universo heroico. Elas são a representação visual e tangível do esforço e da responsabilidade da criança.</p>
-              <p><strong>Valor Gera Conquistas:</strong> A criança acumula essas estrelas em seu perfil. Com elas, ela pode "comprar" ou "resgatar" as recompensas que você, o responsável, criou e disponibilizou.</p>
-              <p className="font-semibold text-foreground">O objetivo das recompensas vai muito além de simplesmente "dar um prêmio". Elas servem para:</p>
-              <ul className="list-disc pl-5 space-y-2">
-                <li><strong className="text-foreground">Ensinar Causa e Efeito:</strong> A criança aprende de forma concreta que o seu esforço (completar missões) leva a um resultado positivo e desejado (conquistar uma recompensa).</li>
-                <li><strong className="text-foreground">Introduzir Educação Financeira:</strong> A dinâmica de economizar estrelas para um prêmio maior ensina, de forma lúdica, os conceitos de economizar, poupar e trabalhar por um objetivo.</li>
-                <li><strong className="text-foreground">Fortalecer Laços Familiares:</strong> Muitas das melhores recompensas não são coisas, mas sim experiências. Uma "tarde de jogos em família", "uma hora a mais no parque com o papai" ou "ajudar a fazer o bolo do fim de semana" são recompensas que criam memórias e fortalecem a conexão entre vocês.</li>
-                <li><strong className="text-foreground">Dar Autonomia e Poder de Escolha:</strong> Ao permitir que a criança escolha qual recompensa ela quer "comprar" com suas estrelas, você dá a ela um senso de controle e autonomia, o que é muito importante para o seu desenvolvimento.</li>
-              </ul>
-              <p className="font-semibold text-foreground">O sistema é flexível para você criar recompensas que se encaixem na sua família:</p>
-              <ul className="list-disc pl-5 space-y-1">
-                <li><strong>Experiências:</strong> Um piquenique, uma noite de cinema, uma história extra antes de dormir.</li>
-                <li><strong>Privilégios:</strong> Escolher o cardápio do jantar, ter 30 minutos a mais de videogame.</li>
-                <li><strong>Itens Materiais:</strong> Um gibi, um brinquedo pequeno, um livro novo.</li>
-              </ul>
-              <p className="pt-2">Em resumo, as recompensas são a ferramenta que fecha o ciclo de gamificação: a missão é o desafio, as estrelas são a pontuação, e a recompensa é a conquista que torna toda a jornada divertida e valiosa.</p>
-            </div>
-           </CardContent>
-          <DialogFooter className="mt-4">
-            <DialogClose asChild>
-              <Button variant="outline" className="w-full">Entendido!</Button>
-            </DialogClose>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-      
-      <Card>
-        <CardHeader>
-            <CardTitle>Ideias de Recompensas</CardTitle>
-            <CardDescription>Inspire-se com estas sugestões. Clique em "Usar" para adicionar a recompensa ao seu catálogo e poder atribuí-la.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {predefinedRewardGroups.length > 0 ? (
-                <Accordion type="multiple" defaultValue={["Privilégios"]} className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
-                    {predefinedRewardGroups.map((group) => {
-                        const Icon = group.icon;
-                        return (
-                            <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md break-inside-avoid">
-                                <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                                    <div className="flex items-center gap-3">
-                                        <Icon className="h-7 w-7 text-primary" />
-                                        <div>
-                                            <h3 className="text-xl font-semibold">{group.userCategory}</h3>
-                                            <p className="text-sm text-muted-foreground font-normal mt-1">{group.description}</p>
-                                        </div>
-                                    </div>
-                                </AccordionTrigger>
-                                <AccordionContent className="p-6 pt-0">
-                                    <ul className="space-y-3 pt-1">
-                                    {group.items.map((idea) => {
-                                        const alreadyExists = userTemplatesLoaded.has(idea.title.trim().toLowerCase());
-                                        return (
-                                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
-                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                                    <div className="flex-grow space-y-1">
-                                                        <h4 className="font-semibold text-md">{idea.title}</h4>
-                                                        <div className="flex items-center gap-2 flex-wrap">
-                                                            {idea.starsCost && <Badge variant="secondary" className="text-xs font-normal"><StarIcon className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsCost}</Badge>}
-                                                            {alreadyExists && <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200"><CheckCircle className="mr-1.5 h-3.5 w-3.5"/> No Catálogo</Badge>}
-                                                        </div>
-                                                    </div>
-                                                    <Button size="sm" variant="outline" onClick={() => handleUseIdea(idea)} className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary" disabled={!canEdit}>
-                                                        Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </li>
-                                        )
-                                    })}
-                                    </ul>
-                                </AccordionContent>
-                            </AccordionItem>
-                        )
-                    })}
-                </Accordion>
-            ) : (
-                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-lg text-muted-foreground">Nenhuma ideia de recompensa disponível no momento.</p>
-                </div>
-            )}
-        </CardContent>
-         <CardFooter>
-            <Link href="/dashboard/rewards/new">
-              <Button disabled={!canEdit}>
-                <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa do Zero
-              </Button>
-            </Link>
-          </CardFooter>
       </Card>
+
+      <Card>
+          <CardHeader>
+              <CardTitle>Estratégia de Recompensas</CardTitle>
+              <CardDescription>Escolha como as recompensas são disponibilizadas para seus heróis.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as 'automatic' | 'manual')} className="space-y-2">
+                  <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+                       <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
+                       <div className="flex-grow">
+                          <p className="font-semibold text-foreground">Automático (Recomendado)</p>
+                          <p className="text-sm text-muted-foreground">O app sugere recompensas e notifica você para aprová-las quando a criança atingir as estrelas necessárias. Menos trabalho para você!</p>
+                       </div>
+                  </Label>
+                   <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary">
+                       <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
+                       <div className="flex-grow">
+                           <p className="font-semibold text-foreground">Manual</p>
+                           <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
+                       </div>
+                  </Label>
+              </RadioGroup>
+          </CardContent>
+      </Card>
+
+      {rewardMode === 'manual' ? (
+        <Card>
+            <CardHeader>
+                <CardTitle>Catálogo de Recompensas</CardTitle>
+                <CardDescription>No modo manual, você cria e atribui cada recompensa. Estas são as que você já criou.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 {rewardTemplates.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {rewardTemplates.map(renderRewardCard)}
+                    </div>
+                 ) : (
+                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                        <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                        <p className="text-lg text-muted-foreground">Seu catálogo de recompensas está vazio.</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Clique em "Criar Nova Recompensa" para começar a adicionar prêmios.
+                        </p>
+                    </div>
+                 )}
+            </CardContent>
+        </Card>
+      ) : (
+        <Card>
+            <CardHeader>
+                <CardTitle>Catálogo de Recompensas Automáticas</CardTitle>
+                <CardDescription>Esta é a lista de recompensas que o sistema usará para sugerir e notificar você. Gerencie as atribuições para ajustar a experiência.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                {rewardTemplates.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {rewardTemplates.map(renderRewardCard)}
+                    </div>
+                ) : (
+                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                        <Loader2 className="mx-auto h-16 w-16 text-muted-foreground mb-4 animate-spin" />
+                        <p className="text-lg text-muted-foreground">Populando seu catálogo inicial...</p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                           As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
+                        </p>
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+      )}
+
+      {templateToDelete && (
+        <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction}>
+                {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Sim, Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {templateToAssign && (
+        <AssignRewardDialog
+          template={templateToAssign}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={fetchData}
+        />
+      )}
     </div>
   );
 }
-
