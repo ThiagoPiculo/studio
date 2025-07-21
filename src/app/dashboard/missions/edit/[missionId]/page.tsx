@@ -27,6 +27,7 @@ import { Loader2, Target, Save, ArrowLeft, Star as StarIcon, BadgeCheck, Users, 
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUserRole } from '@/hooks/useUserRole';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -56,7 +57,11 @@ export default function EditMissionTemplatePage() {
   const [missionTemplate, setMissionTemplate] = useState<MissionTemplate | null>(null);
   
   const [assignedChildren, setAssignedChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
+
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
 
   const form = useForm<MissionTemplateFormValues>({
     resolver: zodResolver(missionTemplateFormSchema),
@@ -73,7 +78,7 @@ export default function EditMissionTemplatePage() {
 
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
 
-  useEffect(() => {
+  const fetchMissionData = async () => {
     if (!missionId || !user) {
       setIsFetchingData(false);
       if(!user) router.push('/auth/login');
@@ -81,69 +86,72 @@ export default function EditMissionTemplatePage() {
       return;
     }
 
-    const fetchMissionTemplateData = async () => {
-      setIsFetchingData(true);
-      try {
-        const fetchedTemplate = await getMissionTemplateById(missionId);
-        if (fetchedTemplate) {
-          setMissionTemplate(fetchedTemplate);
-          form.reset({
-            title: fetchedTemplate.title,
-            emoji: fetchedTemplate.emoji || '',
-            description: fetchedTemplate.description || '',
-            category: fetchedTemplate.category,
-            starsReward: fetchedTemplate.starsReward,
-            xpReward: fetchedTemplate.xpReward,
-            status: fetchedTemplate.status,
-          });
-        } else {
-          toast({ title: "Missão não encontrada", variant: "destructive" });
-          router.push('/dashboard/missions');
-        }
-      } catch (error) {
-        console.error("Error fetching mission template:", error);
-        toast({ title: "Erro ao carregar missão", variant: "destructive" });
-        router.push('/dashboard/missions');
-      } finally {
-        setIsFetchingData(false);
-      }
-    };
-    
-    const fetchAssignments = async () => {
-        setIsLoadingAssignments(true);
-        try {
-            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-            const [allChildren, allInstances] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, familyIdToQuery)
-            ]);
-            
-            const childrenMap = new Map(allChildren.map(child => [child.id, child]));
-            
-            const assignedChildIds = new Set<string>();
-            allInstances.forEach(instance => {
-                if (instance.templateId === missionId) {
-                    assignedChildIds.add(instance.childId);
-                }
-            });
-            
-            const childrenWithAssignment = Array.from(assignedChildIds)
-                .map(childId => childrenMap.get(childId))
-                .filter((child): child is ChildProfile => !!child)
-                .sort((a,b) => a.name.localeCompare(b.name));
-                
-            setAssignedChildren(childrenWithAssignment);
-        } catch (error) {
-            console.error("Error fetching assignments:", error);
-            toast({ title: "Erro ao buscar atribuições", variant: "destructive" });
-        } finally {
-            setIsLoadingAssignments(false);
-        }
-    };
+    setIsFetchingData(true);
+    setIsLoadingAssignments(true);
 
-    fetchMissionTemplateData();
-    fetchAssignments();
-  }, [missionId, user, router, toast, form, currentContext]);
+    try {
+      const fetchedTemplate = await getMissionTemplateById(missionId);
+      if (fetchedTemplate) {
+        setMissionTemplate(fetchedTemplate);
+        form.reset({
+          title: fetchedTemplate.title,
+          emoji: fetchedTemplate.emoji || '',
+          description: fetchedTemplate.description || '',
+          category: fetchedTemplate.category,
+          starsReward: fetchedTemplate.starsReward,
+          xpReward: fetchedTemplate.xpReward,
+          status: fetchedTemplate.status,
+        });
+
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const [allChildren, allInstances] = await Promise.all([
+          getChildProfilesForAttribution(user.uid, currentContext),
+          getMissionInstancesForContext(user.uid, familyIdToQuery)
+        ]);
+        
+        setMissionInstances(allInstances);
+
+        const childrenMap = new Map(allChildren.map(child => [child.id, child]));
+        const assignedChildIds = new Set<string>();
+        allInstances.forEach(instance => {
+            if (instance.templateId === missionId) {
+                assignedChildIds.add(instance.childId);
+            }
+        });
+        
+        const childrenWithAssignment = Array.from(assignedChildIds)
+            .map(childId => childrenMap.get(childId))
+            .filter((child): child is ChildProfile => !!child)
+            .sort((a,b) => a.name.localeCompare(b.name));
+            
+        setAssignedChildren(childrenWithAssignment);
+      } else {
+        toast({ title: "Missão não encontrada", variant: "destructive" });
+        router.push('/dashboard/missions');
+      }
+    } catch (error) {
+      console.error("Error fetching mission data:", error);
+      toast({ title: "Erro ao carregar missão", variant: "destructive" });
+      router.push('/dashboard/missions');
+    } finally {
+      setIsFetchingData(false);
+      setIsLoadingAssignments(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchMissionData();
+  }, [missionId, user, currentContext]);
+
+  const handleOpenEditDialog = (child: ChildProfile) => {
+    const instance = missionInstances.find(inst => inst.templateId === missionId && inst.childId === child.id);
+    if (instance) {
+      setInstanceToEdit(instance);
+      setIsAssignDialogOpen(true);
+    } else {
+      toast({ title: 'Atribuição não encontrada', description: 'Não foi possível encontrar a atribuição para este herói.', variant: 'destructive' });
+    }
+  };
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user || !missionTemplate) {
@@ -402,17 +410,31 @@ export default function EditMissionTemplatePage() {
                       </Avatar>
                       <p className="font-semibold">{child.name}</p>
                   </div>
-                  <Link href={`/dashboard/child/${child.id}/manage?tab=missions`} passHref>
-                      <Button variant="outline" size="sm">
-                          Gerenciar Agendamento <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                  </Link>
+                  <Button variant="outline" size="sm" onClick={() => handleOpenEditDialog(child)}>
+                      Gerenciar Agendamento <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
                 </div>
               ))}
             </div>
           )}
         </CardContent>
       </Card>
+
+      <AssignMissionDialog
+        template={null}
+        instanceToEdit={instanceToEdit}
+        isOpen={isAssignDialogOpen}
+        onOpenChange={(isOpen) => {
+          setIsAssignDialogOpen(isOpen);
+          if (!isOpen) {
+            setInstanceToEdit(null);
+          }
+        }}
+        onAssigned={() => {
+          fetchMissionData(); // Re-fetch all data to ensure UI is up-to-date
+        }}
+      />
+
     </div>
   );
 }
