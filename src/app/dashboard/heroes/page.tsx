@@ -184,11 +184,33 @@ function HeroesPageContent() {
                   
                   return a.title.localeCompare(b.title);
                 });
+              
+              const dayOfWeek = new Date().getDay();
+              const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
+              let todaysSchoolEvents: { time: string, subject: string, id: string, color: string }[] = [];
 
-              const todaysWeekday = getDayToWeekday[new Date().getDay()];
-              const todaysSchedule = scheduleEntries
-                .filter(entry => entry.childId === child.id && entry.dayOfWeek === todaysWeekday && entry.subject !== 'Recreio/Intervalo')
-                .sort((a, b) => a.startTime.localeCompare(b.startTime));
+              if (isWeekday) {
+                  // Get registered classes for the day
+                  const todaysRegisteredClasses = scheduleEntries
+                      .filter(entry => entry.childId === child.id && entry.dayOfWeek === getDayToWeekday[dayOfWeek])
+                      .map(entry => ({
+                          time: entry.startTime,
+                          subject: entry.subject,
+                          id: entry.id,
+                          color: entry.color,
+                      }));
+                  
+                  // Dynamically create entry and exit events
+                  if (child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
+                      todaysSchoolEvents.push({ time: child.schoolShiftStart, subject: 'Entrada na Escola', id: 'school-start', color: '#6b7280' });
+                      todaysSchoolEvents.push({ time: child.schoolShiftEnd, subject: 'Saída da Escola', id: 'school-end', color: '#6b7280' });
+                  }
+                  
+                  // Combine and sort all events for the day
+                  todaysSchoolEvents = [...todaysSchoolEvents, ...todaysRegisteredClasses]
+                      .sort((a, b) => a.time.localeCompare(b.time));
+              }
+
 
               const todaysMissionsCount = todaysMissions.length;
               const completedTodaysMissionsCount = todaysMissions.filter(m => isMissionCompletedForDate(m, new Date())).length;
@@ -300,18 +322,18 @@ function HeroesPageContent() {
                       <TabsContent value="school" className="mt-2">
                         <ScrollArea className="h-[145px] w-full">
                           <div className="grid grid-cols-1 gap-y-1 pr-3">
-                              {todaysSchedule.length > 0 ? (
+                              {todaysSchoolEvents.length > 0 ? (
                                   <ul className="space-y-1">
-                                      {todaysSchedule.slice(0, 6).map(entry => (
+                                      {todaysSchoolEvents.slice(0, 6).map(entry => (
                                           <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
                                               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
-                                              <span className="font-mono w-10">{entry.startTime}</span>
+                                              <span className="font-mono w-10">{entry.time}</span>
                                               <span className="font-semibold truncate">{entry.subject}</span>
                                           </div>
                                       ))}
-                                      {todaysSchedule.length > 6 && (
+                                      {todaysSchoolEvents.length > 6 && (
                                           <Link href={`/dashboard/school-schedule`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                            + {todaysSchedule.length - 6} mais...
+                                            + {todaysSchoolEvents.length - 6} mais...
                                           </Link>
                                       )}
                                   </ul>
