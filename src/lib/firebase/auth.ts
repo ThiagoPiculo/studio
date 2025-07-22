@@ -1,4 +1,5 @@
 
+
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -36,7 +37,8 @@ export const signUpAdmin = async (name: string, email: string, password: string)
   await setDoc(doc(db, 'users', user.uid), userProfile);
   
   // Pre-populate the reward templates for the new user
-  await populateInitialRewardTemplates(user.uid);
+  // This is no longer needed with the new architecture
+  // await populateInitialRewardTemplates(user.uid);
 
   return userProfile;
 };
@@ -73,8 +75,8 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
     };
     await setDoc(userDocRef, userProfile);
     
-    // Pre-populate the reward templates for the new user from Google Sign In
-    await populateInitialRewardTemplates(user.uid);
+    // No longer needed. The app will use a static list of ideas.
+    // await populateInitialRewardTemplates(user.uid);
 
     return userProfile;
   }

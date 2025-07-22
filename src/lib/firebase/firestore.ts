@@ -1002,31 +1002,9 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
 
 
 // --- Reward Templates (Catálogo de Recompensas) ---
-export const populateInitialRewardTemplates = async (userId: string): Promise<void> => {
-  const batch = writeBatch(db);
-  const now = serverTimestamp();
-
-  predefinedRewardGroups.forEach(group => {
-    group.items.forEach(idea => {
-      const newTemplateRef = doc(collection(db, 'rewardTemplates'));
-      const templateData: Omit<RewardTemplate, 'id'> = {
-        ownerId: userId,
-        familyId: null,
-        title: idea.title,
-        description: idea.description || '',
-        category: idea.suggestedAppCategory,
-        starsCost: idea.starsCost || 50,
-        isMaterial: idea.isMaterialSuggestion || false,
-        status: 'active',
-        createdAt: now as Timestamp,
-        updatedAt: now as Timestamp,
-      };
-      batch.set(newTemplateRef, templateData);
-    });
-  });
-
-  await batch.commit();
-};
+// This function is no longer needed with the new architecture.
+// export const populateInitialRewardTemplates = async (userId: string): Promise<void> => {
+// };
 
 export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
   const newTemplateRef = doc(collection(db, 'rewardTemplates'));

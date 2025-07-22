@@ -5,8 +5,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 
-// This page is now deprecated in favor of the main rewards page logic.
-// It will redirect users to the main rewards page.
 export default function RewardIdeasRedirector() {
     const router = useRouter();
 

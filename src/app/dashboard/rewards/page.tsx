@@ -16,17 +16,16 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getRewardTemplatesByOwnerOrFamily, 
   deleteRewardTemplate,
   getChildProfilesForAttribution,
-  getChildRewardInstancesForContext,
-  populateInitialRewardTemplates
+  getChildRewardInstancesForContext
 } from '@/lib/firebase/firestore';
 import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
@@ -44,6 +43,8 @@ import { Separator } from '@/components/ui/separator';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
+import { Progress } from '@/components/ui/progress';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
@@ -57,7 +58,6 @@ export default function RewardsHubPage() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isPopulating, setIsPopulating] = useState(false);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -80,19 +80,9 @@ export default function RewardsHubPage() {
         getChildRewardInstancesForContext(user.uid, familyIdToQuery)
       ]);
       
+      setRewardTemplates(fetchedTemplates);
       setChildren(fetchedChildren);
-
-      if (fetchedTemplates.length === 0 && fetchedChildren.length > 0 && currentContext === 'my-space') {
-        setIsPopulating(true);
-        await populateInitialRewardTemplates(user.uid);
-        const newTemplates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
-        setRewardTemplates(newTemplates);
-        setIsPopulating(false);
-      } else {
-        setRewardTemplates(fetchedTemplates);
-      }
-      
-      setRewardInstances(fetchedInstances.filter(i => i.status === 'active'));
+      setRewardInstances(fetchedInstances);
     } catch (err) {
       console.error("Error fetching rewards data:", err);
       toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
@@ -105,27 +95,6 @@ export default function RewardsHubPage() {
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  const groupedAndSortedTemplates = useMemo(() => {
-    const grouped: Record<string, RewardTemplate[]> = {};
-    rewardTemplates.forEach(template => {
-        if (!grouped[template.category]) {
-            grouped[template.category] = [];
-        }
-        grouped[template.category].push(template);
-    });
-
-    for (const category in grouped) {
-        grouped[category].sort((a, b) => a.starsCost - b.starsCost);
-    }
-
-    return rewardCategories
-        .map(categoryInfo => ({
-            ...categoryInfo,
-            items: grouped[categoryInfo.id] || []
-        }))
-        .filter(group => group.items.length > 0);
-  }, [rewardTemplates]);
   
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
@@ -145,21 +114,15 @@ export default function RewardsHubPage() {
       }
   };
 
-  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
-
-  const assignmentsByTemplate = useMemo(() => {
-    const assignments = new Map<string, ChildProfile[]>();
-    rewardInstances.forEach(instance => {
-      const child = childrenMap.get(instance.childId);
-      if (child) {
-        const existing = assignments.get(instance.templateId) || [];
-        if (!existing.find(c => c.id === child.id)) {
-          assignments.set(instance.templateId, [...existing, child]);
-        }
-      }
-    });
-    return assignments;
-  }, [rewardInstances, childrenMap]);
+  const allIdeasWithStatus = useMemo(() => {
+    const userTemplateTitles = new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
+    return predefinedRewardGroups.flatMap(group => 
+      group.items.map(idea => ({
+        ...idea,
+        isAdded: userTemplateTitles.has(idea.title.toLowerCase().trim())
+      }))
+    );
+  }, [rewardTemplates]);
 
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
@@ -180,6 +143,24 @@ export default function RewardsHubPage() {
       setIsProcessingAction(false);
     }
   };
+  
+  const handleUseIdea = (idea: (typeof allIdeasWithStatus)[0]) => {
+    if (idea.isAdded) {
+      toast({ title: "Recompensa já existe", description: "Esta recompensa já está no seu catálogo. Você pode editá-la lá." });
+      const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
+      if (existingTemplate) {
+        router.push(`/dashboard/rewards/edit-template/${existingTemplate.id}`);
+      }
+      return;
+    }
+    const queryParams = new URLSearchParams();
+    queryParams.append('title', idea.title);
+    if (idea.description) queryParams.append('description', idea.description);
+    queryParams.append('category', idea.suggestedAppCategory);
+    if (idea.starsCost) queryParams.append('starsCost', String(idea.starsCost));
+    if (idea.isMaterialSuggestion) queryParams.append('isMaterial', 'true');
+    router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
+  };
 
   const handleOpenAssignDialog = (template: RewardTemplate) => {
     setTemplateToAssign(template);
@@ -199,40 +180,15 @@ export default function RewardsHubPage() {
                 <Loader2 className="h-16 w-16 text-primary animate-spin" />
               </div>
               <p className="text-lg text-muted-foreground font-semibold">Carregando a lojinha...</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                  Buscando as melhores recompensas para seus heróis.
-              </p>
             </CardContent>
         </Card>
       </div>
     );
   }
-  
-  if (isPopulating) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Card>
-           <CardHeader>
-             <Skeleton className="h-6 w-1/2" />
-          </CardHeader>
-           <CardContent className="text-center py-10">
-              <div className="flex justify-center mb-4">
-                <Loader2 className="h-16 w-16 text-primary animate-spin" />
-              </div>
-              <p className="text-lg text-muted-foreground font-semibold">Preparando seu catálogo inicial...</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                  As recompensas padrão estão sendo adicionadas. Isto pode levar um momento.
-              </p>
-            </CardContent>
-        </Card>
-      </div>
-    )
-  }
 
   const renderRewardCard = (template: RewardTemplate) => {
     const categoryDetails = getCategoryDetails(template.category);
-    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
+    
     return (
       <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
         <CardHeader>
@@ -247,40 +203,60 @@ export default function RewardsHubPage() {
             <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
           </div>
           <div className="flex-grow" />
-          {rewardMode === 'manual' && (
-            <div className="pt-4">
+           <div className="pt-4">
               <Separator className="mb-3" />
               <div className="space-y-2">
                 <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Users className="h-4 w-4" /> Atribuído a:
+                  <Users className="h-4 w-4" /> Desbloqueado por:
                 </h4>
-                {assignedChildren.length > 0 ? (
-                  <div className="flex -space-x-2">
-                    {assignedChildren.slice(0, 5).map(child => (
-                      <TooltipProvider key={child.id} delayDuration={100}>
+                <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
+                {children.length > 0 ? (
+                  children.map(child => {
+                    const canAfford = child.stars >= template.starsCost;
+                    const progress = canAfford ? 100 : (child.stars / template.starsCost) * 100;
+                    return (
+                       <TooltipProvider key={child.id} delayDuration={100}>
                         <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Avatar className="h-8 w-8 border-2 border-background">
-                              <AvatarImage src={child.avatar} alt={child.name} />
-                              <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                            </Avatar>
+                          <TooltipTrigger>
+                              <div className="relative">
+                                  <Avatar className={cn("h-8 w-8", !canAfford && "opacity-40")}>
+                                      <AvatarImage src={child.avatar} alt={child.name} />
+                                      <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                  </Avatar>
+                                  {!canAfford && (
+                                    <svg className="h-8 w-8 absolute top-0 left-0" viewBox="0 0 36 36">
+                                      <path
+                                        className="stroke-muted"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        strokeWidth="2"
+                                        fill="none"
+                                      />
+                                      <path
+                                        className="stroke-primary"
+                                        strokeDasharray={`${progress}, 100`}
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                                        strokeWidth="2"
+                                        fill="none"
+                                      />
+                                    </svg>
+                                  )}
+                              </div>
                           </TooltipTrigger>
-                          <TooltipContent><p>{child.name}</p></TooltipContent>
+                          <TooltipContent><p>{child.name}: {child.stars}/{template.starsCost} estrelas</p></TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                    ))}
-                    {assignedChildren.length > 5 && <span className="text-xs font-medium text-muted-foreground pl-3 self-center">+ {assignedChildren.length - 5}</span>}
-                  </div>
+                    )
+                  })
                 ) : (
-                  <p className="text-xs text-muted-foreground italic">Ninguém no momento.</p>
+                  <p className="text-xs text-muted-foreground italic">Nenhum herói cadastrado.</p>
                 )}
+                </div>
               </div>
             </div>
-          )}
         </CardContent>
         <CardFooter className="flex items-center gap-2">
            <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit}>
-                <Users className="mr-2 h-4 w-4" /> {rewardMode === 'automatic' ? 'Gerenciar' : 'Atribuir'}
+                <Users className="mr-2 h-4 w-4" /> Gerenciar
             </Button>
             <TooltipProvider>
                 <Tooltip><TooltipTrigger asChild>
@@ -303,22 +279,53 @@ export default function RewardsHubPage() {
   
   const renderCatalogView = () => (
     <div className="space-y-6">
-      {groupedAndSortedTemplates.map(group => {
-        const GroupIcon = group.icon;
-        return (
-          <section key={group.id} aria-labelledby={`category-title-${group.id}`}>
-            <div className="flex items-center gap-3 mb-4">
-              <GroupIcon className="h-8 w-8 text-primary" />
-              <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
-                {group.userCategory}
-              </h2>
+      {rewardTemplates.length > 0 && (
+         <Card>
+            <CardHeader>
+                <CardTitle>Seu Catálogo Personalizado</CardTitle>
+                <CardDescription>Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {rewardTemplates.map(renderRewardCard)}
+                </div>
+            </CardContent>
+         </Card>
+      )}
+
+       <Card>
+        <CardHeader>
+            <CardTitle>Ideias de Recompensas</CardTitle>
+            <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <div className="space-y-6">
+              {predefinedRewardGroups.map(group => (
+                <section key={group.userCategory}>
+                  <h3 className="text-xl font-headline font-bold mb-3">{group.userCategory}</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
+                      <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
+                        <CardHeader>
+                           <CardTitle className="text-base">{idea.title}</CardTitle>
+                           {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
+                        </CardHeader>
+                        <CardContent className="flex-grow">
+                          <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
+                        </CardContent>
+                        <CardFooter>
+                           <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                {idea.isAdded ? "Editar no Catálogo" : "Usar Ideia"}
+                            </Button>
+                        </CardFooter>
+                      </Card>
+                    ))}
+                  </div>
+                </section>
+              ))}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {group.items.map(renderRewardCard)}
-            </div>
-          </section>
-        )
-      })}
+        </CardContent>
+      </Card>
     </div>
   );
 
@@ -362,7 +369,7 @@ export default function RewardsHubPage() {
                     <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
                     <div className="flex-grow">
                       <p className="font-semibold text-foreground">Automático (Recomendado)</p>
-                      <p className="text-sm text-muted-foreground">O app sugere recompensas e notifica você para aprová-las quando a criança atingir as estrelas necessárias. Menos trabalho para você!</p>
+                      <p className="text-sm text-muted-foreground">Você aprova as recompensas e o app notifica quando o herói pode resgatar. Menos trabalho para você!</p>
                     </div>
                 </Label>
                 <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
@@ -376,31 +383,8 @@ export default function RewardsHubPage() {
           </AccordionContent>
         </AccordionItem>
       </Accordion>
-
-      <Card>
-        <CardHeader>
-            <CardTitle>Catálogo de Recompensas</CardTitle>
-            <CardDescription>
-                {rewardMode === 'automatic'
-                    ? "Esta é a lista de recompensas que o sistema usará para sugerir e notificar você. Gerencie as atribuições para ajustar a experiência."
-                    : "No modo manual, você cria e atribui cada recompensa. Estas são as que você já criou."
-                }
-            </CardDescription>
-        </CardHeader>
-        <CardContent>
-            {groupedAndSortedTemplates.length > 0 ? (
-                renderCatalogView()
-            ) : (
-                <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                    <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-lg text-muted-foreground">Seu catálogo de recompensas está vazio.</p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Clique em "Criar Nova Recompensa" para começar a adicionar prêmios.
-                    </p>
-                </div>
-            )}
-        </CardContent>
-      </Card>
+      
+      {renderCatalogView()}
 
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>

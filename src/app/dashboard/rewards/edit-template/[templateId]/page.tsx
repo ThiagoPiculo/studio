@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -33,6 +33,7 @@ const rewardTemplateFormSchema = z.object({
   }),
   starsCost: z.coerce.number().min(1, { message: "O custo deve ser de pelo menos 1 estrela." }).max(10000, {message: "O custo não pode ser superior a 10.000 estrelas."}),
   isMaterial: z.boolean().default(false),
+  isUnique: z.boolean().default(false),
   status: z.enum(['active', 'archived']).default('active'),
 });
 
@@ -62,6 +63,7 @@ export default function EditRewardTemplatePage() {
       category: undefined, 
       starsCost: 10,
       isMaterial: false,
+      isUnique: false,
       status: 'active',
     },
   });
@@ -91,6 +93,7 @@ export default function EditRewardTemplatePage() {
           category: fetchedTemplate.category,
           starsCost: fetchedTemplate.starsCost,
           isMaterial: fetchedTemplate.isMaterial,
+          isUnique: fetchedTemplate.isUnique,
           status: fetchedTemplate.status,
         });
 
@@ -150,6 +153,7 @@ export default function EditRewardTemplatePage() {
         category: values.category,
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
+        isUnique: values.isUnique,
         status: values.status,
       };
       
@@ -275,27 +279,50 @@ export default function EditRewardTemplatePage() {
                       </FormItem>
                     )}
                   />
-                  <FormField
-                    control={form.control}
-                    name="isMaterial"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30 h-full">
-                        <div className="space-y-0.5">
-                          <FormLabel>Item material?</FormLabel>
-                          <FormDescription>
-                            É um objeto físico?
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={form.getValues('category') === 'material_items' || !canEdit}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
+                   <div className="space-y-4">
+                        <FormField
+                            control={form.control}
+                            name="isMaterial"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Item material?</FormLabel>
+                                    <FormDescription>
+                                    É um objeto físico?
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={form.getValues('category') === 'material_items' || !canEdit}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="isUnique"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                                <div className="space-y-0.5">
+                                    <FormLabel>Resgate Único?</FormLabel>
+                                    <FormDescription>
+                                    Pode ser resgatado só uma vez.
+                                    </FormDescription>
+                                </div>
+                                <FormControl>
+                                    <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    disabled={!canEdit}
+                                    />
+                                </FormControl>
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                 </div>
 
                 <FormField

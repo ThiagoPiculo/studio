@@ -246,6 +246,7 @@ export interface RewardTemplate {
   category: RewardCategory;
   starsCost: number;
   isMaterial: boolean;
+  isUnique: boolean; // Se a recompensa só pode ser resgatada uma vez
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: 'active' | 'archived';

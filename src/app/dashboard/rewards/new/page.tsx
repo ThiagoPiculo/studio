@@ -31,6 +31,7 @@ const rewardTemplateFormSchema = z.object({
   }),
   starsCost: z.coerce.number().min(1, { message: "O custo deve ser de pelo menos 1 estrela." }).max(10000, {message: "O custo não pode ser superior a 10.000 estrelas."}),
   isMaterial: z.boolean().default(false),
+  isUnique: z.boolean().default(false),
 });
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
@@ -64,6 +65,21 @@ function CreateRewardTemplatePageContent() {
   } else if (resolvedInitialCategory === 'material_items') {
     resolvedInitialIsMaterial = true;
   }
+  
+  const suggestedCost = useMemo(() => {
+    const category = form.watch('category');
+    if (!category) return null;
+    
+    // Simple logic to suggest a price based on category. Could be more complex.
+    switch (category) {
+        case 'privileges': return 75;
+        case 'experiences': return 150;
+        case 'material_items': return 250;
+        case 'personal_development': return 120;
+        case 'impact_generosity': return 50;
+        default: return null;
+    }
+  }, [form.watch('category')]);
 
   const form = useForm<RewardTemplateFormValues>({
     resolver: zodResolver(rewardTemplateFormSchema),
@@ -73,31 +89,24 @@ function CreateRewardTemplatePageContent() {
       category: resolvedInitialCategory, 
       starsCost: initialStarsCost ? parseInt(initialStarsCost, 10) : 10,
       isMaterial: resolvedInitialIsMaterial,
+      isUnique: false,
     },
   });
   
   useEffect(() => {
-    // Este useEffect lida com a lógica reativa quando a categoria é alterada pelo usuário
-    // ou se a categoria inicial (via URL) for 'material_items'.
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
         const currentCategoryValue = value.category;
         const isCategoryMaterial = currentCategoryValue === 'material_items';
 
-        // Atualiza isMaterial se a categoria for 'material_items'
         if (isCategoryMaterial) {
           form.setValue('isMaterial', true, { shouldValidate: true });
         } else {
-            // Se a categoria mudou para NÃO material E 'isMaterial' não foi explicitamente definido como true via URL
-            // desmarcamos 'isMaterial'.
-            // Se isMaterialParam === 'true', o usuário explicitamente passou, então não desmarcamos automaticamente
-            // ao mudar para categoria não-material. Ele pode querer.
              if (isMaterialParam !== 'true') {
                  form.setValue('isMaterial', false, { shouldValidate: true });
              }
         }
         
-        // Mostra o toast de aviso para recompensas materiais, se aplicável
         if (isCategoryMaterial) {
             toast({
                 title: "Dica de Mestre Heroi",
@@ -108,7 +117,6 @@ function CreateRewardTemplatePageContent() {
         }
       }
     });
-    // Disparar a lógica do toast se a categoria inicial for material
     if (form.getValues('category') === 'material_items') {
         toast({
             title: "Dica de Mestre Heroi",
@@ -135,6 +143,7 @@ function CreateRewardTemplatePageContent() {
         category: values.category,
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
+        isUnique: values.isUnique,
         familyId: currentContext === 'my-space' ? null : currentContext,
       };
       
@@ -145,7 +154,7 @@ function CreateRewardTemplatePageContent() {
       });
       setNewlyCreatedTemplate(createdTemplate);
       setIsAssignDialogOpen(true);
-      form.reset(); // Limpa o formulário após o sucesso
+      form.reset(); 
 
     } catch (error) {
       console.error('Error creating reward template:', error);
@@ -232,33 +241,55 @@ function CreateRewardTemplatePageContent() {
                         <Input type="number" placeholder="Ex: 50" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Quantas estrelas serão necessárias.
+                        {suggestedCost ? `Sugestão para esta categoria: ${suggestedCost} estrelas.` : 'Quantas estrelas serão necessárias.'}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="isMaterial"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-muted/30 h-full">
-                      <div className="space-y-0.5">
-                        <FormLabel>Item material?</FormLabel>
-                        <FormDescription>
-                          É um objeto físico?
-                        </FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          disabled={form.getValues('category') === 'material_items'}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-4">
+                    <FormField
+                    control={form.control}
+                    name="isMaterial"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                        <div className="space-y-0.5">
+                            <FormLabel>Item material?</FormLabel>
+                            <FormDescription>
+                            É um objeto físico?
+                            </FormDescription>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={form.getValues('category') === 'material_items'}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                    <FormField
+                    control={form.control}
+                    name="isUnique"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                        <div className="space-y-0.5">
+                            <FormLabel>Resgate Único?</FormLabel>
+                            <FormDescription>
+                            Pode ser resgatado só uma vez.
+                            </FormDescription>
+                        </div>
+                        <FormControl>
+                            <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            />
+                        </FormControl>
+                        </FormItem>
+                    )}
+                    />
+                </div>
               </div>
 
               <FormField
@@ -310,9 +341,9 @@ function CreateRewardTemplatePageContent() {
           template={newlyCreatedTemplate}
           isOpen={isAssignDialogOpen}
           onOpenChange={(isOpen) => {
-            if (!isOpen) { // Se o diálogo for fechado
-              setNewlyCreatedTemplate(null); // Limpar o template
-              router.push('/dashboard/rewards'); // Navegar para o catálogo
+            if (!isOpen) { 
+              setNewlyCreatedTemplate(null);
+              router.push('/dashboard/rewards'); 
             }
             setIsAssignDialogOpen(isOpen);
           }}
