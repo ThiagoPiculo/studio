@@ -30,6 +30,16 @@ import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
 
+// Define a type for our combined timeline items
+type TimelineItem = (MissionInstance & { itemType: 'mission' }) | {
+    itemType: 'school_event';
+    id: string;
+    title: string;
+    startDate: Date;
+    color?: string;
+};
+
+
 function HeroesPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
@@ -169,52 +179,41 @@ function HeroesPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
-              const todaysMissions = missionInstances
+              
+              const todaysTimelineItems: TimelineItem[] = missionInstances
                 .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
-                .sort((a, b) => {
-                  const timeA = getDateObject(a.startDate || a.dueDate);
-                  const timeB = getDateObject(b.startDate || b.dueDate);
-                  
-                  const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
-                  const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
-
-                  if (minutesA !== minutesB) {
-                      return minutesA - minutesB;
-                  }
-                  
-                  return a.title.localeCompare(b.title);
-                });
+                .map(inst => ({ ...inst, itemType: 'mission' }));
               
               const dayOfWeek = new Date().getDay();
               const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-              let todaysSchoolEvents: { time: string, subject: string, id: string, color: string }[] = [];
-
-              if (isWeekday) {
-                  // Get registered classes for the day
-                  const todaysRegisteredClasses = scheduleEntries
-                      .filter(entry => entry.childId === child.id && entry.dayOfWeek === getDayToWeekday[dayOfWeek])
-                      .map(entry => ({
-                          time: entry.startTime,
-                          subject: entry.subject,
-                          id: entry.id,
-                          color: entry.color,
-                      }));
-                  
-                  // Dynamically create entry and exit events
-                  if (child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
-                      todaysSchoolEvents.push({ time: child.schoolShiftStart, subject: 'Entrada na Escola', id: 'school-start', color: '#6b7280' });
-                      todaysSchoolEvents.push({ time: child.schoolShiftEnd, subject: 'Saída da Escola', id: 'school-end', color: '#6b7280' });
-                  }
-                  
-                  // Combine and sort all events for the day
-                  todaysSchoolEvents = [...todaysSchoolEvents, ...todaysRegisteredClasses]
-                      .sort((a, b) => a.time.localeCompare(b.time));
+              
+              if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
+                  const createSchoolEvent = (time: string, title: string, id: string): TimelineItem => {
+                      const [hour, minute] = time.split(':').map(Number);
+                      const eventDate = new Date();
+                      eventDate.setHours(hour, minute, 0, 0);
+                      return {
+                          itemType: 'school_event',
+                          id: `${child.id}-${id}`,
+                          title: title,
+                          startDate: eventDate,
+                          color: '#6b7280', // Default color for school events
+                      };
+                  };
+                  todaysTimelineItems.push(createSchoolEvent(child.schoolShiftStart, 'Entrada na Escola', 'school-start'));
+                  todaysTimelineItems.push(createSchoolEvent(child.schoolShiftEnd, 'Saída da Escola', 'school-end'));
               }
+              
+              todaysTimelineItems.sort((a, b) => {
+                  const timeA = a.startDate ? (a.startDate instanceof Date ? a.startDate : a.startDate.toDate()) : new Date(0);
+                  const timeB = b.startDate ? (b.startDate instanceof Date ? b.startDate : b.startDate.toDate()) : new Date(0);
+                  return timeA.getTime() - timeB.getTime();
+              });
 
-
-              const todaysMissionsCount = todaysMissions.length;
-              const completedTodaysMissionsCount = todaysMissions.filter(m => isMissionCompletedForDate(m, new Date())).length;
-
+              const todaysMissionsCount = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date())).length;
+              const completedTodaysMissionsCount = missionInstances
+                .filter(inst => inst.childId === child.id && isMissionCompletedForDate(inst, new Date())).length;
+              
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
@@ -264,88 +263,58 @@ function HeroesPageContent() {
                         </div>
                     </div>
                    <Separator className="my-4" />
-                   <Tabs defaultValue="missions" className="w-full">
-                      <TabsList className="grid w-full grid-cols-2 h-9 mb-2">
-                          <TabsTrigger value="missions" className="text-xs gap-1.5"><ListChecks className="h-4 w-4" />Missões de Hoje</TabsTrigger>
-                          <TabsTrigger value="school" className="text-xs gap-1.5"><NotebookPen className="h-4 w-4"/>Escola Hoje</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="missions" className="mt-2">
-                        <ScrollArea className="h-[145px] w-full">
-                          <ul className="space-y-1 pr-3">
-                            {todaysMissions.length > 0 ? (
-                            <>
-                            {todaysMissions.slice(0, 6).map(mission => {
-                              const isCompleted = isMissionCompletedForDate(mission, new Date());
-                              const eventTime = getDateObject(mission.startDate || mission.dueDate);
-                              const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                              const popoverId = `${mission.id}-${today}`;
-                              const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
-                              
-                              return (
-                                <li key={mission.id}>
-                                  <Link href={href} className="block">
-                                    <div className={cn(
-                                      "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
-                                      isCompleted 
-                                        ? "bg-green-500/10 text-muted-foreground" 
-                                        : "bg-background hover:bg-accent/50",
-                                    )}>
-                                      {isCompleted ? (
+                   <h3 className="text-sm font-semibold mb-2">Cronograma de Hoje</h3>
+                   <ScrollArea className="h-[145px] w-full">
+                      <ul className="space-y-1 pr-3">
+                        {todaysTimelineItems.length > 0 ? (
+                        <>
+                        {todaysTimelineItems.slice(0, 6).map(item => {
+                          const isCompleted = item.itemType === 'mission' && isMissionCompletedForDate(item, new Date());
+                          const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
+                          const formattedTime = format(eventTime, 'HH:mm');
+                          const popoverId = `${item.id}-${today}`;
+                          const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
+                          
+                          return (
+                            <li key={item.id}>
+                              <Link href={href} className="block">
+                                <div className={cn(
+                                  "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
+                                  isCompleted ? "bg-green-500/10 text-muted-foreground" : "bg-background hover:bg-accent/50",
+                                  item.itemType === 'school_event' && 'bg-blue-500/5'
+                                )}>
+                                  {item.itemType === 'mission' ? (
+                                      isCompleted ? (
                                         <CheckSquare className="h-3.5 w-3.5 text-green-500 shrink-0" />
                                       ) : (
                                         <Square className="h-3.5 w-3.5 text-primary shrink-0" />
-                                      )}
-                                      <span className="font-semibold text-foreground/80">{formattedTime}</span>
-                                      {mission.emoji && <span className="text-sm">{mission.emoji}</span>}
-                                      <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
-                                        {mission.title}
-                                      </span>
-                                    </div>
-                                  </Link>
-                                </li>
-                              );
-                            })}
-                            {todaysMissions.length > 6 && (
-                              <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                + {todaysMissions.length - 6} mais...
+                                      )
+                                  ) : (
+                                      <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                  )}
+                                  <span className="font-semibold text-foreground/80">{formattedTime}</span>
+                                  {'emoji' in item && item.emoji && <span className="text-sm">{item.emoji}</span>}
+                                  <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
+                                    {item.title}
+                                  </span>
+                                </div>
                               </Link>
-                            )}
-                            </>
-                           ) : (
-                             <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                               Dia de descanso do heroi!
-                             </p>
-                           )}
-                          </ul>
-                         </ScrollArea>
-                      </TabsContent>
-                      <TabsContent value="school" className="mt-2">
-                        <ScrollArea className="h-[145px] w-full">
-                          <div className="grid grid-cols-1 gap-y-1 pr-3">
-                              {todaysSchoolEvents.length > 0 ? (
-                                  <ul className="space-y-1">
-                                      {todaysSchoolEvents.slice(0, 6).map(entry => (
-                                          <div key={entry.id} className="text-xs flex items-center gap-2 p-1.5 rounded-md bg-background">
-                                              <div className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color, flexShrink: 0 }}></div>
-                                              <span className="font-mono w-10">{entry.time}</span>
-                                              <span className="font-semibold truncate">{entry.subject}</span>
-                                          </div>
-                                      ))}
-                                      {todaysSchoolEvents.length > 6 && (
-                                          <Link href={`/dashboard/school-schedule`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                            + {todaysSchoolEvents.length - 6} mais...
-                                          </Link>
-                                      )}
-                                  </ul>
-                              ) : (
-                                  <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                                      Nenhuma aula hoje. Dia livre!
-                                  </p>
-                              )}
-                          </div>
-                        </ScrollArea>
-                      </TabsContent>
-                   </Tabs>
+                            </li>
+                          );
+                        })}
+                        {todaysTimelineItems.length > 6 && (
+                          <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
+                            + {todaysTimelineItems.length - 6} mais...
+                          </Link>
+                        )}
+                        </>
+                       ) : (
+                         <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                           Dia de descanso do heroi!
+                         </p>
+                       )}
+                      </ul>
+                     </ScrollArea>
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
