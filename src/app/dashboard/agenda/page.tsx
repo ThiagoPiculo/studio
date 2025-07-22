@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3 } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -195,6 +195,10 @@ function AgendaPageContent() {
     setTemplateToAssign(null);
     setIsAssignDialogOpen(true);
   };
+  
+  const handleEditTemplateClick = (instance: MissionInstance) => {
+    router.push(`/dashboard/missions/edit/${instance.templateId}`);
+  }
 
   const handleAssignmentComplete = () => {
     refetchData();
@@ -602,6 +606,7 @@ function AgendaPageContent() {
                                       <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                     )}
                                     <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                    <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
                                     <Separator />
                                     <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
                                   </div>
@@ -843,6 +848,7 @@ function AgendaPageContent() {
                                             <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                           <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
                                           <Separator/>
                                           <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
                                       </div>
@@ -1108,3 +1114,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
