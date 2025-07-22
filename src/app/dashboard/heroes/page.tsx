@@ -400,5 +400,3 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
-
-    
