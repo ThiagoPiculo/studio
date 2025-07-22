@@ -126,7 +126,7 @@ function HeroesPageContent() {
     
     const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
     const xpInCurrentLevel = currentXp - xpForCurrentLevel;
-    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
+    const xpNeededForLevelUp = xpForNextLevel - currentXp;
     
     const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
 
@@ -143,6 +143,7 @@ function HeroesPageContent() {
   const showGuide = !isLoading && (!hasChildren || !hasMissions || !hasRewards);
 
   const today = format(new Date(), 'yyyy-MM-dd');
+  const dayOfWeekToday = getDayToWeekday[new Date().getDay()];
 
   return (
     <div className="space-y-8">
@@ -180,13 +181,12 @@ function HeroesPageContent() {
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
-              const todaysTimelineItems: TimelineItem[] = missionInstances
+              const todaysMissions: TimelineItem[] = missionInstances
                 .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
                 .map(inst => ({ ...inst, itemType: 'mission' }));
               
-              const dayOfWeek = new Date().getDay();
-              const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5;
-              
+              const isWeekday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
+
               if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
                   const createSchoolEvent = (time: string, title: string, id: string): TimelineItem => {
                       const [hour, minute] = time.split(':').map(Number);
@@ -200,15 +200,20 @@ function HeroesPageContent() {
                           color: '#6b7280', // Default color for school events
                       };
                   };
-                  todaysTimelineItems.push(createSchoolEvent(child.schoolShiftStart, 'Entrada na Escola', 'school-start'));
-                  todaysTimelineItems.push(createSchoolEvent(child.schoolShiftEnd, 'Saída da Escola', 'school-end'));
+                  todaysMissions.push(createSchoolEvent(child.schoolShiftStart, 'Entrada na Escola', 'school-start'));
+                  todaysMissions.push(createSchoolEvent(child.schoolShiftEnd, 'Saída da Escola', 'school-end'));
               }
               
-              todaysTimelineItems.sort((a, b) => {
+              todaysMissions.sort((a, b) => {
                   const timeA = a.startDate ? (a.startDate instanceof Date ? a.startDate : a.startDate.toDate()) : new Date(0);
                   const timeB = b.startDate ? (b.startDate instanceof Date ? b.startDate : b.startDate.toDate()) : new Date(0);
                   return timeA.getTime() - timeB.getTime();
               });
+
+              const todaysSchoolSubjects = scheduleEntries.filter(entry => 
+                  entry.childId === child.id && 
+                  entry.dayOfWeek === dayOfWeekToday
+              ).sort((a,b) => a.startTime.localeCompare(b.startTime));
 
               const todaysMissionsCount = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date())).length;
               const completedTodaysMissionsCount = missionInstances
@@ -263,58 +268,89 @@ function HeroesPageContent() {
                         </div>
                     </div>
                    <Separator className="my-4" />
-                   <h3 className="text-sm font-semibold mb-2">Cronograma de Hoje</h3>
-                   <ScrollArea className="h-[145px] w-full">
-                      <ul className="space-y-1 pr-3">
-                        {todaysTimelineItems.length > 0 ? (
-                        <>
-                        {todaysTimelineItems.slice(0, 6).map(item => {
-                          const isCompleted = item.itemType === 'mission' && isMissionCompletedForDate(item, new Date());
-                          const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
-                          const formattedTime = format(eventTime, 'HH:mm');
-                          const popoverId = `${item.id}-${today}`;
-                          const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
-                          
-                          return (
-                            <li key={item.id}>
-                              <Link href={href} className="block">
-                                <div className={cn(
-                                  "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
-                                  isCompleted ? "bg-green-500/10 text-muted-foreground" : "bg-background hover:bg-accent/50",
-                                  item.itemType === 'school_event' && 'bg-blue-500/5'
-                                )}>
-                                  {item.itemType === 'mission' ? (
-                                      isCompleted ? (
-                                        <CheckSquare className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                      ) : (
-                                        <Square className="h-3.5 w-3.5 text-primary shrink-0" />
-                                      )
-                                  ) : (
-                                      <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                                  )}
-                                  <span className="font-semibold text-foreground/80">{formattedTime}</span>
-                                  {'emoji' in item && item.emoji && <span className="text-sm">{item.emoji}</span>}
-                                  <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
-                                    {item.title}
-                                  </span>
-                                </div>
-                              </Link>
-                            </li>
-                          );
-                        })}
-                        {todaysTimelineItems.length > 6 && (
-                          <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                            + {todaysTimelineItems.length - 6} mais...
-                          </Link>
-                        )}
-                        </>
-                       ) : (
-                         <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                           Dia de descanso do heroi!
-                         </p>
-                       )}
-                      </ul>
-                     </ScrollArea>
+                   
+                   <Tabs defaultValue="missions">
+                        <TabsList className="grid w-full grid-cols-2">
+                            <TabsTrigger value="missions">Missões de Hoje</TabsTrigger>
+                            <TabsTrigger value="school">Escola Hoje</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="missions">
+                            <ScrollArea className="h-[145px] w-full">
+                                <ul className="space-y-1 pr-3">
+                                {todaysMissions.length > 0 ? (
+                                <>
+                                {todaysMissions.slice(0, 6).map(item => {
+                                    const isCompleted = item.itemType === 'mission' && isMissionCompletedForDate(item, new Date());
+                                    const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
+                                    const formattedTime = format(eventTime, 'HH:mm');
+                                    const popoverId = `${item.id}-${today}`;
+                                    const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
+                                    
+                                    return (
+                                        <li key={item.id}>
+                                        <Link href={href} className="block">
+                                            <div className={cn(
+                                            "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
+                                            isCompleted ? "bg-green-500/10 text-muted-foreground" : "bg-background hover:bg-accent/50",
+                                            item.itemType === 'school_event' && 'bg-blue-500/5'
+                                            )}>
+                                            {item.itemType === 'mission' ? (
+                                                isCompleted ? (
+                                                    <CheckSquare className="h-3.5 w-3.5 text-green-500 shrink-0" />
+                                                ) : (
+                                                    <Square className="h-3.5 w-3.5 text-primary shrink-0" />
+                                                )
+                                            ) : (
+                                                <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                            )}
+                                            <span className="font-semibold text-foreground/80">{formattedTime}</span>
+                                            {'emoji' in item && item.emoji && <span className="text-sm">{item.emoji}</span>}
+                                            <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
+                                                {item.title}
+                                            </span>
+                                            </div>
+                                        </Link>
+                                        </li>
+                                    );
+                                })}
+                                {todaysMissions.length > 6 && (
+                                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
+                                    + {todaysMissions.length - 6} mais...
+                                    </Link>
+                                )}
+                                </>
+                                ) : (
+                                <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                                    Dia de descanso do heroi!
+                                </p>
+                                )}
+                                </ul>
+                            </ScrollArea>
+                        </TabsContent>
+                        <TabsContent value="school">
+                             <ScrollArea className="h-[145px] w-full">
+                                <ul className="space-y-1 pr-3">
+                                {todaysSchoolSubjects.length > 0 ? (
+                                    todaysSchoolSubjects.map(entry => (
+                                        <li key={entry.id}>
+                                            <Link href={`/dashboard/school-schedule`} className="block">
+                                                <div className="text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors bg-background hover:bg-accent/50">
+                                                    <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                                    <span className="font-semibold text-foreground/80">{entry.startTime}</span>
+                                                    <span className="truncate flex-grow font-semibold">{entry.subject}</span>
+                                                </div>
+                                            </Link>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                                        Nenhuma matéria registrada para hoje.
+                                    </p>
+                                )}
+                                </ul>
+                             </ScrollArea>
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
