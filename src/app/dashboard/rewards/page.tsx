@@ -42,17 +42,15 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { Progress } from '@/components/ui/progress';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
-  const isMobile = useIsMobile();
 
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [children, setChildren] = useState<ChildProfile[]>([]);
@@ -167,6 +165,12 @@ export default function RewardsHubPage() {
     setIsAssignDialogOpen(true);
   };
   
+  const currentContextName = useMemo(() => {
+    if (currentContext === 'my-space') return 'Meu Catálogo Pessoal';
+    const contextData = availableContexts.find(c => c.id === currentContext);
+    return `Catálogo da Aliança: ${contextData?.name || ''}`;
+  }, [currentContext, availableContexts]);
+  
   if (isLoading || isRoleLoading) {
     return (
       <div className="space-y-6">
@@ -248,7 +252,7 @@ export default function RewardsHubPage() {
                     )
                   })
                 ) : (
-                  <p className="text-xs text-muted-foreground italic">Nenhum herói cadastrado.</p>
+                  <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
                 )}
                 </div>
               </div>
@@ -279,19 +283,24 @@ export default function RewardsHubPage() {
   
   const renderCatalogView = () => (
     <div className="space-y-6">
-      {rewardTemplates.length > 0 && (
-         <Card>
-            <CardHeader>
-                <CardTitle>Seu Catálogo Personalizado</CardTitle>
-                <CardDescription>Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis.</CardDescription>
-            </CardHeader>
+      <Card>
+          <CardHeader>
+              <CardTitle>{currentContextName}</CardTitle>
+              <CardDescription>
+                  {rewardTemplates.length > 0
+                  ? "Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis."
+                  : "Seu catálogo está vazio. Adicione recompensas das ideias abaixo ou crie uma do zero."
+                  }
+              </CardDescription>
+          </CardHeader>
+          {rewardTemplates.length > 0 && (
             <CardContent>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {rewardTemplates.map(renderRewardCard)}
-                </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {rewardTemplates.map(renderRewardCard)}
+                  </div>
             </CardContent>
-         </Card>
-      )}
+          )}
+      </Card>
 
        <Card>
         <CardHeader>
@@ -350,39 +359,40 @@ export default function RewardsHubPage() {
                   </Link>
               </div>
           </CardHeader>
+           <CardContent>
+             <Accordion type="single" collapsible className="w-full" defaultValue="strategy">
+                <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                  <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                    <div className="flex items-center gap-4">
+                      <Info className="h-8 w-8 text-primary" />
+                      <div>
+                          <h2 className="text-2xl font-headline font-bold">Estratégia de Recompensas</h2>
+                          <p className="text-sm text-muted-foreground font-normal mt-1">Escolha como as recompensas são disponibilizadas para seus heróis.</p>
+                      </div>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="p-6 pt-0">
+                     <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as any)} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                        <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
+                            <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
+                            <div className="flex-grow">
+                              <p className="font-semibold text-foreground">Automático (Recomendado)</p>
+                              <p className="text-sm text-muted-foreground">O sistema notifica quando o herói pode resgatar. Você aprova, e pronto. Menos trabalho para você!</p>
+                            </div>
+                        </Label>
+                        <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
+                            <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
+                            <div className="flex-grow">
+                                <p className="font-semibold text-foreground">Manual</p>
+                                <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
+                            </div>
+                        </Label>
+                     </RadioGroup>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+           </CardContent>
       </Card>
-      
-      <Accordion type="single" collapsible className="w-full" defaultValue={isMobile ? undefined : "strategy"}>
-        <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
-          <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-            <div className="flex items-center gap-4">
-              <Info className="h-8 w-8 text-primary" />
-              <div>
-                  <h2 className="text-2xl font-headline font-bold">Estratégia de Recompensas</h2>
-                  <p className="text-sm text-muted-foreground font-normal mt-1">Escolha como as recompensas são disponibilizadas para seus heróis.</p>
-              </div>
-            </div>
-          </AccordionTrigger>
-          <AccordionContent className="p-6 pt-0">
-             <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as any)} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                    <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
-                    <div className="flex-grow">
-                      <p className="font-semibold text-foreground">Automático (Recomendado)</p>
-                      <p className="text-sm text-muted-foreground">Você aprova as recompensas e o app notifica quando o herói pode resgatar. Menos trabalho para você!</p>
-                    </div>
-                </Label>
-                <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                    <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
-                    <div className="flex-grow">
-                        <p className="font-semibold text-foreground">Manual</p>
-                        <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
-                    </div>
-                </Label>
-             </RadioGroup>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
       
       {renderCatalogView()}
 
@@ -417,3 +427,4 @@ export default function RewardsHubPage() {
     </div>
   );
 }
+
