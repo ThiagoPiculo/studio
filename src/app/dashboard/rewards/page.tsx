@@ -18,7 +18,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -28,7 +28,7 @@ import {
   getChildRewardInstancesForContext,
   populateInitialRewardTemplates
 } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance, UserProfile } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -47,7 +47,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function RewardsHubPage() {
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
+  const { currentContext } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
@@ -74,24 +74,25 @@ export default function RewardsHubPage() {
     setIsLoading(true);
     try {
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      const [templates, children, instances] = await Promise.all([
+      const [fetchedTemplates, fetchedChildren, fetchedInstances] = await Promise.all([
         getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
         getChildProfilesForAttribution(user.uid, currentContext),
         getChildRewardInstancesForContext(user.uid, familyIdToQuery)
       ]);
       
-      if (templates.length === 0 && children.length > 0) {
+      setChildren(fetchedChildren);
+
+      if (fetchedTemplates.length === 0 && fetchedChildren.length > 0 && currentContext === 'my-space') {
         setIsPopulating(true);
         await populateInitialRewardTemplates(user.uid);
         const newTemplates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
         setRewardTemplates(newTemplates);
         setIsPopulating(false);
       } else {
-        setRewardTemplates(templates);
+        setRewardTemplates(fetchedTemplates);
       }
       
-      setChildren(children);
-      setRewardInstances(instances.filter(i => i.status === 'active'));
+      setRewardInstances(fetchedInstances.filter(i => i.status === 'active'));
     } catch (err) {
       console.error("Error fetching rewards data:", err);
       toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
@@ -301,31 +302,24 @@ export default function RewardsHubPage() {
   };
   
   const renderCatalogView = () => (
-      <Accordion type="multiple" defaultValue={groupedAndSortedTemplates.map(g => g.id)} className="w-full space-y-4">
-        {groupedAndSortedTemplates.map(group => {
-            const GroupIcon = group.icon;
-            return (
-                <AccordionItem value={group.id} key={group.id} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                  <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                     <div className="flex items-center gap-4">
-                        <GroupIcon className="h-8 w-8 text-primary" />
-                        <div>
-                            <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
-                                {group.userCategory}
-                            </h2>
-                             <p className="text-sm text-muted-foreground font-normal mt-1">{group.description}</p>
-                        </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="p-6 pt-0">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4">
-                        {group.items.map(renderRewardCard)}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-            );
-        })}
-      </Accordion>
+    <div className="space-y-6">
+      {groupedAndSortedTemplates.map(group => {
+        const GroupIcon = group.icon;
+        return (
+          <section key={group.id} aria-labelledby={`category-title-${group.id}`}>
+            <div className="flex items-center gap-3 mb-4">
+              <GroupIcon className="h-8 w-8 text-primary" />
+              <h2 id={`category-title-${group.id}`} className="text-2xl font-headline font-bold">
+                {group.userCategory}
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {group.items.map(renderRewardCard)}
+            </div>
+          </section>
+        )
+      })}
+    </div>
   );
 
   return (
@@ -363,22 +357,22 @@ export default function RewardsHubPage() {
             </div>
           </AccordionTrigger>
           <AccordionContent className="p-6 pt-0">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-              <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                    <RadioGroupItem value="automatic" id="mode-auto" checked={rewardMode === 'automatic'} onClick={() => handleRewardModeChange('automatic')} className="mt-1" />
+             <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as any)} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
+                    <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
                     <div className="flex-grow">
                       <p className="font-semibold text-foreground">Automático (Recomendado)</p>
                       <p className="text-sm text-muted-foreground">O app sugere recompensas e notifica você para aprová-las quando a criança atingir as estrelas necessárias. Menos trabalho para você!</p>
                     </div>
-              </Label>
+                </Label>
                 <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                    <RadioGroupItem value="manual" id="mode-manual" checked={rewardMode === 'manual'} onClick={() => handleRewardModeChange('manual')} className="mt-1" />
+                    <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
                     <div className="flex-grow">
                         <p className="font-semibold text-foreground">Manual</p>
                         <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
                     </div>
-              </Label>
-            </div>
+                </Label>
+             </RadioGroup>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
