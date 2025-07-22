@@ -194,7 +194,7 @@ export interface MissionInstance {
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
-  completionLog?: { [key: string]: Timestamp }; // Map of scheduled date (YYYY-MM-DD) to completion timestamp
+  completionLog?: { [dateKey: string]: { completedAt: Timestamp, stars: number, xp: number } };
   exceptionDates?: { [key: string]: boolean }; // Using a map for faster lookups
 }
 

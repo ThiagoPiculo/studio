@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -57,7 +58,7 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 
 type Activity = 
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, completedAt: Timestamp })
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number } })
     | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp });
 
 
@@ -268,11 +269,17 @@ function ManageChildPageContent() {
       return { completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0, pendingMissions: 0, availableRewards: 0, earnedBadges: 0 };
     }
 
-    const totalCompletedOccurrences = missionInstances.reduce((sum, m) => sum + Object.keys(m.completionLog || {}).length, 0);
-
-    const totalStarsEarned = missionInstances
-      .flatMap(m => Object.keys(m.completionLog || {}).length > 0 ? Array(Object.keys(m.completionLog || {}).length).fill(m.starsReward) : [])
-      .reduce((sum, stars) => sum + (stars || 0), 0);
+    let totalCompletedOccurrences = 0;
+    let totalStarsEarned = 0;
+    
+    missionInstances.forEach(m => {
+        if (m.completionLog) {
+            Object.values(m.completionLog).forEach(logEntry => {
+                totalCompletedOccurrences++;
+                totalStarsEarned += logEntry.stars || 0;
+            });
+        }
+    });
 
     const pendingMissionsCount = missionInstances.filter(m => m.status === 'pending').length;
     const redeemedRewardsCount = childRewards.filter(r => r.status === 'redeemed').length;
@@ -296,18 +303,22 @@ function ManageChildPageContent() {
 
     const allActivities: Activity[] = [
       ...missionInstances.flatMap(m =>
-        Object.entries(m.completionLog || {}).map(([dateStr, completedTimestamp]) => ({
+        Object.entries(m.completionLog || {}).map(([dateStr, completionLogEntry]) => ({
           ...m,
           type: 'mission' as const,
           scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
-          completedAt: completedTimestamp,
+          completionLogEntry: completionLogEntry
         }))
       ),
       ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
     ].sort((a, b) => {
-        const timeA = a.completedAt instanceof Timestamp ? a.completedAt.toDate().getTime() : new Date(a.completedAt as any).getTime();
-        const timeB = b.completedAt instanceof Timestamp ? b.completedAt.toDate().getTime() : new Date(b.completedAt as any).getTime();
-        return timeB - timeA;
+        const timeA = a.type === 'mission' ? a.completionLogEntry.completedAt : a.completedAt;
+        const timeB = b.type === 'mission' ? b.completionLogEntry.completedAt : b.completedAt;
+        
+        const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : new Date(timeA as any).getTime();
+        const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : new Date(timeB as any).getTime();
+        
+        return dateB - dateA;
     });
     return allActivities.slice(0, 10);
   }, [missionInstances, childRewards]);
@@ -1053,9 +1064,9 @@ function ManageChildPageContent() {
                 ) : (
                   <ul className="space-y-4">
                     {activities.map((activity, index) => {
-                      const completedDate = activity.completedAt.toDate();
+                      const completedDate = activity.type === 'mission' ? activity.completionLogEntry.completedAt.toDate() : activity.completedAt.toDate();
                       return (
-                        <Fragment key={activity.id + completedDate.getTime()}>
+                        <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
                           <li className="flex items-start gap-4">
                             {activity.type === 'mission' ? (
                                <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
@@ -1482,7 +1493,7 @@ function ManageChildPageContent() {
                             <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
                         </ul>
 
-                        <p className="pt-2">Essencialmente, o sistema de conquistas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
+                        <p className="pt-2">Em resumo, o sistema de conquistas cria um "mural de conquistas" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
                     </div>
                 </ScrollArea>
                 <DialogFooter>
@@ -1744,6 +1755,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 

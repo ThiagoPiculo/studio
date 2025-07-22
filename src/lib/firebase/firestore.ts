@@ -1838,7 +1838,11 @@ export const completeMissionInstance = async (
 
         const missionUpdates: any = {
             completionCount: newCompletionCount,
-            [`completionLog.${completionDateKey}`]: Timestamp.now(),
+            [`completionLog.${completionDateKey}`]: {
+              completedAt: Timestamp.now(),
+              stars: missionData.starsReward,
+              xp: missionData.xpReward
+            },
             updatedAt: serverTimestamp(),
         };
 
@@ -1904,7 +1908,9 @@ export const reactivateMissionInstance = async (
         const missionData = missionSnap.data() as MissionInstance;
         
         const completionDateKey = formatDateFns(dateToUndo, 'yyyy-MM-dd');
-        if (!missionData.completionLog || !missionData.completionLog[completionDateKey]) {
+        const completionLogEntry = missionData.completionLog ? missionData.completionLog[completionDateKey] : undefined;
+
+        if (!completionLogEntry) {
             console.warn("No completion found for this date to undo.");
             return null;
         }
@@ -1919,8 +1925,8 @@ export const reactivateMissionInstance = async (
 
         // Revert rewards for the child
         const finalChildUpdates: any = { 
-            stars: Math.max(0, childData.stars - missionData.starsReward),
-            xp: Math.max(0, childData.xp - missionData.xpReward),
+            stars: Math.max(0, childData.stars - (completionLogEntry.stars || missionData.starsReward)),
+            xp: Math.max(0, childData.xp - (completionLogEntry.xp || missionData.xpReward)),
             updatedAt: serverTimestamp() 
         };
         transaction.update(childRef, finalChildUpdates);
