@@ -182,7 +182,7 @@ function HeroesPageContent() {
               const age = calculateAge(child.birthDate);
               
               const todaysMissions: TimelineItem[] = missionInstances
-                .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
+                .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()))
                 .map(inst => ({ 
                     ...inst, 
                     itemType: 'mission',
