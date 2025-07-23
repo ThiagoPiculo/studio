@@ -1330,35 +1330,40 @@ export const updateMissionTemplate = async (actor: UserProfile, templateId: stri
     if (!templateSnap.exists()) {
       throw new Error("Template de missão não encontrado.");
     }
-
-    const familyId = templateSnap.data().familyId;
-
+    const templateData = templateSnap.data();
+    
     // 1. Update the MissionTemplate
     transaction.update(templateRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     });
 
-    // 2. Find and update all pending MissionInstances
+    // 2. Find all pending MissionInstances
     const instancesQuery = query(
       collection(db, 'missionInstances'),
       where('templateId', '==', templateId),
       where('status', '==', 'pending')
     );
-    const instancesSnapshot = await getDocs(instancesQuery); // Note: getDocs is not available in transactions, this needs to be fetched outside.
+    // Fetch outside transaction as per Firestore limitations
+    const instancesSnapshot = await getDocs(instancesQuery);
     
-    const instanceUpdates = {
-      title: updates.title,
-      description: updates.description,
-      emoji: updates.emoji,
-      category: updates.category,
-      starsReward: updates.starsReward,
-      xpReward: updates.xpReward,
-      updatedAt: serverTimestamp(),
-    };
-    
-    instancesSnapshot.forEach(doc => {
-      transaction.update(doc.ref, instanceUpdates);
+    instancesSnapshot.forEach(docSnap => {
+      const instance = docSnap.data() as MissionInstance;
+      // ONLY update if it's a recurring mission. One-off missions are snapshots.
+      if (instance.isRecurring) {
+        const instanceUpdates: any = {
+          updatedAt: serverTimestamp(),
+        };
+        // Selectively copy only the updatable fields from the template updates
+        if (updates.title !== undefined) instanceUpdates.title = updates.title;
+        if (updates.description !== undefined) instanceUpdates.description = updates.description;
+        if (updates.emoji !== undefined) instanceUpdates.emoji = updates.emoji;
+        if (updates.category !== undefined) instanceUpdates.category = updates.category;
+        if (updates.starsReward !== undefined) instanceUpdates.starsReward = updates.starsReward;
+        if (updates.xpReward !== undefined) instanceUpdates.xpReward = updates.xpReward;
+        
+        transaction.update(docSnap.ref, instanceUpdates);
+      }
     });
   });
 
@@ -1370,11 +1375,12 @@ export const updateMissionTemplate = async (actor: UserProfile, templateId: stri
     await createAllianceNotification(finalTemplateData.familyId, actor, {
       type: 'template_updated',
       title: 'Missão Atualizada',
-      description: `${actor.name} atualizou a missão: "${updates.title || finalTemplateData.title}". As agendas foram sincronizadas.`,
+      description: `${actor.name} atualizou a missão: "${updates.title || finalTemplateData.title}". As agendas recorrentes foram sincronizadas.`,
       href: `/dashboard/missions/edit/${templateId}`,
     });
   }
 };
+
 
 
 export const deleteMissionTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
@@ -1868,7 +1874,8 @@ export const completeMissionInstance = async (
 
         // --- Mission Instance Update ---
         const newCompletionCount = Object.keys(missionData.completionLog || {}).length + 1;
-        const isFullyCompleted = missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count;
+        const isFullyCompleted = (!missionData.isRecurring && newCompletionCount >= 1) || (missionData.isRecurring && missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count);
+
 
         const missionUpdates: any = {
             completionCount: newCompletionCount,
@@ -2036,7 +2043,7 @@ export const updateRecurringMissionInstance = async (
     }
     const originalInstance = { id: originalInstanceSnap.id, ...originalInstanceSnap.data() } as MissionInstance;
     
-    const scheduleUpdates = {
+    const scheduleUpdates: any = {
       isRecurring: newSchedule.isRecurring,
       startDate: newSchedule.startDate ? Timestamp.fromDate(newSchedule.startDate) : null,
       dueDate: newSchedule.dueDate ? Timestamp.fromDate(newSchedule.dueDate) : null,
@@ -2048,6 +2055,8 @@ export const updateRecurringMissionInstance = async (
     };
 
     if (editMode === 'all') {
+      // When editing the entire series, clear any past exceptions.
+      scheduleUpdates.exceptionDates = {};
       transaction.update(originalInstanceRef, scheduleUpdates);
     } 
     else if (editMode === 'single') {
