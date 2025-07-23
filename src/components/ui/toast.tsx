@@ -4,6 +4,7 @@ import * as React from "react"
 import * as ToastPrimitives from "@radix-ui/react-toast"
 import { cva, type VariantProps } from "class-variance-authority"
 import { X } from "lucide-react"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 import { cn } from "@/lib/utils"
 
@@ -12,17 +13,23 @@ const ToastProvider = ToastPrimitives.Provider
 const ToastViewport = React.forwardRef<
   React.ElementRef<typeof ToastPrimitives.Viewport>,
   React.ComponentPropsWithoutRef<typeof ToastPrimitives.Viewport>
->(({ className, ...props }, ref) => (
-  <ToastPrimitives.Viewport
-    ref={ref}
-    className={cn(
-      "fixed z-[100] flex max-h-screen w-full flex-col-reverse p-4 sm:bottom-auto sm:right-0 sm:top-0 sm:flex-col md:max-w-[420px]",
-      "bottom-0",
-      className
-    )}
-    {...props}
-  />
-))
+>(({ className, ...props }, ref) => {
+  const isMobile = useIsMobile();
+
+  return (
+    <ToastPrimitives.Viewport
+      ref={ref}
+      className={cn(
+        "fixed z-[100] flex max-h-screen w-full flex-col-reverse p-4",
+        // Default to mobile styles, then apply desktop styles if not mobile
+        "bottom-0",
+        isMobile === false && "sm:bottom-auto sm:right-0 sm:top-0 sm:flex-col",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(

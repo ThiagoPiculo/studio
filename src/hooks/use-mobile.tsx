@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react"
 
 const MOBILE_BREAKPOINT = 768
@@ -7,21 +6,20 @@ export function useIsMobile() {
   const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined)
 
   useEffect(() => {
-    // Check if window is defined (to prevent errors during SSR)
-    if (typeof window === 'undefined') {
-        return;
-    }
+    // This effect only runs on the client, after the initial render.
+    // This safely avoids hydration mismatches.
+    const checkDevice = () => {
+        setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
 
-    const mql = window.matchMedia(`(max-width: ${MOBILE_BREAKPOINT - 1}px)`)
-    const onChange = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
-    }
-
-    mql.addEventListener("change", onChange)
-    // Set initial value
-    setIsMobile(window.innerWidth < MOBILE_BREAKPOINT)
+    // Set the initial value on the client
+    checkDevice();
     
-    return () => mql.removeEventListener("change", onChange)
+    // Add event listener to check on resize
+    window.addEventListener("resize", checkDevice);
+    
+    // Cleanup event listener on component unmount
+    return () => window.removeEventListener("resize", checkDevice);
   }, [])
 
   return isMobile
