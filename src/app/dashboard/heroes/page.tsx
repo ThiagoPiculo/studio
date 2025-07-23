@@ -31,7 +31,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
 
 // Define a type for our combined timeline items
-type TimelineItem = (MissionInstance & { itemType: 'mission' }) | {
+type TimelineItem = (MissionInstance & { itemType: 'mission', startDate: Date }) | {
     itemType: 'school_event';
     id: string;
     title: string;
@@ -183,7 +183,11 @@ function HeroesPageContent() {
               
               const todaysMissions: TimelineItem[] = missionInstances
                 .filter(inst => inst.childId === child.id && inst.status === 'pending' && isMissionScheduledForDate(inst, new Date()))
-                .map(inst => ({ ...inst, itemType: 'mission' }));
+                .map(inst => ({ 
+                    ...inst, 
+                    itemType: 'mission',
+                    startDate: getDateObject(inst.startDate || inst.dueDate)!,
+                }));
               
               const isWeekday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
 
