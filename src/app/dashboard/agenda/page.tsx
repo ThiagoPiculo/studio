@@ -5,13 +5,13 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
-import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails } from '@/lib/types';
 import { missionCategories, weekdays } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -35,6 +35,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRecurrenceDialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Badge } from '@/components/ui/badge';
 
 
 export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -205,6 +206,8 @@ function AgendaPageContent() {
   };
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
+  const categoryMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
+
 
   const viewInterval = useMemo(() => {
     const weekStartsOn = 1; // Monday
@@ -567,6 +570,8 @@ function AgendaPageContent() {
                                 </li>
                             )
                         }
+                        
+                        const categoryDetails = categoryMap.get(event.data.category);
 
                         return(
                         <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
@@ -598,8 +603,54 @@ function AgendaPageContent() {
                                     <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
-                              <PopoverContent className="w-auto p-2">
-                                  <div className="flex flex-col gap-1">
+                              <PopoverContent className="w-80 p-0">
+                                  <div className="p-4 space-y-3">
+                                      <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                          <Avatar className="h-10 w-10">
+                                            <AvatarImage src={child.avatar} alt={child.name}/>
+                                            <AvatarFallback style={{backgroundColor: child.color}}>
+                                              {getInitials(child.name)}
+                                            </AvatarFallback>
+                                          </Avatar>
+                                          <div>
+                                            <p className="font-semibold">{child.name}</p>
+                                            <p className="text-xs text-muted-foreground">
+                                                Ocorrência de {format(day, 'dd/MM/yyyy')}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                                        {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                        {event.data.title}
+                                      </h3>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                          {categoryDetails && (
+                                              <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                  {categoryDetails.label}
+                                              </Badge>
+                                          )}
+                                          <Badge variant="secondary" className="flex items-center gap-1">
+                                            <Repeat className="h-3 w-3"/>
+                                            <span className="text-xs">{formatRecurrenceSummary(event.data)}</span>
+                                          </Badge>
+                                      </div>
+                                      
+                                      <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
+                                        <span className="flex items-center gap-1.5">
+                                          <StarIcon className="h-4 w-4 text-yellow-500"/>
+                                          <span className="font-semibold text-foreground">{event.data.starsReward}</span>
+                                        </span>
+                                         <span className="flex items-center gap-1.5">
+                                          <BadgeCheck className="h-4 w-4 text-blue-500"/>
+                                           <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
+                                        </span>
+                                      </div>
+
+                                  </div>
+                                  <Separator/>
+                                  <div className="p-2 flex flex-col gap-1">
                                     {isCompleted ? (
                                       <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                     ) : (
@@ -796,6 +847,8 @@ function AgendaPageContent() {
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
                         const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                         const categoryDetails = categoryMap.get(event.data.category);
+
 
                         if (event.type === 'school') {
                            return (
@@ -840,8 +893,54 @@ function AgendaPageContent() {
                                           <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-2">
-                                      <div className="flex flex-col gap-1">
+                                  <PopoverContent className="w-80 p-0">
+                                      <div className="p-4 space-y-3">
+                                          <div className="flex items-start justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <Avatar className="h-10 w-10">
+                                                <AvatarImage src={child.avatar} alt={child.name}/>
+                                                <AvatarFallback style={{backgroundColor: child.color}}>
+                                                  {getInitials(child.name)}
+                                                </AvatarFallback>
+                                              </Avatar>
+                                              <div>
+                                                <p className="font-semibold">{child.name}</p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ocorrência de {format(day, 'dd/MM/yyyy')}
+                                                </p>
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <h3 className="text-lg font-semibold flex items-center gap-2">
+                                            {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                            {event.data.title}
+                                          </h3>
+                                          <div className="flex flex-wrap items-center gap-2">
+                                              {categoryDetails && (
+                                                  <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                      {categoryDetails.label}
+                                                  </Badge>
+                                              )}
+                                              <Badge variant="secondary" className="flex items-center gap-1">
+                                                <Repeat className="h-3 w-3"/>
+                                                <span className="text-xs">{formatRecurrenceSummary(event.data)}</span>
+                                              </Badge>
+                                          </div>
+                                          
+                                          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
+                                            <span className="flex items-center gap-1.5">
+                                              <StarIcon className="h-4 w-4 text-yellow-500"/>
+                                              <span className="font-semibold text-foreground">{event.data.starsReward}</span>
+                                            </span>
+                                             <span className="flex items-center gap-1.5">
+                                              <BadgeCheck className="h-4 w-4 text-blue-500"/>
+                                               <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
+                                            </span>
+                                          </div>
+
+                                      </div>
+                                      <Separator/>
+                                      <div className="p-2 flex flex-col gap-1">
                                           {isCompleted ? (
                                             <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
@@ -1114,5 +1213,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
