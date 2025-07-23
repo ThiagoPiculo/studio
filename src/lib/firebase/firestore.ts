@@ -1324,24 +1324,58 @@ export const getMissionTemplateById = async (templateId: string): Promise<Missio
 
 export const updateMissionTemplate = async (actor: UserProfile, templateId: string, updates: Partial<Omit<MissionTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>>): Promise<void> => {
   const templateRef = doc(db, 'missionTemplates', templateId);
-  const templateSnap = await getDoc(templateRef);
-  if (!templateSnap.exists()) throw new Error("Template not found");
-  const familyId = templateSnap.data().familyId;
   
-  await updateDoc(templateRef, {
-    ...updates,
-    updatedAt: serverTimestamp() as Timestamp,
+  await runTransaction(db, async (transaction) => {
+    const templateSnap = await transaction.get(templateRef);
+    if (!templateSnap.exists()) {
+      throw new Error("Template de missão não encontrado.");
+    }
+
+    const familyId = templateSnap.data().familyId;
+
+    // 1. Update the MissionTemplate
+    transaction.update(templateRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
+
+    // 2. Find and update all pending MissionInstances
+    const instancesQuery = query(
+      collection(db, 'missionInstances'),
+      where('templateId', '==', templateId),
+      where('status', '==', 'pending')
+    );
+    const instancesSnapshot = await getDocs(instancesQuery); // Note: getDocs is not available in transactions, this needs to be fetched outside.
+    
+    const instanceUpdates = {
+      title: updates.title,
+      description: updates.description,
+      emoji: updates.emoji,
+      category: updates.category,
+      starsReward: updates.starsReward,
+      xpReward: updates.xpReward,
+      updatedAt: serverTimestamp(),
+    };
+    
+    instancesSnapshot.forEach(doc => {
+      transaction.update(doc.ref, instanceUpdates);
+    });
   });
 
-   if (familyId) {
-    await createAllianceNotification(familyId, actor, {
+  const finalTemplateSnap = await getDoc(templateRef);
+  if (!finalTemplateSnap.exists()) return;
+  const finalTemplateData = finalTemplateSnap.data();
+
+  if (finalTemplateData.familyId) {
+    await createAllianceNotification(finalTemplateData.familyId, actor, {
       type: 'template_updated',
       title: 'Missão Atualizada',
-      description: `${actor.name} atualizou a missão: "${updates.title || templateSnap.data().title}".`,
+      description: `${actor.name} atualizou a missão: "${updates.title || finalTemplateData.title}". As agendas foram sincronizadas.`,
       href: `/dashboard/missions/edit/${templateId}`,
     });
   }
 };
+
 
 export const deleteMissionTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
   const templateRef = doc(db, 'missionTemplates', templateId);

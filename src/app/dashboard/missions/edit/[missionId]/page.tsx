@@ -175,7 +175,7 @@ export default function EditMissionTemplatePage() {
 
       toast({
         title: 'Missão Atualizada!',
-        description: `A missão "${values.title}" foi atualizada com sucesso.`,
+        description: `A missão "${values.title}" e suas agendas ativas foram atualizadas com sucesso.`,
       });
       router.push('/dashboard/missions'); 
     } catch (error) {

@@ -1081,7 +1081,7 @@ function ManageChildPageContent() {
                               <p className="font-semibold">{activity.title}</p>
                               <p className="text-sm text-muted-foreground">
                                 {activity.type === 'mission' ?
-                                    `Concluída (ref. a ${format(activity.scheduledFor, 'dd/MM/yyyy')})`
+                                    `Concluída (ref. a ${format(activity.scheduledFor, 'dd/MM/yyyy')}) - Ganhou ${activity.completionLogEntry.stars} ★`
                                     : `Custo: ${activity.starsCost} Estrelas`
                                 }
                               </p>
@@ -1755,6 +1755,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
