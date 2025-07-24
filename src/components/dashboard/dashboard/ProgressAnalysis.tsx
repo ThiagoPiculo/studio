@@ -10,7 +10,7 @@ import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday }
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
 import { startOfWeek, eachDayOfInterval, addDays } from 'date-fns';
-import { BarChart, ArrowRight } from 'lucide-react';
+import { BarChart, ArrowRight, Star, BadgeCheck } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -51,6 +51,8 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             childName: child.name,
             childAvatar: child.avatar,
             childColor: child.color,
+            stars: child.stars,
+            xp: child.xp,
             dailyData: dailyData
         };
     });
@@ -81,9 +83,19 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                         {getInitials(data.childName)}
                                     </AvatarFallback>
                                 </Avatar>
-                                <h4 className="font-semibold">{data.childName}</h4>
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+                                  <h4 className="font-semibold">{data.childName}</h4>
+                                  <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                                      <span className="flex items-center gap-1 font-semibold text-amber-600">
+                                        <Star className="h-4 w-4" /> {data.stars}
+                                      </span>
+                                      <span className="flex items-center gap-1 font-semibold text-blue-600">
+                                        <BadgeCheck className="h-4 w-4" /> {data.xp}
+                                      </span>
+                                  </div>
+                                </div>
                             </div>
-                            <Button asChild variant="link" className="p-0 h-auto text-sm">
+                            <Button asChild variant="link" className="p-0 h-auto text-sm shrink-0">
                                 <Link href={`/dashboard/agenda?child_id=${data.childId}`}>
                                     ver agenda <ArrowRight className="ml-1 h-4 w-4" />
                                 </Link>
@@ -102,12 +114,12 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                         {dayProgress.total > 0 ? (
                                             <Progress value={progressPercentage} className="h-2" />
                                         ) : (
-                                            <div className="h-2 flex items-center justify-center">
+                                            <div className="h-2 flex items-center justify-center rounded-full bg-muted">
                                                 <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
                                             </div>
                                         )}
                                         <span className="text-sm text-muted-foreground font-mono w-10 text-right">
-                                            {dayProgress.total > 0 ? `${dayProgress.completed}/${dayProgress.total}` : "0/0"}
+                                            {`${dayProgress.completed}/${dayProgress.total}`}
                                         </span>
                                     </div>
                                 )
