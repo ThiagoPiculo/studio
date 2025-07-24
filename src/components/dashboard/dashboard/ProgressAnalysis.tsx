@@ -59,7 +59,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <BarChart className="text-chart-1" />
-          Análise de Progresso da Semana
+          Missões da Semana
         </CardTitle>
         <CardDescription>Acompanhe o desempenho diário dos seus heróis na semana atual.</CardDescription>
       </CardHeader>
@@ -96,7 +96,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 {dayProgress.completed}/{dayProgress.total}
                                             </span>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground italic w-10 text-right">-</span>
+                                            <span className="text-xs text-muted-foreground italic w-10 text-right">Nenhuma missão</span>
                                         )}
                                     </div>
                                 )
