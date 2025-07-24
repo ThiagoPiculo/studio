@@ -33,7 +33,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     // window.history.length <= 2 means the user landed directly on a dashboard page
     // (e.g., from an external link or new tab), so "back" would take them off-site.
     if (window.history.length <= 2) {
-      router.push('/dashboard/heroes'); // Navigate to a safe default page
+      router.push('/dashboard'); 
     } else {
       router.back();
     }

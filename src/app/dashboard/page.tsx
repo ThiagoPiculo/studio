@@ -1,9 +1,59 @@
-// src/app/dashboard/page.tsx
 
+"use client";
+
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BarChart, LayoutGrid, Award } from "lucide-react";
+import { LayoutGrid } from "lucide-react";
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
+import Loading from './loading';
+import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
+import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
+import { RecentAchievements } from '@/components/dashboard/dashboard/RecentAchievements';
+import { Reports } from '@/components/dashboard/dashboard/Reports';
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { currentContext } = useFamily();
+  const [isLoading, setIsLoading] = useState(true);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+
+  useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const [childData, missionData, rewardData] = await Promise.all([
+          getChildProfilesForAttribution(user.uid, currentContext),
+          getMissionInstancesForContext(user.uid, familyIdToQuery),
+          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+        ]);
+        setChildren(childData);
+        setMissionInstances(missionData);
+        setRewardTemplates(rewardData);
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [user, currentContext]);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="space-y-8">
       <Card className="shadow-lg">
@@ -18,48 +68,15 @@ export default function DashboardPage() {
         </CardHeader>
       </Card>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <BarChart className="text-chart-1" />
-              Análise de Progresso
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Em breve: Gráficos sobre a evolução de estrelas, XP e missões concluídas por heroi e por período.</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl flex items-center gap-2">
-              <Award className="text-chart-5" />
-              Conquistas Recentes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Em breve: Visualize as últimas medalhas e conquistas desbloqueadas pelos seus herois.</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Automações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Em breve: Crie regras e gatilhos para otimizar a rotina da sua aliança.</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Relatórios</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">Em breve: Exporte relatórios de desempenho e evolução para compartilhar e comemorar.</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        <div className="space-y-6">
+          <ProgressAnalysis childrenProfiles={children} missionInstances={missionInstances} />
+          <RecentAchievements childrenProfiles={children} />
+        </div>
+        <div className="space-y-6">
+          <UnlockedRewards childrenProfiles={children} rewardTemplates={rewardTemplates} />
+          <Reports />
+        </div>
       </div>
     </div>
   );
