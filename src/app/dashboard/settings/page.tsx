@@ -71,11 +71,11 @@ const notificationSettingsConfig: {
       {
         key: 'new_badge',
         icon: Award,
-        label: "Nova Conquista Desbloqueada",
-        description: "Quando uma criança atinge os critérios para desbloquear uma nova conquista.",
+        label: "Nova Medalha Desbloqueada",
+        description: "Quando uma criança atinge os critérios para desbloquear uma nova medalha.",
         confirmation: {
-            title: "Desativar alertas de Novas Conquistas?",
-            description: "Você não será mais notificado quando uma nova conquista for desbloqueada, o que pode diminuir a celebração dos feitos."
+            title: "Desativar alertas de Novas Medalhas?",
+            description: "Você não será mais notificado quando uma nova medalha for desbloqueada, o que pode diminuir a celebração dos feitos."
         }
       },
     ]
@@ -106,33 +106,33 @@ const notificationSettingsConfig: {
     ]
   },
   {
-    category: "Gestão do Catálogo",
+    category: "Gestão dos Quadros",
     items: [
       {
         key: 'template_created',
         icon: PlusCircle,
         label: "Nova Missão/Recompensa Criada",
-        description: "Quando um colaborador adiciona um novo item ao catálogo da aliança.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novos itens adicionados ao catálogo." }
+        description: "Quando um colaborador adiciona um novo item a um quadro da aliança.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novos itens adicionados aos quadros." }
       },
       {
         key: 'template_updated',
         icon: Edit3,
         label: "Missão/Recompensa Atualizada",
-        description: "Quando um item do catálogo da aliança é modificado.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nos itens do catálogo." }
+        description: "Quando um item de um quadro da aliança é modificado.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nos itens dos quadros." }
       },
       {
         key: 'template_deleted',
         icon: Trash2,
         label: "Missão/Recompensa Removida",
-        description: "Quando um item é removido do catálogo da aliança.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de itens do catálogo." }
+        description: "Quando um item é removido de um quadro da aliança.",
+        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de itens dos quadros." }
       },
     ]
   },
   {
-    category: "Gestão de Atribuições",
+    category: "Gestão de Rotinas",
     items: [
       {
         key: 'instance_assigned',
@@ -151,27 +151,27 @@ const notificationSettingsConfig: {
     ]
   },
   {
-    category: "Agenda Escolar",
+    category: "Rotina Escolar",
     items: [
         {
             key: 'school_schedule_entry_created',
             icon: PlusCircle,
             label: "Aula Adicionada",
-            description: "Quando um colaborador adiciona uma nova aula na agenda escolar.",
-            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novas aulas na agenda." }
+            description: "Quando um colaborador adiciona uma nova aula na rotina escolar.",
+            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novas aulas na rotina." }
         },
         {
             key: 'school_schedule_entry_updated',
             icon: Edit3,
             label: "Aula Atualizada",
-            description: "Quando um colaborador modifica uma aula existente na agenda escolar.",
+            description: "Quando um colaborador modifica uma aula existente na rotina escolar.",
             confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nas aulas." }
         },
         {
             key: 'school_schedule_entry_deleted',
             icon: Trash2,
             label: "Aula Removida",
-            description: "Quando um colaborador remove uma aula da agenda escolar.",
+            description: "Quando um colaborador remove uma aula da rotina escolar.",
             confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de aulas." }
         },
     ]
@@ -319,7 +319,7 @@ export default function SettingsPage() {
 
 
   const settings = {
-    initialPage: user?.settings?.initialPage || 'agenda',
+    initialPage: user?.settings?.initialPage || 'heroes',
     initialContext: user?.settings?.initialContext || 'my-space',
     notifications: user?.settings?.notifications || {},
   };
@@ -434,12 +434,14 @@ export default function SettingsPage() {
                             <SelectValue placeholder="Selecione..." />
                         </SelectTrigger>
                         <SelectContent>
-                            <SelectItem value="dashboard">Painel</SelectItem>
-                            <SelectItem value="heroes">Cartões de Mini Herois</SelectItem>
-                            <SelectItem value="agenda">Agenda de Missões</SelectItem>
-                            <SelectItem value="missions">Mural de Missões</SelectItem>
-                            <SelectItem value="rewards">Mural de Recompensas</SelectItem>
-                            <SelectItem value="achievements">Mural de Conquistas</SelectItem>
+                            <SelectItem value="heroes">Resumo do Dia</SelectItem>
+                            <SelectItem value="dashboard">Painel de Progressos</SelectItem>
+                            <SelectItem value="mural">Mural Completo</SelectItem>
+                            <SelectItem value="agenda">Rotina de Missões</SelectItem>
+                            <SelectItem value="school-schedule">Rotina Escolar</SelectItem>
+                            <SelectItem value="missions">Quadro de Missões</SelectItem>
+                            <SelectItem value="rewards">Quadro de Recompensas</SelectItem>
+                            <SelectItem value="achievements">Quadro de Medalhas</SelectItem>
                             <SelectItem value="family">Aliança de Herois</SelectItem>
                         </SelectContent>
                     </Select>

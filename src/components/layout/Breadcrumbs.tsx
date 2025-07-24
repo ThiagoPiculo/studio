@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
@@ -16,28 +16,27 @@ interface Breadcrumb {
 }
 
 const pathTranslations: { [key: string]: string } = {
-  dashboard: 'Painel',
-  heroes: 'Cartões de Mini Herois',
-  agenda: 'Agenda de Missões',
-  manage: 'Gerenciar',
+  dashboard: 'Painel de Progressos',
+  heroes: 'Resumo do Dia',
+  mural: 'Mural Completo',
+  agenda: 'Rotina de Missões',
   family: 'Aliança de Herois',
-  missions: 'Mural de Missões',
-  rewards: 'Mural de Recompensas',
-  achievements: 'Mural de Medalhas',
+  missions: 'Quadro de Missões',
+  rewards: 'Quadro de Recompensas',
+  achievements: 'Quadro de Medalhas',
   profile: 'Meu Perfil',
   settings: 'Configurações',
-  onboarding: 'Adicionar Herói',
+  onboarding: 'Novo Mini Herói',
   new: 'Criar',
   edit: 'Editar',
   'edit-template': 'Editar Catálogo',
   ideas: 'Ideias',
   suggest: 'Sugerir com IA',
   tasks: 'Tarefas',
-  'school-schedule': 'Agenda Escolar',
-  child: 'child' // placeholder for logic
+  'school-schedule': 'Rotina Escolar',
 };
 
-const nonClickableStaticSegments = ['edit', 'manage', 'new', 'edit-template'];
+const nonClickableStaticSegments = ['edit', 'new', 'edit-template'];
 
 const titleCase = (str: string) => {
     return str.replace(/-/g, ' ').replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
@@ -53,16 +52,13 @@ export function Breadcrumbs() {
       const currentParams = JSON.parse(paramsString);
       const pathSegments = pathname.split('/').filter(Boolean);
       
-      // Remove 'dashboard' from the beginning of the segments
       const relevantSegments = pathSegments[0] === 'dashboard' ? pathSegments.slice(1) : pathSegments;
 
       const crumbPromises = relevantSegments.map(async (segment, index) => {
-        // We construct the href with the /dashboard prefix for correct linking
         const href = `/dashboard/${relevantSegments.slice(0, index + 1).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
         const isLoading = false;
         
-        // This is a dynamic segment, so we fetch data
         if (currentParams.childId && segment === currentParams.childId) {
             const child = await getChildProfileById(segment);
             return { label: child?.name || "Herói", href, isLoading: !child };
@@ -78,11 +74,6 @@ export function Breadcrumbs() {
         if (currentParams.rewardId && segment === currentParams.rewardId) {
              const template = await getRewardTemplateById(segment);
              return { label: template?.title || "Recompensa", href, isLoading: !template };
-        }
-
-        // Skip structural segments like 'child' from appearing
-        if (segment === 'child') {
-            return null;
         }
 
         return { label, href, isLoading };

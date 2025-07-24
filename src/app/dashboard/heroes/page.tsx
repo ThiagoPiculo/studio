@@ -139,9 +139,9 @@ function HeroesPageContent() {
       
       <section>
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-headline">Cartões de Mini Herois</h2>
+          <h2 className="text-2xl font-headline">Resumo do Dia</h2>
           <Link href="/dashboard/onboarding">
-            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Mini Heroi</Button>
+            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
           </Link>
         </div>
 
@@ -149,8 +149,8 @@ function HeroesPageContent() {
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum Cartão de Heroi Ainda!</h3>
-              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro cartão da criança.</p>
+              <h3 className="text-xl font-semibold mb-2">Nenhum Herói Cadastrado Ainda!</h3>
+              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
                   <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
@@ -212,7 +212,7 @@ function HeroesPageContent() {
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
-                  <Link href={`/dashboard/child/${child.id}/manage`} className="absolute top-2 right-2 z-10">
+                  <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
                     <Button variant="outline" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
                         Ver Mural Completo
                         <Settings className="ml-1.5 h-4 w-4" />
@@ -244,14 +244,14 @@ function HeroesPageContent() {
                             <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                             <span className="text-xl font-bold text-amber-600">{child.stars}</span>
                         </div>
-                        <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
+                        <LevelUpPath currentLevel={child.level} currentXp={child.xp} size="sm" />
                     </div>
                    <Separator className="my-4" />
                    
                    <Tabs defaultValue="missions">
                         <TabsList className="grid w-full grid-cols-2">
                             <TabsTrigger value="missions">Missões de Hoje</TabsTrigger>
-                            <TabsTrigger value="school">Escola Hoje</TabsTrigger>
+                            <TabsTrigger value="school">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
                             <ScrollArea className="h-[145px] w-full">
@@ -342,7 +342,7 @@ function HeroesPageContent() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
                     </Link>
-                    <Link href={`/dashboard/child/${child.id}/manage?tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
+                    <Link href={`/dashboard/mural?childId=${child.id}&tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
                             <Gift className="h-5 w-5 text-chart-1" />
                             <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
@@ -351,7 +351,7 @@ function HeroesPageContent() {
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
                     </Link>
-                    <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
+                    <Link href={`/dashboard/mural?childId=${child.id}&tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                       <div className="flex min-h-[36px] items-center justify-center gap-1.5">
                           <Medal className="h-5 w-5 text-chart-5" />
                           <span className="font-bold text-lg leading-none">{unlockedAchievementsCount}</span>
@@ -382,7 +382,7 @@ export default function HeroesPage() {
     if (!authLoading) {
       if (initialLoad === 'true') {
         const userSettings = JSON.parse(localStorage.getItem('user_settings') || '{}');
-        const initialPage = userSettings?.initialPage || 'agenda';
+        const initialPage = userSettings?.initialPage || 'heroes';
         
         if (initialPage !== 'heroes') {
           router.replace(`/dashboard/${initialPage}`);
