@@ -13,30 +13,16 @@ interface LevelUpPathProps {
 const Milestone = ({
   level,
   label,
-  xpForThisLevel,
-  xpInThisLevel,
   isCurrent,
   isCompleted,
-  isNext,
-  color,
+  progressPercentage,
 }: {
   level: number;
   label: string;
-  xpForThisLevel: number;
-  xpInThisLevel: number;
   isCurrent: boolean;
   isCompleted: boolean;
-  isNext: boolean;
-  color: string;
+  progressPercentage: number;
 }) => {
-  const progressPercentage = xpForThisLevel > 0 ? (xpInThisLevel / xpForThisLevel) * 100 : 0;
-  
-  const Icon = useMemo(() => {
-    if (isCompleted) return Star;
-    if (isCurrent) return Gem;
-    return Package;
-  }, [isCompleted, isCurrent]);
-
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
       <div className="relative w-full flex items-center mb-2">
@@ -44,20 +30,20 @@ const Milestone = ({
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
         <div
-          className="absolute h-2.5 rounded-full transition-all duration-500"
-          style={{ width: `${progressPercentage}%`, backgroundColor: color }}
+          className="absolute h-2.5 rounded-full transition-all duration-500 bg-yellow-400"
+          style={{ width: `${isCompleted ? 100 : progressPercentage}%` }}
         />
         {/* Icon Container */}
         <div className={cn(
             "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-4 border-background shadow-md",
             isCompleted || isCurrent ? 'bg-primary/10' : 'bg-muted'
         )}>
-             <Icon
+             <Star
                 className={cn(
-                    "h-6 w-6 sm:h-7 sm:h-7",
-                    isCompleted && 'text-yellow-400 fill-yellow-400',
-                    isCurrent && 'text-purple-500',
-                    isNext && 'text-muted-foreground'
+                    "h-6 w-6 sm:h-7 sm:h-7 transition-all",
+                    isCompleted ? 'text-yellow-400 fill-yellow-400' : 
+                    isCurrent ? 'text-yellow-500 fill-transparent' : 
+                    'text-muted-foreground/50 fill-muted-foreground/20'
                 )}
             />
         </div>
@@ -68,34 +54,40 @@ const Milestone = ({
 };
 
 export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
-  const calculateLevelDetails = (level: number) => {
-    if (level <= 1) return { startXp: 0, endXp: 100 };
-    const xpForPreviousLevels = (level - 2) * (level - 1) * 25 + (level - 1) * 100;
-    const xpNeededForCurrentLevel = 100 + (level - 1) * 50;
-    return {
-      startXp: xpForPreviousLevels,
-      endXp: xpForPreviousLevels + xpNeededForCurrentLevel,
-    };
+  const calculateLevelDetails = (level: number): { startXp: number, endXp: number } => {
+      if (level <= 1) return { startXp: 0, endXp: 100 };
+      let totalXpForPreviousLevels = 0;
+      for (let i = 1; i < level; i++) {
+          totalXpForPreviousLevels += 100 + (i - 1) * 50;
+      }
+      const xpNeededForThisLevel = 100 + (level - 1) * 50;
+      return {
+          startXp: totalXpForPreviousLevels,
+          endXp: totalXpForPreviousLevels + xpNeededForThisLevel,
+      };
   };
 
   const levelData = useMemo(() => {
     const data = [];
+    // Always show 3 levels, starting from the current level or one before if not level 1
     const startLevel = Math.max(1, currentLevel - 1);
 
     for (let i = 0; i < 3; i++) {
         const level = startLevel + i;
-        const details = calculateLevelDetails(level + 1);
-        const xpForThisLevel = details.endXp - details.startXp;
-        const xpInThisLevel = Math.max(0, Math.min(currentXp - details.startXp, xpForThisLevel));
+        const { startXp, endXp } = calculateLevelDetails(level);
+        const xpForThisLevel = endXp - startXp;
+        const xpInThisLevel = currentXp - startXp;
+
+        const progressPercentage = xpForThisLevel > 0 
+            ? Math.max(0, Math.min(100, (xpInThisLevel / xpForThisLevel) * 100))
+            : 0;
         
         data.push({
             level: level,
             label: `Nível ${level}`,
-            xpForThisLevel,
-            xpInThisLevel,
             isCompleted: level < currentLevel,
             isCurrent: level === currentLevel,
-            isNext: level > currentLevel,
+            progressPercentage: progressPercentage
         });
     }
     return data;
@@ -104,17 +96,14 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
   return (
     <div className="w-full space-y-4">
         <div className="flex items-start justify-between gap-2 sm:gap-4">
-            {levelData.map((data, index) => (
+            {levelData.map((data) => (
                  <Milestone
                     key={data.level}
                     level={data.level}
                     label={data.label}
-                    xpForThisLevel={data.xpForThisLevel}
-                    xpInThisLevel={data.xpInThisLevel}
                     isCompleted={data.isCompleted}
                     isCurrent={data.isCurrent}
-                    isNext={data.isNext}
-                    color={data.isCompleted ? '#fcd34d' : '#a855f7'} // yellow for completed, purple for current
+                    progressPercentage={data.progressPercentage}
                 />
             ))}
         </div>
@@ -124,4 +113,3 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
     </div>
   );
 }
-
