@@ -11,7 +11,7 @@ import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types'
 import Loading from './loading';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
-import { RecentAchievements } from '@/components/dashboard/dashboard/RecentAchievements';
+import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import { Reports } from '@/components/dashboard/dashboard/Reports';
 
 export default function DashboardPage() {
@@ -71,7 +71,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
           <ProgressAnalysis childrenProfiles={children} missionInstances={missionInstances} />
-          <RecentAchievements childrenProfiles={children} />
+          <RecentMedals childrenProfiles={children} />
         </div>
         <div className="space-y-6">
           <UnlockedRewards childrenProfiles={children} rewardTemplates={rewardTemplates} />

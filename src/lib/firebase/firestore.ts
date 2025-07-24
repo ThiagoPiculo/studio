@@ -1805,8 +1805,8 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
         if (badge) {
             await createAndDispatchNotifications(childId, {
                 type: 'new_badge',
-                title: 'Nova Conquista Desbloqueada!',
-                description: `${childProfile.name} ganhou a conquista: "${badge.title}"!`,
+                title: 'Nova Medalha Desbloqueada!',
+                description: `${childProfile.name} ganhou a medalha: "${badge.title}"!`,
                 href: `/dashboard/child/${childId}/manage?tab=badges`,
                 relatedChildId: childId,
             });
