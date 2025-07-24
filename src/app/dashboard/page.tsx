@@ -63,7 +63,7 @@ export default function DashboardPage() {
   }, [user, currentContext]);
 
   const selectedChildData = useMemo(() => {
-    if (!selectedChildId) {
+    if (!selectedChildId || allChildren.length <= 1) {
         return {
             children: allChildren,
             missions: missionInstances,
