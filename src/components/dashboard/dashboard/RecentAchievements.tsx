@@ -39,13 +39,13 @@ export function RecentAchievements({ childrenProfiles }: RecentAchievementsProps
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Award className="text-chart-5" />
-          Conquistas em Destaque
+          Medalhas em Destaque
         </CardTitle>
-        <CardDescription>As conquistas mais notáveis dos seus heróis.</CardDescription>
+        <CardDescription>As medalhas mais notáveis dos seus heróis.</CardDescription>
       </CardHeader>
       <CardContent>
         {recentAchievements.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Nenhuma conquista desbloqueada ainda. A jornada está apenas começando!</p>
+          <p className="text-sm text-muted-foreground">Nenhuma medalha desbloqueada ainda. A jornada está apenas começando!</p>
         ) : (
           <ul className="space-y-3">
             {recentAchievements.map(({ child, badge }, index) => (

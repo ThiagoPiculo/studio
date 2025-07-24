@@ -358,7 +358,7 @@ function HeroesPageContent() {
                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                            <span className="font-bold text-lg leading-none">{totalBadgesCount}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-tight">Conquistas</p>
+                      <p className="text-xs text-muted-foreground leading-tight">Medalhas</p>
                     </Link>
                 </CardFooter>
               </Card>

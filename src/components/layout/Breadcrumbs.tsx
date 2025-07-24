@@ -23,7 +23,7 @@ const pathTranslations: { [key: string]: string } = {
   family: 'Aliança de Herois',
   missions: 'Mural de Missões',
   rewards: 'Mural de Recompensas',
-  achievements: 'Mural de Conquistas',
+  achievements: 'Mural de Medalhas',
   profile: 'Meu Perfil',
   settings: 'Configurações',
   onboarding: 'Adicionar Herói',

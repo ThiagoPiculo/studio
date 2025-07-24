@@ -131,7 +131,7 @@ export default function AchievementsPage() {
                       currentPerfectStreak++;
                   } else {
                       if (currentPerfectStreak > longestPerfectStreak) {
-                          longestPerfectStreak = currentPerfectStreak;
+                          longestPerfectStreak = longestPerfectStreak;
                       }
                       currentPerfectStreak = 0;
                   }
@@ -227,7 +227,7 @@ export default function AchievementsPage() {
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center">
             <Medal className="mr-3 h-8 w-8 text-primary" />
-            Mural de Conquistas
+            Mural de Medalhas
           </CardTitle>
           <CardDescription>
             Acompanhe todas as medalhas e troféus que seus heróis desbloquearam em suas jornadas.
@@ -290,7 +290,7 @@ export default function AchievementsPage() {
            {allChildren.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
-                <p>Nenhum herói encontrado neste contexto para exibir as conquistas.</p>
+                <p>Nenhum herói encontrado neste contexto para exibir as medalhas.</p>
                 <Link href="/dashboard/onboarding" passHref>
                   <Button variant="link" className="p-0 h-auto mt-2">
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -332,7 +332,7 @@ export default function AchievementsPage() {
                     <CardContent className="flex-grow space-y-4">
                       <div>
                         <div className="flex justify-between items-baseline mb-1">
-                          <p className="text-sm font-medium text-muted-foreground">Conquistas Desbloqueadas</p>
+                          <p className="text-sm font-medium text-muted-foreground">Medalhas Desbloqueadas</p>
                           <p className="text-sm font-bold">{unlockedCount} / {totalBadges}</p>
                         </div>
                         <Progress value={progress} />
@@ -361,7 +361,7 @@ export default function AchievementsPage() {
                             </TooltipProvider>
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground italic">Nenhuma conquista ainda.</p>
+                          <p className="text-sm text-muted-foreground italic">Nenhuma medalha ainda.</p>
                         )}
                       </div>
                     </CardContent>
@@ -386,7 +386,7 @@ export default function AchievementsPage() {
                 <CardHeader>
                   <CardTitle className="text-xl flex items-center gap-2">
                     <Trophy className="text-chart-5" />
-                    Próximas Conquistas
+                    Próximas Medalhas
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -417,7 +417,7 @@ export default function AchievementsPage() {
                         ))}
                       </ul>
                   ) : (
-                     <p className="text-muted-foreground text-sm">Nenhuma conquista em progresso no momento. Incentive seus heróis!</p>
+                     <p className="text-muted-foreground text-sm">Nenhuma medalha em progresso no momento. Incentive seus heróis!</p>
                   )}
                 </CardContent>
               </Card>
@@ -425,7 +425,7 @@ export default function AchievementsPage() {
                 <CardHeader>
                   <CardTitle className="text-xl flex items-center gap-2">
                     <Gem className="text-chart-4" />
-                    Conquistas Raras
+                    Medalhas Raras
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -467,7 +467,7 @@ export default function AchievementsPage() {
                         ))}
                       </ul>
                     ) : (
-                      <p className="text-muted-foreground text-sm">Nenhuma conquista rara foi desbloqueada ainda. A jornada continua!</p>
+                      <p className="text-muted-foreground text-sm">Nenhuma medalha rara foi desbloqueada ainda. A jornada continua!</p>
                     )}
                 </CardContent>
               </Card>

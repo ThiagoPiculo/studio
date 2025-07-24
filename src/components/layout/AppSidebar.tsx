@@ -103,9 +103,9 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/achievements" tooltip="Mural de Conquistas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                        <SidebarMenuButton href="/dashboard/achievements" tooltip="Mural de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
                             <Medal className="text-amber-500"/>
-                            <span>Mural de Conquistas</span>
+                            <span>Mural de Medalhas</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
