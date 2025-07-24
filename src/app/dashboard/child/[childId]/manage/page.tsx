@@ -39,7 +39,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -709,7 +708,7 @@ function ManageChildPageContent() {
                       </>
                     ) : (
                       <>
-                        <Progress value={progressPercentage} className="h-2" />
+                        <LevelUpPath currentLevel={currentProgress} currentXp={badge.goal || 0} />
                         <p className="text-xs text-muted-foreground">{currentProgress} de {badge.goal} {progressLabel}</p>
                       </>
                     )}
@@ -1721,6 +1720,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 

@@ -20,7 +20,6 @@ import {
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Progress } from "@/components/ui/progress";
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -29,6 +28,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
+import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 
 // Define a type for our combined timeline items
 type TimelineItem = (MissionInstance & { itemType: 'mission', startDate: Date }) | {
@@ -113,24 +113,6 @@ function HeroesPageContent() {
       age--;
     }
     return age;
-  };
-
-  const calculateXpDetails = (level: number, currentXp: number) => {
-    let xpForCurrentLevel = 0;
-    let xpToLevelUp = 0;
-
-    for (let i = 1; i < level; i++) {
-      xpToLevelUp = 100 + (i - 1) * 50;
-      xpForCurrentLevel += xpToLevelUp;
-    }
-    
-    const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
-    const xpInCurrentLevel = currentXp - xpForCurrentLevel;
-    const xpNeededForLevelUp = xpForNextLevel - currentXp;
-    
-    const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
-
-    return { progressPercentage, xpRemaining: xpForNextLevel - currentXp, xpForNextLevel };
   };
 
   if (isLoading) {
@@ -226,7 +208,6 @@ function HeroesPageContent() {
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
-              const { progressPercentage, xpForNextLevel } = calculateXpDetails(child.level, child.xp);
 
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -258,18 +239,12 @@ function HeroesPageContent() {
                 </CardHeader>
 
                 <CardContent className="p-4 pt-0">
-                   <div className="grid grid-cols-3 items-center gap-2">
-                        <div className="flex-shrink-0 flex items-center justify-start gap-1.5 w-[70px]">
+                   <div className="space-y-4">
+                        <div className="flex items-center justify-center gap-1.5 w-full">
                             <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                             <span className="text-xl font-bold text-amber-600">{child.stars}</span>
                         </div>
-                        <div className="space-y-1 flex-grow col-span-2">
-                            <div className="flex justify-between text-xs text-muted-foreground font-medium">
-                                <span>Nível {child.level}</span>
-                                <span>{child.xp} / {xpForNextLevel} XP</span>
-                            </div>
-                            <Progress value={progressPercentage} className="h-2" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                        </div>
+                        <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
                     </div>
                    <Separator className="my-4" />
                    

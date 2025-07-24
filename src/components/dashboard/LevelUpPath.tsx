@@ -44,7 +44,7 @@ const Milestone = ({
                 className={cn(
                     "h-6 w-6 sm:h-7 sm:h-7 transition-all",
                     isCompleted ? 'text-yellow-400 fill-yellow-400' : 
-                    isCurrent ? 'text-yellow-500 fill-yellow-400' : 
+                    isCurrent ? 'text-yellow-500' : 
                     'text-muted-foreground/50'
                 )}
             />
