@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -312,11 +313,11 @@ function ManageChildPageContent() {
       ),
       ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
     ].sort((a, b) => {
-        const timeA = a.type === 'mission' ? a.completionLogEntry.completedAt : a.completedAt;
-        const timeB = b.type === 'mission' ? b.completionLogEntry.completedAt : b.completedAt;
+        const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
+        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
         
-        const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : new Date(timeA as any).getTime();
-        const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : new Date(timeB as any).getTime();
+        const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : timeA ? new Date(timeA as any).getTime() : 0;
+        const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : timeB ? new Date(timeB as any).getTime() : 0;
         
         return dateB - dateA;
     });
@@ -1064,7 +1065,7 @@ function ManageChildPageContent() {
                 ) : (
                   <ul className="space-y-4">
                     {activities.map((activity, index) => {
-                      const completedDate = activity.type === 'mission' ? activity.completionLogEntry.completedAt.toDate() : activity.completedAt.toDate();
+                      const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
                       return (
                         <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
                           <li className="flex items-start gap-4">
@@ -1755,6 +1756,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
