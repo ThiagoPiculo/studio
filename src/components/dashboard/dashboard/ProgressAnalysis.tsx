@@ -99,14 +99,17 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                         <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
                                             {dayProgress.day}
                                         </span>
-                                        <Progress value={progressPercentage} className="h-2" />
-                                        {dayProgress.total > 0 ? (
-                                            <span className="text-sm text-muted-foreground font-mono w-10 text-right">
-                                                {dayProgress.completed}/{dayProgress.total}
-                                            </span>
-                                        ) : (
-                                            <span className="text-xs text-muted-foreground italic w-10 text-right whitespace-nowrap">Nenhuma missão</span>
-                                        )}
+                                        <div className="relative">
+                                            <Progress value={progressPercentage} className="h-2" />
+                                            {dayProgress.total === 0 && (
+                                                <div className="absolute inset-0 flex items-center justify-center">
+                                                    <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span className="text-sm text-muted-foreground font-mono w-10 text-right">
+                                            {dayProgress.completed}/{dayProgress.total}
+                                        </span>
                                     </div>
                                 )
                             })}
