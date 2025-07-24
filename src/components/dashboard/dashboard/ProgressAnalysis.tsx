@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -7,7 +8,7 @@ import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels, allWeekdays } from '@/lib/types';
-import { startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { startOfWeek, endOfWeek, eachDayOfInterval, addDays } from 'date-fns';
 import { BarChart, Clock, CalendarCheck, CalendarX, Check, X, Minus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
