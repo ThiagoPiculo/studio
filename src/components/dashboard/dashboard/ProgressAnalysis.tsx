@@ -7,11 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
-import { weekdayLabels, allWeekdays } from '@/lib/types';
-import { startOfWeek, endOfWeek, eachDayOfInterval, addDays } from 'date-fns';
-import { BarChart, Clock, CalendarCheck, CalendarX, Check, X, Minus } from 'lucide-react';
+import { weekdayLabels } from '@/lib/types';
+import { startOfWeek, addDays, eachDayOfInterval } from 'date-fns';
+import { BarChart, Check, X, Minus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Progress } from '@/components/ui/progress';
 
 interface ProgressAnalysisProps {
   childrenProfiles: ChildProfile[];
@@ -24,51 +25,6 @@ interface DailyProgress {
     completed: number;
     dayKey: 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
 }
-
-const DayStatus = ({ dayProgress }: { dayProgress: DailyProgress }) => {
-    const isToday = weekdayLabels[dayProgress.dayKey].long.toLowerCase() === new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
-
-    let status: 'perfect' | 'partial' | 'missed' | 'empty' = 'empty';
-    if (dayProgress.total > 0) {
-        if (dayProgress.completed === dayProgress.total) {
-            status = 'perfect';
-        } else if (dayProgress.completed > 0) {
-            status = 'partial';
-        } else {
-            status = 'missed';
-        }
-    }
-
-    const statusConfig = {
-        perfect: { icon: Check, color: 'bg-green-500/20 text-green-700', tooltip: `Perfeito! ${dayProgress.completed}/${dayProgress.total} missões concluídas.` },
-        partial: { icon: Check, color: 'bg-yellow-500/20 text-yellow-700', tooltip: `Quase lá! ${dayProgress.completed}/${dayProgress.total} missões concluídas.` },
-        missed: { icon: X, color: 'bg-red-500/20 text-red-700', tooltip: `Nenhuma missão concluída de ${dayProgress.total}.` },
-        empty: { icon: Minus, color: 'bg-muted text-muted-foreground', tooltip: 'Nenhuma missão agendada.' },
-    };
-    
-    const { icon: Icon, color, tooltip } = statusConfig[status];
-
-    return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="flex flex-col items-center gap-1">
-                        <span className={cn("text-xs font-semibold text-muted-foreground", isToday && "text-primary")}>
-                            {dayProgress.day}
-                        </span>
-                        <div className={cn("h-10 w-10 rounded-full flex items-center justify-center transition-all", color)}>
-                            <Icon className="h-5 w-5" />
-                        </div>
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{tooltip}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
-};
-
 
 export function ProgressAnalysis({ childrenProfiles, missionInstances }: ProgressAnalysisProps) {
   const weeklyProgress = useMemo(() => {
@@ -108,14 +64,14 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
         </CardTitle>
         <CardDescription>Acompanhe o desempenho diário dos seus heróis na semana atual.</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-6">
         {weeklyProgress.length === 0 ? (
-            <p className="text-muted-foreground text-sm">Nenhum herói ou missão encontrada para analisar.</p>
+            <p className="text-muted-foreground text-sm py-4">Nenhum herói ou missão encontrada para analisar.</p>
         ) : (
             weeklyProgress.map((data, index) => (
                 <div key={data.childId}>
                     {index > 0 && <Separator className="my-4" />}
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                         <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={data.childAvatar} alt={data.childName} />
@@ -125,10 +81,46 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                             </Avatar>
                             <h4 className="font-semibold">{data.childName}</h4>
                         </div>
-                        <div className="grid grid-cols-7 gap-2">
-                            {data.dailyData.map((dayProgress) => (
-                                <DayStatus key={dayProgress.day} dayProgress={dayProgress} />
-                            ))}
+                        <div className="space-y-2">
+                            {data.dailyData.map((dayProgress) => {
+                                const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
+                                const isToday = weekdayLabels[dayProgress.dayKey].long.toLowerCase() === new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
+                                
+                                let status: 'perfect' | 'partial' | 'missed' | 'empty' = 'empty';
+                                let StatusIcon = Minus;
+                                let iconColor = "text-muted-foreground";
+
+                                if (dayProgress.total > 0) {
+                                    if (dayProgress.completed === dayProgress.total) {
+                                        status = 'perfect';
+                                        StatusIcon = Check;
+                                        iconColor = "text-green-500";
+                                    } else if (dayProgress.completed > 0) {
+                                        status = 'partial';
+                                        StatusIcon = Minus;
+                                        iconColor = "text-orange-500";
+                                    } else {
+                                        status = 'missed';
+                                        StatusIcon = X;
+                                        iconColor = "text-red-500";
+                                    }
+                                }
+
+                                return (
+                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,4rem,2rem] items-center gap-4">
+                                        <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
+                                            {dayProgress.day}
+                                        </span>
+                                        <Progress value={progressPercentage} className="h-2" />
+                                        <span className="text-sm text-muted-foreground font-mono">
+                                            {dayProgress.completed}/{dayProgress.total}
+                                        </span>
+                                        <div className="flex justify-center">
+                                            <StatusIcon className={cn("h-5 w-5", iconColor)} />
+                                        </div>
+                                    </div>
+                                )
+                            })}
                         </div>
                     </div>
                 </div>
@@ -138,3 +130,4 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
     </Card>
   );
 }
+
