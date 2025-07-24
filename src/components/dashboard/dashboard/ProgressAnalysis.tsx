@@ -2,15 +2,15 @@
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels, allWeekdays } from '@/lib/types';
-import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
-import { BarChart, Clock, CalendarCheck, CalendarX } from 'lucide-react';
+import { startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
+import { BarChart, Clock, CalendarCheck, CalendarX, Check, X, Minus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ProgressAnalysisProps {
   childrenProfiles: ChildProfile[];
@@ -21,21 +21,68 @@ interface DailyProgress {
     day: string;
     total: number;
     completed: number;
+    dayKey: 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
 }
+
+const DayStatus = ({ dayProgress }: { dayProgress: DailyProgress }) => {
+    const isToday = weekdayLabels[dayProgress.dayKey].long.toLowerCase() === new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
+
+    let status: 'perfect' | 'partial' | 'missed' | 'empty' = 'empty';
+    if (dayProgress.total > 0) {
+        if (dayProgress.completed === dayProgress.total) {
+            status = 'perfect';
+        } else if (dayProgress.completed > 0) {
+            status = 'partial';
+        } else {
+            status = 'missed';
+        }
+    }
+
+    const statusConfig = {
+        perfect: { icon: Check, color: 'bg-green-500/20 text-green-700', tooltip: `Perfeito! ${dayProgress.completed}/${dayProgress.total} missões concluídas.` },
+        partial: { icon: Check, color: 'bg-yellow-500/20 text-yellow-700', tooltip: `Quase lá! ${dayProgress.completed}/${dayProgress.total} missões concluídas.` },
+        missed: { icon: X, color: 'bg-red-500/20 text-red-700', tooltip: `Nenhuma missão concluída de ${dayProgress.total}.` },
+        empty: { icon: Minus, color: 'bg-muted text-muted-foreground', tooltip: 'Nenhuma missão agendada.' },
+    };
+    
+    const { icon: Icon, color, tooltip } = statusConfig[status];
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex flex-col items-center gap-1">
+                        <span className={cn("text-xs font-semibold text-muted-foreground", isToday && "text-primary")}>
+                            {dayProgress.day}
+                        </span>
+                        <div className={cn("h-10 w-10 rounded-full flex items-center justify-center transition-all", color)}>
+                            <Icon className="h-5 w-5" />
+                        </div>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{tooltip}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+};
+
 
 export function ProgressAnalysis({ childrenProfiles, missionInstances }: ProgressAnalysisProps) {
   const weeklyProgress = useMemo(() => {
     const today = new Date();
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 });
-    const endOfThisWeek = endOfWeek(today, { weekStartsOn: 1 });
-    const daysInWeek = eachDayOfInterval({ start: startOfThisWeek, end: endOfThisWeek });
+    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    const daysInWeek = eachDayOfInterval({ start: startOfThisWeek, end: addDays(startOfThisWeek, 6) }); // Mon-Sun
 
     return childrenProfiles.map(child => {
         const dailyData: DailyProgress[] = daysInWeek.map(day => {
             const scheduledMissions = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, day));
             const completedMissions = scheduledMissions.filter(inst => isMissionCompletedForDate(inst, day));
+            const dayKey = getDayToWeekday[day.getDay()];
             return {
-                day: weekdayLabels[getDayToWeekday[day.getDay()]].short,
+                day: weekdayLabels[dayKey].short,
+                dayKey: dayKey,
                 total: scheduledMissions.length,
                 completed: completedMissions.length
             };
@@ -77,29 +124,10 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                             </Avatar>
                             <h4 className="font-semibold">{data.childName}</h4>
                         </div>
-                        <div className="space-y-2">
-                            {data.dailyData.map((dayProgress, dayIndex) => {
-                                const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
-                                const isToday = dayIndex === (new Date().getDay() + 6) % 7; // Monday is 0
-
-                                return (
-                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,4rem] items-center gap-2">
-                                        <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
-                                            {dayProgress.day}
-                                        </span>
-                                        <div className="w-full">
-                                            {dayProgress.total > 0 ? (
-                                                <Progress value={progressPercentage} className="h-3"/>
-                                            ) : (
-                                                <div className="h-3 text-xs text-muted-foreground italic flex items-center">Nenhuma missão agendada</div>
-                                            )}
-                                        </div>
-                                        <span className="text-sm font-mono text-right text-muted-foreground">
-                                            {dayProgress.total > 0 ? `${dayProgress.completed}/${dayProgress.total}` : `-`}
-                                        </span>
-                                    </div>
-                                );
-                            })}
+                        <div className="grid grid-cols-7 gap-2">
+                            {data.dailyData.map((dayProgress) => (
+                                <DayStatus key={dayProgress.day} dayProgress={dayProgress} />
+                            ))}
                         </div>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ import { Gift, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Badge } from '@/components/ui/badge';
 
 interface UnlockedRewardsProps {
   childrenProfiles: ChildProfile[];
@@ -100,9 +101,12 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
                             return (
                                 <AccordionItem value={group.category} key={group.category}>
                                     <AccordionTrigger>
-                                        <div className="flex items-center gap-2">
-                                            <CategoryIcon className="h-4 w-4" />
-                                            <span>{categoryInfo.label}</span>
+                                        <div className="flex items-center justify-between w-full">
+                                            <div className="flex items-center gap-2">
+                                                <CategoryIcon className="h-4 w-4" />
+                                                <span>{categoryInfo.label}</span>
+                                            </div>
+                                            <Badge variant="secondary" className="mr-2">{group.rewards.length}</Badge>
                                         </div>
                                     </AccordionTrigger>
                                     <AccordionContent>
