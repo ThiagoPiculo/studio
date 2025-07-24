@@ -28,8 +28,8 @@ export function RecentAchievements({ childrenProfiles }: RecentAchievementsProps
     // Sort by badge "difficulty" (goal) as a proxy for recency/importance
     const sortedBadges = allEarnedBadges
       .map(({ child, badgeId }) => ({ child, badge: allBadgesMap.get(badgeId) }))
-      .filter(item => item.badge)
-      .sort((a, b) => (b.badge!.goal || 0) - (a.badge!.goal || 0));
+      .filter((item): item is { child: ChildProfile, badge: NonNullable<typeof item.badge> } => !!item.badge)
+      .sort((a, b) => (b.badge.goal || 0) - (a.badge.goal || 0));
       
     return sortedBadges.slice(0, 3); // Take top 3 most "difficult" achievements
   }, [childrenProfiles]);
@@ -49,12 +49,12 @@ export function RecentAchievements({ childrenProfiles }: RecentAchievementsProps
         ) : (
           <ul className="space-y-3">
             {recentAchievements.map(({ child, badge }, index) => (
-              <li key={`${child.id}-${badge!.id}-${index}`} className="flex items-center gap-4">
-                <div className="p-2 rounded-full shadow-inner" style={{ backgroundColor: `${badge!.color}20` }}>
-                    <badge!.icon className="h-6 w-6" style={{ color: badge!.color }} />
+              <li key={`${child.id}-${badge.id}-${index}`} className="flex items-center gap-4">
+                <div className="p-2 rounded-full shadow-inner" style={{ backgroundColor: `${badge.color}20` }}>
+                    <badge.icon className="h-6 w-6" style={{ color: badge.color }} />
                 </div>
                 <div className="flex-grow">
-                  <p className="font-semibold">{badge!.title}</p>
+                  <p className="font-semibold">{badge.title}</p>
                   <div className="flex items-center gap-2 mt-1">
                      <TooltipProvider>
                         <Tooltip>
@@ -70,7 +70,7 @@ export function RecentAchievements({ childrenProfiles }: RecentAchievementsProps
                         </Tooltip>
                     </TooltipProvider>
                     <p className="text-xs text-muted-foreground">
-                        {badge!.description}
+                        {badge.description}
                     </p>
                   </div>
                 </div>
