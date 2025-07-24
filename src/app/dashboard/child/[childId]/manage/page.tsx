@@ -57,6 +57,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
+import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number } })
@@ -324,29 +325,6 @@ function ManageChildPageContent() {
     return allActivities.slice(0, 10);
   }, [missionInstances, childRewards]);
 
-
-  const calculateXpDetails = (level: number, currentXp: number) => {
-    let xpForCurrentLevel = 0;
-    let xpToLevelUp = 0;
-
-    for (let i = 1; i < level; i++) {
-      xpToLevelUp = 100 + (i - 1) * 50;
-      xpForCurrentLevel += xpToLevelUp;
-    }
-    
-    const xpForNextLevel = xpForCurrentLevel + (100 + (level - 1) * 50);
-    const xpInCurrentLevel = currentXp - xpForCurrentLevel;
-    const xpNeededForLevelUp = xpForNextLevel - xpForCurrentLevel;
-    
-    const progressPercentage = xpNeededForLevelUp > 0 ? (xpInCurrentLevel / xpNeededForLevelUp) * 100 : 0;
-    const xpRemaining = xpForNextLevel - currentXp;
-
-    return {
-      progressPercentage,
-      xpRemaining,
-      xpForNextLevel
-    };
-  };
 
   const calculateAge = (birthDate: Date): number => {
     return differenceInYears(new Date(), birthDate);
@@ -663,11 +641,6 @@ function ManageChildPageContent() {
   }, [missionInstances, recurrenceFilter]);
 
 
-  const { progressPercentage, xpRemaining, xpForNextLevel } = useMemo(() => 
-    child ? calculateXpDetails(child.level, child.xp) : { progressPercentage: 0, xpRemaining: 0, xpForNextLevel: 0 },
-    [child]
-  );
-
   const renderBadge = (badge: BadgeType) => {
     if (!child) return null;
     const isEarned = child.earnedBadgeIds?.includes(badge.id);
@@ -971,8 +944,7 @@ function ManageChildPageContent() {
             
             <div className="mt-4 flex flex-col gap-4 font-semibold">
                 <div className="flex items-end justify-between gap-4">
-                  <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
+                      <div className="flex items-center gap-4 text-amber-600 dark:text-amber-400">
                           <StarIcon className="h-7 w-7 fill-current"/>
                           <span className="text-2xl font-bold">{child.stars}</span>
                       </div>
@@ -982,15 +954,8 @@ function ManageChildPageContent() {
                           <span className="text-sm font-normal">XP</span>
                       </div>
                   </div>
-                   <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-sm">Nível {child.level}</Badge>
-                    </div>
-                </div>
                 <div className="w-full">
-                    <Progress value={progressPercentage} className="h-2.5" aria-label={`${progressPercentage.toFixed(0)}% do progresso de XP`} />
-                    <p className="text-xs text-muted-foreground text-right mt-1">
-                        {xpRemaining} XP para o próximo nível
-                    </p>
+                    <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
                 </div>
             </div>
         </div>
@@ -1756,6 +1721,7 @@ export default function ManageChildPage() {
     
 
     
+
 
 
 
