@@ -11,7 +11,6 @@ import { weekdayLabels } from '@/lib/types';
 import { startOfWeek, addDays, eachDayOfInterval } from 'date-fns';
 import { BarChart, Check, X, Minus } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 
 interface ProgressAnalysisProps {
@@ -81,43 +80,24 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                             </Avatar>
                             <h4 className="font-semibold">{data.childName}</h4>
                         </div>
-                        <div className="space-y-2">
+                        <div className="space-y-3">
                             {data.dailyData.map((dayProgress) => {
                                 const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
                                 const isToday = weekdayLabels[dayProgress.dayKey].long.toLowerCase() === new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
-                                
-                                let status: 'perfect' | 'partial' | 'missed' | 'empty' = 'empty';
-                                let StatusIcon = Minus;
-                                let iconColor = "text-muted-foreground";
-
-                                if (dayProgress.total > 0) {
-                                    if (dayProgress.completed === dayProgress.total) {
-                                        status = 'perfect';
-                                        StatusIcon = Check;
-                                        iconColor = "text-green-500";
-                                    } else if (dayProgress.completed > 0) {
-                                        status = 'partial';
-                                        StatusIcon = Minus;
-                                        iconColor = "text-orange-500";
-                                    } else {
-                                        status = 'missed';
-                                        StatusIcon = X;
-                                        iconColor = "text-red-500";
-                                    }
-                                }
 
                                 return (
-                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,4rem,2rem] items-center gap-4">
+                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,auto] items-center gap-4">
                                         <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
                                             {dayProgress.day}
                                         </span>
                                         <Progress value={progressPercentage} className="h-2" />
-                                        <span className="text-sm text-muted-foreground font-mono">
-                                            {dayProgress.completed}/{dayProgress.total}
-                                        </span>
-                                        <div className="flex justify-center">
-                                            <StatusIcon className={cn("h-5 w-5", iconColor)} />
-                                        </div>
+                                        {dayProgress.total > 0 ? (
+                                            <span className="text-sm text-muted-foreground font-mono w-10 text-right">
+                                                {dayProgress.completed}/{dayProgress.total}
+                                            </span>
+                                        ) : (
+                                            <span className="text-xs text-muted-foreground italic w-10 text-right">-</span>
+                                        )}
                                     </div>
                                 )
                             })}
@@ -130,4 +110,3 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
     </Card>
   );
 }
-
