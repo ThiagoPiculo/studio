@@ -2,16 +2,18 @@
 "use client";
 
 import { useMemo } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { startOfWeek, addDays, eachDayOfInterval } from 'date-fns';
-import { BarChart, Check, X, Minus } from 'lucide-react';
+import { startOfWeek, eachDayOfInterval, addDays } from 'date-fns';
+import { BarChart, ArrowRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 
 interface ProgressAnalysisProps {
   childrenProfiles: ChildProfile[];
@@ -71,14 +73,21 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                 <div key={data.childId}>
                     {index > 0 && <Separator className="my-4" />}
                     <div className="space-y-4">
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                                <AvatarImage src={data.childAvatar} alt={data.childName} />
-                                <AvatarFallback style={{ backgroundColor: data.childColor }}>
-                                    {getInitials(data.childName)}
-                                </AvatarFallback>
-                            </Avatar>
-                            <h4 className="font-semibold">{data.childName}</h4>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10">
+                                    <AvatarImage src={data.childAvatar} alt={data.childName} />
+                                    <AvatarFallback style={{ backgroundColor: data.childColor }}>
+                                        {getInitials(data.childName)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <h4 className="font-semibold">{data.childName}</h4>
+                            </div>
+                            <Button asChild variant="link" className="p-0 h-auto text-sm">
+                                <Link href={`/dashboard/agenda?child_id=${data.childId}`}>
+                                    ver agenda <ArrowRight className="ml-1 h-4 w-4" />
+                                </Link>
+                            </Button>
                         </div>
                         <div className="space-y-3">
                             {data.dailyData.map((dayProgress) => {
@@ -96,7 +105,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 {dayProgress.completed}/{dayProgress.total}
                                             </span>
                                         ) : (
-                                            <span className="text-xs text-muted-foreground italic w-10 text-right">Nenhuma missão</span>
+                                            <span className="text-xs text-muted-foreground italic w-10 text-right whitespace-nowrap">Nenhuma missão</span>
                                         )}
                                     </div>
                                 )
