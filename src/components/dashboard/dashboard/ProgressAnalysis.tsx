@@ -1,20 +1,26 @@
-
 "use client";
 
 import { useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getInitials } from '@/lib/utils';
-import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
+import { getInitials, cn } from '@/lib/utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
-import { startOfWeek, endOfWeek, eachDayOfInterval, isToday } from 'date-fns';
-import { BarChart, Clock } from 'lucide-react';
+import { weekdayLabels, allWeekdays } from '@/lib/types';
+import { startOfWeek, endOfWeek, eachDayOfInterval, format } from 'date-fns';
+import { BarChart, Clock, CalendarCheck, CalendarX } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
 interface ProgressAnalysisProps {
   childrenProfiles: ChildProfile[];
   missionInstances: MissionInstance[];
+}
+
+interface DailyProgress {
+    day: string;
+    total: number;
+    completed: number;
 }
 
 export function ProgressAnalysis({ childrenProfiles, missionInstances }: ProgressAnalysisProps) {
@@ -25,35 +31,23 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
     const daysInWeek = eachDayOfInterval({ start: startOfThisWeek, end: endOfThisWeek });
 
     return childrenProfiles.map(child => {
-      let totalMissionsInWeek = 0;
-      let completedMissionsInWeek = 0;
-      
-      const todaysPendingMissions = missionInstances.filter(inst => 
-        inst.childId === child.id &&
-        isMissionScheduledForDate(inst, today) &&
-        !isMissionCompletedForDate(inst, today)
-      );
-
-      daysInWeek.forEach(day => {
-        const scheduledMissions = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, day));
-        totalMissionsInWeek += scheduledMissions.length;
+        const dailyData: DailyProgress[] = daysInWeek.map(day => {
+            const scheduledMissions = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, day));
+            const completedMissions = scheduledMissions.filter(inst => isMissionCompletedForDate(inst, day));
+            return {
+                day: weekdayLabels[getDayToWeekday[day.getDay()]].short,
+                total: scheduledMissions.length,
+                completed: completedMissions.length
+            };
+        });
         
-        const completedMissions = scheduledMissions.filter(inst => isMissionCompletedForDate(inst, day));
-        completedMissionsInWeek += completedMissions.length;
-      });
-
-      const progressPercentage = totalMissionsInWeek > 0 ? (completedMissionsInWeek / totalMissionsInWeek) * 100 : 0;
-
-      return {
-        childId: child.id,
-        childName: child.name,
-        childAvatar: child.avatar,
-        childColor: child.color,
-        totalMissions: totalMissionsInWeek,
-        completedMissions: completedMissionsInWeek,
-        progress: progressPercentage,
-        todaysPendingMissions: todaysPendingMissions.slice(0, 2),
-      };
+        return {
+            childId: child.id,
+            childName: child.name,
+            childAvatar: child.avatar,
+            childColor: child.color,
+            dailyData: dailyData
+        };
     });
   }, [childrenProfiles, missionInstances]);
 
@@ -64,7 +58,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
           <BarChart className="text-chart-1" />
           Análise de Progresso da Semana
         </CardTitle>
-        <CardDescription>Acompanhe o desempenho semanal dos seus heróis.</CardDescription>
+        <CardDescription>Acompanhe o desempenho diário dos seus heróis na semana atual.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {weeklyProgress.length === 0 ? (
@@ -73,7 +67,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             weeklyProgress.map((data, index) => (
                 <div key={data.childId}>
                     {index > 0 && <Separator className="my-4" />}
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10">
                                 <AvatarImage src={data.childAvatar} alt={data.childName} />
@@ -83,24 +77,30 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                             </Avatar>
                             <h4 className="font-semibold">{data.childName}</h4>
                         </div>
-                        <div>
-                            <Progress value={data.progress} className="h-2" />
-                            <p className="text-xs text-muted-foreground mt-1">
-                                {data.completedMissions} de {data.totalMissions} missões concluídas esta semana.
-                            </p>
-                        </div>
-                        {data.todaysPendingMissions.length > 0 ? (
-                             <div className="space-y-1 pt-1">
-                                {data.todaysPendingMissions.map(mission => (
-                                    <div key={mission.id} className="text-xs text-muted-foreground flex items-center gap-1.5">
-                                        <Clock className="h-3 w-3" />
-                                        <span>Pendente para hoje: <span className="font-semibold text-foreground">{mission.title}</span></span>
+                        <div className="space-y-2">
+                            {data.dailyData.map((dayProgress, dayIndex) => {
+                                const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
+                                const isToday = dayIndex === (new Date().getDay() + 6) % 7; // Monday is 0
+
+                                return (
+                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,4rem] items-center gap-2">
+                                        <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
+                                            {dayProgress.day}
+                                        </span>
+                                        <div className="w-full">
+                                            {dayProgress.total > 0 ? (
+                                                <Progress value={progressPercentage} className="h-3"/>
+                                            ) : (
+                                                <div className="h-3 text-xs text-muted-foreground italic flex items-center">Nenhuma missão agendada</div>
+                                            )}
+                                        </div>
+                                        <span className="text-sm font-mono text-right text-muted-foreground">
+                                            {dayProgress.total > 0 ? `${dayProgress.completed}/${dayProgress.total}` : `-`}
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-green-600 font-medium pt-1">Tudo certo por hoje! 🎉</p>
-                        )}
+                                );
+                            })}
+                        </div>
                     </div>
                 </div>
             ))

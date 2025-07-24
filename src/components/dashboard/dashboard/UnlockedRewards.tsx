@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from 'react';
@@ -6,14 +5,21 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import type { ChildProfile, RewardTemplate } from '@/lib/types';
+import type { ChildProfile, RewardTemplate, RewardCategory } from '@/lib/types';
+import { rewardCategories } from '@/lib/types';
 import { Gift, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface UnlockedRewardsProps {
   childrenProfiles: ChildProfile[];
   rewardTemplates: RewardTemplate[];
+}
+
+type GroupedReward = {
+  category: RewardCategory;
+  rewards: RewardTemplate[];
 }
 
 export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedRewardsProps) {
@@ -21,14 +27,32 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
   
   const unlockedRewardsByChild = useMemo(() => {
     return childrenProfiles.map(child => {
-      const affordableRewards = rewardTemplates.filter(template => 
-        template.status === 'active' && child.stars >= template.starsCost
-      );
+      const affordableRewards = rewardTemplates
+        .filter(template => template.status === 'active' && child.stars >= template.starsCost)
+        .sort((a, b) => a.starsCost - b.starsCost);
+
+      const groupedRewards = affordableRewards.reduce((acc, reward) => {
+        let group = acc.find(g => g.category === reward.category);
+        if (!group) {
+          group = { category: reward.category, rewards: [] };
+          acc.push(group);
+        }
+        group.rewards.push(reward);
+        return acc;
+      }, [] as GroupedReward[]);
+
+      // Sort categories based on the predefined order in `rewardCategories`
+      groupedRewards.sort((a, b) => {
+        const indexA = rewardCategories.findIndex(rc => rc.id === a.category);
+        const indexB = rewardCategories.findIndex(rc => rc.id === b.category);
+        return indexA - indexB;
+      });
+      
       return {
         ...child,
-        affordableRewards,
+        groupedRewards,
       };
-    }).filter(child => child.affordableRewards.length > 0);
+    }).filter(child => child.groupedRewards.length > 0);
   }, [childrenProfiles, rewardTemplates]);
   
   const handleRedeem = (childName: string, rewardTitle: string) => {
@@ -68,19 +92,38 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
                             </p>
                         </div>
                     </div>
-                    <ul className="space-y-2 pl-4 border-l-2 ml-4" style={{borderColor: childData.color}}>
-                        {childData.affordableRewards.map(reward => (
-                            <li key={reward.id} className="flex items-center justify-between text-sm">
-                                <span className="flex-grow pr-2">{reward.title}</span>
-                                <div className="flex items-center gap-2 flex-shrink-0">
-                                    <span className="font-semibold text-muted-foreground flex items-center gap-1">
-                                        {reward.starsCost} <Star className="h-3 w-3 text-yellow-500"/>
-                                    </span>
-                                    <Button size="sm" variant="outline" onClick={() => handleRedeem(childData.name, reward.title)}>Resgatar</Button>
-                                </div>
-                            </li>
-                        ))}
-                    </ul>
+                     <Accordion type="multiple" className="w-full">
+                        {childData.groupedRewards.map(group => {
+                            const categoryInfo = rewardCategories.find(c => c.id === group.category);
+                            if (!categoryInfo) return null;
+                             const CategoryIcon = categoryInfo.icon;
+                            return (
+                                <AccordionItem value={group.category} key={group.category}>
+                                    <AccordionTrigger>
+                                        <div className="flex items-center gap-2">
+                                            <CategoryIcon className="h-4 w-4" />
+                                            <span>{categoryInfo.label}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                        <ul className="space-y-2 pl-4">
+                                            {group.rewards.map(reward => (
+                                                <li key={reward.id} className="flex items-center justify-between text-sm">
+                                                    <span className="flex-grow pr-2">{reward.title}</span>
+                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                        <span className="font-semibold text-muted-foreground flex items-center gap-1">
+                                                            {reward.starsCost} <Star className="h-3 w-3 text-yellow-500"/>
+                                                        </span>
+                                                        <Button size="sm" variant="outline" onClick={() => handleRedeem(childData.name, reward.title)}>Resgatar</Button>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            )
+                        })}
+                    </Accordion>
                 </div>
             ))
         )}
