@@ -9,6 +9,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import Loading from './loading';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
@@ -18,9 +19,11 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const [isLoading, setIsLoading] = useState(true);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -37,9 +40,18 @@ export default function DashboardPage() {
           getMissionInstancesForContext(user.uid, familyIdToQuery),
           getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
         ]);
-        setChildren(childData);
+        setAllChildren(childData);
         setMissionInstances(missionData);
         setRewardTemplates(rewardData);
+        
+        if (childData.length > 0 && !selectedChildId) {
+            setSelectedChildId(childData[0].id);
+        } else if (childData.length > 0 && selectedChildId && !childData.some(c => c.id === selectedChildId)) {
+            setSelectedChildId(childData[0].id);
+        } else if (childData.length === 0) {
+            setSelectedChildId(null);
+        }
+
       } catch (error) {
         console.error("Error fetching dashboard data:", error);
       } finally {
@@ -49,6 +61,22 @@ export default function DashboardPage() {
     
     fetchData();
   }, [user, currentContext]);
+
+  const selectedChildData = useMemo(() => {
+    if (!selectedChildId) {
+        return {
+            children: allChildren,
+            missions: missionInstances,
+            rewards: rewardTemplates,
+        };
+    }
+    return {
+        children: allChildren.filter(c => c.id === selectedChildId),
+        missions: missionInstances.filter(m => m.childId === selectedChildId),
+        rewards: rewardTemplates, // Rewards catalog isn't child-specific
+    }
+  }, [selectedChildId, allChildren, missionInstances, rewardTemplates]);
+
 
   if (isLoading) {
     return <Loading />;
@@ -68,13 +96,21 @@ export default function DashboardPage() {
         </CardHeader>
       </Card>
       
+      {allChildren.length > 1 && (
+        <HeroSelector
+          heroes={allChildren}
+          selectedHeroId={selectedChildId}
+          onSelectHero={setSelectedChildId}
+        />
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
-          <ProgressAnalysis childrenProfiles={children} missionInstances={missionInstances} />
-          <RecentMedals childrenProfiles={children} />
+          <ProgressAnalysis childrenProfiles={selectedChildData.children} missionInstances={selectedChildData.missions} />
+          <RecentMedals childrenProfiles={selectedChildData.children} />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childrenProfiles={children} rewardTemplates={rewardTemplates} />
+          <UnlockedRewards childrenProfiles={selectedChildData.children} rewardTemplates={selectedChildData.rewards} />
           <Reports />
         </div>
       </div>
