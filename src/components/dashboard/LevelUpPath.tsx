@@ -13,19 +13,21 @@ interface LevelUpPathProps {
 const Milestone = ({
   level,
   label,
+  xpGoal,
   isCurrent,
   isCompleted,
   progressPercentage,
 }: {
   level: number;
   label: string;
+  xpGoal: number;
   isCurrent: boolean;
   isCompleted: boolean;
   progressPercentage: number;
 }) => {
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
-      <div className="relative w-full flex items-center mb-2">
+      <div className="relative w-full flex items-center mb-1">
         {/* Path Background */}
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
@@ -42,13 +44,14 @@ const Milestone = ({
                 className={cn(
                     "h-6 w-6 sm:h-7 sm:h-7 transition-all",
                     isCompleted ? 'text-yellow-400 fill-yellow-400' : 
-                    isCurrent ? 'text-yellow-500 fill-transparent' : 
-                    'text-muted-foreground/50 fill-muted-foreground/20'
+                    isCurrent ? 'text-yellow-500 fill-yellow-400' : 
+                    'text-muted-foreground/50'
                 )}
             />
         </div>
       </div>
-      <span className="text-xs font-semibold text-muted-foreground">{label}</span>
+      <span className="text-xs font-semibold text-foreground">{label}</span>
+      <span className="text-xs text-muted-foreground">Até {xpGoal} XP</span>
     </div>
   );
 };
@@ -69,8 +72,7 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
 
   const levelData = useMemo(() => {
     const data = [];
-    // Always show 3 levels, starting from the current level or one before if not level 1
-    const startLevel = Math.max(1, currentLevel - 1);
+    const startLevel = Math.max(1, currentLevel > 1 ? currentLevel - 1 : 1);
 
     for (let i = 0; i < 3; i++) {
         const level = startLevel + i;
@@ -85,6 +87,7 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
         data.push({
             level: level,
             label: `Nível ${level}`,
+            xpGoal: endXp,
             isCompleted: level < currentLevel,
             isCurrent: level === currentLevel,
             progressPercentage: progressPercentage
@@ -101,6 +104,7 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
                     key={data.level}
                     level={data.level}
                     label={data.label}
+                    xpGoal={data.xpGoal}
                     isCompleted={data.isCompleted}
                     isCurrent={data.isCurrent}
                     progressPercentage={data.progressPercentage}
