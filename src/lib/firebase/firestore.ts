@@ -1080,39 +1080,17 @@ export const deleteRewardTemplate = async (actor: UserProfile, templateId: strin
 };
 
 export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyId?: string | null): Promise<RewardTemplate[]> => {
-  const queries = [];
-
-  // Query for personal, unassigned templates
-  const personalQuery = query(
-    collection(db, 'rewardTemplates'),
-    where('ownerId', '==', ownerId),
-    where('familyId', '==', null)
-  );
-  queries.push(getDocs(personalQuery));
-
-  // If in a family context, also query for that family's templates
+  let q;
   if (familyId && familyId !== 'my-space') {
-    const familyQuery = query(
-      collection(db, 'rewardTemplates'),
-      where('familyId', '==', familyId)
-    );
-    queries.push(getDocs(familyQuery));
+    q = query(collection(db, 'rewardTemplates'), where('familyId', '==', familyId));
+  } else {
+    q = query(collection(db, 'rewardTemplates'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   }
 
-  const snapshots = await Promise.all(queries);
-  const allTemplates: RewardTemplate[] = [];
-  const seenIds = new Set<string>();
-
-  snapshots.forEach(snapshot => {
-    snapshot.docs.forEach(doc => {
-      if (!seenIds.has(doc.id)) {
-        allTemplates.push({ id: doc.id, ...doc.data() } as RewardTemplate);
-        seenIds.add(doc.id);
-      }
-    });
-  });
-
-  return allTemplates.sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
+  const querySnapshot = await getDocs(q);
+  const templates = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RewardTemplate));
+  
+  return templates.sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
 };
 
 
@@ -2396,3 +2374,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
+
+    
