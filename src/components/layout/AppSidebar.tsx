@@ -16,7 +16,7 @@ import {
 import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 
 function AppLogo() {
@@ -35,8 +35,16 @@ function AppLogo() {
 
 export function AppSidebar() {
     const pathname = usePathname();
-    const { availableContexts } = useFamily();
+    const router = useRouter();
+    const { availableContexts, currentContext, setCurrentContext } = useFamily();
     const isInAnyAlliance = availableContexts.some(c => c.id !== 'my-space');
+
+    const handleAllianceAction = (action: 'create' | 'join') => {
+        if (currentContext !== 'my-space') {
+            setCurrentContext('my-space');
+        }
+        router.push(`/dashboard/family?action=${action}`);
+    };
 
     return (
         <Sidebar>
@@ -110,13 +118,13 @@ export function AppSidebar() {
 
                     <SidebarGroupLabel>Aliança de Herois</SidebarGroupLabel>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/family?action=create" tooltip="Criar Aliança">
+                        <SidebarMenuButton asChild={false} onClick={() => handleAllianceAction('create')} tooltip="Criar Aliança">
                             <PlusCircle className="text-primary" />
                             <span>Criar Aliança</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/family?action=join" tooltip="Entrar em Aliança">
+                         <SidebarMenuButton asChild={false} onClick={() => handleAllianceAction('join')} tooltip="Entrar em Aliança">
                             <LinkIcon className="text-primary" />
                             <span>Entrar em Aliança</span>
                         </SidebarMenuButton>
