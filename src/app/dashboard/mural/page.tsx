@@ -3,9 +3,9 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile } from '@/lib/types';
-import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole } from '@/lib/types';
+import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -80,6 +80,7 @@ function MuralCompletoPageContent() {
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
+  const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
   
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
@@ -145,13 +146,15 @@ function MuralCompletoPageContent() {
     setIsLoading(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [allProfiles, fetchedCollaborators] = await Promise.all([
+        const [allProfiles, fetchedCollaborators, fetchedMemberships] = await Promise.all([
           getChildProfilesForAttribution(user.uid, currentContext),
-          familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile])
+          familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
+          familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
         ]);
         
         setAllChildren(allProfiles);
         setCollaborators(fetchedCollaborators);
+        setMemberships(fetchedMemberships);
 
       if (!childId && allProfiles.length > 0) {
         router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
@@ -799,7 +802,7 @@ function MuralCompletoPageContent() {
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
+                  <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Heroi
                 </Button>
               </Link>
             </CardContent>
@@ -1092,54 +1095,64 @@ function MuralCompletoPageContent() {
                         </div>
                     ) : (
                         <ul className="space-y-4">
-                          {activities.map((activity, index) => {
-                            const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
-                            const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
-                            
-                            const isActorTheChild = activity.actorId === child.id;
-                            const actorDisplayName = isActorTheChild ? `pelo próprio ${child.name}` : activity.actorName || 'um responsável';
+                            {activities.map((activity, index) => {
+                                const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
+                                const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
+                                const isActorTheChild = activity.actorId === child.id;
+                                
+                                let actorRoleLabel = '';
+                                if (!isActorTheChild && activity.actorId) {
+                                    const membership = memberships.find(m => m.userId === activity.actorId);
+                                    if(membership) {
+                                        actorRoleLabel = `(${familyRoles.find(r => r.id === membership.role)?.label || 'Membro'})`;
+                                    }
+                                }
 
-                            return (
-                              <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
-                                <li className="flex items-start gap-3">
-                                  <div className={`p-2 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
-                                    {activity.type === 'mission' ? (
-                                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                    ) : (
-                                      <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                                    )}
-                                  </div>
-                                  <div className="flex-grow text-sm space-y-1">
-                                    {activity.type === 'mission' ? (
-                                        <>
-                                            <p className="font-semibold text-foreground/90">
-                                                {child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida
-                                            </p>
-                                            <p className="font-bold text-green-600 text-xs flex items-center gap-1.5">
-                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
-                                            </p>
-                                            <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
-                                            <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <p className="font-semibold text-foreground/90">
-                                                {child.name.toUpperCase()} - Recompensa Resgatada
-                                            </p>
-                                            <p className="font-bold text-destructive text-xs flex items-center gap-1.5">
-                                                (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
-                                            </p>
-                                            <p className="font-medium text-foreground/80">- {activity.title}</p>
-                                            <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
-                                        </>
-                                    )}
-                                    <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
-                                  </div>
-                                </li>
-                                {index < activities.length - 1 && <Separator />}
-                              </Fragment>
-                            );
-                          })}
+                                const actorDisplayName = isActorTheChild
+                                    ? `pelo próprio ${child.name}!`
+                                    : `${activity.actorName || 'um responsável'} ${actorRoleLabel}`;
+
+                                return (
+                                <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
+                                    <li className="flex items-start gap-4">
+                                        <div className={`p-2.5 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
+                                            {activity.type === 'mission' ? (
+                                            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                            ) : (
+                                            <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                                            )}
+                                        </div>
+                                        <div className="flex-grow text-sm space-y-1">
+                                            {activity.type === 'mission' ? (
+                                                <>
+                                                    <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                                        <span>{child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida</span>
+                                                        <span className="font-bold text-green-600 text-xs flex items-center gap-1.5 whitespace-nowrap">
+                                                            (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
+                                                        </span>
+                                                    </p>
+                                                    <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
+                                                    <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                                        <span>{child.name.toUpperCase()} - Recompensa Resgatada</span>
+                                                        <span className="font-bold text-destructive text-xs flex items-center gap-1.5 whitespace-nowrap">
+                                                            (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
+                                                        </span>
+                                                    </p>
+                                                    <p className="font-medium text-foreground/80">- {activity.title}</p>
+                                                    <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
+                                                </>
+                                            )}
+                                            <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
+                                        </div>
+                                    </li>
+                                    {index < activities.length - 1 && <Separator />}
+                                </Fragment>
+                                );
+                            })}
                         </ul>
                     )}
                 </CardContent>
@@ -1798,3 +1811,5 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+    

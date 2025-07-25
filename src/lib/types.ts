@@ -194,7 +194,7 @@ export interface MissionInstance {
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
-  completionLog?: { [dateKey: string]: { completedAt: Timestamp, stars: number, xp: number } };
+  completionLog?: { [dateKey: string]: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } };
   exceptionDates?: { [key: string]: boolean }; // Using a map for faster lookups
 }
 
@@ -269,6 +269,7 @@ export interface ChildRewardInstance {
   status: 'active' | 'redeemed' | 'disabled'; // Status desta instância específica para esta criança
   isRedeemed: boolean; // Pode ser usado para UI, mas 'status' é a fonte da verdade
   redeemedAt?: Timestamp; // Quando foi resgatada
+  actorId?: string; // Who redeemed it
   assignedAt: Timestamp; // Quando foi atribuída à criança
   updatedAt: Timestamp; // Última atualização de status ou dados desta instância
 }
@@ -382,3 +383,5 @@ export interface Notification {
   actorId?: string | null; // Optional, who performed the action
   actorName?: string | null; // Optional, name of the actor
 }
+
+    

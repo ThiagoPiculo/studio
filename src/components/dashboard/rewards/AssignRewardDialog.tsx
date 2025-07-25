@@ -137,7 +137,7 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
             removedCount++;
         } else if (!hadAssignmentInitially && hasAssignmentNow) {
             // Add assignment
-            const instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'> = {
+            const instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial' | 'actorId'> = {
               templateId: template.id,
               childId: child.id,
               ownerId: child.ownerId,
@@ -279,3 +279,5 @@ export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned 
     </Dialog>
   );
 }
+
+    
