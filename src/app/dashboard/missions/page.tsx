@@ -75,7 +75,6 @@ export default function MissionsHubPage() {
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
-  const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -148,14 +147,8 @@ export default function MissionsHubPage() {
         templates = templates.filter(template => assignedTemplateIds.has(template.id));
     }
 
-    return templates
-      .filter(template => {
-        if (recurrenceFilter === 'unique') return !template.isRecurring;
-        if (recurrenceFilter === 'recurring') return template.isRecurring;
-        return true;
-      })
-      .sort((a, b) => (a.isRecurring ? 1 : 0) - (b.isRecurring ? 1 : 0));
-  }, [missionTemplates, missionInstances, recurrenceFilter, selectedChildId]);
+    return templates;
+  }, [missionTemplates, missionInstances, selectedChildId]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -302,27 +295,6 @@ export default function MissionsHubPage() {
         <CardHeader>
           <CardTitle>Missões do Catálogo</CardTitle>
           <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
-           <div className="pt-4">
-            <Label className="text-sm font-medium text-muted-foreground">Filtrar por tipo de recorrência:</Label>
-            <RadioGroup
-                value={recurrenceFilter}
-                onValueChange={(v) => setRecurrenceFilter(v as 'all' | 'unique' | 'recurring')}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
-            >
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="all" id="filter-all" />
-                    <Label htmlFor="filter-all" className="cursor-pointer font-normal">Todas</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="unique" id="filter-unique" />
-                    <Label htmlFor="filter-unique" className="cursor-pointer font-normal">Únicas</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="recurring" id="filter-recurring" />
-                    <Label htmlFor="filter-recurring" className="cursor-pointer font-normal">Recorrentes</Label>
-                </div>
-            </RadioGroup>
-          </div>
         </CardHeader>
         <CardContent>
           {isLoading || isRoleLoading ? (
