@@ -1039,7 +1039,7 @@ function MuralCompletoPageContent() {
         
         <div className="mt-4">
           <TabsContent value="overview" className="space-y-6">
-             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <Card className="shadow-sm flex flex-col">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
@@ -1805,6 +1805,7 @@ function MuralCompletoPageContent() {
 }
 
 export default function MuralCompleto() {
+    const hasRecess = false; // Add your logic to determine if recess exists
     return (
         <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
             <MuralCompletoPageContent />
