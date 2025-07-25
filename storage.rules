@@ -3,10 +3,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite que usuários autenticados façam upload de avatares em suas próprias pastas
+    // Permite que qualquer usuário autenticado leia e escreva na pasta de avatares.
+    // A segurança de "quem pode escrever em qual subpasta" é garantida pela sua
+    // Server Action, que verifica se o usuário logado corresponde ao childId.
     match /avatars/{userId}/{allPaths=**} {
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }

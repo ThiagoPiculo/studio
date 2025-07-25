@@ -208,19 +208,21 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     setIsUploadingAvatar(true);
     try {
         const base64Image = await getCroppedImgAsBase64(imgRef.current, crop);
-        const { newUrl } = await handleAvatarUpload(child.id, base64Image);
+        const result = await handleAvatarUpload(child.id, base64Image);
         
-        if (newUrl) {
-            setAvatarPreview(newUrl);
+        if (result.newUrl) {
+            setAvatarPreview(result.newUrl);
             toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
             onProfileUpdate(); // Fetch other data in background
+        } else if (result.error) {
+            throw new Error(result.error);
         } else {
             throw new Error("A URL do avatar não foi retornada.");
         }
         
-    } catch (error) {
+    } catch (error: any) {
         console.error("Error cropping and uploading:", error);
-        toast({ title: "Erro no Upload", description: "Não foi possível enviar a imagem.", variant: "destructive" });
+        toast({ title: "Erro no Upload", description: error.message || "Não foi possível enviar a imagem.", variant: "destructive" });
     } finally {
         setIsUploadingAvatar(false);
         setImageSrc(null);
