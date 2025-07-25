@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,9 +18,13 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, ChevronsUpDown, Check } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { predefinedMissionGroups } from '@/lib/predefined-missions';
 
 // Schema simplified to remove all scheduling fields
 const missionTemplateFormSchema = z.object({
@@ -46,11 +50,22 @@ function CreateMissionTemplatePageContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
 
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [titleInputValue, setTitleInputValue] = useState("");
+
+  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(group => group.items), []);
+
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
   const xpParam = searchParams.get('xpReward');
+
+  useEffect(() => {
+    if (initialTitle) {
+      setTitleInputValue(initialTitle);
+    }
+  }, [initialTitle]);
 
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
@@ -159,9 +174,55 @@ function CreateMissionTemplatePageContent() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Título da Missão</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Arrumar a cama" {...field} />
-                        </FormControl>
+                        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn("w-full justify-between h-10", !field.value && "text-muted-foreground")}
+                              >
+                                {field.value || "Digite ou selecione uma ideia..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                                <CommandInput 
+                                  placeholder="Buscar ideia de missão..."
+                                  value={titleInputValue}
+                                  onValueChange={(value) => {
+                                    setTitleInputValue(value);
+                                    field.onChange(value); // Update form state while typing
+                                  }}
+                                />
+                                <CommandList>
+                                  <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                  <CommandGroup>
+                                    {allMissionIdeas.map((idea) => (
+                                      <CommandItem
+                                        value={idea.title}
+                                        key={idea.title}
+                                        onSelect={() => {
+                                          form.setValue("title", idea.title, { shouldValidate: true });
+                                          form.setValue("emoji", idea.emoji, { shouldValidate: true });
+                                          form.setValue("category", idea.suggestedAppCategory, { shouldValidate: true });
+                                          form.setValue("starsReward", idea.starsReward, { shouldValidate: true });
+                                          form.setValue("xpReward", idea.xpReward, { shouldValidate: true });
+                                          setTitleInputValue(idea.title);
+                                          setIsPopoverOpen(false);
+                                        }}
+                                      >
+                                        <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                        {idea.title}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -293,5 +354,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
-    
