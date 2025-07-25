@@ -617,7 +617,7 @@ function FamilyPageContent() {
         setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
         toast({ title: "Perfil de Heroi Arquivado", description: `O perfil de ${childToRemove.name} e todos os seus dados foram excluídos permanentemente.` });
     } catch (error: any) {
-        console.error("Error deleting child profile permanently:", error);
+        console.error("Error deleting child profile:", error);
         toast({ title: "Erro ao Excluir", description: error.message, variant: "destructive" });
     } finally {
         setIsRemovingChild(false);
@@ -1274,9 +1274,6 @@ function FamilyPageContent() {
                   <LinkIcon className="mr-3 h-8 w-8 text-primary" />
                   Aliança de Herois
                 </CardTitle>
-                <CardDescription>
-                  Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe ou responsável, ou junte-se a uma aliança já existente.
-                </CardDescription>
               </div>
               {userAlliances.length > 0 && (
               <DropdownMenu>
@@ -1307,7 +1304,7 @@ function FamilyPageContent() {
             <span>O que é o "Meu Espaço"?</span>
           </CardTitle>
           <CardDescription className="pt-2">
-            Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista, ou junte-se a uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança
           </CardDescription>
         </CardHeader>
       </Card>
@@ -1401,7 +1398,6 @@ function FamilyPageContent() {
         <Card ref={createCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança de Herois</CardTitle>
-                <CardDescription>Dê um nome para sua aliança e convide outros responsáveis.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
               <CardContent>
@@ -1423,7 +1419,6 @@ function FamilyPageContent() {
           <Card ref={joinCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança de Herois</CardTitle>
-                <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
               <CardContent>
