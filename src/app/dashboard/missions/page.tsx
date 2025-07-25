@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -54,6 +54,7 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { Target } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 export default function MissionsHubPage() {
   const { user } = useAuth();
@@ -77,6 +78,7 @@ export default function MissionsHubPage() {
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
   const [recurrenceFilter, setRecurrenceFilter] = useState<'all' | 'unique' | 'recurring'>('all');
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -137,14 +139,25 @@ export default function MissionsHubPage() {
   const templatesDescription = `Catálogo de missões em ${currentContextText}. Crie e gerencie missões para atribuir aos seus Mini Herois.`;
   
   const filteredTemplates = useMemo(() => {
-    return missionTemplates
+    let templates = [...missionTemplates];
+
+    if (selectedChildId) {
+        const assignedTemplateIds = new Set(
+            missionInstances
+                .filter(inst => inst.childId === selectedChildId)
+                .map(inst => inst.templateId)
+        );
+        templates = templates.filter(template => assignedTemplateIds.has(template.id));
+    }
+
+    return templates
       .filter(template => {
         if (recurrenceFilter === 'unique') return !template.isRecurring;
         if (recurrenceFilter === 'recurring') return template.isRecurring;
         return true;
       })
       .sort((a, b) => (a.isRecurring ? 1 : 0) - (b.isRecurring ? 1 : 0));
-  }, [missionTemplates, recurrenceFilter]);
+  }, [missionTemplates, missionInstances, recurrenceFilter, selectedChildId]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -278,6 +291,15 @@ export default function MissionsHubPage() {
         </DialogContent>
       </Dialog>
       
+      {children.length > 1 && (
+        <HeroSelector
+          heroes={children}
+          selectedHeroId={selectedChildId}
+          onSelectHero={setSelectedChildId}
+          showAllOption={true}
+        />
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle>Missões do Catálogo</CardTitle>
