@@ -1302,8 +1302,7 @@ function FamilyPageContent() {
         <AccordionItem value="meu-espaco" className="border-0">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
                 <div className="flex items-center gap-3">
-                    <Home className="mr-1 h-5 w-5 text-primary" />
-                    <h3 className="text-xl font-headline">O que é o "Meu Espaço"?</h3>
+                    <h3 className="text-lg font-headline">O que é o "Meu Espaço"?</h3>
                 </div>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6 text-muted-foreground">
