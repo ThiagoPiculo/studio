@@ -124,9 +124,6 @@ export default function MissionIdeasPage() {
 
     return (
         <div className="space-y-8 pb-10">
-            <Button variant="outline" onClick={() => router.back()}>
-                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar para o Mural de Missões
-            </Button>
             <Card className="shadow-lg">
                 <CardHeader>
                     <CardTitle className="text-3xl font-headline flex items-center">
