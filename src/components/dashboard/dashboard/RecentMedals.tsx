@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getInitials } from '@/lib/utils';
-import type { ChildProfile } from '@/lib/types';
+import type { ChildProfile, Badge } from '@/lib/types';
 import { allBadgesMap } from '@/lib/badges';
 import { Medal, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,21 @@ import { Button } from '@/components/ui/button';
 interface RecentMedalsProps {
   childrenProfiles: ChildProfile[];
 }
+
+const getProgressTypeLabel = (badge: Badge): string => {
+    if (!badge.goal) return '';
+    switch (badge.progressType) {
+      case 'singleMissionStreak':
+      case 'perfectStreak':
+        return `${badge.goal} ${badge.goal > 1 ? 'dias' : 'dia'}`;
+      case 'stars':
+        return `${badge.goal} estrelas`;
+      case 'level':
+        return `Nível ${badge.goal}`;
+      default:
+        return '';
+    }
+};
 
 export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
   const recentMedals = useMemo(() => {
@@ -47,14 +62,22 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
           <p className="text-sm text-muted-foreground text-center py-4">Nenhuma medalha desbloqueada ainda. A jornada está apenas começando!</p>
         ) : (
           <div className="grid grid-cols-3 gap-4 text-center">
-            {recentMedals.map(({ badge }) => (
-              <div key={badge.id} className="flex flex-col items-center gap-2">
-                <div className="p-3 rounded-full shadow-inner" style={{ backgroundColor: `${badge.color}20` }}>
-                    <badge.icon className="h-8 w-8" style={{ color: badge.color }} />
-                </div>
-                <p className="text-xs font-semibold leading-tight">{badge.title}</p>
-              </div>
-            ))}
+            {recentMedals.map(({ badge }) => {
+                const metricLabel = getProgressTypeLabel(badge);
+                return (
+                    <div key={badge.id} className="flex flex-col items-center gap-2">
+                        <div className="p-3 rounded-full shadow-inner" style={{ backgroundColor: `${badge.color}20` }}>
+                            <badge.icon className="h-8 w-8" style={{ color: badge.color }} />
+                        </div>
+                        <div className="h-12 flex flex-col justify-start">
+                           <p className="text-xs font-semibold leading-tight">{badge.title}</p>
+                           {metricLabel && (
+                             <p className="text-xs text-muted-foreground mt-1">({metricLabel})</p>
+                           )}
+                        </div>
+                    </div>
+                )
+            })}
           </div>
         )}
       </CardContent>
