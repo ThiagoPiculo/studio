@@ -118,14 +118,21 @@ function CreateMissionTemplatePageContent() {
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <Card className="shadow-xl">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <Target className="h-10 w-10 text-primary" />
-            <div>
-              <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
-              <CardDescription className="text-md">
-                Defina uma nova missão para o catálogo. Depois você poderá atribuí-la aos Mini Herois.
-              </CardDescription>
+           <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+            <div className="flex items-center gap-3">
+                <Target className="h-10 w-10 text-primary" />
+                <div>
+                <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
+                <CardDescription className="text-md">
+                    Defina uma nova missão para o catálogo.
+                </CardDescription>
+                </div>
             </div>
+             <Link href="/dashboard/missions/ideas">
+                <Button variant="secondary" className="w-full sm:w-auto">
+                    <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
+                </Button>
+            </Link>
           </div>
         </CardHeader>
         <CardContent>
@@ -286,3 +293,5 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
+    
