@@ -18,6 +18,8 @@ import {
     getSchoolScheduleForContext,
     regenerateChildAccessCode,
 } from "@/lib/firebase/firestore";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -62,7 +64,7 @@ function HeroesPageContent() {
     setIsRegenerating(childId);
     try {
       const newCode = await regenerateChildAccessCode(childId);
-      setAllChildren(prev => prev.map(c => c.id === childId ? { ...c, accessCode: newCode } : c));
+      // O listener do onSnapshot atualizará o estado automaticamente.
       toast({
         title: "Nova Chave Secreta Gerada!",
         description: `A nova chave de ${childName} é ${newCode}.`,
@@ -76,48 +78,63 @@ function HeroesPageContent() {
     }
   };
 
-  const fetchDashboardData = useCallback(async () => {
+  useEffect(() => {
     if (!user) {
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
 
-    try {
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    
+    // Define the base query for children based on context
+    const childrenQuery = familyIdToQuery
+      ? query(collection(db, 'children'), where('familyId', '==', familyIdToQuery))
+      : query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
 
-      const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts, scheduleData] = await Promise.all([
-        getChildProfilesForAttribution(user.uid, currentContext),
-        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getMissionInstancesForContext(user.uid, familyIdToQuery),
-        getChildRewardInstancesForContext(user.uid, familyIdToQuery),
-        getSchoolScheduleForContext(user.uid, familyIdToQuery)
-      ]);
-      
+    // Set up listeners
+    const unsubscribeChildren = onSnapshot(childrenQuery, (snapshot) => {
+      const childProfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
       setAllChildren(childProfiles);
-      setMissionTemplates(missionTpls);
-      setRewardTemplates(rewardTpls);
-      setMissionInstances(missionInsts);
-      setRewardInstances(rewardInsts);
-      setScheduleEntries(scheduleData);
-
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      setAllChildren([]);
-      setMissionTemplates([]);
-      setRewardTemplates([]);
-      setMissionInstances([]);
-      setRewardInstances([]);
-      setScheduleEntries([]);
-    } finally {
       setIsLoading(false);
-    }
-  }, [user, currentContext]);
+    }, (error) => {
+      console.error("Error fetching children in real-time:", error);
+      setIsLoading(false);
+    });
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [fetchDashboardData]);
+    const missionsQuery = familyIdToQuery
+      ? query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery))
+      : query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
+
+    const unsubscribeMissions = onSnapshot(missionsQuery, (snapshot) => {
+      const missionInsts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+      setMissionInstances(missionInsts);
+    }, (error) => console.error("Error fetching mission instances in real-time:", error));
+
+    // Fetch static data (templates, etc.) once
+    const fetchStaticData = async () => {
+        try {
+             const [rewardTpls, rewardInsts, scheduleData] = await Promise.all([
+                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+                getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+                getSchoolScheduleForContext(user.uid, familyIdToQuery)
+            ]);
+            setRewardTemplates(rewardTpls);
+            setRewardInstances(rewardInsts);
+            setScheduleEntries(scheduleData);
+        } catch (error) {
+            console.error("Error fetching static dashboard data:", error);
+        }
+    }
+    
+    fetchStaticData();
+
+    // Cleanup function
+    return () => {
+      unsubscribeChildren();
+      unsubscribeMissions();
+    };
+  }, [user, currentContext]);
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -141,7 +158,7 @@ function HeroesPageContent() {
   }
 
   const hasChildren = allChildren.length > 0;
-  const hasMissions = missionTemplates.length > 0;
+  const hasMissions = missionInstances.length > 0;
   const hasRewards = rewardTemplates.length > 0;
   const showGuide = !isLoading && (!hasChildren || !hasMissions || !hasRewards);
 
