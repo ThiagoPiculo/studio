@@ -37,7 +37,7 @@ const Milestone = ({
         />
         {/* Icon Container */}
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md",
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10",
             isCompleted || isCurrent ? 'bg-primary/10' : 'bg-muted'
         )}>
              <BadgeCheck
@@ -114,5 +114,3 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
     </div>
   );
 }
-
-    
