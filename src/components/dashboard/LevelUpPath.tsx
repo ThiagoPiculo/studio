@@ -27,7 +27,7 @@ const Milestone = ({
 }) => {
   return (
     <div className="flex flex-col items-center flex-1 min-w-0">
-      <div className="relative w-full flex items-center mb-1">
+      <div className="relative w-full flex items-center mb-1 isolate">
         {/* Path Background */}
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
