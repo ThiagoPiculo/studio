@@ -1275,6 +1275,9 @@ function FamilyPageContent() {
                   <LinkIcon className="mr-3 h-8 w-8 text-primary" />
                   Aliança de Herois
                 </CardTitle>
+                <CardDescription>
+                    O Meu Espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois nele sem precisar criar ou participar de uma aliança.
+                </CardDescription>
               </div>
               {userAlliances.length > 0 && (
               <DropdownMenu>
@@ -1298,21 +1301,6 @@ function FamilyPageContent() {
         </CardHeader>
       </Card>
       
-      <Accordion type="single" collapsible className="w-full bg-muted/30 rounded-lg shadow-sm">
-        <AccordionItem value="meu-espaco" className="border-0">
-            <AccordionTrigger className="p-6 hover:no-underline">
-                <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-headline">O que é o "Meu Espaço"?</h3>
-                </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6 text-muted-foreground">
-                <p>
-                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. <strong>Crie uma aliança</strong> para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista. <strong>Entre em uma aliança</strong> já existente para ajudar a gerenciar os Mini Herios da aliança.
-                </p>
-            </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
       {isLoadingInvitations ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando convites...</CardContent></Card>
       ) : invitations.length > 0 && (
