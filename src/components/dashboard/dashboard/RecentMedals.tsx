@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useMemo } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { getInitials } from '@/lib/utils';
 import type { ChildProfile } from '@/lib/types';
 import { allBadgesMap } from '@/lib/badges';
-import { Award, ArrowRight } from 'lucide-react';
+import { Medal, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 interface RecentMedalsProps {
@@ -38,7 +37,7 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
     <Card className="flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Award className="text-chart-5" />
+          <Medal className="text-chart-5" />
           Medalhas Conquistadas
         </CardTitle>
         <CardDescription>As últimas medalhas desbloqueadas pelos seus heróis.</CardDescription>
