@@ -20,9 +20,8 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Toggle } from '@/components/ui/toggle';
 import { Separator } from '@/components/ui/separator';
-import { cn } from '@/lib/utils';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 interface UpcomingBadge {
   child: ChildProfile;
@@ -47,12 +46,12 @@ export default function AchievementsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCalculating, setIsCalculating] = useState(true);
   
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   
   const children = useMemo(() => {
-    if (selectedChildrenIds.length === 0) return allChildren;
-    return allChildren.filter(child => selectedChildrenIds.includes(child.id));
-  }, [allChildren, selectedChildrenIds]);
+    if (!selectedChildId) return allChildren;
+    return allChildren.filter(child => child.id === selectedChildId);
+  }, [allChildren, selectedChildId]);
 
 
   useEffect(() => {
@@ -248,60 +247,19 @@ export default function AchievementsPage() {
             Acompanhe todas as medalhas e troféus que seus heróis desbloquearam em suas jornadas.
           </CardDescription>
         </CardHeader>
-        {allChildren.length > 0 && (
-          <CardFooter className="p-4 pt-0">
-            <div className="w-full">
-              <Separator className="mb-4" />
-              <div className="flex flex-wrap items-center gap-2">
-                  <Toggle
-                      size="sm"
-                      variant="outline"
-                      pressed={selectedChildrenIds.length === 0}
-                      onPressedChange={(pressed) => {
-                        if (pressed) {
-                          setSelectedChildrenIds([])
-                        }
-                      }}
-                      className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                  >
-                      Todos
-                  </Toggle>
-                  {allChildren.map(child => {
-                    const isPressed = selectedChildrenIds.includes(child.id);
-                    return (
-                      <Toggle
-                          key={child.id}
-                          size="sm"
-                          className={cn(
-                              "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
-                              isPressed
-                                ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
-                                : 'opacity-70 hover:opacity-100'
-                          )}
-                          style={{ backgroundColor: child.color }}
-                          pressed={isPressed}
-                          onPressedChange={(pressed) => {
-                            const otherIds = selectedChildrenIds.filter(id => id !== child.id);
-                            if (pressed) {
-                              setSelectedChildrenIds([...otherIds, child.id]);
-                            } else {
-                              setSelectedChildrenIds(otherIds);
-                            }
-                          }}
-                      >
-                          {child.name}
-                      </Toggle>
-                    )
-                  })}
-                </div>
-            </div>
-          </CardFooter>
-        )}
       </Card>
+
+      {allChildren.length > 1 && (
+        <HeroSelector
+            heroes={allChildren}
+            selectedHeroId={selectedChildId}
+            onSelectHero={setSelectedChildId}
+        />
+      )}
       
       <div className="space-y-6">
         <div>
-          <h2 className="text-2xl font-headline mb-4">Progresso por Herói</h2>
+          <h2 className="text-2xl font-headline mb-4">{selectedChildId ? `Progresso de ${children[0]?.name}` : 'Progresso por Herói'}</h2>
            {allChildren.length === 0 ? (
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
@@ -312,12 +270,6 @@ export default function AchievementsPage() {
                     Vá para Adicionar Heroi para começar.
                   </Button>
                 </Link>
-              </CardContent>
-            </Card>
-          ) : children.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center text-muted-foreground">
-                <p>Nenhum herói selecionado. Use o filtro acima para escolher um ou mais heróis.</p>
               </CardContent>
             </Card>
           ) : (
@@ -381,7 +333,7 @@ export default function AchievementsPage() {
                       </div>
                     </CardContent>
                     <CardFooter>
-                      <Link href={`/dashboard/child/${child.id}/manage?tab=badges`} className="w-full">
+                      <Link href={`/dashboard/mural?childId=${child.id}&tab=badges`} className="w-full">
                         <Button variant="outline" className="w-full">
                           Ver Mural Completo <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -494,3 +446,4 @@ export default function AchievementsPage() {
     </div>
   );
 }
+
