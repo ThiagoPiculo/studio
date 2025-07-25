@@ -47,7 +47,6 @@ function HeroesPageContent() {
 
   const totalBadgesCount = allBadgesMap.size;
   
-  const [expandedLists, setExpandedLists] = useState<Record<string, boolean>>({});
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
   
   useEffect(() => {
@@ -69,10 +68,6 @@ function HeroesPageContent() {
       }
     }
   }, [authLoading, router, searchParams]);
-
-  const toggleListExpansion = (listId: string) => {
-    setExpandedLists(prev => ({ ...prev, [listId]: !prev[listId] }));
-  };
 
   const handleRegenerateAccessCode = async (childId: string, childName: string) => {
     if (isRegenerating) return;
@@ -211,10 +206,6 @@ function HeroesPageContent() {
               const availableRewardsCount = rewardTemplates.filter(r => r.status === 'active' && child.stars >= r.starsCost).length;
               const redeemedRewardsCount = 0; // Placeholder, would need rewardInstances
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
-              
-              const missionsListId = `missions-${child.id}`;
-              const areMissionsExpanded = !!expandedLists[missionsListId];
-              const missionsToShow = areMissionsExpanded ? todaysMissions : todaysMissions.slice(0, 3);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -305,8 +296,7 @@ function HeroesPageContent() {
                             <ScrollArea className="h-[145px] w-full">
                                 <ul className="space-y-1 pr-3">
                                 {todaysMissions.length > 0 ? (
-                                <>
-                                {missionsToShow.map(item => {
+                                  todaysMissions.map(item => {
                                     const isCompleted = isMissionCompletedForDate(item, new Date());
                                     const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
                                     const formattedTime = format(eventTime, 'HH:mm');
@@ -334,13 +324,7 @@ function HeroesPageContent() {
                                         </Link>
                                         </li>
                                     );
-                                })}
-                                {todaysMissions.length > 3 && (
-                                     <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => toggleListExpansion(missionsListId)}>
-                                        {areMissionsExpanded ? 'Mostrar menos' : `Mostrar mais ${todaysMissions.length - 3}...`}
-                                    </Button>
-                                )}
-                                </>
+                                  })
                                 ) : (
                                 <p className="text-xs text-muted-foreground text-center py-2 px-1">
                                     Dia de descanso do heroi!
