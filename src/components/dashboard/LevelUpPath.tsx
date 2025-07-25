@@ -26,8 +26,8 @@ const Milestone = ({
   progressPercentage: number;
 }) => {
   return (
-    <div className="flex flex-col items-center flex-1 min-w-0">
-      <div className="relative w-full flex items-center mb-1 isolate">
+    <div className="flex flex-col items-center flex-1 min-w-0 isolate">
+      <div className="relative w-full flex items-center mb-1">
         {/* Path Background */}
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
@@ -37,8 +37,7 @@ const Milestone = ({
         />
         {/* Icon Container */}
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10",
-            isCompleted || isCurrent ? 'bg-primary/10' : 'bg-muted'
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10 bg-background"
         )}>
              <BadgeCheck
                 className={cn(
