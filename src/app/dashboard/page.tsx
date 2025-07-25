@@ -1,7 +1,8 @@
 
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,15 +16,18 @@ import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedReward
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import { Reports } from '@/components/dashboard/dashboard/Reports';
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
+  const searchParams = useSearchParams();
+  
   const [isLoading, setIsLoading] = useState(true);
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
 
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const childIdFromParams = searchParams.get('childId');
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
 
   useEffect(() => {
     if (!user) {
@@ -44,12 +48,13 @@ export default function DashboardPage() {
         setMissionInstances(missionData);
         setRewardTemplates(rewardData);
         
-        if (childData.length > 0 && !selectedChildId) {
-            setSelectedChildId(childData[0].id);
-        } else if (childData.length > 0 && selectedChildId && !childData.some(c => c.id === selectedChildId)) {
-            setSelectedChildId(childData[0].id);
-        } else if (childData.length === 0) {
-            setSelectedChildId(null);
+        // Update selectedChildId based on fetched data and URL params
+        if (childIdFromParams && childData.some(c => c.id === childIdFromParams)) {
+          setSelectedChildId(childIdFromParams);
+        } else if (childData.length > 0) {
+          setSelectedChildId(childData[0].id);
+        } else {
+          setSelectedChildId(null);
         }
 
       } catch (error) {
@@ -60,7 +65,7 @@ export default function DashboardPage() {
     };
     
     fetchData();
-  }, [user, currentContext]);
+  }, [user, currentContext, childIdFromParams]);
 
   const selectedChildData = useMemo(() => {
     if (!selectedChildId || allChildren.length <= 1) {
@@ -116,4 +121,12 @@ export default function DashboardPage() {
       </div>
     </div>
   );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<Loading />}>
+            <DashboardPageContent />
+        </Suspense>
+    )
 }

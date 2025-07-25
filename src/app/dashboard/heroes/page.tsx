@@ -217,7 +217,7 @@ function HeroesPageContent() {
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
-                  <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                  <Link href={`/dashboard?childId=${child.id}`} className="absolute top-2 right-2 z-10">
                     <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
                         Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
                     </Button>
