@@ -9,7 +9,7 @@ import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit, Smile } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -56,6 +56,7 @@ import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number } })
@@ -135,20 +136,40 @@ function MuralCompletoPageContent() {
 
   // Centralized data fetching function
   const fetchData = useCallback(async () => {
-    if (!childId) return;
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    
     setIsLoading(true);
     try {
-      const profile = await getChildProfileById(childId);
+      const allProfiles = await getChildProfilesForAttribution(user.uid, currentContext);
+      setAllChildren(allProfiles);
+
+      if (!childId && allProfiles.length > 0) {
+        router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
+        setIsLoading(false);
+        return;
+      }
       
-      // Context validation
-      const childContextId = profile?.familyId || 'my-space';
-      if (profile && childContextId !== currentContext) {
-        toast({
-          title: "Contexto Atualizado",
-          description: `O heroi ${profile.name} não pertence a este espaço. Redirecionando...`,
-          variant: "default",
-        });
-        router.push('/dashboard/heroes');
+      if (!childId || allProfiles.length === 0) {
+        setChild(null);
+        setMissionInstances([]);
+        setChildRewards([]);
+        setSchoolSchedule([]);
+        setIsLoading(false);
+        return;
+      }
+      
+      const profile = allProfiles.find(p => p.id === childId);
+      if (!profile) {
+        toast({ title: "Herói não encontrado", description: "O herói selecionado não foi encontrado neste contexto.", variant: "destructive" });
+        if (allProfiles.length > 0) {
+          router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
+        } else {
+          router.replace('/dashboard/heroes', { scroll: false });
+        }
+        setIsLoading(false);
         return;
       }
       
@@ -157,53 +178,30 @@ function MuralCompletoPageContent() {
         getChildRewardInstancesByChild(childId),
         getSchoolScheduleForChild(childId),
       ]);
-
-      if (profile) {
-        setChild(profile);
-        setMissionInstances(missions);
-        setChildRewards(rewards.sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
-        }));
-        setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
-      } else {
-        toast({ title: "Perfil Não Encontrado", description: "Não encontramos um perfil para este Mini Heroi.", variant: "destructive" });
-        router.push('/dashboard/heroes');
-      }
+      
+      setChild(profile);
+      setMissionInstances(missions);
+      setChildRewards(rewards.sort((a, b) => {
+          if (a.status === 'active' && b.status !== 'active') return -1;
+          if (a.status !== 'active' && b.status === 'active') return 1;
+          if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+          if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+          return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
+      }));
+      setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
+      
     } catch (error) {
       console.error("Error fetching child data:", error);
       toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados. Tente novamente.", variant: "destructive" });
     } finally {
       setIsLoading(false);
     }
-  }, [childId, router, toast, currentContext]);
-
-
-  useEffect(() => {
-    if (user) {
-        getChildProfilesForAttribution(user.uid, currentContext).then(setAllChildren);
-    }
-  }, [user, currentContext]);
-
-  // Effect to automatically select the first child if none is selected in the URL
-  useEffect(() => {
-    if (!childId && allChildren.length > 0) {
-      router.replace(`/dashboard/mural?childId=${allChildren[0].id}`);
-    }
-  }, [childId, allChildren, router]);
-
+  }, [childId, router, toast, currentContext, user, pathname]);
 
   // Initial data fetch and context validation effect
   useEffect(() => {
-    if (childId) {
-      fetchData();
-    } else {
-      setIsLoading(false);
-    }
-  }, [childId, fetchData, currentContext]); // Added currentContext to re-trigger on context change
+    fetchData();
+  }, [fetchData]);
   
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -327,7 +325,7 @@ function MuralCompletoPageContent() {
       ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
     ].sort((a, b) => {
         const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
-        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : a.completedAt;
+        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
         
         const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : timeA ? new Date(timeA as any).getTime() : 0;
         const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : timeB ? new Date(timeB as any).getTime() : 0;
@@ -471,7 +469,7 @@ function MuralCompletoPageContent() {
       });
       // Update global context to reflect the change
       setCurrentContext(selectedMoveContext);
-      onProfileUpdate(); // Refetch data on parent page
+      // Let the natural useEffect of the page handle the refetch
     } catch (error: any) {
       console.error("Error moving child profile:", error);
       toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
@@ -756,11 +754,18 @@ function MuralCompletoPageContent() {
   if (!child) {
      return (
         <div className="text-center py-10">
-            <h2 className="text-2xl font-bold mb-4">Mural Completo do Mini Herói</h2>
-            <p className="text-muted-foreground mb-6">
-                Para ver o mural completo de um herói, por favor, selecione um na página{' '}
-                <Link href="/dashboard/heroes" className="text-primary hover:underline font-semibold">Resumo do Dia</Link>.
-            </p>
+          <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
+            <CardContent>
+              <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-xl font-semibold mb-2">Nenhum Herói Cadastrado Ainda!</h3>
+              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
+              <Link href="/dashboard/onboarding">
+                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
+                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
         </div>
     );
   }
@@ -876,21 +881,13 @@ function MuralCompletoPageContent() {
 
   return (
     <div className="space-y-6 pb-8">
-        <div className="flex items-center gap-4">
-            <Select value={childId || undefined} onValueChange={(id) => router.push(`/dashboard/mural?childId=${id}`)}>
-                <SelectTrigger className="w-[280px]">
-                    <SelectValue placeholder="Selecione um Mini Herói..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {allChildren.map(c => (
-                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Button variant="outline" asChild>
-                <Link href="/dashboard/heroes"><ArrowLeft className="mr-2 h-4 w-4" />Voltar ao Resumo do Dia</Link>
-            </Button>
-        </div>
+        {allChildren.length > 1 && (
+            <HeroSelector
+                heroes={allChildren}
+                selectedHeroId={childId}
+                onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+            />
+        )}
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
             <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
@@ -1352,7 +1349,7 @@ function MuralCompletoPageContent() {
                     )}
                 </CardContent>
             </Card>
-        </TabsContent>
+          </TabsContent>
           <TabsContent value="badges" className="space-y-6">
             <Dialog open={isAboutBadgesOpen} onOpenChange={setIsAboutBadgesOpen}>
               <Card className="shadow-md">
@@ -1745,5 +1742,7 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+    
 
     

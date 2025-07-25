@@ -26,7 +26,7 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero }: HeroSelec
   }
 
   return (
-    <div className="relative group">
+    <div className="relative group w-full">
         <Button 
             variant="outline" 
             size="icon" 
@@ -81,3 +81,5 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero }: HeroSelec
     </div>
   );
 }
+
+    
