@@ -2,7 +2,7 @@
 'use server';
 
 import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
-import { getDownloadURL, ref, uploadBytesResumable } from 'firebase/storage';
+import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
 
 export async function handleAvatarUpload(childId: string, base64Image: string) {
@@ -10,28 +10,27 @@ export async function handleAvatarUpload(childId: string, base64Image: string) {
         if (!childId) {
             throw new Error('Child ID is required.');
         }
-        if (!base64Image.startsWith('data:image/')) {
-            throw new Error('Invalid image format.');
+        
+        const match = base64Image.match(/^data:(image\/[a-z]+);base64,(.+)$/);
+        if (!match) {
+            throw new Error('Invalid base64 image format.');
         }
+
+        const contentType = match[1];
+        const base64Data = match[2];
+        
+        // Convert base64 to a Buffer
+        const imageBuffer = Buffer.from(base64Data, 'base64');
 
         const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
         
-        // Convert base64 to a Blob, which is more robust for uploads
-        const response = await fetch(base64Image);
-        const blob = await response.blob();
-
         const metadata = {
-            contentType: blob.type,
+            contentType: contentType,
         };
 
-        // Use uploadBytesResumable for a more robust upload process
-        const uploadTask = uploadBytesResumable(storageRef, blob, metadata);
-
-        // Wait for the upload to complete
-        await uploadTask;
-
-        // Get the download URL
-        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+        // Upload the buffer
+        const uploadResult = await uploadBytes(storageRef, imageBuffer, metadata);
+        const downloadURL = await getDownloadURL(uploadResult.ref);
 
         // Update the child's profile in Firestore
         const childRef = doc(db, 'children', childId);
