@@ -6,8 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck } from "lucide-react";
-import { useEffect, useState, useMemo, Suspense } from "react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw } from "lucide-react";
+import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
@@ -15,7 +15,8 @@ import {
     getRewardTemplatesByOwnerOrFamily,
     getMissionInstancesForContext,
     getChildRewardInstancesForContext,
-    getSchoolScheduleForContext
+    getSchoolScheduleForContext,
+    regenerateChildAccessCode,
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
@@ -30,12 +31,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useToast } from "@/hooks/use-toast";
 
 
 function HeroesPageContent() {
   const { user } = useAuth();
   const { currentContext } = useFamily();
   const router = useRouter();
+  const { toast } = useToast();
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
@@ -48,53 +51,73 @@ function HeroesPageContent() {
   const totalBadgesCount = allBadgesMap.size;
   
   const [expandedLists, setExpandedLists] = useState<Record<string, boolean>>({});
+  const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
 
   const toggleListExpansion = (listId: string) => {
     setExpandedLists(prev => ({ ...prev, [listId]: !prev[listId] }));
   };
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return
-      };
-      setIsLoading(true);
+  const handleRegenerateCode = async (childId: string, childName: string) => {
+    if (isRegenerating) return;
+    setIsRegenerating(childId);
+    try {
+      const newCode = await regenerateChildAccessCode(childId);
+      setAllChildren(prev => prev.map(c => c.id === childId ? { ...c, accessCode: newCode } : c));
+      toast({
+        title: "Nova Chave Secreta Gerada!",
+        description: `A nova chave de ${childName} é ${newCode}.`,
+        duration: 10000,
+      });
+    } catch (error) {
+      console.error("Error regenerating code:", error);
+      toast({ title: "Erro ao gerar nova chave", variant: "destructive" });
+    } finally {
+      setIsRegenerating(null);
+    }
+  };
 
-      try {
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+  const fetchDashboardData = useCallback(async () => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
+    setIsLoading(true);
 
-        const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts, scheduleData] = await Promise.all([
-          getChildProfilesForAttribution(user.uid, currentContext),
-          getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-          getMissionInstancesForContext(user.uid, familyIdToQuery),
-          getChildRewardInstancesForContext(user.uid, familyIdToQuery),
-          getSchoolScheduleForContext(user.uid, familyIdToQuery)
-        ]);
-        
-        setAllChildren(childProfiles);
-        setMissionTemplates(missionTpls);
-        setRewardTemplates(rewardTpls);
-        setMissionInstances(missionInsts);
-        setRewardInstances(rewardInsts);
-        setScheduleEntries(scheduleData);
+    try {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
-      } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        setAllChildren([]);
-        setMissionTemplates([]);
-        setRewardTemplates([]);
-        setMissionInstances([]);
-        setRewardInstances([]);
-        setScheduleEntries([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+      const [childProfiles, missionTpls, rewardTpls, missionInsts, rewardInsts, scheduleData] = await Promise.all([
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getMissionInstancesForContext(user.uid, familyIdToQuery),
+        getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+        getSchoolScheduleForContext(user.uid, familyIdToQuery)
+      ]);
+      
+      setAllChildren(childProfiles);
+      setMissionTemplates(missionTpls);
+      setRewardTemplates(rewardTpls);
+      setMissionInstances(missionInsts);
+      setRewardInstances(rewardInsts);
+      setScheduleEntries(scheduleData);
 
-    fetchDashboardData();
+    } catch (error) {
+      console.error("Error fetching dashboard data:", error);
+      setAllChildren([]);
+      setMissionTemplates([]);
+      setRewardTemplates([]);
+      setMissionInstances([]);
+      setRewardInstances([]);
+      setScheduleEntries([]);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user, currentContext]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [fetchDashboardData]);
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -237,7 +260,30 @@ function HeroesPageContent() {
                       </Avatar>
                       <div className="flex-grow overflow-hidden">
                         <CardTitle className="text-2xl font-semibold truncate">{child.name}</CardTitle>
-                        <CardDescription>{age} anos</CardDescription>
+                        <div className="flex items-center gap-2 text-muted-foreground text-xs flex-wrap">
+                          <span>{age} anos</span>
+                          <span className="text-muted-foreground/50">•</span>
+                          <div className="flex items-center gap-1 font-mono">
+                            <Lock className="h-3 w-3" />
+                            <span className="tracking-wider">{child.accessCode}</span>
+                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5"
+                                  onClick={() => handleRegenerateCode(child.id, child.name)}
+                                  disabled={isRegenerating === child.id}
+                                >
+                                  {isRegenerating === child.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <RefreshCw className="h-3 w-3" />}
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Gerar nova Chave Secreta</p></TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                   </div>
                 </CardHeader>
@@ -245,7 +291,7 @@ function HeroesPageContent() {
                 <CardContent className="p-4 pt-0">
                    <div className="space-y-4">
                        <div className="flex items-center justify-around gap-4 w-full">
-                           <TooltipProvider>
+                            <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
@@ -434,5 +480,3 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
-
-    
