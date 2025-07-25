@@ -3,8 +3,8 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -37,7 +37,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -59,8 +59,8 @@ import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 type Activity = 
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number } })
-    | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp });
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
+    | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp, actorId?: string, actorName?: string });
 
 
 function MuralCompletoPageContent() {
@@ -79,6 +79,7 @@ function MuralCompletoPageContent() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
+  const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
@@ -143,8 +144,14 @@ function MuralCompletoPageContent() {
     
     setIsLoading(true);
     try {
-      const allProfiles = await getChildProfilesForAttribution(user.uid, currentContext);
-      setAllChildren(allProfiles);
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const [allProfiles, fetchedCollaborators] = await Promise.all([
+          getChildProfilesForAttribution(user.uid, currentContext),
+          familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile])
+        ]);
+        
+        setAllChildren(allProfiles);
+        setCollaborators(fetchedCollaborators);
 
       if (!childId && allProfiles.length > 0) {
         router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
@@ -307,23 +314,44 @@ function MuralCompletoPageContent() {
       earnedBadges: earnedBadgesCount,
     };
   }, [child, missionInstances, childRewards]);
+  
+  const collaboratorsMap = useMemo(() => {
+    const map = new Map(collaborators.map(c => [c.uid, c]));
+    if (user && !map.has(user.uid)) {
+        map.set(user.uid, user);
+    }
+    return map;
+  }, [collaborators, user]);
 
-  const activities = useMemo(() => {
+  const activities = useMemo((): Activity[] => {
     if (!missionInstances || !childRewards) return [];
-    
-    const redeemedRewards = childRewards.filter(r => r.status === 'redeemed' && r.redeemedAt);
 
-    const allActivities: Activity[] = [
-      ...missionInstances.flatMap(m =>
-        Object.entries(m.completionLog || {}).map(([dateStr, completionLogEntry]) => ({
-          ...m,
-          type: 'mission' as const,
-          scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
-          completionLogEntry: completionLogEntry
-        }))
-      ),
-      ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
-    ].sort((a, b) => {
+    const redeemedRewards: Activity[] = childRewards
+      .filter(r => r.status === 'redeemed' && r.redeemedAt)
+      .map(r => ({ 
+          ...r, 
+          type: 'reward' as const, 
+          completedAt: r.redeemedAt!, 
+          actorId: r.actorId,
+          actorName: r.actorId ? collaboratorsMap.get(r.actorId)?.name : child?.name
+      }));
+
+    const completedMissions: Activity[] = missionInstances.flatMap(m =>
+      Object.entries(m.completionLog || {}).map(([dateStr, logEntry]) => ({
+        ...m,
+        type: 'mission' as const,
+        scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
+        completionLogEntry: {
+          ...logEntry,
+          actorId: logEntry.actorId,
+          actorName: logEntry.actorId ? collaboratorsMap.get(logEntry.actorId)?.name : child?.name
+        }
+      }))
+    );
+
+    const allActivities: Activity[] = [...redeemedRewards, ...completedMissions];
+    
+    allActivities.sort((a, b) => {
         const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
         const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
         
@@ -332,8 +360,9 @@ function MuralCompletoPageContent() {
         
         return dateB - dateA;
     });
+
     return allActivities.slice(0, 10);
-  }, [missionInstances, childRewards]);
+  }, [missionInstances, childRewards, collaboratorsMap, child?.name]);
 
 
   const calculateAge = (birthDate: Date): number => {
@@ -771,7 +800,7 @@ function MuralCompletoPageContent() {
   }
 
   const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
-
+  
   const renderMissionCard = (instance: MissionInstance) => {
     const categoryDetails = getMissionCategoryDetails(instance.category);
       
@@ -838,7 +867,7 @@ function MuralCompletoPageContent() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')</span>
+                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
@@ -1042,52 +1071,61 @@ function MuralCompletoPageContent() {
               </div>
             
             <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Atividades Recentes</CardTitle>
-                <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {activities.length === 0 ? (
-                  <div className="text-center py-6 text-muted-foreground">
-                    <Clock className="h-10 w-10 mx-auto mb-2" />
-                    Nenhuma atividade recente registrada.
-                  </div>
-                ) : (
-                  <ul className="space-y-4">
-                    {activities.map((activity, index) => {
-                      const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
-                      return (
-                        <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
-                          <li className="flex items-start gap-4">
-                            {activity.type === 'mission' ? (
-                               <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-full">
-                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                              </div>
-                            ) : (
-                              <div className="p-2 bg-yellow-100 dark:bg-yellow-800/30 rounded-full">
-                                <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                              </div>
-                            )}
-                            <div className="grid gap-1 flex-grow">
-                              <p className="font-semibold">{activity.title}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {activity.type === 'mission' ?
-                                    `Concluída (ref. a ${format(activity.scheduledFor, 'dd/MM/yyyy')}) - Ganhou ${activity.completionLogEntry.stars} ★`
-                                    : `Custo: ${activity.starsCost} Estrelas`
-                                }
-                              </p>
-                              <p className="text-xs text-muted-foreground capitalize">
-                                {formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true })}
-                              </p>
-                            </div>
-                          </li>
-                          {index < activities.length - 1 && <Separator />}
-                        </Fragment>
-                      );
-                    })}
-                  </ul>
-                )}
-              </CardContent>
+                <CardHeader>
+                    <CardTitle>Atividades Recentes</CardTitle>
+                    <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {activities.length === 0 ? (
+                        <div className="text-center py-6 text-muted-foreground">
+                            <Clock className="h-10 w-10 mx-auto mb-2" />
+                            Nenhuma atividade recente registrada.
+                        </div>
+                    ) : (
+                        <ul className="space-y-4">
+                          {activities.map((activity, index) => {
+                            const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
+                            const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
+                            const actorName = (activity.type === 'mission' ? activity.completionLogEntry.actorName : activity.actorName) || 'Herói';
+
+                            return (
+                              <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
+                                <li className="flex items-start gap-4">
+                                  <div className={`p-2 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
+                                    {activity.type === 'mission' ? (
+                                      <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                    ) : (
+                                      <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                                    )}
+                                  </div>
+                                  <div className="flex-grow text-sm">
+                                    <p className="font-semibold">
+                                      {activity.type === 'mission' ? `Missão Cumprida por ${child.name}` : `Recompensa Resgatada por ${child.name}`}
+                                    </p>
+                                    <p className="font-medium text-foreground/80">- {activity.title}</p>
+                                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                      {activity.type === 'mission' ? (
+                                        <>
+                                          <p>Concluída por <strong>{actorName}</strong> (ref. a {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
+                                          <p>Ganhou <strong>{activity.completionLogEntry.stars} ★</strong> e <strong>{activity.completionLogEntry.xp} XP</strong></p>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <p>Resgatada por <strong>{actorName}</strong></p>
+                                          <p>Custou <strong>{activity.starsCost} ★</strong></p>
+                                        </>
+                                      )}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
+                                  </div>
+                                </li>
+                                {index < activities.length - 1 && <Separator />}
+                              </Fragment>
+                            );
+                          })}
+                        </ul>
+                    )}
+                </CardContent>
             </Card>
           </TabsContent>
           <TabsContent value="missions">
@@ -1225,11 +1263,11 @@ function MuralCompletoPageContent() {
                               Custo: {instance.starsCost} estrelas
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Atribuída em: getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')
+                              Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
                             </p>
                             {instance.status === 'redeemed' && instance.redeemedAt && (
                               <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')
+                                Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
                               </p>
                             )}
                           </CardContent>
@@ -1742,7 +1780,3 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
-
-    
-
-    
