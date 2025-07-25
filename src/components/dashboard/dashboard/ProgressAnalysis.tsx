@@ -15,6 +15,8 @@ import { BarChart, ArrowRight, Star, BadgeCheck, ChevronLeft, ChevronRight } fro
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 
 interface ProgressAnalysisProps {
   childrenProfiles: ChildProfile[];
@@ -23,8 +25,11 @@ interface ProgressAnalysisProps {
 
 interface DailyProgress {
     day: string;
+    dateLabel: string;
     total: number;
     completed: number;
+    starsEarned: number;
+    xpEarned: number;
     dayKey: 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
 }
 
@@ -46,11 +51,24 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             const scheduledMissions = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, day));
             const completedMissions = scheduledMissions.filter(inst => isMissionCompletedForDate(inst, day));
             const dayKey = getDayToWeekday[day.getDay()];
+
+            const { starsEarned, xpEarned } = completedMissions.reduce(
+              (acc, mission) => {
+                  acc.starsEarned += mission.starsReward;
+                  acc.xpEarned += mission.xpReward;
+                  return acc;
+              },
+              { starsEarned: 0, xpEarned: 0 }
+            );
+
             return {
                 day: weekdayLabels[dayKey].short,
+                dateLabel: format(day, 'dd/MM'),
                 dayKey: dayKey,
                 total: scheduledMissions.length,
-                completed: completedMissions.length
+                completed: completedMissions.length,
+                starsEarned,
+                xpEarned,
             };
         });
         
@@ -135,20 +153,41 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                 const isToday = isSameWeek(new Date(), currentDate, { weekStartsOn: 1 }) && dayProgress.dayKey === getDayToWeekday[new Date().getDay()];
 
                                 return (
-                                    <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,auto] items-center gap-4">
-                                        <span className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
-                                            {dayProgress.day}
-                                        </span>
+                                    <div key={dayProgress.day} className="grid grid-cols-[4.5rem,1fr,auto] items-center gap-4">
+                                        <div className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
+                                          <span>{dayProgress.day}</span>
+                                          <span className="ml-1 text-xs opacity-80">{dayProgress.dateLabel}</span>
+                                        </div>
                                         {dayProgress.total > 0 ? (
-                                            <Progress value={progressPercentage} className="h-2" />
+                                            <TooltipProvider>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Progress value={progressPercentage} className="h-2" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{dayProgress.completed} de {dayProgress.total} missões concluídas</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
                                         ) : (
                                             <div className="h-2 flex items-center justify-center rounded-full bg-muted">
                                                 <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
                                             </div>
                                         )}
-                                        <span className="text-sm text-muted-foreground font-mono w-10 text-right">
-                                            {`${dayProgress.completed}/${dayProgress.total}`}
-                                        </span>
+                                        <div className="flex items-center gap-2 text-xs font-mono w-24 justify-end">
+                                            {dayProgress.completed > 0 ? (
+                                                <>
+                                                    <span className="flex items-center gap-1 text-amber-600">
+                                                        <Star className="h-3 w-3" /> {dayProgress.starsEarned}
+                                                    </span>
+                                                    <span className="flex items-center gap-1 text-blue-600">
+                                                        <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
+                                                    </span>
+                                                </>
+                                            ) : (
+                                                <span className="text-muted-foreground/70">{`${dayProgress.completed}/${dayProgress.total}`}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 )
                             })}
