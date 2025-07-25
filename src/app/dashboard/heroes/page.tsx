@@ -211,9 +211,9 @@ function HeroesPageContent() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                    <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                    <Link href="/dashboard" className="absolute top-2 right-2 z-10">
                       <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
-                          Ver Mural <ArrowRight className="ml-1.5 h-4 w-4" />
+                          Painel de Progresso <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
                   </div>
@@ -400,3 +400,4 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
+ 
