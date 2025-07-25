@@ -779,12 +779,8 @@ function MuralCompletoPageContent() {
   }, [availableContexts, child]);
 
   if (isLoading || isRoleLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-200px)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Carregando Mural Completo do Mini Heroi...</p>
-      </div>
-    );
+    // Let loading.tsx handle the UI
+    return null;
   }
 
   if (!child) {
@@ -1802,11 +1798,10 @@ function MuralCompletoPageContent() {
 export default function MuralCompleto() {
     const hasRecess = false; // Add your logic to determine if recess exists
     return (
-        <Suspense fallback={<div className="flex justify-center items-center min-h-[calc(100vh-200px)]"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+        <Suspense>
             <MuralCompletoPageContent />
         </Suspense>
     )
 }
 
     
-
