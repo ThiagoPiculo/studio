@@ -6,23 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
-    getMissionTemplatesByOwnerOrFamily,
-    getRewardTemplatesByOwnerOrFamily,
     getMissionInstancesForContext,
-    getChildRewardInstancesForContext,
-    getSchoolScheduleForContext,
     regenerateChildAccessCode,
 } from "@/lib/firebase/firestore";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -43,11 +39,8 @@ function HeroesPageContent() {
   const { toast } = useToast();
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
-  const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const totalBadgesCount = allBadgesMap.size;
@@ -96,7 +89,7 @@ function HeroesPageContent() {
     const unsubscribeChildren = onSnapshot(childrenQuery, (snapshot) => {
       const childProfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
       setAllChildren(childProfiles);
-      setIsLoading(false);
+      if (isLoading) setIsLoading(false);
     }, (error) => {
       console.error("Error fetching children in real-time:", error);
       setIsLoading(false);
@@ -111,24 +104,6 @@ function HeroesPageContent() {
       setMissionInstances(missionInsts);
     }, (error) => console.error("Error fetching mission instances in real-time:", error));
 
-    // Fetch static data (templates, etc.) once
-    const fetchStaticData = async () => {
-        try {
-             const [rewardTpls, rewardInsts, scheduleData] = await Promise.all([
-                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-                getChildRewardInstancesForContext(user.uid, familyIdToQuery),
-                getSchoolScheduleForContext(user.uid, familyIdToQuery)
-            ]);
-            setRewardTemplates(rewardTpls);
-            setRewardInstances(rewardInsts);
-            setScheduleEntries(scheduleData);
-        } catch (error) {
-            console.error("Error fetching static dashboard data:", error);
-        }
-    }
-    
-    fetchStaticData();
-
     // Cleanup function
     return () => {
       unsubscribeChildren();
@@ -141,8 +116,8 @@ function HeroesPageContent() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  const calculateAge = (birthDate: Timestamp): number => {
-    if (!birthDate) return 0;
+  const calculateAge = (birthDate?: Timestamp): number | null => {
+    if (!birthDate) return null;
     const today = new Date();
     const birthDateObj = birthDate.toDate();
     let age = today.getFullYear() - birthDateObj.getFullYear();
@@ -158,20 +133,17 @@ function HeroesPageContent() {
   }
 
   const hasChildren = allChildren.length > 0;
-  const hasMissions = missionInstances.length > 0;
-  const hasRewards = rewardTemplates.length > 0;
-  const showGuide = !isLoading && (!hasChildren || !hasMissions || !hasRewards);
-
+  
   const today = format(new Date(), 'yyyy-MM-dd');
   const dayOfWeekToday = getDayToWeekday[new Date().getDay()];
 
   return (
     <div className="space-y-8">
-       {showGuide && (
+       {!hasChildren && (
          <GettingStartedGuide 
-            hasChildren={hasChildren}
-            hasMissions={hasMissions}
-            hasRewards={hasRewards}
+            hasChildren={false}
+            hasMissions={false}
+            hasRewards={false}
           />
       )}
       
@@ -201,59 +173,21 @@ function HeroesPageContent() {
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
-              const todaysMissions: TimelineItem[] = missionInstances
-                .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()))
-                .map(inst => ({ 
-                    ...inst, 
-                    itemType: 'mission',
-                    startDate: getDateObject(inst.startDate || inst.dueDate)!,
-                }));
+              const todaysMissions: MissionInstance[] = missionInstances
+                .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()));
               
-              const isWeekday = new Date().getDay() >= 1 && new Date().getDay() <= 5;
-
-              if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && child.schoolShiftEnd) {
-                  const createSchoolEvent = (time: string, title: string, id: string): TimelineItem => {
-                      const [hour, minute] = time.split(':').map(Number);
-                      const eventDate = new Date();
-                      eventDate.setHours(hour, minute, 0, 0);
-                      return {
-                          itemType: 'school_event',
-                          id: `${child.id}-${id}`,
-                          title: title,
-                          startDate: eventDate,
-                          color: '#6b7280', // Default color for school events
-                      };
-                  };
-                  todaysMissions.push(createSchoolEvent(child.schoolShiftStart, 'Entrada na Escola', 'school-start'));
-                  todaysMissions.push(createSchoolEvent(child.schoolShiftEnd, 'Saída da Escola', 'school-end'));
-              }
+              const todaysMissionsCount = todaysMissions.length;
+              const completedTodaysMissionsCount = todaysMissions
+                .filter(inst => isMissionCompletedForDate(inst, new Date())).length;
               
-              todaysMissions.sort((a, b) => {
-                  const timeA = a.startDate ? (a.startDate instanceof Date ? a.startDate : a.startDate.toDate()) : new Date(0);
-                  const timeB = b.startDate ? (b.startDate instanceof Date ? b.startDate : b.startDate.toDate()) : new Date(0);
-                  return timeA.getTime() - timeB.getTime();
-              });
-
-              const todaysSchoolSubjects = scheduleEntries.filter(entry => 
-                  entry.childId === child.id && 
-                  entry.dayOfWeek === dayOfWeekToday
-              ).sort((a,b) => a.startTime.localeCompare(b.startTime));
-
-              const todaysMissionsCount = missionInstances.filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date())).length;
-              const completedTodaysMissionsCount = missionInstances
-                .filter(inst => inst.childId === child.id && isMissionCompletedForDate(inst, new Date())).length;
-              
-              const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
-              const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
+              const availableRewardsCount = rewardTemplates.filter(r => r.status === 'active' && child.stars >= r.starsCost).length;
+              const redeemedRewardsCount = 0; // Placeholder, would need rewardInstances
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               
               const missionsListId = `missions-${child.id}`;
-              const schoolListId = `school-${child.id}`;
               const areMissionsExpanded = !!expandedLists[missionsListId];
-              const areSchoolSubjectsExpanded = !!expandedLists[schoolListId];
               const missionsToShow = areMissionsExpanded ? todaysMissions : todaysMissions.slice(0, 3);
-              const schoolSubjectsToShow = areSchoolSubjectsExpanded ? todaysSchoolSubjects : todaysSchoolSubjects.slice(0, 3);
-
+             
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
@@ -277,29 +211,29 @@ function HeroesPageContent() {
                       </Avatar>
                       <div className="flex-grow overflow-hidden">
                         <CardTitle className="text-2xl font-semibold truncate">{child.name}</CardTitle>
-                        <div className="flex items-center gap-2 text-muted-foreground text-xs flex-wrap">
-                          <span>{age} anos</span>
-                          <span className="text-muted-foreground/50">•</span>
+                         <div className="flex flex-col md:flex-row md:items-center md:gap-2 text-muted-foreground text-xs">
+                          {age !== null && <span>{age} anos</span>}
+                          <span className="text-muted-foreground/50 hidden md:inline">•</span>
                           <div className="flex items-center gap-1 font-mono">
                             <span className="font-sans font-semibold">Chave Secreta:</span>
                             <span className="tracking-wider font-bold text-foreground">{child.accessCode}</span>
+                             <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-5 w-5"
+                                    onClick={() => handleRegenerateAccessCode(child.id, child.name)}
+                                    disabled={isRegenerating === child.id}
+                                  >
+                                    {isRegenerating === child.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <RefreshCw className="h-3 w-3" />}
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Gerar nova Chave Secreta</p></TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5"
-                                  onClick={() => handleRegenerateAccessCode(child.id, child.name)}
-                                  disabled={isRegenerating === child.id}
-                                >
-                                  {isRegenerating === child.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <RefreshCw className="h-3 w-3" />}
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent><p>Gerar nova Chave Secreta</p></TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
                         </div>
                       </div>
                   </div>
@@ -309,7 +243,7 @@ function HeroesPageContent() {
                    <div className="space-y-4">
                        <div className="flex items-center justify-around gap-4 w-full">
                             <div className="flex items-center gap-1.5">
-                                <TooltipProvider>
+                               <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
@@ -343,7 +277,7 @@ function HeroesPageContent() {
                                 {todaysMissions.length > 0 ? (
                                 <>
                                 {missionsToShow.map(item => {
-                                    const isCompleted = item.itemType === 'mission' && isMissionCompletedForDate(item, new Date());
+                                    const isCompleted = isMissionCompletedForDate(item, new Date());
                                     const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
                                     const formattedTime = format(eventTime, 'HH:mm');
                                     const popoverId = `${item.id}-${today}`;
@@ -354,20 +288,15 @@ function HeroesPageContent() {
                                         <Link href={href} className="block">
                                             <div className={cn(
                                             "text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors",
-                                            isCompleted ? "bg-green-500/10 text-muted-foreground" : "bg-background hover:bg-accent/50",
-                                            item.itemType === 'school_event' && 'bg-blue-500/5'
+                                            isCompleted ? "bg-green-500/10 text-muted-foreground" : "bg-background hover:bg-accent/50"
                                             )}>
-                                            {item.itemType === 'mission' ? (
-                                                isCompleted ? (
-                                                    <CheckSquare className="h-3.5 w-3.5 text-green-500 shrink-0" />
-                                                ) : (
-                                                    <Square className="h-3.5 w-3.5 text-primary shrink-0" />
-                                                )
+                                            {isCompleted ? (
+                                                <CheckSquare className="h-3.5 w-3.5 text-green-500 shrink-0" />
                                             ) : (
-                                                <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
+                                                <Square className="h-3.5 w-3.5 text-primary shrink-0" />
                                             )}
                                             <span className="font-semibold text-foreground/80">{formattedTime}</span>
-                                            {'emoji' in item && item.emoji && <span className="text-sm">{item.emoji}</span>}
+                                            {item.emoji && <span className="text-sm">{item.emoji}</span>}
                                             <span className={cn("truncate flex-grow", isCompleted ? "line-through font-normal" : "font-semibold")}>
                                                 {item.title}
                                             </span>
@@ -393,30 +322,9 @@ function HeroesPageContent() {
                         <TabsContent value="school">
                              <ScrollArea className="h-[145px] w-full">
                                 <ul className="space-y-1 pr-3">
-                                {todaysSchoolSubjects.length > 0 ? (
-                                  <>
-                                    {schoolSubjectsToShow.map(entry => (
-                                        <li key={entry.id}>
-                                            <Link href={`/dashboard/school-schedule`} className="block">
-                                                <div className="text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors bg-background hover:bg-accent/50">
-                                                    <NotebookPen className="h-3.5 w-3.5 text-blue-500 shrink-0" />
-                                                    <span className="font-semibold text-foreground/80">{entry.startTime}</span>
-                                                    <span className="truncate flex-grow font-semibold">{entry.subject}</span>
-                                                </div>
-                                            </Link>
-                                        </li>
-                                    ))}
-                                    {todaysSchoolSubjects.length > 3 && (
-                                        <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => toggleListExpansion(schoolListId)}>
-                                            {areSchoolSubjectsExpanded ? 'Mostrar menos' : `Mostrar mais ${todaysSchoolSubjects.length - 3}...`}
-                                        </Button>
-                                    )}
-                                  </>
-                                ) : (
-                                    <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                                        Nenhuma matéria registrada para hoje.
-                                    </p>
-                                )}
+                                <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                                    Funcionalidade em desenvolvimento.
+                                </p>
                                 </ul>
                              </ScrollArea>
                         </TabsContent>
@@ -436,8 +344,6 @@ function HeroesPageContent() {
                     <Link href={`/dashboard/mural?childId=${child.id}&tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
                             <Gift className="h-5 w-5 text-chart-1" />
-                            <span className="font-bold text-lg leading-none">{redeemedRewardsCount}</span>
-                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                             <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
