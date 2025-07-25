@@ -60,10 +60,10 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
     {
         title: "Exploração e Diversidade",
         items: [
-            { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Complete missões de 3 categorias diferentes.', icon: Puzzle, color: '#14b8a6' },
-            { id: 'explorador_talentos', title: 'Explorador de Talentos', description: 'Complete missões de 5 categorias diferentes.', icon: Compass, color: '#3b82f6' },
             { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão Social ou Ambiental.', icon: Leaf, color: '#a16207' },
             { id: 'atleta_dedicado', title: 'Atleta Dedicado', description: 'Conclua uma missão da categoria "Esportes".', icon: Bike, color: '#ef4444' },
+            { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Complete missões de 3 categorias diferentes.', icon: Puzzle, color: '#14b8a6' },
+            { id: 'explorador_talentos', title: 'Explorador de Talentos', description: 'Complete missões de 5 categorias diferentes.', icon: Compass, color: '#3b82f6' },
         ]
     }
 ];
