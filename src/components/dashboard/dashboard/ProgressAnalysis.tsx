@@ -9,7 +9,7 @@ import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { startOfWeek, eachDayOfInterval, addDays, subWeeks, addWeeks, format, isSameWeek } from 'date-fns';
+import { startOfWeek, eachDayOfInterval, addDays, subWeeks, addWeeks, format, isSameWeek, isPast } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, ArrowRight, Star, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +25,7 @@ interface ProgressAnalysisProps {
 
 interface DailyProgress {
     day: string;
+    date: Date;
     dateLabel: string;
     total: number;
     completed: number;
@@ -63,6 +64,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
 
             return {
                 day: weekdayLabels[dayKey].short,
+                date: day,
                 dateLabel: format(day, 'dd/MM'),
                 dayKey: dayKey,
                 total: scheduledMissions.length,
@@ -147,33 +149,42 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                 </Link>
                             </Button>
                         </div>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                             {data.dailyData.map((dayProgress) => {
                                 const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
                                 const isToday = isSameWeek(new Date(), currentDate, { weekStartsOn: 1 }) && dayProgress.dayKey === getDayToWeekday[new Date().getDay()];
-
+                                
+                                const dayIsInThePast = isPast(dayProgress.date) && !isSameDay(dayProgress.date, new Date());
+                                const isSuccess = dayProgress.total > 0 && dayProgress.completed === dayProgress.total;
+                                const isFailure = dayIsInThePast && dayProgress.total > 0 && dayProgress.completed < dayProgress.total;
+                                
                                 return (
-                                    <div key={dayProgress.day} className="grid grid-cols-[4.5rem,1fr,10rem] items-center gap-4">
+                                    <div key={dayProgress.day} className={cn("grid grid-cols-[4.5rem,1fr,10rem] items-center gap-4 p-1 -m-1 rounded-md transition-colors",
+                                        isSuccess && "bg-green-500/10",
+                                        isFailure && "bg-destructive/10",
+                                    )}>
                                         <div className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
                                           <span>{dayProgress.day}</span>
                                           <span className="ml-1 text-xs opacity-80">{dayProgress.dateLabel}</span>
                                         </div>
-                                        {dayProgress.total > 0 ? (
-                                            <TooltipProvider>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Progress value={progressPercentage} className="h-2" />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{dayProgress.completed} de {dayProgress.total} missões concluídas</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        ) : (
-                                            <div className="h-2 flex items-center justify-center rounded-full bg-muted">
-                                                <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
-                                            </div>
-                                        )}
+                                        <div className="flex-grow">
+                                            {dayProgress.total > 0 ? (
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Progress value={progressPercentage} className="h-2" />
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>{dayProgress.completed} de {dayProgress.total} missões concluídas</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            ) : (
+                                                <div className="h-2 flex items-center justify-center rounded-full bg-muted">
+                                                    <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
+                                                </div>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-2 text-xs font-mono justify-end">
                                             <span className="text-muted-foreground/80">{`${dayProgress.completed}/${dayProgress.total}`}</span>
                                             <Separator orientation="vertical" className="h-3" />
