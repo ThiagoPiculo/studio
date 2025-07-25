@@ -1300,13 +1300,15 @@ function FamilyPageContent() {
       
       <Accordion type="single" collapsible className="w-full bg-muted/30 rounded-lg shadow-sm">
         <AccordionItem value="meu-espaco" className="border-0">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+            <AccordionTrigger className="p-6 hover:no-underline">
                 <div className="flex items-center gap-3">
                     <h3 className="text-lg font-headline">O que é o "Meu Espaço"?</h3>
                 </div>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6 text-muted-foreground">
-                Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista, ou junte-se a uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança
+                <p>
+                    Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. <strong>Crie uma aliança</strong> para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista. <strong>Entre em uma aliança</strong> já existente para ajudar a gerenciar os Mini Herios da aliança.
+                </p>
             </AccordionContent>
         </AccordionItem>
       </Accordion>
