@@ -47,6 +47,11 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
       
     return uniqueBadges.slice(0, 6);
   }, [childrenProfiles]);
+  
+  const singleChildProfile = childrenProfiles.length === 1 ? childrenProfiles[0] : null;
+  const medalsLink = singleChildProfile
+    ? `/dashboard/mural?childId=${singleChildProfile.id}&tab=badges`
+    : '/dashboard/achievements';
 
   return (
     <Card className="flex flex-col">
@@ -83,7 +88,7 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
       </CardContent>
       <CardFooter>
         <Button asChild variant="secondary" className="w-full">
-            <Link href="/dashboard/achievements">
+            <Link href={medalsLink}>
                 Ver Quadro de Medalhas <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
         </Button>
