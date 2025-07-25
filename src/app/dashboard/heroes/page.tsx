@@ -8,7 +8,7 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense } from "react";
-import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
+import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
     getMissionTemplatesByOwnerOrFamily,
@@ -46,6 +46,12 @@ function HeroesPageContent() {
   const [isLoading, setIsLoading] = useState(true);
 
   const totalBadgesCount = allBadgesMap.size;
+  
+  const [expandedLists, setExpandedLists] = useState<Record<string, boolean>>({});
+
+  const toggleListExpansion = (listId: string) => {
+    setExpandedLists(prev => ({ ...prev, [listId]: !prev[listId] }));
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -200,14 +206,20 @@ function HeroesPageContent() {
               const availableRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'active').length;
               const redeemedRewardsCount = rewardInstances.filter(inst => inst.childId === child.id && inst.status === 'redeemed').length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
+              
+              const missionsListId = `missions-${child.id}`;
+              const schoolListId = `school-${child.id}`;
+              const areMissionsExpanded = !!expandedLists[missionsListId];
+              const areSchoolSubjectsExpanded = !!expandedLists[schoolListId];
+              const missionsToShow = areMissionsExpanded ? todaysMissions : todaysMissions.slice(0, 3);
+              const schoolSubjectsToShow = areSchoolSubjectsExpanded ? todaysSchoolSubjects : todaysSchoolSubjects.slice(0, 3);
 
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
-                    <Button variant="outline" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-full">
-                        Ver Mural Completo
-                        <Settings className="ml-1.5 h-4 w-4" />
+                    <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
+                        Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
                     </Button>
                   </Link>
                   <div className="flex items-center gap-4 mt-2">
@@ -233,6 +245,16 @@ function HeroesPageContent() {
                 <CardContent className="p-4 pt-0">
                    <div className="space-y-4">
                        <div className="flex items-center justify-around gap-4 w-full">
+                           <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Complete missões para ganhar Estrelas (⭐) para resgatar recompensas e XP (🛡️) para subir de nível!</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                           </TooltipProvider>
                           <div className="flex items-center gap-1.5">
                               <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                               <span className="text-xl font-bold text-amber-600">{child.stars}</span>
@@ -240,16 +262,7 @@ function HeroesPageContent() {
                            <div className="flex items-center gap-1.5">
                               <BadgeCheck className="h-5 w-5 text-blue-500" />
                               <span className="text-xl font-bold text-blue-600">{child.xp}</span>
-                               <TooltipProvider>
-                                  <Tooltip>
-                                      <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                          <p>Complete missões para ganhar XP e avançar para o próximo nível!</p>
-                                      </TooltipContent>
-                                  </Tooltip>
-                               </TooltipProvider>
+                              <span className="text-xs text-muted-foreground font-semibold">(Nível {child.level})</span>
                            </div>
                        </div>
                        <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
@@ -266,7 +279,7 @@ function HeroesPageContent() {
                                 <ul className="space-y-1 pr-3">
                                 {todaysMissions.length > 0 ? (
                                 <>
-                                {todaysMissions.slice(0, 6).map(item => {
+                                {missionsToShow.map(item => {
                                     const isCompleted = item.itemType === 'mission' && isMissionCompletedForDate(item, new Date());
                                     const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
                                     const formattedTime = format(eventTime, 'HH:mm');
@@ -300,10 +313,10 @@ function HeroesPageContent() {
                                         </li>
                                     );
                                 })}
-                                {todaysMissions.length > 6 && (
-                                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="text-xs text-muted-foreground text-center pt-1 block hover:underline">
-                                    + {todaysMissions.length - 6} mais...
-                                    </Link>
+                                {todaysMissions.length > 3 && (
+                                     <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => toggleListExpansion(missionsListId)}>
+                                        {areMissionsExpanded ? 'Mostrar menos' : `Mostrar mais ${todaysMissions.length - 3}...`}
+                                    </Button>
                                 )}
                                 </>
                                 ) : (
@@ -318,7 +331,8 @@ function HeroesPageContent() {
                              <ScrollArea className="h-[145px] w-full">
                                 <ul className="space-y-1 pr-3">
                                 {todaysSchoolSubjects.length > 0 ? (
-                                    todaysSchoolSubjects.map(entry => (
+                                  <>
+                                    {schoolSubjectsToShow.map(entry => (
                                         <li key={entry.id}>
                                             <Link href={`/dashboard/school-schedule`} className="block">
                                                 <div className="text-xs flex items-center gap-1.5 p-1.5 rounded-md transition-colors bg-background hover:bg-accent/50">
@@ -328,7 +342,13 @@ function HeroesPageContent() {
                                                 </div>
                                             </Link>
                                         </li>
-                                    ))
+                                    ))}
+                                    {todaysSchoolSubjects.length > 3 && (
+                                        <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => toggleListExpansion(schoolListId)}>
+                                            {areSchoolSubjectsExpanded ? 'Mostrar menos' : `Mostrar mais ${todaysSchoolSubjects.length - 3}...`}
+                                        </Button>
+                                    )}
+                                  </>
                                 ) : (
                                     <p className="text-xs text-muted-foreground text-center py-2 px-1">
                                         Nenhuma matéria registrada para hoje.

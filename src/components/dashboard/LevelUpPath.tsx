@@ -11,14 +11,12 @@ interface LevelUpPathProps {
 }
 
 const Milestone = ({
-  level,
   label,
   xpGoal,
   isCurrent,
   isCompleted,
   progressPercentage,
 }: {
-  level: number;
   label: string;
   xpGoal: number;
   isCurrent: boolean;
@@ -26,7 +24,7 @@ const Milestone = ({
   progressPercentage: number;
 }) => {
   return (
-    <div className="flex flex-col items-center flex-1 min-w-0 isolate">
+    <div className="flex flex-col items-start flex-1 min-w-0 isolate">
       <div className="relative w-full flex items-center mb-1">
         {/* Path Background */}
         <div className="h-2.5 bg-muted rounded-full w-full" />
@@ -101,7 +99,6 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
             {levelData.map((data) => (
                  <Milestone
                     key={data.level}
-                    level={data.level}
                     label={data.label}
                     xpGoal={data.xpGoal}
                     isCompleted={data.isCompleted}
@@ -113,3 +110,4 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
     </div>
   );
 }
+
