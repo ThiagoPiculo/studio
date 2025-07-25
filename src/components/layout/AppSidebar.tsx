@@ -111,12 +111,6 @@ export function AppSidebar() {
                     <SidebarGroup>
                         <SidebarGroupLabel>Aliança de Herois</SidebarGroupLabel>
                         <SidebarMenuSub>
-                             {isInAnyAlliance && (
-                                <SidebarMenuSubButton href="/dashboard/alliances" isActive={pathname.startsWith('/dashboard/alliances')}>
-                                    <Users />
-                                    <span>Ver Minhas Alianças</span>
-                                </SidebarMenuSubButton>
-                             )}
                              <SidebarMenuSubButton href="/dashboard/family?action=create">
                                 <PlusCircle />
                                 <span>Criar Aliança</span>
@@ -125,6 +119,12 @@ export function AppSidebar() {
                                 <LinkIcon />
                                 <span>Entrar em uma Aliança</span>
                              </SidebarMenuSubButton>
+                             {isInAnyAlliance && (
+                                <SidebarMenuSubButton href="/dashboard/alliances" isActive={pathname.startsWith('/dashboard/alliances')}>
+                                    <Users />
+                                    <span>Ver Minhas Alianças</span>
+                                </SidebarMenuSubButton>
+                             )}
                         </SidebarMenuSub>
                     </SidebarGroup>
                 </SidebarMenu>
