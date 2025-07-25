@@ -57,7 +57,7 @@ function HeroesPageContent() {
     setExpandedLists(prev => ({ ...prev, [listId]: !prev[listId] }));
   };
 
-  const handleRegenerateCode = async (childId: string, childName: string) => {
+  const handleRegenerateAccessCode = async (childId: string, childName: string) => {
     if (isRegenerating) return;
     setIsRegenerating(childId);
     try {
@@ -274,7 +274,7 @@ function HeroesPageContent() {
                                   variant="ghost"
                                   size="icon"
                                   className="h-5 w-5"
-                                  onClick={() => handleRegenerateCode(child.id, child.name)}
+                                  onClick={() => handleRegenerateAccessCode(child.id, child.name)}
                                   disabled={isRegenerating === child.id}
                                 >
                                   {isRegenerating === child.id ? <Loader2 className="h-3 w-3 animate-spin"/> : <RefreshCw className="h-3 w-3" />}
@@ -291,20 +291,20 @@ function HeroesPageContent() {
                 <CardContent className="p-4 pt-0">
                    <div className="space-y-4">
                        <div className="flex items-center justify-around gap-4 w-full">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Complete missões para ganhar Estrelas (⭐) para resgatar recompensas e XP (🛡️) para subir de nível!</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                           </TooltipProvider>
-                          <div className="flex items-center gap-1.5">
-                              <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
-                              <span className="text-xl font-bold text-amber-600">{child.stars}</span>
-                          </div>
+                            <div className="flex items-center gap-1.5">
+                                <TooltipProvider>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent className="max-w-xs text-center">
+                                            <p>Complete missões para ganhar Estrelas (⭐) para resgatar recompensas e XP (🛡️) para subir de nível!</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                               </TooltipProvider>
+                                <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+                                <span className="text-xl font-bold text-amber-600">{child.stars}</span>
+                            </div>
                            <div className="flex items-center gap-1.5">
                               <BadgeCheck className="h-5 w-5 text-blue-500" />
                               <span className="text-xl font-bold text-blue-600">{child.xp}</span>
