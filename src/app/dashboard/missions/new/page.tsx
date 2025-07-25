@@ -15,12 +15,18 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate } from '@/lib/firebase/firestore';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { predefinedMissionGroups } from '@/lib/predefined-missions';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+
 
 // Schema simplified to remove all scheduling fields
 const missionTemplateFormSchema = z.object({
@@ -46,6 +52,15 @@ function CreateMissionTemplatePageContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
 
+  const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(true);
+  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
+  const [duplicateTitle, setDuplicateTitle] = useState('');
+  
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
+  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(group => group.items), []);
+
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
@@ -69,6 +84,23 @@ function CreateMissionTemplatePageContent() {
       xpReward: xpParam ? parseInt(xpParam, 10) : 10,
     },
   });
+  
+  const existingTitles = useMemo(() => {
+    return new Set(userTemplates.map(t => t.title.trim().toLowerCase()));
+  }, [userTemplates]);
+
+  useEffect(() => {
+    if (!user) {
+      setIsCheckingDuplicates(false);
+      return;
+    }
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+      .then(setUserTemplates)
+      .catch(console.error)
+      .finally(() => setIsCheckingDuplicates(false));
+  }, [user, currentContext]);
+
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user) {
@@ -158,11 +190,61 @@ function CreateMissionTemplatePageContent() {
                       control={form.control}
                       name="title"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem className="flex flex-col w-full">
                           <FormLabel>Título da Missão</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Ex: Arrumar a cama" {...field} />
-                          </FormControl>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
+                                        >
+                                            {field.value ? field.value : "Buscar ou digitar um título..."}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput 
+                                            placeholder="Buscar ideia de missão..."
+                                            onValueChange={(search) => form.setValue("title", search)}
+                                        />
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada. Continue digitando para criar uma nova!</CommandEmpty>
+                                            <CommandGroup>
+                                                {allMissionIdeas.map((idea) => {
+                                                    const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
+                                                    return (
+                                                        <CommandItem
+                                                            value={idea.title}
+                                                            key={idea.title}
+                                                            onSelect={() => {
+                                                                if (isDuplicate) {
+                                                                    setDuplicateTitle(idea.title);
+                                                                    setShowDuplicateDialog(true);
+                                                                    return;
+                                                                }
+                                                                form.setValue("title", idea.title);
+                                                                form.setValue("emoji", idea.emoji);
+                                                                form.setValue("category", idea.suggestedAppCategory);
+                                                                form.setValue("starsReward", idea.starsReward);
+                                                                form.setValue("xpReward", idea.xpReward);
+                                                                setIsPopoverOpen(false);
+                                                            }}
+                                                        >
+                                                            <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                            {idea.title}
+                                                            {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                        </CommandItem>
+                                                    )
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -267,23 +349,54 @@ function CreateMissionTemplatePageContent() {
             </Form>
           </CardContent>
         </Card>
-        {newlyCreatedTemplate && (
-          <AssignMissionDialog
-            template={newlyCreatedTemplate}
-            isOpen={isAssignDialogOpen}
-            onOpenChange={(isOpen) => {
-              if (!isOpen) { 
-                setNewlyCreatedTemplate(null);
-                router.push('/dashboard/missions');
-              }
-              setIsAssignDialogOpen(isOpen);
-            }}
-            onAssigned={() => {
-              toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
-            }}
-          />
-        )}
       </div>
+
+       {showDuplicateDialog && (
+        <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Missão Já Existe!</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        A missão "{duplicateTitle}" já está no seu catálogo. Você gostaria de gerenciá-la ou criar uma nova versão?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogAction onClick={() => {
+                        setShowDuplicateDialog(false);
+                        const idea = allMissionIdeas.find(i => i.title === duplicateTitle);
+                        if(idea) {
+                             form.setValue("title", idea.title);
+                             form.setValue("emoji", idea.emoji);
+                             form.setValue("category", idea.suggestedAppCategory);
+                             form.setValue("starsReward", idea.starsReward);
+                             form.setValue("xpReward", idea.xpReward);
+                        }
+                    }}>Criar mesmo assim</AlertDialogAction>
+                    <AlertDialogCancel onClick={() => {
+                        setShowDuplicateDialog(false);
+                        router.push('/dashboard/missions');
+                    }}>Ir para o Catálogo</AlertDialogCancel>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {newlyCreatedTemplate && (
+        <AssignMissionDialog
+          template={newlyCreatedTemplate}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={(isOpen) => {
+            if (!isOpen) { 
+              setNewlyCreatedTemplate(null);
+              router.push('/dashboard/missions');
+            }
+            setIsAssignDialogOpen(isOpen);
+          }}
+          onAssigned={() => {
+            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+          }}
+        />
+      )}
     </>
   );
 }
@@ -295,3 +408,4 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
