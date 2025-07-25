@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Star, Gem, Package } from 'lucide-react';
+import { BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 
@@ -32,26 +32,26 @@ const Milestone = ({
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
         <div
-          className="absolute h-2.5 rounded-full transition-all duration-500 bg-yellow-400"
-          style={{ width: `${isCompleted ? 100 : progressPercentage}%` }}
+          className="absolute h-2.5 rounded-full transition-all duration-500 bg-blue-500"
+          style={{ width: `${isCurrent ? progressPercentage : isCompleted ? 100 : 0}%` }}
         />
         {/* Icon Container */}
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-4 border-background shadow-md",
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md",
             isCompleted || isCurrent ? 'bg-primary/10' : 'bg-muted'
         )}>
-             <Star
+             <BadgeCheck
                 className={cn(
-                    "h-6 w-6 sm:h-7 sm:h-7 transition-all",
-                    isCompleted ? 'text-yellow-400 fill-yellow-400' : 
-                    isCurrent ? 'text-yellow-500' : 
+                    "h-5 w-5 sm:h-6 sm:w-6 transition-all",
+                    isCompleted ? 'text-blue-500 fill-blue-500/20' : 
+                    isCurrent ? 'text-blue-600' : 
                     'text-muted-foreground/50'
                 )}
             />
         </div>
       </div>
       <span className="text-xs font-semibold text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">Até {xpGoal} XP</span>
+      <span className="text-xs text-muted-foreground">{xpGoal} XP</span>
     </div>
   );
 };
@@ -97,7 +97,7 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
   }, [currentLevel, currentXp]);
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full">
         <div className="flex items-start justify-between gap-2 sm:gap-4">
             {levelData.map((data) => (
                  <Milestone
@@ -111,9 +111,8 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
                 />
             ))}
         </div>
-         <p className="text-xs text-muted-foreground text-center">
-            Complete missões para ganhar XP e avançar para o próximo nível!
-        </p>
     </div>
   );
 }
+
+    

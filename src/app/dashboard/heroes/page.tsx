@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, Lock, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, ChildRewardInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -29,15 +29,7 @@ import { allBadgesMap } from "@/lib/badges";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
-
-// Define a type for our combined timeline items
-type TimelineItem = (MissionInstance & { itemType: 'mission', startDate: Date }) | {
-    itemType: 'school_event';
-    id: string;
-    title: string;
-    startDate: Date;
-    color?: string;
-};
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 function HeroesPageContent() {
@@ -240,11 +232,27 @@ function HeroesPageContent() {
 
                 <CardContent className="p-4 pt-0">
                    <div className="space-y-4">
-                        <div className="flex items-center justify-center gap-1.5 w-full">
-                            <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
-                            <span className="text-xl font-bold text-amber-600">{child.stars}</span>
-                        </div>
-                        <LevelUpPath currentLevel={child.level} currentXp={child.xp} size="sm" />
+                       <div className="flex items-center justify-around gap-4 w-full">
+                          <div className="flex items-center gap-1.5">
+                              <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
+                              <span className="text-xl font-bold text-amber-600">{child.stars}</span>
+                          </div>
+                           <div className="flex items-center gap-1.5">
+                              <BadgeCheck className="h-5 w-5 text-blue-500" />
+                              <span className="text-xl font-bold text-blue-600">{child.xp}</span>
+                               <TooltipProvider>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground"><Info className="h-4 w-4" /></Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                          <p>Complete missões para ganhar XP e avançar para o próximo nível!</p>
+                                      </TooltipContent>
+                                  </Tooltip>
+                               </TooltipProvider>
+                           </div>
+                       </div>
+                       <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
                     </div>
                    <Separator className="my-4" />
                    
@@ -406,3 +414,5 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
+
+    
