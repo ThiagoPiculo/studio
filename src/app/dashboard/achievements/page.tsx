@@ -359,7 +359,7 @@ export default function AchievementsPage() {
                               {unlockedBadges.slice(0, 5).map(badge => (
                                 <Tooltip key={badge.id}>
                                   <TooltipTrigger asChild>
-                                    <div className="p-2 rounded-full" style={{ backgroundColor: `${badge.color}20` }}>
+                                    <div className="p-2 rounded-full cursor-pointer" style={{ backgroundColor: `${badge.color}20` }}>
                                       <badge.icon className="h-5 w-5" style={{ color: badge.color }} />
                                     </div>
                                   </TooltipTrigger>
