@@ -13,9 +13,10 @@ interface HeroSelectorProps {
   heroes: ChildProfile[];
   selectedHeroId: string | null;
   onSelectHero: (id: string | null) => void;
+  showAllOption?: boolean;
 }
 
-export function HeroSelector({ heroes, selectedHeroId, onSelectHero }: HeroSelectorProps) {
+export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOption = false }: HeroSelectorProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   
   const scroll = (direction: 'left' | 'right') => {
@@ -37,25 +38,27 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero }: HeroSelec
         </Button>
       <ScrollArea className="w-full whitespace-nowrap rounded-md">
         <div className="flex w-max space-x-4 p-4" ref={scrollContainerRef}>
-          <button
-            onClick={() => onSelectHero(null)}
-            className="flex flex-col items-center gap-2 text-center w-20 transition-transform duration-200 hover:scale-105"
-          >
-            <div
-              className={cn(
-                "h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center transition-all duration-300 ring-2 ring-offset-2 ring-offset-background",
-                selectedHeroId === null ? 'ring-primary bg-primary/10' : 'ring-transparent bg-muted/50'
-              )}
+          {showAllOption && (
+            <button
+              onClick={() => onSelectHero(null)}
+              className="flex flex-col items-center gap-2 text-center w-20 transition-transform duration-200 hover:scale-105"
             >
-              <Users className={cn("h-8 w-8 md:h-10 md:w-10", selectedHeroId === null ? 'text-primary' : 'text-muted-foreground')} />
-            </div>
-            <span className={cn(
-                  "text-xs md:text-sm font-medium w-full truncate",
-                  selectedHeroId === null ? "text-primary" : "text-muted-foreground"
-              )}>
-                Todos
-              </span>
-          </button>
+              <div
+                className={cn(
+                  "h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center transition-all duration-300 ring-2 ring-offset-2 ring-offset-background",
+                  selectedHeroId === null ? 'ring-primary bg-primary/10' : 'ring-transparent bg-muted/50'
+                )}
+              >
+                <Users className={cn("h-8 w-8 md:h-10 md:w-10", selectedHeroId === null ? 'text-primary' : 'text-muted-foreground')} />
+              </div>
+              <span className={cn(
+                    "text-xs md:text-sm font-medium w-full truncate",
+                    selectedHeroId === null ? "text-primary" : "text-muted-foreground"
+                )}>
+                  Todos
+                </span>
+            </button>
+          )}
 
           {heroes.map((hero) => (
             <button

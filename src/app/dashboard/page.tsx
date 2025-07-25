@@ -68,7 +68,7 @@ function DashboardPageContent() {
   }, [user, currentContext, childIdFromParams]);
 
   const selectedChildData = useMemo(() => {
-    if (!selectedChildId || allChildren.length <= 1) {
+    if (!selectedChildId) {
         return {
             children: allChildren,
             missions: missionInstances,
@@ -106,6 +106,7 @@ function DashboardPageContent() {
           heroes={allChildren}
           selectedHeroId={selectedChildId}
           onSelectHero={setSelectedChildId}
+          showAllOption={true}
         />
       )}
 

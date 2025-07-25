@@ -939,6 +939,7 @@ function MuralCompletoPageContent() {
                 heroes={allChildren}
                 selectedHeroId={childId}
                 onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                showAllOption={false}
             />
         )}
       <Card className="shadow-xl overflow-hidden">
@@ -1823,5 +1824,6 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
 
 

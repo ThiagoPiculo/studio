@@ -65,6 +65,12 @@ export default function AchievementsPage() {
       ]).then(([fetchedChildren, fetchedInstances]) => {
         setAllChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
+        // Smart selection: if only one child, select it by default. Otherwise, default to all.
+        if (fetchedChildren.length === 1) {
+            setSelectedChildId(fetchedChildren[0].id);
+        } else {
+            setSelectedChildId(null);
+        }
         setIsLoading(false);
       }).catch(err => {
         console.error("Error fetching achievements data:", err);
@@ -254,6 +260,7 @@ export default function AchievementsPage() {
             heroes={allChildren}
             selectedHeroId={selectedChildId}
             onSelectHero={setSelectedChildId}
+            showAllOption={true}
         />
       )}
       
@@ -446,4 +453,3 @@ export default function AchievementsPage() {
     </div>
   );
 }
-
