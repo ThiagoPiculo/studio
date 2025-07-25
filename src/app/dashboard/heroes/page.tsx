@@ -257,7 +257,7 @@ function HeroesPageContent() {
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
-                  <Link href={`/dashboard?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                  <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
                     <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
                         Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
                     </Button>
@@ -281,8 +281,8 @@ function HeroesPageContent() {
                           <span>{age} anos</span>
                           <span className="text-muted-foreground/50">•</span>
                           <div className="flex items-center gap-1 font-mono">
-                            <Lock className="h-3 w-3" />
-                            <span className="tracking-wider">{child.accessCode}</span>
+                            <span className="font-sans font-semibold">Chave Secreta:</span>
+                            <span className="tracking-wider font-bold text-foreground">{child.accessCode}</span>
                           </div>
                           <TooltipProvider>
                             <Tooltip>
@@ -318,7 +318,7 @@ function HeroesPageContent() {
                                             <p>Complete missões para ganhar Estrelas (⭐) para resgatar recompensas e XP (🛡️) para subir de nível!</p>
                                         </TooltipContent>
                                     </Tooltip>
-                               </TooltipProvider>
+                                </TooltipProvider>
                                 <Star className="h-5 w-5 fill-amber-400 text-amber-500" />
                                 <span className="text-xl font-bold text-amber-600">{child.stars}</span>
                             </div>
