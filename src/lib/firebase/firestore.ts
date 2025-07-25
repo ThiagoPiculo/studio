@@ -159,7 +159,7 @@ export const uploadAvatarAndUpdateProfile = async (childId: string, file: File):
   const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
   
   // Upload the file
-  const snapshot = await uploadBytes(storageRef, file);
+  const snapshot = await uploadBytes(storageRef, file, { contentType: 'image/png' });
   
   // Get the download URL
   const downloadURL = await getDownloadURL(snapshot.ref);
@@ -2375,5 +2375,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
   }
 };
 
+
+    
 
     
