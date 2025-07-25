@@ -158,17 +158,17 @@ function MuralCompletoPageContent() {
         setCollaborators(fetchedCollaborators);
         setMemberships(fetchedMemberships);
         
-        const currentUrl = new URL(window.location.toString());
-        const currentChildId = currentUrl.searchParams.get('childId');
-        let selectedId = currentChildId;
+        let selectedId = childId;
 
         // Smart selection logic
         if (!selectedId || !allProfiles.some(c => c.id === selectedId)) {
           selectedId = allProfiles.length > 0 ? allProfiles[0].id : null;
           if (selectedId) {
+            const currentUrl = new URL(window.location.toString());
             currentUrl.searchParams.set('childId', selectedId);
-            window.history.replaceState({}, '', currentUrl); // Use window.history to avoid re-triggering effects that depend on router
+            window.history.replaceState({}, '', currentUrl);
           } else {
+             const currentUrl = new URL(window.location.toString());
              currentUrl.searchParams.delete('childId');
              window.history.replaceState({}, '', currentUrl);
           }
@@ -207,13 +207,13 @@ function MuralCompletoPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentContext, toast]);
+  }, [user, currentContext, toast, childId]);
 
 
   // Initial data fetch and context validation effect
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, childId]);
   
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -1823,4 +1823,5 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
 
