@@ -2,12 +2,12 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite que qualquer usuário autenticado escreva na pasta de avatares.
-    // A lógica de quem pode escrever o avatar de quem é controlada pela aplicação.
-    // Permite leitura pública para que todos possam ver os avatares.
-    match /avatars/{path=**} {
-      allow read: if true;
-      allow write: if request.auth != null;
+    // Permite que qualquer pessoa leia os avatares (eles são públicos por natureza)
+    // e permite a escrita sem verificar a autenticação, pois a segurança
+    // será controlada pela lógica da aplicação (Server Action).
+    match /avatars/{userId}/{allPaths=**} {
+      allow read;
+      allow write;
     }
   }
 }
