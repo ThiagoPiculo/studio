@@ -53,6 +53,12 @@ export function AppSidebar() {
                             <span>Resumo do Dia</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                     <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard" tooltip="Painel de Progressos" isActive={pathname === '/dashboard'}>
+                            <LayoutGrid className="text-chart-3" />
+                            <span>Painel de Progressos</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     
                     <SidebarGroupLabel>Meus Mini Herois</SidebarGroupLabel>
                     <SidebarMenuItem>
@@ -65,12 +71,6 @@ export function AppSidebar() {
                         <SidebarMenuButton href="/dashboard/mural" tooltip="Mural Completo" isActive={pathname.startsWith('/dashboard/mural')}>
                             <ListCollapse className="text-chart-1" />
                             <span>Mural Completo</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard" tooltip="Painel de Progressos" isActive={pathname === '/dashboard'}>
-                            <LayoutGrid className="text-chart-3" />
-                            <span>Painel de Progressos</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
 
