@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
@@ -690,5 +690,3 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     </>
   );
 }
-
-    
