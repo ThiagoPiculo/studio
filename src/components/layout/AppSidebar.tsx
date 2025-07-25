@@ -39,8 +39,8 @@ function AppLogo() {
 
 export function AppSidebar() {
     const pathname = usePathname();
-    const { availableContexts, currentContext } = useFamily();
-    const isInAlliance = currentContext !== 'my-space' && availableContexts.some(c => c.id === currentContext);
+    const { availableContexts } = useFamily();
+    const isInAnyAlliance = availableContexts.some(c => c.id !== 'my-space');
 
     return (
         <Sidebar>
@@ -111,10 +111,10 @@ export function AppSidebar() {
                     <SidebarGroup>
                         <SidebarGroupLabel>Aliança de Herois</SidebarGroupLabel>
                         <SidebarMenuSub>
-                             {isInAlliance && (
-                                <SidebarMenuSubButton href="/dashboard/family?action=switch" isActive={pathname.startsWith('/dashboard/family')}>
+                             {isInAnyAlliance && (
+                                <SidebarMenuSubButton href="/dashboard/alliances" isActive={pathname.startsWith('/dashboard/alliances')}>
                                     <Users />
-                                    <span>Ver Minha Aliança</span>
+                                    <span>Ver Minhas Alianças</span>
                                 </SidebarMenuSubButton>
                              )}
                              <SidebarMenuSubButton href="/dashboard/family?action=create">

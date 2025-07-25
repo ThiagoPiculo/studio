@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense, useMemo } from 'react';
+import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -70,6 +70,7 @@ function FamilyPageContent() {
   const { currentContext, setCurrentContext, availableContexts, setAvailableContexts } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [isClient, setIsClient] = useState(false);
   const [familyDetails, setFamilyDetails] = useState<Family | null>(null);
@@ -116,7 +117,10 @@ function FamilyPageContent() {
   const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isRequestingOwnership, setIsRequestingOwnership] = useState(false);
   const [isTransferringOwnership, setIsTransferringOwnership] = useState(false);
-
+  
+  const createCardRef = useRef<HTMLDivElement>(null);
+  const joinCardRef = useRef<HTMLDivElement>(null);
+  const inviteSectionRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setIsClient(true);
@@ -163,6 +167,13 @@ function FamilyPageContent() {
   useEffect(() => {
     if (!user || !isClient) return;
 
+    // Redirect to alliances list if in 'my-space' but part of other alliances
+    const userAlliances = availableContexts.filter(c => c.id !== 'my-space');
+    if (currentContext === 'my-space' && userAlliances.length > 0 && !searchParams.get('action')) {
+      router.replace('/dashboard/alliances');
+      return;
+    }
+
     if (currentContext === 'my-space') {
       setIsLoading(false);
       setFamilyDetails(null);
@@ -190,7 +201,21 @@ function FamilyPageContent() {
       setPendingRequests([]);
       fetchFamilyData(currentContext);
     }
-  }, [currentContext, user, toast, setCurrentContext, isClient]);
+  }, [currentContext, user, toast, setCurrentContext, isClient, availableContexts, router, searchParams]);
+  
+  useEffect(() => {
+    const action = searchParams.get('action');
+    if (action) {
+      setTimeout(() => {
+        let elementRef;
+        if (action === 'create') elementRef = createCardRef;
+        if (action === 'join') elementRef = joinCardRef;
+        if (action === 'invite') elementRef = inviteSectionRef;
+
+        elementRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 200);
+    }
+  }, [searchParams]);
 
   const handleUpdateFamilyName = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -806,7 +831,7 @@ function FamilyPageContent() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 flex-shrink-0">
-                                  <Link href={`/dashboard/child/${child.id}/manage`}>
+                                  <Link href={`/dashboard/mural?childId=${child.id}`}>
                                       <Button variant="outline" size="sm">
                                           Gerenciar <Settings className="ml-2 h-4 w-4" />
                                       </Button>
@@ -826,7 +851,7 @@ function FamilyPageContent() {
             </CardContent>
         </Card>
         
-        <Card>
+        <Card ref={inviteSectionRef}>
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
@@ -1361,7 +1386,7 @@ function FamilyPageContent() {
         )}
 
       <div className="grid md:grid-cols-2 gap-6">
-        <Card>
+        <Card ref={createCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança de Herois</CardTitle>
                 <CardDescription>Dê um nome para sua aliança e convide outros responsáveis.</CardDescription>
@@ -1383,7 +1408,7 @@ function FamilyPageContent() {
               </CardFooter>
             </form>
           </Card>
-          <Card>
+          <Card ref={joinCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança de Herois</CardTitle>
                 <CardDescription>Insira um código de convite de 6 dígitos para se juntar.</CardDescription>
