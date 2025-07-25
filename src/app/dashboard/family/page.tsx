@@ -64,6 +64,7 @@ import { cn } from '@/lib/utils';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -1297,17 +1298,19 @@ function FamilyPageContent() {
         </CardHeader>
       </Card>
       
-      <Card className="bg-muted/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="mr-2 h-5 w-5" />
-            <span>O que é o "Meu Espaço"?</span>
-          </CardTitle>
-          <CardDescription className="pt-2">
-Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista, ou junte-se a uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <Accordion type="single" collapsible className="w-full bg-muted/30 rounded-lg shadow-sm">
+        <AccordionItem value="meu-espaco" className="border-0">
+            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                    <Home className="mr-1 h-5 w-5 text-primary" />
+                    <h3 className="text-xl font-headline">O que é o "Meu Espaço"?</h3>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6 text-muted-foreground">
+                Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar criar ou participar de uma aliança. A funcionalidade de aliança é totalmente opcional. Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista, ou junte-se a uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança
+            </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       {isLoadingInvitations ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando convites...</CardContent></Card>
