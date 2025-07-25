@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -186,6 +187,13 @@ function MuralCompletoPageContent() {
         getChildProfilesForAttribution(user.uid, currentContext).then(setAllChildren);
     }
   }, [user, currentContext]);
+
+  // Effect to automatically select the first child if none is selected in the URL
+  useEffect(() => {
+    if (!childId && allChildren.length > 0) {
+      router.replace(`/dashboard/mural?childId=${allChildren[0].id}`);
+    }
+  }, [childId, allChildren, router]);
 
 
   // Initial data fetch and context validation effect
