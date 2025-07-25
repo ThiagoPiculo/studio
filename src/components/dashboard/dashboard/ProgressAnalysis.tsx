@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,8 +9,9 @@ import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { startOfWeek, eachDayOfInterval, addDays } from 'date-fns';
-import { BarChart, ArrowRight, Star, BadgeCheck } from 'lucide-react';
+import { startOfWeek, eachDayOfInterval, addDays, subWeeks, addWeeks, format, isSameWeek } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { BarChart, ArrowRight, Star, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
@@ -28,9 +29,16 @@ interface DailyProgress {
 }
 
 export function ProgressAnalysis({ childrenProfiles, missionInstances }: ProgressAnalysisProps) {
+  const [currentDate, setCurrentDate] = useState(new Date());
+
+  const handlePrevWeek = () => setCurrentDate(subWeeks(currentDate, 1));
+  const handleNextWeek = () => setCurrentDate(addWeeks(currentDate, 1));
+  const handleToday = () => setCurrentDate(new Date());
+  
+  const isCurrentWeek = isSameWeek(currentDate, new Date(), { weekStartsOn: 1 });
+
   const weeklyProgress = useMemo(() => {
-    const today = new Date();
-    const startOfThisWeek = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    const startOfThisWeek = startOfWeek(currentDate, { weekStartsOn: 1 }); // Monday
     const daysInWeek = eachDayOfInterval({ start: startOfThisWeek, end: addDays(startOfThisWeek, 6) }); // Mon-Sun
 
     return childrenProfiles.map(child => {
@@ -56,7 +64,13 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             dailyData: dailyData
         };
     });
-  }, [childrenProfiles, missionInstances]);
+  }, [childrenProfiles, missionInstances, currentDate]);
+
+  const weekDisplay = useMemo(() => {
+    const start = startOfWeek(currentDate, { weekStartsOn: 1 });
+    const end = addDays(start, 6);
+    return `${format(start, 'd MMM', { locale: ptBR })} - ${format(end, 'd MMM', { locale: ptBR })}`;
+  }, [currentDate]);
 
   return (
     <Card>
@@ -66,6 +80,20 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
           Missões da Semana
         </CardTitle>
         <CardDescription>Acompanhe o desempenho diário dos seus heróis na semana atual.</CardDescription>
+        <div className="flex items-center justify-between pt-2">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handlePrevWeek}>
+                <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium w-32 text-center">{weekDisplay}</span>
+            <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleNextWeek}>
+                <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          <Button variant="secondary" size="sm" onClick={handleToday} disabled={isCurrentWeek}>
+            Hoje
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-6">
         {weeklyProgress.length === 0 ? (
@@ -104,7 +132,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                         <div className="space-y-3">
                             {data.dailyData.map((dayProgress) => {
                                 const progressPercentage = dayProgress.total > 0 ? (dayProgress.completed / dayProgress.total) * 100 : 0;
-                                const isToday = weekdayLabels[dayProgress.dayKey].long.toLowerCase() === new Date().toLocaleDateString('pt-BR', { weekday: 'long' }).toLowerCase();
+                                const isToday = isSameWeek(new Date(), currentDate, { weekStartsOn: 1 }) && dayProgress.dayKey === getDayToWeekday[new Date().getDay()];
 
                                 return (
                                     <div key={dayProgress.day} className="grid grid-cols-[3rem,1fr,auto] items-center gap-4">
