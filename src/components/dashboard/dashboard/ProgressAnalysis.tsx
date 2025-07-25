@@ -153,7 +153,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                 const isToday = isSameWeek(new Date(), currentDate, { weekStartsOn: 1 }) && dayProgress.dayKey === getDayToWeekday[new Date().getDay()];
 
                                 return (
-                                    <div key={dayProgress.day} className="grid grid-cols-[4.5rem,1fr,auto] items-center gap-4">
+                                    <div key={dayProgress.day} className="grid grid-cols-[4.5rem,1fr,10rem] items-center gap-4">
                                         <div className={cn("text-sm font-semibold text-muted-foreground", isToday && "text-primary")}>
                                           <span>{dayProgress.day}</span>
                                           <span className="ml-1 text-xs opacity-80">{dayProgress.dateLabel}</span>
@@ -174,13 +174,13 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-2 text-xs font-mono w-40 justify-end">
+                                        <div className="flex items-center gap-2 text-xs font-mono justify-end">
                                             <span className="text-muted-foreground/80">{`${dayProgress.completed}/${dayProgress.total}`}</span>
                                             <Separator orientation="vertical" className="h-3" />
-                                            <span className={cn("flex items-center gap-1", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
+                                            <span className={cn("flex items-center gap-1 w-12", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
                                                 <Star className="h-3 w-3" /> {dayProgress.starsEarned}
                                             </span>
-                                            <span className={cn("flex items-center gap-1", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
+                                            <span className={cn("flex items-center gap-1 w-12", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
                                                 <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
                                             </span>
                                         </div>
