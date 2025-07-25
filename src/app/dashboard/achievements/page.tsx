@@ -131,7 +131,7 @@ export default function AchievementsPage() {
                       currentPerfectStreak++;
                   } else {
                       if (currentPerfectStreak > longestPerfectStreak) {
-                          longestPerfectStreak = longestPerfectStreak;
+                          longestPerfectStreak = currentPerfectStreak;
                       }
                       currentPerfectStreak = 0;
                   }
@@ -216,6 +216,21 @@ export default function AchievementsPage() {
 
   const totalBadges = allBadgesMap.size;
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
+
+  const getProgressTypeLabel = (type: Badge['progressType']): string => {
+    switch (type) {
+      case 'singleMissionStreak':
+      case 'perfectStreak':
+        return 'dias';
+      case 'stars':
+        return 'estrelas';
+      case 'level':
+        return 'nível';
+      default:
+        return '';
+    }
+  };
+
 
   if (isLoading) {
     return <Loading />;
@@ -396,7 +411,7 @@ export default function AchievementsPage() {
                       </div>
                   ) : upcomingBadges.length > 0 ? (
                       <ul className="space-y-4">
-                        {upcomingBadges.map(({ child, badge, progress }) => (
+                        {upcomingBadges.map(({ child, badge, progress, progressPercentage }) => (
                           <li key={`${child.id}-${badge.id}`} className="flex items-center gap-4">
                             <Avatar
                               className="h-10 w-10 text-lg ring-1 ring-offset-background ring-[var(--ring-color)]"
@@ -410,8 +425,10 @@ export default function AchievementsPage() {
                             <div className="flex-grow">
                                 <p className="text-sm font-semibold leading-tight">{badge.title}</p>
                                 <p className="text-xs text-muted-foreground">Para {child.name}</p>
-                                <Progress value={(progress / badge.goal!) * 100} className="h-2 mt-1" />
-                                <p className="text-xs text-muted-foreground text-right mt-0.5">{progress} / {badge.goal}</p>
+                                <Progress value={progressPercentage} className="h-2 mt-1" />
+                                <p className="text-xs text-muted-foreground text-right mt-0.5">
+                                  {progress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})
+                                </p>
                             </div>
                           </li>
                         ))}
