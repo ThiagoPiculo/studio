@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useMemo } from 'react';
@@ -27,7 +28,16 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
   const { toast } = useToast();
   
   const unlockedRewardsByChild = useMemo(() => {
-    return childrenProfiles.map(child => {
+    // Create a unique map of children to prevent duplicates from different contexts
+    const uniqueChildrenMap = new Map<string, ChildProfile>();
+    childrenProfiles.forEach(child => {
+        if (!uniqueChildrenMap.has(child.id)) {
+            uniqueChildrenMap.set(child.id, child);
+        }
+    });
+    const uniqueChildren = Array.from(uniqueChildrenMap.values());
+
+    return uniqueChildren.map(child => {
       const affordableRewards = rewardTemplates
         .filter(template => template.status === 'active' && child.stars >= template.starsCost)
         .sort((a, b) => a.starsCost - b.starsCost);
