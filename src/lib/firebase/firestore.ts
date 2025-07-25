@@ -1882,7 +1882,9 @@ export const completeMissionInstance = async (
             [`completionLog.${completionDateKey}`]: {
               completedAt: Timestamp.now(),
               stars: missionData.starsReward,
-              xp: missionData.xpReward
+              xp: missionData.xpReward,
+              actorId: actor.id,
+              actorName: actor.name
             },
             updatedAt: serverTimestamp(),
         };

@@ -37,7 +37,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -318,7 +318,7 @@ function MuralCompletoPageContent() {
   const collaboratorsMap = useMemo(() => {
     const map = new Map(collaborators.map(c => [c.uid, c]));
     if (user && !map.has(user.uid)) {
-        map.set(user.uid, user);
+        map.set(user.uid, user as UserProfile);
     }
     return map;
   }, [collaborators, user]);
@@ -1095,11 +1095,13 @@ function MuralCompletoPageContent() {
                           {activities.map((activity, index) => {
                             const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
                             const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
-                            const actorName = (activity.type === 'mission' ? activity.completionLogEntry.actorName : activity.actorName) || 'Herói';
+                            
+                            const isActorTheChild = activity.actorId === child.id;
+                            const actorDisplayName = isActorTheChild ? `pelo próprio ${child.name}` : activity.actorName || 'um responsável';
 
                             return (
                               <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
-                                <li className="flex items-start gap-4">
+                                <li className="flex items-start gap-3">
                                   <div className={`p-2 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
                                     {activity.type === 'mission' ? (
                                       <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1108,27 +1110,29 @@ function MuralCompletoPageContent() {
                                     )}
                                   </div>
                                   <div className="flex-grow text-sm space-y-1">
-                                    <p className="font-semibold flex items-center justify-between flex-wrap gap-x-2">
-                                      {activity.type === 'mission' ? (
+                                    {activity.type === 'mission' ? (
                                         <>
-                                          <span className="leading-tight">Missão {activity.missionTypeLabel} Cumprida por {child.name}</span>
-                                          <span className="flex items-center gap-1.5 font-bold text-green-600 text-xs whitespace-nowrap">
-                                             (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5"/>)
-                                          </span>
+                                            <p className="font-semibold text-foreground/90">
+                                                {child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida
+                                            </p>
+                                            <p className="font-bold text-green-600 text-xs flex items-center gap-1.5">
+                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
+                                            </p>
+                                            <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
+                                            <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
                                         </>
-                                      ) : (
+                                    ) : (
                                         <>
-                                           <span className="leading-tight">Recompensa Resgatada por {child.name}</span>
-                                           <span className="flex items-center gap-1.5 font-bold text-destructive text-xs whitespace-nowrap">
+                                            <p className="font-semibold text-foreground/90">
+                                                {child.name.toUpperCase()} - Recompensa Resgatada
+                                            </p>
+                                            <p className="font-bold text-destructive text-xs flex items-center gap-1.5">
                                                 (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
-                                           </span>
+                                            </p>
+                                            <p className="font-medium text-foreground/80">- {activity.title}</p>
+                                            <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
                                         </>
-                                      )}
-                                    </p>
-                                    <p className="font-medium text-foreground/80">- {activity.title}
-                                        {activity.type === 'mission' && ` (ref. ao dia ${format(activity.scheduledFor, 'dd/MM/yyyy')})`}
-                                    </p>
-                                    <p className="text-xs text-muted-foreground">Concluída por <strong>{actorName}</strong></p>
+                                    )}
                                     <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
                                   </div>
                                 </li>
@@ -1655,6 +1659,7 @@ function MuralCompletoPageContent() {
             }}
             entryToEdit={entryToEdit}
             child={child}
+            showRecessHint={!hasRecess}
             onDelete={() => {
               if (entryToEdit) {
                 setEntryToDelete(entryToEdit);
