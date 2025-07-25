@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, getUserProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
@@ -207,11 +207,23 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
 
   const handleCropAndUpload = async () => {
+    // Temporarily disable the upload and show an informational toast.
+    toast({
+        title: "Configuração de CORS Necessária",
+        description: "O upload de avatar está desabilitado. É necessário configurar o CORS no bucket do Cloud Storage para permitir uploads do domínio da aplicação. Esta é uma configuração de infraestrutura.",
+        variant: "destructive",
+        duration: 15000,
+    });
+    setImageSrc(null); // Close the crop dialog
+    return;
+
+    // --- The original logic is kept below but commented out ---
+    /*
     if (!crop || !imgRef.current || !user) return;
     setIsUploadingAvatar(true);
     try {
         const imageBlob = await getCroppedImg(imgRef.current, crop);
-        const result = await uploadAvatarAndUpdateProfile(user.uid, child.id, imageBlob);
+        const result = await uploadAvatarAndUpdateProfile(child.id, imageBlob);
 
         if (result.newUrl) {
             setAvatarPreview(result.newUrl);
@@ -231,6 +243,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
             fileInputRef.current.value = "";
         }
     }
+    */
   }
 
 
@@ -677,3 +690,5 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     </>
   );
 }
+
+    
