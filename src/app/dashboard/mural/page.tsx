@@ -1,9 +1,8 @@
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -320,7 +319,7 @@ function MuralCompletoPageContent() {
       ...redeemedRewards.map(r => ({ ...r, type: 'reward' as const, completedAt: r.redeemedAt! })),
     ].sort((a, b) => {
         const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
-        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
+        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : a.completedAt;
         
         const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : timeA ? new Date(timeA as any).getTime() : 0;
         const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : timeB ? new Date(timeB as any).getTime() : 0;
@@ -1738,3 +1737,5 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+    
