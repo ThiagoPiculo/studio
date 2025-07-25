@@ -1300,6 +1300,18 @@ function FamilyPageContent() {
         </CardHeader>
       </Card>
       
+      <Card className="bg-muted/50">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Home className="mr-2 h-5 w-5" />
+            <span>O que é o "Meu Espaço"?</span>
+          </CardTitle>
+          <CardDescription className="pt-2">
+            Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
       {isLoadingInvitations ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando convites...</CardContent></Card>
       ) : invitations.length > 0 && (
@@ -1433,18 +1445,6 @@ function FamilyPageContent() {
             </form>
           </Card>
       </div>
-
-       <Card className="bg-muted/50">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Home className="mr-2 h-5 w-5" />
-            <span>O que é o "Meu Espaço"?</span>
-          </CardTitle>
-          <CardDescription className="pt-2">
-            Seu espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois aqui sem precisar de uma aliança. A funcionalidade de aliança é totalmente opcional.
-          </CardDescription>
-        </CardHeader>
-      </Card>
     </div>
   );
 }
