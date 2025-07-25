@@ -370,7 +370,7 @@ function FamilyPageContent() {
     setIsProcessingInvitationAction(invitation.id);
     try {
       const family = await acceptFamilyInvitation(invitation.id, user.uid);
-      const newContext = { id: family.id, name: `Aliança de Herois: ${family.name}` };
+      const newContext = { id: family.id, name: `Aliança de Herois: ${family.name} ` };
       if(!availableContexts.find(c => c.id === newContext.id)){
         setAvailableContexts([...availableContexts, newContext]);
       }
@@ -1402,6 +1402,7 @@ function FamilyPageContent() {
         <Card ref={createCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança de Herois</CardTitle>
+                <CardDescription>Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
               <CardContent>
@@ -1423,6 +1424,7 @@ function FamilyPageContent() {
           <Card ref={joinCardRef}>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança de Herois</CardTitle>
+                 <CardDescription>Entre em uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
               <CardContent>
@@ -1455,3 +1457,4 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
