@@ -13,9 +13,8 @@ import {
     getChildProfilesForAttribution,
     getMissionInstancesForContext,
     regenerateChildAccessCode,
+    getSchoolScheduleForContext,
 } from "@/lib/firebase/firestore";
-import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase/config";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -42,6 +41,7 @@ function HeroesPageContent() {
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+  const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(true);
 
@@ -79,12 +79,13 @@ function HeroesPageContent() {
     setIsRegenerating(childId);
     try {
       const newCode = await regenerateChildAccessCode(childId);
-      // O listener do onSnapshot atualizará o estado automaticamente.
       toast({
         title: "Nova Chave Secreta Gerada!",
         description: `A nova chave de ${childName} é ${newCode}.`,
         duration: 10000,
       });
+      // Optimistically update the UI
+      setAllChildren(prev => prev.map(c => c.id === childId ? { ...c, accessCode: newCode } : c));
     } catch (error) {
       console.error("Error regenerating code:", error);
       toast({ title: "Erro ao gerar nova chave", variant: "destructive" });
@@ -98,40 +99,31 @@ function HeroesPageContent() {
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
 
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    
-    // Define the base query for children based on context
-    const childrenQuery = familyIdToQuery
-      ? query(collection(db, 'children'), where('familyId', '==', familyIdToQuery))
-      : query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-
-    // Set up listeners
-    const unsubscribeChildren = onSnapshot(childrenQuery, (snapshot) => {
-      const childProfiles = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
-      setAllChildren(childProfiles);
-      if (isLoading) setIsLoading(false);
-    }, (error) => {
-      console.error("Error fetching children in real-time:", error);
-      setIsLoading(false);
-    });
-
-    const missionsQuery = familyIdToQuery
-      ? query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery))
-      : query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
-
-    const unsubscribeMissions = onSnapshot(missionsQuery, (snapshot) => {
-      const missionInsts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
-      setMissionInstances(missionInsts);
-    }, (error) => console.error("Error fetching mission instances in real-time:", error));
-
-    // Cleanup function
-    return () => {
-      unsubscribeChildren();
-      unsubscribeMissions();
+    const fetchData = async () => {
+        setIsLoading(true);
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        
+        try {
+            const [childrenData, missionsData, scheduleData] = await Promise.all([
+                getChildProfilesForAttribution(user.uid, currentContext),
+                getMissionInstancesForContext(user.uid, familyIdToQuery),
+                getSchoolScheduleForContext(user.uid, familyIdToQuery)
+            ]);
+            setAllChildren(childrenData);
+            setMissionInstances(missionsData);
+            setSchoolSchedule(scheduleData);
+        } catch (error) {
+            console.error("Error fetching dashboard data:", error);
+            toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar as informações dos heróis.", variant: "destructive" });
+        } finally {
+            setIsLoading(false);
+        }
     };
-  }, [user, currentContext]);
+
+    fetchData();
+  }, [user, currentContext, toast]);
+
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -149,6 +141,13 @@ function HeroesPageContent() {
     }
     return age;
   };
+  
+  const todaysSchoolEntries = useMemo(() => {
+    const todayWeekday = getDayToWeekday[new Date().getDay()];
+    return schoolSchedule
+        .filter(entry => entry.dayOfWeek === todayWeekday)
+        .sort((a,b) => a.startTime.localeCompare(b.startTime));
+  }, [schoolSchedule]);
 
   if (isLoading || authLoading || isRedirecting) {
     return <Loading />;
@@ -157,8 +156,7 @@ function HeroesPageContent() {
   const hasChildren = allChildren.length > 0;
   
   const today = format(new Date(), 'yyyy-MM-dd');
-  const dayOfWeekToday = getDayToWeekday[new Date().getDay()];
-
+  
   return (
     <div className="space-y-8">
        {!hasChildren && (
@@ -196,7 +194,12 @@ function HeroesPageContent() {
               const age = calculateAge(child.birthDate);
               
               const todaysMissions: MissionInstance[] = missionInstances
-                .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()));
+                .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()))
+                .sort((a, b) => {
+                    const timeA = a.startDate?.toDate() || a.dueDate?.toDate() || new Date(0);
+                    const timeB = b.startDate?.toDate() || b.dueDate?.toDate() || new Date(0);
+                    return timeA.getTime() - timeB.getTime();
+                });
               
               const todaysMissionsCount = todaysMissions.length;
               const completedTodaysMissionsCount = todaysMissions
@@ -214,9 +217,9 @@ function HeroesPageContent() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                    <Link href={`/dashboard?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                    <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
                       <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
-                          Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
+                          Ver Mural <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
                   </div>
@@ -346,9 +349,21 @@ function HeroesPageContent() {
                         <TabsContent value="school">
                              <ScrollArea className="h-[145px] w-full">
                                 <ul className="space-y-1 pr-3">
-                                <p className="text-xs text-muted-foreground text-center py-2 px-1">
-                                    Funcionalidade em desenvolvimento.
-                                </p>
+                                {todaysSchoolEntries.filter(e => e.childId === child.id).length > 0 ? (
+                                    todaysSchoolEntries.filter(e => e.childId === child.id).map(entry => (
+                                        <li key={entry.id}>
+                                            <div className="text-xs flex items-center gap-1.5 p-1.5 rounded-md" style={{ borderLeft: `4px solid ${entry.color}`}}>
+                                                <NotebookPen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                                <span className="font-semibold text-foreground/80">{entry.startTime}</span>
+                                                <span className="truncate flex-grow font-semibold">{entry.subject}</span>
+                                            </div>
+                                        </li>
+                                    ))
+                                ) : (
+                                    <p className="text-xs text-muted-foreground text-center py-2 px-1">
+                                        Nenhuma aula hoje.
+                                    </p>
+                                )}
                                 </ul>
                              </ScrollArea>
                         </TabsContent>
