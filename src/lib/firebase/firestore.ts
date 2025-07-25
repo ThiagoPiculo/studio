@@ -151,27 +151,28 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
-export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<string> => {
-  if (!childId) throw new Error("Child ID is required.");
-  if (!file) throw new Error("File is required.");
-  
-  // Create a storage reference
-  const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
-  
-  // Upload the file
-  const snapshot = await uploadBytes(storageRef, file, { contentType: 'image/png' });
-  
-  // Get the download URL
-  const downloadURL = await getDownloadURL(snapshot.ref);
-  
-  // Update the child's profile in Firestore
-  const childRef = doc(db, 'children', childId);
-  await updateDoc(childRef, {
-    avatar: downloadURL,
-    updatedAt: serverTimestamp(),
-  });
-  
-  return downloadURL; // Return the URL
+export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<{ newUrl: string }> => {
+    if (!childId) throw new Error("Child ID is required.");
+    if (!file) throw new Error("File is required.");
+    
+    // The path in the storage will be avatars/{childId}/avatar.png
+    // This makes it easy to manage and secure.
+    const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
+    
+    // 'file' comes from the cropping utility, which should be a Blob/File.
+    const snapshot = await uploadBytes(storageRef, file, { contentType: 'image/png' });
+    
+    // Get the public URL for the uploaded file.
+    const downloadURL = await getDownloadURL(snapshot.ref);
+    
+    // Update the child's profile in Firestore with the new URL.
+    const childRef = doc(db, 'children', childId);
+    await updateDoc(childRef, {
+      avatar: downloadURL,
+      updatedAt: serverTimestamp(),
+    });
+    
+    return { newUrl: downloadURL };
 };
 
 export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
