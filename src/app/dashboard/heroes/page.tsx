@@ -196,9 +196,12 @@ function HeroesPageContent() {
               const todaysMissions: MissionInstance[] = missionInstances
                 .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()))
                 .sort((a, b) => {
-                    const timeA = a.startDate?.toDate() || a.dueDate?.toDate() || new Date(0);
-                    const timeB = b.startDate?.toDate() || b.dueDate?.toDate() || new Date(0);
-                    return timeA.getTime() - timeB.getTime();
+                    const timeA = a.startDate?.toDate() || a.dueDate?.toDate();
+                    const timeB = b.startDate?.toDate() || b.dueDate?.toDate();
+                    if (!timeA || !timeB) return 0;
+                    const minutesA = timeA.getHours() * 60 + timeA.getMinutes();
+                    const minutesB = timeB.getHours() * 60 + timeB.getMinutes();
+                    return minutesA - minutesB;
                 });
               
               const todaysMissionsCount = todaysMissions.length;
