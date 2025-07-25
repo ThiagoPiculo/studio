@@ -9,7 +9,7 @@ import { getInitials, cn } from '@/lib/utils';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { startOfWeek, eachDayOfInterval, addDays, subWeeks, addWeeks, format, isSameWeek, isPast } from 'date-fns';
+import { startOfWeek, eachDayOfInterval, addDays, subWeeks, addWeeks, format, isSameWeek, isPast, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { BarChart, ArrowRight, Star, BadgeCheck, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
@@ -159,7 +159,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                 const isFailure = dayIsInThePast && dayProgress.total > 0 && dayProgress.completed < dayProgress.total;
                                 
                                 return (
-                                    <div key={dayProgress.day} className={cn("grid grid-cols-[4.5rem,1fr,10rem] items-center gap-4 p-1 -m-1 rounded-md transition-colors",
+                                    <div key={dayProgress.day} className={cn("grid grid-cols-[4.5rem,1fr,auto] items-center gap-4 p-1 -m-1 rounded-md transition-colors",
                                         isSuccess && "bg-green-500/10",
                                         isFailure && "bg-destructive/10",
                                     )}>
@@ -185,15 +185,21 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 </div>
                                             )}
                                         </div>
-                                        <div className="flex items-center gap-2 text-xs font-mono justify-end">
-                                            <span className="text-muted-foreground/80">{`${dayProgress.completed}/${dayProgress.total}`}</span>
-                                            <Separator orientation="vertical" className="h-3" />
-                                            <span className={cn("flex items-center gap-1 w-12", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
-                                                <Star className="h-3 w-3" /> {dayProgress.starsEarned}
-                                            </span>
-                                            <span className={cn("flex items-center gap-1 w-12", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
-                                                <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
-                                            </span>
+                                        <div className="flex items-center gap-2 text-xs font-mono justify-end w-40">
+                                            {dayProgress.total > 0 ? (
+                                              <>
+                                                <span className="text-muted-foreground/80">{`${dayProgress.completed}/${dayProgress.total}`}</span>
+                                                <Separator orientation="vertical" className="h-3" />
+                                                <span className={cn("flex items-center gap-1 w-12", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
+                                                    <Star className="h-3 w-3" /> {dayProgress.starsEarned}
+                                                </span>
+                                                <span className={cn("flex items-center gap-1 w-12", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
+                                                    <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
+                                                </span>
+                                              </>
+                                            ) : (
+                                              <span className="text-muted-foreground/80 text-center w-full">-</span>
+                                            )}
                                         </div>
                                     </div>
                                 )
