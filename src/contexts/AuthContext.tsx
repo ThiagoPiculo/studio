@@ -32,34 +32,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { // Make this async to handle profile creation
             if (docSnap.exists()) {
-              setUser(docSnap.data() as UserProfile);
-              setLoading(false);
+              setUser({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
+              setIsChildAuthenticated(false);
+              setChildProfile(null);
             } else {
-              // Profile doesn't exist. Check if it's a Google sign-in to create one.
-              if (firebaseUser.providerData.some(p => p.providerId === GoogleAuthProvider.PROVIDER_ID)) {
-                const newUserProfile: UserProfile = {
+              // This case can happen right after account creation or if the doc doesn't exist.
+              // We create a temporary user object from the auth data.
+              // The onSnapshot will eventually pick up the full profile once it's created.
+              const tempUser: UserProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
                   name: firebaseUser.displayName,
-                  createdAt: serverTimestamp() as any,
-                };
-                try {
-                  await setDoc(userDocRef, newUserProfile);
-                  setUser(newUserProfile);
-                } catch (e) {
-                  console.error("Failed to create profile for Google user", e);
-                  setUser(null);
-                } finally {
-                  setLoading(false);
-                }
-              } else {
-                // For email/password, if doc doesn't exist, user is effectively not fully logged in for app purposes
-                // This can also happen right after a user is deleted, before the redirect.
-                console.log("User document does not exist for UID:", firebaseUser.uid);
-                setUser(null);
-                setLoading(false);
-              }
+                  createdAt: firebaseUser.metadata.creationTime ? Timestamp.fromDate(new Date(firebaseUser.metadata.creationTime)) : serverTimestamp() as any,
+              };
+              setUser(tempUser);
+              setIsChildAuthenticated(false);
+              setChildProfile(null);
             }
+             setLoading(false);
           },
           (error) => {
             console.error("Error listening to user profile:", error);
@@ -68,8 +58,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
         setProfileUnsubscribe(() => newProfileUnsubscribe);
-        setIsChildAuthenticated(false);
-        setChildProfile(null);
       } else {
         // No Firebase user
         setUser(null);

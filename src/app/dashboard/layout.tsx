@@ -22,6 +22,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading) {
+      // This is the main check: if there is no authenticated entity (neither user nor child),
+      // redirect to the main login page.
       if (!user && !isChildAuthenticated) {
         router.replace('/auth/login');
       }
@@ -48,6 +50,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // If there's no user and no authenticated child, show a loading state while redirecting.
+  // This prevents flashing the layout before the redirect happens.
   if (!user && !isChildAuthenticated) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -57,6 +61,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // This layout is now primarily for the "Master User" (responsible).
+  // The child-specific view is handled within the page components themselves,
+  // but they will still be wrapped by this layout structure.
   return (
     <>
       <SidebarProvider>
