@@ -16,7 +16,7 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, Sparkles, UserPlus, Home, ListCollapse } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, Sparkles, UserPlus, Home, ListCollapse, PlusCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { useSidebar } from '@/components/ui/sidebar';
