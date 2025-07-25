@@ -41,7 +41,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Skeleton } from '@/components/ui/skeleton';
+import Loading from './loading';
 import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import { predefinedBadgeCategories, type Badge as BadgeType } from '@/lib/badges';
 import { cn } from '@/lib/utils';
@@ -759,8 +759,8 @@ function MuralCompletoPageContent() {
                   <div className="mt-2 space-y-1">
                     {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
                       <>
-                        <Skeleton className="h-2 w-full" />
-                        <Skeleton className="h-3 w-1/2 mx-auto" />
+                        <div className="h-2 w-full animate-pulse bg-muted-foreground/20 rounded-full" />
+                        <div className="h-3 w-1/2 mx-auto animate-pulse bg-muted-foreground/20 rounded-full" />
                       </>
                     ) : (
                       <>
@@ -791,6 +791,10 @@ function MuralCompletoPageContent() {
     return schoolSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
   }, [schoolSchedule]);
 
+  if (isLoading || isRoleLoading) {
+    return <Loading />;
+  }
+  
   if (!child) {
      return (
         <div className="text-center py-10">
