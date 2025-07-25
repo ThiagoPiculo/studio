@@ -346,7 +346,7 @@ export default function RewardsHubPage() {
                   <div>
                       <CardTitle className="text-3xl font-headline flex items-center">
                           <Gift className="mr-3 h-8 w-8 text-primary" />
-                          Lojinha de Recompensas
+                          Quadro de Recompensas
                       </CardTitle>
                       <CardDescription>
                           Inspire-se, crie e gerencie as recompensas para o seu espaço.
@@ -427,4 +427,5 @@ export default function RewardsHubPage() {
     </div>
   );
 }
+
 
