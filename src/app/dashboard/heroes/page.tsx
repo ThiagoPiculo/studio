@@ -18,7 +18,7 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -33,20 +33,42 @@ import { useToast } from "@/hooks/use-toast";
 
 
 function HeroesPageContent() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { currentContext } = useFamily();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRedirecting, setIsRedirecting] = useState(true);
 
   const totalBadgesCount = allBadgesMap.size;
   
   const [expandedLists, setExpandedLists] = useState<Record<string, boolean>>({});
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const initialLoad = searchParams.get('initial_load');
+
+    if (!authLoading) {
+      if (initialLoad === 'true') {
+        const userSettings = JSON.parse(localStorage.getItem('user_settings') || '{}');
+        const initialPage = userSettings?.initialPage || 'heroes';
+        
+        if (initialPage !== 'heroes') {
+          router.replace(`/dashboard/${initialPage}`);
+        } else {
+          router.replace('/dashboard/heroes'); 
+          setIsRedirecting(false);
+        }
+      } else {
+        setIsRedirecting(false);
+      }
+    }
+  }, [authLoading, router, searchParams]);
 
   const toggleListExpansion = (listId: string) => {
     setExpandedLists(prev => ({ ...prev, [listId]: !prev[listId] }));
@@ -128,7 +150,7 @@ function HeroesPageContent() {
     return age;
   };
 
-  if (isLoading) {
+  if (isLoading || authLoading || isRedirecting) {
     return <Loading />;
   }
 
@@ -191,11 +213,13 @@ function HeroesPageContent() {
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
-                  <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
-                    <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
-                        Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                    <Link href={`/dashboard?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                      <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
+                          Ver Progressos <ArrowRight className="ml-1.5 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                   <div className="flex items-center gap-4 mt-2">
                      <Avatar
                         className="h-16 w-16 text-2xl shadow-sm ring-2 ring-offset-2 ring-[var(--ring-color)] ring-offset-background"
@@ -368,35 +392,6 @@ function HeroesPageContent() {
 }
 
 export default function HeroesPage() {
-  const { loading: authLoading } = useAuth();
-  const [isRedirecting, setIsRedirecting] = useState(true);
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const initialLoad = searchParams.get('initial_load');
-
-    if (!authLoading) {
-      if (initialLoad === 'true') {
-        const userSettings = JSON.parse(localStorage.getItem('user_settings') || '{}');
-        const initialPage = userSettings?.initialPage || 'heroes';
-        
-        if (initialPage !== 'heroes') {
-          router.replace(`/dashboard/${initialPage}`);
-        } else {
-          router.replace('/dashboard/heroes'); 
-          setIsRedirecting(false);
-        }
-      } else {
-        setIsRedirecting(false);
-      }
-    }
-  }, [authLoading, router, searchParams]);
-  
-  if (authLoading || isRedirecting) {
-      return <Loading />;
-  }
-  
   return (
       <Suspense fallback={<Loading />}>
           <HeroesPageContent />
