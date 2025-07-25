@@ -15,26 +15,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { addMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, ChevronsUpDown, Check, AlertTriangle } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
-import { predefinedMissionGroups, type PredefinedMissionIdea } from '@/lib/predefined-missions';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 // Schema simplified to remove all scheduling fields
 const missionTemplateFormSchema = z.object({
@@ -60,16 +46,6 @@ function CreateMissionTemplatePageContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
 
-  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  
-  const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
-  const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
-  const [showExistsDialog, setShowExistsDialog] = useState(false);
-  const [selectedIdea, setSelectedIdea] = useState<PredefinedMissionIdea | null>(null);
-
-  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(group => group.items), []);
-  const existingTitles = useMemo(() => new Set(userTemplates.map(t => t.title.trim().toLowerCase())), [userTemplates]);
-
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
@@ -93,22 +69,6 @@ function CreateMissionTemplatePageContent() {
       xpReward: xpParam ? parseInt(xpParam, 10) : 10,
     },
   });
-
-  useEffect(() => {
-    if (!user) {
-      setIsLoadingTemplates(false);
-      return;
-    }
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-      .then(setUserTemplates)
-      .catch((err) => {
-        console.error("Error fetching user mission templates:", err);
-        toast({ title: "Erro ao carregar catálogo", variant: "destructive" });
-      })
-      .finally(() => setIsLoadingTemplates(false));
-  }, [user, currentContext, toast]);
-
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user) {
@@ -153,25 +113,6 @@ function CreateMissionTemplatePageContent() {
       setIsLoading(false);
     }
   };
-  
-  const populateFormWithIdea = (idea: PredefinedMissionIdea) => {
-      form.setValue("title", idea.title, { shouldValidate: true });
-      form.setValue("emoji", idea.emoji, { shouldValidate: true });
-      form.setValue("category", idea.suggestedAppCategory, { shouldValidate: true });
-      form.setValue("starsReward", idea.starsReward, { shouldValidate: true });
-      form.setValue("xpReward", idea.xpReward, { shouldValidate: true });
-      setIsPopoverOpen(false);
-  };
-
-  const handleIdeaSelection = (idea: PredefinedMissionIdea) => {
-      if (existingTitles.has(idea.title.trim().toLowerCase())) {
-          setSelectedIdea(idea);
-          setShowExistsDialog(true);
-      } else {
-          populateFormWithIdea(idea);
-      }
-      setIsPopoverOpen(false);
-  };
 
   return (
     <>
@@ -188,33 +129,11 @@ function CreateMissionTemplatePageContent() {
                   </CardDescription>
                   </div>
               </div>
-              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                <PopoverTrigger asChild>
-                    <Button variant="secondary" className="w-full sm:w-auto">
-                        <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                    <Command>
-                        <CommandInput placeholder="Buscar ideia de missão..."/>
-                        <CommandList>
-                        <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                        <CommandGroup>
-                            {allMissionIdeas.map((idea) => (
-                            <CommandItem
-                                value={idea.title}
-                                key={idea.title}
-                                onSelect={() => handleIdeaSelection(idea)}
-                            >
-                                <Check className={cn("mr-2 h-4 w-4", form.getValues("title") === idea.title ? "opacity-100" : "opacity-0")} />
-                                {idea.title}
-                            </CommandItem>
-                            ))}
-                        </CommandGroup>
-                        </CommandList>
-                    </Command>
-                </PopoverContent>
-              </Popover>
+              <Link href="/dashboard/missions/ideas">
+                <Button variant="secondary" className="w-full sm:w-auto">
+                    <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
+                </Button>
+              </Link>
             </div>
           </CardHeader>
           <CardContent>
@@ -365,37 +284,6 @@ function CreateMissionTemplatePageContent() {
           />
         )}
       </div>
-
-      <AlertDialog open={showExistsDialog} onOpenChange={setShowExistsDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-amber-500" />
-              Missão já existe no catálogo!
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              A missão "{selectedIdea?.title}" já está no seu catálogo. O que você gostaria de fazer?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2 mt-4">
-            <AlertDialogAction
-              className="w-full sm:w-auto"
-              onClick={() => {
-                if(selectedIdea) populateFormWithIdea(selectedIdea);
-                setShowExistsDialog(false);
-              }}
-            >
-              Criar Variação (Mesmo Assim)
-            </AlertDialogAction>
-             <AlertDialogCancel
-              className="w-full sm:w-auto mt-0"
-              onClick={() => router.push('/dashboard/missions')}
-            >
-              Gerenciar no Catálogo
-            </AlertDialogCancel>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </>
   );
 }
