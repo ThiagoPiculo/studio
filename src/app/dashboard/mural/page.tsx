@@ -37,7 +37,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
+import { Label } from "@/components/ui/label";
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -59,7 +59,7 @@ import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 type Activity = 
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
     | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp, actorId?: string, actorName?: string });
 
 
@@ -322,6 +322,14 @@ function MuralCompletoPageContent() {
     }
     return map;
   }, [collaborators, user]);
+  
+  const getMissionTypeLabel = (mission: MissionInstance): string => {
+    if (!mission.isRecurring) return "única";
+    if (mission.recurrenceRule?.freq === 'DAILY') return "diária";
+    if (mission.recurrenceRule?.freq === 'WEEKLY') return "semanal";
+    return "recorrente";
+  };
+
 
   const activities = useMemo((): Activity[] => {
     if (!missionInstances || !childRewards) return [];
@@ -341,6 +349,7 @@ function MuralCompletoPageContent() {
         ...m,
         type: 'mission' as const,
         scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
+        missionTypeLabel: getMissionTypeLabel(m),
         completionLogEntry: {
           ...logEntry,
           actorId: logEntry.actorId,
@@ -867,7 +876,7 @@ function MuralCompletoPageContent() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
+                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')</span>
                             </div>
                         )}
                     </div>
@@ -1098,24 +1107,28 @@ function MuralCompletoPageContent() {
                                       <Trophy className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
                                     )}
                                   </div>
-                                  <div className="flex-grow text-sm">
-                                    <p className="font-semibold">
-                                      {activity.type === 'mission' ? `Missão Cumprida por ${child.name}` : `Recompensa Resgatada por ${child.name}`}
-                                    </p>
-                                    <p className="font-medium text-foreground/80">- {activity.title}</p>
-                                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                                  <div className="flex-grow text-sm space-y-1">
+                                    <p className="font-semibold flex items-center justify-between flex-wrap gap-x-2">
                                       {activity.type === 'mission' ? (
                                         <>
-                                          <p>Concluída por <strong>{actorName}</strong> (ref. a {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
-                                          <p>Ganhou <strong>{activity.completionLogEntry.stars} ★</strong> e <strong>{activity.completionLogEntry.xp} XP</strong></p>
+                                          <span className="leading-tight">Missão {activity.missionTypeLabel} Cumprida por {child.name}</span>
+                                          <span className="flex items-center gap-1.5 font-bold text-green-600 text-xs whitespace-nowrap">
+                                             (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5"/>)
+                                          </span>
                                         </>
                                       ) : (
                                         <>
-                                          <p>Resgatada por <strong>{actorName}</strong></p>
-                                          <p>Custou <strong>{activity.starsCost} ★</strong></p>
+                                           <span className="leading-tight">Recompensa Resgatada por {child.name}</span>
+                                           <span className="flex items-center gap-1.5 font-bold text-destructive text-xs whitespace-nowrap">
+                                                (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
+                                           </span>
                                         </>
                                       )}
-                                    </div>
+                                    </p>
+                                    <p className="font-medium text-foreground/80">- {activity.title}
+                                        {activity.type === 'mission' && ` (ref. ao dia ${format(activity.scheduledFor, 'dd/MM/yyyy')})`}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">Concluída por <strong>{actorName}</strong></p>
                                     <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
                                   </div>
                                 </li>
@@ -1263,11 +1276,11 @@ function MuralCompletoPageContent() {
                               Custo: {instance.starsCost} estrelas
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
+                              Atribuída em: getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')
                             </p>
                             {instance.status === 'redeemed' && instance.redeemedAt && (
                               <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
+                                Resgatada em: getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')
                               </p>
                             )}
                           </CardContent>
