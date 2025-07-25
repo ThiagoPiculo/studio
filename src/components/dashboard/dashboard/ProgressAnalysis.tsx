@@ -174,19 +174,15 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
                                             </div>
                                         )}
-                                        <div className="flex items-center gap-2 text-xs font-mono w-24 justify-end">
-                                            {dayProgress.completed > 0 ? (
-                                                <>
-                                                    <span className="flex items-center gap-1 text-amber-600">
-                                                        <Star className="h-3 w-3" /> {dayProgress.starsEarned}
-                                                    </span>
-                                                    <span className="flex items-center gap-1 text-blue-600">
-                                                        <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
-                                                    </span>
-                                                </>
-                                            ) : (
-                                                <span className="text-muted-foreground/70">{`${dayProgress.completed}/${dayProgress.total}`}</span>
-                                            )}
+                                        <div className="flex items-center gap-2 text-xs font-mono w-40 justify-end">
+                                            <span className="text-muted-foreground/80">{`${dayProgress.completed}/${dayProgress.total}`}</span>
+                                            <Separator orientation="vertical" className="h-3" />
+                                            <span className={cn("flex items-center gap-1", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
+                                                <Star className="h-3 w-3" /> {dayProgress.starsEarned}
+                                            </span>
+                                            <span className={cn("flex items-center gap-1", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
+                                                <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
+                                            </span>
                                         </div>
                                     </div>
                                 )
