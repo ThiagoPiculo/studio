@@ -30,12 +30,12 @@ const Milestone = ({
         <div className="h-2.5 bg-muted rounded-full w-full" />
         {/* Path Progress */}
         <div
-          className="absolute h-2.5 rounded-full transition-all duration-500 bg-blue-500"
+          className="absolute h-2.5 rounded-full transition-all duration-500 bg-blue-300"
           style={{ width: `${isCurrent ? progressPercentage : isCompleted ? 100 : 0}%` }}
         />
         {/* Icon Container */}
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10 bg-background"
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10"
         )}>
              <BadgeCheck
                 className={cn(
