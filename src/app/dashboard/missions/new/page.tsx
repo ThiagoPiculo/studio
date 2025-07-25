@@ -61,7 +61,6 @@ function CreateMissionTemplatePageContent() {
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
 
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [titleInputValue, setTitleInputValue] = useState("");
   
   const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
   const [isLoadingTemplates, setIsLoadingTemplates] = useState(true);
@@ -77,11 +76,6 @@ function CreateMissionTemplatePageContent() {
   const starsParam = searchParams.get('starsReward');
   const xpParam = searchParams.get('xpReward');
 
-  useEffect(() => {
-    if (initialTitle) {
-      setTitleInputValue(initialTitle);
-    }
-  }, [initialTitle]);
 
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
@@ -166,7 +160,6 @@ function CreateMissionTemplatePageContent() {
       form.setValue("category", idea.suggestedAppCategory, { shouldValidate: true });
       form.setValue("starsReward", idea.starsReward, { shouldValidate: true });
       form.setValue("xpReward", idea.xpReward, { shouldValidate: true });
-      setTitleInputValue(idea.title);
       setIsPopoverOpen(false);
   };
 
@@ -195,11 +188,33 @@ function CreateMissionTemplatePageContent() {
                   </CardDescription>
                   </div>
               </div>
-              <Link href="/dashboard/missions/ideas">
-                  <Button variant="secondary" className="w-full sm:w-auto">
-                      <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
-                  </Button>
-              </Link>
+              <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <Button variant="secondary" className="w-full sm:w-auto">
+                        <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                        <CommandInput placeholder="Buscar ideia de missão..."/>
+                        <CommandList>
+                        <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                        <CommandGroup>
+                            {allMissionIdeas.map((idea) => (
+                            <CommandItem
+                                value={idea.title}
+                                key={idea.title}
+                                onSelect={() => handleIdeaSelection(idea)}
+                            >
+                                <Check className={cn("mr-2 h-4 w-4", form.getValues("title") === idea.title ? "opacity-100" : "opacity-0")} />
+                                {idea.title}
+                            </CommandItem>
+                            ))}
+                        </CommandGroup>
+                        </CommandList>
+                    </Command>
+                </PopoverContent>
+              </Popover>
             </div>
           </CardHeader>
           <CardContent>
@@ -226,47 +241,9 @@ function CreateMissionTemplatePageContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Título da Missão</FormLabel>
-                          <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className={cn("w-full justify-between h-10", !field.value && "text-muted-foreground")}
-                                >
-                                  {field.value || "Digite ou selecione uma ideia..."}
-                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                              <Command>
-                                  <CommandInput 
-                                    placeholder="Buscar ideia de missão..."
-                                    value={titleInputValue}
-                                    onValueChange={(value) => {
-                                      setTitleInputValue(value);
-                                      field.onChange(value); // Update form state while typing
-                                    }}
-                                  />
-                                  <CommandList>
-                                    <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                    <CommandGroup>
-                                      {allMissionIdeas.map((idea) => (
-                                        <CommandItem
-                                          value={idea.title}
-                                          key={idea.title}
-                                          onSelect={() => handleIdeaSelection(idea)}
-                                        >
-                                          <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                          {idea.title}
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
+                          <FormControl>
+                            <Input placeholder="Ex: Arrumar a cama" {...field} />
+                          </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
