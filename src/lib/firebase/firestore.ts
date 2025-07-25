@@ -484,7 +484,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     inviterId: inviterId,
     inviterName: inviterName,
     inviteeId: invitee.uid,
-    inviteeEmail: invitee.email!,
+    inviteeEmail: inviteeEmail,
     status: 'pending',
     type: 'invite',
     createdAt: serverTimestamp() as Timestamp,
@@ -1120,7 +1120,7 @@ export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyI
 // --- Child Reward Instances (Recompensas Atribuídas) ---
 export const addChildRewardInstance = async (
   actor: UserProfile,
-  instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial'>,
+  instanceData: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'isRedeemed' | 'redeemedAt' | 'title' | 'description' | 'category' | 'starsCost' | 'isMaterial' | 'actorId'>,
   templateSnapshot: RewardTemplate
 ): Promise<ChildRewardInstance> => {
   const newInstanceRef = doc(collection(db, 'childRewardInstances'));
@@ -2396,4 +2396,3 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
-
