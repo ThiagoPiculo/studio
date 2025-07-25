@@ -491,11 +491,11 @@ const sidebarMenuButtonVariants = cva(
 )
 
 const SidebarMenuButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<typeof Link> & {
-    asChild?: boolean
-    isActive?: boolean
-    tooltip?: string | React.ComponentProps<typeof TooltipContent>
+  HTMLButtonElement | HTMLAnchorElement,
+  (React.ComponentProps<typeof Link> | React.ComponentProps<"button">) & {
+    asChild?: boolean;
+    isActive?: boolean;
+    tooltip?: string | React.ComponentProps<typeof TooltipContent>;
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -510,10 +510,14 @@ const SidebarMenuButton = React.forwardRef<
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : Link
-    const { isMobile, state } = useSidebar()
+    // Determine if the component should be a link or a button
+    const isLink = 'href' in props && props.href !== undefined;
+    const Comp = asChild ? Slot : (isLink ? Link : "button");
+
+    const { isMobile, state } = useSidebar();
 
     const button = (
+      // @ts-expect-error - `Comp` can be a Link or button, but TS complains about the ref.
       <Comp
         ref={ref}
         data-sidebar="menu-button"
@@ -522,16 +526,16 @@ const SidebarMenuButton = React.forwardRef<
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
         {...props}
       />
-    )
+    );
 
     if (!tooltip) {
-      return button
+      return button;
     }
 
     if (typeof tooltip === "string") {
       tooltip = {
         children: tooltip,
-      }
+      };
     }
 
     return (
@@ -544,9 +548,9 @@ const SidebarMenuButton = React.forwardRef<
           {...tooltip}
         />
       </Tooltip>
-    )
+    );
   }
-)
+);
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarMenuAction = React.forwardRef<
