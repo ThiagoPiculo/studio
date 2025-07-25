@@ -1041,13 +1041,13 @@ function MuralCompletoPageContent() {
       </Card>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-10 bg-muted/50 p-1 rounded-lg">
-          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><User className="mr-2 h-4 w-4 text-blue-500" />Visão Geral</TabsTrigger>
-          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Target className="mr-2 h-4 w-4 text-red-500" />Quadro de Missões</TabsTrigger>
-          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Gift className="mr-2 h-4 w-4 text-blue-500" />Quadro de Recompensas</TabsTrigger>
-          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><NotebookPen className="mr-2 h-4 w-4 text-chart-5" />Rotina Escolar</TabsTrigger>
-          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md"><Medal className="mr-2 h-4 w-4 text-purple-500" />Quadro de Medalhas</TabsTrigger>
-          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md" disabled={!canEdit}><Edit3 className="mr-2 h-4 w-4 text-orange-500" />Editar Perfil</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-auto bg-muted/50 p-1 rounded-lg">
+          <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><User className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5" /><span>Visão Geral</span></TabsTrigger>
+          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Target className="h-4 w-4 text-red-500 lg:h-5 lg:w-5" /><span>Quadro de Missões</span></TabsTrigger>
+          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Gift className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5" /><span>Quadro de Recompensas</span></TabsTrigger>
+          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5" /><span>Rotina Escolar</span></TabsTrigger>
+          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5" /><span>Quadro de Medalhas</span></TabsTrigger>
+          <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2" disabled={!canEdit}><Edit3 className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5" /><span>Editar Perfil</span></TabsTrigger>
         </TabsList>
         
         <div className="mt-4">
@@ -1824,6 +1824,8 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+
 
 
 
