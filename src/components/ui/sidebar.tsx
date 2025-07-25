@@ -3,10 +3,9 @@
 
 import * as React from "react"
 import Link from "next/link"
-import * as Collapsible from "@radix-ui/react-collapsible"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
-import { ChevronRight, PanelLeft, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
@@ -423,77 +422,25 @@ const SidebarContent = React.forwardRef<
 })
 SidebarContent.displayName = "SidebarContent"
 
-const SidebarGroup = React.forwardRef<
-  React.ElementRef<typeof Collapsible.Root>,
-  React.ComponentProps<typeof Collapsible.Root>
->(({ className, ...props }, ref) => (
-  <Collapsible.Root
-    ref={ref}
-    data-sidebar="group"
-    className={cn("relative flex w-full min-w-0 flex-col", className)}
-    {...props}
-  />
-))
-SidebarGroup.displayName = "SidebarGroup"
-
 const SidebarGroupLabel = React.forwardRef<
-  React.ElementRef<typeof Collapsible.Trigger>,
-  React.ComponentProps<typeof Collapsible.Trigger>
+  HTMLDivElement,
+  React.ComponentProps<"div">
 >(({ className, children, ...props }, ref) => (
-  <Collapsible.Trigger
+  <div
     ref={ref}
     data-sidebar="group-label"
     className={cn(
-      "group/trigger mx-2 flex w-[calc(100%-1rem)] cursor-pointer items-center justify-between rounded-md p-2 text-xs font-medium text-sidebar-foreground/70 outline-none ring-sidebar-ring transition-colors focus-visible:ring-2 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+      "mx-2 flex w-[calc(100%-1rem)] items-center justify-between p-2 text-xs font-semibold text-sidebar-foreground/70",
       "group-data-[collapsible=icon]:hidden",
       className
     )}
     {...props}
   >
-    <div className="flex items-center gap-2">{children}</div>
-    <ChevronRight className="size-4 shrink-0 transition-transform duration-200 group-data-[state=open]/trigger:rotate-90" />
-  </Collapsible.Trigger>
+    {children}
+  </div>
 ))
 SidebarGroupLabel.displayName = "SidebarGroupLabel"
 
-const SidebarGroupAction = React.forwardRef<
-  HTMLButtonElement,
-  React.ComponentProps<"button"> & { asChild?: boolean }
->(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? Slot : "button"
-
-  return (
-    <Comp
-      ref={ref}
-      data-sidebar="group-action"
-      className={cn(
-        "absolute right-3 top-3.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
-        // Increases the hit area of the button on mobile.
-        "after:absolute after:-inset-2 after:md:hidden",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
-      {...props}
-    />
-  )
-})
-SidebarGroupAction.displayName = "SidebarGroupAction"
-
-const SidebarGroupContent = React.forwardRef<
-  React.ElementRef<typeof Collapsible.Content>,
-  React.ComponentProps<typeof Collapsible.Content>
->(({ className, ...props }, ref) => (
-  <Collapsible.Content
-    ref={ref}
-    data-sidebar="group-content"
-    className={cn(
-      "w-full text-sm overflow-hidden data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down",
-      className
-    )}
-    {...props}
-  />
-))
-SidebarGroupContent.displayName = "SidebarGroupContent"
 
 const SidebarMenu = React.forwardRef<
   HTMLUListElement,
@@ -692,66 +639,11 @@ const SidebarMenuSkeleton = React.forwardRef<
 })
 SidebarMenuSkeleton.displayName = "SidebarMenuSkeleton"
 
-const SidebarMenuSub = React.forwardRef<
-  HTMLUListElement,
-  React.ComponentProps<"ul">
->(({ className, ...props }, ref) => (
-  <ul
-    ref={ref}
-    data-sidebar="menu-sub"
-    className={cn(
-      "mx-3.5 flex min-w-0 translate-x-px flex-col gap-1 border-l border-sidebar-border px-2.5 py-0.5",
-      "group-data-[collapsible=icon]:hidden",
-      className
-    )}
-    {...props}
-  />
-))
-SidebarMenuSub.displayName = "SidebarMenuSub"
-
-const SidebarMenuSubItem = React.forwardRef<
-  HTMLLIElement,
-  React.ComponentProps<"li">
->(({ ...props }, ref) => <li ref={ref} {...props} />)
-SidebarMenuSubItem.displayName = "SidebarMenuSubItem"
-
-const SidebarMenuSubButton = React.forwardRef<
-  HTMLAnchorElement,
-  React.ComponentProps<"a"> & {
-    asChild?: boolean
-    size?: "sm" | "md"
-    isActive?: boolean
-  }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
-
-  return (
-    <Comp
-      ref={ref}
-      data-sidebar="menu-sub-button"
-      data-size={size}
-      data-active={isActive}
-      className={cn(
-        "flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-none ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-primary",
-        "data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
-        size === "sm" && "text-xs",
-        size === "md" && "text-sm",
-        "group-data-[collapsible=icon]:hidden",
-        className
-      )}
-      {...props}
-    />
-  )
-})
-SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
 export {
   Sidebar,
   SidebarContent,
   SidebarFooter,
-  SidebarGroup,
-  SidebarGroupAction,
-  SidebarGroupContent,
   SidebarGroupLabel,
   SidebarHeader,
   SidebarInput,
@@ -762,9 +654,6 @@ export {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSkeleton,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarMenuSubItem,
   SidebarProvider,
   SidebarRail,
   SidebarSeparator,

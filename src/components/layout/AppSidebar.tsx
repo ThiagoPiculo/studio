@@ -11,16 +11,11 @@ import {
     SidebarRail,
     SidebarFooter,
     SidebarTrigger,
-    SidebarGroup,
     SidebarGroupLabel,
-    SidebarMenuSub,
-    SidebarMenuSubButton,
-    SidebarGroupContent,
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, Sparkles, UserPlus, Home, ListCollapse, PlusCircle } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
-import { useSidebar } from '@/components/ui/sidebar';
 import { usePathname } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 
@@ -59,83 +54,81 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Meus Mini Herois</SidebarGroupLabel>
-                        <SidebarGroupContent>
-                            <SidebarMenuSub>
-                                <SidebarMenuSubButton href="/dashboard/onboarding" isActive={pathname.startsWith('/dashboard/onboarding')}>
-                                    <UserPlus />
-                                    <span>Novo Mini Heroi</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard/mural" isActive={pathname.startsWith('/dashboard/mural')}>
-                                    <ListCollapse />
-                                    <span>Mural Completo</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard" isActive={pathname === '/dashboard'}>
-                                    <LayoutGrid />
-                                    <span>Painel de Progressos</span>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSub>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                    <SidebarGroupLabel>Meus Mini Herois</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/onboarding" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/onboarding')}>
+                            <UserPlus className="text-chart-2" />
+                            <span>Novo Mini Heroi</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/mural" tooltip="Mural Completo" isActive={pathname.startsWith('/dashboard/mural')}>
+                            <ListCollapse className="text-chart-1" />
+                            <span>Mural Completo</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard" tooltip="Painel de Progressos" isActive={pathname === '/dashboard'}>
+                            <LayoutGrid className="text-chart-3" />
+                            <span>Painel de Progressos</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
 
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Rotinas dos Mini Herois</SidebarGroupLabel>
-                         <SidebarGroupContent>
-                            <SidebarMenuSub>
-                                <SidebarMenuSubButton href="/dashboard/agenda" isActive={pathname.startsWith('/dashboard/agenda')}>
-                                    <CalendarDays />
-                                    <span>Rotina de Missões</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard/school-schedule" isActive={pathname.startsWith('/dashboard/school-schedule')}>
-                                    <NotebookPen />
-                                    <span>Rotina Escolar</span>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSub>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                    <SidebarGroupLabel>Rotinas dos Herois</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
+                            <CalendarDays className="text-chart-5" />
+                            <span>Rotina de Missões</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
+                            <NotebookPen className="text-chart-4" />
+                            <span>Rotina Escolar</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    
+                    <SidebarGroupLabel>Quadros</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/missions" tooltip="Quadro de Missões" isActive={pathname.startsWith('/dashboard/missions')}>
+                            <Target className="text-destructive" />
+                            <span>Quadro de Missões</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/rewards" tooltip="Quadro de Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
+                            <Gift className="text-chart-2" />
+                            <span>Quadro de Recompensas</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                            <Medal className="text-chart-5" />
+                            <span>Quadro de Medalhas</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
 
-                     <SidebarGroup>
-                        <SidebarGroupLabel>Quadros dos Mini Herois</SidebarGroupLabel>
-                         <SidebarGroupContent>
-                            <SidebarMenuSub>
-                                <SidebarMenuSubButton href="/dashboard/missions" isActive={pathname.startsWith('/dashboard/missions')}>
-                                    <Target />
-                                    <span>Quadro de Missões</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard/achievements" isActive={pathname.startsWith('/dashboard/achievements')}>
-                                    <Medal />
-                                    <span>Quadro de Medalhas</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard/rewards" isActive={pathname.startsWith('/dashboard/rewards')}>
-                                    <Gift />
-                                    <span>Quadro de Recompensas</span>
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSub>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
-
-                    <SidebarGroup>
-                        <SidebarGroupLabel>Aliança de Herois</SidebarGroupLabel>
-                         <SidebarGroupContent>
-                            <SidebarMenuSub>
-                                <SidebarMenuSubButton href="/dashboard/family?action=create">
-                                    <PlusCircle />
-                                    <span>Criar Aliança</span>
-                                </SidebarMenuSubButton>
-                                <SidebarMenuSubButton href="/dashboard/family?action=join">
-                                    <LinkIcon />
-                                    <span>Entrar em uma Aliança</span>
-                                </SidebarMenuSubButton>
-                                {isInAnyAlliance && (
-                                    <SidebarMenuSubButton href="/dashboard/alliances" isActive={pathname.startsWith('/dashboard/alliances')}>
-                                        <Users />
-                                        <span>Ver Minhas Alianças</span>
-                                    </SidebarMenuSubButton>
-                                )}
-                            </SidebarMenuSub>
-                        </SidebarGroupContent>
-                    </SidebarGroup>
+                    <SidebarGroupLabel>Aliança de Herois</SidebarGroupLabel>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/family?action=create" tooltip="Criar Aliança">
+                            <PlusCircle className="text-primary" />
+                            <span>Criar Aliança</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/family?action=join" tooltip="Entrar em Aliança">
+                            <LinkIcon className="text-primary" />
+                            <span>Entrar em Aliança</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    {isInAnyAlliance && (
+                        <SidebarMenuItem>
+                            <SidebarMenuButton href="/dashboard/alliances" tooltip="Ver Minhas Alianças" isActive={pathname.startsWith('/dashboard/alliances')}>
+                                <Users className="text-primary" />
+                                <span>Ver Alianças</span>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    )}
                 </SidebarMenu>
             </SidebarContent>
 
