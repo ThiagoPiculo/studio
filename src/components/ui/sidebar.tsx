@@ -430,7 +430,7 @@ const SidebarGroupLabel = React.forwardRef<
     ref={ref}
     data-sidebar="group-label"
     className={cn(
-      "mx-2 flex w-[calc(100%-1rem)] items-center justify-between p-2 text-xs font-semibold text-sidebar-foreground/70",
+      "px-4 py-2 mt-2 text-xs font-semibold uppercase tracking-wider text-sidebar-foreground/80",
       "group-data-[collapsible=icon]:hidden",
       className
     )}
