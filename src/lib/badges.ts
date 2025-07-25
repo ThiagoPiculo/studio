@@ -1,6 +1,6 @@
 
 
-import { Award, BedDouble, Compass, Crown, Gem, Puzzle, Repeat, Smile, Sparkles, Star, Stars, TrendingUp, Trophy, type LucideIcon, HandHelping, BrainCircuit, ShieldCheck, TowerControl, Bike } from 'lucide-react';
+import { Award, BedDouble, Compass, Crown, Gem, Puzzle, Repeat, Smile, Sparkles, Star, Stars, TrendingUp, Trophy, type LucideIcon, HandHelping, BrainCircuit, ShieldCheck, TowerControl, Bike, Leaf } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { LucideProps } from 'lucide-react';
 
