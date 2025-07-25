@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -157,16 +158,19 @@ function MuralCompletoPageContent() {
         setCollaborators(fetchedCollaborators);
         setMemberships(fetchedMemberships);
         
-        const currentChildId = searchParams.get('childId');
+        const currentUrl = new URL(window.location.toString());
+        const currentChildId = currentUrl.searchParams.get('childId');
         let selectedId = currentChildId;
 
         // Smart selection logic
         if (!selectedId || !allProfiles.some(c => c.id === selectedId)) {
           selectedId = allProfiles.length > 0 ? allProfiles[0].id : null;
           if (selectedId) {
-            router.replace(`${pathname}?childId=${selectedId}`, { scroll: false });
+            currentUrl.searchParams.set('childId', selectedId);
+            window.history.replaceState({}, '', currentUrl); // Use window.history to avoid re-triggering effects that depend on router
           } else {
-            router.replace(pathname, { scroll: false }); // No children, clear param
+             currentUrl.searchParams.delete('childId');
+             window.history.replaceState({}, '', currentUrl);
           }
         }
         
@@ -175,6 +179,7 @@ function MuralCompletoPageContent() {
             setMissionInstances([]);
             setChildRewards([]);
             setSchoolSchedule([]);
+            setIsLoading(false); // Make sure to stop loading
             return; // Exit early if no child is selected
         }
 
@@ -202,7 +207,8 @@ function MuralCompletoPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentContext, toast, pathname, router, searchParams]);
+  }, [user, currentContext, toast]);
+
 
   // Initial data fetch and context validation effect
   useEffect(() => {
@@ -795,7 +801,7 @@ function MuralCompletoPageContent() {
     return <Loading />;
   }
   
-  if (!child) {
+  if (!child && !isLoading) {
      return (
         <div className="text-center py-10">
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
@@ -813,6 +819,9 @@ function MuralCompletoPageContent() {
         </div>
     );
   }
+  
+  // Safeguard against rendering before child data is available.
+  if (!child) return <Loading />;
 
   const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
   
@@ -1814,3 +1823,4 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
