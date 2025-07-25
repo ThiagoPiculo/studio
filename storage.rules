@@ -2,12 +2,14 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Permite que qualquer pessoa leia os avatares (eles são públicos por natureza)
-    // e permite a escrita sem verificar a autenticação, pois a segurança
-    // será controlada pela lógica da aplicação (Server Action).
+    // Allow read access to all avatars
     match /avatars/{userId}/{allPaths=**} {
       allow read;
-      allow write;
+    }
+    
+    // Allow a user to write to their own avatar path
+    match /avatars/{userId}/avatar.png {
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

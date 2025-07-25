@@ -38,7 +38,6 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
-import { handleAvatarUpload } from "@/lib/actions/user.actions";
 
 
 const profileFormSchema = z.object({
@@ -161,61 +160,63 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     setCrop(centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height), width, height));
   };
 
-  const getCroppedImgAsBase64 = (image: HTMLImageElement, crop: Crop): Promise<string> => {
-      const canvas = document.createElement('canvas');
-      const scaleX = image.naturalWidth / image.width;
-      const scaleY = image.naturalHeight / image.height;
-      
-      const targetWidth = 300; // Define a target size for the avatar
-      const targetHeight = 300;
-      
-      canvas.width = targetWidth;
-      canvas.height = targetHeight;
-      
-      const ctx = canvas.getContext('2d');
+  function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<Blob> {
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = Math.floor(crop.width * scaleX);
+    canvas.height = Math.floor(crop.height * scaleY);
+    const ctx = canvas.getContext("2d");
 
-      if (!ctx) {
-          return Promise.reject(new Error('Canvas context is not available'));
-      }
-      
-      const pixelRatio = window.devicePixelRatio;
-      canvas.width = targetWidth * pixelRatio;
-      canvas.height = targetHeight * pixelRatio;
-      canvas.style.width = `${targetWidth}px`;
-      canvas.style.height = `${targetHeight}px`;
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
-      ctx.imageSmoothingQuality = 'high';
+    if (!ctx) {
+      return Promise.reject(new Error("Canvas context could not be created."));
+    }
 
-      ctx.drawImage(
-          image,
-          crop.x * scaleX,
-          crop.y * scaleY,
-          crop.width * scaleX,
-          crop.height * scaleY,
-          0,
-          0,
-          targetWidth,
-          targetHeight
-      );
+    const pixelRatio = window.devicePixelRatio;
+    canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
+    canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = "high";
 
-      return new Promise((resolve, reject) => {
-          resolve(canvas.toDataURL('image/png', 0.9)); // Get Base64 string
-      });
-  };
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width * scaleX,
+      crop.height * scaleY
+    );
+    
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    reject(new Error('Canvas is empty'));
+                    return;
+                }
+                resolve(blob);
+            },
+            'image/png', // Use PNG for transparency support
+            0.9 // Image quality
+        );
+    });
+  }
+
 
   const handleCropAndUpload = async () => {
-    if (!crop || !imgRef.current) return;
+    if (!crop || !imgRef.current || !user) return;
     setIsUploadingAvatar(true);
     try {
-        const base64Image = await getCroppedImgAsBase64(imgRef.current, crop);
-        const result = await handleAvatarUpload(child.id, base64Image);
-        
+        const imageBlob = await getCroppedImg(imgRef.current, crop);
+        const result = await uploadAvatarAndUpdateProfile(user.uid, child.id, imageBlob);
+
         if (result.newUrl) {
             setAvatarPreview(result.newUrl);
             toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
-            onProfileUpdate(); // Fetch other data in background
-        } else if (result.error) {
-            throw new Error(result.error);
+            onProfileUpdate(); 
         } else {
             throw new Error("A URL do avatar não foi retornada.");
         }
@@ -340,9 +341,9 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       digits = digits.slice(0, 8);
     }
     if (digits.length > 4) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      return `\${digits.slice(0, 2)}/\${digits.slice(2, 4)}/\${digits.slice(4)}`;
     } else if (digits.length > 2) {
-      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `\${digits.slice(0, 2)}/\${digits.slice(2)}`;
     }
     return digits;
   };
