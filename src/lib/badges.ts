@@ -1,6 +1,6 @@
 
 
-import { Award, BedDouble, Compass, Crown, Gem, Puzzle, Repeat, Smile, Sparkles, Star, Stars, TrendingUp, Trophy, type LucideIcon } from 'lucide-react';
+import { Award, BedDouble, Compass, Crown, Gem, Puzzle, Repeat, Smile, Sparkles, Star, Stars, TrendingUp, Trophy, type LucideIcon, HandHelping, BrainCircuit, ShieldCheck, TowerControl, Bike } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { LucideProps } from 'lucide-react';
 
@@ -26,6 +26,8 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
             { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo.', icon: Sparkles, color: '#FFD700' },
             { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes".', icon: Smile, color: '#60a5fa' },
             { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama".', icon: BedDouble, color: '#a78bfa' },
+            { id: 'maozinha_amiga', title: 'Mãozinha Amiga', description: 'Ajude a pôr ou tirar a mesa pela primeira vez.', icon: HandHelping, color: '#34d399' },
+            { id: 'mente_brilhante', title: 'Mente Brilhante', description: 'Complete a missão "Fazer lição de casa" pela primeira vez.', icon: BrainCircuit, color: '#60a5fa' },
         ]
     },
     {
@@ -50,13 +52,18 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
             { id: 'lenda_estelar', title: 'Lenda Estelar', description: 'Acumule 1.000 estrelas.', icon: Crown, color: '#ec4899', goal: 1000, progressType: 'stars' },
             { id: 'heroi_ascensao', title: 'Heroi em Ascensão', description: 'Alcance o Nível 5.', icon: TrendingUp, color: '#22c55e', goal: 5, progressType: 'level' },
             { id: 'campeao_herois', title: 'Campeão dos Herois', description: 'Alcance o Nível 10.', icon: Award, color: '#8b5cf6', goal: 10, progressType: 'level' },
+            { id: 'arquiteto_sonhos', title: 'Arquiteto de Sonhos', description: 'Alcance o Nível 15.', icon: TowerControl, color: '#a78bfa', goal: 15, progressType: 'level' },
+            { id: 'heroi_lendario', title: 'Herói Lendário', description: 'Alcance o Nível 20.', icon: ShieldCheck, color: '#facc15', goal: 20, progressType: 'level' },
+            { id: 'conquistador_recompensas', title: 'Conquistador de Recompensas', description: 'Resgate sua primeira recompensa na lojinha.', icon: Gem, color: '#ec4899' },
         ]
     },
     {
         title: "Exploração e Diversidade",
         items: [
             { id: 'heroi_versatil', title: 'Heroi Versátil', description: 'Complete missões de 3 categorias diferentes.', icon: Puzzle, color: '#14b8a6' },
-            { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão Social ou Ambiental.', icon: Compass, color: '#a16207' },
+            { id: 'explorador_talentos', title: 'Explorador de Talentos', description: 'Complete missões de 5 categorias diferentes.', icon: Compass, color: '#3b82f6' },
+            { id: 'aventureiro_nato', title: 'Aventureiro Nato', description: 'Conclua uma missão Social ou Ambiental.', icon: Leaf, color: '#a16207' },
+            { id: 'atleta_dedicado', title: 'Atleta Dedicado', description: 'Conclua uma missão da categoria "Esportes".', icon: Bike, color: '#ef4444' },
         ]
     }
 ];
