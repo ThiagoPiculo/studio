@@ -57,6 +57,7 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
+import { Progress } from '@/components/ui/progress';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
@@ -686,6 +687,19 @@ function MuralCompletoPageContent() {
       });
   }, [missionInstances, recurrenceFilter]);
 
+  const getProgressTypeLabel = (type: BadgeType['progressType']): string => {
+    switch (type) {
+      case 'singleMissionStreak':
+      case 'perfectStreak':
+        return 'dias';
+      case 'stars':
+        return 'estrelas';
+      case 'level':
+        return 'nível';
+      default:
+        return '';
+    }
+  };
 
   const renderBadge = (badge: BadgeType) => {
     if (!child) return null;
@@ -693,25 +707,20 @@ function MuralCompletoPageContent() {
     const hasProgress = !!badge.progressType && !!badge.goal;
 
     let currentProgress = 0;
-    let progressLabel = '';
 
     if (hasProgress && !isEarned) {
       switch (badge.progressType) {
         case 'singleMissionStreak':
           currentProgress = badgeProgress.longestSingleMissionStreak;
-          progressLabel = 'dias';
           break;
         case 'perfectStreak':
           currentProgress = badgeProgress.longestPerfectStreak;
-          progressLabel = 'dias';
           break;
         case 'stars':
           currentProgress = child.stars;
-          progressLabel = 'estrelas';
           break;
         case 'level':
           currentProgress = child.level;
-          progressLabel = 'nível';
           break;
       }
     }
@@ -755,8 +764,8 @@ function MuralCompletoPageContent() {
                       </>
                     ) : (
                       <>
-                        <LevelUpPath currentLevel={currentProgress} currentXp={badge.goal || 0} />
-                        <p className="text-xs text-muted-foreground">{currentProgress} de {badge.goal} {progressLabel}</p>
+                        <Progress value={progressPercentage} className="h-2" />
+                        <p className="text-xs text-muted-foreground">{currentProgress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})</p>
                       </>
                     )}
                   </div>
@@ -778,10 +787,9 @@ function MuralCompletoPageContent() {
     return availableContexts.filter(c => c.id !== (child?.familyId || 'my-space'));
   }, [availableContexts, child]);
 
-  if (isLoading || isRoleLoading) {
-    // Let loading.tsx handle the UI
-    return null;
-  }
+  const hasRecess = useMemo(() => {
+    return schoolSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
+  }, [schoolSchedule]);
 
   if (!child) {
      return (
@@ -1796,12 +1804,9 @@ function MuralCompletoPageContent() {
 }
 
 export default function MuralCompleto() {
-    const hasRecess = false; // Add your logic to determine if recess exists
     return (
         <Suspense>
             <MuralCompletoPageContent />
         </Suspense>
     )
 }
-
-    

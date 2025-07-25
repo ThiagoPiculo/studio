@@ -4,6 +4,7 @@
 import { BadgeCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+import { Progress } from '@/components/ui/progress';
 
 interface LevelUpPathProps {
   currentLevel: number;
@@ -26,16 +27,9 @@ const Milestone = ({
   return (
     <div className="flex flex-col items-start flex-1 min-w-0">
       <div className="relative w-full flex items-center mb-1 isolate">
-        {/* Path Background */}
-        <div className="h-2.5 bg-muted rounded-full w-full" />
-        {/* Path Progress */}
-        <div
-          className="absolute h-2.5 rounded-full transition-all duration-500 bg-blue-300"
-          style={{ width: `${isCurrent ? progressPercentage : isCompleted ? 100 : 0}%` }}
-        />
-        {/* Icon Container */}
+        <Progress value={isCompleted ? 100 : isCurrent ? progressPercentage : 0} className="h-2.5 w-full" />
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10"
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10 bg-background"
         )}>
              <BadgeCheck
                 className={cn(
