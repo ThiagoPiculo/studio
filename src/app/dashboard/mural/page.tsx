@@ -155,50 +155,45 @@ function MuralCompletoPageContent() {
         setAllChildren(allProfiles);
         setCollaborators(fetchedCollaborators);
         setMemberships(fetchedMemberships);
+        
+        const currentChildId = searchParams.get('childId');
+        let selectedId = currentChildId;
 
-      if (!childId && allProfiles.length > 0) {
-        router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
-        setIsLoading(false);
-        return;
-      }
-      
-      if (!childId || allProfiles.length === 0) {
-        setChild(null);
-        setMissionInstances([]);
-        setChildRewards([]);
-        setSchoolSchedule([]);
-        setIsLoading(false);
-        return;
-      }
-      
-      const profile = allProfiles.find(p => p.id === childId);
-      if (!profile) {
-        toast({ title: "Herói não encontrado", description: "O herói selecionado não foi encontrado neste contexto.", variant: "destructive" });
-        if (allProfiles.length > 0) {
-          router.replace(`${pathname}?childId=${allProfiles[0].id}`, { scroll: false });
-        } else {
-          router.replace('/dashboard/heroes', { scroll: false });
+        // Smart selection logic
+        if (!selectedId || !allProfiles.some(c => c.id === selectedId)) {
+          selectedId = allProfiles.length > 0 ? allProfiles[0].id : null;
+          if (selectedId) {
+            router.replace(`${pathname}?childId=${selectedId}`, { scroll: false });
+          } else {
+            router.replace(pathname, { scroll: false }); // No children, clear param
+          }
         }
-        setIsLoading(false);
-        return;
-      }
-      
-      const [missions, rewards, schedule] = await Promise.all([
-        getMissionInstancesByChild(childId),
-        getChildRewardInstancesByChild(childId),
-        getSchoolScheduleForChild(childId),
-      ]);
-      
-      setChild(profile);
-      setMissionInstances(missions);
-      setChildRewards(rewards.sort((a, b) => {
-          if (a.status === 'active' && b.status !== 'active') return -1;
-          if (a.status !== 'active' && b.status === 'active') return 1;
-          if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-          if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-          return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
-      }));
-      setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
+        
+        if (!selectedId) {
+            setChild(null);
+            setMissionInstances([]);
+            setChildRewards([]);
+            setSchoolSchedule([]);
+            return; // Exit early if no child is selected
+        }
+
+        const [profile, missions, rewards, schedule] = await Promise.all([
+            getChildProfileById(selectedId),
+            getMissionInstancesByChild(selectedId),
+            getChildRewardInstancesByChild(selectedId),
+            getSchoolScheduleForChild(selectedId),
+        ]);
+        
+        setChild(profile);
+        setMissionInstances(missions);
+        setChildRewards(rewards.sort((a, b) => {
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (a.status !== 'active' && b.status === 'active') return 1;
+            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
+            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
+            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
+        }));
+        setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
       
     } catch (error) {
       console.error("Error fetching child data:", error);
@@ -206,7 +201,7 @@ function MuralCompletoPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [childId, router, toast, currentContext, user, pathname]);
+  }, [user, currentContext, toast, pathname, router, searchParams]);
 
   // Initial data fetch and context validation effect
   useEffect(() => {
@@ -1814,3 +1809,4 @@ export default function MuralCompleto() {
 }
 
     
+
