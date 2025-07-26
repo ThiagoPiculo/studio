@@ -45,7 +45,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
-import { Alert, AlertTitle as AlertTitleShad } from "../ui/alert";
+import { Alert, AlertTitle as AlertTitleShad, AlertDescription as AlertDescriptionShad } from "../ui/alert";
 
 
 const profileFormSchema = z.object({
@@ -462,9 +462,9 @@ const handleRemoveAvatar = async () => {
                   {hasCameraPermission === false && (
                       <Alert variant="destructive" className="mt-2">
                           <AlertTitleShad>Câmera não acessível</AlertTitleShad>
-                          <AlertDescription>
+                          <AlertDescriptionShad>
                               Você precisa permitir o acesso à câmera no seu navegador para usar esta funcionalidade.
-                          </AlertDescription>
+                          </AlertDescriptionShad>
                       </Alert>
                   )}
               </div>
