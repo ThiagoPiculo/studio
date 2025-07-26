@@ -64,6 +64,9 @@ export async function generateFamilyRoutinePDF(
         format: 'a4'
     });
     
+    // Set the default font for the entire document
+    doc.setFont('Helvetica');
+
     let isFirstPage = true;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
     const daysOfWeek = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -138,17 +141,18 @@ export async function generateFamilyRoutinePDF(
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                 styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'top', font: 'Helvetica' },
                 didParseCell: function(data) {
-                    if (data.section === 'body') {
-                        // Apply bold styling for period headers like "[Manhã]"
-                        const cellText = data.cell.text as string[];
-                        const styledText = cellText.map(line => {
-                             if (line.startsWith('[') && line.endsWith(']')) {
-                                // This requires a more complex setup not directly supported by autotable's basic styling
-                                // For now, we'll rely on the structure. A more advanced PDF library would be needed for rich text.
+                    if (data.section === 'body' && data.cell.text) {
+                        // Ensure correct font is set before manual drawing
+                        doc.setFont('Helvetica');
+                        const cellText = Array.isArray(data.cell.text) ? data.cell.text.join('\n') : data.cell.text;
+                        const lines = cellText.split('\n');
+                        const styledLines = lines.map(line => {
+                            if (line.startsWith('[') && line.endsWith(']')) {
+                                return { content: line.replace(/\[(.*?)\]/g, '$1'), styles: { fontStyle: 'bold', textColor: TEXT_COLOR_DARK } };
                             }
-                            return line.replace(/\[(.*?)\]/g, '$1'); // Remove brackets for display
+                            return { content: line, styles: { fontStyle: 'normal', textColor: TEXT_COLOR_LIGHT } };
                         });
-                        data.cell.text = styledText;
+                        data.cell.text = styledLines as any;
                     }
                 },
                 didDrawPage: (data) => {
@@ -192,7 +196,7 @@ export async function generateFamilyRoutinePDF(
                 styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
                 columnStyles: { 0: { fontStyle: 'bold' } },
                  didParseCell: function (data) {
-                    const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === data.row.cells[0].text[0]);
+                    const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text[0] || ''));
                     if (entry && entry.color) {
                        data.cell.styles.fillColor = entry.color;
                        data.cell.styles.textColor = '#FFFFFF';
