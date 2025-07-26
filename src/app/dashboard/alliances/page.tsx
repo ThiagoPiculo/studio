@@ -107,10 +107,10 @@ export default function AlliancesPage() {
                   {roleInfo ? (
                       <CardDescription className="flex flex-col gap-2 pt-2">
                         <span className="font-semibold text-foreground">Seu papel: {roleInfo.label}</span>
-                        <p className="text-xs text-muted-foreground flex items-start gap-2">
+                        <div className="text-xs text-muted-foreground flex items-start gap-2">
                           <Info className="h-4 w-4 mt-0.5 shrink-0" />
                           <span>{roleInfo.description}</span>
-                        </p>
+                        </div>
                       </CardDescription>
                   ) : (
                      <CardDescription>Seu papel não foi definido.</CardDescription>
