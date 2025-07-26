@@ -41,6 +41,7 @@ import {
   cancelFamilyInvitation,
   resendFamilyInvitationNotification,
   transferFamilyOwnership,
+  getChildProfilesByOwner,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
@@ -77,7 +78,7 @@ function FamilyPageContent() {
   const [familyDetails, setFamilyDetails] = useState<Family | null>(null);
   const [familyMemberships, setFamilyMemberships] = useState<FamilyMembership[]>([]);
   const [familyMembers, setFamilyMembers] = useState<UserProfile[]>([]);
-  const [childrenInFamily, setChildrenInFamily] = useState<ChildProfile[]>([]);
+  const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -151,7 +152,7 @@ function FamilyPageContent() {
       setFamilyDetails(details as Family | null);
       setFamilyMembers(members as UserProfile[]);
       setFamilyMemberships(memberships as FamilyMembership[]);
-      setChildrenInFamily(children as ChildProfile[]);
+      setChildrenInContext(children as ChildProfile[]);
       setJoinRequests(requests as FamilyInvitation[]);
       setSentInvitations(sentInvites as FamilyInvitation[]);
 
@@ -168,32 +169,32 @@ function FamilyPageContent() {
   useEffect(() => {
     if (!user || !isClient) return;
 
-    // Redirect to alliances list if in 'my-space' but part of other alliances
-    const userAlliances = availableContexts.filter(c => c.id !== 'my-space');
-    if (currentContext === 'my-space' && userAlliances.length > 0 && !searchParams.get('action')) {
-      router.replace('/dashboard/alliances');
-      return;
-    }
-
     if (currentContext === 'my-space') {
-      setIsLoading(false);
+      setIsLoading(true);
       setFamilyDetails(null);
       setFamilyMembers([]);
-      setChildrenInFamily([]);
       setJoinRequests([]);
       setSentInvitations([]);
-      
-      setIsLoadingInvitations(true);
-      getPendingActionsForUser(user.uid)
-        .then(actions => {
-          setInvitations(actions.filter(a => a.type === 'invite'));
-          setPendingRequests(actions.filter(a => a.type === 'request'));
-        })
-        .catch(error => {
-          console.error("Error fetching invitations:", error);
-          toast({ title: "Erro ao buscar convites", variant: "destructive" });
-        })
-        .finally(() => setIsLoadingInvitations(false));
+
+      const fetchMySpaceData = async () => {
+        try {
+          const [invites, requests, children] = await Promise.all([
+            getPendingActionsForUser(user.uid).then(actions => actions.filter(a => a.type === 'invite')),
+            getPendingActionsForUser(user.uid).then(actions => actions.filter(a => a.type === 'request')),
+            getChildProfilesByOwner(user.uid, true)
+          ]);
+          setInvitations(invites);
+          setPendingRequests(requests);
+          setChildrenInContext(children);
+        } catch (error) {
+          console.error("Error fetching 'My Space' data:", error);
+          toast({ title: "Erro ao carregar dados", variant: "destructive" });
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      fetchMySpaceData();
         
     } else {
       setIsLoading(true);
@@ -583,7 +584,7 @@ function FamilyPageContent() {
           await assignChildrenToFamily(childrenIdsToAssign, currentContext);
           toast({ title: "Equipe Reforçada!", description: `${childrenIdsToAssign.length} ${childrenIdsToAssign.length === 1 ? 'Mini Heroi foi adicionado' : 'Mini Herois foram adicionados'} à aliança!` });
           
-          getChildProfilesByFamily(currentContext).then(setChildrenInFamily);
+          getChildProfilesByFamily(currentContext).then(setChildrenInContext);
 
           setIsAddChildDialogOpen(false);
       } catch (error) {
@@ -599,7 +600,7 @@ function FamilyPageContent() {
     setIsRemovingChild(true);
     try {
         await removeChildFromFamily(childToRemove.id);
-        setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
+        setChildrenInContext(prev => prev.filter(c => c.id !== childToRemove.id));
         toast({ title: "Heroi em Missão Solo", description: `${childToRemove.name} agora está no espaço pessoal e não faz mais parte da aliança.` });
     } catch (error: any) {
         console.error("Error removing child from family:", error);
@@ -615,7 +616,7 @@ function FamilyPageContent() {
     setIsRemovingChild(true);
     try {
         await deleteChildProfile(childToRemove.id);
-        setChildrenInFamily(prev => prev.filter(c => c.id !== childToRemove.id));
+        setChildrenInContext(prev => prev.filter(c => c.id !== childToRemove.id));
         toast({ title: "Perfil de Heroi Arquivado", description: `O perfil de ${childToRemove.name} e todos os seus dados foram excluídos permanentemente.` });
     } catch (error: any) {
         console.error("Error deleting child profile:", error);
@@ -648,8 +649,8 @@ function FamilyPageContent() {
 
   const childrenOfMemberToRemove = useMemo(() => {
     if (!memberToManage) return [];
-    return childrenInFamily.filter(child => child.ownerId === memberToManage.uid);
-  }, [memberToManage, childrenInFamily]);
+    return childrenInContext.filter(child => child.ownerId === memberToManage.uid);
+  }, [memberToManage, childrenInContext]);
 
   const currentUserMembership = useMemo(() => {
     return familyMemberships.find(m => m.userId === user?.uid);
@@ -812,9 +813,9 @@ function FamilyPageContent() {
                 <CardDescription>Gerencie o perfil de cada Mini Heroi da sua aliança.</CardDescription>
             </CardHeader>
             <CardContent>
-                {childrenInFamily.length > 0 ? (
+                {childrenInContext.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {childrenInFamily.map(child => (
+                        {childrenInContext.map(child => (
                             <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                                 <div className="flex items-center gap-4 min-w-0">
                                     <Avatar
@@ -866,7 +867,7 @@ function FamilyPageContent() {
               {sortedMembers.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {sortedMembers.map(member => {
-                    const ownedChildren = childrenInFamily.filter(child => child.ownerId === member.uid);
+                    const ownedChildren = childrenInContext.filter(child => child.ownerId === member.uid);
                     const membership = familyMemberships.find(m => m.userId === member.uid);
                     const roleLabel = familyRoles.find(r => r.id === membership?.role)?.label || 'Desconhecido';
                     const canManage = isOwner && member.uid !== user?.uid;
@@ -1272,11 +1273,11 @@ function FamilyPageContent() {
            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
-                  <LinkIcon className="mr-3 h-8 w-8 text-primary" />
-                  Aliança de Herois
+                  <Home className="mr-3 h-8 w-8 text-primary" />
+                  Meu Espaço Pessoal
                 </CardTitle>
                 <CardDescription>
-                    O Meu Espaço é seu ambiente pessoal padrão. Você pode gerenciar seus Mini Herois nele sem precisar criar ou participar de uma aliança.
+                    Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.
                 </CardDescription>
               </div>
               {userAlliances.length > 0 && (
@@ -1291,7 +1292,7 @@ function FamilyPageContent() {
                   {userAlliances.map(alliance => (
                     <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
                       <LinkIcon className="mr-2 h-4 w-4" />
-                      <span>{`Aliança de Herois: ${alliance.name}`}</span>
+                      <span>{`Aliança: ${alliance.name}`}</span>
                     </DropdownMenuItem>
                   ))}
                 </DropdownMenuContent>
@@ -1386,6 +1387,54 @@ function FamilyPageContent() {
           </Card>
         )}
 
+      <Card>
+        <CardHeader>
+            <CardTitle className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <Sparkles className="h-6 w-6 text-primary"/>Mini Herois no Meu Espaço
+                </div>
+                <Link href="/dashboard/onboarding" passHref>
+                    <Button variant="outline" size="sm">
+                        <UserPlus className="mr-2 h-4 w-4" /> Cadastrar Novo
+                    </Button>
+                </Link>
+            </CardTitle>
+            <CardDescription>Estes são os heróis que você gerencia pessoalmente.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            {childrenInContext.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {childrenInContext.map(child => (
+                        <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                            <div className="flex items-center gap-4 min-w-0">
+                                <Avatar
+                                    className="h-10 w-10 text-lg ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
+                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                >
+                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                    <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                        {getInitials(child.name)}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div className="min-w-0">
+                                    <span className="font-semibold truncate block">{child.name}</span>
+                                    <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
+                                </div>
+                            </div>
+                            <Link href={`/dashboard/mural?childId=${child.id}`}>
+                                <Button variant="ghost" size="sm">
+                                    Ver Painel <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </Link>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-muted-foreground text-center py-4">Nenhum Mini Heroi cadastrado no seu espaço pessoal ainda.</p>
+            )}
+        </CardContent>
+      </Card>
+
       <div className="grid md:grid-cols-2 gap-6">
         <Card ref={createCardRef}>
             <CardHeader>
@@ -1445,4 +1494,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
