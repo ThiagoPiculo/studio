@@ -151,7 +151,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
-export const uploadAvatarAndUpdateProfile = async (childId: string, file: File): Promise<{ newUrl: string }> => {
+export const uploadAvatarAndUpdateProfile = async (childId: string, file: Blob): Promise<{ newUrl: string }> => {
     if (!childId) throw new Error("Child ID is required.");
     if (!file) throw new Error("File is required.");
     
@@ -2380,3 +2380,4 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     
 
     
+
