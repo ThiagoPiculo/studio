@@ -125,7 +125,10 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                     <div className="space-y-4">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <Avatar className="h-10 w-10">
+                                <Avatar 
+                                  className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                  style={{ '--ring-color': data.childColor } as React.CSSProperties}
+                                >
                                     <AvatarImage src={data.childAvatar} alt={data.childName} />
                                     <AvatarFallback style={{ backgroundColor: data.childColor }}>
                                         {getInitials(data.childName)}
