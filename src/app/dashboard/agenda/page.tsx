@@ -16,7 +16,6 @@ import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDet
 import { missionCategories, weekdays } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { generateFamilyRoutinePDF } from '@/lib/pdf-generator';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -69,7 +68,6 @@ function AgendaPageContent() {
   const [currentDate, setCurrentDate] = useState(new Date());
   
   const [isLoading, setIsLoading] = useState(true);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
@@ -218,29 +216,6 @@ function AgendaPageContent() {
 
   const handleAssignmentComplete = () => {
     refetchData();
-  };
-
-  const handleExport = async () => {
-    if (!user) {
-        toast({ title: "Usuário não encontrado.", variant: "destructive"});
-        return;
-    }
-    
-    setIsGeneratingPdf(true);
-    toast({ title: "Gerando seu PDF da Agenda...", description: "Isso pode levar alguns segundos." });
-    
-    try {
-        const familyName = availableContexts.find(c => c.id === currentContext)?.name || 'Pessoal';
-        await generateFamilyRoutinePDF(children, missionInstances, [], familyName, { 
-            includeMissions: true,
-            includeSchool: false
-        });
-    } catch (error) {
-        console.error("Error generating PDF:", error);
-        toast({ title: "Erro ao Gerar PDF", description: "Não foi possível gerar o relatório. Tente novamente.", variant: "destructive" });
-    } finally {
-        setIsGeneratingPdf(false);
-    }
   };
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
@@ -1130,10 +1105,6 @@ function AgendaPageContent() {
                             </div>
                         </div>
                         )}
-                        <Button onClick={handleExport} variant="outline" disabled={isGeneratingPdf} className="flex-shrink-0">
-                            {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileText className="mr-2 h-4 w-4"/>}
-                            Gerar PDF
-                        </Button>
                     </div>
                 </div>
             </div>
