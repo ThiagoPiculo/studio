@@ -68,11 +68,12 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
             >
               <Avatar
                 className={cn(
-                  "h-16 w-16 md:h-20 md:w-20 transition-all duration-300 ring-2 ring-offset-2 ring-offset-background",
+                  "h-16 w-16 md:h-20 md:w-20 transition-all duration-300 ring-2 ring-offset-2 ring-offset-background ring-[var(--ring-color)]",
                   selectedHeroId === hero.id
-                    ? 'ring-primary'
-                    : 'ring-transparent'
+                    ? 'opacity-100'
+                    : 'opacity-70'
                 )}
+                 style={{ '--ring-color': hero.color } as React.CSSProperties}
               >
                 <AvatarImage src={hero.avatar} alt={hero.name} />
                 <AvatarFallback
