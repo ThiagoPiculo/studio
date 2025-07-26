@@ -44,7 +44,7 @@ function addFooter(doc: jsPDF) {
         doc.setFontSize(8);
         doc.setTextColor(TEXT_COLOR_LIGHT);
         const date = new Date().toLocaleDateString('pt-BR');
-        doc.text(`Gerado em: ${date}`, PAGE_MARGIN, doc.internal.pageSize.height - 10);
+        doc.text(`Gerado em: ${date} | miniherois.com.br`, PAGE_MARGIN, doc.internal.pageSize.height - 10);
         doc.text(`Página ${i}`, doc.internal.pageSize.width - PAGE_MARGIN, doc.internal.pageSize.height - 10, { align: 'right' });
     }
 }
@@ -103,8 +103,14 @@ export async function generateFamilyRoutinePDF(
                         const missionDate = m.isRecurring ? m.startDate?.toDate() : m.dueDate?.toDate();
                         return missionDate && format(missionDate, 'HH:mm') === time && isMissionScheduledForDate(m, day);
                     });
+                     // Sanitize emojis from mission titles
+                    const formattedMissions = missionsForSlot.map(m => {
+                        const emoji = m.emoji || '🎯';
+                        return `${emoji} ${m.title}`;
+                    }).join('\n');
+                    
                     row.push({
-                        content: missionsForSlot.map(m => `${m.emoji || '🎯'} **${m.title}**`).join('\n'),
+                        content: formattedMissions,
                         styles: { font: 'Helvetica', cellWidth: 'wrap' }
                     });
                  }
