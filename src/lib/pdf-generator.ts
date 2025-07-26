@@ -92,7 +92,7 @@ export async function generateFamilyRoutinePDF(
             const sortedTimeSlots = Array.from(timeSlots).sort();
             
             for(const time of sortedTimeSlots){
-                const row: string[] = [time];
+                const row: (string | { content: string, styles: { fontStyle: 'bold' } })[] = [{ content: time, styles: { fontStyle: 'bold' } }];
                  for(const day of daysOfWeek){
                     const dayKey = getDayToWeekday[day.getDay()];
                     const missionsForSlot = childMissions.filter(m => {
@@ -109,7 +109,7 @@ export async function generateFamilyRoutinePDF(
                 body: missionRows,
                 startY: 30,
                 theme: 'grid',
-                headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center' },
+                headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                 styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle' },
                 columnStyles: { 0: { fontStyle: 'bold', halign: 'center' } },
                 didDrawPage: (data) => {
@@ -149,7 +149,7 @@ export async function generateFamilyRoutinePDF(
                 body: scheduleBody,
                 startY: 30,
                 theme: 'grid',
-                headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center' },
+                headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                 styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15 },
                 columnStyles: { 0: { fontStyle: 'bold', halign: 'center' } },
                  didParseCell: function (data) {
