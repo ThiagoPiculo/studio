@@ -3,8 +3,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry, Weekday } from './types';
 import { weekdayLabels, allWeekdays } from './types';
-import { getDayToWeekday, isMissionScheduledForDate, parseTime, getPeriodOfDay } from './calendar-utils';
-import { format, startOfWeek, addDays } from 'date-fns';
+import { getDayToWeekday, isMissionScheduledForDate, getPeriodOfDay } from './calendar-utils';
+import { format, startOfWeek, addDays, parse } from 'date-fns';
 
 // --- PDF Styling Constants ---
 const PRIMARY_COLOR = '#64B5F6'; 
@@ -48,6 +48,33 @@ function addFooter(doc: jsPDF) {
     }
 }
 
+function drawMissionCell(doc: jsPDF, data: any) {
+    const cellText = data.cell.raw as string;
+    if (!cellText || typeof cellText !== 'string') return;
+    
+    const lines = cellText.split('\n');
+    let y = data.cell.y + 4; // Initial y position with padding
+
+    lines.forEach(line => {
+        if (line.trim() === '') {
+            y += 2; // Extra space for empty lines
+            return;
+        }
+        if (line.startsWith('§')) { // Use a special character to denote period
+            doc.setFont('Helvetica', 'bold');
+            doc.setTextColor(TEXT_COLOR_DARK);
+            doc.text(line.substring(1), data.cell.x + 3, y);
+            y += 4;
+        } else {
+            doc.setFont('Helvetica', 'normal');
+            doc.setTextColor(TEXT_COLOR_LIGHT);
+            const splitLines = doc.splitTextToSize(line, data.cell.width - 6);
+            doc.text(splitLines, data.cell.x + 3, y);
+            y += splitLines.length * 4;
+        }
+    });
+}
+
 // --- Main PDF Generation Function ---
 
 export async function generateFamilyRoutinePDF(
@@ -68,6 +95,7 @@ export async function generateFamilyRoutinePDF(
     let isFirstPage = true;
     const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const daysOfWeek = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+    const weekdaysForColumns = allWeekdays.filter(d => d !== 'SU'); // Mon-Sat
 
     for (const child of children) {
         const childMissions = missions.filter(m => m.childId === child.id && m.status === 'pending');
@@ -87,14 +115,13 @@ export async function generateFamilyRoutinePDF(
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Rotina Semanal de Missões', child.name);
             
-            const missionColumns = allWeekdays.map(day => weekdayLabels[day].long);
-            const missionRows: string[][] = [];
-
+            const missionColumns = weekdaysForColumns.map(day => weekdayLabels[day].long);
+            
             const missionsByDayAndPeriod: Record<Weekday, { Manhã: string[], Tarde: string[], Noite: string[] }> = {
                 MO: { Manhã: [], Tarde: [], Noite: [] }, TU: { Manhã: [], Tarde: [], Noite: [] },
                 WE: { Manhã: [], Tarde: [], Noite: [] }, TH: { Manhã: [], Tarde: [], Noite: [] },
                 FR: { Manhã: [], Tarde: [], Noite: [] }, SA: { Manhã: [], Tarde: [], Noite: [] },
-                SU: { Manhã: [], Tarde: [], Noite: [] },
+                SU: { Manhã: [], Tarde: [], Noite: [] }, // Keep SU for data mapping
             };
 
             for (const day of daysOfWeek) {
@@ -113,63 +140,28 @@ export async function generateFamilyRoutinePDF(
                     if (period) {
                         const time = missionDate ? format(missionDate, 'HH:mm') : '';
                         const emoji = m.emoji || '🎯';
-                        missionsByDayAndPeriod[dayKey][period].push(`[${time}] ${emoji} ${m.title}`);
+                        missionsByDayAndPeriod[dayKey][period].push(`${time} ${emoji} ${m.title}`);
                     }
                 });
             }
             
-            const formattedRowData = Object.entries(missionsByDayAndPeriod).reduce((acc, [dayKey, periods]) => {
-                const periodContent = (Object.entries(periods) as [('Manhã'|'Tarde'|'Noite'), string[]][])
+            const formattedRowData = weekdaysForColumns.map(dayKey => {
+                const periods = missionsByDayAndPeriod[dayKey];
+                return (Object.entries(periods) as [('Manhã'|'Tarde'|'Noite'), string[]][])
                     .filter(([, missions]) => missions.length > 0)
-                    .map(([periodName, missions]) => `[${periodName}]\n${missions.join('\n')}`)
+                    .map(([periodName, missions]) => `§${periodName}\n${missions.join('\n')}`)
                     .join('\n\n');
-                
-                acc[dayKey as Weekday] = periodContent;
-                return acc;
-            }, {} as Record<Weekday, string>);
-            
-            missionRows.push(allWeekdays.map(day => formattedRowData[day]));
+            });
 
             autoTable(doc, {
                 head: [missionColumns],
-                body: missionRows,
+                body: [formattedRowData],
                 startY: 30,
                 theme: 'grid',
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                 styles: { fontSize: BODY_FONT_SIZE, cellPadding: 3, valign: 'top', font: 'Helvetica' },
-                didDrawCell: (data) => {
-                    if (data.section === 'body' && typeof data.cell.raw === 'string') {
-                        // Clear the cell content drawn by autotable initially
-                        doc.setFillColor(data.cell.styles.fillColor as string || '#FFFFFF');
-                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
-                        
-                        const cellText = data.cell.raw;
-                        const lines = cellText.split('\n');
-                        let y = data.cell.y + 4; // Initial y position with padding
-
-                        lines.forEach(line => {
-                            if (line.trim() === '') {
-                                y += 2; // Extra space for empty lines
-                                return;
-                            }
-                            if (line.startsWith('[') && line.endsWith(']')) {
-                                doc.setFont('Helvetica', 'bold');
-                                doc.setTextColor(TEXT_COLOR_DARK);
-                                doc.text(line.replace(/\[(.*?)\]/g, '$1'), data.cell.x + 3, y);
-                                y += 4; // Move y for next line
-                            } else {
-                                doc.setFont('Helvetica', 'normal');
-                                doc.setTextColor(TEXT_COLOR_LIGHT);
-                                const splitLines = doc.splitTextToSize(line, data.cell.width - 6);
-                                doc.text(splitLines, data.cell.x + 3, y);
-                                y += splitLines.length * 4; // Adjust y based on wrapped lines
-                            }
-                        });
-                    }
-                },
-                didDrawPage: (data) => {
-                    addHeader(doc, 'Rotina Semanal de Missões', child.name);
-                }
+                didDrawCell: (data) => drawMissionCell(doc, data),
+                didDrawPage: (data) => addHeader(doc, 'Rotina Semanal de Missões', child.name)
             });
             isFirstPage = false;
         }
@@ -181,7 +173,7 @@ export async function generateFamilyRoutinePDF(
             if (childSchedule.length === 0) {
                  doc.text("Nenhuma rotina escolar cadastrada para este herói.", PAGE_MARGIN, 40);
             } else {
-                const scheduleColumns = ['Horário', ...allWeekdays.map(day => weekdayLabels[day].long)];
+                const scheduleColumns = ['Horário', ...weekdaysForColumns.map(day => weekdayLabels[day].long)];
                 const scheduleBody: string[][] = [];
                 const scheduleTimeSlots = new Set<string>();
 
@@ -190,7 +182,7 @@ export async function generateFamilyRoutinePDF(
 
                 for (const time of sortedScheduleTimes) {
                     const row = [time];
-                    for (const day of allWeekdays) {
+                    for (const day of weekdaysForColumns) {
                         const entry = childSchedule.find(e => e.dayOfWeek === day && e.startTime === time);
                         row.push(entry ? entry.subject : '');
                     }
@@ -204,10 +196,10 @@ export async function generateFamilyRoutinePDF(
                     theme: 'grid',
                     headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                     styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
-                    columnStyles: { 0: { fontStyle: 'bold' } },
+                    columnStyles: { 0: { fontStyle: 'bold', halign: 'center' } },
                     didParseCell: (data) => {
                         if (data.section === 'body' && data.column.index > 0) {
-                            const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text?.[0] || ''));
+                            const entry = childSchedule.find(e => e.dayOfWeek === weekdaysForColumns[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text?.[0] || ''));
                             if (entry && entry.color) {
                                 data.cell.styles.fillColor = entry.color;
                                 data.cell.styles.textColor = '#FFFFFF';
@@ -215,9 +207,7 @@ export async function generateFamilyRoutinePDF(
                             }
                         }
                     },
-                    didDrawPage: (data) => {
-                        addHeader(doc, 'Agenda Escolar', child.name);
-                    }
+                    didDrawPage: (data) => addHeader(doc, 'Agenda Escolar', child.name)
                 });
             }
             isFirstPage = false;
