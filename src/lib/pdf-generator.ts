@@ -30,7 +30,6 @@ function addHeader(doc: jsPDF, title: string, childName: string) {
     const fullTitle = `${title} - ${childName}`;
     doc.text(fullTitle, doc.internal.pageSize.width - PAGE_MARGIN, 20, { align: 'right' });
     
-    // Add a line separator
     doc.setDrawColor(PRIMARY_COLOR);
     doc.setLineWidth(0.3);
     doc.line(PAGE_MARGIN, 25, doc.internal.pageSize.width - PAGE_MARGIN, 25);
@@ -64,11 +63,10 @@ export async function generateFamilyRoutinePDF(
         format: 'a4'
     });
     
-    // Set the default font for the entire document
     doc.setFont('Helvetica');
 
     let isFirstPage = true;
-    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Monday
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 });
     const daysOfWeek = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
     for (const child of children) {
@@ -90,15 +88,12 @@ export async function generateFamilyRoutinePDF(
             addHeader(doc, 'Rotina Semanal de Missões', child.name);
             
             const missionColumns = allWeekdays.map(day => weekdayLabels[day].long);
-            const missionRows = [];
+            const missionRows: string[][] = [];
 
             const missionsByDayAndPeriod: Record<Weekday, { Manhã: string[], Tarde: string[], Noite: string[] }> = {
-                MO: { Manhã: [], Tarde: [], Noite: [] },
-                TU: { Manhã: [], Tarde: [], Noite: [] },
-                WE: { Manhã: [], Tarde: [], Noite: [] },
-                TH: { Manhã: [], Tarde: [], Noite: [] },
-                FR: { Manhã: [], Tarde: [], Noite: [] },
-                SA: { Manhã: [], Tarde: [], Noite: [] },
+                MO: { Manhã: [], Tarde: [], Noite: [] }, TU: { Manhã: [], Tarde: [], Noite: [] },
+                WE: { Manhã: [], Tarde: [], Noite: [] }, TH: { Manhã: [], Tarde: [], Noite: [] },
+                FR: { Manhã: [], Tarde: [], Noite: [] }, SA: { Manhã: [], Tarde: [], Noite: [] },
                 SU: { Manhã: [], Tarde: [], Noite: [] },
             };
 
@@ -137,25 +132,39 @@ export async function generateFamilyRoutinePDF(
 
             autoTable(doc, {
                 head: [missionColumns],
-                body: missionRows as any,
+                body: missionRows,
                 startY: 30,
                 theme: 'grid',
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
-                styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'top', font: 'Helvetica' },
-                didParseCell: function(data) {
-                    doc.setFont('Helvetica');
+                styles: { fontSize: BODY_FONT_SIZE, cellPadding: 3, valign: 'top', font: 'Helvetica' },
+                didDrawCell: (data) => {
                     if (data.section === 'body' && typeof data.cell.raw === 'string') {
+                        // Clear the cell content drawn by autotable initially
+                        doc.setFillColor(data.cell.styles.fillColor as string || '#FFFFFF');
+                        doc.rect(data.cell.x, data.cell.y, data.cell.width, data.cell.height, 'F');
+                        
                         const cellText = data.cell.raw;
                         const lines = cellText.split('\n');
-                        const styledLines = lines.map(line => {
-                            if (line.startsWith('[') && line.endsWith(']')) {
-                                return { content: line.replace(/\[(.*?)\]/g, '$1'), styles: { fontStyle: 'bold', textColor: TEXT_COLOR_DARK } };
-                            } else if (line.trim() === '') {
-                                return { content: '', styles: {} };
+                        let y = data.cell.y + 4; // Initial y position with padding
+
+                        lines.forEach(line => {
+                            if (line.trim() === '') {
+                                y += 2; // Extra space for empty lines
+                                return;
                             }
-                            return { content: line, styles: { fontStyle: 'normal', textColor: TEXT_COLOR_LIGHT } };
+                            if (line.startsWith('[') && line.endsWith(']')) {
+                                doc.setFont('Helvetica', 'bold');
+                                doc.setTextColor(TEXT_COLOR_DARK);
+                                doc.text(line.replace(/\[(.*?)\]/g, '$1'), data.cell.x + 3, y);
+                                y += 4; // Move y for next line
+                            } else {
+                                doc.setFont('Helvetica', 'normal');
+                                doc.setTextColor(TEXT_COLOR_LIGHT);
+                                const splitLines = doc.splitTextToSize(line, data.cell.width - 6);
+                                doc.text(splitLines, data.cell.x + 3, y);
+                                y += splitLines.length * 4; // Adjust y based on wrapped lines
+                            }
                         });
-                        data.cell.text = styledLines as any;
                     }
                 },
                 didDrawPage: (data) => {
@@ -165,12 +174,10 @@ export async function generateFamilyRoutinePDF(
             isFirstPage = false;
         }
 
-        // --- School Schedule Page ---
         if (options.includeSchool) {
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Agenda Escolar', child.name);
 
-            const childSchedule = schedule.filter(s => s.childId === child.id);
             if (childSchedule.length === 0) {
                  doc.text("Nenhuma rotina escolar cadastrada para este herói.", PAGE_MARGIN, 40);
             } else {
@@ -178,10 +185,7 @@ export async function generateFamilyRoutinePDF(
                 const scheduleBody: string[][] = [];
                 const scheduleTimeSlots = new Set<string>();
 
-                childSchedule.forEach(entry => {
-                    scheduleTimeSlots.add(entry.startTime);
-                });
-                
+                childSchedule.forEach(entry => scheduleTimeSlots.add(entry.startTime));
                 const sortedScheduleTimes = Array.from(scheduleTimeSlots).sort();
 
                 for (const time of sortedScheduleTimes) {
@@ -201,13 +205,13 @@ export async function generateFamilyRoutinePDF(
                     headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                     styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
                     columnStyles: { 0: { fontStyle: 'bold' } },
-                    didParseCell: function (data) {
+                    didParseCell: (data) => {
                         if (data.section === 'body' && data.column.index > 0) {
                             const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text?.[0] || ''));
                             if (entry && entry.color) {
-                            data.cell.styles.fillColor = entry.color;
-                            data.cell.styles.textColor = '#FFFFFF';
-                            data.cell.styles.fontStyle = 'bold';
+                                data.cell.styles.fillColor = entry.color;
+                                data.cell.styles.textColor = '#FFFFFF';
+                                data.cell.styles.fontStyle = 'bold';
                             }
                         }
                     },
@@ -222,8 +226,8 @@ export async function generateFamilyRoutinePDF(
 
     if (isFirstPage) {
         let title = "Relatório de Rotinas";
-        if(options.includeMissions && !options.includeSchool) title = "Rotina Semanal de Missões";
-        if(!options.includeMissions && options.includeSchool) title = "Agenda Escolar";
+        if (options.includeMissions && !options.includeSchool) title = "Rotina Semanal de Missões";
+        if (!options.includeMissions && options.includeSchool) title = "Agenda Escolar";
 
         addHeader(doc, title, familyName);
         doc.setFontSize(BODY_FONT_SIZE);
