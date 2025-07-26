@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -292,7 +293,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     try {
         const croppedBlob = await getCroppedImg(imgRef.current, crop);
         const { newUrl } = await uploadAvatarAndUpdateProfile(child.id, croppedBlob, user.uid);
-        setAvatarPreview(newUrl); // Update UI instantly
+        setAvatarPreview(newUrl); // Optimistic update
         toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
         onProfileUpdate(); // Re-fetch other data
     } catch (error) {
