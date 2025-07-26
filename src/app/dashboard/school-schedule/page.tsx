@@ -13,7 +13,7 @@ import { getDayToWeekday, parseTime, format as formatTime } from '@/lib/calendar
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle, Target } from 'lucide-react';
+import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle, Target, FileText } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
 import {
@@ -39,6 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { EditShiftDialog } from '@/components/dashboard/school-schedule/EditShiftDialog';
 import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
+import { generateFamilyRoutinePDF } from '@/lib/pdf-generator';
 
 const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
@@ -46,7 +47,7 @@ const subjectColors = [
 
 function SchoolSchedulePageContent() {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -56,6 +57,7 @@ function SchoolSchedulePageContent() {
   const [selectedChildId, setSelectedChildId] = useState<string>('');
   const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
@@ -353,6 +355,29 @@ function SchoolSchedulePageContent() {
     }
   };
   
+  const handleExport = async () => {
+    if (!user) {
+        toast({ title: "Usuário não encontrado.", variant: "destructive"});
+        return;
+    }
+    
+    setIsGeneratingPdf(true);
+    toast({ title: "Gerando seu PDF da Rotina Escolar...", description: "Isso pode levar alguns segundos." });
+    
+    try {
+        const familyName = availableContexts.find(c => c.id === currentContext)?.name || 'Pessoal';
+        await generateFamilyRoutinePDF(children, [], scheduleEntries, familyName, { 
+            includeMissions: false,
+            includeSchool: true
+        });
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ title: "Erro ao Gerar PDF", description: "Não foi possível gerar o relatório. Tente novamente.", variant: "destructive" });
+    } finally {
+        setIsGeneratingPdf(false);
+    }
+  };
+  
   const hasRecess = useMemo(() => {
     return inBoundsSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
   }, [inBoundsSchedule]);
@@ -504,7 +529,7 @@ function SchoolSchedulePageContent() {
                 Visualize e gerencie os horários de aula dos seus heróis.
               </CardDescription>
             </div>
-            <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex flex-col sm:flex-row items-stretch gap-2">
                 {isMobile && (
                     <div className="grid grid-cols-2 gap-2 w-full">
                         <Button onClick={handleScrollToToday} variant="outline" className="w-full">
@@ -564,21 +589,23 @@ function SchoolSchedulePageContent() {
                         </Popover>
                     </div>
                 )}
-                <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
-                    <SelectTrigger className="w-full sm:w-[240px]">
-                        <div className="flex items-center gap-2">
-                            <User className="h-4 w-4" />
-                            <SelectValue placeholder="Selecione um herói..." />
-                        </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {children.map(child => (
-                            <SelectItem key={child.id} value={child.id}>
-                                {child.name} ({child.schoolShift ? schoolShiftMap[child.schoolShift] : 'Turno não definido'})
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
+                 <div className="flex-1">
+                    <Select value={selectedChildId} onValueChange={setSelectedChildId} disabled={children.length === 0}>
+                        <SelectTrigger className="w-full sm:w-[240px]">
+                            <div className="flex items-center gap-2">
+                                <User className="h-4 w-4" />
+                                <SelectValue placeholder="Selecione um herói..." />
+                            </div>
+                        </SelectTrigger>
+                        <SelectContent>
+                            {children.map(child => (
+                                <SelectItem key={child.id} value={child.id}>
+                                    {child.name} ({child.schoolShift ? schoolShiftMap[child.schoolShift] : 'Turno não definido'})
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                 </div>
                 {!isMobile && (
                     <Popover>
                         <PopoverTrigger asChild>
@@ -633,10 +660,16 @@ function SchoolSchedulePageContent() {
                         </PopoverContent>
                     </Popover>
                 )}
-              <Button onClick={handleAddClick} disabled={!selectedChildId || !canEdit}>
-                <PlusCircle className="mr-2 h-4 w-4" />
-                + Aula
-              </Button>
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleExport} variant="outline" disabled={isGeneratingPdf}>
+                        {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileText className="mr-2 h-4 w-4"/>}
+                        PDF
+                    </Button>
+                    <Button onClick={handleAddClick} disabled={!selectedChildId || !canEdit}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        + Aula
+                    </Button>
+                </div>
             </div>
           </div>
         </CardHeader>

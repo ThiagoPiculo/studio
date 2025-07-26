@@ -38,14 +38,14 @@ function addHeader(doc: jsPDF, title: string, childName: string) {
 
 function addFooter(doc: jsPDF) {
     const pageCount = doc.getNumberOfPages();
-    doc.setFontSize(8);
-    doc.setTextColor(TEXT_COLOR_LIGHT);
-
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        doc.setFont('Helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(TEXT_COLOR_LIGHT);
         const date = new Date().toLocaleDateString('pt-BR');
         doc.text(`Gerado em: ${date}`, PAGE_MARGIN, doc.internal.pageSize.height - 10);
-        doc.text(`Página ${i} de ${pageCount}`, doc.internal.pageSize.width - PAGE_MARGIN, doc.internal.pageSize.height - 10, { align: 'right' });
+        doc.text(`Página ${i}`, doc.internal.pageSize.width - PAGE_MARGIN, doc.internal.pageSize.height - 10, { align: 'right' });
     }
 }
 
@@ -55,7 +55,8 @@ export async function generateFamilyRoutinePDF(
     children: ChildProfile[],
     missions: MissionInstance[],
     schedule: SchoolScheduleEntry[],
-    familyName: string
+    familyName: string,
+    options: { includeMissions?: boolean, includeSchool?: boolean } = { includeMissions: true, includeSchool: true }
 ) {
     const doc = new jsPDF({
         orientation: 'landscape',
@@ -71,12 +72,15 @@ export async function generateFamilyRoutinePDF(
         const childMissions = missions.filter(m => m.childId === child.id && m.status === 'pending');
         const childSchedule = schedule.filter(s => s.childId === child.id);
 
-        if (childMissions.length === 0 && childSchedule.length === 0) {
+        const hasMissionsToPrint = options.includeMissions && childMissions.length > 0;
+        const hasSchoolToPrint = options.includeSchool && childSchedule.length > 0;
+
+        if (!hasMissionsToPrint && !hasSchoolToPrint) {
             continue;
         }
 
         // --- Missions Page ---
-        if (childMissions.length > 0) {
+        if (hasMissionsToPrint) {
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Rotina Semanal de Missões', child.name);
             
@@ -92,26 +96,28 @@ export async function generateFamilyRoutinePDF(
             const sortedTimeSlots = Array.from(timeSlots).sort();
             
             for(const time of sortedTimeSlots){
-                const row: (string | { content: string, styles: { fontStyle: 'bold' } })[] = [{ content: time, styles: { fontStyle: 'bold' } }];
+                const row: (string | { content: string, styles: any })[] = [{ content: time, styles: { fontStyle: 'bold', halign: 'center' } }];
                  for(const day of daysOfWeek){
                     const dayKey = getDayToWeekday[day.getDay()];
                     const missionsForSlot = childMissions.filter(m => {
                         const missionDate = m.isRecurring ? m.startDate?.toDate() : m.dueDate?.toDate();
                         return missionDate && format(missionDate, 'HH:mm') === time && isMissionScheduledForDate(m, day);
                     });
-                    row.push(missionsForSlot.map(m => `${m.emoji || '🎯'} ${m.title}`).join('\n'));
+                    row.push({
+                        content: missionsForSlot.map(m => `${m.emoji || '🎯'} **${m.title}**`).join('\n'),
+                        styles: { font: 'Helvetica', cellWidth: 'wrap' }
+                    });
                  }
                  missionRows.push(row);
             }
 
             autoTable(doc, {
                 head: [missionColumns],
-                body: missionRows,
+                body: missionRows as any,
                 startY: 30,
                 theme: 'grid',
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
-                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle' },
-                columnStyles: { 0: { fontStyle: 'bold', halign: 'center' } },
+                styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle' },
                 didDrawPage: (data) => {
                     addHeader(doc, 'Rotina Semanal de Missões', child.name);
                     data.cursor.y = 30;
@@ -121,7 +127,7 @@ export async function generateFamilyRoutinePDF(
         }
 
         // --- School Schedule Page ---
-        if (childSchedule.length > 0) {
+        if (hasSchoolToPrint) {
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Agenda Escolar', child.name);
 
@@ -150,8 +156,8 @@ export async function generateFamilyRoutinePDF(
                 startY: 30,
                 theme: 'grid',
                 headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
-                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15 },
-                columnStyles: { 0: { fontStyle: 'bold', halign: 'center' } },
+                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
+                columnStyles: { 0: { fontStyle: 'bold' } },
                  didParseCell: function (data) {
                     const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === data.row.cells[0].text[0]);
                     if (entry && entry.color) {
@@ -170,10 +176,14 @@ export async function generateFamilyRoutinePDF(
     }
 
     if (isFirstPage) {
-        addHeader(doc, 'Relatório de Rotinas', familyName);
+        let title = "Relatório de Rotinas";
+        if(options.includeMissions && !options.includeSchool) title = "Rotina Semanal de Missões";
+        if(!options.includeMissions && options.includeSchool) title = "Agenda Escolar";
+
+        addHeader(doc, title, familyName);
         doc.setFontSize(BODY_FONT_SIZE);
         doc.setTextColor(TEXT_COLOR_LIGHT);
-        doc.text("Nenhuma rotina de missão ou escolar encontrada para os heróis desta aliança.", PAGE_MARGIN, 40);
+        doc.text("Nenhuma rotina encontrada para os heróis neste contexto.", PAGE_MARGIN, 40);
     }
     
     addFooter(doc);
