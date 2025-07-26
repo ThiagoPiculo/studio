@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db, storage } from './config';
-import { ref, uploadBytes, getDownloadURL, getMetadata } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "firebase/storage";
 
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
@@ -148,6 +148,38 @@ export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blo
     });
     
     return { newUrl: downloadURL };
+};
+
+export const deleteAvatar = async (profileId: string, userId: string, isUserAvatar = false): Promise<void> => {
+    if (!profileId || !userId) throw new Error("Profile and User IDs are required.");
+
+    const basePath = isUserAvatar ? `user_avatars/${profileId}` : `avatars/${userId}/${profileId}`;
+    const originalPath = `${basePath}/avatar.png`;
+    const resizedPath = `${basePath}/avatar_200x200.png`;
+
+    // References to the files in storage
+    const originalRef = ref(storage, originalPath);
+    const resizedRef = ref(storage, resizedPath);
+
+    // Update Firestore document to remove the avatar URL
+    const docRef = doc(db, isUserAvatar ? 'users' : 'children', profileId);
+    await updateDoc(docRef, {
+        avatarUrl: deleteField(),
+        avatar: deleteField(), // Ensure both potential fields are cleared
+        updatedAt: serverTimestamp(),
+    });
+
+    // Attempt to delete files from storage, ignoring errors if they don't exist
+    try {
+        await deleteObject(originalRef);
+    } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') console.error("Error deleting original avatar:", error);
+    }
+    try {
+        await deleteObject(resizedRef);
+    } catch (error: any) {
+        if (error.code !== 'storage/object-not-found') console.error("Error deleting resized avatar:", error);
+    }
 };
 
 // --- Child Profile ---
@@ -2464,3 +2496,4 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
     
+

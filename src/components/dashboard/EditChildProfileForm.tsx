@@ -16,10 +16,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertTitle as AlertTitleShad } from "../ui/alert";
 
@@ -310,6 +311,21 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     }
 };
 
+const handleRemoveAvatar = async () => {
+    if (!user || !child.avatar) return;
+    setIsUploadingAvatar(true);
+    try {
+        await deleteAvatar(child.id, user.uid);
+        setAvatarPreview(null);
+        toast({ title: "Avatar removido!" });
+        onProfileUpdate();
+    } catch (error) {
+        console.error("Error removing avatar:", error);
+        toast({ title: "Erro ao remover", description: "Não foi possível remover o avatar.", variant: "destructive" });
+    } finally {
+        setIsUploadingAvatar(false);
+    }
+};
 
 
   const handleShiftChange = (value: string) => {
@@ -529,6 +545,15 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
                         <Camera className="mr-2 h-4 w-4" />
                         Tirar Foto
                       </DropdownMenuItem>
+                       {avatarPreview && (
+                        <>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem onSelect={handleRemoveAvatar} className="text-destructive focus:text-destructive">
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Remover Imagem
+                          </DropdownMenuItem>
+                        </>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}

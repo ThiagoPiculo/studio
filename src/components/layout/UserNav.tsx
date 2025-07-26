@@ -30,7 +30,7 @@ export function UserNav() {
 
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
   const displayEmail = isChildAuthenticated ? `Código de Acesso: ${childProfile?.accessCode}` : user?.email;
-  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : undefined; 
+  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : user?.avatarUrl; 
   const avatarColor = isChildAuthenticated ? childProfile?.color : undefined;
   
   const currentAlliance = currentContext !== 'my-space' 

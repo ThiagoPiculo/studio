@@ -14,7 +14,7 @@ import { updateProfile as updateAuthProfile, reauthenticateWithCredential, Email
 import { doc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase/config';
 import { resetPassword, deleteUserAccount } from '@/lib/firebase/auth';
-import { getChildProfilesByOwner, getChildProfilesByFamily, getFamilyMembers, resetSelectedChildrenProgress, resetSchedulesForChildren, getUserProfile, uploadUserAvatarAndUpdateProfile } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, getChildProfilesByFamily, getFamilyMembers, resetSelectedChildrenProgress, resetSchedulesForChildren, getUserProfile, uploadUserAvatarAndUpdateProfile, deleteAvatar } from '@/lib/firebase/firestore';
 import type { ChildProfile, UserProfile } from '@/lib/types';
 import {
   AlertDialog,
@@ -33,7 +33,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -415,6 +415,21 @@ export default function ProfilePage() {
     }
   };
 
+  const handleRemoveAvatar = async () => {
+    if (!user || !user.avatarUrl) return;
+    setIsUploadingAvatar(true);
+    try {
+        await deleteAvatar(user.uid, user.uid, true);
+        setAvatarPreview(null);
+        toast({ title: "Avatar removido!" });
+    } catch (error) {
+        console.error("Error removing avatar:", error);
+        toast({ title: "Erro ao remover", description: "Não foi possível remover o avatar.", variant: "destructive" });
+    } finally {
+        setIsUploadingAvatar(false);
+    }
+  };
+
   const selectedProgressCount = useMemo(() => Object.values(selectedChildrenForProgress).filter(Boolean).length, [selectedChildrenForProgress]);
   const selectedRoutinesCount = useMemo(() => Object.values(selectedChildrenForRoutines).filter(Boolean).length, [selectedChildrenForRoutines]);
 
@@ -564,6 +579,15 @@ export default function ProfilePage() {
                       <Camera className="mr-2 h-4 w-4" />
                       Tirar Foto
                     </DropdownMenuItem>
+                    {avatarPreview && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={handleRemoveAvatar} className="text-destructive focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remover Imagem
+                        </DropdownMenuItem>
+                      </>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
                  <input
