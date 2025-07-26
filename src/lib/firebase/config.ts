@@ -9,7 +9,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDaZbI0YglL_s5-mHhhCAXqUcB2l7FhlgQ",
   authDomain: "miniheroes-habit-builder.firebaseapp.com",
   projectId: "miniheroes-habit-builder",
-  storageBucket: "miniheroes-habit-builder.appspot.com",
+  storageBucket: "miniheroes-habit-builder.firebasestorage.app",
   messagingSenderId: "479524072547",
   appId: "1:479524072547:web:a33dc8d5b99e3b61721c56"
 };
