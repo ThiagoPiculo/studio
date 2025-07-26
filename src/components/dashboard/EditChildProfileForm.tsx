@@ -157,7 +157,13 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
     const aspect = 1; // 1:1 aspect ratio
-    setCrop(centerCrop(makeAspectCrop({ unit: '%', width: 100 }, aspect, width, height), width, height));
+    setCrop({
+      unit: 'px',
+      x: 0,
+      y: 0,
+      width: Math.min(width, height),
+      height: Math.min(width, height),
+    });
   };
 
   function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<Blob> {
@@ -343,9 +349,9 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       digits = digits.slice(0, 8);
     }
     if (digits.length > 4) {
-      return `\${digits.slice(0, 2)}/\${digits.slice(2, 4)}/\${digits.slice(4)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
     } else if (digits.length > 2) {
-      return `\${digits.slice(0, 2)}/\${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     }
     return digits;
   };
