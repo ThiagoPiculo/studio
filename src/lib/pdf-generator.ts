@@ -110,7 +110,7 @@ export async function generateFamilyRoutinePDF(
                 startY: startY + 2,
                 theme: 'striped',
                 headStyles: { fillColor: PRIMARY_COLOR },
-                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE },
+                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2 },
                 didDrawPage: (data) => {
                     addHeader(doc, familyName);
                     // Reset Y position for content on new page
@@ -135,14 +135,15 @@ export async function generateFamilyRoutinePDF(
 
             const scheduleByDay: { [key in Weekday]?: SchoolScheduleEntry[] } = {};
             childSchedule.forEach(entry => {
-                if (!scheduleByDay[entry.dayOfWeek]) {
-                    scheduleByDay[entry.dayOfWeek] = [];
+                const day = entry.dayOfWeek;
+                if (!scheduleByDay[day]) {
+                    scheduleByDay[day] = [];
                 }
-                scheduleByDay[entry.dayOfWeek]!.push(entry);
+                scheduleByDay[day]!.push(entry);
             });
             
             const scheduleBody = allWeekdays
-                .filter(day => scheduleByDay[day])
+                .filter(day => scheduleByDay[day] && scheduleByDay[day]!.length > 0)
                 .map(day => {
                     const entries = scheduleByDay[day]!.sort((a, b) => a.startTime.localeCompare(b.startTime));
                     const activities = entries.map(e => `${e.startTime} - ${e.endTime}: ${e.subject}`).join('\n');
@@ -155,7 +156,7 @@ export async function generateFamilyRoutinePDF(
                 startY: startY + 2,
                 theme: 'grid',
                 headStyles: { fillColor: '#3B82F6' }, // A different color for distinction
-                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE },
+                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2,  valign: 'middle' },
                 didDrawPage: (data) => {
                     addHeader(doc, familyName);
                     data.cursor.y = 40;
