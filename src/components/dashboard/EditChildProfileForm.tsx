@@ -157,7 +157,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
     const aspect = 1; // 1:1 aspect ratio
-    setCrop(centerCrop(makeAspectCrop({ unit: '%', width: 90 }, aspect, width, height), width, height));
+    setCrop(centerCrop(makeAspectCrop({ unit: '%', width: 100 }, aspect, width, height), width, height));
   };
 
   function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<Blob> {
