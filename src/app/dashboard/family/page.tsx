@@ -1438,7 +1438,29 @@ function FamilyPageContent() {
       <div className="grid md:grid-cols-2 gap-6">
         <Card ref={createCardRef}>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança de Herois</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><UserPlus className="h-5 w-5 text-primary" />Crie Sua Própria Aliança</CardTitle>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground">
+                                <Info className="mr-1 h-3 w-3" /> Como usar?
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Como Criar uma Aliança</AlertDialogTitle>
+                            </AlertDialogHeader>
+                            <div className="space-y-2 text-sm text-muted-foreground">
+                                <p><b>Passo 1:</b> Dê um nome divertido para sua equipe no campo "Ex: Aliança Aventura".</p>
+                                <p><b>Passo 2:</b> Clique no botão "Criar Aliança".</p>
+                                <p><b>Passo 3:</b> Na próxima tela, você receberá um código secreto para convidar outros responsáveis para a sua nova aliança!</p>
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Entendi!</AlertDialogCancel>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
                 <CardDescription>Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
@@ -1460,7 +1482,29 @@ function FamilyPageContent() {
           </Card>
           <Card ref={joinCardRef}>
             <CardHeader>
-                <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança de Herois</CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary" />Entrar em uma Aliança</CardTitle>
+                     <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="link" className="p-0 h-auto text-xs text-muted-foreground">
+                                <Info className="mr-1 h-3 w-3" /> Como usar?
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Como Entrar em uma Aliança</AlertDialogTitle>
+                            </AlertDialogHeader>
+                            <div className="space-y-2 text-sm text-muted-foreground">
+                                <p><b>Passo 1:</b> Peça o código de 6 dígitos ao dono da aliança que você quer entrar.</p>
+                                <p><b>Passo 2:</b> Digite o código no campo "Código de 6 dígitos".</p>
+                                <p><b>Passo 3:</b> Clique em "Entrar com Código". Seu pedido será enviado para aprovação.</p>
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Entendi!</AlertDialogCancel>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
                  <CardDescription>Entre em uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
