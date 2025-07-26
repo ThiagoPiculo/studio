@@ -19,7 +19,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -38,6 +38,13 @@ import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Alert, AlertTitle as AlertTitleShad } from "../ui/alert";
 
 
 const profileFormSchema = z.object({
@@ -115,6 +122,13 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
 
+  // States for camera modal
+  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -129,6 +143,48 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   });
   
   const watchedSchoolShift = form.watch("schoolShift");
+
+  useEffect(() => {
+    if (!isCameraDialogOpen) {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
+      return;
+    }
+  
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setCameraStream(stream);
+        setHasCameraPermission(true);
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+        toast({
+          variant: 'destructive',
+          title: 'Câmera não Permitida',
+          description: 'Por favor, habilite a permissão de câmera no seu navegador para usar esta função.',
+        });
+        setIsCameraDialogOpen(false);
+      }
+    };
+  
+    getCameraPermission();
+  
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraDialogOpen, toast]);
+
+  useEffect(() => {
+      if (cameraStream && videoRef.current) {
+          videoRef.current.srcObject = cameraStream;
+      }
+  }, [cameraStream]);
+
 
   useEffect(() => {
     form.reset({
@@ -154,15 +210,29 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     }
   };
 
+  const handleTakePicture = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        setImageSrc(dataUrl);
+        setIsCameraDialogOpen(false); // Close camera dialog to open crop dialog
+      }
+    }
+  };
+
   const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget;
-    const aspect = 1; // 1:1 aspect ratio
     setCrop({
       unit: 'px',
       x: 0,
       y: 0,
       width: Math.min(width, height),
-      height: Math.min(width, height),
+      height: Math.min(width, height)
     });
   };
 
@@ -349,9 +419,9 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       digits = digits.slice(0, 8);
     }
     if (digits.length > 4) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      return `\${digits.slice(0, 2)}/\${digits.slice(2, 4)}/\${digits.slice(4)}`;
     } else if (digits.length > 2) {
-      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `\${digits.slice(0, 2)}/\${digits.slice(2)}`;
     }
     return digits;
   };
@@ -363,6 +433,33 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
   return (
     <>
+      <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Tirar Foto para o Avatar</DialogTitle>
+                  <DialogDescription>
+                      Posicione o rosto do seu herói no centro da câmera e clique em "Capturar!".
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="my-4">
+                  <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
+                  {hasCameraPermission === false && (
+                      <Alert variant="destructive" className="mt-2">
+                          <AlertTitleShad>Câmera não acessível</AlertTitleShad>
+                          <AlertDescription>
+                              Você precisa permitir o acesso à câmera no seu navegador para usar esta funcionalidade.
+                          </AlertDescription>
+                      </Alert>
+                  )}
+              </div>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCameraDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleTakePicture} disabled={!hasCameraPermission || !cameraStream}>
+                      <Camera className="mr-2 h-4 w-4" /> Capturar!
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
       <Dialog open={!!imageSrc} onOpenChange={(open) => !open && setImageSrc(null)}>
         <DialogContent>
             <DialogHeader>
@@ -411,16 +508,29 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
                   </div>
                 )}
                 {canEdit && (
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    size="icon"
-                    className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingAvatar}
-                  >
-                    <Camera className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="icon"
+                        className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
+                        disabled={isUploadingAvatar}
+                      >
+                        <Camera className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+                        <UploadCloud className="mr-2 h-4 w-4" />
+                        Carregar Imagem
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onSelect={() => setIsCameraDialogOpen(true)}>
+                        <Camera className="mr-2 h-4 w-4" />
+                        Tirar Foto
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
                 <input
                   ref={fileInputRef}
