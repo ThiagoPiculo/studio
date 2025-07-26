@@ -24,7 +24,6 @@ import Loading from './loading';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
-import { Toggle } from '@/components/ui/toggle';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
@@ -36,6 +35,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRecurrenceDialog';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Badge } from '@/components/ui/badge';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
 
 export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -73,7 +73,7 @@ function AgendaPageContent() {
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
   const childIdParam = searchParams.get('child_id');
-  const [selectedChildrenIds, setSelectedChildrenIds] = useState<string[]>(childIdParam ? [childIdParam] : []);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdParam);
 
   // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
@@ -168,8 +168,10 @@ function AgendaPageContent() {
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
         // Do not reset selected children if coming from a link
-        if (!childIdParam) {
-          setSelectedChildrenIds([]);
+        if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
+          setSelectedChildId(childIdParam);
+        } else {
+          setSelectedChildId(null);
         }
 
       } catch (error) {
@@ -240,9 +242,9 @@ function AgendaPageContent() {
   }, [currentDate, dateRangeFilter]);
 
   const eventsByDate = useMemo(() => {
-    const childrenToProcess = selectedChildrenIds.length === 0 
+    const childrenToProcess = !selectedChildId
       ? children 
-      : children.filter(c => selectedChildrenIds.includes(c.id));
+      : children.filter(c => c.id === selectedChildId);
       
     const instancesToProcess = missionInstances.filter(inst => childrenToProcess.some(c => c.id === inst.childId));
 
@@ -326,7 +328,7 @@ function AgendaPageContent() {
     });
 
     return acc;
-  }, [viewInterval, missionInstances, selectedChildrenIds, timePeriodFilter, children]);
+  }, [viewInterval, missionInstances, selectedChildId, timePeriodFilter, children]);
 
   const createUrlWithNewDate = (newDate: Date) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -1021,52 +1023,15 @@ function AgendaPageContent() {
           <CardContent>
             <Separator className="mb-4" />
             <div className="space-y-4">
-                <div>
-                  <Label className="px-1 text-sm font-semibold text-muted-foreground">Filtrar por Heróis</Label>
-                  <div className="flex flex-wrap items-center gap-2 mt-2">
-                    <Toggle
-                        size="sm"
-                        variant="outline"
-                        pressed={selectedChildrenIds.length === 0}
-                        onPressedChange={(pressed) => {
-                          if (pressed) {
-                            setSelectedChildrenIds([])
-                          }
-                        }}
-                        className="h-9 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
-                    >
-                        Todos
-                    </Toggle>
-                    {children.map(child => {
-                      const isPressed = selectedChildrenIds.includes(child.id);
-                      return (
-                        <Toggle
-                            key={child.id}
-                            size="sm"
-                            className={cn(
-                                "h-9 px-3 rounded-md text-white border-0 transition-all duration-200",
-                                isPressed
-                                  ? 'opacity-100 ring-2 ring-primary ring-offset-2 ring-offset-background shadow-md'
-                                  : 'opacity-70 hover:opacity-100'
-                            )}
-                            style={{ backgroundColor: child.color }}
-                            pressed={isPressed}
-                            onPressedChange={(pressed) => {
-                              const otherIds = selectedChildrenIds.filter(id => id !== child.id);
-                              if (pressed) {
-                                setSelectedChildrenIds([...otherIds, child.id]);
-                              } else {
-                                setSelectedChildrenIds(otherIds);
-                              }
-                            }}
-                        >
-                            {child.name}
-                        </Toggle>
-                      )
-                    })}
-                  </div>
-                </div>
-
+                {children.length > 1 && (
+                    <HeroSelector
+                        heroes={children}
+                        selectedHeroId={selectedChildId}
+                        onSelectHero={setSelectedChildId}
+                        showAllOption={true}
+                    />
+                )}
+                
                 <Separator />
 
                 {isMobile ? (
