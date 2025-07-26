@@ -104,6 +104,52 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
   } as UserProfile;
 };
 
+export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blob): Promise<{ newUrl: string }> => {
+    if (!userId) throw new Error("User ID is required.");
+    if (!file) throw new Error("File is required.");
+    
+    const originalPath = `user_avatars/${userId}/avatar.png`;
+    const storageRef = ref(storage, originalPath);
+    
+    await uploadBytes(storageRef, file, { contentType: 'image/png' });
+    
+    const resizedPath = `user_avatars/${userId}/avatar_200x200.png`;
+    const resizedRef = ref(storage, resizedPath);
+    let downloadURL: string | null = null;
+    const maxRetries = 10;
+    const initialDelay = 1000;
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            await getMetadata(resizedRef);
+            downloadURL = await getDownloadURL(resizedRef);
+            break;
+        } catch (error: any) {
+            if (error.code === 'storage/object-not-found') {
+                if (i === maxRetries - 1) {
+                    downloadURL = await getDownloadURL(storageRef);
+                    break;
+                }
+                await new Promise(resolve => setTimeout(resolve, initialDelay * (i + 1)));
+            } else {
+                throw error;
+            }
+        }
+    }
+
+    if (!downloadURL) {
+        throw new Error("Failed to get a download URL for the avatar.");
+    }
+
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, {
+      avatarUrl: downloadURL,
+      updatedAt: serverTimestamp(),
+    });
+    
+    return { newUrl: downloadURL };
+};
+
 // --- Child Profile ---
 export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>, contextId?: string): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();

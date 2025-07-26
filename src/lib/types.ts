@@ -43,6 +43,7 @@ export interface UserProfile {
   uid: string;
   email: string | null;
   name: string | null;
+  avatarUrl?: string | null;
   createdAt: Timestamp;
   settings?: Partial<UserSettings>;
 }
@@ -383,5 +384,3 @@ export interface Notification {
   actorId?: string | null; // Optional, who performed the action
   actorName?: string | null; // Optional, name of the actor
 }
-
-    

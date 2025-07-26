@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/config';
 import type { UserProfile, ChildProfile, AuthContextType } from '@/lib/types';
-import { doc, getDoc, setDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
                   name: firebaseUser.displayName,
+                  avatarUrl: firebaseUser.photoURL,
                   createdAt: firebaseUser.metadata.creationTime ? Timestamp.fromDate(new Date(firebaseUser.metadata.creationTime)) : serverTimestamp() as any,
               };
               setUser(tempUser);
