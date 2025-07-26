@@ -207,30 +207,14 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
 
   const handleCropAndUpload = async () => {
-    if (!crop || !imgRef.current || !user) return;
-    setIsUploadingAvatar(true);
-    try {
-        const imageBlob = await getCroppedImg(imgRef.current, crop);
-        const result = await uploadAvatarAndUpdateProfile(child.id, imageBlob);
-
-        if (result.newUrl) {
-            setAvatarPreview(result.newUrl);
-            toast({ title: "Avatar Atualizado!", description: "A nova foto do seu herói foi salva." });
-            onProfileUpdate(); 
-        } else {
-            throw new Error("A URL do avatar não foi retornada.");
-        }
-        
-    } catch (error: any) {
-        console.error("Error cropping and uploading:", error);
-        toast({ title: "Erro no Upload", description: error.message || "Não foi possível enviar a imagem.", variant: "destructive" });
-    } finally {
-        setIsUploadingAvatar(false);
-        setImageSrc(null);
-        if (fileInputRef.current) {
-            fileInputRef.current.value = "";
-        }
-    }
+    toast({
+        title: "Configuração de CORS Necessária",
+        description: "O upload de avatar está temporariamente desativado. É preciso configurar o CORS no bucket do Cloud Storage para que funcione.",
+        variant: "destructive",
+        duration: 10000,
+    });
+    setImageSrc(null);
+    return;
   }
 
 
