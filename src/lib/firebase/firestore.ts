@@ -151,21 +151,19 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
-export const uploadAvatarAndUpdateProfile = async (childId: string, file: Blob): Promise<{ newUrl: string }> => {
+export const uploadAvatarAndUpdateProfile = async (childId: string, file: Blob, userId: string): Promise<{ newUrl: string }> => {
     if (!childId) throw new Error("Child ID is required.");
+    if (!userId) throw new Error("User ID is required.");
     if (!file) throw new Error("File is required.");
     
-    // The path in the storage will be avatars/{childId}/avatar.png
-    // This makes it easy to manage and secure.
-    const storageRef = ref(storage, `avatars/${childId}/avatar.png`);
+    // The path in the storage will be avatars/{userId}/{childId}/avatar.png
+    // This allows the rules to secure uploads based on the authenticated user's ID.
+    const storageRef = ref(storage, `avatars/${userId}/${childId}/avatar.png`);
     
-    // 'file' comes from the cropping utility, which should be a Blob/File.
     const snapshot = await uploadBytes(storageRef, file, { contentType: 'image/png' });
     
-    // Get the public URL for the uploaded file.
     const downloadURL = await getDownloadURL(snapshot.ref);
     
-    // Update the child's profile in Firestore with the new URL.
     const childRef = doc(db, 'children', childId);
     await updateDoc(childRef, {
       avatar: downloadURL,
@@ -2381,3 +2379,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
     
 
+
+
+    

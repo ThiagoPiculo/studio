@@ -1,21 +1,15 @@
-
 rules_version = '2';
 
-// By default, deny all reads and writes
 service firebase.storage {
   match /b/{bucket}/o {
-    
-    // Allow profile picture uploads
-    match /avatars/{childId}/avatar.png {
-      // Any authenticated user can upload an avatar.
-      // The security is handled by the application logic which ensures
-      // that only authorized users can trigger the upload for a specific child.
-      allow write: if request.auth != null;
-    }
-
-    // Public read for all avatars
-    match /avatars/{childId}/avatar.png {
+    // Allow any authenticated user to upload their own avatar
+    // The path ensures that the userId in the path matches the authenticated user's ID.
+    // This prevents one user from overwriting another user's avatar.
+    match /avatars/{userId}/{childId}/{allPaths=**} {
       allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
+
+    

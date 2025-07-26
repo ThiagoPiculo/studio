@@ -1,4 +1,3 @@
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, updateChildProfile, uploadAvatarAndUpdateProfile, getUserProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
@@ -207,15 +206,33 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
 
   const handleCropAndUpload = async () => {
-    toast({
-        title: "Configuração de CORS Necessária",
-        description: "O upload de avatar está temporariamente desativado. É preciso configurar o CORS no bucket do Cloud Storage para que funcione.",
-        variant: "destructive",
-        duration: 10000,
-    });
-    setImageSrc(null);
-    return;
-  }
+    if (!user || !crop || !imgRef.current) return;
+    
+    setIsUploadingAvatar(true);
+    setImageSrc(null); // Close the modal
+
+    try {
+        const croppedBlob = await getCroppedImg(imgRef.current, crop);
+        const { newUrl } = await uploadAvatarAndUpdateProfile(child.id, croppedBlob, user.uid);
+        setAvatarPreview(newUrl); // Update UI instantly
+        toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
+        onProfileUpdate(); // Re-fetch other data
+    } catch (error) {
+        console.error("Error uploading avatar:", error);
+        let description = "Não foi possível salvar o novo avatar. Tente novamente.";
+        if (error instanceof Error && (error.message.includes('storage/unauthorized') || error.message.includes('CORS'))) {
+            description = "Falha no upload. Verifique as permissões do CORS no seu bucket do Cloud Storage.";
+        }
+        toast({
+            title: "Erro no Upload",
+            description,
+            variant: "destructive",
+        });
+    } finally {
+        setIsUploadingAvatar(false);
+    }
+};
+
 
 
   const handleShiftChange = (value: string) => {
@@ -661,3 +678,5 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     </>
   );
 }
+
+    
