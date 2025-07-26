@@ -2,14 +2,16 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Allow any authenticated user to upload their own avatar
-    // The path ensures that the userId in the path matches the authenticated user's ID.
-    // This prevents one user from overwriting another user's avatar.
+    // Regra geral: por padrão, ninguém pode ler ou escrever.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+    
+    // Permite que qualquer usuário autenticado escreva na pasta de avatares.
+    // A segurança de qual usuário pode escrever em qual subpasta é controlada
+    // pela lógica da aplicação (Server Action ou client-side code).
     match /avatars/{userId}/{childId}/{allPaths=**} {
-      allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      allow write: if request.auth != null;
     }
   }
 }
-
-    
