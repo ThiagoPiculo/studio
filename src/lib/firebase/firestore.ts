@@ -20,7 +20,7 @@ import {
   onSnapshot,
 } from 'firebase/firestore';
 import { db, storage } from './config';
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, getMetadata } from "firebase/storage";
 
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
@@ -151,19 +151,55 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   return newChild;
 };
 
+// Helper function to delay execution
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
 export const uploadAvatarAndUpdateProfile = async (childId: string, file: Blob, userId: string): Promise<{ newUrl: string }> => {
     if (!childId) throw new Error("Child ID is required.");
     if (!userId) throw new Error("User ID is required.");
     if (!file) throw new Error("File is required.");
     
-    // The path in the storage will be avatars/{userId}/{childId}/avatar.png
-    // This allows the rules to secure uploads based on the authenticated user's ID.
-    const storageRef = ref(storage, `avatars/${userId}/${childId}/avatar.png`);
+    // Path for the original image
+    const originalPath = `avatars/${userId}/${childId}/avatar.png`;
+    const storageRef = ref(storage, originalPath);
     
-    const snapshot = await uploadBytes(storageRef, file, { contentType: 'image/png' });
+    // Upload the original file
+    await uploadBytes(storageRef, file, { contentType: 'image/png' });
     
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    
+    // Define the path for the resized image
+    const resizedPath = `avatars/${userId}/${childId}/avatar_200x200.png`;
+    const resizedRef = ref(storage, resizedPath);
+    let downloadURL: string | null = null;
+    const maxRetries = 10;
+    const initialDelay = 1000; // 1 second
+
+    // Poll for the resized image
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            await getMetadata(resizedRef); // Check if the file exists
+            downloadURL = await getDownloadURL(resizedRef);
+            break; // Exit loop if successful
+        } catch (error: any) {
+            if (error.code === 'storage/object-not-found') {
+                // File doesn't exist yet, wait and retry
+                if (i === maxRetries - 1) {
+                    console.warn("Resized image not found after all retries. Falling back to original image.");
+                    // If all retries fail, fall back to the original image URL
+                    downloadURL = await getDownloadURL(storageRef);
+                    break;
+                }
+                await delay(initialDelay * (i + 1)); // Exponential backoff
+            } else {
+                throw error; // Rethrow other errors
+            }
+        }
+    }
+
+    if (!downloadURL) {
+        throw new Error("Failed to get a download URL for the avatar.");
+    }
+
+    // Update the child's profile with the (preferably resized) URL
     const childRef = doc(db, 'children', childId);
     await updateDoc(childRef, {
       avatar: downloadURL,
@@ -2092,7 +2128,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
