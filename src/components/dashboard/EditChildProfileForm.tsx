@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildProfile, uploadAvatarAndUpdateProfile } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X } from "lucide-react";
@@ -361,7 +362,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
             <DialogHeader>
                 <DialogTitle>Recortar Foto do Herói</DialogTitle>
                 <DialogDescription>
-                    Ajuste a imagem para criar o avatar perfeito.
+                    A ferramenta já está travada em um formato quadrado (1:1) para garantir que o avatar fique perfeito. Ajuste a imagem para criar o avatar ideal.
                 </DialogDescription>
             </DialogHeader>
             {imageSrc && (
@@ -678,5 +679,3 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     </>
   );
 }
-
-    
