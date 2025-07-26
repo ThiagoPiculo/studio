@@ -78,12 +78,14 @@ export async function generateFamilyRoutinePDF(
         const hasMissionsToPrint = options.includeMissions && childMissions.length > 0;
         const hasSchoolToPrint = options.includeSchool && childSchedule.length > 0;
 
-        if (!hasMissionsToPrint && !hasSchoolToPrint) {
-            continue;
-        }
+        if (!options.includeMissions && !options.includeSchool) continue;
+        if (options.includeMissions && !options.includeSchool && !hasMissionsToPrint) continue;
+        if (!options.includeMissions && options.includeSchool && !hasSchoolToPrint) continue;
+        if (options.includeMissions && options.includeSchool && !hasMissionsToPrint && !hasSchoolToPrint) continue;
+
 
         // --- Missions Page ---
-        if (hasMissionsToPrint) {
+        if (options.includeMissions) {
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Rotina Semanal de Missões', child.name);
             
@@ -116,7 +118,7 @@ export async function generateFamilyRoutinePDF(
                     if (period) {
                         const time = missionDate ? format(missionDate, 'HH:mm') : '';
                         const emoji = m.emoji || '🎯';
-                        missionsByDayAndPeriod[dayKey][period].push(`${time} ${emoji} ${m.title}`);
+                        missionsByDayAndPeriod[dayKey][period].push(`[${time}] ${emoji} ${m.title}`);
                     }
                 });
             }
@@ -141,14 +143,15 @@ export async function generateFamilyRoutinePDF(
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
                 styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'top', font: 'Helvetica' },
                 didParseCell: function(data) {
-                    if (data.section === 'body' && data.cell.text) {
-                        // Ensure correct font is set before manual drawing
-                        doc.setFont('Helvetica');
-                        const cellText = Array.isArray(data.cell.text) ? data.cell.text.join('\n') : data.cell.text;
+                    doc.setFont('Helvetica');
+                    if (data.section === 'body' && typeof data.cell.raw === 'string') {
+                        const cellText = data.cell.raw;
                         const lines = cellText.split('\n');
                         const styledLines = lines.map(line => {
                             if (line.startsWith('[') && line.endsWith(']')) {
                                 return { content: line.replace(/\[(.*?)\]/g, '$1'), styles: { fontStyle: 'bold', textColor: TEXT_COLOR_DARK } };
+                            } else if (line.trim() === '') {
+                                return { content: '', styles: {} };
                             }
                             return { content: line, styles: { fontStyle: 'normal', textColor: TEXT_COLOR_LIGHT } };
                         });
@@ -157,57 +160,62 @@ export async function generateFamilyRoutinePDF(
                 },
                 didDrawPage: (data) => {
                     addHeader(doc, 'Rotina Semanal de Missões', child.name);
-                    data.cursor.y = 30;
                 }
             });
             isFirstPage = false;
         }
 
         // --- School Schedule Page ---
-        if (hasSchoolToPrint) {
+        if (options.includeSchool) {
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Agenda Escolar', child.name);
 
-            const scheduleColumns = ['Horário', ...allWeekdays.map(day => weekdayLabels[day].long)];
-            const scheduleBody: string[][] = [];
-            const scheduleTimeSlots = new Set<string>();
+            const childSchedule = schedule.filter(s => s.childId === child.id);
+            if (childSchedule.length === 0) {
+                 doc.text("Nenhuma rotina escolar cadastrada para este herói.", PAGE_MARGIN, 40);
+            } else {
+                const scheduleColumns = ['Horário', ...allWeekdays.map(day => weekdayLabels[day].long)];
+                const scheduleBody: string[][] = [];
+                const scheduleTimeSlots = new Set<string>();
 
-            childSchedule.forEach(entry => {
-                scheduleTimeSlots.add(entry.startTime);
-            });
-            
-            const sortedScheduleTimes = Array.from(scheduleTimeSlots).sort();
+                childSchedule.forEach(entry => {
+                    scheduleTimeSlots.add(entry.startTime);
+                });
+                
+                const sortedScheduleTimes = Array.from(scheduleTimeSlots).sort();
 
-            for (const time of sortedScheduleTimes) {
-                const row = [time];
-                for (const day of allWeekdays) {
-                    const entry = childSchedule.find(e => e.dayOfWeek === day && e.startTime === time);
-                    row.push(entry ? entry.subject : '');
-                }
-                scheduleBody.push(row);
-            }
-            
-            autoTable(doc, {
-                head: [scheduleColumns],
-                body: scheduleBody,
-                startY: 30,
-                theme: 'grid',
-                headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
-                styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
-                columnStyles: { 0: { fontStyle: 'bold' } },
-                 didParseCell: function (data) {
-                    const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text[0] || ''));
-                    if (entry && entry.color) {
-                       data.cell.styles.fillColor = entry.color;
-                       data.cell.styles.textColor = '#FFFFFF';
-                       data.cell.styles.fontStyle = 'bold';
+                for (const time of sortedScheduleTimes) {
+                    const row = [time];
+                    for (const day of allWeekdays) {
+                        const entry = childSchedule.find(e => e.dayOfWeek === day && e.startTime === time);
+                        row.push(entry ? entry.subject : '');
                     }
-                },
-                didDrawPage: (data) => {
-                    addHeader(doc, 'Agenda Escolar', child.name);
-                    data.cursor.y = 30;
+                    scheduleBody.push(row);
                 }
-            });
+                
+                autoTable(doc, {
+                    head: [scheduleColumns],
+                    body: scheduleBody,
+                    startY: 30,
+                    theme: 'grid',
+                    headStyles: { fillColor: '#3B82F6', textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
+                    styles: { font: 'Helvetica', fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle', minCellHeight: 15, halign: 'center' },
+                    columnStyles: { 0: { fontStyle: 'bold' } },
+                    didParseCell: function (data) {
+                        if (data.section === 'body' && data.column.index > 0) {
+                            const entry = childSchedule.find(e => e.dayOfWeek === allWeekdays[data.column.index - 1] && e.startTime === (data.row.cells[0]?.text?.[0] || ''));
+                            if (entry && entry.color) {
+                            data.cell.styles.fillColor = entry.color;
+                            data.cell.styles.textColor = '#FFFFFF';
+                            data.cell.styles.fontStyle = 'bold';
+                            }
+                        }
+                    },
+                    didDrawPage: (data) => {
+                        addHeader(doc, 'Agenda Escolar', child.name);
+                    }
+                });
+            }
             isFirstPage = false;
         }
     }
