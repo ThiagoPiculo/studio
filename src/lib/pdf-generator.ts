@@ -3,7 +3,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry, Weekday } from './types';
 import { weekdayLabels, allWeekdays } from './types';
-import { getDayToWeekday, isMissionScheduledForDate, parseTime } from './calendar-utils';
+import { getDayToWeekday, isMissionScheduledForDate, parseTime, getPeriodOfDay } from './calendar-utils';
 import { format, startOfWeek, addDays } from 'date-fns';
 
 // --- PDF Styling Constants ---
@@ -84,38 +84,51 @@ export async function generateFamilyRoutinePDF(
             if (!isFirstPage) doc.addPage('a4', 'landscape');
             addHeader(doc, 'Rotina Semanal de Missões', child.name);
             
-            const missionColumns = ['Horário', ...allWeekdays.map(day => weekdayLabels[day].long)];
+            const missionColumns = allWeekdays.map(day => weekdayLabels[day].long);
             const missionRows = [];
-            const timeSlots = new Set<string>();
 
-            childMissions.forEach(m => {
-                const date = m.isRecurring ? m.startDate?.toDate() : m.dueDate?.toDate();
-                if(date) timeSlots.add(format(date, 'HH:mm'));
-            });
+            const missionsByDayAndPeriod: Record<Weekday, { Manhã: string[], Tarde: string[], Noite: string[] }> = {
+                MO: { Manhã: [], Tarde: [], Noite: [] },
+                TU: { Manhã: [], Tarde: [], Noite: [] },
+                WE: { Manhã: [], Tarde: [], Noite: [] },
+                TH: { Manhã: [], Tarde: [], Noite: [] },
+                FR: { Manhã: [], Tarde: [], Noite: [] },
+                SA: { Manhã: [], Tarde: [], Noite: [] },
+                SU: { Manhã: [], Tarde: [], Noite: [] },
+            };
 
-            const sortedTimeSlots = Array.from(timeSlots).sort();
-            
-            for(const time of sortedTimeSlots){
-                const row: (string | { content: string, styles: any })[] = [{ content: time, styles: { fontStyle: 'bold', halign: 'center' } }];
-                 for(const day of daysOfWeek){
-                    const dayKey = getDayToWeekday[day.getDay()];
-                    const missionsForSlot = childMissions.filter(m => {
-                        const missionDate = m.isRecurring ? m.startDate?.toDate() : m.dueDate?.toDate();
-                        return missionDate && format(missionDate, 'HH:mm') === time && isMissionScheduledForDate(m, day);
+            for (const day of daysOfWeek) {
+                const dayKey = getDayToWeekday[day.getDay()];
+                const dailyMissions = childMissions.filter(m => isMissionScheduledForDate(m, day))
+                    .sort((a,b) => {
+                        const timeA = a.isRecurring ? a.startDate?.toDate() : a.dueDate?.toDate();
+                        const timeB = b.isRecurring ? b.startDate?.toDate() : b.dueDate?.toDate();
+                        if (!timeA || !timeB) return 0;
+                        return timeA.getTime() - timeB.getTime();
                     });
-                     // Sanitize emojis from mission titles
-                    const formattedMissions = missionsForSlot.map(m => {
+
+                dailyMissions.forEach(m => {
+                    const missionDate = m.isRecurring ? m.startDate?.toDate() : m.dueDate?.toDate();
+                    const period = getPeriodOfDay(missionDate);
+                    if (period) {
+                        const time = missionDate ? format(missionDate, 'HH:mm') : '';
                         const emoji = m.emoji || '🎯';
-                        return `${emoji} ${m.title}`;
-                    }).join('\n');
-                    
-                    row.push({
-                        content: formattedMissions,
-                        styles: { font: 'Helvetica', cellWidth: 'wrap' }
-                    });
-                 }
-                 missionRows.push(row);
+                        missionsByDayAndPeriod[dayKey][period].push(`${time} ${emoji} ${m.title}`);
+                    }
+                });
             }
+            
+            const formattedRowData = Object.entries(missionsByDayAndPeriod).reduce((acc, [dayKey, periods]) => {
+                const periodContent = (Object.entries(periods) as [('Manhã'|'Tarde'|'Noite'), string[]][])
+                    .filter(([, missions]) => missions.length > 0)
+                    .map(([periodName, missions]) => `[${periodName}]\n${missions.join('\n')}`)
+                    .join('\n\n');
+                
+                acc[dayKey as Weekday] = periodContent;
+                return acc;
+            }, {} as Record<Weekday, string>);
+            
+            missionRows.push(allWeekdays.map(day => formattedRowData[day]));
 
             autoTable(doc, {
                 head: [missionColumns],
@@ -123,7 +136,21 @@ export async function generateFamilyRoutinePDF(
                 startY: 30,
                 theme: 'grid',
                 headStyles: { fillColor: PRIMARY_COLOR, textColor: '#FFFFFF', fontStyle: 'bold', halign: 'center', font: 'Helvetica' },
-                styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'middle' },
+                styles: { fontSize: BODY_FONT_SIZE, cellPadding: 2, valign: 'top', font: 'Helvetica' },
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        // Apply bold styling for period headers like "[Manhã]"
+                        const cellText = data.cell.text as string[];
+                        const styledText = cellText.map(line => {
+                             if (line.startsWith('[') && line.endsWith(']')) {
+                                // This requires a more complex setup not directly supported by autotable's basic styling
+                                // For now, we'll rely on the structure. A more advanced PDF library would be needed for rich text.
+                            }
+                            return line.replace(/\[(.*?)\]/g, '$1'); // Remove brackets for display
+                        });
+                        data.cell.text = styledText;
+                    }
+                },
                 didDrawPage: (data) => {
                     addHeader(doc, 'Rotina Semanal de Missões', child.name);
                     data.cursor.y = 30;
