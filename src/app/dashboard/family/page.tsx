@@ -1505,7 +1505,7 @@ function FamilyPageContent() {
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
-                 <CardDescription>Entre em uma aliança já existente para ajudar a gerenciar os Mini Herios da aliança.</CardDescription>
+                 <CardDescription>Entre em uma aliança já existente para ajudar a gerenciar os Mini Heroios da aliança.</CardDescription>
             </CardHeader>
             <form onSubmit={handleJoinFamily}>
               <CardContent>
@@ -1538,3 +1538,5 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
+    
