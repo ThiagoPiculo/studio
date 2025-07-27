@@ -184,7 +184,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 </TooltipProvider>
                                             ) : (
                                                 <div className="h-2 flex items-center justify-center rounded-full bg-muted">
-                                                    <span className="text-xs text-muted-foreground italic">Nenhuma missão</span>
+                                                    <span className="text-xs text-foreground/70 italic whitespace-nowrap">Nenhuma missão</span>
                                                 </div>
                                             )}
                                         </div>
