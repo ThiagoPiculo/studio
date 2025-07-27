@@ -233,8 +233,6 @@ function HeroesPageContent() {
                       <div className="flex-grow overflow-hidden">
                         <CardTitle className="text-2xl font-semibold truncate">{child.name}</CardTitle>
                          <div className="flex flex-col md:flex-row md:items-center md:gap-2 text-muted-foreground text-xs">
-                          {age !== null && <span>{age} anos</span>}
-                          <span className="text-muted-foreground/50 hidden md:inline">•</span>
                           <div className="flex items-center gap-1 font-mono">
                             <span className="font-sans font-semibold">Chave Secreta:</span>
                             <span className="tracking-wider font-bold text-foreground">{child.accessCode}</span>
@@ -401,3 +399,5 @@ export default function HeroesPage() {
   )
 }
  
+
+    
