@@ -30,6 +30,7 @@ import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from "@/hooks/use-toast";
+import { Progress } from "@/components/ui/progress";
 
 
 function HeroesPageContent() {
@@ -369,7 +370,19 @@ function HeroesPageContent() {
                               <span className="text-xs text-muted-foreground font-semibold">(Nível {child.level})</span>
                            </div>
                        </div>
-                       <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
+                       {todaysMissionsCount > 0 ? (
+                        <div className="space-y-2 pt-1">
+                            <div className="flex justify-between items-baseline text-xs text-muted-foreground">
+                                <span className="font-semibold">Missões de Hoje</span>
+                                <span>{completedTodaysMissionsCount} de {todaysMissionsCount}</span>
+                            </div>
+                            <Progress value={(completedTodaysMissionsCount / todaysMissionsCount) * 100} className="h-3" />
+                        </div>
+                        ) : (
+                        <div className="text-center text-xs text-muted-foreground py-3 px-2 rounded-md bg-muted/50">
+                            Dia de descanso do herói! Nenhuma missão hoje.
+                        </div>
+                        )}
                     </div>
                    <Separator className="my-4" />
                    
@@ -487,3 +500,5 @@ export default function HeroesPage() {
   )
 }
  
+
+    
