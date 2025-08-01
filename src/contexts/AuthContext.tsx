@@ -6,7 +6,7 @@ import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/config';
 import type { UserProfile, ChildProfile, AuthContextType } from '@/lib/types';
-import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,15 +30,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const newProfileUnsubscribe = onSnapshot(userDocRef,
-          async (docSnap) => { // Make this async to handle profile creation
+          async (docSnap) => { 
             if (docSnap.exists()) {
-              setUser({ uid: docSnap.id, ...docSnap.data() } as UserProfile);
+              const userData = docSnap.data() as UserProfile;
+              // Check if existing user is missing avatarUrl from Google login
+              if (!userData.avatarUrl && firebaseUser.photoURL) {
+                await updateDoc(userDocRef, { avatarUrl: firebaseUser.photoURL });
+                setUser({ ...userData, avatarUrl: firebaseUser.photoURL });
+              } else {
+                setUser({ uid: docSnap.id, ...userData });
+              }
               setIsChildAuthenticated(false);
               setChildProfile(null);
             } else {
-              // This case can happen right after account creation or if the doc doesn't exist.
-              // We create a temporary user object from the auth data.
-              // The onSnapshot will eventually pick up the full profile once it's created.
               const tempUser: UserProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
@@ -83,19 +87,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      // onAuthStateChanged will handle setting user and loading state
-      // router.push('/dashboard'); // Let onAuthStateChanged and page logic handle redirects
-    } catch (error) {
-      console.error("Error during Google sign-in:", error);
-      setLoading(false); // Ensure loading is false on error
+      const googleUser = result.user;
+
+      const userDocRef = doc(db, 'users', googleUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (!userDocSnap.exists()) {
+        const userProfile: UserProfile = {
+          uid: googleUser.uid,
+          email: googleUser.email,
+          name: googleUser.displayName,
+          avatarUrl: googleUser.photoURL,
+          createdAt: serverTimestamp() as any,
+          settings: {
+            initialPage: 'heroes',
+            rewardMode: 'automatic',
+          },
+        };
+        await setDoc(userDocRef, userProfile);
+      } else {
+        // If user exists but is missing avatar, update it.
+        const userData = userDocSnap.data();
+        if (!userData.avatarUrl && googleUser.photoURL) {
+          await updateDoc(userDocRef, { avatarUrl: googleUser.photoURL });
+        }
+      }
+
+    } catch (error: any) {
+        if (error.code !== 'auth/popup-closed-by-user') {
+           console.error("Error during Google sign-in:", error);
+        }
+        setLoading(false); 
+        throw error;
     }
   };
 
   const logout = async () => {
     try {
       await signOut(auth);
-      // onAuthStateChanged will set user to null. The useEffect in DashboardLayout
-      // will then redirect to /auth/login.
       router.push('/auth/login');
     } catch (error) {
       console.error("Error signing out:", error);
@@ -104,7 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const setChildAuthenticatedState = (profile: ChildProfile) => {
     if (profileUnsubscribe) {
-      profileUnsubscribe(); // Unsubscribe from any admin profile listener
+      profileUnsubscribe();
       setProfileUnsubscribe(null);
     }
     setChildProfile(profile);

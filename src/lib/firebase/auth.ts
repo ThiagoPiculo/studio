@@ -14,7 +14,7 @@ import {
   fetchSignInMethodsForEmail,
   getAuth,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import type { UserProfile, ChildProfile } from '@/lib/types';
 import { populateInitialRewardTemplates } from './firestore';
@@ -54,7 +54,8 @@ export const signInAdmin = async (email: string, password: string): Promise<User
   return userDoc.data() as UserProfile;
 };
 
-// Sign In with Google
+// Sign In with Google - This function is now mostly handled inside AuthContext for better state management.
+// It can be kept for other potential uses or simplified.
 export const signInWithGoogle = async (): Promise<UserProfile> => {
   const provider = new GoogleAuthProvider();
   try {
@@ -69,7 +70,7 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
         uid: user.uid,
         email: user.email,
         name: user.displayName,
-        avatarUrl: user.photoURL, // Salva a foto do perfil do Google
+        avatarUrl: user.photoURL,
         createdAt: serverTimestamp() as any,
         settings: {
           initialPage: 'heroes',
@@ -78,19 +79,20 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
       };
       await setDoc(userDocRef, userProfile);
       return userProfile;
+    } else {
+        const userData = userDocSnap.data();
+         if (!userData.avatarUrl && user.photoURL) {
+          await updateDoc(userDocRef, { avatarUrl: user.photoURL });
+          return {...userData, avatarUrl: user.photoURL } as UserProfile;
+        }
+        return userData as UserProfile;
     }
-    return userDocSnap.data() as UserProfile;
 
   } catch (error: any) {
     if (error.code === 'auth/popup-closed-by-user') {
-      // Silently ignore this error as it's a user action.
       console.log('Google sign-in popup closed by user.');
-      // We need to re-throw something to be caught by the calling form's logic
-      // so it can stop its loading state, but we don't want to show a toast.
-      // A custom error type or just rethrowing a specific error code works.
       throw error; 
     }
-    // Re-throw other errors to be handled by the UI
     throw error;
   }
 };
