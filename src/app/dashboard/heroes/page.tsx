@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -14,6 +14,7 @@ import {
     getMissionInstancesForContext,
     regenerateChildAccessCode,
     getSchoolScheduleForContext,
+    getChildProfilesByFamily,
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
@@ -33,12 +34,13 @@ import { useToast } from "@/hooks/use-toast";
 
 function HeroesPageContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts, setCurrentContext } = useFamily();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
+  const [alliancesWithChildren, setAlliancesWithChildren] = useState<{ id: string; name: string; children: ChildProfile[] }[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
@@ -108,6 +110,19 @@ function HeroesPageContent() {
             setAllChildren(childrenData);
             setMissionInstances(missionsData);
             setSchoolSchedule(scheduleData);
+
+            if (currentContext === 'my-space' && childrenData.length === 0) {
+              const alliances = availableContexts.filter(c => c.id !== 'my-space');
+              const alliancesChildrenPromises = alliances.map(async (alliance) => {
+                const allianceChildren = await getChildProfilesByFamily(alliance.id);
+                return { ...alliance, children: allianceChildren };
+              });
+              const alliancesWithKids = (await Promise.all(alliancesChildrenPromises)).filter(a => a.children.length > 0);
+              setAlliancesWithChildren(alliancesWithKids);
+            } else {
+              setAlliancesWithChildren([]);
+            }
+
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
             toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar as informações dos heróis.", variant: "destructive" });
@@ -117,7 +132,7 @@ function HeroesPageContent() {
     };
 
     fetchData();
-  }, [user, currentContext, toast]);
+  }, [user, currentContext, toast, availableContexts]);
 
 
   const getInitials = (name?: string | null) => {
@@ -148,13 +163,44 @@ function HeroesPageContent() {
     return <Loading />;
   }
 
-  const hasChildren = allChildren.length > 0;
+  const hasChildrenInCurrentContext = allChildren.length > 0;
+  const hasChildrenInAlliances = alliancesWithChildren.length > 0;
   
   const today = format(new Date(), 'yyyy-MM-dd');
   
+  const renderAllianceBridge = () => (
+    <Card className="text-center py-10 shadow-lg bg-gradient-to-br from-card to-accent/10">
+      <CardHeader>
+        <CardTitle className="text-2xl font-semibold mb-2 flex items-center justify-center gap-3">
+            <LinkIcon className="h-8 w-8 text-primary" />
+            Seus Heróis estão em suas Alianças!
+        </CardTitle>
+        <CardDescription className="text-base text-muted-foreground mb-4">
+            Seu espaço pessoal está vazio, mas encontramos heróis em suas equipes. Selecione uma aliança para ver o resumo do dia.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="flex flex-col items-center gap-4">
+          <div className="flex flex-wrap justify-center gap-4 mb-4">
+              {alliancesWithChildren.map(alliance => (
+                  <Button key={alliance.id} size="lg" variant="secondary" className="shadow-md" onClick={() => setCurrentContext(alliance.id)}>
+                      Ir para Aliança: {alliance.name}
+                  </Button>
+              ))}
+          </div>
+          <Separator className="my-2" />
+          <p className="text-sm text-muted-foreground">Ou cadastre um novo herói para este espaço:</p>
+          <Link href="/dashboard/onboarding">
+            <Button size="sm" variant="outline">
+              <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar Novo Mini Herói
+            </Button>
+          </Link>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-8">
-       {!hasChildren && (
+       {!hasChildrenInCurrentContext && !hasChildrenInAlliances && (
          <GettingStartedGuide 
             hasChildren={false}
             hasMissions={false}
@@ -170,7 +216,7 @@ function HeroesPageContent() {
           </Link>
         </div>
 
-        {allChildren.length === 0 ? (
+        {!hasChildrenInCurrentContext && hasChildrenInAlliances ? renderAllianceBridge() : !hasChildrenInCurrentContext ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
@@ -211,7 +257,7 @@ function HeroesPageContent() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                    <Link href={`/dashboard?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                    <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
                       <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
                           Painel de Progresso <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
@@ -399,5 +445,3 @@ export default function HeroesPage() {
   )
 }
  
-
-    
