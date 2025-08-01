@@ -18,7 +18,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, LogIn, UserPlus, Eye, EyeOff } from "lucide-react";
-import { signInAdmin, signUpAdmin, signInWithGoogle, resetPassword } from "@/lib/firebase/auth";
+import { signInAdmin, signUpAdmin, resetPassword } from "@/lib/firebase/auth";
+import { getAuth, fetchSignInMethodsForEmail } from "firebase/auth";
 import { joinFamilyByInviteCode } from "@/lib/firebase/firestore";
 import type { UserProfile } from "@/lib/types";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "../ui/alert-dialog";
@@ -93,7 +94,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
       await resetPassword(resetEmail);
       toast({
         title: "Link Enviado!",
-        description: "Enviamos um link para o seu e-mail para que você possa criar uma nova senha.",
+        description: "Enviamos um link para o seu e-mail para que você possa criar uma nova senha. Se não encontrar, verifique sua caixa de spam!",
       });
     } catch (error: any) {
         let description = "Ocorreu um erro. Verifique o e-mail digitado ou tente novamente mais tarde.";
@@ -112,9 +113,25 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
 
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
+    const auth = getAuth();
+    
     try {
       if (mode === "login") {
         const { email, password } = values as z.infer<typeof loginSchema>;
+        
+        const methods = await fetchSignInMethodsForEmail(auth, email);
+
+        if (methods.includes('google.com') && !methods.includes('password')) {
+            toast({
+                title: "Use o login com Google",
+                description: "Essa conta foi criada com o Google. Use o botão 'Continuar com o Google' ou redefina sua senha para criar um acesso por e-mail.",
+                variant: "destructive",
+                duration: 8000,
+            });
+            setIsLoading(false);
+            return;
+        }
+
         const userProfile = await signInAdmin(email, password);
         toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
         router.push("/dashboard/heroes?initial_load=true");
@@ -167,23 +184,6 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setIsLoading(true);
-    try {
-      const userProfile = await signInWithGoogle();
-      toast({ title: "Boas-vindas!", description: getLoginToastDescription(userProfile) });
-      router.push("/dashboard/heroes?initial_load=true");
-    } catch (error: any) {
-      console.error("Google Sign-In failed:", error);
-      toast({
-        title: "Falha no Login com Google",
-        description: "Não foi possível fazer login com o Google. Verifique sua conexão ou tente novamente. Se o erro persistir, pode haver um problema com sua conta Google.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   const toggleShowPassword = () => setShowPassword(!showPassword);
 
@@ -294,36 +294,16 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             )}
           />
         )}
-        <div className="space-y-4 pt-4">
-            <Button type="submit" className="w-full rounded-xl text-lg h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" disabled={isLoading}>
-            {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : mode === "login" ? (
-                <LogIn className="mr-2 h-4 w-4" />
-            ) : (
-                <UserPlus className="mr-2 h-4 w-4" />
-            )}
-            {mode === "login" ? "Acessar o Comando" : "Criar Conta"}
-            </Button>
-            <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                    Ou entre com um clique
-                </span>
-                </div>
-            </div>
-            <Button variant="outline" className="w-full rounded-xl h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" onClick={handleGoogleSignIn} disabled={isLoading}>
-                {isLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                <svg className="mr-2 h-4 w-4" aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 123 24.5 166.3 64.9l-67.5 64.9C258.5 52.6 94.3 116.6 94.3 256c0 86.5 69.1 156.6 153.7 156.6 98.2 0 135-70.4 140.8-106.9H248v-85.3h236.1c2.3 12.7 3.9 24.9 3.9 41.4z"></path></svg>
-                )}
-                Google
-            </Button>
-        </div>
+        <Button type="submit" className="w-full rounded-xl text-lg h-12 shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" disabled={isLoading}>
+          {isLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : mode === "login" ? (
+            <LogIn className="mr-2 h-4 w-4" />
+          ) : (
+            <UserPlus className="mr-2 h-4 w-4" />
+          )}
+          {mode === "login" ? "Entrar com E-mail" : "Criar Conta"}
+        </Button>
       </form>
     </Form>
   );

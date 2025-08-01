@@ -1,5 +1,4 @@
 
-
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -12,6 +11,8 @@ import {
   reauthenticateWithCredential,
   EmailAuthProvider,
   deleteUser,
+  fetchSignInMethodsForEmail,
+  getAuth,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
@@ -56,32 +57,43 @@ export const signInAdmin = async (email: string, password: string): Promise<User
 // Sign In with Google
 export const signInWithGoogle = async (): Promise<UserProfile> => {
   const provider = new GoogleAuthProvider();
-  const result = await signInWithPopup(auth, provider);
-  const user = result.user;
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
 
-  const userDocRef = doc(db, 'users', user.uid);
-  const userDocSnap = await getDoc(userDocRef);
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDocSnap = await getDoc(userDocRef);
 
-  if (!userDocSnap.exists()) {
-    const userProfile: UserProfile = {
-      uid: user.uid,
-      email: user.email,
-      name: user.displayName,
-      createdAt: serverTimestamp() as any,
-      settings: {
-        initialPage: 'heroes',
-        rewardMode: 'automatic',
-      },
-    };
-    await setDoc(userDocRef, userProfile);
-    
-    // No longer needed. The app will use a static list of ideas.
-    // await populateInitialRewardTemplates(user.uid);
+    if (!userDocSnap.exists()) {
+      const userProfile: UserProfile = {
+        uid: user.uid,
+        email: user.email,
+        name: user.displayName,
+        createdAt: serverTimestamp() as any,
+        settings: {
+          initialPage: 'heroes',
+          rewardMode: 'automatic',
+        },
+      };
+      await setDoc(userDocRef, userProfile);
+      return userProfile;
+    }
+    return userDocSnap.data() as UserProfile;
 
-    return userProfile;
+  } catch (error: any) {
+    if (error.code === 'auth/popup-closed-by-user') {
+      // Silently ignore this error as it's a user action.
+      console.log('Google sign-in popup closed by user.');
+      // We need to re-throw something to be caught by the calling form's logic
+      // so it can stop its loading state, but we don't want to show a toast.
+      // A custom error type or just rethrowing a specific error code works.
+      throw error; 
+    }
+    // Re-throw other errors to be handled by the UI
+    throw error;
   }
-  return userDocSnap.data() as UserProfile;
 };
+
 
 // Sign Out
 export const logout = async (): Promise<void> => {
