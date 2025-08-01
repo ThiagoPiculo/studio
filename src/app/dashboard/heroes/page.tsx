@@ -182,6 +182,24 @@ function HeroesPageContent() {
             </CardHeader>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                       <Smile className="h-5 w-5 text-chart-1"/>
+                       Espaço Pessoal
+                    </CardTitle>
+                    <CardDescription>
+                        Cadastre um novo herói para gerenciar individualmente.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex items-center justify-center">
+                   <Link href="/dashboard/onboarding" className="w-full">
+                        <Button size="lg" variant="outline" className="w-full h-16 text-base">
+                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Herói
+                        </Button>
+                    </Link>
+                </CardContent>
+            </Card>
             {alliancesWithChildren.map(alliance => (
                 <Card key={alliance.id} className="shadow-md hover:shadow-lg transition-all flex flex-col">
                     <CardHeader>
@@ -215,24 +233,6 @@ function HeroesPageContent() {
                     </CardFooter>
                 </Card>
             ))}
-             <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                       <Smile className="h-5 w-5 text-chart-1"/>
-                       Espaço Pessoal
-                    </CardTitle>
-                    <CardDescription>
-                        Cadastre um novo herói para gerenciar individualmente.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow flex items-center justify-center">
-                   <Link href="/dashboard/onboarding" className="w-full">
-                        <Button size="lg" variant="outline" className="w-full h-16 text-base">
-                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Herói
-                        </Button>
-                    </Link>
-                </CardContent>
-            </Card>
         </div>
     </div>
   );
