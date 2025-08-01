@@ -69,6 +69,7 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
         uid: user.uid,
         email: user.email,
         name: user.displayName,
+        avatarUrl: user.photoURL, // Salva a foto do perfil do Google
         createdAt: serverTimestamp() as any,
         settings: {
           initialPage: 'heroes',
