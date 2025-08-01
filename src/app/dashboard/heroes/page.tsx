@@ -288,12 +288,17 @@ function HeroesPageContent() {
                     return minutesA - minutesB;
                 });
               
+              const completedTodaysMissions = todaysMissions.filter(inst => isMissionCompletedForDate(inst, new Date()));
               const todaysMissionsCount = todaysMissions.length;
-              const completedTodaysMissionsCount = todaysMissions
-                .filter(inst => isMissionCompletedForDate(inst, new Date())).length;
+              const completedTodaysMissionsCount = completedTodaysMissions.length;
+
+              const { starsEarnedToday, xpEarnedToday } = completedTodaysMissions.reduce((acc, mission) => {
+                  acc.starsEarnedToday += mission.starsReward;
+                  acc.xpEarnedToday += mission.xpReward;
+                  return acc;
+              }, { starsEarnedToday: 0, xpEarnedToday: 0 });
               
               const availableRewardsCount = rewardTemplates.filter(r => r.status === 'active' && child.stars >= r.starsCost).length;
-              const redeemedRewardsCount = 0; // Placeholder, would need rewardInstances
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
              
               return (
@@ -373,8 +378,7 @@ function HeroesPageContent() {
                        {todaysMissionsCount > 0 ? (
                         <div className="space-y-2 pt-1">
                             <div className="flex justify-between items-baseline text-xs text-muted-foreground">
-                                <span className="font-semibold">Missões de Hoje</span>
-                                <span>{completedTodaysMissionsCount} de {todaysMissionsCount}</span>
+                                <span className="font-semibold">Missões de Hoje: {completedTodaysMissionsCount} de {todaysMissionsCount}</span>
                             </div>
                             <Progress value={(completedTodaysMissionsCount / todaysMissionsCount) * 100} className="h-3" />
                         </div>
@@ -396,7 +400,7 @@ function HeroesPageContent() {
                                 <ul className="space-y-1 pr-3">
                                 {todaysMissions.length > 0 ? (
                                   todaysMissions.map(item => {
-                                    const isCompleted = isMissionCompletedForDate(item, new Date());
+                                    const isCompleted = completedTodaysMissions.some(cm => cm.id === item.id);
                                     const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
                                     const formattedTime = format(eventTime, 'HH:mm');
                                     const popoverId = `${item.id}-${today}`;
@@ -459,12 +463,11 @@ function HeroesPageContent() {
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
-                            <CheckSquare className="h-5 w-5 text-chart-2" />
-                            <span className="font-bold text-lg leading-none">{completedTodaysMissionsCount}</span>
-                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
-                            <span className="font-bold text-lg leading-none">{todaysMissionsCount}</span>
+                            <span className="font-semibold text-sm text-green-600">+{starsEarnedToday} <span className="text-amber-500">⭐</span></span>
+                            <Separator orientation="vertical" className="h-4" />
+                            <span className="font-semibold text-sm text-blue-600">+{xpEarnedToday} <span className="font-bold">XP</span></span>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-tight">Missões Hoje</p>
+                        <p className="text-xs text-muted-foreground leading-tight">Ganhos do Dia</p>
                     </Link>
                     <Link href={`/dashboard/mural?childId=${child.id}&tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
