@@ -182,14 +182,17 @@ function HeroesPageContent() {
             </CardHeader>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-             <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
+            <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                        <Home className="h-5 w-5 text-chart-1"/>
                        Meu Espaço
                     </CardTitle>
                     <CardDescription>
-                        Cadastre um novo herói para gerenciar individualmente.
+                        {alliancesWithChildren.length > 0
+                            ? "Seu espaço privado. Adicione um herói aqui se desejar gerenciá-lo de forma separada das suas alianças."
+                            : "Seu cantinho particular. Adicione um herói aqui para iniciar a jornada de forma individual. Mais tarde, se quiser, você poderá movê-lo para uma aliança."
+                        }
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-center justify-center">
