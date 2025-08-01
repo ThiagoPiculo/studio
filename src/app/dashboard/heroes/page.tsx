@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon, Home } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon, Home, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -51,6 +51,19 @@ function HeroesPageContent() {
   const totalBadgesCount = allBadgesMap.size;
   
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
+  const [expandedHeroes, setExpandedHeroes] = useState<Set<string>>(new Set());
+
+  const toggleMissionsExpansion = (childId: string) => {
+    setExpandedHeroes(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(childId)) {
+            newSet.delete(childId);
+        } else {
+            newSet.add(childId);
+        }
+        return newSet;
+    });
+  };
   
   useEffect(() => {
     const initialLoad = searchParams.get('initial_load');
@@ -273,7 +286,7 @@ function HeroesPageContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
@@ -300,6 +313,9 @@ function HeroesPageContent() {
               
               const availableRewardsCount = rewardTemplates.filter(r => r.status === 'active' && child.stars >= r.starsCost).length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
+              
+              const isExpanded = expandedHeroes.has(child.id);
+              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 3);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -396,10 +412,10 @@ function HeroesPageContent() {
                             <TabsTrigger value="school">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
-                            <ScrollArea className="h-[145px] w-full">
-                                <ul className="space-y-1 pr-3">
+                            <div className="h-auto w-full">
+                                <ul className="space-y-1 pr-1">
                                 {todaysMissions.length > 0 ? (
-                                  todaysMissions.map(item => {
+                                  missionsToShow.map(item => {
                                     const isCompleted = completedTodaysMissions.some(cm => cm.id === item.id);
                                     const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
                                     const formattedTime = format(eventTime, 'HH:mm');
@@ -434,7 +450,21 @@ function HeroesPageContent() {
                                 </p>
                                 )}
                                 </ul>
-                            </ScrollArea>
+                                {todaysMissions.length > 3 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full mt-2 text-xs"
+                                        onClick={() => toggleMissionsExpansion(child.id)}
+                                    >
+                                        {isExpanded ? (
+                                            <>Ver menos <ChevronUp className="ml-2 h-4 w-4" /></>
+                                        ) : (
+                                            <>Ver mais {todaysMissions.length - 3} missões <ChevronDown className="ml-2 h-4 w-4" /></>
+                                        )}
+                                    </Button>
+                                )}
+                            </div>
                         </TabsContent>
                         <TabsContent value="school">
                              <ScrollArea className="h-[145px] w-full">
@@ -503,4 +533,6 @@ export default function HeroesPage() {
   )
 }
  
+    
+
     
