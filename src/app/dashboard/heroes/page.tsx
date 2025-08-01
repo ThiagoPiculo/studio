@@ -273,7 +273,7 @@ function HeroesPageContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
@@ -290,7 +290,7 @@ function HeroesPageContent() {
               
               const completedTodaysMissions = todaysMissions.filter(inst => isMissionCompletedForDate(inst, new Date()));
               const todaysMissionsCount = todaysMissions.length;
-              const completedTodaysMissionsCount = completedTodaysMissions.length;
+              const completedTodaysMissionsCount = completedTodays.length;
 
               const { starsEarnedToday, xpEarnedToday } = completedTodaysMissions.reduce((acc, mission) => {
                   acc.starsEarnedToday += mission.starsReward;
