@@ -1,4 +1,3 @@
-
 "use client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
@@ -290,7 +289,7 @@ function HeroesPageContent() {
               
               const completedTodaysMissions = todaysMissions.filter(inst => isMissionCompletedForDate(inst, new Date()));
               const todaysMissionsCount = todaysMissions.length;
-              const completedTodaysMissionsCount = completedTodays.length;
+              const completedTodaysMissionsCount = completedTodaysMissions.length;
 
               const { starsEarnedToday, xpEarnedToday } = completedTodaysMissions.reduce((acc, mission) => {
                   acc.starsEarnedToday += mission.starsReward;
@@ -503,5 +502,4 @@ export default function HeroesPage() {
   )
 }
  
-
     
