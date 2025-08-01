@@ -169,33 +169,72 @@ function HeroesPageContent() {
   const today = format(new Date(), 'yyyy-MM-dd');
   
   const renderAllianceBridge = () => (
-    <Card className="text-center py-10 shadow-lg bg-gradient-to-br from-card to-accent/10">
-      <CardHeader>
-        <CardTitle className="text-2xl font-semibold mb-2 flex items-center justify-center gap-3">
-            <LinkIcon className="h-8 w-8 text-primary" />
-            Seus Heróis estão em suas Alianças!
-        </CardTitle>
-        <CardDescription className="text-base text-muted-foreground mb-4">
-            Seu espaço pessoal está vazio, mas encontramos heróis em suas equipes. Selecione uma aliança para ver o resumo do dia.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="flex flex-col items-center gap-4">
-          <div className="flex flex-wrap justify-center gap-4 mb-4">
-              {alliancesWithChildren.map(alliance => (
-                  <Button key={alliance.id} size="lg" variant="secondary" className="shadow-md" onClick={() => setCurrentContext(alliance.id)}>
-                      Ir para Aliança: {alliance.name}
-                  </Button>
-              ))}
-          </div>
-          <Separator className="my-2" />
-          <p className="text-sm text-muted-foreground">Ou cadastre um novo herói para este espaço:</p>
-          <Link href="/dashboard/onboarding">
-            <Button size="sm" variant="outline">
-              <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar Novo Mini Herói
-            </Button>
-          </Link>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+        <Card className="text-center border-0 shadow-none bg-transparent">
+            <CardHeader>
+                <CardTitle className="text-2xl font-semibold mb-2 flex items-center justify-center gap-3">
+                    <LinkIcon className="h-8 w-8 text-primary" />
+                    Seus Heróis estão em suas Alianças!
+                </CardTitle>
+                <CardDescription className="text-base text-muted-foreground mb-4 max-w-2xl mx-auto">
+                    Seu espaço pessoal está vazio, mas encontramos heróis em suas equipes. Selecione uma aliança para ver o resumo do dia ou adicione um novo herói ao seu espaço pessoal.
+                </CardDescription>
+            </CardHeader>
+        </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {alliancesWithChildren.map(alliance => (
+                <Card key={alliance.id} className="shadow-md hover:shadow-lg transition-all flex flex-col">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                           <Users className="h-5 w-5 text-chart-4"/>
+                           Aliança: {alliance.name}
+                        </CardTitle>
+                        <CardDescription>
+                            {alliance.children.length} {alliance.children.length === 1 ? 'herói nesta aliança' : 'heróis nesta aliança'}.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        <div className="flex -space-x-2">
+                            {alliance.children.slice(0, 7).map(child => (
+                                <Avatar key={child.id} className="h-10 w-10 border-2 border-background">
+                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                    <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                </Avatar>
+                            ))}
+                            {alliance.children.length > 7 && (
+                                <Avatar className="h-10 w-10 border-2 border-background">
+                                    <AvatarFallback>+{alliance.children.length - 7}</AvatarFallback>
+                                </Avatar>
+                            )}
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full" onClick={() => setCurrentContext(alliance.id)}>
+                            Acessar Aliança <ArrowRight className="ml-2 h-4 w-4"/>
+                        </Button>
+                    </CardFooter>
+                </Card>
+            ))}
+             <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                       <Smile className="h-5 w-5 text-chart-1"/>
+                       Espaço Pessoal
+                    </CardTitle>
+                    <CardDescription>
+                        Cadastre um novo herói para gerenciar individualmente.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex-grow flex items-center justify-center">
+                   <Link href="/dashboard/onboarding" className="w-full">
+                        <Button size="lg" variant="outline" className="w-full h-16 text-base">
+                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Herói
+                        </Button>
+                    </Link>
+                </CardContent>
+            </Card>
+        </div>
+    </div>
   );
 
   return (
