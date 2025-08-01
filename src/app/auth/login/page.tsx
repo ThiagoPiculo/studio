@@ -64,7 +64,7 @@ export default function LoginPage() {
           <div className="space-y-4">
             <Button 
                 variant="outline" 
-                className="w-full rounded-xl h-12 text-base shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" 
+                className="w-full rounded-full h-12 text-base shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" 
                 onClick={handleGoogleSignIn} 
                 disabled={isLoading}
             >
