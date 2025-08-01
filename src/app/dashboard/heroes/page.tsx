@@ -286,7 +286,7 @@ function HeroesPageContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
@@ -407,9 +407,9 @@ function HeroesPageContent() {
                    <Separator className="my-4" />
                    
                    <Tabs defaultValue="missions">
-                        <TabsList className="grid w-full grid-cols-2">
-                            <TabsTrigger value="missions">Missões de Hoje</TabsTrigger>
-                            <TabsTrigger value="school">Rotina Escolar</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
+                            <TabsTrigger value="missions" className="text-xs px-2 py-1 h-auto">Missões de Hoje</TabsTrigger>
+                            <TabsTrigger value="school" className="text-xs px-2 py-1 h-auto">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
                             <div className="h-auto w-full">
