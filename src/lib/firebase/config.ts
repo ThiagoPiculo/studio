@@ -1,17 +1,18 @@
+
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 
 // Your web app's Firebase configuration
-// IMPORTANT: Replace with your actual Firebase project configuration
+// IMPORTANT: These values are loaded from environment variables
 const firebaseConfig = {
-  apiKey: "REDACTED",
-  authDomain: "miniheroes-habit-builder.firebaseapp.com",
-  projectId: "miniheroes-habit-builder",
-  storageBucket: "miniheroes-habit-builder.appspot.com",
-  messagingSenderId: "479524072547",
-  appId: "1:479524072547:web:a33dc8d5b99e3b61721c56"
+  apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 let app: FirebaseApp;
@@ -19,7 +20,17 @@ let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
 
+// Initialize Firebase only if it hasn't been initialized yet
 if (!getApps().length) {
+  if (
+    !firebaseConfig.apiKey ||
+    !firebaseConfig.authDomain ||
+    !firebaseConfig.projectId
+  ) {
+    console.error(
+      'Firebase config is missing. Make sure to set NEXT_PUBLIC_FIREBASE_ environment variables.'
+    );
+  }
   app = initializeApp(firebaseConfig);
 } else {
   app = getApps()[0];
