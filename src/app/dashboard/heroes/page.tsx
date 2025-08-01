@@ -195,7 +195,7 @@ function HeroesPageContent() {
                 <CardContent className="flex-grow flex items-center justify-center">
                    <Link href="/dashboard/onboarding" className="w-full">
                         <Button size="lg" variant="outline" className="w-full h-16 text-base">
-                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Herói
+                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Heroi
                         </Button>
                     </Link>
                 </CardContent>
