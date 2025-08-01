@@ -492,20 +492,23 @@ function HeroesPageContent() {
 
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
-                    <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
+                    <div className="p-2 flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
                             <span className="font-semibold text-sm text-green-600">+{starsEarnedToday} <span className="text-amber-500">⭐</span></span>
                             <Separator orientation="vertical" className="h-4" />
                             <span className="font-semibold text-sm text-blue-600">+{xpEarnedToday} <span className="font-bold">XP</span></span>
                         </div>
                         <p className="text-xs text-muted-foreground leading-tight">Ganhos do Dia</p>
-                    </Link>
+                    </div>
                     <Link href={`/dashboard/mural?childId=${child.id}&tab=rewards`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                         <div className="flex min-h-[36px] items-center justify-center gap-1.5">
                             <Gift className="h-5 w-5 text-chart-1" />
                             <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
                         </div>
-                        <p className="text-xs text-muted-foreground leading-tight">Recompensas</p>
+                         <div className="flex items-center text-xs text-muted-foreground leading-tight">
+                            <span>Recompensas</span>
+                            <ArrowRight className="ml-1 h-3 w-3" />
+                        </div>
                     </Link>
                     <Link href={`/dashboard/mural?childId=${child.id}&tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                       <div className="flex min-h-[36px] items-center justify-center gap-1.5">
@@ -514,7 +517,10 @@ function HeroesPageContent() {
                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                            <span className="font-bold text-lg leading-none">{totalBadgesCount}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground leading-tight">Medalhas</p>
+                       <div className="flex items-center text-xs text-muted-foreground leading-tight">
+                            <span>Medalhas</span>
+                            <ArrowRight className="ml-1 h-3 w-3" />
+                        </div>
                     </Link>
                 </CardFooter>
               </Card>
@@ -537,4 +543,5 @@ export default function HeroesPage() {
     
 
     
+
 
