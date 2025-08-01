@@ -286,7 +286,7 @@ function HeroesPageContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
@@ -404,15 +404,17 @@ function HeroesPageContent() {
                         </div>
                         )}
                     </div>
-                   <Separator className="my-4" />
-                   
+                </CardContent>
+                
+                <div className="px-4 pb-2 flex-grow">
+                   <Separator className="my-2" />
                    <Tabs defaultValue="missions">
-                        <TabsList className="grid w-full grid-cols-2 h-auto p-1">
-                            <TabsTrigger value="missions" className="text-xs px-2 py-1 h-auto">Missões de Hoje</TabsTrigger>
-                            <TabsTrigger value="school" className="text-xs px-2 py-1 h-auto">Rotina Escolar</TabsTrigger>
+                        <TabsList className="grid w-full grid-cols-2 h-auto p-1 text-xs h-9">
+                            <TabsTrigger value="missions" className="py-1.5 text-xs">Missões de Hoje</TabsTrigger>
+                            <TabsTrigger value="school" className="py-1.5 text-xs">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
-                            <div className="h-auto w-full">
+                            <div className="h-auto w-full mt-2">
                                 <ul className="space-y-1 pr-1">
                                 {todaysMissions.length > 0 ? (
                                   missionsToShow.map(item => {
@@ -450,24 +452,10 @@ function HeroesPageContent() {
                                 </p>
                                 )}
                                 </ul>
-                                {todaysMissions.length > 3 && (
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        className="w-full mt-2 text-xs"
-                                        onClick={() => toggleMissionsExpansion(child.id)}
-                                    >
-                                        {isExpanded ? (
-                                            <>Ver menos <ChevronUp className="ml-2 h-4 w-4" /></>
-                                        ) : (
-                                            <>Ver mais {todaysMissions.length - 3} missões <ChevronDown className="ml-2 h-4 w-4" /></>
-                                        )}
-                                    </Button>
-                                )}
                             </div>
                         </TabsContent>
                         <TabsContent value="school">
-                             <ScrollArea className="h-[145px] w-full">
+                             <ScrollArea className="h-[145px] w-full mt-2">
                                 <ul className="space-y-1 pr-3">
                                 {todaysSchoolEntries.filter(e => e.childId === child.id).length > 0 ? (
                                     todaysSchoolEntries.filter(e => e.childId === child.id).map(entry => (
@@ -488,7 +476,21 @@ function HeroesPageContent() {
                              </ScrollArea>
                         </TabsContent>
                     </Tabs>
-                </CardContent>
+                </div>
+
+                 {todaysMissions.length > 3 && (
+                    <button
+                        onClick={() => toggleMissionsExpansion(child.id)}
+                        className="w-full mt-2 -mb-2 border-t text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5"
+                    >
+                        {isExpanded ? (
+                            <>Ver menos <ChevronUp className="h-4 w-4" /></>
+                        ) : (
+                            <>+ {todaysMissions.length - 3} missões <ChevronDown className="h-4 w-4" /></>
+                        )}
+                    </button>
+                )}
+
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
                     <Link href={`/dashboard/agenda?view=day&focus_date=${today}&child_id=${child.id}`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
