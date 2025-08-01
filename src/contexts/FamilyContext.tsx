@@ -11,7 +11,7 @@ import { collection, query, where, onSnapshot } from 'firebase/firestore';
 interface EnrichedContext {
     id: string;
     name: string;
-    role?: FamilyRole;
+    role?: FamilyRole | 'Personal';
 }
 
 const FamilyContext = React.createContext<FamilyContextType | undefined>(undefined);

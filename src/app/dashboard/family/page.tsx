@@ -1274,7 +1274,7 @@ function FamilyPageContent() {
               <div>
                 <CardTitle className="text-3xl font-headline flex items-center">
                   <Home className="mr-3 h-8 w-8 text-primary" />
-                  Meu Espaço Pessoal
+                  Meu Espaço
                 </CardTitle>
                 <CardDescription>
                     Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.

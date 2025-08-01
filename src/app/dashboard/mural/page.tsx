@@ -1797,7 +1797,7 @@ function MuralCompletoPageContent() {
               <SelectContent>
                 {moveTargetContexts.map(context => (
                   <SelectItem key={context.id} value={context.id}>
-                    {context.id === 'my-space' ? 'Meu Espaço Pessoal' : `Aliança: ${context.name}`}
+                    {context.id === 'my-space' ? 'Meu Espaço' : `Aliança: ${context.name}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -1824,6 +1824,7 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
 
 
 
