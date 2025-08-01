@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon, Home } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -182,11 +182,11 @@ function HeroesPageContent() {
             </CardHeader>
         </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
+             <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                       <Smile className="h-5 w-5 text-chart-1"/>
-                       Espaço Pessoal
+                       <Home className="h-5 w-5 text-chart-1"/>
+                       Meu Espaço
                     </CardTitle>
                     <CardDescription>
                         Cadastre um novo herói para gerenciar individualmente.
