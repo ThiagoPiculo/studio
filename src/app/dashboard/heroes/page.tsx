@@ -315,7 +315,7 @@ function HeroesPageContent() {
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               
               const isExpanded = expandedHeroes.has(child.id);
-              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 3);
+              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 5);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -407,11 +407,10 @@ function HeroesPageContent() {
                 </CardContent>
                 
                 <div className="px-4 pb-2 flex-grow">
-                   <Separator className="my-2" />
                    <Tabs defaultValue="missions">
                         <TabsList className="grid w-full grid-cols-2 h-auto p-1 text-xs h-9">
-                            <TabsTrigger value="missions" className="py-1.5 text-xs">Missões de Hoje</TabsTrigger>
-                            <TabsTrigger value="school" className="py-1.5 text-xs">Rotina Escolar</TabsTrigger>
+                            <TabsTrigger value="missions" className="py-1.5 text-xs justify-center">Missões de Hoje</TabsTrigger>
+                            <TabsTrigger value="school" className="py-1.5 text-xs justify-center">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
                             <div className="h-auto w-full mt-2">
@@ -478,15 +477,15 @@ function HeroesPageContent() {
                     </Tabs>
                 </div>
 
-                 {todaysMissions.length > 3 && (
+                 {todaysMissions.length > 5 && (
                     <button
                         onClick={() => toggleMissionsExpansion(child.id)}
-                        className="w-full mt-2 -mb-2 border-t text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5"
+                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md"
                     >
                         {isExpanded ? (
                             <>Ver menos <ChevronUp className="h-4 w-4" /></>
                         ) : (
-                            <>+ {todaysMissions.length - 3} missões <ChevronDown className="h-4 w-4" /></>
+                            <>+ {todaysMissions.length - 5} missões <ChevronDown className="h-4 w-4" /></>
                         )}
                     </button>
                 )}
@@ -538,3 +537,4 @@ export default function HeroesPage() {
     
 
     
+
