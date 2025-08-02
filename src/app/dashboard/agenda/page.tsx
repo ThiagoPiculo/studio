@@ -1028,9 +1028,9 @@ function AgendaPageContent() {
                 <div className="flex gap-2">
                     <Button variant="outline" onClick={handleToday} className="hidden sm:inline-flex">Hoje</Button>
                     {canEdit && (
-                        <Button onClick={() => setIsSelectMissionDialogOpen(true)} size="icon" className="shrink-0">
-                            <PlusCircle className="h-4 w-4" />
-                            <span className="sr-only">Adicionar Missão</span>
+                        <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
+                            <PlusCircle className="mr-2 h-4 w-4" />
+                            <span className="sm:inline">Adicionar Missão</span>
                         </Button>
                     )}
                 </div>
@@ -1042,7 +1042,6 @@ function AgendaPageContent() {
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                     {children.length > 1 && (
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1 sr-only">Filtrar por Herói</Label>
                             <HeroSelector
                                 heroes={children}
                                 selectedHeroId={selectedChildId}
@@ -1054,7 +1053,6 @@ function AgendaPageContent() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1 sr-only">Visão</Label>
                             <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione a visão" />
@@ -1069,12 +1067,6 @@ function AgendaPageContent() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1 sr-only flex items-center gap-1.5">
-                                <Sun className="h-4 w-4 text-yellow-500" />
-                                <CloudSun className="h-4 w-4 text-orange-500" />
-                                <Moon className="h-4 w-4 text-indigo-500" />
-                                <span className="sr-only">Período</span>
-                            </Label>
                             <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione o período" />
