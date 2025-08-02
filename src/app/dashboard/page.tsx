@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, Suspense } from 'react';
@@ -91,7 +92,7 @@ function DashboardPageContent() {
 
   return (
     <div className="space-y-8">
-       <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <LayoutGrid className="h-8 w-8 text-primary" />
             <h2 className="text-3xl font-headline font-bold">Painel de Controle</h2>
