@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, Link as LinkIcon, Home, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -14,7 +14,6 @@ import {
     getMissionInstancesForContext,
     regenerateChildAccessCode,
     getSchoolScheduleForContext,
-    getChildProfilesByFamily,
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
@@ -25,7 +24,6 @@ import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -41,7 +39,6 @@ function HeroesPageContent() {
   const { toast } = useToast();
   
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [alliancesWithChildren, setAlliancesWithChildren] = useState<{ id: string; name: string; children: ChildProfile[] }[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
@@ -105,53 +102,51 @@ function HeroesPageContent() {
     }
   };
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user) {
       setIsLoading(false);
       return;
     }
 
-    const fetchData = async () => {
-        setIsLoading(true);
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        
-        try {
-            const [childrenData, missionsData, scheduleData] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, familyIdToQuery),
-                getSchoolScheduleForContext(user.uid, familyIdToQuery)
-            ]);
-            setAllChildren(childrenData);
-            setMissionInstances(missionsData);
-            setSchoolSchedule(scheduleData);
+    setIsLoading(true);
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    
+    try {
+        const [childrenData, missionsData, scheduleData] = await Promise.all([
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, familyIdToQuery),
+            getSchoolScheduleForContext(user.uid, familyIdToQuery)
+        ]);
 
-            if (currentContext === 'my-space' && childrenData.length === 0) {
-              const alliances = availableContexts.filter(c => c.id !== 'my-space');
-              const alliancesChildrenPromises = alliances.map(async (alliance) => {
-                const allianceChildren = await getChildProfilesByFamily(alliance.id);
-                return { ...alliance, children: allianceChildren };
-              });
-              const alliancesWithKids = (await Promise.all(alliancesChildrenPromises)).filter(a => a.children.length > 0);
-              setAlliancesWithChildren(alliancesWithKids);
-
-              // If my-space is empty but there are kids in other alliances, switch context
-              if (alliancesWithKids.length > 0 && availableContexts.length > 1) {
-                  setCurrentContext(alliancesWithKids[0].id);
-              }
-            } else {
-              setAlliancesWithChildren([]);
+        if (childrenData.length === 0 && currentContext === 'my-space') {
+            const alliances = availableContexts.filter(c => c.id !== 'my-space');
+            if (alliances.length > 0) {
+                // Check if any alliance has children
+                for (const alliance of alliances) {
+                    const allianceChildren = await getChildProfilesForAttribution(user.uid, alliance.id);
+                    if (allianceChildren.length > 0) {
+                        setCurrentContext(alliance.id); // This will trigger a re-fetch via the main useEffect
+                        return; // Exit early, the re-fetch will handle the rest
+                    }
+                }
             }
-
-        } catch (error) {
-            console.error("Error fetching dashboard data:", error);
-            toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar as informações dos heróis.", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
         }
-    };
+        
+        setAllChildren(childrenData);
+        setMissionInstances(missionsData);
+        setSchoolSchedule(scheduleData);
 
-    fetchData();
+    } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+        toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar as informações dos heróis.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
   }, [user, currentContext, toast, availableContexts, setCurrentContext]);
+  
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
 
   const getInitials = (name?: string | null) => {
@@ -181,76 +176,12 @@ function HeroesPageContent() {
   if (isLoading || authLoading || isRedirecting) {
     return <Loading />;
   }
-
-  const hasChildrenInCurrentContext = allChildren.length > 0;
-  const hasChildrenInAlliances = alliancesWithChildren.length > 0;
   
   const today = format(new Date(), 'yyyy-MM-dd');
   
-  const renderAllianceBridge = () => (
-    <div className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                       <Home className="h-5 w-5 text-chart-1"/>
-                       Meu Espaço
-                    </CardTitle>
-                    <CardDescription>
-                       Adicione heróis aqui para gerenciá-los de forma separada de suas alianças.
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-grow flex items-center justify-center">
-                    <p className="text-muted-foreground text-center">Nenhum herói aqui ainda.</p>
-                </CardContent>
-                 <CardFooter>
-                    <Link href="/dashboard/onboarding" className="w-full">
-                        <Button className="w-full">
-                            <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Heroi
-                        </Button>
-                    </Link>
-                </CardFooter>
-            </Card>
-            {alliancesWithChildren.map(alliance => (
-                <Card key={alliance.id} className="shadow-md hover:shadow-lg transition-all flex flex-col">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                           <Users className="h-5 w-5 text-chart-4"/>
-                           Aliança: {alliance.name}
-                        </CardTitle>
-                        <CardDescription>
-                            {alliance.children.length} {alliance.children.length === 1 ? 'herói nesta aliança' : 'heróis nesta aliança'}.
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="flex-grow">
-                        <div className="flex -space-x-2">
-                            {alliance.children.slice(0, 7).map(child => (
-                                <Avatar key={child.id} className="h-10 w-10 border-2 border-background">
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                            {alliance.children.length > 7 && (
-                                <Avatar className="h-10 w-10 border-2 border-background">
-                                    <AvatarFallback>+{alliance.children.length - 7}</AvatarFallback>
-                                </Avatar>
-                            )}
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button className="w-full" onClick={() => setCurrentContext(alliance.id)}>
-                            Acessar Aliança <ArrowRight className="ml-2 h-4 w-4"/>
-                        </Button>
-                    </CardFooter>
-                </Card>
-            ))}
-        </div>
-    </div>
-  );
-
   return (
     <div className="space-y-8">
-       {!hasChildrenInCurrentContext && !hasChildrenInAlliances && (
+       {allChildren.length === 0 && (
          <GettingStartedGuide 
             hasChildren={false}
             hasMissions={false}
@@ -266,7 +197,7 @@ function HeroesPageContent() {
           </Link>
         </div>
 
-        {!hasChildrenInCurrentContext && hasChildrenInAlliances ? renderAllianceBridge() : !hasChildrenInCurrentContext ? (
+        {allChildren.length === 0 ? (
           <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
@@ -448,7 +379,7 @@ function HeroesPageContent() {
                             </div>
                         </TabsContent>
                         <TabsContent value="school">
-                             <ScrollArea className="h-[145px] w-full mt-2">
+                             <div className="h-[145px] w-full mt-2">
                                 <ul className="space-y-1 pr-3">
                                 {todaysSchoolEntries.filter(e => e.childId === child.id).length > 0 ? (
                                     todaysSchoolEntries.filter(e => e.childId === child.id).map(entry => (
@@ -466,13 +397,13 @@ function HeroesPageContent() {
                                     </p>
                                 )}
                                 </ul>
-                             </ScrollArea>
+                             </div>
                         </TabsContent>
                     </Tabs>
                 </div>
 
                  {todaysMissions.length > 5 && (
-                    <div
+                    <button
                         onClick={() => toggleMissionsExpansion(child.id)}
                         className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer border-t"
                     >
@@ -481,7 +412,7 @@ function HeroesPageContent() {
                         ) : (
                             <>+ {todaysMissions.length - 5} missões <ChevronDown className="h-4 w-4" /></>
                         )}
-                    </div>
+                    </button>
                 )}
 
 
@@ -537,6 +468,7 @@ export default function HeroesPage() {
     
 
     
+
 
 
 
