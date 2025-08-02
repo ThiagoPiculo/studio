@@ -44,7 +44,7 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const { user, loading: authLoading } = useAuth();
   const { currentContext } = useFamily();
-  const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
+  const [selectedHeroId, setSelectedChildId] = useState<string | null>(null);
 
   const totalBadgesCount = allBadgesMap.size;
 
@@ -124,7 +124,7 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
       <section>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-headline">Resumo do Dia</h2>
-          <div className="flex items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             {allChildren.length > 1 && (
                 <HeroSelector
                     heroes={allChildren}
