@@ -1038,62 +1038,60 @@ function AgendaPageContent() {
         </div>
 
         <Card>
-            <CardContent className="p-4">
-                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                    {children.length > 1 && (
-                        <div className="space-y-2">
-                            <HeroSelector
-                                heroes={children}
-                                selectedHeroId={selectedChildId}
-                                onSelectHero={handleSelectedChildChange}
-                                showAllOption={true}
-                            />
-                        </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                        <div className="space-y-2">
-                            <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione a visão" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="day">1 Dia</SelectItem>
-                                    <SelectItem value="3days">3 Dias</SelectItem>
-                                    <SelectItem value="workweek">Semana Útil</SelectItem>
-                                    <SelectItem value="week">Semana</SelectItem>
-                                    <SelectItem value="month">Mês</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o período" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        <span className="flex items-center gap-2">
-                                            <Sun className="h-4 w-4 text-yellow-500" />
-                                            <CloudSun className="h-4 w-4 text-orange-500" />
-                                            <Moon className="h-4 w-4 text-indigo-500" />
-                                        </span>
-                                    </SelectItem>
-                                    <SelectItem value="morning">
-                                        <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
-                                    </SelectItem>
-                                    <SelectItem value="afternoon">
-                                        <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
-                                    </SelectItem>
-                                    <SelectItem value="night">
-                                        <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+            <div className="grid md:grid-cols-2 gap-x-8 gap-y-4 p-4">
+                {children.length > 1 && (
+                    <div className="space-y-2">
+                        <HeroSelector
+                            heroes={children}
+                            selectedHeroId={selectedChildId}
+                            onSelectHero={handleSelectedChildChange}
+                            showAllOption={true}
+                        />
+                    </div>
+                )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                    <div className="space-y-2">
+                        <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione a visão" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="day">1 Dia</SelectItem>
+                                <SelectItem value="3days">3 Dias</SelectItem>
+                                <SelectItem value="workweek">Semana Útil</SelectItem>
+                                <SelectItem value="week">Semana</SelectItem>
+                                <SelectItem value="month">Mês</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="space-y-2">
+                        <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione o período" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">
+                                    <span className="flex items-center gap-2">
+                                        <Sun className="h-4 w-4 text-yellow-500" />
+                                        <CloudSun className="h-4 w-4 text-orange-500" />
+                                        <Moon className="h-4 w-4 text-indigo-500" />
+                                    </span>
+                                </SelectItem>
+                                <SelectItem value="morning">
+                                    <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
+                                </SelectItem>
+                                <SelectItem value="afternoon">
+                                    <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
+                                </SelectItem>
+                                <SelectItem value="night">
+                                    <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
                     </div>
                 </div>
-            </CardContent>
+            </div>
         </Card>
         
         {renderContent()}
