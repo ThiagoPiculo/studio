@@ -33,7 +33,7 @@ import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurr
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRecurrenceDialog';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
@@ -1046,7 +1046,7 @@ function AgendaPageContent() {
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                     {children.length > 1 && (
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1">Filtrar por Herói</Label>
+                            <Label className="font-semibold px-1 sr-only">Filtrar por Herói</Label>
                             <HeroSelector
                                 heroes={children}
                                 selectedHeroId={selectedChildId}
@@ -1059,28 +1059,38 @@ function AgendaPageContent() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="space-y-2">
                             <Label className="font-semibold px-1">Visão</Label>
-                            <ToggleGroup type="single" variant="outline" value={dateRangeFilter} onValueChange={(v) => v && handleFilterChange('view', v)} className="flex-wrap justify-start">
-                                <ToggleGroupItem value="day" aria-label="1 Dia">1 Dia</ToggleGroupItem>
-                                <ToggleGroupItem value="3days" aria-label="3 Dias">3 Dias</ToggleGroupItem>
-                                <ToggleGroupItem value="workweek" aria-label="Semana Útil">Semana Útil</ToggleGroupItem>
-                                <ToggleGroupItem value="week" aria-label="Semana">Semana</ToggleGroupItem>
-                                <ToggleGroupItem value="month" aria-label="Mês">Mês</ToggleGroupItem>
-                            </ToggleGroup>
+                            <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione a visão" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="day">1 Dia</SelectItem>
+                                    <SelectItem value="3days">3 Dias</SelectItem>
+                                    <SelectItem value="workweek">Semana Útil</SelectItem>
+                                    <SelectItem value="week">Semana</SelectItem>
+                                    <SelectItem value="month">Mês</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
                             <Label className="font-semibold px-1">Período</Label>
-                            <ToggleGroup type="single" variant="outline" value={timePeriodFilter} onValueChange={(v) => v && handleFilterChange('period', v)} className="flex-wrap justify-start">
-                                <ToggleGroupItem value="all" aria-label="Todos">Todos</ToggleGroupItem>
-                                <ToggleGroupItem value="morning" aria-label="Manhã" className="text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10 data-[state=on]:bg-yellow-500/10 data-[state=on]:border-yellow-500/30">
-                                    <Sun className="h-4 w-4 mr-2 text-yellow-500" />Manhã
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="afternoon" aria-label="Tarde" className="text-orange-700 dark:text-orange-400 hover:bg-orange-500/10 data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500/30">
-                                    <CloudSun className="h-4 w-4 mr-2 text-orange-500" />Tarde
-                                </ToggleGroupItem>
-                                <ToggleGroupItem value="night" aria-label="Noite" className="text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 data-[state=on]:bg-indigo-500/10 data-[state=on]:border-indigo-500/30">
-                                    <Moon className="h-4 w-4 mr-2 text-indigo-500" />Noite
-                                </ToggleGroupItem>
-                            </ToggleGroup>
+                            <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione o período" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos</SelectItem>
+                                    <SelectItem value="morning">
+                                        <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
+                                    </SelectItem>
+                                    <SelectItem value="afternoon">
+                                        <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
+                                    </SelectItem>
+                                    <SelectItem value="night">
+                                        <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
+                                    </SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </div>
                 </div>
