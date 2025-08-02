@@ -29,9 +29,9 @@ import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import { Progress } from "@/components/ui/progress";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { HeroSelector } from "@/components/dashboard/dashboard/HeroSelector";
 
 // This component shows the main hero summary cards
 function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { allChildren: ChildProfile[], missionInstances: MissionInstance[], rewardTemplates: RewardTemplate[] }) {
@@ -43,6 +43,7 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const { user, loading: authLoading } = useAuth();
   const { currentContext } = useFamily();
+  const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
 
   const totalBadgesCount = allBadgesMap.size;
 
@@ -104,6 +105,11 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
   }, [schoolSchedule]);
   
   const today = format(new Date(), 'yyyy-MM-dd');
+  
+  const filteredChildren = useMemo(() => {
+      if (!selectedHeroId) return allChildren;
+      return allChildren.filter(c => c.id === selectedHeroId);
+  }, [selectedHeroId, allChildren]);
 
   return (
     <div className="space-y-8">
@@ -115,14 +121,24 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
           />
       ) : (
       <section>
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-headline">Resumo do Dia</h2>
-          <Link href="/dashboard/onboarding">
-            <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
-          </Link>
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+            {allChildren.length > 1 && (
+                <HeroSelector
+                    heroes={allChildren}
+                    selectedHeroId={selectedHeroId}
+                    onSelectHero={setSelectedHeroId}
+                    showAllOption={true}
+                />
+            )}
+            <Link href="/dashboard/onboarding" className="w-full sm:w-auto">
+                <Button className="shadow-md w-full"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+            </Link>
+          </div>
         </div>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {allChildren.map((child) => {
+            {filteredChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
               const todaysMissions: MissionInstance[] = missionInstances
@@ -577,3 +593,5 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
+
+    
