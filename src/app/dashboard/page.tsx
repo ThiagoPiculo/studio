@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutGrid } from "lucide-react";
+import { LayoutGrid, HelpCircle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
@@ -15,6 +15,8 @@ import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnaly
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import { Reports } from '@/components/dashboard/dashboard/Reports';
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { Button } from '@/components/ui/button';
 
 function DashboardPageContent() {
   const { user } = useAuth();
@@ -89,17 +91,20 @@ function DashboardPageContent() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline flex items-center">
-            <LayoutGrid className="mr-3 h-8 w-8 text-primary" />
-            Painel de Controle
-          </CardTitle>
-          <CardDescription>
-            Sua central de análises e automações para acompanhar a jornada dos seus herois.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+       <div className="flex items-center gap-4">
+        <LayoutGrid className="h-8 w-8 text-primary" />
+        <h2 className="text-3xl font-headline font-bold">Painel de Controle</h2>
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                    <HelpCircle className="h-5 w-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-72 text-sm">
+              Sua central de análises e automações para acompanhar a jornada dos seus herois.
+            </PopoverContent>
+        </Popover>
+      </div>
       
       {allChildren.length > 1 && (
         <HeroSelector
@@ -131,5 +136,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    
