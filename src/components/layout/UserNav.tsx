@@ -15,7 +15,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { useUserRole } from "@/hooks/useUserRole";
 import { familyRoles } from "@/lib/types";
-import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield, ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 
@@ -64,10 +64,11 @@ export function UserNav() {
                 {getInitials(displayName)}
               </AvatarFallback>
             </Avatar>
-            <div className="truncate group-data-[collapsible=icon]:hidden">
+            <div className="truncate group-data-[collapsible=icon]:hidden flex-grow">
                 <p className="text-sm font-medium leading-tight">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
                 {displayEmail && <p className="text-xs leading-tight text-muted-foreground">{displayEmail}</p>}
             </div>
+            <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
