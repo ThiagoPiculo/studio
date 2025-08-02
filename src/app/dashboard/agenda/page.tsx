@@ -1038,11 +1038,7 @@ function AgendaPageContent() {
         </div>
 
         <Card>
-            <CardHeader>
-                <CardTitle>Filtros da Agenda</CardTitle>
-                <CardDescription>Personalize a visualização para focar no que é mais importante.</CardDescription>
-            </CardHeader>
-            <CardContent>
+            <CardContent className="p-4">
                 <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                     {children.length > 1 && (
                         <div className="space-y-2">
@@ -1058,7 +1054,7 @@ function AgendaPageContent() {
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1">Visão</Label>
+                            <Label className="font-semibold px-1 sr-only">Visão</Label>
                             <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione a visão" />
@@ -1073,7 +1069,7 @@ function AgendaPageContent() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1 flex items-center gap-1.5">
+                            <Label className="font-semibold px-1 sr-only flex items-center gap-1.5">
                                 <Sun className="h-4 w-4 text-yellow-500" />
                                 <CloudSun className="h-4 w-4 text-orange-500" />
                                 <Moon className="h-4 w-4 text-indigo-500" />
@@ -1089,7 +1085,6 @@ function AgendaPageContent() {
                                             <Sun className="h-4 w-4 text-yellow-500" />
                                             <CloudSun className="h-4 w-4 text-orange-500" />
                                             <Moon className="h-4 w-4 text-indigo-500" />
-                                            <span className="sr-only">Todos</span>
                                         </span>
                                     </SelectItem>
                                     <SelectItem value="morning">
