@@ -21,7 +21,7 @@ import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
-import { cn } from "@/lib/utils";
+import { cn, getInitials } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { format } from 'date-fns';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -81,11 +81,6 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
     } finally {
       setIsRegenerating(null);
     }
-  };
-
-  const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; 
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
   const calculateAge = (birthDate?: Timestamp): number | null => {
@@ -369,11 +364,6 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
 function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildProfile[], onContextSelect: (contextId: string) => void }) {
     const { availableContexts } = useFamily();
 
-    const getInitials = (name?: string | null) => {
-      if (!name) return "MH"; 
-      return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-    };
-
     const childrenByContext = useMemo(() => {
         const map = new Map<string, ChildProfile[]>();
         allChildren.forEach(child => {
@@ -396,7 +386,7 @@ function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildP
       const hasChildren = childrenForContext.length > 0;
 
       return (
-        <Card className="flex flex-col shadow-md hover:shadow-lg transition-all h-full">
+        <Card key={contextId} className="flex flex-col shadow-md hover:shadow-lg transition-all h-full">
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Icon className={cn(contextId === 'my-space' ? "text-primary" : "text-chart-4")}/> {title}
@@ -524,17 +514,21 @@ function HeroesPageContent() {
 
     if (initialLoad) {
       const preferredPage = user?.settings?.initialPage || 'heroes';
-      const preferredContext = user?.settings?.initialContext || 'my-space';
       
+      const childrenInMySpace = allChildren.filter(c => !c.familyId);
+      const hasAlliancesWithChildren = availableContexts.some(context => context.id !== 'my-space' && allChildren.some(c => c.familyId === context.id));
+
+      if (childrenInMySpace.length === 0 && hasAlliancesWithChildren && currentContext === 'my-space') {
+          const firstAllianceWithChildren = availableContexts.find(context => context.id !== 'my-space' && allChildren.some(c => c.familyId === context.id));
+          if (firstAllianceWithChildren) {
+              setCurrentContext(firstAllianceWithChildren.id);
+          }
+      }
+
       // Navigate away from heroes if it's not the preferred page
       if (preferredPage !== 'heroes') {
         router.replace(`/dashboard/${preferredPage}`);
         return;
-      }
-      
-      // If the preferred context exists and is different, switch to it
-      if (preferredContext && preferredContext !== currentContext && availableContexts.some(c => c.id === preferredContext)) {
-          setCurrentContext(preferredContext);
       }
       
       // Clean up URL
@@ -542,14 +536,25 @@ function HeroesPageContent() {
       newUrl.searchParams.delete('initial_load');
       window.history.replaceState({}, '', newUrl);
     }
-  }, [isFamilyLoading, isLoadingData, user, searchParams, router, availableContexts, currentContext, setCurrentContext]);
+  }, [isFamilyLoading, isLoadingData, user, searchParams, router, availableContexts, currentContext, allChildren, setCurrentContext]);
 
 
   // Render logic
   if (authLoading || isFamilyLoading || isLoadingData) {
     return <Loading />;
   }
+  
+  const childrenInMySpace = allChildren.filter(c => !c.familyId);
+  const hasAlliances = availableContexts.length > 1;
 
+  // This is the core logic change.
+  // If there are multiple contexts, always show the selector.
+  // Otherwise, just show the summary for the single available context.
+  if (hasAlliances) {
+    return <ContextSelector allChildren={allChildren} onContextSelect={setCurrentContext} />;
+  }
+
+  // This part runs only if there is ONE context (which must be 'my-space')
   const missionsForCurrentContext = allMissions.filter(m => {
     const missionContext = m.familyId || 'my-space';
     return missionContext === currentContext;
@@ -560,11 +565,6 @@ function HeroesPageContent() {
     return rewardContext === currentContext;
   });
   
-  // If user is part of multiple contexts, always show the selector first.
-  if (availableContexts.length > 1) {
-    return <ContextSelector allChildren={allChildren} onContextSelect={setCurrentContext} />;
-  }
-
   return <HeroesSummary allChildren={childrenInCurrentContext} missionInstances={missionsForCurrentContext} rewardTemplates={rewardsForCurrentContext} />;
 }
 
