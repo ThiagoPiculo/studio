@@ -463,9 +463,15 @@ function HeroesPageContent() {
   const [allMissions, setAllMissions] = useState<MissionInstance[]>([]);
   const [allRewards, setAllRewards] = useState<RewardTemplate[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [contextSelected, setContextSelected] = useState(false);
 
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const handleContextSelection = (contextId: string) => {
+    setCurrentContext(contextId);
+    setContextSelected(true);
+  };
 
   // This is now the definitive data fetcher. It gets everything.
   const fetchData = useCallback(async () => {
@@ -515,16 +521,6 @@ function HeroesPageContent() {
     if (initialLoad) {
       const preferredPage = user?.settings?.initialPage || 'heroes';
       
-      const childrenInMySpace = allChildren.filter(c => !c.familyId);
-      const hasAlliancesWithChildren = availableContexts.some(context => context.id !== 'my-space' && allChildren.some(c => c.familyId === context.id));
-
-      if (childrenInMySpace.length === 0 && hasAlliancesWithChildren && currentContext === 'my-space') {
-          const firstAllianceWithChildren = availableContexts.find(context => context.id !== 'my-space' && allChildren.some(c => c.familyId === context.id));
-          if (firstAllianceWithChildren) {
-              setCurrentContext(firstAllianceWithChildren.id);
-          }
-      }
-
       // Navigate away from heroes if it's not the preferred page
       if (preferredPage !== 'heroes') {
         router.replace(`/dashboard/${preferredPage}`);
@@ -536,7 +532,7 @@ function HeroesPageContent() {
       newUrl.searchParams.delete('initial_load');
       window.history.replaceState({}, '', newUrl);
     }
-  }, [isFamilyLoading, isLoadingData, user, searchParams, router, availableContexts, currentContext, allChildren, setCurrentContext]);
+  }, [isFamilyLoading, isLoadingData, user, searchParams, router]);
 
 
   // Render logic
@@ -544,17 +540,8 @@ function HeroesPageContent() {
     return <Loading />;
   }
   
-  const childrenInMySpace = allChildren.filter(c => !c.familyId);
   const hasAlliances = availableContexts.length > 1;
 
-  // This is the core logic change.
-  // If there are multiple contexts, always show the selector.
-  // Otherwise, just show the summary for the single available context.
-  if (hasAlliances) {
-    return <ContextSelector allChildren={allChildren} onContextSelect={setCurrentContext} />;
-  }
-
-  // This part runs only if there is ONE context (which must be 'my-space')
   const missionsForCurrentContext = allMissions.filter(m => {
     const missionContext = m.familyId || 'my-space';
     return missionContext === currentContext;
@@ -564,6 +551,12 @@ function HeroesPageContent() {
     const rewardContext = r.familyId || 'my-space';
     return rewardContext === currentContext;
   });
+  
+  // If user has multiple contexts and hasn't chosen one, show selector.
+  // Otherwise, show the summary for the current context.
+  if (hasAlliances && !contextSelected) {
+    return <ContextSelector allChildren={allChildren} onContextSelect={handleContextSelection} />;
+  }
   
   return <HeroesSummary allChildren={childrenInCurrentContext} missionInstances={missionsForCurrentContext} rewardTemplates={rewardsForCurrentContext} />;
 }
