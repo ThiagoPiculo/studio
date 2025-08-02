@@ -951,12 +951,17 @@ function MuralCompletoPageContent() {
                 </Popover>
             </div>
             {allChildren.length > 0 && (
-                <HeroSelector
-                    heroes={allChildren}
-                    selectedHeroId={childId}
-                    onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
-                    showAllOption={false}
-                />
+                 <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <HeroSelector
+                        heroes={allChildren}
+                        selectedHeroId={childId}
+                        onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                        showAllOption={false}
+                    />
+                     <Link href="/dashboard/onboarding">
+                        <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+                    </Link>
+                </div>
             )}
         </div>
       <Card className="shadow-xl overflow-hidden">
@@ -1841,3 +1846,5 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+    
