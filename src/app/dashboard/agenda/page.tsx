@@ -1084,7 +1084,14 @@ function AgendaPageContent() {
                                     <SelectValue placeholder="Selecione o período" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="all">Todos</SelectItem>
+                                    <SelectItem value="all">
+                                        <span className="flex items-center gap-2">
+                                            <Sun className="h-4 w-4 text-yellow-500" />
+                                            <CloudSun className="h-4 w-4 text-orange-500" />
+                                            <Moon className="h-4 w-4 text-indigo-500" />
+                                            <span className="sr-only">Todos</span>
+                                        </span>
+                                    </SelectItem>
                                     <SelectItem value="morning">
                                         <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
                                     </SelectItem>
