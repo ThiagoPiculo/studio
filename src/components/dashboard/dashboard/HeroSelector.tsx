@@ -17,12 +17,12 @@ interface HeroSelectorProps {
 }
 
 export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOption = false }: HeroSelectorProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
   
   const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-        const scrollAmount = direction === 'left' ? -200 : 200;
-        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    if (viewportRef.current) {
+        const scrollAmount = direction === 'left' ? -250 : 250;
+        viewportRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   }
 
@@ -36,8 +36,8 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
         >
             <ChevronLeft className="h-4 w-4" />
         </Button>
-      <ScrollArea className="w-full whitespace-nowrap rounded-md">
-        <div className="flex w-max space-x-4 p-4" ref={scrollContainerRef}>
+      <ScrollArea className="w-full whitespace-nowrap rounded-md" viewportRef={viewportRef}>
+        <div className="flex w-max space-x-4 p-4">
           {showAllOption && (
             <button
               onClick={() => onSelectHero(null)}
@@ -92,7 +92,7 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
             </button>
           ))}
         </div>
-        <ScrollBar orientation="horizontal" className="h-0" />
+        <ScrollBar orientation="horizontal" />
       </ScrollArea>
       <Button 
             variant="outline" 
