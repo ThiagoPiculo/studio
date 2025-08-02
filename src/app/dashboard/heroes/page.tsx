@@ -133,6 +133,11 @@ function HeroesPageContent() {
               });
               const alliancesWithKids = (await Promise.all(alliancesChildrenPromises)).filter(a => a.children.length > 0);
               setAlliancesWithChildren(alliancesWithKids);
+
+              // If my-space is empty but there are kids in other alliances, switch context
+              if (alliancesWithKids.length > 0 && availableContexts.length > 1) {
+                  setCurrentContext(alliancesWithKids[0].id);
+              }
             } else {
               setAlliancesWithChildren([]);
             }
@@ -146,7 +151,7 @@ function HeroesPageContent() {
     };
 
     fetchData();
-  }, [user, currentContext, toast, availableContexts]);
+  }, [user, currentContext, toast, availableContexts, setCurrentContext]);
 
 
   const getInitials = (name?: string | null) => {
@@ -532,6 +537,7 @@ export default function HeroesPage() {
     
 
     
+
 
 
 
