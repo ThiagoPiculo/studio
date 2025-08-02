@@ -1073,7 +1073,12 @@ function AgendaPageContent() {
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label className="font-semibold px-1">Período</Label>
+                            <Label className="font-semibold px-1 flex items-center gap-1.5">
+                                <Sun className="h-4 w-4 text-yellow-500" />
+                                <CloudSun className="h-4 w-4 text-orange-500" />
+                                <Moon className="h-4 w-4 text-indigo-500" />
+                                <span className="sr-only">Período</span>
+                            </Label>
                             <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="Selecione o período" />
