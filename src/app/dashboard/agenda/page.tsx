@@ -1043,79 +1043,44 @@ function AgendaPageContent() {
                 <CardDescription>Personalize a visualização para focar no que é mais importante.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
                     {children.length > 1 && (
-                        <HeroSelector
-                            heroes={children}
-                            selectedHeroId={selectedChildId}
-                            onSelectHero={handleSelectedChildChange}
-                            showAllOption={true}
-                        />
+                        <div className="space-y-2">
+                            <Label className="font-semibold px-1">Filtrar por Herói</Label>
+                            <HeroSelector
+                                heroes={children}
+                                selectedHeroId={selectedChildId}
+                                onSelectHero={handleSelectedChildChange}
+                                showAllOption={true}
+                            />
+                        </div>
                     )}
                     
-                    <div className={cn(children.length > 1 && "border-t pt-4")}>
-                        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                            {isMobile ? (
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <Button variant="outline" className="w-full sm:w-auto">
-                                        <Filter className="mr-2 h-4 w-4" />
-                                        Filtros da Agenda
-                                    </Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-auto" align="start">
-                                    <div className="grid grid-cols-2 gap-x-8 gap-y-4 p-4">
-                                        <div className="space-y-2">
-                                            <Label className="font-semibold">Visão</Label>
-                                            <RadioGroup value={dateRangeFilter} onValueChange={(value) => handleFilterChange('view', value)} className="space-y-1">
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="day" id="m-view-day" /><Label htmlFor="m-view-day" className="font-normal cursor-pointer">1 Dia</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="3days" id="m-view-3days" /><Label htmlFor="m-view-3days" className="font-normal cursor-pointer">3 Dias</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="workweek" id="m-view-workweek" /><Label htmlFor="m-view-workweek" className="font-normal cursor-pointer">Semana Útil</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="week" id="m-view-week" /><Label htmlFor="m-view-week" className="font-normal cursor-pointer">Semana</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="month" id="m-view-month" /><Label htmlFor="m-view-month" className="font-normal cursor-pointer">Mês</Label></div>
-                                            </RadioGroup>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label className="font-semibold">Período</Label>
-                                            <RadioGroup value={timePeriodFilter} onValueChange={(value) => handleFilterChange('period', value)} className="space-y-1">
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="all" id="m-period-all" /><Label htmlFor="m-period-all" className="font-normal cursor-pointer">Todos</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="morning" id="m-period-morning" /><Label htmlFor="m-period-morning" className="font-normal flex items-center gap-2 cursor-pointer text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" />Manhã</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="afternoon" id="m-period-afternoon" /><Label htmlFor="m-period-afternoon" className="font-normal flex items-center gap-2 cursor-pointer text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</Label></div>
-                                                <div className="flex items-center space-x-2"><RadioGroupItem value="night" id="m-period-night" /><Label htmlFor="m-period-night" className="font-normal flex items-center gap-2 cursor-pointer text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" />Noite</Label></div>
-                                            </RadioGroup>
-                                        </div>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                            ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-grow">
-                                <div className="space-y-2">
-                                    <Label className="font-semibold px-1">Visão</Label>
-                                    <ToggleGroup type="single" variant="outline" value={dateRangeFilter} onValueChange={(v) => v && handleFilterChange('view', v)} className="flex-wrap justify-start">
-                                        <ToggleGroupItem value="day" aria-label="1 Dia">1 Dia</ToggleGroupItem>
-                                        <ToggleGroupItem value="3days" aria-label="3 Dias">3 Dias</ToggleGroupItem>
-                                        <ToggleGroupItem value="workweek" aria-label="Semana Útil">Semana Útil</ToggleGroupItem>
-                                        <ToggleGroupItem value="week" aria-label="Semana">Semana</ToggleGroupItem>
-                                        <ToggleGroupItem value="month" aria-label="Mês">Mês</ToggleGroupItem>
-                                    </ToggleGroup>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label className="font-semibold px-1">Período</Label>
-                                    <ToggleGroup type="single" variant="outline" value={timePeriodFilter} onValueChange={(v) => v && handleFilterChange('period', v)} className="flex-wrap justify-start">
-                                        <ToggleGroupItem value="all" aria-label="Todos">Todos</ToggleGroupItem>
-                                        <ToggleGroupItem value="morning" aria-label="Manhã" className="text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10 data-[state=on]:bg-yellow-500/10 data-[state=on]:border-yellow-500/30">
-                                            <Sun className="h-4 w-4 mr-2 text-yellow-500" />Manhã
-                                        </ToggleGroupItem>
-                                        <ToggleGroupItem value="afternoon" aria-label="Tarde" className="text-orange-700 dark:text-orange-400 hover:bg-orange-500/10 data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500/30">
-                                            <CloudSun className="h-4 w-4 mr-2 text-orange-500" />Tarde
-                                        </ToggleGroupItem>
-                                        <ToggleGroupItem value="night" aria-label="Noite" className="text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 data-[state=on]:bg-indigo-500/10 data-[state=on]:border-indigo-500/30">
-                                            <Moon className="h-4 w-4 mr-2 text-indigo-500" />Noite
-                                        </ToggleGroupItem>
-                                    </ToggleGroup>
-                                </div>
-                            </div>
-                            )}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
+                        <div className="space-y-2">
+                            <Label className="font-semibold px-1">Visão</Label>
+                            <ToggleGroup type="single" variant="outline" value={dateRangeFilter} onValueChange={(v) => v && handleFilterChange('view', v)} className="flex-wrap justify-start">
+                                <ToggleGroupItem value="day" aria-label="1 Dia">1 Dia</ToggleGroupItem>
+                                <ToggleGroupItem value="3days" aria-label="3 Dias">3 Dias</ToggleGroupItem>
+                                <ToggleGroupItem value="workweek" aria-label="Semana Útil">Semana Útil</ToggleGroupItem>
+                                <ToggleGroupItem value="week" aria-label="Semana">Semana</ToggleGroupItem>
+                                <ToggleGroupItem value="month" aria-label="Mês">Mês</ToggleGroupItem>
+                            </ToggleGroup>
+                        </div>
+                        <div className="space-y-2">
+                            <Label className="font-semibold px-1">Período</Label>
+                            <ToggleGroup type="single" variant="outline" value={timePeriodFilter} onValueChange={(v) => v && handleFilterChange('period', v)} className="flex-wrap justify-start">
+                                <ToggleGroupItem value="all" aria-label="Todos">Todos</ToggleGroupItem>
+                                <ToggleGroupItem value="morning" aria-label="Manhã" className="text-yellow-700 dark:text-yellow-400 hover:bg-yellow-500/10 data-[state=on]:bg-yellow-500/10 data-[state=on]:border-yellow-500/30">
+                                    <Sun className="h-4 w-4 mr-2 text-yellow-500" />Manhã
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="afternoon" aria-label="Tarde" className="text-orange-700 dark:text-orange-400 hover:bg-orange-500/10 data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500/30">
+                                    <CloudSun className="h-4 w-4 mr-2 text-orange-500" />Tarde
+                                </ToggleGroupItem>
+                                <ToggleGroupItem value="night" aria-label="Noite" className="text-indigo-700 dark:text-indigo-400 hover:bg-indigo-500/10 data-[state=on]:bg-indigo-500/10 data-[state=on]:border-indigo-500/30">
+                                    <Moon className="h-4 w-4 mr-2 text-indigo-500" />Noite
+                                </ToggleGroupItem>
+                            </ToggleGroup>
                         </div>
                     </div>
                 </div>
