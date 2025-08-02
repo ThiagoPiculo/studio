@@ -32,6 +32,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { HeroSelector } from "@/components/dashboard/dashboard/HeroSelector";
+import { Progress } from "@/components/ui/progress";
 
 // This component shows the main hero summary cards
 function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { allChildren: ChildProfile[], missionInstances: MissionInstance[], rewardTemplates: RewardTemplate[] }) {
@@ -593,5 +594,3 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
-
-    
