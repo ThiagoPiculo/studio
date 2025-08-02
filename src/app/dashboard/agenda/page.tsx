@@ -561,13 +561,19 @@ function AgendaPageContent() {
 
           return (
             <li key={childId}>
-                <div
-                    style={{ backgroundColor: child.color, color: 'white' }}
-                    className="inline-block rounded-full px-3 py-1 text-sm font-semibold shadow"
-                >
-                    {child.name}
+                <div className="flex items-center gap-3">
+                    <Avatar
+                        className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                    >
+                        <AvatarImage src={child.avatar} alt={child.name} />
+                        <AvatarFallback style={{backgroundColor: child.color}}>
+                            {getInitials(child.name)}
+                        </AvatarFallback>
+                    </Avatar>
+                    <h4 className="font-semibold text-foreground/90">{child.name}</h4>
                 </div>
-                <ul className="mt-2 border-l-2 pl-4" style={{ borderColor: child.color }}>
+                <ul className="mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
@@ -1190,3 +1196,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
