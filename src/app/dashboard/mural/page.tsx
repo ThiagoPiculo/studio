@@ -935,12 +935,16 @@ function MuralCompletoPageContent() {
   return (
     <div className="space-y-6 pb-8">
         {allChildren.length > 1 && (
-            <HeroSelector
-                heroes={allChildren}
-                selectedHeroId={childId}
-                onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
-                showAllOption={false}
-            />
+            <Card>
+                <CardContent className="p-2">
+                     <HeroSelector
+                        heroes={allChildren}
+                        selectedHeroId={childId}
+                        onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                        showAllOption={false}
+                    />
+                </CardContent>
+            </Card>
         )}
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
@@ -1824,6 +1828,7 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
 
 
 
