@@ -153,7 +153,7 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               
               const isExpanded = expandedHeroes.has(child.id);
-              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 3);
+              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 5);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -560,3 +560,8 @@ export default function HeroesPage() {
 
 
 
+
+
+    
+
+    
