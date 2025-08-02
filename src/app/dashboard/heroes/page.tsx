@@ -1,14 +1,15 @@
 
 "use client";
 
-import { useAuth } from "@/contexts/AuthContext";
-import { useFamily } from "@/contexts/FamilyContext";
+import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon } from "lucide-react";
-import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle } from "lucide-react";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
     getChildProfilesForAttribution,
@@ -19,7 +20,6 @@ import {
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getDayToWeekday } from "@/lib/calendar-utils";
 import { cn, getInitials } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -31,6 +31,8 @@ import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 
 // This component shows the main hero summary cards
 function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { allChildren: ChildProfile[], missionInstances: MissionInstance[], rewardTemplates: RewardTemplate[] }) {
@@ -429,12 +431,19 @@ function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildP
 
     return (
         <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl font-headline">Selecione um Espaço</CardTitle>
-                    <CardDescription>Escolha qual equipe de heróis você deseja visualizar.</CardDescription>
-                </CardHeader>
-            </Card>
+            <div className="flex items-center justify-center gap-2 text-center">
+                <h2 className="text-2xl font-headline">Selecione um Espaço</h2>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 text-sm">
+                        Escolha qual equipe de heróis você deseja visualizar.
+                    </PopoverContent>
+                </Popover>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {renderContextCard(
                     'my-space', 
@@ -569,23 +578,3 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
- 
-    
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    
-
-    
-
-    
