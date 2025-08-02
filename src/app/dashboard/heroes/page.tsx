@@ -8,7 +8,6 @@ import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle } from "lucide-react";
 import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
-import { useEffect, useState, useMemo, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -430,37 +429,37 @@ function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildP
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-center gap-2 text-center">
-                <h2 className="text-2xl font-headline">Selecione um Espaço</h2>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 text-sm">
-                        Escolha qual equipe de heróis você deseja visualizar.
-                    </PopoverContent>
-                </Popover>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {renderContextCard(
-                    'my-space', 
-                    'Meu Espaço', 
-                    'Seu espaço privado para gerenciar heróis individualmente.', 
-                    Home
-                 )}
-                {availableContexts.filter(c => c.id !== 'my-space').map(context =>
-                    renderContextCard(
-                        context.id,
-                        `Aliança: ${context.name}`,
-                        'Aliança compartilhada com outros responsáveis.',
-                        LinkIcon
-                    )
-                )}
-            </div>
+      <div className="space-y-6">
+        <div className="flex items-center justify-center gap-2 text-center">
+            <h2 className="text-2xl font-headline">Selecione um Espaço</h2>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm">
+                    Escolha qual equipe de heróis você deseja visualizar.
+                </PopoverContent>
+            </Popover>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {renderContextCard(
+                  'my-space', 
+                  'Meu Espaço', 
+                  'Seu espaço privado para gerenciar heróis individualmente.', 
+                  Home
+              )}
+            {availableContexts.filter(c => c.id !== 'my-space').map(context =>
+                renderContextCard(
+                    context.id,
+                    `Aliança: ${context.name}`,
+                    'Aliança compartilhada com outros responsáveis.',
+                    LinkIcon
+                )
+            )}
+        </div>
+      </div>
     );
 }
 
