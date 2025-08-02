@@ -10,7 +10,7 @@ import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRol
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit, Smile } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit, Smile, HelpCircle, ListCollapse } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -662,6 +662,7 @@ function MuralCompletoPageContent() {
     } finally {
       setIsDeleting(false);
       setEntryToDelete(null);
+      setIsEntryDialogOpen(false); // Close edit dialog if delete is triggered from there
     }
   };
 
@@ -934,18 +935,30 @@ function MuralCompletoPageContent() {
 
   return (
     <div className="space-y-6 pb-8">
-        {allChildren.length > 1 && (
-            <Card>
-                <CardContent className="p-2">
-                    <HeroSelector
-                        heroes={allChildren}
-                        selectedHeroId={childId}
-                        onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
-                        showAllOption={false}
-                    />
-                </CardContent>
-            </Card>
-        )}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+                <ListCollapse className="h-8 w-8 text-primary" />
+                <h2 className="text-3xl font-headline font-bold">Mural Completo</h2>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 text-sm">
+                        Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.
+                    </PopoverContent>
+                </Popover>
+            </div>
+            {allChildren.length > 0 && (
+                <HeroSelector
+                    heroes={allChildren}
+                    selectedHeroId={childId}
+                    onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                    showAllOption={false}
+                />
+            )}
+        </div>
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
             <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
