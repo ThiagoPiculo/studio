@@ -1,13 +1,20 @@
 
 "use client";
 
-import { useRef } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import type { ChildProfile } from "@/lib/types";
 import { getInitials, cn } from "@/lib/utils";
-import { ChevronLeft, ChevronRight, Users } from "lucide-react";
+import { ChevronsUpDown, Users, User } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+  DropdownMenuSeparator
+} from "@/components/ui/dropdown-menu";
 
 interface HeroSelectorProps {
   heroes: ChildProfile[];
@@ -17,92 +24,62 @@ interface HeroSelectorProps {
 }
 
 export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOption = false }: HeroSelectorProps) {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
-  const scroll = (direction: 'left' | 'right') => {
-    if (scrollContainerRef.current) {
-        const scrollAmount = direction === 'left' ? -250 : 250;
-        scrollContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    }
-  }
+
+  const selectedHero = heroes.find(h => h.id === selectedHeroId);
 
   return (
-    <div className="relative group w-full">
-        <Button 
-            variant="outline" 
-            size="icon" 
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full shadow-md hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => scroll('left')}
-        >
-            <ChevronLeft className="h-4 w-4" />
-        </Button>
-      <ScrollArea className="w-full whitespace-nowrap rounded-md" viewportRef={scrollContainerRef}>
-        <div className="flex w-max space-x-4 p-4">
-          {showAllOption && (
-            <button
-              key="all-heroes"
-              onClick={() => onSelectHero(null)}
-              className="flex flex-col items-center gap-2 text-center w-20 transition-transform duration-200 hover:scale-105"
-            >
-              <div
-                className={cn(
-                  "h-16 w-16 md:h-20 md:w-20 rounded-full flex items-center justify-center transition-all duration-300 ring-2 ring-offset-2 ring-offset-background",
-                  selectedHeroId === null ? 'ring-primary bg-primary/10' : 'ring-transparent bg-muted/50'
-                )}
-              >
-                <Users className={cn("h-8 w-8 md:h-10 md:w-10", selectedHeroId === null ? 'text-primary' : 'text-muted-foreground')} />
-              </div>
-              <span className={cn(
-                    "text-xs md:text-sm font-medium w-full truncate",
-                    selectedHeroId === null ? "text-primary" : "text-muted-foreground"
-                )}>
-                  Todos
-                </span>
-            </button>
-          )}
-
-          {heroes.map((hero) => (
-            <button
-              key={hero.id}
-              onClick={() => onSelectHero(hero.id)}
-              className="flex flex-col items-center gap-2 text-center w-20 transition-transform duration-200 hover:scale-105"
-            >
-              <Avatar
-                className={cn(
-                  "h-16 w-16 md:h-20 md:w-20 transition-all duration-300 ring-2 ring-offset-2 ring-offset-background ring-[var(--ring-color)]",
-                  selectedHeroId === hero.id
-                    ? 'opacity-100'
-                    : 'opacity-70'
-                )}
-                 style={{ '--ring-color': hero.color } as React.CSSProperties}
-              >
-                <AvatarImage src={hero.avatar} alt={hero.name} />
-                <AvatarFallback
-                  className="font-bold text-xl"
-                  style={{ backgroundColor: hero.color }}
-                >
-                  {getInitials(hero.name)}
-                </AvatarFallback>
-              </Avatar>
-              <span className={cn(
-                  "text-xs md:text-sm font-medium w-full truncate",
-                  selectedHeroId === hero.id ? "text-primary" : "text-muted-foreground"
-              )}>
-                {hero.name}
-              </span>
-            </button>
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-      <Button 
-            variant="outline" 
-            size="icon" 
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 rounded-full shadow-md hidden md:flex opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={() => scroll('right')}
-        >
-            <ChevronRight className="h-4 w-4" />
-        </Button>
-    </div>
+     <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="w-full sm:w-[280px] justify-between shadow-sm">
+                <div className="flex items-center gap-3 truncate">
+                    {selectedHero ? (
+                         <Avatar className="h-6 w-6">
+                            <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
+                            <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
+                                {getInitials(selectedHero.name)}
+                            </AvatarFallback>
+                        </Avatar>
+                    ) : (
+                        <Users className="h-5 w-5 text-muted-foreground" />
+                    )}
+                    <span className="truncate font-semibold">
+                        {selectedHero ? selectedHero.name : 'Todos os Heróis'}
+                    </span>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]">
+            <DropdownMenuRadioGroup value={selectedHeroId || 'all'} onValueChange={(value) => onSelectHero(value === 'all' ? null : value)}>
+                 {showAllOption && (
+                    <>
+                        <DropdownMenuRadioItem value="all" className="cursor-pointer">
+                           <div className="flex items-center gap-3">
+                                <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                                <span className="font-medium">Todos os Heróis</span>
+                            </div>
+                        </DropdownMenuRadioItem>
+                        <DropdownMenuSeparator />
+                    </>
+                 )}
+                 <DropdownMenuLabel>Selecione um Herói</DropdownMenuLabel>
+                 {heroes.map(hero => (
+                    <DropdownMenuRadioItem key={hero.id} value={hero.id} className="cursor-pointer">
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-6 w-6">
+                                <AvatarImage src={hero.avatar} alt={hero.name} />
+                                <AvatarFallback style={{ backgroundColor: hero.color }}>
+                                    {getInitials(hero.name)}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span>{hero.name}</span>
+                        </div>
+                    </DropdownMenuRadioItem>
+                 ))}
+            </DropdownMenuRadioGroup>
+        </DropdownMenuContent>
+     </DropdownMenu>
   );
 }

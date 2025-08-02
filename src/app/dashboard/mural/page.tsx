@@ -937,7 +937,7 @@ function MuralCompletoPageContent() {
         {allChildren.length > 1 && (
             <Card>
                 <CardContent className="p-2">
-                     <HeroSelector
+                    <HeroSelector
                         heroes={allChildren}
                         selectedHeroId={childId}
                         onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
@@ -1828,12 +1828,3 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
-
-
-
-
-
-
-
-
-

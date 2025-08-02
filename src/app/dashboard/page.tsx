@@ -54,7 +54,7 @@ function DashboardPageContent() {
         if (childIdFromParams && childData.some(c => c.id === childIdFromParams)) {
           setSelectedChildId(childIdFromParams);
         } else if (childData.length > 0) {
-          setSelectedChildId(childData[0].id);
+          setSelectedChildId(null); // Default to all
         } else {
           setSelectedChildId(null);
         }
@@ -91,30 +91,31 @@ function DashboardPageContent() {
 
   return (
     <div className="space-y-8">
-       <div className="flex items-center gap-4">
-        <LayoutGrid className="h-8 w-8 text-primary" />
-        <h2 className="text-3xl font-headline font-bold">Painel de Controle</h2>
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                    <HelpCircle className="h-5 w-5" />
-                </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-72 text-sm">
-              Sua central de análises e automações para acompanhar a jornada dos seus herois.
-            </PopoverContent>
-        </Popover>
+       <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <LayoutGrid className="h-8 w-8 text-primary" />
+            <h2 className="text-3xl font-headline font-bold">Painel de Controle</h2>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm">
+                  Sua central de análises e automações para acompanhar a jornada dos seus herois.
+                </PopoverContent>
+            </Popover>
+        </div>
+        {allChildren.length > 0 && (
+            <HeroSelector
+            heroes={allChildren}
+            selectedHeroId={selectedChildId}
+            onSelectHero={setSelectedChildId}
+            showAllOption={true}
+            />
+        )}
       </div>
       
-      {allChildren.length > 1 && (
-        <HeroSelector
-          heroes={allChildren}
-          selectedHeroId={selectedChildId}
-          onSelectHero={setSelectedChildId}
-          showAllOption={true}
-        />
-      )}
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
           <ProgressAnalysis childrenProfiles={selectedChildData.children} missionInstances={selectedChildData.missions} />
