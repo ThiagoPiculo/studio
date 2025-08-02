@@ -358,8 +358,8 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
               </Card>
             )})}
           </div>
-        )}
       </section>
+      )}
     </div>
   );
 }
@@ -561,6 +561,8 @@ export default function HeroesPage() {
 
 
 
+
+    
 
     
 
