@@ -430,7 +430,7 @@ function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildP
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-center gap-2 text-center">
+        <div className="flex items-center gap-2">
             <h2 className="text-2xl font-headline">Selecione um Espaço</h2>
             <Popover>
                 <PopoverTrigger asChild>
@@ -444,19 +444,19 @@ function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildP
             </Popover>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {renderContextCard(
-                  'my-space', 
-                  'Meu Espaço', 
-                  'Seu espaço privado para gerenciar heróis individualmente.', 
-                  Home
-              )}
+            {renderContextCard(
+                'my-space', 
+                'Meu Espaço', 
+                'Seu espaço privado para gerenciar heróis individualmente.', 
+                Home
+            )}
             {availableContexts.filter(c => c.id !== 'my-space').map(context =>
-                renderContextCard(
-                    context.id,
-                    `Aliança: ${context.name}`,
-                    'Aliança compartilhada com outros responsáveis.',
-                    LinkIcon
-                )
+              renderContextCard(
+                  context.id,
+                  `Aliança: ${context.name}`,
+                  'Aliança compartilhada com outros responsáveis.',
+                  LinkIcon
+              )
             )}
         </div>
       </div>
