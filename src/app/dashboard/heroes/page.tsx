@@ -184,17 +184,6 @@ function HeroesPageContent() {
   
   const renderAllianceBridge = () => (
     <div className="space-y-6">
-        <Card className="text-center border-0 shadow-none bg-transparent">
-            <CardHeader>
-                <CardTitle className="text-2xl font-semibold mb-2 flex items-center justify-center gap-3">
-                    <LinkIcon className="h-8 w-8 text-primary" />
-                    Seus Heróis estão em suas Alianças!
-                </CardTitle>
-                <CardDescription className="text-base text-muted-foreground mb-4 max-w-2xl mx-auto">
-                    Seu espaço pessoal está vazio, mas encontramos heróis em suas equipes. Selecione uma aliança para ver o resumo do dia ou adicione um novo herói ao seu espaço pessoal.
-                </CardDescription>
-            </CardHeader>
-        </Card>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             <Card className="shadow-md hover:shadow-lg transition-all flex flex-col border-dashed border-2">
                 <CardHeader>
@@ -286,7 +275,7 @@ function HeroesPageContent() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
               
@@ -543,5 +532,6 @@ export default function HeroesPage() {
     
 
     
+
 
 
