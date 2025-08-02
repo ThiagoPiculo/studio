@@ -124,16 +124,16 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { all
       <section>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
           <h2 className="text-2xl font-headline">Resumo do Dia</h2>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+          <div className="flex items-stretch sm:items-center gap-2 w-full sm:w-auto">
             {allChildren.length > 1 && (
                 <HeroSelector
                     heroes={allChildren}
                     selectedHeroId={selectedHeroId}
-                    onSelectHero={setSelectedHeroId}
+                    onSelectHero={setSelectedChildId}
                     showAllOption={true}
                 />
             )}
-            <Link href="/dashboard/onboarding" className="w-full sm:w-auto">
+            <Link href="/dashboard/onboarding" className="sm:w-auto">
                 <Button className="shadow-md w-full"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
             </Link>
           </div>
