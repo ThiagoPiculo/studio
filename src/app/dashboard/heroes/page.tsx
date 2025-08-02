@@ -192,19 +192,19 @@ function HeroesPageContent() {
                        Meu Espaço
                     </CardTitle>
                     <CardDescription>
-                        {alliancesWithChildren.length > 0
-                            ? "Seu espaço privado. Adicione um herói aqui se desejar gerenciá-lo de forma separada das suas alianças."
-                            : "Seu cantinho particular. Adicione um herói aqui para iniciar a jornada de forma individual. Mais tarde, se quiser, você poderá movê-lo para uma aliança."
-                        }
+                       Adicione heróis aqui para gerenciá-los de forma separada de suas alianças.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="flex-grow flex items-center justify-center">
-                   <Link href="/dashboard/onboarding" className="w-full">
-                        <Button size="lg" variant="outline" className="w-full h-16 text-base">
+                    <p className="text-muted-foreground text-center">Nenhum herói aqui ainda.</p>
+                </CardContent>
+                 <CardFooter>
+                    <Link href="/dashboard/onboarding" className="w-full">
+                        <Button className="w-full">
                             <PlusCircle className="mr-2 h-5 w-5" /> Cadastrar Novo Mini Heroi
                         </Button>
                     </Link>
-                </CardContent>
+                </CardFooter>
             </Card>
             {alliancesWithChildren.map(alliance => (
                 <Card key={alliance.id} className="shadow-md hover:shadow-lg transition-all flex flex-col">
@@ -467,16 +467,16 @@ function HeroesPageContent() {
                 </div>
 
                  {todaysMissions.length > 5 && (
-                    <button
+                    <div
                         onClick={() => toggleMissionsExpansion(child.id)}
-                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md"
+                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer border-t"
                     >
                         {isExpanded ? (
                             <>Ver menos <ChevronUp className="h-4 w-4" /></>
                         ) : (
                             <>+ {todaysMissions.length - 5} missões <ChevronDown className="h-4 w-4" /></>
                         )}
-                    </button>
+                    </div>
                 )}
 
 
@@ -532,6 +532,7 @@ export default function HeroesPage() {
     
 
     
+
 
 
 
