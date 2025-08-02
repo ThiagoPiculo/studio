@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon } from "lucide-react";
 import { useEffect, useState, useMemo, Suspense, useCallback } from "react";
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -14,6 +14,7 @@ import {
     getMissionInstancesForContext,
     regenerateChildAccessCode,
     getSchoolScheduleForContext,
+    getRewardTemplatesByOwnerOrFamily,
 } from "@/lib/firebase/firestore";
 import type { Timestamp } from "firebase/firestore";
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
@@ -26,29 +27,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { allBadgesMap } from "@/lib/badges";
 import Loading from "./loading";
 import { LevelUpPath } from "@/components/dashboard/LevelUpPath";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import { Progress } from "@/components/ui/progress";
 
-
-function HeroesPageContent() {
-  const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, setCurrentContext } = useFamily();
+// This component shows the main hero summary cards
+function HeroesSummary({ allChildren, missionInstances, rewardTemplates }: { allChildren: ChildProfile[], missionInstances: MissionInstance[], rewardTemplates: RewardTemplate[] }) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const { toast } = useToast();
-  
-  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
-  const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRedirecting, setIsRedirecting] = useState(true);
-
-  const totalBadgesCount = allBadgesMap.size;
   
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
   const [expandedHeroes, setExpandedHeroes] = useState<Set<string>>(new Set());
+  const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
+  const { user, loading: authLoading } = useAuth();
+  const { currentContext } = useFamily();
+
+  const totalBadgesCount = allBadgesMap.size;
+
+  useEffect(() => {
+    if (user) {
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        getSchoolScheduleForContext(user.uid, familyIdToQuery).then(setSchoolSchedule);
+    }
+  }, [user, currentContext]);
 
   const toggleMissionsExpansion = (childId: string) => {
     setExpandedHeroes(prev => {
@@ -61,26 +62,6 @@ function HeroesPageContent() {
         return newSet;
     });
   };
-  
-  useEffect(() => {
-    const initialLoad = searchParams.get('initial_load');
-
-    if (!authLoading) {
-      if (initialLoad === 'true') {
-        const userSettings = JSON.parse(localStorage.getItem('user_settings') || '{}');
-        const initialPage = userSettings?.initialPage || 'heroes';
-        
-        if (initialPage !== 'heroes') {
-          router.replace(`/dashboard/${initialPage}`);
-        } else {
-          router.replace('/dashboard/heroes'); 
-          setIsRedirecting(false);
-        }
-      } else {
-        setIsRedirecting(false);
-      }
-    }
-  }, [authLoading, router, searchParams]);
 
   const handleRegenerateAccessCode = async (childId: string, childName: string) => {
     if (isRegenerating) return;
@@ -92,8 +73,7 @@ function HeroesPageContent() {
         description: `A nova chave de ${childName} é ${newCode}.`,
         duration: 10000,
       });
-      // Optimistically update the UI
-      setAllChildren(prev => prev.map(c => c.id === childId ? { ...c, accessCode: newCode } : c));
+      // The parent component will refetch and update the state.
     } catch (error) {
       console.error("Error regenerating code:", error);
       toast({ title: "Erro ao gerar nova chave", variant: "destructive" });
@@ -101,53 +81,6 @@ function HeroesPageContent() {
       setIsRegenerating(null);
     }
   };
-
-  const fetchData = useCallback(async () => {
-    if (!user) {
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    
-    try {
-        const [childrenData, missionsData, scheduleData] = await Promise.all([
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, familyIdToQuery),
-            getSchoolScheduleForContext(user.uid, familyIdToQuery)
-        ]);
-
-        if (childrenData.length === 0 && currentContext === 'my-space') {
-            const alliances = availableContexts.filter(c => c.id !== 'my-space');
-            if (alliances.length > 0) {
-                // Check if any alliance has children
-                for (const alliance of alliances) {
-                    const allianceChildren = await getChildProfilesForAttribution(user.uid, alliance.id);
-                    if (allianceChildren.length > 0) {
-                        setCurrentContext(alliance.id); // This will trigger a re-fetch via the main useEffect
-                        return; // Exit early, the re-fetch will handle the rest
-                    }
-                }
-            }
-        }
-        
-        setAllChildren(childrenData);
-        setMissionInstances(missionsData);
-        setSchoolSchedule(scheduleData);
-
-    } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-        toast({ title: "Erro ao carregar dados", description: "Não foi possível buscar as informações dos heróis.", variant: "destructive" });
-    } finally {
-        setIsLoading(false);
-    }
-  }, [user, currentContext, toast, availableContexts, setCurrentContext]);
-  
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -172,23 +105,18 @@ function HeroesPageContent() {
         .filter(entry => entry.dayOfWeek === todayWeekday)
         .sort((a,b) => a.startTime.localeCompare(b.startTime));
   }, [schoolSchedule]);
-
-  if (isLoading || authLoading || isRedirecting) {
-    return <Loading />;
-  }
   
   const today = format(new Date(), 'yyyy-MM-dd');
-  
+
   return (
     <div className="space-y-8">
-       {allChildren.length === 0 && (
-         <GettingStartedGuide 
+      {allChildren.length === 0 ? (
+          <GettingStartedGuide 
             hasChildren={false}
             hasMissions={false}
             hasRewards={false}
           />
-      )}
-      
+      ) : (
       <section>
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-headline">Resumo do Dia</h2>
@@ -196,21 +124,6 @@ function HeroesPageContent() {
             <Button className="shadow-md"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
           </Link>
         </div>
-
-        {allChildren.length === 0 ? (
-          <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
-            <CardContent>
-              <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum Herói Cadastrado Ainda!</h3>
-              <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
-              <Link href="/dashboard/onboarding">
-                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-5 w-5" /> Adicione Seu Primeiro Heroi
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {allChildren.map((child) => {
               const age = calculateAge(child.birthDate);
@@ -240,7 +153,7 @@ function HeroesPageContent() {
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               
               const isExpanded = expandedHeroes.has(child.id);
-              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 5);
+              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 3);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -331,7 +244,7 @@ function HeroesPageContent() {
                     </div>
                 </CardContent>
                 
-                <div className="px-4 pb-2 flex-grow">
+                <div className="px-4 pb-0 flex-grow">
                    <Tabs defaultValue="missions">
                         <TabsList className="grid w-full grid-cols-2 h-auto p-1 text-xs h-9">
                             <TabsTrigger value="missions" className="py-1.5 text-xs justify-center">Missões de Hoje</TabsTrigger>
@@ -402,10 +315,10 @@ function HeroesPageContent() {
                     </Tabs>
                 </div>
 
-                 {todaysMissions.length > 5 && (
+                {todaysMissions.length > 5 && (
                     <button
                         onClick={() => toggleMissionsExpansion(child.id)}
-                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer border-t"
+                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer"
                     >
                         {isExpanded ? (
                             <>Ver menos <ChevronUp className="h-4 w-4" /></>
@@ -430,10 +343,7 @@ function HeroesPageContent() {
                             <Gift className="h-5 w-5 text-chart-1" />
                             <span className="font-bold text-lg leading-none">{availableRewardsCount}</span>
                         </div>
-                         <div className="flex items-center text-xs text-muted-foreground leading-tight">
-                            <span>Recompensas</span>
-                            <ArrowRight className="ml-1 h-3 w-3" />
-                        </div>
+                         <p className="text-xs text-muted-foreground leading-tight flex items-center">Recompensas <ArrowRight className="ml-1 h-3 w-3" /></p>
                     </Link>
                     <Link href={`/dashboard/mural?childId=${child.id}&tab=badges`} className="p-2 rounded-md hover:bg-primary/10 transition-colors flex flex-col items-center justify-center gap-1">
                       <div className="flex min-h-[36px] items-center justify-center gap-1.5">
@@ -442,10 +352,7 @@ function HeroesPageContent() {
                            <span className="text-xl text-muted-foreground font-light pb-0.5">/</span>
                            <span className="font-bold text-lg leading-none">{totalBadgesCount}</span>
                       </div>
-                       <div className="flex items-center text-xs text-muted-foreground leading-tight">
-                            <span>Medalhas</span>
-                            <ArrowRight className="ml-1 h-3 w-3" />
-                        </div>
+                       <p className="text-xs text-muted-foreground leading-tight flex items-center">Medalhas <ArrowRight className="ml-1 h-3 w-3" /></p>
                     </Link>
                 </CardFooter>
               </Card>
@@ -456,6 +363,182 @@ function HeroesPageContent() {
     </div>
   );
 }
+
+// This component shows the context selection cards
+function ContextSelector({ allChildren, onContextSelect }: { allChildren: ChildProfile[], onContextSelect: (contextId: string) => void }) {
+    const { availableContexts } = useFamily();
+
+    const childrenByContext = useMemo(() => {
+        const map = new Map<string, ChildProfile[]>();
+        allChildren.forEach(child => {
+            const contextId = child.familyId || 'my-space';
+            if (!map.has(contextId)) {
+                map.set(contextId, []);
+            }
+            map.get(contextId)!.push(child);
+        });
+        return map;
+    }, [allChildren]);
+    
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-2xl font-headline">Selecione um Espaço</CardTitle>
+                    <CardDescription>Escolha qual equipe de heróis você deseja visualizar.</CardDescription>
+                </CardHeader>
+            </Card>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {/* My Space Card */}
+                <Card className="flex flex-col shadow-md hover:shadow-lg transition-all">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Home className="text-primary"/> Meu Espaço</CardTitle>
+                        <CardDescription>Seu espaço privado para gerenciar heróis individualmente.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                        {(childrenByContext.get('my-space') || []).length > 0 ? (
+                             <p className="text-sm text-muted-foreground">Contém {(childrenByContext.get('my-space') || []).length} herói(s).</p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground italic">Nenhum herói aqui ainda.</p>
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                        <Button className="w-full" onClick={() => onContextSelect('my-space')}>
+                            Acessar Meu Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </CardFooter>
+                </Card>
+
+                {/* Alliance Cards */}
+                {availableContexts.filter(c => c.id !== 'my-space').map(context => (
+                    <Card key={context.id} className="flex flex-col shadow-md hover:shadow-lg transition-all">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><LinkIcon className="text-chart-4"/> {context.name}</CardTitle>
+                            <CardDescription>Aliança compartilhada com outros responsáveis.</CardDescription>
+                        </CardHeader>
+                         <CardContent className="flex-grow">
+                           <p className="text-sm text-muted-foreground">Contém {(childrenByContext.get(context.id) || []).length} herói(s).</p>
+                        </CardContent>
+                        <CardFooter>
+                             <Button className="w-full" onClick={() => onContextSelect(context.id)}>
+                                Acessar Aliança <ArrowRight className="ml-2 h-4 w-4" />
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function HeroesPageContent() {
+  const { user, loading: authLoading } = useAuth();
+  const { currentContext, availableContexts, setCurrentContext, isLoading: isFamilyLoading } = useFamily();
+  
+  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
+  const [allMissions, setAllMissions] = useState<MissionInstance[]>([]);
+  const [allRewards, setAllRewards] = useState<RewardTemplate[]>([]);
+  const [isLoadingData, setIsLoadingData] = useState(true);
+
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // This is now the definitive data fetcher. It gets everything.
+  const fetchData = useCallback(async () => {
+    if (!user) {
+        setIsLoadingData(false);
+        return;
+    }
+    setIsLoadingData(true);
+    
+    try {
+        const [childrenArrays, missionArrays, rewardArrays] = await Promise.all([
+            Promise.all(availableContexts.map(context => getChildProfilesForAttribution(user.uid, context.id))),
+            Promise.all(availableContexts.map(context => getMissionInstancesForContext(user.uid, context.id === 'my-space' ? null : context.id))),
+            Promise.all(availableContexts.map(context => getRewardTemplatesByOwnerOrFamily(user.uid, context.id === 'my-space' ? null : context.id))),
+        ]);
+        
+        const flatChildren = childrenArrays.flat();
+        const uniqueChildren = Array.from(new Map(flatChildren.map(c => [c.id, c])).values());
+        
+        setAllChildren(uniqueChildren);
+        setAllMissions(missionArrays.flat());
+        setAllRewards(rewardArrays.flat());
+    } catch (error) {
+        console.error("Error fetching all dashboard data:", error);
+    } finally {
+        setIsLoadingData(false);
+    }
+  }, [user, availableContexts]);
+  
+  useEffect(() => {
+    if (!isFamilyLoading) {
+      fetchData();
+    }
+  }, [fetchData, isFamilyLoading]);
+
+  // Children filtered for the *currently selected* context
+  const childrenInCurrentContext = useMemo(() => {
+    return allChildren.filter(c => (c.familyId || 'my-space') === currentContext);
+  }, [allChildren, currentContext]);
+
+  // Logic to handle initial redirect or view selection
+  useEffect(() => {
+    if (isFamilyLoading || isLoadingData) return;
+
+    const initialLoad = searchParams.get('initial_load') === 'true';
+
+    if (initialLoad) {
+      const preferredPage = user?.settings?.initialPage || 'heroes';
+      const preferredContext = user?.settings?.initialContext || 'my-space';
+      
+      // Navigate away from heroes if it's not the preferred page
+      if (preferredPage !== 'heroes') {
+        router.replace(`/dashboard/${preferredPage}`);
+        return;
+      }
+      
+      // If the preferred context exists and is different, switch to it
+      if (preferredContext && preferredContext !== currentContext && availableContexts.some(c => c.id === preferredContext)) {
+          setCurrentContext(preferredContext);
+      }
+      
+      // Clean up URL
+      const newUrl = new URL(window.location.toString());
+      newUrl.searchParams.delete('initial_load');
+      window.history.replaceState({}, '', newUrl);
+    }
+  }, [isFamilyLoading, isLoadingData, user, searchParams, router, availableContexts, currentContext, setCurrentContext]);
+
+
+  // Render logic
+  if (authLoading || isFamilyLoading || isLoadingData) {
+    return <Loading />;
+  }
+
+  const missionsForCurrentContext = allMissions.filter(m => {
+    const missionContext = m.familyId || 'my-space';
+    return missionContext === currentContext;
+  });
+
+  const rewardsForCurrentContext = allRewards.filter(r => {
+    const rewardContext = r.familyId || 'my-space';
+    return rewardContext === currentContext;
+  });
+  
+  // If user is part of multiple contexts, always show the selector first.
+  if (availableContexts.length > 1) {
+    const childrenInSelectedContext = allChildren.filter(c => (c.familyId || 'my-space') === currentContext);
+
+    // If no children in current context, show the selector
+    if(childrenInSelectedContext.length === 0){
+        return <ContextSelector allChildren={allChildren} onContextSelect={setCurrentContext} />;
+    }
+  }
+
+  return <HeroesSummary allChildren={childrenInCurrentContext} missionInstances={missionsForCurrentContext} rewardTemplates={rewardsForCurrentContext} />;
+}
+
 
 export default function HeroesPage() {
   return (
@@ -468,6 +551,9 @@ export default function HeroesPage() {
     
 
     
+
+
+
 
 
 
