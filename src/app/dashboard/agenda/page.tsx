@@ -177,6 +177,8 @@ function AgendaPageContent() {
         const childIdParam = searchParams.get('childId');
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
           setSelectedChildId(childIdParam);
+        } else if (fetchedChildren.length > 0) {
+          setSelectedChildId(fetchedChildren[0].id);
         } else {
           setSelectedChildId(null);
         }
@@ -996,14 +998,7 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-             <div className="flex w-full flex-row-reverse sm:flex-row items-center justify-start sm:justify-end gap-2">
-                {canEdit && (
-                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Adicionar Missão</span>
-                         <span className="sm:hidden">Adicionar</span>
-                    </Button>
-                )}
+             <div className="flex w-full flex-row items-center justify-end gap-2">
                 {children.length > 1 && (
                     <div className="flex-grow sm:flex-grow-0">
                         <HeroSelector
@@ -1013,6 +1008,13 @@ function AgendaPageContent() {
                             showAllOption={true}
                         />
                     </div>
+                )}
+                {canEdit && (
+                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-shrink-0">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Adicionar Missão</span>
+                         <span className="sm:hidden">Adicionar</span>
+                    </Button>
                 )}
             </div>
         </div>
