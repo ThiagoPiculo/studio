@@ -1,4 +1,6 @@
 
+"use client";
+
 import { useMemo } from 'react';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { FamilyRole } from '@/lib/types';
