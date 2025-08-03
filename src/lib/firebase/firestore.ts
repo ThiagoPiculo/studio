@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -314,16 +315,17 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
 };
 
 // Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
-export const getChildProfilesForAttribution = async (currentUserId: string, currentContextId: 'my-space' | string): Promise<ChildProfile[]> => {
-  let q;
+export const getChildProfilesForAttribution = async (contextId: 'my-space' | string): Promise<ChildProfile[]> => {
+  const currentUserId = auth.currentUser?.uid;
   if (!currentUserId) {
     throw new Error("Usuário não autenticado.");
   }
   
-  if (currentContextId === 'my-space') {
+  let q;
+  if (contextId === 'my-space') {
     q = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
   } else {
-    q = query(collection(db, 'children'), where('familyId', '==', currentContextId));
+    q = query(collection(db, 'children'), where('familyId', '==', contextId));
   }
   
   const snapshot = await getDocs(q);
@@ -1185,7 +1187,7 @@ export const deleteRewardTemplate = async (actor: UserProfile, templateId: strin
   
   await deleteDoc(templateRef);
 
-  if (templateData.familyId) {
+   if (templateData.familyId) {
     await createAllianceNotification(templateData.familyId, actor, {
       type: 'template_deleted',
       title: 'Recompensa Removida do Catálogo',
@@ -1561,16 +1563,17 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
 };
 
 // --- Mission Instances (Missões Atribuídas) ---
-export const getMissionInstancesForContext = async (ownerId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
+export const getMissionInstancesForContext = async (contextId: 'my-space' | string): Promise<MissionInstance[]> => {
   let q;
-  if (!ownerId) {
+  const currentUserId = auth.currentUser?.uid;
+  if (!currentUserId) {
     throw new Error("Usuário não autenticado.");
   }
 
-  if (contextId && contextId !== 'my-space') {
-    q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
+  if (contextId === 'my-space') {
+    q = query(collection(db, 'missionInstances'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
   } else {
-    q = query(collection(db, 'missionInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null));
+    q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
   }
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
@@ -2216,7 +2219,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));

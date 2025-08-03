@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -145,7 +146,7 @@ function AgendaPageContent() {
   const refetchData = useCallback(async () => {
     if (!user) return;
     try {
-      const instances = await getMissionInstancesForContext(user.uid, currentContext);
+      const instances = await getMissionInstancesForContext(currentContext);
       setMissionInstances(instances);
     } catch (error) {
       console.error("Error refetching mission instances:", error);
@@ -164,8 +165,8 @@ function AgendaPageContent() {
       setIsLoading(true);
       try {
         const [fetchedChildren, fetchedInstances] = await Promise.all([
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, currentContext)
+            getChildProfilesForAttribution(currentContext),
+            getMissionInstancesForContext(currentContext)
         ]);
         
         setChildren(fetchedChildren);
