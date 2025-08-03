@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -598,7 +599,7 @@ function AgendaPageContent() {
                                     ) : (
                                       <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                     )}
-                                    <span className={cn("font-semibold text-foreground/80 text-left text-xs", isCompleted && "line-through")}>{formattedTime}</span>
+                                    <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                     {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                     <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
@@ -1069,23 +1070,24 @@ function AgendaPageContent() {
                             </SelectItem>
                             <SelectItem value="night">
                                 <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
-                            SelectItem>
-                        SelectContent>
-                    Select>
-                  div>
-                div>
-            Card>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+            </div>
+        </Card>
         
-        renderContent()}
-      div>
+        {renderContent()}
+      </div>
 
-      SelectMissionTemplateDialog
+      <SelectMissionTemplateDialog
         isOpen={isSelectMissionDialogOpen}
         onOpenChange={setIsSelectMissionDialogOpen}
         onMissionSelected={handleMissionSelected}
       />
       
-      AssignMissionDialog
+      <AssignMissionDialog
         template={templateToAssign}
         instanceToEdit={instanceToEdit}
         occurrenceDate={occurrenceDate}
@@ -1101,57 +1103,59 @@ function AgendaPageContent() {
         onAssigned={handleAssignmentComplete}
       />
 
-      DeleteRecurrenceDialog
+      <DeleteRecurrenceDialog
         isOpen={isDeleteRecurrenceDialogOpen}
         onOpenChange={setIsDeleteRecurrenceDialogOpen}
         onSelect={handleConfirmRecurrenceDelete}
       />
 
-      AlertDialog open={isConfirmSimpleDeleteOpen} onOpenChange={setIsConfirmSimpleDeleteOpen}>
-        AlertDialogContent>
-            AlertDialogHeader>
-                AlertDialogTitle>Excluir esta missão?AlertDialogTitle>
-                AlertDialogDescription>
+      <AlertDialog open={isConfirmSimpleDeleteOpen} onOpenChange={setIsConfirmSimpleDeleteOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta missão?</AlertDialogTitle>
+                <AlertDialogDescription>
                     Tem certeza que deseja remover a missão "{instanceToDeleteInfo?.instance.title}" da agenda de <strong>{instanceToDeleteInfo ? childrenMap.get(instanceToDeleteInfo.instance.childId)?.name : ''}</strong>? Esta ação não pode ser desfeita.
-                AlertDialogDescription>
-            AlertDialogHeader>
-            AlertDialogFooter>
-                AlertDialogCancel disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>CancelarAlertDialogCancel>
-                AlertDialogAction onClick={handleConfirmSimpleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmSimpleDelete} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToDeleteInfo?.instance.id}>
                     {isProcessingAction === instanceToDeleteInfo?.instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Sim, Excluir
-                AlertDialogAction>
-            AlertDialogFooter>
-        AlertDialogContent>
-      AlertDialog>
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-      AlertDialog open={!!instanceToExclude} onOpenChange={(isOpen) => !isOpen && setInstanceToExclude(null)}>
-        AlertDialogContent>
-            AlertDialogHeader>
-                AlertDialogTitle>Excluir esta ocorrência?AlertDialogTitle>
-                AlertDialogDescription>
+      <AlertDialog open={!!instanceToExclude} onOpenChange={(isOpen) => !isOpen && setInstanceToExclude(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Excluir esta ocorrência?</AlertDialogTitle>
+                <AlertDialogDescription>
                     Tem certeza que deseja remover a missão "{instanceToExclude?.instance.title}" para o Mini Heroi <strong>{instanceToExclude ? childrenMap.get(instanceToExclude.instance.childId)?.name : ''}</strong> apenas para o dia {instanceToExclude && format(instanceToExclude.date, 'dd/MM/yyyy')}?
-                    br />
+                    <br />
                     As outras repetições não serão afetadas.
-                AlertDialogDescription>
-            AlertDialogHeader>
-            AlertDialogFooter>
-                AlertDialogCancel disabled={isProcessingAction === instanceToExclude?.instance.id}>CancelarAlertDialogCancel>
-                AlertDialogAction onClick={handleConfirmExclusion} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToExclude?.instance.id}>
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingAction === instanceToExclude?.instance.id}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmExclusion} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction === instanceToExclude?.instance.id}>
                     {isProcessingAction === instanceToExclude?.instance.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Sim, Excluir
-                AlertDialogAction>
-            AlertDialogFooter>
-        AlertDialogContent>
-      AlertDialog>
-    >
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
 export default function AgendaPage() {
   return (
-    Suspense fallback={<Loading />}>
-      AgendaPageContent />
-    Suspense>
+    <Suspense fallback={<Loading />}>
+      <AgendaPageContent />
+    </Suspense>
   )
 }
+
+    
