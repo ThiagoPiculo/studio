@@ -142,17 +142,18 @@ function MuralCompletoPageContent() {
   // Centralized data fetching function
   const fetchData = useCallback(async () => {
     if (!user) {
-      setIsLoading(false);
-      return;
+        setIsLoading(false);
+        return;
     }
     
     setIsLoading(true);
     try {
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
+
         const [allProfiles, fetchedCollaborators, fetchedMemberships] = await Promise.all([
-          getChildProfilesForAttribution(user.uid, currentContext),
-          familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
-          familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
+            getChildProfilesForAttribution(user.uid, currentContext),
+            familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
+            familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
         ]);
         
         setAllChildren(allProfiles);
@@ -1853,3 +1854,4 @@ export default function MuralCompleto() {
 }
 
     
+
