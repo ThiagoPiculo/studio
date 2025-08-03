@@ -4,7 +4,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { getInitials } from '@/lib/utils';
-import type { ChildProfile, Badge } from '@/lib/types';
+import type { ChildProfile } from '@/lib/types';
 import { allBadgesMap } from '@/lib/badges';
 import { Medal, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ interface RecentMedalsProps {
   childrenProfiles: ChildProfile[];
 }
 
-const getProgressTypeLabel = (badge: Badge): string => {
+const getProgressTypeLabel = (badge: { progressType?: string, goal?: number }): string => {
     if (!badge.goal) return '';
     switch (badge.progressType) {
       case 'singleMissionStreak':

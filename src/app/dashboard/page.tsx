@@ -41,11 +41,10 @@ function DashboardPageContent() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
         const [childData, missionData, rewardData] = await Promise.all([
           getChildProfilesForAttribution(user.uid, currentContext),
-          getMissionInstancesForContext(user.uid, familyIdToQuery),
-          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+          getMissionInstancesForContext(user.uid, currentContext),
+          getRewardTemplatesByOwnerOrFamily(user.uid, currentContext)
         ]);
         setAllChildren(childData);
         setMissionInstances(missionData);
