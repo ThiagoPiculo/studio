@@ -981,8 +981,8 @@ function AgendaPageContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
                 <CalendarDays className="h-8 w-8 text-primary" />
                 <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Rotina de Missões</h2>
                 <Popover>
@@ -996,8 +996,8 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="flex w-full flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
-                 {children.length > 1 && (
+             <div className="flex w-full flex-row items-center justify-end gap-2">
+                {children.length > 1 && (
                     <div className="flex-grow sm:flex-grow-0">
                         <HeroSelector
                             heroes={children}
@@ -1008,9 +1008,10 @@ function AgendaPageContent() {
                     </div>
                 )}
                 {canEdit && (
-                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
+                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0">
                         <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="sm:inline">Adicionar Missão</span>
+                        <span className="hidden sm:inline">Adicionar Missão</span>
+                         <span className="sm:hidden">Adicionar</span>
                     </Button>
                 )}
             </div>
@@ -1018,7 +1019,8 @@ function AgendaPageContent() {
 
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
-                <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                <div className="flex items-center gap-2 flex-grow">
+                  <Button variant="outline" onClick={handleToday} className="h-9 px-3 hidden sm:inline-flex">Hoje</Button>
                   <div className="flex items-center gap-1">
                       <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
                           <ChevronLeft className="h-4 w-4" />
@@ -1027,13 +1029,13 @@ function AgendaPageContent() {
                           <ChevronRight className="h-4 w-4" />
                       </Button>
                   </div>
-                  <h2 className="text-sm sm:text-base font-medium text-center capitalize">
+                  <h2 className="text-sm sm:text-base font-medium text-center capitalize flex-grow sm:flex-grow-0">
                     {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                   </h2>
                 </div>
 
-                <div className="flex-grow flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
-                  <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
+                <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
+                   <Button variant="outline" onClick={handleToday} className="h-9 px-3 sm:hidden flex-grow">Hoje</Button>
                   <div className="flex-grow sm:flex-grow-0">
                     <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
                         <SelectTrigger className="w-full sm:w-[140px] h-9">
