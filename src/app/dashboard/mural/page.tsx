@@ -59,6 +59,7 @@ import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/
 import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { Progress } from '@/components/ui/progress';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Activity = 
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
@@ -935,35 +936,35 @@ function MuralCompletoPageContent() {
 
   return (
     <div className="space-y-6 pb-8">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-                <ListCollapse className="h-8 w-8 text-primary" />
-                <h2 className="text-3xl font-headline font-bold">Mural Completo</h2>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72 text-sm">
-                        Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.
-                    </PopoverContent>
-                </Popover>
-            </div>
-            {allChildren.length > 0 && (
-                 <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <HeroSelector
-                        heroes={allChildren}
-                        selectedHeroId={childId}
-                        onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
-                        showAllOption={false}
-                    />
-                     <Link href="/dashboard/onboarding">
-                        <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
-                    </Link>
-                </div>
-            )}
+      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4">
+            <ListCollapse className="h-8 w-8 text-primary" />
+            <h2 className="text-3xl font-headline font-bold">Mural Completo</h2>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-72 text-sm">
+                    Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.
+                </PopoverContent>
+            </Popover>
         </div>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          {allChildren.length > 0 && (
+              <HeroSelector
+                  heroes={allChildren}
+                  selectedHeroId={childId}
+                  onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                  showAllOption={false}
+              />
+          )}
+          <Link href="/dashboard/onboarding">
+              <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+          </Link>
+        </div>
+      </div>
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
             <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
@@ -996,18 +997,22 @@ function MuralCompletoPageContent() {
             </div>
 
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
-              <Avatar
-                className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background flex-shrink-0"
-                style={{ '--ring-color': child.color } as React.CSSProperties}
-              >
-                <AvatarImage src={child.avatar} alt={child.name} />
-                <AvatarFallback
-                  className="font-bold"
-                  style={{ backgroundColor: child.color }}
-                >
-                  {getInitials(child.name)}
-                </AvatarFallback>
-              </Avatar>
+              {isLoading ? (
+                  <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
+              ) : (
+                  <Avatar
+                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background flex-shrink-0"
+                      style={{ '--ring-color': child.color } as React.CSSProperties}
+                  >
+                      <AvatarImage src={child.avatar} alt={child.name} />
+                      <AvatarFallback
+                          className="font-bold"
+                          style={{ backgroundColor: child.color }}
+                      >
+                          {getInitials(child.name)}
+                      </AvatarFallback>
+                  </Avatar>
+              )}
               <div className="flex-grow">
                   <CardTitle className="text-3xl font-headline text-primary">{child.name}</CardTitle>
                   <CardDescription className="text-base mt-1">
