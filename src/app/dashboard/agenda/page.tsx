@@ -110,14 +110,6 @@ function AgendaPageContent() {
   
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
-    const currentParams = new URLSearchParams(searchParams.toString());
-    if (id) {
-        currentParams.set('childId', id);
-    } else {
-        currentParams.delete('childId');
-    }
-    // We update the URL for child selection as it's a primary context change
-    router.replace(`${pathname}?${currentParams.toString()}`);
   }
 
   const handleShowTodayMissions = () => {
@@ -992,7 +984,7 @@ function AgendaPageContent() {
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                 <CalendarDays className="h-8 w-8 text-primary" />
-                <h2 className="text-3xl font-headline font-bold">Rotina de Missões</h2>
+                <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Rotina de Missões</h2>
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
