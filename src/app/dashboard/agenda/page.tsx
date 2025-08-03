@@ -543,7 +543,7 @@ function AgendaPageContent() {
           });
 
           return (
-            <li key={childId} className="relative">
+            <li key={childId} className="relative pt-12">
                 <div className="absolute top-0 left-0 flex items-center gap-3">
                     <Avatar
                         className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
@@ -556,7 +556,7 @@ function AgendaPageContent() {
                     </Avatar>
                     <h4 className="font-semibold text-foreground/90">{child.name}</h4>
                 </div>
-                <ul className="pt-12 mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
+                <ul className="mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
