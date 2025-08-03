@@ -16,7 +16,7 @@ import Link from 'next/link';
 import type { Notification, ChildProfile } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { getUserNotifications, markNotificationsAsRead, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { formatDistanceToNowStrict } from 'date-fns';
@@ -92,24 +92,29 @@ export function Notifications() {
   const [childFilter, setChildFilter] = useState('all');
   
   const [pendingNavigation, setPendingNavigation] = useState<{ href: string; contextId: string } | null>(null);
-
-  // Real-time listener effect for notifications
-  useEffect(() => {
+  
+  const fetchNotifications = useCallback(async () => {
     if (!user) {
       setNotifications([]);
       setIsLoading(false);
       return;
     }
     setIsLoading(true);
-    const unsubscribe = getUserNotifications(user.uid, (updatedNotifications) => {
+    try {
+      const updatedNotifications = await getUserNotifications(user.uid);
       setNotifications(updatedNotifications);
-      if (isLoading) {
-        setIsLoading(false);
-      }
-    });
-    return () => unsubscribe();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    } catch (error) {
+      console.error("Failed to fetch notifications:", error);
+    } finally {
+      setIsLoading(false);
+    }
   }, [user]);
+
+  // Initial and on-user-change fetch
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
 
   // Fetch children for filter dropdown
   useEffect(() => {
@@ -144,6 +149,7 @@ export function Notifications() {
     const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
     try {
         await markNotificationsAsRead(user.uid, unreadIds);
+        fetchNotifications(); // Refetch to update the UI
     } catch (error) {
         console.error("Failed to mark notifications as read:", error);
         toast({ title: "Erro ao atualizar notificações", variant: 'destructive'});
@@ -304,3 +310,5 @@ export function Notifications() {
     </DropdownMenu>
   );
 }
+
+    

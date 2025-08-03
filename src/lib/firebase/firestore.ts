@@ -1,4 +1,5 @@
 
+'use server';
 
 import {
   collection,
@@ -2498,3 +2499,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     
 
 
+
+
+    
