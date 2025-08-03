@@ -103,6 +103,14 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
           <DialogDescription>Selecione uma missão do seu catálogo para atribuir ou crie uma nova.</DialogDescription>
         </DialogHeader>
 
+        <div className="pt-2">
+            <Link href="/dashboard/missions/new" className="w-full">
+                <Button variant="secondary" className="w-full" onClick={() => onOpenChange(false)}>
+                <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Missão no Catálogo
+                </Button>
+            </Link>
+        </div>
+
         {isLoading ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
@@ -112,10 +120,10 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
           <div className="text-center py-6 text-muted-foreground">
             <PackageSearch className="h-10 w-10 mx-auto mb-2 text-primary" />
             <p className='font-semibold'>Nenhuma missão ativa no catálogo.</p>
-            <p className="text-sm">Clique no botão abaixo para criar sua primeira missão.</p>
+            <p className="text-sm">Clique no botão acima para criar sua primeira missão.</p>
           </div>
         ) : (
-          <ScrollArea className="max-h-[50vh] mt-2 pr-3">
+          <ScrollArea className="max-h-[50vh] mt-4 pr-3">
             <div className="space-y-2">
               {missionTemplates.map(template => {
                  const categoryDetails = getCategoryDetails(template.category);
@@ -184,13 +192,6 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
             </div>
           </ScrollArea>
         )}
-        <DialogFooter className="mt-4 pt-4 border-t">
-          <Link href="/dashboard/missions/new" className="w-full">
-            <Button variant="secondary" className="w-full" onClick={() => onOpenChange(false)}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Missão no Catálogo
-            </Button>
-          </Link>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
