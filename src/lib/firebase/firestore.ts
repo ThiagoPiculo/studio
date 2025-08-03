@@ -18,7 +18,6 @@ import {
   orderBy,
   runTransaction,
   deleteField,
-  onSnapshot,
 } from 'firebase/firestore';
 import { db, storage } from './config';
 import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "firebase/storage";
@@ -2207,7 +2206,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2313,29 +2312,18 @@ export const addNotification = async (notificationData: Omit<Notification, 'id' 
     await setDoc(newNotificationRef, dataToWrite);
 };
 
-
-export const getUserNotifications = (
-  userId: string,
-  onUpdate: (notifications: Notification[]) => void
-): (() => void) => { // Returns an unsubscribe function
+export async function getUserNotifications(userId: string): Promise<Notification[]> {
   const q = query(
     collection(db, 'notifications'),
     where('userId', '==', userId),
     orderBy('createdAt', 'desc')
   );
 
-  const unsubscribe = onSnapshot(q, (querySnapshot) => {
-    const notifications = querySnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() }) as Notification
-    );
-    onUpdate(notifications);
-  }, (error) => {
-    console.error("Error listening to notifications:", error);
-    onUpdate([]);
-  });
-
-  return unsubscribe;
-};
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(
+    (doc) => ({ id: doc.id, ...doc.data() }) as Notification
+  );
+}
 
 export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
     if (notificationIds.length === 0) return;
@@ -2500,5 +2488,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
 
+
+    
 
     
