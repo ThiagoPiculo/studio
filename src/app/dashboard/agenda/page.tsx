@@ -998,7 +998,7 @@ function AgendaPageContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div className="flex items-center gap-4">
                 <CalendarDays className="h-8 w-8 text-primary" />
                 <h2 className="text-3xl font-headline font-bold">Rotina de Missões</h2>
@@ -1013,85 +1013,86 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
-                <div className="flex items-center gap-2">
-                    <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
-                        <ChevronLeft className="h-4 w-4" />
+            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
+                 {children.length > 1 && (
+                    <div className="flex-grow sm:flex-grow-0">
+                        <HeroSelector
+                            heroes={children}
+                            selectedHeroId={selectedChildId}
+                            onSelectHero={handleSelectedChildChange}
+                            showAllOption={true}
+                        />
+                    </div>
+                )}
+                {canEdit && (
+                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <span className="sm:inline">Adicionar Missão</span>
                     </Button>
-                    <h2 className="text-sm font-medium text-center w-full sm:w-auto capitalize px-2">
-                        {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                    </h2>
-                    <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={handleToday} className="hidden sm:inline-flex">Hoje</Button>
-                    {canEdit && (
-                        <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
-                            <PlusCircle className="mr-2 h-4 w-4" />
-                            <span className="sm:inline">Adicionar Missão</span>
-                        </Button>
-                    )}
-                </div>
+                )}
             </div>
         </div>
 
         <Card>
-            <div className="p-4">
-                <div className="grid md:grid-cols-2 gap-x-8 gap-y-4">
-                    {children.length > 1 && (
-                        <div className="space-y-2">
-                            <HeroSelector
-                                heroes={children}
-                                selectedHeroId={selectedChildId}
-                                onSelectHero={handleSelectedChildChange}
-                                showAllOption={true}
-                            />
-                        </div>
-                    )}
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
-                        <div className="space-y-2">
-                            <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione a visão" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="day">1 Dia</SelectItem>
-                                    <SelectItem value="3days">3 Dias</SelectItem>
-                                    <SelectItem value="workweek">Semana Útil</SelectItem>
-                                    <SelectItem value="week">Semana</SelectItem>
-                                    <SelectItem value="month">Mês</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Selecione o período" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">
-                                        <span className="flex items-center gap-2">
-                                            <Sun className="h-4 w-4 text-yellow-500" />
-                                            <CloudSun className="h-4 w-4 text-orange-500" />
-                                            <Moon className="h-4 w-4 text-indigo-500" />
-                                        </span>
-                                    </SelectItem>
-                                    <SelectItem value="morning">
-                                        <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
-                                    </SelectItem>
-                                    <SelectItem value="afternoon">
-                                        <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
-                                    </SelectItem>
-                                    <SelectItem value="night">
-                                        <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
-                                    </SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
+            <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={handleToday} className="hidden sm:inline-flex">Hoje</Button>
+                   <div className="flex items-center gap-1">
+                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                          <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                          <ChevronRight className="h-4 w-4" />
+                      </Button>
+                  </div>
+                  <h2 className="text-sm font-medium text-center capitalize px-2 hidden md:block">
+                    {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                  </h2>
+                </div>
+                 <h2 className="text-sm font-medium text-center capitalize px-2 md:hidden">
+                    {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                 </h2>
+
+                <div className="flex-grow flex items-center justify-end gap-x-4 gap-y-2 flex-wrap">
+                  <div className="flex-grow sm:flex-grow-0">
+                    <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="Selecione a visão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="day">1 Dia</SelectItem>
+                            <SelectItem value="3days">3 Dias</SelectItem>
+                            <SelectItem value="workweek">Semana Útil</SelectItem>
+                            <SelectItem value="week">Semana</SelectItem>
+                            <SelectItem value="month">Mês</SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-grow sm:flex-grow-0">
+                    <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
+                        <SelectTrigger className="w-full sm:w-[150px]">
+                            <SelectValue placeholder="Selecione o período" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">
+                                <span className="flex items-center gap-2">
+                                    <Sun className="h-4 w-4 text-yellow-500" />
+                                    <CloudSun className="h-4 w-4 text-orange-500" />
+                                    <Moon className="h-4 w-4 text-indigo-500" />
+                                </span>
+                            </SelectItem>
+                            <SelectItem value="morning">
+                                <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
+                            </SelectItem>
+                            <SelectItem value="afternoon">
+                                <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
+                            </SelectItem>
+                            <SelectItem value="night">
+                                <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
+                            </SelectItem>
+                        </SelectContent>
+                    </Select>
+                  </div>
                 </div>
             </div>
         </Card>
