@@ -83,7 +83,7 @@ function AgendaPageContent() {
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
   const [selectedChildId, setSelectedChildId] = useState<string | null>(searchParams.get('childId'));
-
+  
   // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -100,9 +100,13 @@ function AgendaPageContent() {
   const [isDeleteRecurrenceDialogOpen, setIsDeleteRecurrenceDialogOpen] = useState(false);
   const [isConfirmSimpleDeleteOpen, setIsConfirmSimpleDeleteOpen] = useState(false);
 
-  // Read filters from URL
-  const dateRangeFilter = (searchParams.get('view') || '3days') as DateRangeFilter;
-  const timePeriodFilter = (searchParams.get('period') || 'all') as TimePeriod;
+  // States for filters, initialized from URL
+  const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>(
+    () => (searchParams.get('view') || '3days') as DateRangeFilter
+  );
+  const [timePeriodFilter, setTimePeriodFilter] = useState<TimePeriod>(
+    () => (searchParams.get('period') || 'all') as TimePeriod
+  );
   
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -112,14 +116,13 @@ function AgendaPageContent() {
     } else {
         currentParams.delete('childId');
     }
+    // We update the URL for child selection as it's a primary context change
     router.replace(`${pathname}?${currentParams.toString()}`);
   }
 
   const handleShowTodayMissions = () => {
-    const newParams = new URLSearchParams(searchParams.toString());
-    newParams.set('view', 'day');
-    newParams.set('focus_date', format(new Date(), 'yyyy-MM-dd'));
-    router.replace(`${pathname}?${newParams.toString()}`);
+    setCurrentDate(new Date());
+    setDateRangeFilter('day');
   };
 
   useEffect(() => {
@@ -342,13 +345,6 @@ function AgendaPageContent() {
     return acc;
   }, [viewInterval, missionInstances, selectedChildId, timePeriodFilter, children]);
   
-  const handleFilterChange = (type: 'view' | 'period', value: string | null) => {
-    if (!value) return;
-    const params = new URLSearchParams(searchParams.toString());
-    params.set(type, value);
-    router.replace(`${pathname}?${params.toString()}`);
-  }
-
   const handlePrev = () => {
     const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
     let newDate;
@@ -1047,7 +1043,7 @@ function AgendaPageContent() {
                 <div className="flex-grow flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
                   <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
                   <div className="flex-grow sm:flex-grow-0">
-                    <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
+                    <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
                         <SelectTrigger className="w-full sm:w-[140px] h-9">
                             <SelectValue placeholder="Selecione a visão" />
                         </SelectTrigger>
@@ -1061,7 +1057,7 @@ function AgendaPageContent() {
                     </Select>
                   </div>
                   <div className="flex-grow sm:flex-grow-0">
-                    <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
+                    <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
                         <SelectTrigger className="w-full sm:w-[130px] h-9">
                             <SelectValue placeholder="Selecione o período" />
                         </SelectTrigger>
