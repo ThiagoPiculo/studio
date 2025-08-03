@@ -1,4 +1,3 @@
-
 'use server';
 
 import {
@@ -1559,16 +1558,19 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
 
 // --- Mission Instances (Missões Atribuídas) ---
 
-export const getMissionInstancesForContext = async (ownerId: string, familyId: string | null): Promise<MissionInstance[]> => {
+export const getMissionInstancesForContext = async (ownerId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
   let q;
-  if (familyId && familyId !== 'my-space') {
-    q = query(collection(db, 'missionInstances'), where('familyId', '==', familyId));
+  if (contextId && contextId !== 'my-space') {
+    q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
   } else {
+    // This is the important part: When contextId is 'my-space', we look for instances
+    // belonging to the specific owner that are NOT in a family.
     q = query(collection(db, 'missionInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   }
   const querySnapshot = await getDocs(q);
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
 };
+
 
 export const addMissionInstance = async (
   actor: UserProfile,
@@ -2206,7 +2208,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
