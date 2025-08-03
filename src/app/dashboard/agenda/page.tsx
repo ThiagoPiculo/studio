@@ -65,7 +65,17 @@ function AgendaPageContent() {
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
   
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(() => {
+    const focusDateParam = searchParams.get('focus_date');
+    if (focusDateParam) {
+      const [year, month, day] = focusDateParam.split('-').map(Number);
+      const date = new Date(year, month - 1, day);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+    return new Date();
+  });
   
   const [isLoading, setIsLoading] = useState(true);
   const [children, setChildren] = useState<ChildProfile[]>([]);
@@ -113,17 +123,8 @@ function AgendaPageContent() {
   };
 
   useEffect(() => {
-    const focusDateParam = searchParams.get('focus_date');
     const openPopoverParam = searchParams.get('open_popover');
     
-    if (focusDateParam) {
-      const [year, month, day] = focusDateParam.split('-').map(Number);
-      const date = new Date(year, month - 1, day);
-      if (!isNaN(date.getTime()) && !isSameDay(date, currentDate)) {
-          setCurrentDate(date);
-      }
-    }
-
     if (openPopoverParam) {
         const timer = setTimeout(() => {
             const element = document.querySelector(`[data-mission-id="${openPopoverParam}"]`);
@@ -143,7 +144,7 @@ function AgendaPageContent() {
         }, 200);
         return () => clearTimeout(timer);
     }
-  }, [searchParams, currentDate]);
+  }, [searchParams]);
 
 
   const refetchData = useCallback(async () => {
@@ -340,12 +341,6 @@ function AgendaPageContent() {
 
     return acc;
   }, [viewInterval, missionInstances, selectedChildId, timePeriodFilter, children]);
-
-  const createUrlWithNewDate = (newDate: Date) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('focus_date', format(newDate, 'yyyy-MM-dd'));
-    return `${pathname}?${params.toString()}`;
-  }
   
   const handleFilterChange = (type: 'view' | 'period', value: string | null) => {
     if (!value) return;
@@ -362,7 +357,7 @@ function AgendaPageContent() {
     } else {
         newDate = subDays(currentDate, dateChanges[dateRangeFilter]);
     }
-    router.replace(createUrlWithNewDate(newDate));
+    setCurrentDate(newDate);
   };
 
   const handleNext = () => {
@@ -373,11 +368,11 @@ function AgendaPageContent() {
     } else {
         newDate = addDays(currentDate, dateChanges[dateRangeFilter]);
     }
-    router.replace(createUrlWithNewDate(newDate));
+    setCurrentDate(newDate);
   };
   
   const handleToday = () => {
-    router.replace(createUrlWithNewDate(new Date()));
+    setCurrentDate(new Date());
   };
   
   const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
@@ -998,7 +993,7 @@ function AgendaPageContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                 <CalendarDays className="h-8 w-8 text-primary" />
                 <h2 className="text-3xl font-headline font-bold">Rotina de Missões</h2>
@@ -1013,7 +1008,7 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="flex w-full flex-row items-center justify-end gap-2">
+            <div className="flex w-full flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2">
                  {children.length > 1 && (
                     <div className="flex-grow sm:flex-grow-0">
                         <HeroSelector
