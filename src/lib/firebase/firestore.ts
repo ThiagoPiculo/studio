@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -28,6 +29,7 @@ import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
 import { predefinedRewardGroups } from '../predefined-reward-ideas';
+import { auth } from './config';
 
 const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
 
@@ -314,11 +316,13 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
 // Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
 export const getChildProfilesForAttribution = async (currentUserId: string, currentContextId: 'my-space' | string): Promise<ChildProfile[]> => {
   let q;
-  // If we are in "My Space", we ONLY see personal, unassigned children.
+  if (!currentUserId) {
+    throw new Error("Usuário não autenticado.");
+  }
+  
   if (currentContextId === 'my-space') {
     q = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
   } else {
-  // If we are in a family context, we ONLY see children from that family.
     q = query(collection(db, 'children'), where('familyId', '==', currentContextId));
   }
   
@@ -1557,14 +1561,15 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
 };
 
 // --- Mission Instances (Missões Atribuídas) ---
-
 export const getMissionInstancesForContext = async (ownerId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
   let q;
+  if (!ownerId) {
+    throw new Error("Usuário não autenticado.");
+  }
+
   if (contextId && contextId !== 'my-space') {
     q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
   } else {
-    // This is the important part: When contextId is 'my-space', we look for instances
-    // belonging to the specific owner that are NOT in a family.
     q = query(collection(db, 'missionInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   }
   const querySnapshot = await getDocs(q);
@@ -1640,6 +1645,9 @@ export const getActiveMissionInstancesByTemplate = async (templateId: string, co
     if (contextId === 'my-space') {
       // This case might need ownerId to be fully correct, but it's not passed.
       // Assuming 'my-space' means unassigned to a family, so familyId is null.
+      const currentUserId = auth.currentUser?.uid;
+      if (!currentUserId) throw new Error("Usuário não autenticado.");
+      constraints.push(where('ownerId', '==', currentUserId));
       constraints.push(where('familyId', '==', null));
     } else {
       constraints.push(where('familyId', '==', contextId));
