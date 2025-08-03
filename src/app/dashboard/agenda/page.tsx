@@ -338,25 +338,25 @@ function AgendaPageContent() {
   }, [viewInterval, missionInstances, selectedChildId, timePeriodFilter, children]);
   
   const handlePrev = () => {
-    const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
     let newDate;
     if (dateRangeFilter === 'month') {
         newDate = subMonths(currentDate, 1);
     } else {
-        newDate = subDays(currentDate, dateChanges[dateRangeFilter]);
+        const daysToSubtract = dateRangeFilter === '3days' ? 3 : dateRangeFilter === 'day' ? 1 : 7;
+        newDate = subDays(currentDate, daysToSubtract);
     }
     setCurrentDate(newDate);
   };
 
   const handleNext = () => {
-    const dateChanges = { day: 1, '3days': 3, week: 7, workweek: 7, month: 0 };
-    let newDate;
-    if (dateRangeFilter === 'month') {
-        newDate = addMonths(currentDate, 1);
-    } else {
-        newDate = addDays(currentDate, dateChanges[dateRangeFilter]);
-    }
-    setCurrentDate(newDate);
+      let newDate;
+      if (dateRangeFilter === 'month') {
+          newDate = addMonths(currentDate, 1);
+      } else {
+          const daysToAdd = dateRangeFilter === '3days' ? 3 : dateRangeFilter === 'day' ? 1 : 7;
+          newDate = addDays(currentDate, daysToAdd);
+      }
+      setCurrentDate(newDate);
   };
   
   const handleToday = () => {
@@ -525,7 +525,7 @@ function AgendaPageContent() {
     });
 
     return (
-      <ul className="space-y-3">
+      <ul className="space-y-3 pt-8">
         {sortedChildIds.map(childId => {
           const child = childrenMap.get(childId);
           if (!child) return null;
@@ -567,7 +567,7 @@ function AgendaPageContent() {
                             return (
                                 <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex items-center p-1 -m-1">
                                     <NotebookPen className="h-4 w-4 inline-block text-gray-500 shrink-0" />
-                                    <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5">{formattedTime}</span>
+                                    <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5 text-xs">{formattedTime}</span>
                                     <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
                                 </li>
                             )
@@ -600,8 +600,8 @@ function AgendaPageContent() {
                                     ) : (
                                       <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                     )}
-                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5", isCompleted && "line-through")}>{formattedTime}</span>
-                                    {showEmoji && event.data.emoji && <span className="text-lg mr-1.5">{event.data.emoji}</span>}
+                                    <span className={cn("font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
+                                    {showEmoji && event.data.emoji && <span className="text-xl mr-1.5">{event.data.emoji}</span>}
                                     <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                   </button>
                               </PopoverTrigger>
@@ -725,13 +725,13 @@ function AgendaPageContent() {
                                     ) : (
                                         <CardContent className="p-4 space-y-4">
                                             {dayEvents.morning.length > 0 && (
-                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
+                                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
                                             )}
                                             {dayEvents.afternoon.length > 0 && (
-                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
+                                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
                                             )}
                                             {dayEvents.night.length > 0 && (
-                                                <div className="space-y-2"><h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
+                                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
                                             )}
                                         </CardContent>
                                     )}
@@ -768,20 +768,20 @@ function AgendaPageContent() {
                 ) : (
                     <CardContent className="p-4 space-y-4">
                       {dayEvents.morning.length > 0 && (
-                        <div className={cn("space-y-2", "bg-yellow-500/5 p-3 rounded-lg")}>
-                          <h4 className="flex items-center gap-2 text-sm font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
+                        <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg">
+                          <h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>
                           {renderEventListForPeriod(dayEvents.morning, day, showEmojiInGrid)}
                         </div>
                       )}
                       {dayEvents.afternoon.length > 0 && (
-                        <div className={cn("space-y-2", "bg-orange-500/5 p-3 rounded-lg")}>
-                          <h4 className="flex items-center gap-2 text-sm font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
+                        <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg">
+                          <h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>
                            {renderEventListForPeriod(dayEvents.afternoon, day, showEmojiInGrid)}
                         </div>
                       )}
                       {dayEvents.night.length > 0 && (
-                        <div className={cn("space-y-2", "bg-indigo-500/5 p-3 rounded-lg")}>
-                          <h4 className="flex items-center gap-2 text-sm font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
+                        <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg">
+                          <h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>
                            {renderEventListForPeriod(dayEvents.night, day, showEmojiInGrid)}
                         </div>
                       )}
@@ -858,7 +858,7 @@ function AgendaPageContent() {
                                     <div className="w-2 h-2 rounded-full mt-1 flex-shrink-0" style={{ backgroundColor: child.color }}></div>
                                     <div className="w-full text-left leading-tight flex items-center">
                                         <NotebookPen className="h-3 w-3 inline-block mr-1 text-gray-500 shrink-0" />
-                                        <span className="font-semibold text-foreground/80 mr-1">{formattedTime}</span>
+                                        <span className="font-semibold text-foreground/80 mr-1 text-xs">{formattedTime}</span>
                                         <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
                                     </div>
                                 </li>
@@ -891,7 +891,7 @@ function AgendaPageContent() {
                                           ) : (
                                             <Square className="h-3 w-3 inline-block mr-1 text-primary shrink-0" />
                                           )}
-                                          <span className={cn("font-semibold text-foreground/80 mr-1", isCompleted && "line-through")}>{formattedTime}</span>
+                                          <span className={cn("font-semibold text-foreground/80 mr-1 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                           <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                       </button>
                                   </PopoverTrigger>
