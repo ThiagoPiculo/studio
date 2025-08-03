@@ -525,7 +525,7 @@ function AgendaPageContent() {
     });
 
     return (
-      <ul className="space-y-3 pt-8">
+      <ul className="space-y-4">
         {sortedChildIds.map(childId => {
           const child = childrenMap.get(childId);
           if (!child) return null;
@@ -543,8 +543,8 @@ function AgendaPageContent() {
           });
 
           return (
-            <li key={childId}>
-                <div className="flex items-center gap-3">
+            <li key={childId} className="relative">
+                <div className="absolute top-0 left-0 flex items-center gap-3">
                     <Avatar
                         className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
                         style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
@@ -556,7 +556,7 @@ function AgendaPageContent() {
                     </Avatar>
                     <h4 className="font-semibold text-foreground/90">{child.name}</h4>
                 </div>
-                <ul className="mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
+                <ul className="pt-12 mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
@@ -996,7 +996,14 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-             <div className="flex w-full flex-row items-center justify-end gap-2">
+             <div className="flex w-full flex-row-reverse sm:flex-row items-center justify-start sm:justify-end gap-2">
+                {canEdit && (
+                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        <span className="hidden sm:inline">Adicionar Missão</span>
+                         <span className="sm:hidden">Adicionar</span>
+                    </Button>
+                )}
                 {children.length > 1 && (
                     <div className="flex-grow sm:flex-grow-0">
                         <HeroSelector
@@ -1006,13 +1013,6 @@ function AgendaPageContent() {
                             showAllOption={true}
                         />
                     </div>
-                )}
-                {canEdit && (
-                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Adicionar Missão</span>
-                         <span className="sm:hidden">Adicionar</span>
-                    </Button>
                 )}
             </div>
         </div>
