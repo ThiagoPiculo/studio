@@ -146,7 +146,7 @@ function AgendaPageContent() {
   const refetchData = useCallback(async () => {
     if (!user) return;
     try {
-      const instances = await getMissionInstancesForContext(currentContext);
+      const instances = await getMissionInstancesForContext(user.uid, currentContext);
       setMissionInstances(instances);
     } catch (error) {
       console.error("Error refetching mission instances:", error);
@@ -165,8 +165,8 @@ function AgendaPageContent() {
       setIsLoading(true);
       try {
         const [fetchedChildren, fetchedInstances] = await Promise.all([
-            getChildProfilesForAttribution(currentContext),
-            getMissionInstancesForContext(currentContext)
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, currentContext)
         ]);
         
         setChildren(fetchedChildren);
@@ -176,7 +176,7 @@ function AgendaPageContent() {
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
           setSelectedChildId(childIdParam);
         } else if (fetchedChildren.length > 0) {
-          setSelectedChildId(fetchedChildren[0].id);
+          setSelectedChildId(null);
         } else {
           setSelectedChildId(null);
         }
@@ -1158,5 +1158,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    

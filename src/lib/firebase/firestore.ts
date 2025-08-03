@@ -314,16 +314,14 @@ export const getChildProfilesByFamily = async (familyId: string): Promise<ChildP
   return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
 };
 
-// Helper para buscar crianças elegíveis para atribuição de recompensa ou filtro
-export const getChildProfilesForAttribution = async (contextId: 'my-space' | string): Promise<ChildProfile[]> => {
-  const currentUserId = auth.currentUser?.uid;
-  if (!currentUserId) {
+export const getChildProfilesForAttribution = async (userId: string, contextId: 'my-space' | string): Promise<ChildProfile[]> => {
+  if (!userId) {
     throw new Error("Usuário não autenticado.");
   }
   
   let q;
   if (contextId === 'my-space') {
-    q = query(collection(db, 'children'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
+    q = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
   } else {
     q = query(collection(db, 'children'), where('familyId', '==', contextId));
   }
@@ -1563,15 +1561,14 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
 };
 
 // --- Mission Instances (Missões Atribuídas) ---
-export const getMissionInstancesForContext = async (contextId: 'my-space' | string): Promise<MissionInstance[]> => {
-  let q;
-  const currentUserId = auth.currentUser?.uid;
-  if (!currentUserId) {
+export const getMissionInstancesForContext = async (userId: string, contextId: 'my-space' | string): Promise<MissionInstance[]> => {
+  if (!userId) {
     throw new Error("Usuário não autenticado.");
   }
 
+  let q;
   if (contextId === 'my-space') {
-    q = query(collection(db, 'missionInstances'), where('ownerId', '==', currentUserId), where('familyId', '==', null));
+    q = query(collection(db, 'missionInstances'), where('ownerId', '==', userId), where('familyId', '==', null));
   } else {
     q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
   }
@@ -1646,8 +1643,6 @@ export const getActiveMissionInstancesByTemplate = async (templateId: string, co
     ];
 
     if (contextId === 'my-space') {
-      // This case might need ownerId to be fully correct, but it's not passed.
-      // Assuming 'my-space' means unassigned to a family, so familyId is null.
       const currentUserId = auth.currentUser?.uid;
       if (!currentUserId) throw new Error("Usuário não autenticado.");
       constraints.push(where('ownerId', '==', currentUserId));
