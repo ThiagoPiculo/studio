@@ -1013,7 +1013,7 @@ function AgendaPageContent() {
                     </PopoverContent>
                 </Popover>
             </div>
-            <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2">
+            <div className="flex w-full flex-row items-center justify-end gap-2">
                  {children.length > 1 && (
                     <div className="flex-grow sm:flex-grow-0">
                         <HeroSelector
@@ -1035,28 +1035,25 @@ function AgendaPageContent() {
 
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" onClick={handleToday} className="hidden sm:inline-flex">Hoje</Button>
-                   <div className="flex items-center gap-1">
-                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior">
+                <div className="flex items-center gap-2 md:gap-4 flex-wrap">
+                  <div className="flex items-center gap-1">
+                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
                           <ChevronLeft className="h-4 w-4" />
                       </Button>
-                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período">
+                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
                           <ChevronRight className="h-4 w-4" />
                       </Button>
                   </div>
-                  <h2 className="text-sm font-medium text-center capitalize px-2 hidden md:block">
+                  <h2 className="text-sm sm:text-base font-medium text-center capitalize">
                     {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                   </h2>
                 </div>
-                 <h2 className="text-sm font-medium text-center capitalize px-2 md:hidden">
-                    {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                 </h2>
 
-                <div className="flex-grow flex items-center justify-end gap-x-4 gap-y-2 flex-wrap">
+                <div className="flex-grow flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
+                  <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
                   <div className="flex-grow sm:flex-grow-0">
                     <Select value={dateRangeFilter} onValueChange={(v) => handleFilterChange('view', v)}>
-                        <SelectTrigger className="w-full sm:w-[150px]">
+                        <SelectTrigger className="w-full sm:w-[140px] h-9">
                             <SelectValue placeholder="Selecione a visão" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1070,7 +1067,7 @@ function AgendaPageContent() {
                   </div>
                   <div className="flex-grow sm:flex-grow-0">
                     <Select value={timePeriodFilter} onValueChange={(v) => handleFilterChange('period', v)}>
-                        <SelectTrigger className="w-full sm:w-[150px]">
+                        <SelectTrigger className="w-full sm:w-[130px] h-9">
                             <SelectValue placeholder="Selecione o período" />
                         </SelectTrigger>
                         <SelectContent>
