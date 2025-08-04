@@ -72,11 +72,7 @@ export const getUserNotifications = async (userId: string): Promise<Notification
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => {
-    const data = doc.data();
-    const createdAt = (data.createdAt as Timestamp)?.toDate().toISOString();
-    return { id: doc.id, ...data, createdAt } as Notification;
-  });
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as Notification);
 };
 
 export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
@@ -1321,7 +1317,7 @@ export const getActiveChildRewardInstancesByTemplateAndChild = async (templateId
     where('status', '==', 'active')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
 };
 
 
@@ -1633,7 +1629,7 @@ export const getMissionInstancesForContext = async (userId: string, contextId: '
     q = query(collection(db, 'missionInstances'), where('familyId', '==', contextId));
   }
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
 
@@ -1692,7 +1688,7 @@ export const getActiveChildMissionInstancesByTemplateAndChild = async (templateI
     where('status', '==', 'pending')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }) as MissionInstance);
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
 export const getActiveMissionInstancesByTemplate = async (templateId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
@@ -1714,13 +1710,13 @@ export const getActiveMissionInstancesByTemplate = async (templateId: string, co
     q = query(collection(db, 'missionInstances'), ...constraints);
     
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+    return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
 export const getMissionInstancesByChild = async (childId: string): Promise<MissionInstance[]> => {
   const q = query(collection(db, 'missionInstances'), where('childId', '==', childId), orderBy('assignedAt', 'desc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
 export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'emoji'>>): Promise<void> => {
@@ -2461,3 +2457,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     
 
 
+
+
+      
