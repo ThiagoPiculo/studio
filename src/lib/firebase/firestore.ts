@@ -217,19 +217,23 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'> & { birthDate: string }): Promise<ChildProfile> => {
+export const addChildProfile = async (
+    ownerId: string, 
+    childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { childName: string, childBirthDate: string, childGender: 'boy' | 'girl' | 'not-informed' },
+    contextId: string
+): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
   
-  const familyId = childData.contextId && childData.contextId !== 'my-space' ? childData.contextId : null;
+  const familyId = contextId && contextId !== 'my-space' ? contextId : null;
   
   // Find available colors based on context and gender
   const existingChildren = familyId ? await getChildProfilesByFamily(familyId) : await getChildProfilesByOwner(ownerId);
   const usedColors = new Set(existingChildren.map(child => child.color));
 
   let colorPalette;
-  if (childData.gender === 'boy') {
+  if (childData.childGender === 'boy') {
     colorPalette = boyColors;
-  } else if (childData.gender === 'girl') {
+  } else if (childData.childGender === 'girl') {
     colorPalette = girlColors;
   } else {
     colorPalette = heroColors; // Use all colors if not specified
@@ -240,14 +244,14 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
   
-  const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.birthDate, 'yyyy-MM-dd', new Date()));
+  const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.childBirthDate, 'yyyy-MM-dd', new Date()));
 
   const newChild: ChildProfile = {
     id: newChildRef.id,
     ownerId,
     name: childData.childName,
     birthDate: birthDateAsTimestamp,
-    gender: childData.gender,
+    gender: childData.childGender,
     schoolShift: childData.schoolShift || 'not_applicable',
     schoolShiftStart: childData.schoolShiftStart || '',
     schoolShiftEnd: childData.schoolShiftEnd || '',
@@ -2249,7 +2253,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
