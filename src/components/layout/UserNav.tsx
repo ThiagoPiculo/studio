@@ -13,7 +13,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { useUserRole } from "@/hooks/useUserRole";
 import { familyRoles } from "@/lib/types";
 import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield, ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
@@ -21,8 +20,7 @@ import React from 'react';
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
-  const { role } = useUserRole();
+  const { currentContext, availableContexts, currentRole } = useFamily();
 
   const handleLogout = async () => {
     await logout();
@@ -37,7 +35,7 @@ export function UserNav() {
     ? availableContexts.find(c => c.id === currentContext)
     : null;
     
-  const roleLabel = role ? familyRoles.find(r => r.id === role)?.label : null;
+  const roleLabel = currentRole ? familyRoles.find(r => r.id === currentRole)?.label : null;
 
   const getInitials = (name?: string | null) => {
     if (!name) return "MH"; 
@@ -110,7 +108,7 @@ export function UserNav() {
           )}
            {isChildAuthenticated && childProfile && (
             <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={`/dashboard/child/${childProfile.id}/manage`}>
+              <Link href={`/dashboard/mural?childId=${childProfile.id}`}>
                 <Rocket className="mr-2 h-4 w-4" />
                 <span>Minha Página de Heroi</span>
               </Link>

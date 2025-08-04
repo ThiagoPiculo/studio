@@ -36,7 +36,7 @@ import {
   getMissionInstancesForContext,
   deleteMissionTemplateAndInstances,
 } from '@/lib/firebase/firestore';
-import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance } from '@/lib/types';
+import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance, FamilyRole } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -47,22 +47,19 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { useUserRole } from '@/hooks/useUserRole';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Loading from './loading';
 
 
 function MissionsHubContent({ initialData }: { initialData: { templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] }}) {
-  const { templates, children: initialChildren, instances } = initialData;
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext, availableContexts, currentRole } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>(templates);
-  const [children, setChildren] = useState<ChildProfile[]>(initialChildren);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>(instances);
+  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>(initialData.templates);
+  const [children, setChildren] = useState<ChildProfile[]>(initialData.children);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>(initialData.instances);
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -73,6 +70,13 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
   
   const refetchAllData = useCallback(async () => {
     if (user) {
@@ -178,10 +182,6 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
   };
 
   const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
-
-  if (isRoleLoading) {
-      return <Loading />
-  }
 
   return (
     <div className="space-y-8">
@@ -535,3 +535,5 @@ export default function MissionsHubPage() {
 
   return <MissionsHubContent initialData={initialData} />;
 }
+
+    
