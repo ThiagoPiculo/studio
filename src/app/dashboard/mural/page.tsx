@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -1439,7 +1438,7 @@ function MuralCompletoPageContent() {
                                                         </div>
                                                         {canEdit && (
                                                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()={() => handleEditEntry(entry)}}>
                                                               <Edit className="h-4 w-4" />
                                                             </Button>
                                                             <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}>
@@ -1855,3 +1854,4 @@ export default function MuralCompleto() {
 
     
 
+    
