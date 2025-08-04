@@ -25,7 +25,7 @@ import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "fir
 
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
-import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore } from 'date-fns';
+import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionScheduledForDate } from '../calendar-utils';
@@ -185,7 +185,7 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'>, contextId?: string): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { birthDate: string }, contextId?: string): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
   
   const familyId = contextId && contextId !== 'my-space' ? contextId : null;
@@ -208,11 +208,15 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
 
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
+  
+  // Convert date string to Timestamp
+  const birthDateTimestamp = Timestamp.fromDate(parse(childData.birthDate, 'yyyy-MM-dd', new Date()));
+  
   const newChild: ChildProfile = {
     id: newChildRef.id,
     ownerId,
     name: childData.name,
-    birthDate: childData.birthDate,
+    birthDate: birthDateTimestamp,
     gender: childData.gender,
     schoolShift: childData.schoolShift || 'not_applicable',
     schoolShiftStart: childData.schoolShiftStart || '',

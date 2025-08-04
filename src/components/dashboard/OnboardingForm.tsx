@@ -45,8 +45,8 @@ import {
 
 const onboardingSchema = z.object({
   childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
-  childBirthDate: z.date({
-    required_error: "A data de nascimento é obrigatória.",
+  childBirthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+    message: "Data inválida."
   }),
   childGender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
@@ -119,6 +119,7 @@ export function OnboardingForm() {
   }, [currentContext, form]);
 
   const watchedSchoolShift = form.watch('schoolShift');
+  const watchedBirthDate = form.watch('childBirthDate');
 
   const handleShiftChange = (value: string) => {
     form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
@@ -164,7 +165,7 @@ export function OnboardingForm() {
     try {
       await addChildProfile(user.uid, { 
         name: values.childName, 
-        birthDate: Timestamp.fromDate(values.childBirthDate), 
+        birthDate: values.childBirthDate,
         gender: values.childGender,
         schoolShift: values.schoolShift,
         schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : '',
@@ -199,6 +200,8 @@ export function OnboardingForm() {
   };
   
   const schoolShiftLabel = schoolShifts.find(s => s.id === formData?.schoolShift)?.label;
+  const birthDateValue = watchedBirthDate ? parse(watchedBirthDate, 'yyyy-MM-dd', new Date()) : null;
+
 
   return (
     <>
@@ -226,8 +229,8 @@ export function OnboardingForm() {
                   <FormItem className="flex flex-col">
                   <FormLabel>Data de Nascimento</FormLabel>
                   <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                      if (open) {
-                          setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
+                      if (open && birthDateValue) {
+                          setDateInput(format(birthDateValue, 'dd/MM/yyyy'));
                       }
                       setIsCalendarOpen(open);
                       }}>
@@ -240,8 +243,8 @@ export function OnboardingForm() {
                               !field.value && "text-muted-foreground"
                           )}
                           >
-                          {field.value ? (
-                              format(field.value, "PPP", { locale: ptBR })
+                          {birthDateValue ? (
+                              format(birthDateValue, "PPP", { locale: ptBR })
                           ) : (
                               <span>Escolha uma data</span>
                           )}
@@ -255,28 +258,28 @@ export function OnboardingForm() {
                               placeholder="Digite a data: dd/mm/aaaa"
                               value={dateInput}
                               onChange={(e) => {
-                              const maskedValue = handleDateMask(e.target.value);
-                              setDateInput(maskedValue);
-                              if (maskedValue.length === 10) {
+                                const maskedValue = handleDateMask(e.target.value);
+                                setDateInput(maskedValue);
+                                if (maskedValue.length === 10) {
                                   const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
                                   if (isValid(parsedDate)) {
-                                  field.onChange(parsedDate);
-                                  setMonth(parsedDate);
+                                    field.onChange(format(parsedDate, 'yyyy-MM-dd'));
+                                    setMonth(parsedDate);
                                   }
-                              }
+                                }
                               }}
                               onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
+                                if (e.key === 'Enter') {
                                   e.preventDefault();
                                   const date = parse(dateInput, 'dd/MM/yyyy', new Date());
                                   if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                  field.onChange(date);
-                                  setMonth(date);
-                                  setIsCalendarOpen(false);
+                                    field.onChange(format(date, 'yyyy-MM-dd'));
+                                    setMonth(date);
+                                    setIsCalendarOpen(false);
                                   } else {
-                                  toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                    toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
                                   }
-                              }
+                                }
                               }}
                           />
                       </div>
@@ -285,14 +288,14 @@ export function OnboardingForm() {
                           mode="single"
                           month={month}
                           onMonthChange={setMonth}
-                          selected={field.value}
+                          selected={birthDateValue || undefined}
                           onSelect={(date) => {
-                          field.onChange(date);
-                          if (date) {
+                            if (date) {
+                              field.onChange(format(date, 'yyyy-MM-dd'));
                               setDateInput(format(date, 'dd/MM/yyyy'));
                               setMonth(date);
-                          }
-                          setIsCalendarOpen(false);
+                            }
+                            setIsCalendarOpen(false);
                           }}
                           disabled={(date) =>
                           date > new Date() || date < new Date("1900-01-01")
