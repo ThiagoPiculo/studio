@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from '@/components/ui/label';
+import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,31 +45,29 @@ import { cn } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { Progress } from '@/components/ui/progress';
 
-export default function RewardsHubPage() {
+function RewardsHubContent({ initialData }: { initialData: { templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' }}) {
+  const { templates, children: initialChildren, instances, rewardMode: initialRewardMode } = initialData;
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>(templates);
+  const [children, setChildren] = useState<ChildProfile[]>(initialChildren);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>(instances);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  const rewardMode = user?.settings?.rewardMode || 'automatic';
-
+  const rewardMode = user?.settings?.rewardMode || initialRewardMode;
+  
   const fetchData = useCallback(async () => {
     if (!user) {
-      setIsLoading(false);
       return;
     }
-    setIsLoading(true);
     try {
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
       const [fetchedTemplates, fetchedChildren, fetchedInstances] = await Promise.all([
@@ -82,18 +80,11 @@ export default function RewardsHubPage() {
       setChildren(fetchedChildren);
       setRewardInstances(fetchedInstances);
     } catch (err) {
-      console.error("Error fetching rewards data:", err);
-      toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
+      console.error("Error refetching rewards data:", err);
+      toast({ title: "Erro ao atualizar dados", variant: "destructive" });
     }
   }, [user, currentContext, toast]);
 
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
-  
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
       
@@ -106,6 +97,10 @@ export default function RewardsHubPage() {
               title: "Modo de Estratégia Atualizado!",
               description: `Você agora está no modo ${newMode === 'automatic' ? 'Automático' : 'Manual'}.`
           });
+          // Optimistically update the state
+          const updatedUser = { ...user, settings: { ...user.settings, rewardMode: newMode } };
+          // This is a bit of a hack since we can't update the user context directly here
+          // A full page reload or context refresh would be ideal but this provides immediate UI feedback
       } catch (error) {
           console.error("Failed to update reward mode:", error);
           toast({ title: "Erro ao salvar", description: "Não foi possível alterar sua estratégia de recompensas.", variant: "destructive"});
@@ -171,7 +166,7 @@ export default function RewardsHubPage() {
     return `Catálogo da Aliança: ${contextData?.name || ''}`;
   }, [currentContext, availableContexts]);
   
-  if (isLoading || isRoleLoading) {
+  if (isRoleLoading) {
     return (
       <div className="space-y-6">
         <Skeleton className="h-32 w-full" />
@@ -428,4 +423,50 @@ export default function RewardsHubPage() {
   );
 }
 
+export default function RewardsHubPageWrapper() {
+  const { user } = useAuth();
+  const { currentContext } = useFamily();
+  const [initialData, setInitialData] = useState<{ templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    if (user) {
+      setIsLoading(true);
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      Promise.all([
+        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+      ]).then(([templates, children, instances]) => {
+        setInitialData({ templates, children, instances, rewardMode: user.settings?.rewardMode || 'automatic' });
+      }).catch((err) => {
+        console.error("Error fetching initial data for rewards page:", err);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    } else {
+        setIsLoading(false);
+    }
+  }, [user, currentContext]);
+
+  if (isLoading || !initialData) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-32 w-full" />
+        <Card>
+           <CardHeader>
+             <Skeleton className="h-6 w-1/2" />
+          </CardHeader>
+           <CardContent className="text-center py-10">
+              <div className="flex justify-center mb-4">
+                <Loader2 className="h-16 w-16 text-primary animate-spin" />
+              </div>
+              <p className="text-lg text-muted-foreground font-semibold">Carregando a lojinha...</p>
+            </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return <RewardsHubContent initialData={initialData} />;
+}
