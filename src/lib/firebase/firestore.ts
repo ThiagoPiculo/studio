@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import {
@@ -234,6 +233,7 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
   await setDoc(newChildRef, newChild);
   return newChild;
 };
+
 
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -2242,111 +2242,6 @@ export const updateRecurringMissionInstance = async (
 };
 
 
-// --- Feature Votes ---
-
-// This function gets the vote count.
-export const getFeatureVoteCount = async (featureId: string): Promise<number> => {
-  try {
-    const docRef = doc(db, 'feature_votes', featureId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data().likeCount || 0;
-    }
-    return 0;
-  } catch (error) {
-    console.error(`Error getting vote count for ${featureId}:`, error);
-    return 0; // Fail gracefully
-  }
-};
-
-// This function checks if a specific user has voted for a feature.
-export const getUserFeatureVote = async (userId: string, featureId: string): Promise<boolean> => {
-  try {
-    const voteRef = doc(db, `feature_votes/${featureId}/voters/${userId}`);
-    const voteSnap = await getDoc(voteRef);
-    return voteSnap.exists();
-  } catch (error) {
-    console.error(`Error getting user vote for ${featureId}:`, error);
-    return false; // Fail gracefully
-  }
-};
-
-// This function toggles a user's vote for a feature in a single transaction.
-export const toggleUserFeatureVote = async (userId: string, featureId: string): Promise<void> => {
-  const featureVoteRef = doc(db, 'feature_votes', featureId);
-  const userVoteRef = doc(db, `feature_votes/${featureId}/voters/${userId}`);
-
-  await runTransaction(db, async (transaction) => {
-    const userVoteSnap = await transaction.get(userVoteRef);
-    const featureVoteSnap = await getDoc(featureVoteRef);
-    
-    const currentCount = featureVoteSnap.data()?.likeCount || 0;
-
-    if (userVoteSnap.exists()) {
-      // User has already voted, so we're un-voting.
-      transaction.delete(userVoteRef);
-      transaction.update(featureVoteRef, { likeCount: Math.max(0, currentCount - 1) });
-    } else {
-      // User has not voted, so we're adding a vote.
-      transaction.set(userVoteRef, { votedAt: serverTimestamp() });
-      if (featureVoteSnap.exists()) {
-        transaction.update(featureVoteRef, { likeCount: currentCount + 1 });
-      } else {
-        transaction.set(featureVoteRef, { likeCount: 1 });
-      }
-    }
-  });
-};
-
-// --- Notifications ---
-export const addNotification = async (notificationData: Omit<Notification, 'id' | 'createdAt' | 'isRead'>): Promise<void> => {
-    const userProfile = await getUserProfile(notificationData.userId);
-    const shouldNotify = userProfile?.settings?.notifications?.[notificationData.type] !== false;
-
-    if (!shouldNotify) {
-        return;
-    }
-
-    const newNotificationRef = doc(collection(db, 'notifications'));
-    const dataToWrite: Omit<Notification, 'id'> = {
-      ...notificationData,
-      isRead: false,
-      createdAt: serverTimestamp() as Timestamp,
-    };
-    
-    // Remove null/undefined fields to avoid Firestore errors
-    Object.keys(dataToWrite).forEach(key => {
-        if ((dataToWrite as any)[key] === null || (dataToWrite as any)[key] === undefined) {
-            delete (dataToWrite as any)[key];
-        }
-    });
-
-    await setDoc(newNotificationRef, dataToWrite);
-};
-
-export async function getUserNotifications(userId: string): Promise<Notification[]> {
-  const q = query(
-    collection(db, 'notifications'),
-    where('userId', '==', userId),
-    orderBy('createdAt', 'desc')
-  );
-
-  const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(
-    (doc) => ({ id: doc.id, ...doc.data() }) as Notification
-  );
-}
-
-export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
-    if (notificationIds.length === 0) return;
-    const batch = writeBatch(db);
-    notificationIds.forEach(id => {
-        const notifRef = doc(db, 'notifications', id);
-        batch.update(notifRef, { isRead: true });
-    });
-    await batch.commit();
-};
-
 // --- School Schedule ---
 
 export const getSchoolScheduleForContext = async (ownerId: string, familyId: string | null): Promise<SchoolScheduleEntry[]> => {
@@ -2500,6 +2395,8 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
 
+
+    
 
     
 
