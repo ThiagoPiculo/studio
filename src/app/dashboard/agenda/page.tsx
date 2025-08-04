@@ -10,11 +10,10 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { useUserRole } from '@/hooks/useUserRole';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
 import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary } from '@/lib/calendar-utils';
-import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails } from '@/lib/types';
-import { missionCategories, weekdays } from '@/lib/types';
+import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole } from '@/lib/types';
+import { missionCategories, weekdays, familyRoles } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -58,13 +57,19 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
 
 function AgendaPageContent() {
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isMobile = useIsMobile();
+  
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
   
   const [currentDate, setCurrentDate] = useState(() => {
     const focusDateParam = searchParams.get('focus_date');
@@ -586,7 +591,7 @@ function AgendaPageContent() {
                               <PopoverTrigger asChild>
                                   <button 
                                       data-mission-id={popoverId}
-                                      disabled={isProcessingAction === event.data.id || isRoleLoading} 
+                                      disabled={isProcessingAction === event.data.id || isFamilyLoading} 
                                       className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
                                         "hover:bg-accent/50",
                                         isCompleted && "text-muted-foreground/70",
@@ -877,7 +882,7 @@ function AgendaPageContent() {
                                   <PopoverTrigger asChild>
                                       <button 
                                           data-mission-id={popoverId}
-                                          disabled={isProcessingAction === event.data.id || isRoleLoading} 
+                                          disabled={isProcessingAction === event.data.id || isFamilyLoading} 
                                           className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                             "hover:bg-accent/50",
                                             isCompleted && "text-muted-foreground/70",
@@ -969,7 +974,7 @@ function AgendaPageContent() {
     );
   };
   
-  if (isLoading || isRoleLoading) return <Loading />;
+  if (isLoading || isFamilyLoading) return <Loading />;
 
   const renderContent = () => {
     if (dateRangeFilter === 'month') {

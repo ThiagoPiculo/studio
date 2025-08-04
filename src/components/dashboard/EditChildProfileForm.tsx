@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
-import type { ChildProfile, HeroColor, UserProfile, SchoolShift } from "@/lib/types";
+import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2 } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
@@ -35,7 +35,6 @@ import { schoolShifts } from "@/lib/types";
 import { TimePicker } from "./school-schedule/TimePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
-import { useUserRole } from "@/hooks/useUserRole";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
@@ -47,6 +46,7 @@ import {
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertTitle as AlertTitleShad, AlertDescription as AlertDescriptionShad } from "../ui/alert";
+import { useFamily } from "@/contexts/FamilyContext";
 
 
 const profileFormSchema = z.object({
@@ -102,8 +102,15 @@ interface EditChildProfileFormProps {
 export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfileFormProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { canEdit } = useUserRole();
+  const { currentContext, currentRole } = useFamily();
   
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");

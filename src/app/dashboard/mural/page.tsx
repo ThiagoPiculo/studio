@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -51,7 +52,6 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { useUserRole } from '@/hooks/useUserRole';
 import { Select, SelectItem, SelectTrigger, SelectContent, SelectValue } from '@/components/ui/select';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
@@ -71,8 +71,15 @@ function MuralCompletoPageContent() {
   const pathname = usePathname();
   const { toast } = useToast();
   const { user } = useAuth();
-  const { currentContext, availableContexts, setCurrentContext } = useFamily();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
+  
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
+
   const childId = searchParams.get('childId');
 
   // Primary data states
@@ -799,7 +806,7 @@ function MuralCompletoPageContent() {
     return schoolSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
   }, [schoolSchedule]);
 
-  if (isLoading || isRoleLoading) {
+  if (isLoading || isFamilyLoading) {
     return <Loading />;
   }
   

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, Fragment } from 'react';
@@ -18,7 +19,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { RewardTemplate, ChildProfile, ChildRewardInstance } from '@/lib/types';
+import type { RewardTemplate, ChildProfile, ChildRewardInstance, FamilyRole } from '@/lib/types';
 import { 
   getChildProfilesForAttribution, 
   addChildRewardInstance,
@@ -29,7 +30,6 @@ import { Loader2, Users, AlertCircle, Gift } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { useUserRole } from '@/hooks/useUserRole';
 
 interface AssignRewardDialogProps {
   template: RewardTemplate | null;
@@ -40,8 +40,14 @@ interface AssignRewardDialogProps {
 
 export function AssignRewardDialog({ template, isOpen, onOpenChange, onAssigned }: AssignRewardDialogProps) {
   const { user } = useAuth();
-  const { canEdit } = useUserRole();
-  const { currentContext, availableContexts } = useFamily();
+  const { currentContext, availableContexts, currentRole } = useFamily();
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
+
   const { toast } = useToast();
 
   const [eligibleChildren, setEligibleChildren] = useState<ChildProfile[]>([]);

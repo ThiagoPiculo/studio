@@ -106,7 +106,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const currentRole = React.useMemo(() => {
-    return availableContexts.find(c => c.id === currentContext)?.role || null;
+    const context = availableContexts.find(c => c.id === currentContext)
+    return context?.role || null
   }, [currentContext, availableContexts]);
 
   return (

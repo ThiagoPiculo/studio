@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -17,7 +18,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { MissionTemplate, ChildProfile, MissionInstance, SchoolShift } from '@/lib/types';
+import type { MissionTemplate, ChildProfile, MissionInstance, SchoolShift, FamilyRole } from '@/lib/types';
 import {
   getChildProfilesForAttribution,
   addMissionInstance,
@@ -38,7 +39,6 @@ import { Form } from '@/components/ui/form';
 import { RecurrenceControl } from './RecurrenceControl';
 import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceDialog';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 import Link from 'next/link';
 
@@ -101,8 +101,13 @@ const schoolShiftMap: Record<SchoolShift, string> = {
 
 export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
-  const { canEdit } = useUserRole();
+  const { currentContext, availableContexts, currentRole } = useFamily();
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
   const { toast } = useToast();
 
   const [effectiveTemplate, setEffectiveTemplate] = useState<MissionTemplate | MissionInstance | null>(template || instanceToEdit);
