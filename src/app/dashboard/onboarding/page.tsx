@@ -30,7 +30,8 @@ export default function OnboardingPage() {
       if (user) {
         setIsLoadingCount(true);
         try {
-          const profiles = await getChildProfilesByOwner(user.uid);
+          // Fetch all children, not just unassigned
+          const profiles = await getChildProfilesByOwner(user.uid, false);
           setChildrenCount(profiles.length);
         } catch (error) {
           console.error("Error fetching children count:", error);
@@ -79,3 +80,4 @@ export default function OnboardingPage() {
     </div>
   );
 }
+

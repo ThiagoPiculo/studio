@@ -28,11 +28,31 @@ import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
-import { isMissionScheduledForDate } from '../calendar-utils';
+import { isMissionScheduledForDate, getDateObject } from '../calendar-utils';
 import { predefinedRewardGroups } from '../predefined-reward-ideas';
 import { auth } from './config';
 
 const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+
+// Helper to convert Firestore Timestamps in an object to strings
+const convertTimestampsInObject = (obj: any): any => {
+    if (!obj) return obj;
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const value = obj[key];
+            if (value instanceof Timestamp) {
+                newObj[key] = value.toDate().toISOString();
+            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                newObj[key] = convertTimestampsInObject(value);
+            } else {
+                newObj[key] = value;
+            }
+        }
+    }
+    return newObj;
+};
+
 
 // --- Notifications ---
 export const addNotification = async (
@@ -126,7 +146,8 @@ const createAllianceNotification = async (
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   const docRef = doc(db, 'users', uid);
   const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? (docSnap.data() as UserProfile) : null;
+  if (!docSnap.exists()) return null;
+  return convertTimestampsInObject({ uid: docSnap.id, ...docSnap.data() }) as UserProfile;
 };
 
 export const findUserByEmail = async (email: string): Promise<UserProfile | null> => {
@@ -135,11 +156,8 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
   if (querySnapshot.empty) {
     return null;
   }
-  const userData = querySnapshot.docs[0].data();
-  return {
-    uid: querySnapshot.docs[0].id,
-    ...userData
-  } as UserProfile;
+  const userDoc = querySnapshot.docs[0];
+  return convertTimestampsInObject({ uid: userDoc.id, ...userDoc.data() }) as UserProfile;
 };
 
 export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blob): Promise<{ newUrl: string }> => {
@@ -246,12 +264,11 @@ export const addChildProfile = async (
   const availableColor = colorPalette.find(color => !usedColors.has(color)) || heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
 
   const newChildRef = doc(collection(db, 'children'));
-  const now = serverTimestamp() as Timestamp;
+  const now = serverTimestamp();
   
   const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.childBirthDate, 'yyyy-MM-dd', new Date()));
 
-  const newChild: ChildProfile = {
-    id: newChildRef.id,
+  const newChildData = {
     ownerId,
     name: childData.childName,
     birthDate: birthDateAsTimestamp,
@@ -269,8 +286,8 @@ export const addChildProfile = async (
     updatedAt: now,
     familyId: familyId,
   };
-  await setDoc(newChildRef, newChild);
-  return newChild;
+  await setDoc(newChildRef, newChildData);
+  return { id: newChildRef.id, ...newChildData } as ChildProfile;
 };
 
 
@@ -336,7 +353,7 @@ export const getChildProfileById = async (childId: string): Promise<ChildProfile
   const docRef = doc(db, 'children', childId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as ChildProfile;
+    return convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as ChildProfile;
   }
   return null;
 };
@@ -348,13 +365,13 @@ export const getChildProfilesByOwner = async (ownerId: string, unassignedOnly = 
   }
   const q = query(collection(db, 'children'), ...constraints, orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
 };
 
 export const getChildProfilesByFamily = async (familyId: string): Promise<ChildProfile[]> => {
   const q = query(collection(db, 'children'), where('familyId', '==', familyId), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
 };
 
 export const getChildProfilesForAttribution = async (userId: string, contextId: 'my-space' | string): Promise<ChildProfile[]> => {
@@ -370,7 +387,7 @@ export const getChildProfilesForAttribution = async (userId: string, contextId: 
   }
   
   const snapshot = await getDocs(q);
-  const children = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  const children = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
   return children.sort((a, b) => a.name.localeCompare(b.name));
 };
 
@@ -378,7 +395,7 @@ export const getChildProfilesForAttribution = async (userId: string, contextId: 
 export const getUnassignedChildProfilesByOwner = async (ownerId: string): Promise<ChildProfile[]> => {
   const q = query(collection(db, 'children'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('name', 'asc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildProfile));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
 };
 
 export const assignChildrenToFamily = async (childIds: string[], familyId: string): Promise<void> => {
@@ -2190,7 +2207,7 @@ export const findChildByAccessCode = async (accessCode: string): Promise<ChildPr
     return null;
   }
   const childDoc = querySnapshot.docs[0];
-  return { id: childDoc.id, ...childDoc.data() } as ChildProfile;
+  return convertTimestampsInObject({ id: childDoc.id, ...childDoc.data() }) as ChildProfile;
 };
 
 export const updateRecurringMissionInstance = async (
@@ -2442,3 +2459,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     
 
     
+
+

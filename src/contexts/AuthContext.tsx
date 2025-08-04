@@ -11,6 +11,24 @@ import { useRouter } from 'next/navigation';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const convertTimestampsInObject = (obj: any): any => {
+    if (!obj) return obj;
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const value = obj[key];
+            if (value instanceof Timestamp) {
+                newObj[key] = value.toDate().toISOString();
+            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                newObj[key] = convertTimestampsInObject(value);
+            } else {
+                newObj[key] = value;
+            }
+        }
+    }
+    return newObj;
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<UserProfile | null>(null);
   const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
@@ -32,7 +50,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { 
             if (docSnap.exists()) {
-              const userData = docSnap.data() as UserProfile;
+              const userData = convertTimestampsInObject(docSnap.data()) as UserProfile;
               // Check if existing user is missing avatarUrl from Google login
               if (!userData.avatarUrl && firebaseUser.photoURL) {
                 await updateDoc(userDocRef, { avatarUrl: firebaseUser.photoURL });
@@ -43,12 +61,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setIsChildAuthenticated(false);
               setChildProfile(null);
             } else {
+              const creationTime = firebaseUser.metadata.creationTime ? new Date(firebaseUser.metadata.creationTime).toISOString() : new Date().toISOString();
               const tempUser: UserProfile = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email,
                   name: firebaseUser.displayName,
                   avatarUrl: firebaseUser.photoURL,
-                  createdAt: firebaseUser.metadata.creationTime ? Timestamp.fromDate(new Date(firebaseUser.metadata.creationTime)) : serverTimestamp() as any,
+                  createdAt: creationTime as any, // Treat as string
               };
               setUser(tempUser);
               setIsChildAuthenticated(false);
@@ -93,12 +112,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDocSnap = await getDoc(userDocRef);
 
       if (!userDocSnap.exists()) {
-        const userProfile: UserProfile = {
+        const userProfile: Omit<UserProfile, 'createdAt'> & { createdAt: any } = {
           uid: googleUser.uid,
           email: googleUser.email,
           name: googleUser.displayName,
           avatarUrl: googleUser.photoURL,
-          createdAt: serverTimestamp() as any,
+          createdAt: serverTimestamp(),
           settings: {
             initialPage: 'heroes',
             rewardMode: 'automatic',
@@ -157,3 +176,4 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+

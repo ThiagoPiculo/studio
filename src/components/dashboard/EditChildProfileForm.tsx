@@ -114,7 +114,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [dateInput, setDateInput] = useState<string>("");
-  const [month, setMonth] = useState<Date>(child.birthDate?.toDate() || new Date());
+  const [month, setMonth] = useState<Date>(child.birthDate ? new Date(child.birthDate) : new Date());
   
   const [usedColors, setUsedColors] = useState<HeroColor[]>([]);
   const [isLoadingColors, setIsLoadingColors] = useState(true);
@@ -142,7 +142,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: child.name || "",
-      birthDate: child.birthDate?.toDate(),
+      birthDate: child.birthDate ? new Date(child.birthDate) : undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -198,7 +198,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   useEffect(() => {
     form.reset({
       name: child.name || "",
-      birthDate: child.birthDate?.toDate(),
+      birthDate: child.birthDate ? new Date(child.birthDate) : undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -207,7 +207,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     });
     setAvatarPreview(child.avatar || null);
     if (child.birthDate) {
-      setMonth(child.birthDate.toDate());
+      setMonth(new Date(child.birthDate));
     }
   }, [child, form]);
 
@@ -797,14 +797,14 @@ const handleRemoveAvatar = async () => {
                       <Clock className="h-4 w-4"/>
                       <span>Data de Criação:</span>
                       <span className="font-medium text-foreground">
-                          {child.createdAt ? format(child.createdAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.createdAt ? format(new Date(child.createdAt), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
                    <div className="flex items-center gap-2 text-muted-foreground">
                       <RefreshCw className="h-4 w-4"/>
                       <span>Última Atualização:</span>
                       <span className="font-medium text-foreground">
-                          {child.updatedAt ? format(child.updatedAt.toDate(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.updatedAt ? format(new Date(child.updatedAt), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
               </div>
@@ -828,3 +828,4 @@ const handleRemoveAvatar = async () => {
     </>
   );
 }
+
