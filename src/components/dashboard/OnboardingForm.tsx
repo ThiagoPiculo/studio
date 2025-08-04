@@ -44,11 +44,11 @@ import {
 
 
 const onboardingSchema = z.object({
-  childName: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
-  childBirthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+  name: z.string().min(2, { message: "O nome da criança deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome da criança deve ter 50 caracteres ou menos." }),
+  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
     message: "Data inválida."
   }),
-  childGender: z.enum(['boy', 'girl', 'not-informed'], {
+  gender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
   }),
   contextId: z.string(),
@@ -103,9 +103,9 @@ export function OnboardingForm() {
   const form = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     defaultValues: {
-      childName: "",
-      childBirthDate: undefined,
-      childGender: undefined,
+      name: "",
+      birthDate: undefined,
+      gender: undefined,
       contextId: currentContext,
       schoolShift: 'afternoon',
       schoolShiftStart: '13:00',
@@ -119,7 +119,7 @@ export function OnboardingForm() {
   }, [currentContext, form]);
 
   const watchedSchoolShift = form.watch('schoolShift');
-  const watchedBirthDate = form.watch('childBirthDate');
+  const watchedBirthDate = form.watch('birthDate');
 
   const handleShiftChange = (value: string) => {
     form.setValue('schoolShift', value as SchoolShift, { shouldValidate: true });
@@ -164,14 +164,14 @@ export function OnboardingForm() {
     setIsLoading(true);
     try {
       await addChildProfile(user.uid, { 
-        name: values.childName, 
-        birthDate: values.childBirthDate,
-        gender: values.childGender,
+        name: values.name, 
+        birthDate: values.birthDate,
+        gender: values.gender,
         schoolShift: values.schoolShift,
         schoolShiftStart: values.schoolShift !== 'not_applicable' ? values.schoolShiftStart : '',
         schoolShiftEnd: values.schoolShift !== 'not_applicable' ? values.schoolShiftEnd : '',
       }, values.contextId);
-      toast({ title: "Mini Heroi Adicionado!", description: `${values.childName} está pronto(a) para a aventura!` });
+      toast({ title: "Mini Heroi Adicionado!", description: `${values.name} está pronto(a) para a aventura!` });
       router.push("/dashboard/heroes"); 
     } catch (error: any) {
       console.error("Failed to add child profile:", error);
@@ -210,7 +210,7 @@ export function OnboardingForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
               <FormField
               control={form.control}
-              name="childName"
+              name="name"
               render={({ field }) => (
                   <FormItem>
                   <FormLabel>Nome ou Apelido da Criança</FormLabel>
@@ -224,7 +224,7 @@ export function OnboardingForm() {
 
               <FormField
               control={form.control}
-              name="childBirthDate"
+              name="birthDate"
               render={({ field }) => (
                   <FormItem className="flex flex-col">
                   <FormLabel>Data de Nascimento</FormLabel>
@@ -314,7 +314,7 @@ export function OnboardingForm() {
           <div className="space-y-6">
             <FormField
               control={form.control}
-              name="childGender"
+              name="gender"
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel>Gênero do Mini Heroi/Heroina</FormLabel>

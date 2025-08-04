@@ -242,8 +242,8 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
 
 // --- Child Profile ---
 export const addChildProfile = async (
-    ownerId: string, 
-    childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { childName: string, childBirthDate: string, childGender: 'boy' | 'girl' | 'not-informed' },
+    ownerId: string,
+    childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { name: string, birthDate: string, gender: 'boy' | 'girl' | 'not-informed' },
     contextId: string
 ): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -255,9 +255,9 @@ export const addChildProfile = async (
   const usedColors = new Set(existingChildren.map(child => child.color));
 
   let colorPalette;
-  if (childData.childGender === 'boy') {
+  if (childData.gender === 'boy') {
     colorPalette = boyColors;
-  } else if (childData.childGender === 'girl') {
+  } else if (childData.gender === 'girl') {
     colorPalette = girlColors;
   } else {
     colorPalette = heroColors; // Use all colors if not specified
@@ -268,13 +268,13 @@ export const addChildProfile = async (
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp();
   
-  const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.childBirthDate, 'yyyy-MM-dd', new Date()));
+  const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.birthDate, 'yyyy-MM-dd', new Date()));
 
   const newChildData = {
     ownerId,
-    name: childData.childName,
+    name: childData.name,
     birthDate: birthDateAsTimestamp,
-    gender: childData.childGender,
+    gender: childData.gender,
     schoolShift: childData.schoolShift || 'not_applicable',
     schoolShiftStart: childData.schoolShiftStart || '',
     schoolShiftEnd: childData.schoolShiftEnd || '',
