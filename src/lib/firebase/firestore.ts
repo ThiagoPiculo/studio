@@ -37,6 +37,12 @@ const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
 // Helper to convert Firestore Timestamps in an object to strings
 const convertTimestampsInObject = (obj: any): any => {
     if (!obj) return obj;
+
+    // Handle array of objects
+    if (Array.isArray(obj)) {
+        return obj.map(item => convertTimestampsInObject(item));
+    }
+    
     const newObj: { [key: string]: any } = {};
     for (const key in obj) {
         if (Object.prototype.hasOwnProperty.call(obj, key)) {
@@ -1200,14 +1206,14 @@ export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<R
     });
   }
 
-  return newTemplate;
+  return convertTimestampsInObject(newTemplate);
 };
 
 export const getRewardTemplateById = async (templateId: string): Promise<RewardTemplate | null> => {
   const docRef = doc(db, 'rewardTemplates', templateId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as RewardTemplate;
+    return convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as RewardTemplate;
   }
   return null;
 };
@@ -1260,9 +1266,14 @@ export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyI
   }
 
   const querySnapshot = await getDocs(q);
-  const templates = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as RewardTemplate));
+  const templates = querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as RewardTemplate);
   
-  return templates.sort((a, b) => (b.createdAt as Timestamp).toMillis() - (a.createdAt as Timestamp).toMillis());
+  return templates.sort((a, b) => {
+    // Timestamps are now ISO strings
+    const timeA = new Date(a.createdAt as string).getTime();
+    const timeB = new Date(b.createdAt as string).getTime();
+    return timeB - timeA;
+  });
 };
 
 
@@ -1305,7 +1316,7 @@ export const addChildRewardInstance = async (
     });
   }
 
-  return newInstance;
+  return convertTimestampsInObject(newInstance);
 };
 
 
@@ -1317,20 +1328,21 @@ export const getActiveChildRewardInstancesByTemplateAndChild = async (templateId
     where('status', '==', 'active')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
 };
 
 
 export const getChildRewardInstanceById = async (instanceId: string): Promise<ChildRewardInstance | null> => {
   const docRef = doc(db, 'childRewardInstances', instanceId);
   const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as ChildRewardInstance : null;
+  if (!docSnap.exists()) return null;
+  return convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as ChildRewardInstance;
 };
 
 export const getChildRewardInstancesByChild = async (childId: string): Promise<ChildRewardInstance[]> => {
   const q = query(collection(db, 'childRewardInstances'), where('childId', '==', childId), orderBy('assignedAt', 'desc'));
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
 };
 
 export const getChildRewardInstancesForContext = async (ownerId: string, familyId: string | null): Promise<ChildRewardInstance[]> => {
@@ -1343,7 +1355,7 @@ export const getChildRewardInstancesForContext = async (ownerId: string, familyI
     q = query(collection(db, 'childRewardInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('assignedAt', 'desc'));
   }
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ChildRewardInstance));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
 };
 
 
@@ -1410,7 +1422,7 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
       type: 'reward_redeemed',
       title: 'Recompensa Resgatada!',
       description: description,
-      href: `/dashboard/child/${childId}/manage?tab=rewards`,
+      href: `/dashboard/mural?childId=${childId}&tab=rewards`,
       relatedChildId: childId,
     },
     actor
@@ -1431,7 +1443,7 @@ export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: 
         type: 'instance_unassigned',
         title: 'Recompensa Desatribuída',
         description: `${actor.name} removeu a atribuição de "${instanceData.title}" para ${child?.name || 'um herói'}.`,
-        href: `/dashboard/child/${instanceData.childId}/manage?tab=rewards`,
+        href: `/dashboard/mural?childId=${instanceData.childId}&tab=rewards`,
         relatedChildId: instanceData.childId
     });
   }
@@ -1454,7 +1466,7 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
             type: 'instance_unassigned',
             title: 'Recompensa Desatribuída',
             description: `${actor.name} removeu a atribuição de "${instanceData.title}" para ${child?.name || 'um herói'}.`,
-            href: `/dashboard/child/${instanceData.childId}/manage?tab=rewards`,
+            href: `/dashboard/mural?childId=${instanceData.childId}&tab=rewards`,
             relatedChildId: instanceData.childId
         });
     }
@@ -1486,14 +1498,14 @@ export const addMissionTemplate = async (actor: UserProfile, templateData: Omit<
     });
   }
 
-  return newTemplate;
+  return convertTimestampsInObject(newTemplate);
 };
 
 export const getMissionTemplateById = async (templateId: string): Promise<MissionTemplate | null> => {
   const docRef = doc(db, 'missionTemplates', templateId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    return { id: docSnap.id, ...docSnap.data() } as MissionTemplate;
+    return convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as MissionTemplate;
   }
   return null;
 };
@@ -1613,7 +1625,7 @@ export const getMissionTemplatesByOwnerOrFamily = async (ownerId: string, family
     q = query(collection(db, 'missionTemplates'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('createdAt', 'desc'));
   }
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionTemplate));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionTemplate);
 };
 
 // --- Mission Instances (Missões Atribuídas) ---
@@ -1672,12 +1684,12 @@ export const addMissionInstance = async (
         type: 'instance_assigned',
         title: 'Missão Atribuída',
         description: `${actor.name} atribuiu "${newInstance.title}" para ${child?.name || 'um herói'}.`,
-        href: `/dashboard/agenda?child_id=${newInstance.childId}`,
+        href: `/dashboard/agenda?childId=${newInstance.childId}`,
         relatedChildId: newInstance.childId
     });
   }
 
-  return newInstance;
+  return convertTimestampsInObject(newInstance);
 };
 
 export const getActiveChildMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<MissionInstance[]> => {
@@ -1783,7 +1795,7 @@ export const deleteMissionInstance = async (actor: UserProfile, instanceId: stri
             type: 'instance_unassigned',
             title: 'Missão Desatribuída',
             description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
-            href: `/dashboard/child/${instanceData.childId}/manage?tab=missions`,
+            href: `/dashboard/mural?childId=${instanceData.childId}&tab=missions`,
             relatedChildId: instanceData.childId,
         });
     }
@@ -1840,7 +1852,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
             type: 'instance_unassigned',
             title: 'Missão Desatribuída',
             description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
-            href: `/dashboard/child/${instanceData.childId}/manage?tab=missions`,
+            href: `/dashboard/mural?childId=${instanceData.childId}&tab=missions`,
             relatedChildId: instanceData.childId,
         });
     }
@@ -1988,7 +2000,7 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
                 type: 'new_badge',
                 title: 'Nova Medalha Desbloqueada!',
                 description: `${childProfile.name} ganhou a medalha: "${badge.title}"!`,
-                href: `/dashboard/child/${childId}/manage?tab=badges`,
+                href: `/dashboard/mural?childId=${childId}&tab=badges`,
                 relatedChildId: childId,
             });
         }
@@ -2094,7 +2106,7 @@ export const completeMissionInstance = async (
               type: 'mission_completed',
               title: `Missão Cumprida!`,
               description: description,
-              href: `/dashboard/child/${missionData.childId}/manage?tab=missions`,
+              href: `/dashboard/mural?childId=${missionData.childId}&tab=missions`,
               relatedChildId: missionData.childId
           },
           actor
@@ -2106,7 +2118,7 @@ export const completeMissionInstance = async (
               type: 'new_level',
               title: 'Subiu de Nível!',
               description: `${updatedChildProfile.name} alcançou o nível ${updatedChildProfile.level}!`,
-              href: `/dashboard/child/${missionData.childId}/manage`,
+              href: `/dashboard/mural?childId=${missionData.childId}`,
               relatedChildId: missionData.childId
           });
       }
@@ -2182,7 +2194,7 @@ export const reactivateMissionInstance = async (
                 type: 'mission_completion_undone',
                 title: 'Ação Desfeita',
                 description,
-                href: `/dashboard/child/${missionData.childId}/manage?tab=missions`,
+                href: `/dashboard/mural?childId=${missionData.childId}&tab=missions`,
                 relatedChildId: missionData.childId,
             },
             actor
@@ -2270,7 +2282,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2304,13 +2316,13 @@ export const getSchoolScheduleForContext = async (ownerId: string, familyId: str
     q = query(collection(db, 'schoolSchedules'), where('ownerId', '==', ownerId), where('familyId', '==', null));
   }
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolScheduleEntry));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as SchoolScheduleEntry);
 };
 
 export const getSchoolScheduleForChild = async (childId: string): Promise<SchoolScheduleEntry[]> => {
     const q = query(collection(db, 'schoolSchedules'), where('childId', '==', childId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as SchoolScheduleEntry));
+    return snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as SchoolScheduleEntry);
 }
 
 export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
@@ -2335,7 +2347,7 @@ export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry
     });
   }
 
-  return newEntry;
+  return convertTimestampsInObject(newEntry);
 };
 
 export const addRecurringSchoolEntry = async (
