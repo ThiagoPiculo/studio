@@ -52,7 +52,11 @@ export const getUserNotifications = async (userId: string): Promise<Notification
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+  return querySnapshot.docs.map(doc => {
+    const data = doc.data();
+    const createdAt = (data.createdAt as Timestamp)?.toDate().toISOString();
+    return { id: doc.id, ...data, createdAt } as Notification;
+  });
 };
 
 export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {

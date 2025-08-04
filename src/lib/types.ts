@@ -378,7 +378,7 @@ export interface Notification {
   description: string;
   href: string; // link to the relevant page
   isRead: boolean;
-  createdAt: Timestamp;
+  createdAt: string; // Changed from Timestamp to string
   relatedChildId?: string; // Optional, if it's about a specific child
   relatedContextId?: string | null;
   actorId?: string | null; // Optional, who performed the action

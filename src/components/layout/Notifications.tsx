@@ -260,7 +260,7 @@ export function Notifications() {
                 ) : (
                     filteredNotifications.map(notification => {
                         const Icon = notificationIcons[notification.type] || Bell;
-                        const timeAgo = notification.createdAt ? formatDistanceToNowStrict(notification.createdAt.toDate(), { locale: ptBR, addSuffix: true }) : "agora mesmo";
+                        const timeAgo = notification.createdAt ? formatDistanceToNowStrict(new Date(notification.createdAt), { locale: ptBR, addSuffix: true }) : "agora mesmo";
                         const context = availableContexts.find(c => c.id === notification.relatedContextId);
                         
                         return (
