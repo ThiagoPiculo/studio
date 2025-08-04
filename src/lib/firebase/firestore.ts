@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -32,6 +33,38 @@ import { predefinedRewardGroups } from '../predefined-reward-ideas';
 import { auth } from './config';
 
 const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+
+// --- Notifications ---
+export const addNotification = async (
+  notificationData: Omit<Notification, 'id' | 'createdAt' | 'isRead'>
+): Promise<void> => {
+  await addDoc(collection(db, 'notifications'), {
+    ...notificationData,
+    isRead: false,
+    createdAt: serverTimestamp(),
+  });
+};
+
+export const getUserNotifications = async (userId: string): Promise<Notification[]> => {
+  const q = query(
+    collection(db, 'notifications'),
+    where('userId', '==', userId),
+    orderBy('createdAt', 'desc')
+  );
+  const querySnapshot = await getDocs(q);
+  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+};
+
+export const markNotificationsAsRead = async (userId: string, notificationIds: string[]): Promise<void> => {
+  if (notificationIds.length === 0) return;
+  const batch = writeBatch(db);
+  notificationIds.forEach(id => {
+    const notificationRef = doc(db, 'notifications', id);
+    batch.update(notificationRef, { isRead: true });
+  });
+  await batch.commit();
+};
+
 
 // --- Notifications Helper ---
 const createAndDispatchNotifications = async (
@@ -184,10 +217,10 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
 };
 
 // --- Child Profile ---
-export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { birthDate: string }, contextId?: string): Promise<ChildProfile> => {
+export const addChildProfile = async (ownerId: string, childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color'> & { birthDate: string }): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
   
-  const familyId = contextId && contextId !== 'my-space' ? contextId : null;
+  const familyId = childData.contextId && childData.contextId !== 'my-space' ? childData.contextId : null;
   
   // Find available colors based on context and gender
   const existingChildren = familyId ? await getChildProfilesByFamily(familyId) : await getChildProfilesByOwner(ownerId);
@@ -204,18 +237,16 @@ export const addChildProfile = async (ownerId: string, childData: Omit<ChildProf
 
   const availableColor = colorPalette.find(color => !usedColors.has(color)) || heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
 
-
   const newChildRef = doc(collection(db, 'children'));
   const now = serverTimestamp() as Timestamp;
   
-  // Convert date string to Timestamp
-  const birthDateTimestamp = Timestamp.fromDate(parse(childData.birthDate, 'yyyy-MM-dd', new Date()));
-  
+  const birthDateAsTimestamp = Timestamp.fromDate(parse(childData.birthDate, 'yyyy-MM-dd', new Date()));
+
   const newChild: ChildProfile = {
     id: newChildRef.id,
     ownerId,
-    name: childData.name,
-    birthDate: birthDateTimestamp,
+    name: childData.childName,
+    birthDate: birthDateAsTimestamp,
     gender: childData.gender,
     schoolShift: childData.schoolShift || 'not_applicable',
     schoolShiftStart: childData.schoolShiftStart || '',
@@ -2395,6 +2426,8 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
 
+
+    
 
     
 
