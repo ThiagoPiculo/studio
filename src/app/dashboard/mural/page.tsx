@@ -386,7 +386,9 @@ function MuralCompletoPageContent() {
   }, [missionInstances, childRewards, collaboratorsMap, child?.name]);
 
 
-  const calculateAge = (birthDate: Date): number => {
+  const calculateAge = (birthDateString: string): number | null => {
+    const birthDate = new Date(birthDateString);
+    if (!isValid(birthDate)) return null;
     return differenceInYears(new Date(), birthDate);
   };
 
@@ -470,7 +472,7 @@ function MuralCompletoPageContent() {
 
     // Final fallback to start/due date if no occurrence is found in the near past/future
     if (!targetDate) {
-        targetDate = instance.startDate?.toDate() || instance.dueDate?.toDate();
+        targetDate = getDateObject(instance.startDate) || getDateObject(instance.dueDate);
     }
     
     if (!targetDate) {
@@ -832,7 +834,7 @@ function MuralCompletoPageContent() {
   // Safeguard against rendering before child data is available.
   if (!child) return <Loading />;
 
-  const age = child.birthDate ? calculateAge(child.birthDate.toDate()) : null;
+  const age = child.birthDate ? calculateAge(child.birthDate) : null;
   
   const renderMissionCard = (instance: MissionInstance) => {
     const categoryDetails = getMissionCategoryDetails(instance.category);
