@@ -1,20 +1,18 @@
 
-"use client";
-
-import { useEffect, useState, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getChildProfilesByFamily } from '@/lib/firebase/firestore';
-import type { UserProfile, ChildProfile, FamilyRole } from '@/lib/types';
+import { getFamilyMembers, getChildProfilesByFamily, getFamilyMemberships } from '@/lib/firebase/firestore';
+import type { UserProfile, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info } from 'lucide-react';
-import Loading from './loading';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { auth } from '@/lib/firebase/config';
+import { redirect } from 'next/navigation';
+import { FamilySwitcherClient } from './FamilySwitcherClient';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 type AllianceDetails = {
   id: string;
@@ -24,60 +22,60 @@ type AllianceDetails = {
   children: ChildProfile[];
 };
 
-export default function AlliancesPage() {
-  const { user } = useAuth();
-  const router = useRouter();
-  const { availableContexts, setCurrentContext } = useFamily();
-  const [alliancesDetails, setAlliancesDetails] = useState<AllianceDetails[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+async function getAlliancesDetails(userId: string): Promise<AllianceDetails[]> {
+    const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', userId));
+    const membershipsSnapshot = await getDocs(membershipsQuery);
+    const memberships = membershipsSnapshot.docs.map(doc => doc.data() as FamilyMembership);
 
-  useEffect(() => {
-    const fetchDetails = async () => {
-      setIsLoading(true);
-      const userAlliances = availableContexts.filter(c => c.id !== 'my-space');
+    const allianceContexts = await Promise.all(memberships.map(async (membership) => {
+        const familyDoc = await getDoc(doc(db, 'families', membership.familyId));
+        if (familyDoc.exists()) {
+            return {
+                id: membership.familyId,
+                name: familyDoc.data().name,
+                role: membership.role,
+            };
+        }
+        return null;
+    }));
 
-      if (userAlliances.length === 0) {
-        // Se não houver alianças, redireciona para a página principal de família para criar/entrar
-        router.replace('/dashboard/family');
-        return;
-      }
-      
-      const detailsPromises = userAlliances.map(async (allianceContext) => {
+    const validAllianceContexts = allianceContexts.filter(Boolean) as { id: string; name: string; role: FamilyRole }[];
+    
+    if (validAllianceContexts.length === 0) {
+        return [];
+    }
+    
+    const detailsPromises = validAllianceContexts.map(async (allianceContext) => {
         const [members, children] = await Promise.all([
-          getFamilyMembers(allianceContext.id),
-          getChildProfilesByFamily(allianceContext.id)
+            getFamilyMembers(allianceContext.id),
+            getChildProfilesByFamily(allianceContext.id)
         ]);
         return {
-          id: allianceContext.id,
-          name: allianceContext.name,
-          role: allianceContext.role || null,
-          members,
-          children
+            id: allianceContext.id,
+            name: allianceContext.name,
+            role: allianceContext.role || null,
+            members,
+            children
         };
-      });
+    });
 
-      const details = await Promise.all(detailsPromises);
-      setAlliancesDetails(details);
-      setIsLoading(false);
-    };
+    return Promise.all(detailsPromises);
+}
 
-    if (availableContexts.length > 0) {
-      fetchDetails();
-    }
-  }, [availableContexts, router]);
 
-  const handleNavigateToAlliance = (contextId: string) => {
-    setCurrentContext(contextId);
-    router.push('/dashboard/family');
-  };
+export default async function AlliancesPage() {
+  const user = auth.currentUser;
+  
+  if (!user) {
+    // This should be handled by middleware, but as a safeguard:
+    redirect('/auth/login');
+  }
 
-  const handleInviteToAlliance = (contextId: string) => {
-    setCurrentContext(contextId);
-    router.push('/dashboard/family?action=invite');
-  };
-
-  if (isLoading) {
-    return <Loading />;
+  const alliancesDetails = await getAlliancesDetails(user.uid);
+  
+  if (alliancesDetails.length === 0) {
+    // If user has no alliances, redirect them to the main family page to create/join one.
+    redirect('/dashboard/family');
   }
 
   return (
@@ -143,12 +141,8 @@ export default function AlliancesPage() {
                   </div>
               </CardContent>
               <CardFooter className="grid grid-cols-2 gap-2 mt-auto">
-                  <Button variant="outline" onClick={() => handleInviteToAlliance(alliance.id)}>
-                      <UserPlus className="mr-2 h-4 w-4" /> Convidar
-                  </Button>
-                  <Button onClick={() => handleNavigateToAlliance(alliance.id)}>
-                      Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+                 <FamilySwitcherClient contextId={alliance.id} action="invite" />
+                 <FamilySwitcherClient contextId={alliance.id} action="details" />
               </CardFooter>
             </Card>
           )
