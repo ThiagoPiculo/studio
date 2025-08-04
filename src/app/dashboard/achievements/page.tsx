@@ -57,11 +57,10 @@ export default function AchievementsPage() {
   useEffect(() => {
     if (user) {
       setIsLoading(true);
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
 
       Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getMissionInstancesForContext(user.uid, familyIdToQuery)
+        getMissionInstancesForContext(user.uid, currentContext)
       ]).then(([fetchedChildren, fetchedInstances]) => {
         setAllChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
