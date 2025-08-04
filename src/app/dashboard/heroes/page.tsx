@@ -86,10 +86,10 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates, onCodeR
     }
   };
 
-  const calculateAge = (birthDate?: Timestamp): number | null => {
+  const calculateAge = (birthDate?: string | Date): number | null => {
     if (!birthDate) return null;
     const today = new Date();
-    const birthDateObj = birthDate.toDate();
+    const birthDateObj = new Date(birthDate);
     let age = today.getFullYear() - birthDateObj.getFullYear();
     const m = today.getMonth() - birthDateObj.getMonth();
     if (m < 0 || (m === 0 && today.getDate() < birthDateObj.getDate())) {
@@ -145,8 +145,8 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates, onCodeR
               const todaysMissions: MissionInstance[] = missionInstances
                 .filter(inst => inst.childId === child.id && isMissionScheduledForDate(inst, new Date()))
                 .sort((a, b) => {
-                    const timeA = a.startDate?.toDate() || a.dueDate?.toDate();
-                    const timeB = b.startDate?.toDate() || b.dueDate?.toDate();
+                    const timeA = a.startDate ? new Date(a.startDate) : a.dueDate ? new Date(a.dueDate) : null;
+                    const timeB = b.startDate ? new Date(b.startDate) : b.dueDate ? new Date(b.dueDate) : null;
                     if (!timeA || !timeB) return 0;
                     const minutesA = timeA.getHours() * 60 + timeA.getMinutes();
                     const minutesB = timeB.getHours() * 60 + timeB.getMinutes();
@@ -270,8 +270,8 @@ function HeroesSummary({ allChildren, missionInstances, rewardTemplates, onCodeR
                                 {todaysMissions.length > 0 ? (
                                   missionsToShow.map(item => {
                                     const isCompleted = completedTodaysMissions.some(cm => cm.id === item.id);
-                                    const eventTime = item.startDate ? (item.startDate instanceof Date ? item.startDate : item.startDate.toDate()) : new Date(0);
-                                    const formattedTime = format(eventTime, 'HH:mm');
+                                    const eventTime = item.startDate ? new Date(item.startDate) : null;
+                                    const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                                     const popoverId = `${item.id}-${today}`;
                                     const href = `/dashboard/agenda?view=day&focus_date=${today}&open_popover=${popoverId}`;
                                     
@@ -447,3 +447,4 @@ export default function HeroesPage() {
       </Suspense>
   )
 }
+
