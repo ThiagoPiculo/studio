@@ -2,7 +2,7 @@
 "use client";
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
-import React, from 'react';
+import React, { useEffect } from 'react';
 import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
@@ -17,24 +17,32 @@ interface EnrichedContext {
 const FamilyContext = React.createContext<FamilyContextType | undefined>(undefined);
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>('my-space');
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  React.useEffect(() => {
+  useEffect(() => {
+    if (authLoading) {
+      setIsLoading(true);
+      return;
+    }
+
+    let unsubscribeMemberships: () => void = () => {};
+    let unsubscribeFamilies: () => void = () => {};
+
     if (user) {
       setIsLoading(true);
       const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }];
       
       const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
       
-      const unsubscribeMemberships = onSnapshot(membershipsQuery, (snapshot) => {
+      unsubscribeMemberships = onSnapshot(membershipsQuery, (snapshot) => {
         const memberships = snapshot.docs.map(doc => doc.data() as FamilyMembership);
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            if (!initialContexts.some(c => c.id === currentContext)) {
+            if (currentContext !== 'my-space') {
               setCurrentContextState('my-space');
             }
             setIsLoading(false);
@@ -46,7 +54,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
         const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
         
-        const unsubscribeFamilies = onSnapshot(familiesQuery, (familiesSnapshot) => {
+        unsubscribeFamilies = onSnapshot(familiesQuery, (familiesSnapshot) => {
             const familyContexts = familiesSnapshot.docs.map(doc => {
                 const family = doc.data() as Family;
                 return { 
@@ -57,17 +65,14 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             });
             
             const allContexts = [...initialContexts, ...familyContexts];
-            
             setAvailableContextsState(allContexts);
 
-            // Logic to set the current context safely
             const preferredContextId = user.settings?.initialContext || 'my-space';
             if (allContexts.some(c => c.id === preferredContextId)) {
                 if (currentContext !== preferredContextId) {
                     setCurrentContextState(preferredContextId);
                 }
             } else if (!allContexts.some(c => c.id === currentContext)) {
-                // If the current context is no longer available (e.g., user left family), reset to a safe default
                 setCurrentContextState('my-space');
             }
             
@@ -78,24 +83,23 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             setIsLoading(false);
         });
         
-        return () => unsubscribeFamilies();
-
       }, (error) => {
         console.error("Error fetching family memberships:", error);
         setAvailableContextsState(initialContexts); 
         setIsLoading(false);
       });
-
-      return () => {
-        unsubscribeMemberships();
-      };
-
-    } else {
+      
+    } else { // No user
       setCurrentContextState('my-space');
       setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
       setIsLoading(false);
     }
-  }, [user]);
+    
+    return () => {
+        unsubscribeMemberships();
+        unsubscribeFamilies();
+      };
+  }, [user, authLoading]);
 
   const setCurrentContext = (contextId: 'my-space' | string) => {
     setCurrentContextState(contextId);
@@ -106,6 +110,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   };
   
   const currentRole = React.useMemo(() => {
+    if (currentContext === 'my-space') return 'Personal';
     const context = availableContexts.find(c => c.id === currentContext)
     return context?.role || null
   }, [currentContext, availableContexts]);

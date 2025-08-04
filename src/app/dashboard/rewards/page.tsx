@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -27,7 +27,7 @@ import {
   getChildProfilesForAttribution,
   getChildRewardInstancesForContext
 } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +35,6 @@ import { useRouter } from 'next/navigation';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useUserRole } from '@/hooks/useUserRole';
 import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -44,12 +43,13 @@ import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { Progress } from '@/components/ui/progress';
+import Loading from './loading';
+
 
 function RewardsHubContent({ initialData }: { initialData: { templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' }}) {
   const { templates, children: initialChildren, instances, rewardMode: initialRewardMode } = initialData;
   const { user } = useAuth();
-  const { currentContext, availableContexts } = useFamily();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext, availableContexts, currentRole } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -63,6 +63,13 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
   const rewardMode = user?.settings?.rewardMode || initialRewardMode;
+  
+   const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
   
   const fetchData = useCallback(async () => {
     if (!user) {
@@ -165,25 +172,6 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
     const contextData = availableContexts.find(c => c.id === currentContext);
     return `Catálogo da Aliança: ${contextData?.name || ''}`;
   }, [currentContext, availableContexts]);
-  
-  if (isRoleLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Card>
-           <CardHeader>
-             <Skeleton className="h-6 w-1/2" />
-          </CardHeader>
-           <CardContent className="text-center py-10">
-              <div className="flex justify-center mb-4">
-                <Loader2 className="h-16 w-16 text-primary animate-spin" />
-              </div>
-              <p className="text-lg text-muted-foreground font-semibold">Carregando a lojinha...</p>
-            </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   const renderRewardCard = (template: RewardTemplate) => {
     const categoryDetails = getCategoryDetails(template.category);
@@ -424,49 +412,38 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
 }
 
 export default function RewardsHubPageWrapper() {
-  const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { user, loading: authLoading } = useAuth();
+  const { currentContext, isLoading: isFamilyLoading } = useFamily();
   const [initialData, setInitialData] = useState<{ templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      Promise.all([
-        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getChildProfilesForAttribution(user.uid, currentContext),
-        getChildRewardInstancesForContext(user.uid, familyIdToQuery),
-      ]).then(([templates, children, instances]) => {
+  const fetchData = useCallback(async () => {
+    if (!user) return;
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    try {
+        const [templates, children, instances] = await Promise.all([
+            getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getChildRewardInstancesForContext(user.uid, familyIdToQuery),
+        ]);
         setInitialData({ templates, children, instances, rewardMode: user.settings?.rewardMode || 'automatic' });
-      }).catch((err) => {
+    } catch (err) {
         console.error("Error fetching initial data for rewards page:", err);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    } else {
-        setIsLoading(false);
     }
   }, [user, currentContext]);
 
-  if (isLoading || !initialData) {
-    return (
-      <div className="space-y-6">
-        <Skeleton className="h-32 w-full" />
-        <Card>
-           <CardHeader>
-             <Skeleton className="h-6 w-1/2" />
-          </CardHeader>
-           <CardContent className="text-center py-10">
-              <div className="flex justify-center mb-4">
-                <Loader2 className="h-16 w-16 text-primary animate-spin" />
-              </div>
-              <p className="text-lg text-muted-foreground font-semibold">Carregando a lojinha...</p>
-            </CardContent>
-        </Card>
-      </div>
-    );
+  useEffect(() => {
+    if (!authLoading && !isFamilyLoading) {
+      fetchData();
+    }
+  }, [authLoading, isFamilyLoading, fetchData]);
+
+  if (authLoading || isFamilyLoading || !initialData) {
+    return <Loading />;
   }
 
-  return <RewardsHubContent initialData={initialData} />;
+  return (
+    <Suspense fallback={<Loading />}>
+        <RewardsHubContent initialData={initialData} />
+    </Suspense>
+  );
 }

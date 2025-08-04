@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry, updateChildProfile } from '@/lib/firebase/firestore';
-import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday } from '@/lib/types';
+import type { ChildProfile, SchoolScheduleEntry, SchoolShift, Weekday, FamilyRole } from '@/lib/types';
 import { allWeekdays, weekdayLabels } from '@/lib/types';
 import { getDayToWeekday, parseTime, format as formatTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +37,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { EditShiftDialog } from '@/components/dashboard/school-schedule/EditShiftDialog';
-import { useUserRole } from '@/hooks/useUserRole';
 import { format } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 
@@ -54,8 +53,7 @@ interface SchoolSchedulePageClientProps {
 
 function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps) {
   const { user } = useAuth();
-  const { currentContext } = useFamily();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
+  const { currentContext, currentRole } = useFamily();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -77,6 +75,13 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
   const [useColors, setUseColors] = useState<boolean>(true);
 
   const selectedChild = useMemo(() => children.find(c => c.id === selectedChildId), [children, selectedChildId]);
+  
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
 
   const schoolShiftMap: Record<SchoolShift, string> = {
     morning: 'Manhã',
@@ -668,30 +673,31 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
 
 
 export default function SchoolSchedulePage() {
-    const { user } = useAuth();
-    const { currentContext } = useFamily();
+    const { user, loading: authLoading } = useAuth();
+    const { currentContext, isLoading: isFamilyLoading } = useFamily();
     const [initialData, setInitialData] = useState<{ children: ChildProfile[]; scheduleEntries: SchoolScheduleEntry[] } | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        if (user) {
-            setIsLoading(true);
-            Promise.all([
+    const fetchData = useCallback(async () => {
+        if (!user) return;
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        try {
+            const [children, scheduleEntries] = await Promise.all([
                 getChildProfilesForAttribution(user.uid, currentContext),
-                getSchoolScheduleForContext(user.uid, currentContext === 'my-space' ? null : currentContext),
-            ]).then(([children, scheduleEntries]) => {
-                setInitialData({ children, scheduleEntries });
-            }).catch(err => {
-                console.error("Error fetching initial data for schedule page:", err);
-            }).finally(() => {
-                setIsLoading(false);
-            });
-        } else {
-            setIsLoading(false);
+                getSchoolScheduleForContext(user.uid, familyIdToQuery),
+            ]);
+            setInitialData({ children, scheduleEntries });
+        } catch (err) {
+            console.error("Error fetching initial data for schedule page:", err);
         }
     }, [user, currentContext]);
 
-    if (isLoading || !initialData) {
+    useEffect(() => {
+        if (!authLoading && !isFamilyLoading) {
+            fetchData();
+        }
+    }, [authLoading, isFamilyLoading, fetchData]);
+
+    if (authLoading || isFamilyLoading || !initialData) {
         return <Loading />;
     }
 
@@ -701,5 +707,3 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
-
-    

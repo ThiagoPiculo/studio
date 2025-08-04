@@ -70,18 +70,11 @@ function MuralCompletoPageContent() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   
-  const canEdit = useMemo(() => {
-    if (currentContext === 'my-space') return true;
-    if (!currentRole) return false;
-    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
-    return editableRoles.includes(currentRole as FamilyRole);
-  }, [currentContext, currentRole]);
-
-  const childId = searchParams.get('childId');
-
+  const childIdFromParams = searchParams.get('childId');
+  
   // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
@@ -137,6 +130,13 @@ function MuralCompletoPageContent() {
   });
   const [isCalculatingProgress, setIsCalculatingProgress] = useState(true);
 
+  const canEdit = useMemo(() => {
+    if (!currentRole) return false;
+    if (currentContext === 'my-space') return true;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
+
 
   const periodIcons = {
     Manhã: Sun,
@@ -146,7 +146,7 @@ function MuralCompletoPageContent() {
 
 
   // Centralized data fetching function
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (childIdToFetch: string) => {
     if (!user) {
         setIsLoading(false);
         return;
@@ -156,48 +156,19 @@ function MuralCompletoPageContent() {
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
 
-        const [allProfiles, fetchedCollaborators, fetchedMemberships] = await Promise.all([
+        const [allProfiles, fetchedCollaborators, fetchedMemberships, profile, missions, rewards, schedule] = await Promise.all([
             getChildProfilesForAttribution(user.uid, currentContext),
             familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
             familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
+            getChildProfileById(childIdToFetch),
+            getMissionInstancesByChild(childIdToFetch),
+            getChildRewardInstancesByChild(childIdToFetch),
+            getSchoolScheduleForChild(childIdToFetch),
         ]);
         
         setAllChildren(allProfiles);
         setCollaborators(fetchedCollaborators);
         setMemberships(fetchedMemberships);
-        
-        let selectedId = childId;
-
-        // Smart selection logic
-        if (!selectedId || !allProfiles.some(c => c.id === selectedId)) {
-          selectedId = allProfiles.length > 0 ? allProfiles[0].id : null;
-          if (selectedId) {
-            const currentUrl = new URL(window.location.toString());
-            currentUrl.searchParams.set('childId', selectedId);
-            window.history.replaceState({}, '', currentUrl);
-          } else {
-             const currentUrl = new URL(window.location.toString());
-             currentUrl.searchParams.delete('childId');
-             window.history.replaceState({}, '', currentUrl);
-          }
-        }
-        
-        if (!selectedId) {
-            setChild(null);
-            setMissionInstances([]);
-            setChildRewards([]);
-            setSchoolSchedule([]);
-            setIsLoading(false); // Make sure to stop loading
-            return; // Exit early if no child is selected
-        }
-
-        const [profile, missions, rewards, schedule] = await Promise.all([
-            getChildProfileById(selectedId),
-            getMissionInstancesByChild(selectedId),
-            getChildRewardInstancesByChild(selectedId),
-            getSchoolScheduleForChild(selectedId),
-        ]);
-        
         setChild(profile);
         setMissionInstances(missions);
         setChildRewards(rewards.sort((a, b) => {
@@ -215,13 +186,41 @@ function MuralCompletoPageContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, currentContext, toast, childId]);
+  }, [user, currentContext, toast]);
 
 
-  // Initial data fetch and context validation effect
+  // Effect to decide which child to fetch data for
   useEffect(() => {
-    fetchData();
-  }, [fetchData, childId]);
+    if (authLoading || isFamilyLoading) return;
+
+    if (childIdFromParams) {
+        fetchData(childIdFromParams);
+    } else {
+        // If no childId in params, fetch all children for the context first
+        // to determine the default child to show.
+        setIsLoading(true);
+        if (user) {
+            getChildProfilesForAttribution(user.uid, currentContext).then(profiles => {
+                setAllChildren(profiles);
+                if (profiles.length > 0) {
+                    const firstChildId = profiles[0].id;
+                    router.replace(`${pathname}?childId=${firstChildId}`);
+                    // The navigation will trigger this effect again with childIdFromParams,
+                    // which will then call fetchData with the correct ID.
+                } else {
+                    // No children in this context, stop loading.
+                    setIsLoading(false);
+                    setChild(null);
+                }
+            }).catch(err => {
+                console.error("Error fetching children to determine default:", err);
+                setIsLoading(false);
+            });
+        } else {
+            setIsLoading(false);
+        }
+    }
+}, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchData, router, pathname]);
   
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -392,9 +391,10 @@ function MuralCompletoPageContent() {
   };
 
   const handleProfileUpdate = useCallback(async () => {
-    await fetchData();
+    if (!child) return;
+    await fetchData(child.id);
     toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${child?.name || ''} foram salvas.` });
-  }, [fetchData, toast, child?.name]);
+  }, [fetchData, toast, child]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child) return;
@@ -494,7 +494,7 @@ function MuralCompletoPageContent() {
     setIsResettingProgress(true);
     try {
       await resetChildProgress(user.uid, child.id);
-      await fetchData(); // Re-fetch all data to update the UI
+      await fetchData(child.id); // Re-fetch all data to update the UI
       toast({ title: "Progresso Redefinido!", description: `Os dados de ${child.name} foram zerados com sucesso.` });
     } catch (error: any) {
       console.error("Error resetting child progress:", error);
@@ -535,7 +535,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteMissionInstance(user, missionToDelete.id);
-      await fetchData();
+      if (child) await fetchData(child.id);
       toast({
         title: "Missão Removida",
         description: `A missão "${missionToDelete.title}" foi removida da lista de ${child?.name}.`
@@ -606,7 +606,7 @@ function MuralCompletoPageContent() {
     try {
       const actor = { id: user.uid, name: user.name };
       await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
-      await fetchData();
+      await fetchData(child.id);
       toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error: any) {
       console.error("Error marking reward as redeemed:", error);
@@ -622,7 +622,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await updateChildRewardInstance(instance.id, { status: newStatus });
-      await fetchData();
+      if (child) await fetchData(child.id);
       toast({ 
         title: "Status da Recompensa Atualizado", 
         description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.` 
@@ -640,7 +640,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteChildRewardInstance(user, instanceToManage.id);
-      await fetchData();
+      if (child) await fetchData(child.id);
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
       console.error("Error deleting reward instance:", error);
@@ -663,7 +663,7 @@ function MuralCompletoPageContent() {
     try {
       await deleteSchoolScheduleEntry(entryToDelete.id, user);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
-      fetchData(); // Refetch data to update the UI
+      if (child) await fetchData(child.id); // Refetch data to update the UI
     } catch (error) {
       console.error("Error deleting school schedule entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
@@ -900,7 +900,7 @@ function MuralCompletoPageContent() {
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')</span>
+                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
@@ -962,7 +962,7 @@ function MuralCompletoPageContent() {
           {allChildren.length > 0 && (
               <HeroSelector
                   heroes={allChildren}
-                  selectedHeroId={childId}
+                  selectedHeroId={childIdFromParams}
                   onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
                   showAllOption={false}
               />
@@ -1270,20 +1270,20 @@ function MuralCompletoPageContent() {
                     className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
                   >
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id={`instance-filter-all-${childId}`} />
-                      <Label htmlFor={`instance-filter-all-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                      <RadioGroupItem value="all" id={`instance-filter-all-${childIdFromParams}`} />
+                      <Label htmlFor={`instance-filter-all-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="active" id={`instance-filter-active-${childId}`} />
-                      <Label htmlFor={`instance-filter-active-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
+                      <RadioGroupItem value="active" id={`instance-filter-active-${childIdFromParams}`} />
+                      <Label htmlFor={`instance-filter-active-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childId}`} />
-                      <Label htmlFor={`instance-filter-redeemed-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
+                      <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childIdFromParams}`} />
+                      <Label htmlFor={`instance-filter-redeemed-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childId}`} />
-                      <Label htmlFor={`instance-filter-disabled-${childId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
+                      <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childIdFromParams}`} />
+                      <Label htmlFor={`instance-filter-disabled-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
                     </div>
                   </RadioGroup>
                 </div>
@@ -1340,11 +1340,11 @@ function MuralCompletoPageContent() {
                               Custo: {instance.starsCost} estrelas
                             </div>
                             <p className="text-xs text-muted-foreground">
-                              Atribuída em: getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')
+                              Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
                             </p>
                             {instance.status === 'redeemed' && instance.redeemedAt && (
                               <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')
+                                Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
                               </p>
                             )}
                           </CardContent>
@@ -1619,7 +1619,7 @@ function MuralCompletoPageContent() {
               <CardContent className="space-y-6">
                 <EditChildProfileForm 
                   child={child} 
-                  onProfileUpdate={handleProfileUpdate}
+                  onProfileUpdate={() => fetchData(child.id)}
                 />
                 <Separator className="my-8" />
                 <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
@@ -1688,7 +1688,7 @@ function MuralCompletoPageContent() {
             child={child} 
             isOpen={isAddMissionDialogOpen}
             onOpenChange={setIsAddMissionDialogOpen}
-            onMissionAdded={fetchData}
+            onMissionAdded={() => fetchData(child.id)}
         />
       )}
       
@@ -1704,7 +1704,7 @@ function MuralCompletoPageContent() {
             }
             setIsAssignMissionDialogOpen(isOpen);
           }}
-          onAssigned={fetchData}
+          onAssigned={() => fetchData(child.id)}
         />
       )}
 
@@ -1713,7 +1713,7 @@ function MuralCompletoPageContent() {
             isOpen={isEntryDialogOpen}
             onOpenChange={setIsEntryDialogOpen}
             onSave={() => {
-              fetchData();
+              if (child) fetchData(child.id);
               setIsEntryDialogOpen(false);
               setEntryToEdit(null);
             }}
@@ -1858,7 +1858,3 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
-
-    
-
-    

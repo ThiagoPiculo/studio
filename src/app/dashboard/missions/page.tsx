@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -53,7 +53,7 @@ import Loading from './loading';
 
 function MissionsHubContent({ initialData }: { initialData: { templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] }}) {
   const { user } = useAuth();
-  const { currentContext, availableContexts, currentRole } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -504,36 +504,38 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
 }
 
 export default function MissionsHubPage() {
-  const { user } = useAuth();
-  const { currentContext } = useFamily();
-  const [initialData, setInitialData] = useState<{ templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+    const { user, loading: authLoading } = useAuth();
+    const { currentContext, isLoading: isFamilyLoading } = useFamily();
+    const [initialData, setInitialData] = useState<{ templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] } | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      setIsLoading(true);
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      Promise.all([
-        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getChildProfilesForAttribution(user.uid, currentContext),
-        getMissionInstancesForContext(user.uid, familyIdToQuery)
-      ]).then(([templates, children, instances]) => {
-        setInitialData({ templates, children, instances: instances.filter(i => i.status === 'pending') });
-      }).catch((err) => {
-        console.error("Error fetching initial data for missions page:", err);
-      }).finally(() => {
-        setIsLoading(false);
-      });
-    } else {
-      setIsLoading(false);
+    const fetchData = useCallback(async () => {
+        if (!user) return;
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        try {
+            const [templates, children, instances] = await Promise.all([
+                getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+                getChildProfilesForAttribution(user.uid, currentContext),
+                getMissionInstancesForContext(user.uid, familyIdToQuery)
+            ]);
+            setInitialData({ templates, children, instances: instances.filter(i => i.status === 'pending') });
+        } catch (err) {
+            console.error("Error fetching initial data for missions page:", err);
+        }
+    }, [user, currentContext]);
+
+    useEffect(() => {
+        if (!authLoading && !isFamilyLoading) {
+            fetchData();
+        }
+    }, [authLoading, isFamilyLoading, fetchData]);
+
+    if (authLoading || isFamilyLoading || !initialData) {
+        return <Loading />;
     }
-  }, [user, currentContext]);
 
-  if (isLoading || !initialData) {
-    return <Loading />;
-  }
-
-  return <MissionsHubContent initialData={initialData} />;
+    return (
+        <Suspense fallback={<Loading />}>
+            <MissionsHubContent initialData={initialData} />
+        </Suspense>
+    );
 }
-
-    

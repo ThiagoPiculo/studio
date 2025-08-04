@@ -427,6 +427,8 @@ function HeroesPageContentWrapper() {
     return <Loading />;
   }
   
+  const hasData = allChildren.length > 0 || allMissions.length > 0;
+
   return (
     <HeroesSummary 
       allChildren={allChildren} 

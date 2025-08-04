@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, Suspense } from 'react';
+import { useEffect, useState, useMemo, Suspense, useCallback } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, HelpCircle } from "lucide-react";
@@ -19,8 +19,8 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 
 export function DashboardClientPage() {
-  const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { user, loading: authLoading } = useAuth();
+  const { currentContext, isLoading: isFamilyLoading } = useFamily();
   const searchParams = useSearchParams();
   
   const [isLoading, setIsLoading] = useState(true);
@@ -31,15 +31,13 @@ export function DashboardClientPage() {
   const childIdFromParams = searchParams.get('childId');
   const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
 
-  useEffect(() => {
+  const fetchData = useCallback(async () => {
     if (!user) {
-      setIsLoading(false);
-      return;
+        setIsLoading(false);
+        return;
     }
-
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
+    setIsLoading(true);
+    try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
         const [childData, missionData, rewardData] = await Promise.all([
           getChildProfilesForAttribution(user.uid, currentContext),
@@ -57,16 +55,18 @@ export function DashboardClientPage() {
         } else {
           setSelectedChildId(null);
         }
-
-      } catch (error) {
+    } catch (error) {
         console.error("Error fetching dashboard data:", error);
-      } finally {
+    } finally {
         setIsLoading(false);
-      }
-    };
-    
-    fetchData();
+    }
   }, [user, currentContext, childIdFromParams]);
+
+  useEffect(() => {
+    if (!authLoading && !isFamilyLoading) {
+      fetchData();
+    }
+  }, [authLoading, isFamilyLoading, fetchData]);
 
   const selectedChildData = useMemo(() => {
     if (!selectedChildId) {
@@ -84,7 +84,7 @@ export function DashboardClientPage() {
   }, [selectedChildId, allChildren, missionInstances, rewardTemplates]);
 
 
-  if (isLoading) {
+  if (authLoading || isFamilyLoading || isLoading) {
     return <Loading />;
   }
 
