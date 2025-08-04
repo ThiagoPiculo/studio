@@ -22,13 +22,11 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
   DialogClose,
 } from "@/components/ui/dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -47,25 +45,24 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { Target } from 'lucide-react';
 import { useUserRole } from '@/hooks/useUserRole';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
+import Loading from './loading';
 
-export default function MissionsHubPage() {
+
+function MissionsHubContent({ initialData }: { initialData: { templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] }}) {
+  const { templates, children: initialChildren, instances } = initialData;
   const { user } = useAuth();
   const { currentContext, availableContexts } = useFamily();
   const { canEdit, isLoading: isRoleLoading } = useUserRole();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>(templates);
+  const [children, setChildren] = useState<ChildProfile[]>(initialChildren);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>(instances);
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -76,30 +73,25 @@ export default function MissionsHubPage() {
   const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setIsLoading(false);
-      return;
+  
+  const refetchAllData = useCallback(async () => {
+    if (user) {
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      try {
+          const [templates, children, instances] = await Promise.all([
+            getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, familyIdToQuery)
+          ]);
+          setMissionTemplates(templates);
+          setChildren(children);
+          setMissionInstances(instances.filter(i => i.status === 'pending'));
+      } catch (err) {
+        console.error("Error refetching instances:", err)
+      }
     }
-    setIsLoading(true);
-    setError(null);
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-
-    Promise.all([
-      getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-      getChildProfilesForAttribution(user.uid, currentContext),
-      getMissionInstancesForContext(user.uid, familyIdToQuery)
-    ]).then(([templates, children, instances]) => {
-      setMissionTemplates(templates);
-      setChildren(children);
-      setMissionInstances(instances.filter(i => i.status === 'pending')); // Only care about active assignments
-    }).catch((err) => {
-      console.error("Error fetching missions data:", err);
-      setError("Não foi possível carregar as missões. Tente atualizar a página.");
-    }).finally(() => setIsLoading(false));
   }, [user, currentContext]);
-
+  
   const childrenMap = useMemo(() => {
     return new Map(children.map(child => [child.id, child]));
   }, [children]);
@@ -185,24 +177,11 @@ export default function MissionsHubPage() {
     setIsAssignDialogOpen(true);
   };
 
-  const refetchAllData = () => {
-    if (user) {
-      setIsLoading(true);
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      Promise.all([
-        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getChildProfilesForAttribution(user.uid, currentContext),
-        getMissionInstancesForContext(user.uid, familyIdToQuery)
-      ]).then(([templates, children, instances]) => {
-        setMissionTemplates(templates);
-        setChildren(children);
-        setMissionInstances(instances.filter(i => i.status === 'pending'));
-      }).catch(err => console.error("Error refetching instances:", err))
-      .finally(() => setIsLoading(false));
-    }
-  };
-
   const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
+
+  if (isRoleLoading) {
+      return <Loading />
+  }
 
   return (
     <div className="space-y-8">
@@ -297,14 +276,7 @@ export default function MissionsHubPage() {
           <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading || isRoleLoading ? (
-            <div className="flex justify-center items-center py-10">
-              <Loader2 className="h-12 w-12 animate-spin text-primary" />
-              <p className="ml-3 text-muted-foreground">Carregando missões...</p>
-            </div>
-          ) : error ? (
-            <p className="text-destructive text-center py-10">{error}</p>
-          ) : filteredTemplates.length === 0 ? (
+          {filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
               <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
               <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
@@ -529,4 +501,37 @@ export default function MissionsHubPage() {
       )}
     </div>
   );
+}
+
+export default function MissionsHubPage() {
+  const { user } = useAuth();
+  const { currentContext } = useFamily();
+  const [initialData, setInitialData] = useState<{ templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] } | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      setIsLoading(true);
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      Promise.all([
+        getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+        getChildProfilesForAttribution(user.uid, currentContext),
+        getMissionInstancesForContext(user.uid, familyIdToQuery)
+      ]).then(([templates, children, instances]) => {
+        setInitialData({ templates, children, instances: instances.filter(i => i.status === 'pending') });
+      }).catch((err) => {
+        console.error("Error fetching initial data for missions page:", err);
+      }).finally(() => {
+        setIsLoading(false);
+      });
+    } else {
+      setIsLoading(false);
+    }
+  }, [user, currentContext]);
+
+  if (isLoading || !initialData) {
+    return <Loading />;
+  }
+
+  return <MissionsHubContent initialData={initialData} />;
 }
