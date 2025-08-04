@@ -383,17 +383,20 @@ function HeroesPageContentWrapper() {
   const { user, loading: authLoading } = useAuth();
   const { currentContext, isLoading: isFamilyLoading } = useFamily();
   
-  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [allMissions, setAllMissions] = useState<MissionInstance[]>([]);
-  const [allRewards, setAllRewards] = useState<RewardTemplate[]>([]);
-  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [initialData, setInitialData] = useState<{
+    children: ChildProfile[];
+    missions: MissionInstance[];
+    rewards: RewardTemplate[];
+  } | null>(null);
+
+  const [isLoading, setIsLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     if (!user) {
-        setIsLoadingData(false);
-        return;
+      setIsLoading(false);
+      return;
     }
-    setIsLoadingData(true);
+    setIsLoading(true);
     
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
@@ -403,13 +406,15 @@ function HeroesPageContentWrapper() {
           getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
         ]);
         
-        setAllChildren(childrenData);
-        setAllMissions(missionData);
-        setAllRewards(rewardData);
+        setInitialData({
+            children: childrenData,
+            missions: missionData,
+            rewards: rewardData
+        });
     } catch (error) {
         console.error("Error fetching dashboard data:", error);
     } finally {
-        setIsLoadingData(false);
+        setIsLoading(false);
     }
   }, [user, currentContext]);
   
@@ -419,22 +424,17 @@ function HeroesPageContentWrapper() {
     }
   }, [fetchData, authLoading, isFamilyLoading]);
 
-  const onCodeRegenerated = () => {
-    fetchData(); // Refetch all data when a code is regenerated
-  };
 
-  if (authLoading || isFamilyLoading || isLoadingData) {
+  if (authLoading || isFamilyLoading || isLoading || !initialData) {
     return <Loading />;
   }
   
-  const hasData = allChildren.length > 0 || allMissions.length > 0;
-
   return (
     <HeroesSummary 
-      allChildren={allChildren} 
-      missionInstances={allMissions} 
-      rewardTemplates={allRewards} 
-      onCodeRegenerated={onCodeRegenerated}
+      allChildren={initialData.children}
+      missionInstances={initialData.missions} 
+      rewardTemplates={initialData.rewards}
+      onCodeRegenerated={fetchData}
     />
   );
 }
