@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -59,10 +58,9 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
-type Activity = 
+type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, xp: number, actorId?: string, actorName?: string } })
     | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
-
 
 function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstance, onManage: (instance: MissionInstance) => void, onDelete: (instance: MissionInstance) => void }) {
     const categoryDetails = missionCategories.find(cat => cat.id === instance.category);
@@ -105,7 +103,7 @@ function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstan
                             period === 'Tarde' && "text-orange-700 dark:text-orange-400",
                             period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
                         )}>
-                            <PeriodIcon className={cn("h-4 w-4 mr-1.5 shrink-0", 
+                            <PeriodIcon className={cn("h-4 w-4 mr-1.5 shrink-0",
                                 period === 'Manhã' && "text-yellow-500",
                                 period === 'Tarde' && "text-orange-500",
                                 period === 'Noite' && "text-indigo-500"
@@ -130,7 +128,7 @@ function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstan
                         ) : instance.dueDate && (
                              <div className="flex items-center font-medium text-destructive/80">
                                 <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')</span>
+                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
                             </div>
                         )}
                     </div>
@@ -169,6 +167,67 @@ function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstan
     );
 }
 
+function BadgeCard({ badge, child, badgeProgress, isCalculatingProgress, onClick }: { badge: BadgeType, child: ChildProfile, badgeProgress: any, isCalculatingProgress: boolean, onClick: () => void }) {
+  const isEarned = child.earnedBadgeIds?.includes(badge.id);
+  const hasProgress = !!badge.progressType && !!badge.goal;
+  let currentProgress = 0;
+  if (hasProgress && !isEarned) {
+      switch (badge.progressType) {
+          case 'singleMissionStreak': currentProgress = badgeProgress.longestSingleMissionStreak; break;
+          case 'perfectStreak': currentProgress = badgeProgress.longestPerfectStreak; break;
+          case 'stars': currentProgress = child.stars; break;
+          case 'level': currentProgress = child.level; break;
+      }
+  }
+  const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
+
+  const getProgressTypeLabel = (type: BadgeType['progressType']): string => {
+    switch (type) {
+      case 'singleMissionStreak':
+      case 'perfectStreak': return 'dias';
+      case 'stars': return 'estrelas';
+      case 'level': return 'nível';
+      default: return '';
+    }
+  };
+
+  return (
+      <div onClick={onClick} className={cn("flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden", isEarned ? 'shadow-lg bg-card' : 'bg-muted/30')}>
+          {isEarned ? (
+              <Medal className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg" style={{ color: badge.color }} />
+          ) : (
+              <Lock className="absolute top-3 right-3 h-5 w-5 text-destructive" />
+          )}
+          <div className={cn("w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative", !isEarned && 'bg-gray-400 dark:bg-gray-700')} style={isEarned ? { backgroundColor: badge.color } : {}}>
+              <badge.icon className={cn("h-9 w-9 text-white", !isEarned && "opacity-30")} />
+          </div>
+          <div className="flex-grow h-24 flex flex-col justify-center w-full">
+              <p className={cn("text-sm font-semibold", isEarned ? 'text-foreground' : 'text-muted-foreground')}>{badge.title}</p>
+              {hasProgress && !isEarned ? (
+                  <div className="mt-2 space-y-1">
+                      {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
+                          <>
+                              <div className="h-2 w-full animate-pulse bg-muted-foreground/20 rounded-full" />
+                              <div className="h-3 w-1/2 mx-auto animate-pulse bg-muted-foreground/20 rounded-full" />
+                          </>
+                      ) : (
+                          <>
+                              <Progress value={progressPercentage} className="h-2" />
+                              <p className="text-xs text-muted-foreground">{currentProgress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})</p>
+                          </>
+                      )}
+                  </div>
+              ) : (
+                  <p className={cn("text-xs text-muted-foreground mt-1", !isEarned && "opacity-70")}>
+                      {badge.description}
+                  </p>
+              )}
+          </div>
+      </div>
+  );
+}
+
+
 function MuralCompletoPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -176,9 +235,9 @@ function MuralCompletoPageContent() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
-  
+
   const childIdFromParams = searchParams.get('childId');
-  
+
   // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
@@ -187,7 +246,7 @@ function MuralCompletoPageContent() {
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
-  
+
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -195,9 +254,9 @@ function MuralCompletoPageContent() {
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
   const [isMoving, setIsMoving] = useState(false);
-  
+
   const activeTab = searchParams.get('tab') || 'overview';
-  
+
   const handleTabChange = (newTab: string) => {
     const current = new URLSearchParams(searchParams.toString());
     current.set('tab', newTab);
@@ -211,7 +270,7 @@ function MuralCompletoPageContent() {
   const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
   const [isAssignMissionDialogOpen, setIsAssignMissionDialogOpen] = useState(false);
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
-  
+
   // Reward-specific states
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
@@ -222,7 +281,7 @@ function MuralCompletoPageContent() {
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<SchoolScheduleEntry | null>(null);
   const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
-  
+
   // Badge states
   const [selectedBadge, setSelectedBadge] = useState<BadgeType | null>(null);
   const [isResettingProgress, setIsResettingProgress] = useState(false);
@@ -255,7 +314,7 @@ function MuralCompletoPageContent() {
         setIsLoading(false);
         return;
     }
-    
+
     setIsLoading(true);
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
@@ -269,7 +328,7 @@ function MuralCompletoPageContent() {
             getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
         ]);
-        
+
         setAllChildren(allProfiles);
         setCollaborators(fetchedCollaborators);
         setMemberships(fetchedMemberships);
@@ -285,7 +344,7 @@ function MuralCompletoPageContent() {
             return timeB - timeA;
         }));
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
-      
+
     } catch (error) {
       console.error("Error fetching child data:", error);
       toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados. Tente novamente.", variant: "destructive" });
@@ -327,13 +386,13 @@ function MuralCompletoPageContent() {
         }
     }
 }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchData, router, pathname]);
-  
+
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
       setIsCalculatingProgress(false);
       return;
     }
-    
+
     setIsCalculatingProgress(true);
 
     // SINGLE MISSION STREAK CALC
@@ -396,7 +455,7 @@ function MuralCompletoPageContent() {
         longestPerfectStreak: longestPerfectStreak,
         missionWithLongestStreak: missionWithStreak,
     });
-    
+
     setIsCalculatingProgress(false);
   }, [missionInstances]);
 
@@ -408,7 +467,7 @@ function MuralCompletoPageContent() {
 
     let totalCompletedOccurrences = 0;
     let totalStarsEarned = 0;
-    
+
     missionInstances.forEach(m => {
         if (m.completionLog) {
             Object.values(m.completionLog).forEach(logEntry => {
@@ -432,7 +491,7 @@ function MuralCompletoPageContent() {
       earnedBadges: earnedBadgesCount,
     };
   }, [child, missionInstances, childRewards]);
-  
+
   const collaboratorsMap = useMemo(() => {
     const map = new Map(collaborators.map(c => [c.uid, c]));
     if (user && !map.has(user.uid)) {
@@ -440,7 +499,7 @@ function MuralCompletoPageContent() {
     }
     return map;
   }, [collaborators, user]);
-  
+
   const getMissionTypeLabel = (mission: MissionInstance): string => {
     if (!mission.isRecurring) return "única";
     if (mission.recurrenceRule?.freq === 'DAILY') return "diária";
@@ -454,10 +513,10 @@ function MuralCompletoPageContent() {
 
     const redeemedRewards: Activity[] = childRewards
       .filter(r => r.status === 'redeemed' && r.redeemedAt)
-      .map(r => ({ 
-          ...r, 
-          type: 'reward' as const, 
-          completedAt: r.redeemedAt!, 
+      .map(r => ({
+          ...r,
+          type: 'reward' as const,
+          completedAt: r.redeemedAt!,
           actorId: r.actorId,
           actorName: r.actorId ? collaboratorsMap.get(r.actorId)?.name : child?.name
       }));
@@ -477,14 +536,14 @@ function MuralCompletoPageContent() {
     );
 
     const allActivities: Activity[] = [...redeemedRewards, ...completedMissions];
-    
+
     allActivities.sort((a, b) => {
         const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
         const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
-        
+
         const dateA = timeA ? new Date(timeA as any).getTime() : 0;
         const dateB = timeB ? new Date(timeB as any).getTime() : 0;
-        
+
         return dateB - dateA;
     });
 
@@ -514,7 +573,7 @@ function MuralCompletoPageContent() {
       toast({
         title: "Nova Chave Secreta Gerada!",
         description: `A nova chave para ${child.name} é ${newAccessCode}. Guarde em um local seguro!`,
-        duration: 10000, 
+        duration: 10000,
       });
     } catch (error) {
       console.error("Error regenerating access code:", error);
@@ -537,7 +596,7 @@ function MuralCompletoPageContent() {
       setIsDeleting(false);
     }
   };
-  
+
   const handleManageInAgenda = (instance: MissionInstance) => {
     // If the mission has no schedule, open the edit dialog instead.
     if (!instance.isRecurring && !instance.dueDate) {
@@ -581,17 +640,17 @@ function MuralCompletoPageContent() {
     if (!targetDate) {
         targetDate = getDateObject(instance.startDate) || getDateObject(instance.dueDate);
     }
-    
+
     if (!targetDate) {
         toast({ title: 'Data não encontrada', description: 'Não foi possível determinar a data para esta missão.', variant: 'destructive' });
         return;
     }
-    
+
     const year = targetDate.getFullYear();
     const month = (targetDate.getMonth() + 1).toString().padStart(2, '0');
     const day = targetDate.getDate().toString().padStart(2, '0');
     const dateString = `${year}-${month}-${day}`;
-    
+
     const popoverId = `${instance.id}-${dateString}`;
 
     router.push(`/dashboard/agenda?focus_date=${dateString}&open_popover=${popoverId}`);
@@ -622,7 +681,7 @@ function MuralCompletoPageContent() {
     try {
       const newFamilyId = selectedMoveContext === 'my-space' ? null : selectedMoveContext;
       await moveChildToNewContext(child.id, newFamilyId, user.uid);
-      
+
       toast({
         title: 'Heroi Movido com Sucesso!',
         description: `${child.name} agora pertence a um novo espaço.`,
@@ -638,12 +697,12 @@ function MuralCompletoPageContent() {
     }
   };
 
-  
+
   const handleDeleteMissionInstance = async () => {
     if (!missionToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteMissionInstance(user, missionToDelete.id);
+      await deleteMissionInstance(missionToDelete.id);
       if (child) await fetchData(child.id);
       toast({
         title: "Missão Removida",
@@ -659,14 +718,14 @@ function MuralCompletoPageContent() {
   };
 
   const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; 
+    if (!name) return "MH";
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
   const getCategoryDetails = (categoryId: ChildRewardInstance['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
-  
+
   const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
     return missionCategories.find(cat => cat.id === categoryId);
   };
@@ -674,13 +733,13 @@ function MuralCompletoPageContent() {
 
   const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
-      case 'active': return 'default'; 
-      case 'redeemed': return 'secondary'; 
-      case 'disabled': return 'outline'; 
+      case 'active': return 'default';
+      case 'redeemed': return 'secondary';
+      case 'disabled': return 'outline';
       default: return 'outline';
     }
   };
-  
+
   const getRewardStatusText = (status: ChildRewardInstance['status']): string => {
     switch (status) {
       case 'active': return 'Ativa';
@@ -689,7 +748,7 @@ function MuralCompletoPageContent() {
       default: return 'Desconhecido';
     }
   };
-  
+
   const getMissionStatusBadgeVariant = (status: MissionInstance['status']): "default" | "secondary" | "destructive" => {
     switch (status) {
         case 'pending': return 'default';
@@ -732,9 +791,9 @@ function MuralCompletoPageContent() {
     try {
       await updateChildRewardInstance(instance.id, { status: newStatus });
       if (child) await fetchData(child.id);
-      toast({ 
-        title: "Status da Recompensa Atualizado", 
-        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.` 
+      toast({
+        title: "Status da Recompensa Atualizado",
+        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.`
       });
     } catch (error) {
       console.error(`Error toggling reward instance status:`, error);
@@ -743,12 +802,12 @@ function MuralCompletoPageContent() {
       setIsDeleting(false);
     }
   };
-  
+
   const handleDeleteInstance = async () => {
     if (!instanceToManage || !user) return;
     setIsDeleting(true);
     try {
-      await deleteChildRewardInstance(user, instanceToManage.id);
+      await deleteChildRewardInstance(instanceToManage.id);
       if (child) await fetchData(child.id);
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
@@ -789,7 +848,7 @@ function MuralCompletoPageContent() {
     }
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
-  
+
   const filteredMissions = useMemo(() => {
     if (!missionInstances) return [];
     return missionInstances
@@ -803,27 +862,13 @@ function MuralCompletoPageContent() {
         // Pending missions first
         if (a.status === 'pending' && b.status !== 'pending') return -1;
         if (a.status !== 'pending' && b.status === 'pending') return 1;
-        
+
         // Then by date
         const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
         const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
         return dateA.getTime() - dateB.getTime();
       });
   }, [missionInstances, recurrenceFilter]);
-
-  const getProgressTypeLabel = (type: BadgeType['progressType']): string => {
-    switch (type) {
-      case 'singleMissionStreak':
-      case 'perfectStreak':
-        return 'dias';
-      case 'stars':
-        return 'estrelas';
-      case 'level':
-        return 'nível';
-      default:
-        return '';
-    }
-  };
 
   const moveTargetContexts = useMemo(() => {
     return availableContexts.filter(c => c.id !== (child?.familyId || 'my-space'));
@@ -832,11 +877,11 @@ function MuralCompletoPageContent() {
   const hasRecess = useMemo(() => {
     return schoolSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
   }, [schoolSchedule]);
-  
+
   if (isLoading || isFamilyLoading) {
     return <Loading />;
   }
-  
+
   if (!child && !isLoading) {
      return (
         <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
@@ -853,12 +898,12 @@ function MuralCompletoPageContent() {
         </Card>
     );
   }
-  
+
   // Safeguard against rendering before child data is available.
   if (!child) return <Loading />;
 
   const age = child.birthDate ? calculateAge(child.birthDate as any) : null;
-  
+
   return (
     <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
@@ -903,10 +948,10 @@ function MuralCompletoPageContent() {
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
-                            onClick={handleRegenerateAccessCode} 
+                            onClick={handleRegenerateAccessCode}
                             disabled={isRegeneratingCode || !canEdit}
                             className="shadow-sm h-9 w-9"
                           >
@@ -926,8 +971,8 @@ function MuralCompletoPageContent() {
                   <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
               ) : (
                   <Avatar
-                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-offset-background"
-                      style={{ '--ring-color': child.color } as React.CSSProperties}
+                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
+                      style={{'--ring-color': child.color } as React.CSSProperties}
                   >
                       <AvatarImage src={child.avatar} alt={child.name} />
                       <AvatarFallback
@@ -945,7 +990,7 @@ function MuralCompletoPageContent() {
                   </CardDescription>
               </div>
             </div>
-            
+
             <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
               <span className="text-sm text-muted-foreground align-middle">
                   Chave Secreta:
@@ -956,10 +1001,10 @@ function MuralCompletoPageContent() {
               <TooltipProvider>
                   <Tooltip>
                   <TooltipTrigger asChild>
-                      <Button 
-                      variant="ghost" 
+                      <Button
+                      variant="ghost"
                       size="icon"
-                      onClick={handleRegenerateAccessCode} 
+                      onClick={handleRegenerateAccessCode}
                       disabled={isRegeneratingCode || !canEdit}
                       className="shadow-sm h-9 w-9"
                       >
@@ -972,7 +1017,7 @@ function MuralCompletoPageContent() {
                   </Tooltip>
               </TooltipProvider>
             </div>
-            
+
             <div className="mt-4 flex flex-col gap-4 font-semibold">
                 <div className="flex items-end justify-between gap-4">
                       <div className="flex items-center gap-4 text-amber-600 dark:text-amber-400">
@@ -1001,7 +1046,7 @@ function MuralCompletoPageContent() {
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Medalhas</span></TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2" disabled={!canEdit}><Edit3 className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Editar Perfil</span></TabsTrigger>
         </TabsList>
-        
+
         <div className="mt-4">
           <TabsContent value="overview" className="space-y-6">
              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -1046,7 +1091,7 @@ function MuralCompletoPageContent() {
                   </CardContent>
                 </Card>
               </div>
-            
+
             <Card className="shadow-md">
                 <CardHeader>
                     <CardTitle>Atividades Recentes</CardTitle>
@@ -1064,7 +1109,7 @@ function MuralCompletoPageContent() {
                                 const completedDate = getDateObject(activity.type === 'mission' ? activity.completionLogEntry?.completedAt : activity.completedAt) || new Date();
                                 const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
                                 const isActorTheChild = activity.actorId === child.id;
-                                
+
                                 let actorRoleLabel = '';
                                 if (!isActorTheChild && activity.actorId) {
                                     const membership = memberships.find(m => m.userId === activity.actorId);
@@ -1216,13 +1261,13 @@ function MuralCompletoPageContent() {
                   <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                     <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                     <p className="text-lg text-muted-foreground">
-                      {childRewards.length === 0 
+                      {childRewards.length === 0
                         ? `${child.name} ainda não tem recompensas atribuídas.`
                         : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
                       }
                     </p>
                     <p className="text-sm text-muted-foreground mt-1">
-                      {childRewards.length === 0 
+                      {childRewards.length === 0
                         ? 'Vá ao catálogo para atribuir algumas!'
                         : 'Tente um filtro diferente ou verifique o catálogo.'
                       }
@@ -1295,8 +1340,8 @@ function MuralCompletoPageContent() {
                                     </DropdownMenuItem>
                                   )}
                                   <DropdownMenuSeparator />
-                                  <DropdownMenuItem 
-                                    onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }} 
+                                  <DropdownMenuItem
+                                    onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
                                     className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
                                     disabled={isDeleting}
                                   >
@@ -1365,12 +1410,8 @@ function MuralCompletoPageContent() {
                                                         </div>
                                                         {canEdit && (
                                                           <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={()={() => handleEditEntry(entry)}}>
-                                                              <Edit className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}>
-                                                              <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}><Edit className="h-4 w-4" /></Button>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}><Trash2 className="h-4 w-4" /></Button>
                                                           </div>
                                                         )}
                                                     </div>
@@ -1409,57 +1450,11 @@ function MuralCompletoPageContent() {
                         <div>
                             <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                                {category.items.map((badge) => {
-                                    const isEarned = child.earnedBadgeIds?.includes(badge.id);
-                                    const hasProgress = !!badge.progressType && !!badge.goal;
-                                    let currentProgress = 0;
-                                    if (hasProgress && !isEarned) {
-                                      switch (badge.progressType) {
-                                        case 'singleMissionStreak': currentProgress = badgeProgress.longestSingleMissionStreak; break;
-                                        case 'perfectStreak': currentProgress = badgeProgress.longestPerfectStreak; break;
-                                        case 'stars': currentProgress = child.stars; break;
-                                        case 'level': currentProgress = child.level; break;
-                                      }
-                                    }
-                                    const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
-
-                                    return (
-                                        <DialogTrigger asChild key={badge.id}>
-                                            <div onClick={() => setSelectedBadge(badge)} className={cn( "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden", isEarned ? 'shadow-lg bg-card' : 'bg-muted/30' )}>
-                                                {isEarned ? (
-                                                <Medal className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg" style={{ color: badge.color }} />
-                                                ) : (
-                                                <Lock className="absolute top-3 right-3 h-5 w-5 text-destructive" />
-                                                )}
-                                                <div className={cn( "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative", !isEarned && 'bg-gray-400 dark:bg-gray-700' )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                                                    <badge.icon className={cn( "h-9 w-9 text-white", !isEarned && "opacity-30" )} />
-                                                </div>
-                                                <div className="flex-grow h-24 flex flex-col justify-center w-full">
-                                                    <p className={cn( "text-sm font-semibold", isEarned ? 'text-foreground' : 'text-muted-foreground' )}>{badge.title}</p>
-                                                    {hasProgress && !isEarned ? (
-                                                    <div className="mt-2 space-y-1">
-                                                        {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
-                                                        <>
-                                                            <div className="h-2 w-full animate-pulse bg-muted-foreground/20 rounded-full" />
-                                                            <div className="h-3 w-1/2 mx-auto animate-pulse bg-muted-foreground/20 rounded-full" />
-                                                        </>
-                                                        ) : (
-                                                        <>
-                                                            <Progress value={progressPercentage} className="h-2" />
-                                                            <p className="text-xs text-muted-foreground">{currentProgress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})</p>
-                                                        </>
-                                                        )}
-                                                    </div>
-                                                    ) : (
-                                                    <p className={cn( "text-xs text-muted-foreground mt-1", !isEarned && "opacity-70" )}>
-                                                        {badge.description}
-                                                    </p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </DialogTrigger>
-                                    );
-                                })}
+                                {category.items.map((badge) => (
+                                    <DialogTrigger asChild key={badge.id}>
+                                       <BadgeCard badge={badge} child={child} badgeProgress={badgeProgress} isCalculatingProgress={isCalculatingProgress} onClick={() => setSelectedBadge(badge)} />
+                                    </DialogTrigger>
+                                ))}
                             </div>
                         </div>
                       </Fragment>
@@ -1519,7 +1514,7 @@ function MuralCompletoPageContent() {
                 <ScrollArea className="max-h-[60vh] -mx-6 px-6">
                     <div className="space-y-4 text-sm text-muted-foreground pb-4 pr-1">
                         <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
-                        
+
                         <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
                         <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
                         <ul className="list-disc pl-5 space-y-1">
@@ -1543,7 +1538,7 @@ function MuralCompletoPageContent() {
                             <li><strong>Heroi em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
                             <li><strong>Campeão dos Herois:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
                         </ul>
-                        
+
                         <h4 className="font-bold text-foreground pt-2">Exploração e Diversidade</h4>
                         <p>Estas incentivam a curiosidade e a versatilidade, motivando a criança a sair da zona de conforto e experimentar novas responsabilidades.</p>
                         <ul className="list-disc pl-5 space-y-1">
@@ -1569,8 +1564,8 @@ function MuralCompletoPageContent() {
                 <CardDescription>Atualize as informações do Mini Heroi e configurações.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <EditChildProfileForm 
-                  child={child} 
+                <EditChildProfileForm
+                  child={child}
                   onProfileUpdate={() => fetchData(child.id)}
                 />
                 <Separator className="my-8" />
@@ -1634,16 +1629,16 @@ function MuralCompletoPageContent() {
           </TabsContent>
         </div>
       </Tabs>
-      
+
       {child && (
-        <AddMissionDialog 
-            child={child} 
+        <AddMissionDialog
+            child={child}
             isOpen={isAddMissionDialogOpen}
             onOpenChange={setIsAddMissionDialogOpen}
             onMissionAdded={() => fetchData(child.id)}
         />
       )}
-      
+
       {instanceToEdit && (
         <AssignMissionDialog
           template={null}
@@ -1651,7 +1646,7 @@ function MuralCompletoPageContent() {
           occurrenceDate={new Date()}
           isOpen={isAssignMissionDialogOpen}
           onOpenChange={(isOpen) => {
-            if (!isOpen) { 
+            if (!isOpen) {
               setInstanceToEdit(null);
             }
             setIsAssignMissionDialogOpen(isOpen);
@@ -1733,9 +1728,9 @@ function MuralCompletoPageContent() {
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction 
-                onClick={handleMarkAsRedeemed} 
-                className="bg-green-600 hover:bg-green-700" 
+              <AlertDialogAction
+                onClick={handleMarkAsRedeemed}
+                className="bg-green-600 hover:bg-green-700"
                 disabled={isDeleting || child.stars < instanceToManage.starsCost}
               >
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
@@ -1745,7 +1740,7 @@ function MuralCompletoPageContent() {
           </AlertDialogContent>
         </AlertDialog>
       )}
-      
+
       {/* Delete Instance Confirmation Dialog */}
       {instanceToManage && isDeleteInstanceConfirmOpen && (
          <AlertDialog open={isDeleteInstanceConfirmOpen} onOpenChange={setIsDeleteInstanceConfirmOpen}>
