@@ -2,16 +2,19 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regra geral: por padrão, ninguém pode ler ou escrever.
-    match /{allPaths=**} {
-      allow read, write: if false;
+    // Regras de segurança para avatares dos Mini-Herois
+    // Permite que um usuário autenticado escreva na sua própria pasta de avatares.
+    // A leitura é pública para que qualquer pessoa possa ver os avatares.
+    match /avatars/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Permite que qualquer usuário autenticado escreva na pasta de avatares.
-    // A segurança de qual usuário pode escrever em qual subpasta é controlada
-    // pela lógica da aplicação (Server Action ou client-side code).
-    match /avatars/{userId}/{childId}/{allPaths=**} {
-      allow write: if request.auth != null;
+    // Regras de segurança para avatares dos Usuários (pais/responsáveis)
+    // Mesma lógica: usuário autenticado pode escrever no seu próprio diretório.
+    match /user_avatars/{userId}/{allPaths=**} {
+      allow read;
+      allow write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
