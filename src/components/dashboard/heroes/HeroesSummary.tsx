@@ -213,8 +213,20 @@ export function HeroesSummary() {
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
-                    <Link href={`/dashboard/mural?childId=${child.id}`} className="absolute top-2 right-2 z-10">
+                  <div className="flex items-center justify-end gap-1 absolute top-2 right-2 z-10">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                           <Link href={`/dashboard/mural?childId=${child.id}&tab=edit`}>
+                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
+                               <Settings className="h-4 w-4"/>
+                             </Button>
+                           </Link>
+                        </TooltipTrigger>
+                        <TooltipContent><p>Editar Perfil do Herói</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Link href={`/dashboard/mural?childId=${child.id}`}>
                       <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
                           Painel de Progresso <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
