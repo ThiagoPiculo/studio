@@ -17,7 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { storage } from "@/lib/firebase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2, Shield } from "lucide-react";
@@ -266,27 +268,28 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   }
 
 
-  const handleCropAndUpload = async () => {
+const handleCropAndUpload = async () => {
     if (!user || !crop || !imgRef.current) return;
-    
+
     setIsUploadingAvatar(true);
     setImageSrc(null); // Close the modal
 
     try {
         const croppedBlob = await getCroppedImg(imgRef.current, crop);
-        const { newUrl } = await uploadAvatarAndUpdateProfile(child.id, croppedBlob, user.uid);
+        const storageRef = ref(storage, `avatars/${user.uid}/${child.id}/avatar.png`);
+        await uploadBytes(storageRef, croppedBlob);
+        const newUrl = await getDownloadURL(storageRef);
+
+        await updateChildAvatarUrl(child.id, newUrl);
+
         setAvatarPreview(newUrl); // Optimistic update
         toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
         onProfileUpdate(); // Re-fetch other data
     } catch (error) {
         console.error("Error uploading avatar:", error);
-        let description = "Não foi possível salvar o novo avatar. Tente novamente.";
-        if (error instanceof Error && (error.message.includes('storage/unauthorized') || error.message.includes('CORS'))) {
-            description = "Falha no upload. Verifique as permissões do CORS no seu bucket do Cloud Storage.";
-        }
         toast({
             title: "Erro no Upload",
-            description,
+            description: "Não foi possível salvar o novo avatar. Tente novamente.",
             variant: "destructive",
         });
     } finally {
@@ -489,7 +492,6 @@ const handleRemoveAvatar = async () => {
         </DialogContent>
       </Dialog>
       
-      {/* This input is now outside the form to prevent submission */}
       <input
         ref={fileInputRef}
         type="file"

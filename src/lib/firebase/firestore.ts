@@ -162,6 +162,14 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
   return convertTimestampsInObject({ uid: userDoc.id, ...userDoc.data() }) as UserProfile;
 };
 
+export const updateChildAvatarUrl = async (childId: string, avatarUrl: string): Promise<void> => {
+    const childRef = doc(db, 'children', childId);
+    await updateDoc(childRef, {
+        avatar: avatarUrl,
+        updatedAt: serverTimestamp(),
+    });
+};
+
 export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blob): Promise<{ newUrl: string }> => {
     if (!userId) throw new Error("User ID is required.");
     if (!file) throw new Error("File is required.");
@@ -296,61 +304,6 @@ export const addChildProfile = async (
 
 // Helper function to delay execution
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
-export const uploadAvatarAndUpdateProfile = async (childId: string, file: Blob, userId: string): Promise<{ newUrl: string }> => {
-    if (!childId) throw new Error("Child ID is required.");
-    if (!userId) throw new Error("User ID is required.");
-    if (!file) throw new Error("File is required.");
-    
-    // Path for the original image
-    const originalPath = `avatars/${userId}/${childId}/avatar.png`;
-    const storageRef = ref(storage, originalPath);
-    
-    // Upload the original file
-    await uploadBytes(storageRef, file, { contentType: 'image/png' });
-    
-    // Define the path for the resized image
-    const resizedPath = `avatars/${userId}/${childId}/avatar_200x200.png`;
-    const resizedRef = ref(storage, resizedPath);
-    let downloadURL: string | null = null;
-    const maxRetries = 10;
-    const initialDelay = 1000; // 1 second
-
-    // Poll for the resized image
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            await getMetadata(resizedRef); // Check if the file exists
-            downloadURL = await getDownloadURL(resizedRef);
-            break; // Exit loop if successful
-        } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
-                // File doesn't exist yet, wait and retry
-                if (i === maxRetries - 1) {
-                    console.warn("Resized image not found after all retries. Falling back to original image.");
-                    // If all retries fail, fall back to the original image URL
-                    downloadURL = await getDownloadURL(storageRef);
-                    break;
-                }
-                await delay(initialDelay * (i + 1)); // Exponential backoff
-            } else {
-                throw error; // Rethrow other errors
-            }
-        }
-    }
-
-    if (!downloadURL) {
-        throw new Error("Failed to get a download URL for the avatar.");
-    }
-
-    // Update the child's profile with the (preferably resized) URL
-    const childRef = doc(db, 'children', childId);
-    await updateDoc(childRef, {
-      avatar: downloadURL,
-      updatedAt: serverTimestamp(),
-    });
-    
-    return { newUrl: downloadURL };
-};
 
 export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
   const docRef = doc(db, 'children', childId);
@@ -2487,6 +2440,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+
 
 
 
