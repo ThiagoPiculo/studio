@@ -174,7 +174,7 @@ export function HeroesSummary() {
                     showAllOption={true}
                 />
             )}
-            <Link href="/dashboard/onboarding" className="sm:w-auto">
+            <Link href="/dashboard/novo-heroi" className="sm:w-auto">
                 <Button className="shadow-md w-full"><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
             </Link>
           </div>

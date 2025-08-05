@@ -70,7 +70,7 @@ export function AppSidebar() {
                     
                     <SidebarGroupLabel>Meus Mini Herois</SidebarGroupLabel>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/onboarding" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/onboarding')}>
+                        <SidebarMenuButton href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/novo-heroi')}>
                             <UserPlus className="text-chart-2" />
                             <span>Novo Mini Heroi</span>
                         </SidebarMenuButton>

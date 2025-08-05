@@ -889,7 +889,7 @@ function MuralCompletoPageContent() {
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Nenhum Herói Cadastrado Ainda!</h3>
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
-              <Link href="/dashboard/onboarding">
+              <Link href="/dashboard/novo-heroi">
                   <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
                       <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Herói
                   </Button>
@@ -930,7 +930,7 @@ function MuralCompletoPageContent() {
                   showAllOption={false}
               />
           )}
-          <Link href="/dashboard/onboarding">
+          <Link href="/dashboard/novo-heroi">
               <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
           </Link>
         </div>

@@ -270,7 +270,7 @@ export default function AchievementsPage() {
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 <p>Nenhum herói encontrado neste contexto para exibir as medalhas.</p>
-                <Link href="/dashboard/onboarding" passHref>
+                <Link href="/dashboard/novo-heroi" passHref>
                   <Button variant="link" className="p-0 h-auto mt-2">
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Vá para Adicionar Heroi para começar.
