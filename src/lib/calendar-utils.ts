@@ -1,4 +1,5 @@
 
+
 import type { MissionInstance, MissionTemplate, RecurrenceRule, Weekday } from '@/lib/types';
 import { missionCategories, weekdayLabels, allWeekdays } from '@/lib/types';
 import { Timestamp } from 'firebase/firestore';
@@ -28,9 +29,13 @@ const weekdayToGetDay: Record<Weekday, number> = { SU: 0, MO: 1, TU: 2, WE: 3, T
 export const getDayToWeekday: Record<number, Weekday> = { 0: 'SU', 1: 'MO', 2: 'TU', 3: 'WE', 4: 'TH', 5: 'FR', 6: 'SA' };
 
 // Helper to safely get a JS Date object from various possible inputs
-export const getDateObject = (dateInput: Timestamp | Date | null | undefined): Date | null => {
+export const getDateObject = (dateInput: Timestamp | Date | string | null | undefined): Date | null => {
     if (!dateInput) return null;
     if (dateInput instanceof Date && isValid(dateInput)) return dateInput;
+    if (typeof dateInput === 'string') {
+        const d = new Date(dateInput);
+        if (isValid(d)) return d;
+    }
     if (typeof (dateInput as any).toDate === 'function') {
         const d = (dateInput as Timestamp).toDate();
         if (isValid(d)) return d;
@@ -65,7 +70,6 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
 
     if (!mission.isRecurring) {
         const dueDate = getDateObject(mission.dueDate);
-        // For non-recurring missions, it's scheduled if the checkDate is the same as the dueDate.
         return !!dueDate && isSameDay(dueDate, checkDate);
     }
 
