@@ -207,7 +207,7 @@ export function OnboardingForm() {
     <>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 items-end">
               <FormField
               control={form.control}
               name="name"
