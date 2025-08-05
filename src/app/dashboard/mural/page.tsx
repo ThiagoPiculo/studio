@@ -589,7 +589,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteChildProfile(child.id);
-      toast({ title: "Missão Arquivada", description: `O perfil de ${child.name} foi arquivado. Novas aventuras o(a) aguardam!` });
+      toast({ title: "Perfil de Herói Removido", description: `O perfil de ${child.name} e todos os seus dados foram excluídos com sucesso.` });
       router.push('/dashboard/heroes');
     } catch (error) {
       console.error("Error deleting child profile:", error);
