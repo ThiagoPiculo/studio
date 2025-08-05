@@ -35,34 +35,32 @@ import { useRouter } from 'next/navigation';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Skeleton } from '@/components/ui/skeleton';
 import { db } from '@/lib/firebase/config';
 import { doc, updateDoc } from 'firebase/firestore';
 import { Separator } from '@/components/ui/separator';
 import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
-import { Progress } from '@/components/ui/progress';
 import Loading from './loading';
 
 
-function RewardsHubContent({ initialData }: { initialData: { templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' }}) {
-  const { templates, children: initialChildren, instances, rewardMode: initialRewardMode } = initialData;
+function RewardsHubContent() {
   const { user } = useAuth();
-  const { currentContext, availableContexts, currentRole } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>(templates);
-  const [children, setChildren] = useState<ChildProfile[]>(initialChildren);
-  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>(instances);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
 
-  const rewardMode = user?.settings?.rewardMode || initialRewardMode;
+  const rewardMode = user?.settings?.rewardMode || 'automatic';
   
    const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -73,8 +71,10 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
   
   const fetchData = useCallback(async () => {
     if (!user) {
+      setIsLoading(false);
       return;
-    }
+    };
+    setIsLoading(true);
     try {
       const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
       const [fetchedTemplates, fetchedChildren, fetchedInstances] = await Promise.all([
@@ -89,8 +89,14 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
     } catch (err) {
       console.error("Error refetching rewards data:", err);
       toast({ title: "Erro ao atualizar dados", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   }, [user, currentContext, toast]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
@@ -321,6 +327,10 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
     </div>
   );
 
+  if (isLoading || isFamilyLoading) {
+    return <Loading />;
+  }
+
   return (
     <div className="space-y-8 pb-10">
       <Card className="shadow-lg">
@@ -412,38 +422,9 @@ function RewardsHubContent({ initialData }: { initialData: { templates: RewardTe
 }
 
 export default function RewardsHubPageWrapper() {
-  const { user, loading: authLoading } = useAuth();
-  const { currentContext, isLoading: isFamilyLoading } = useFamily();
-  const [initialData, setInitialData] = useState<{ templates: RewardTemplate[], children: ChildProfile[], instances: ChildRewardInstance[], rewardMode: 'automatic' | 'manual' } | null>(null);
-
-  const fetchData = useCallback(async () => {
-    if (!user) return;
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    try {
-        const [templates, children, instances] = await Promise.all([
-            getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getChildRewardInstancesForContext(user.uid, familyIdToQuery),
-        ]);
-        setInitialData({ templates, children, instances, rewardMode: user.settings?.rewardMode || 'automatic' });
-    } catch (err) {
-        console.error("Error fetching initial data for rewards page:", err);
-    }
-  }, [user, currentContext]);
-
-  useEffect(() => {
-    if (!authLoading && !isFamilyLoading) {
-      fetchData();
-    }
-  }, [authLoading, isFamilyLoading, fetchData]);
-
-  if (authLoading || isFamilyLoading || !initialData) {
-    return <Loading />;
-  }
-
-  return (
-    <Suspense fallback={<Loading />}>
-        <RewardsHubContent initialData={initialData} />
-    </Suspense>
-  );
+    return (
+        <Suspense fallback={<Loading />}>
+            <RewardsHubContent />
+        </Suspense>
+    );
 }

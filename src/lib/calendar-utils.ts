@@ -70,7 +70,7 @@ export function isMissionScheduledForDate(mission: MissionInstance, date: Date):
 
     if (!mission.isRecurring) {
         const dueDate = getDateObject(mission.dueDate);
-        return !!dueDate && isSameDay(dueDate, checkDate);
+        return !!dueDate && isSameDay(checkDate, startOfDay(dueDate));
     }
 
     const rule = mission.recurrenceRule;

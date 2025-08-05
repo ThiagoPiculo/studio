@@ -51,15 +51,16 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Loading from './loading';
 
 
-function MissionsHubContent({ initialData }: { initialData: { templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] }}) {
+function MissionsHubContent() {
   const { user } = useAuth();
   const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
-  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>(initialData.templates);
-  const [children, setChildren] = useState<ChildProfile[]>(initialData.children);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>(initialData.instances);
+  const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -79,22 +80,29 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
   }, [currentContext, currentRole]);
   
   const refetchAllData = useCallback(async () => {
-    if (user) {
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      try {
-          const [templates, children, instances] = await Promise.all([
-            getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, familyIdToQuery)
-          ]);
-          setMissionTemplates(templates);
-          setChildren(children);
-          setMissionInstances(instances.filter(i => i.status === 'pending'));
-      } catch (err) {
-        console.error("Error refetching instances:", err)
-      }
+    if (!user) return;
+    setIsLoading(true);
+    try {
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const [templates, children, instances] = await Promise.all([
+          getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+          getChildProfilesForAttribution(user.uid, currentContext),
+          getMissionInstancesForContext(user.uid, familyIdToQuery)
+        ]);
+        setMissionTemplates(templates);
+        setChildren(children);
+        setMissionInstances(instances.filter(i => i.status === 'pending'));
+    } catch (err) {
+      console.error("Error refetching missions data:", err)
+      toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
     }
-  }, [user, currentContext]);
+  }, [user, currentContext, toast]);
+
+  useEffect(() => {
+    refetchAllData();
+  }, [refetchAllData]);
   
   const childrenMap = useMemo(() => {
     return new Map(children.map(child => [child.id, child]));
@@ -182,6 +190,10 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
   };
 
   const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
+
+  if (isLoading || isFamilyLoading) {
+      return <Loading />;
+  }
 
   return (
     <div className="space-y-8">
@@ -504,38 +516,9 @@ function MissionsHubContent({ initialData }: { initialData: { templates: Mission
 }
 
 export default function MissionsHubPage() {
-    const { user, loading: authLoading } = useAuth();
-    const { currentContext, isLoading: isFamilyLoading } = useFamily();
-    const [initialData, setInitialData] = useState<{ templates: MissionTemplate[], children: ChildProfile[], instances: MissionInstance[] } | null>(null);
-
-    const fetchData = useCallback(async () => {
-        if (!user) return;
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        try {
-            const [templates, children, instances] = await Promise.all([
-                getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, familyIdToQuery)
-            ]);
-            setInitialData({ templates, children, instances: instances.filter(i => i.status === 'pending') });
-        } catch (err) {
-            console.error("Error fetching initial data for missions page:", err);
-        }
-    }, [user, currentContext]);
-
-    useEffect(() => {
-        if (!authLoading && !isFamilyLoading) {
-            fetchData();
-        }
-    }, [authLoading, isFamilyLoading, fetchData]);
-
-    if (authLoading || isFamilyLoading || !initialData) {
-        return <Loading />;
-    }
-
     return (
         <Suspense fallback={<Loading />}>
-            <MissionsHubContent initialData={initialData} />
+            <MissionsHubContent />
         </Suspense>
     );
 }

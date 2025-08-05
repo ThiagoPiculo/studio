@@ -1,15 +1,11 @@
 
 "use client";
 
-import { useEffect, useState, useMemo, Suspense, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { LayoutGrid, HelpCircle } from "lucide-react";
-import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import Loading from '@/app/dashboard/loading';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
@@ -18,55 +14,20 @@ import { Reports } from '@/components/dashboard/dashboard/Reports';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 
-export function DashboardClientPage() {
-  const { user, loading: authLoading } = useAuth();
-  const { currentContext, isLoading: isFamilyLoading } = useFamily();
-  const searchParams = useSearchParams();
-  
-  const [isLoading, setIsLoading] = useState(true);
-  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
+interface DashboardClientPageProps {
+    initialData: {
+        children: ChildProfile[];
+        missions: MissionInstance[];
+        rewards: RewardTemplate[];
+    }
+}
 
+export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
+  const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
+
+  const searchParams = useSearchParams();
   const childIdFromParams = searchParams.get('childId');
   const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
-
-  const fetchData = useCallback(async () => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    }
-    setIsLoading(true);
-    try {
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [childData, missionData, rewardData] = await Promise.all([
-          getChildProfilesForAttribution(user.uid, currentContext),
-          getMissionInstancesForContext(user.uid, familyIdToQuery),
-          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-        ]);
-        setAllChildren(childData);
-        setMissionInstances(missionData);
-        setRewardTemplates(rewardData);
-        
-        if (childIdFromParams && childData.some(c => c.id === childIdFromParams)) {
-          setSelectedChildId(childIdFromParams);
-        } else if (childData.length > 0) {
-          setSelectedChildId(null);
-        } else {
-          setSelectedChildId(null);
-        }
-    } catch (error) {
-        console.error("Error fetching dashboard data:", error);
-    } finally {
-        setIsLoading(false);
-    }
-  }, [user, currentContext, childIdFromParams]);
-
-  useEffect(() => {
-    if (!authLoading && !isFamilyLoading) {
-      fetchData();
-    }
-  }, [authLoading, isFamilyLoading, fetchData]);
 
   const selectedChildData = useMemo(() => {
     if (!selectedChildId) {
@@ -83,10 +44,6 @@ export function DashboardClientPage() {
     }
   }, [selectedChildId, allChildren, missionInstances, rewardTemplates]);
 
-
-  if (authLoading || isFamilyLoading || isLoading) {
-    return <Loading />;
-  }
 
   return (
     <div className="space-y-8">
