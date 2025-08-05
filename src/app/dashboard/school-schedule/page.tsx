@@ -53,7 +53,7 @@ interface SchoolSchedulePageClientProps {
 
 function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps) {
   const { user } = useAuth();
-  const { currentContext, currentRole } = useFamily();
+  const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -423,7 +423,7 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
     );
   };
   
-  if (isRoleLoading) return <Loading />;
+  if (isFamilyLoading) return <Loading />;
   
   const mobileLayout = (
     <div ref={scrollRef} className="space-y-4">
