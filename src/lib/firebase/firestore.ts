@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import {
@@ -159,7 +158,7 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
     return null;
   }
   const userDoc = querySnapshot.docs[0];
-  return convertTimestampsInObject({ uid: userDoc.id, ...userDoc.data() }) as UserProfile;
+  return convertTimestampsInObject({ uid: userDoc.id, ...docSnap.data() }) as UserProfile;
 };
 
 export const updateChildAvatarUrl = async (childId: string, avatarUrl: string): Promise<void> => {
@@ -702,7 +701,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
 export const getFamilyMemberships = async (familyId: string): Promise<FamilyMembership[]> => {
   const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
   const membershipsSnapshot = await getDocs(membershipsQuery);
-  return membershipsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyMembership));
+  return membershipsSnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as FamilyMembership);
 };
 
 export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]> => {
@@ -721,7 +720,7 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 export const getFamilyById = async (familyId: string): Promise<Family | null> => {
   const docRef = doc(db, 'families', familyId);
   const docSnap = await getDoc(docRef);
-  return docSnap.exists() ? ({ id: docSnap.id, ...docSnap.data() } as Family) : null;
+  return docSnap.exists() ? (convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as Family) : null;
 };
 
 export const leaveFamily = async (userId: string, familyId: string): Promise<void> => {
@@ -866,7 +865,7 @@ export const getPendingActionsForUser = async (userId: string): Promise<FamilyIn
     orderBy('createdAt', 'desc')
   );
   const querySnapshot = await getDocs(q);
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+  return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as FamilyInvitation);
 };
 
 export const getPendingInvitationsForFamily = async (familyId: string): Promise<FamilyInvitation[]> => {
@@ -878,7 +877,7 @@ export const getPendingInvitationsForFamily = async (familyId: string): Promise<
         orderBy('createdAt', 'desc')
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+    return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as FamilyInvitation);
 };
 
 export const cancelFamilyInvitation = async (invitationId: string): Promise<void> => {
@@ -982,7 +981,7 @@ export const getPendingJoinRequestsForFamily = async (familyId: string): Promise
         where('status', '==', 'pending')
     );
     const querySnapshot = await getDocs(q);
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as FamilyInvitation));
+    return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as FamilyInvitation);
 };
 
 
@@ -2402,3 +2401,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
 
+
+
+    
