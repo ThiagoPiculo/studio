@@ -141,32 +141,42 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       }
       return;
     }
-  
+
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         setCameraStream(stream);
         setHasCameraPermission(true);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        toast({
-          variant: 'destructive',
-          title: 'Câmera não Permitida',
-          description: 'Por favor, habilite a permissão de câmera no seu navegador para usar esta função.',
-        });
+        // Specific error handling for device in use
+        if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+          toast({
+            variant: 'destructive',
+            title: 'Câmera Ocupada',
+            description: 'Sua câmera já está sendo usada por outro aplicativo. Por favor, feche-o e tente novamente.',
+          });
+        } else {
+          // General permission denied error
+          toast({
+            variant: 'destructive',
+            title: 'Câmera não Permitida',
+            description: 'Por favor, habilite a permissão de câmera no seu navegador para usar esta função.',
+          });
+        }
         setIsCameraDialogOpen(false);
       }
     };
-  
+
     getCameraPermission();
-  
+
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isCameraDialogOpen, toast]);
+  }, [isCameraDialogOpen, toast, cameraStream]);
 
   useEffect(() => {
       if (cameraStream && videoRef.current) {
@@ -284,16 +294,14 @@ const handleCropAndUpload = async () => {
         
         await uploadBytes(storageRef, croppedBlob);
         
-        // Wait for the resize extension to run. This is a simple delay.
-        // A more robust solution might use a Firestore trigger to confirm.
-        await delay(3000); 
+        await delay(4000); 
 
         const resizedFileRef = ref(storage, resizedPath);
         const newUrl = await getDownloadURL(resizedFileRef);
         
         await updateChildAvatarUrl(child.id, newUrl);
-        setAvatarPreview(newUrl); // Optimistic update
-        onProfileUpdate(); // Notify parent to refetch all data
+        setAvatarPreview(newUrl);
+        onProfileUpdate();
 
         toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
     } catch (error) {
