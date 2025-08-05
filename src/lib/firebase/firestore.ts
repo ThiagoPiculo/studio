@@ -289,7 +289,8 @@ export const addChildProfile = async (
     familyId: familyId,
   };
   await setDoc(newChildRef, newChildData);
-  return { id: newChildRef.id, ...newChildData } as ChildProfile;
+  const finalProfile = { id: newChildRef.id, ...newChildData };
+  return convertTimestampsInObject(finalProfile) as ChildProfile;
 };
 
 
@@ -2125,7 +2126,7 @@ export const completeMissionInstance = async (
       
       await recalculateAndSyncBadges(updatedChildProfile.id);
     }
-    return updatedChildProfile;
+    return convertTimestampsInObject(updatedChildProfile);
 };
 
 export const reactivateMissionInstance = async (
@@ -2203,7 +2204,7 @@ export const reactivateMissionInstance = async (
         await recalculateAndSyncBadges(updatedChildProfile.id);
     }
 
-    return updatedChildProfile;
+    return convertTimestampsInObject(updatedChildProfile);
 };
 
 
@@ -2472,4 +2473,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+
 
