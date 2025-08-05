@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildProfile, updateChildAvatarUrl, deleteAvatar } from "@/lib/firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, getMetadata } from "firebase/storage";
 import { storage } from "@/lib/firebase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -150,7 +150,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       } catch (error: any) {
         console.error('Error accessing camera:', error);
         setHasCameraPermission(false);
-        // Specific error handling for device in use
         if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
           toast({
             variant: 'destructive',
@@ -158,7 +157,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
             description: 'Sua câmera já está sendo usada por outro aplicativo. Por favor, feche-o e tente novamente.',
           });
         } else {
-          // General permission denied error
           toast({
             variant: 'destructive',
             title: 'Câmera não Permitida',
@@ -176,7 +174,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
         cameraStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isCameraDialogOpen, toast, cameraStream]);
+  }, [isCameraDialogOpen]);
 
   useEffect(() => {
       if (cameraStream && videoRef.current) {
@@ -277,8 +275,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     });
   }
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-
 const handleCropAndUpload = async () => {
     if (!user || !crop || !imgRef.current) return;
 
@@ -290,15 +286,36 @@ const handleCropAndUpload = async () => {
         const originalPath = `avatars/${child.ownerId}/${child.id}/avatar.png`;
         const resizedPath = `avatars/${child.ownerId}/${child.id}/avatar_200x200.png`;
 
+        // 1. Upload the original image
         const storageRef = ref(storage, originalPath);
-        
         await uploadBytes(storageRef, croppedBlob);
-        
-        await delay(4000); 
 
+        // 2. Poll for the resized image to exist
         const resizedFileRef = ref(storage, resizedPath);
-        const newUrl = await getDownloadURL(resizedFileRef);
+        let newUrl = '';
+        const maxAttempts = 10; // Try for 10 seconds
+        let attempt = 0;
         
+        while (attempt < maxAttempts) {
+            try {
+                // Try to get the download URL. This will fail if the object doesn't exist.
+                newUrl = await getDownloadURL(resizedFileRef);
+                break; // Success! Exit the loop.
+            } catch (error: any) {
+                if (error.code === 'storage/object-not-found') {
+                    attempt++;
+                    if (attempt >= maxAttempts) {
+                        throw new Error("Aguardando o arquivo redimensionado, mas o tempo se esgotou. A extensão pode não estar funcionando corretamente.");
+                    }
+                    // Wait for 1 second before the next attempt
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } else {
+                    throw error; // Re-throw other errors
+                }
+            }
+        }
+        
+        // 3. Update Firestore with the new URL
         await updateChildAvatarUrl(child.id, newUrl);
         setAvatarPreview(newUrl);
         onProfileUpdate();
