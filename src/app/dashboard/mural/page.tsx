@@ -560,9 +560,9 @@ function MuralCompletoPageContent() {
 
   const handleProfileUpdate = useCallback(async () => {
     if (!child) return;
-    await fetchData(child.id);
+    // We only need to show a toast now, as the optimistic update is handled by the form.
     toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${child?.name || ''} foram salvas.` });
-  }, [fetchData, toast, child]);
+  }, [toast, child]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child) return;
@@ -1566,7 +1566,7 @@ function MuralCompletoPageContent() {
               <CardContent className="space-y-6">
                 <EditChildProfileForm
                   child={child}
-                  onProfileUpdate={() => fetchData(child.id)}
+                  onProfileUpdate={handleProfileUpdate}
                 />
                 <Separator className="my-8" />
                 <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">

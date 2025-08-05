@@ -67,31 +67,6 @@ const profileFormSchema = z.object({
   color: z.string().refine((val) => heroColors.includes(val as HeroColor), {
     message: "Por favor, selecione uma cor válida."
   }),
-}).superRefine((data, ctx) => {
-  const isShiftApplicable = data.schoolShift !== 'not_applicable';
-  if (isShiftApplicable) {
-    if (!data.schoolShiftStart || !/^\d{2}:\d{2}$/.test(data.schoolShiftStart)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['schoolShiftStart'],
-        message: 'O horário de início é obrigatório.',
-      });
-    }
-    if (!data.schoolShiftEnd || !/^\d{2}:\d{2}$/.test(data.schoolShiftEnd)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['schoolShiftEnd'],
-        message: 'O horário de término é obrigatório.',
-      });
-    }
-    if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['schoolShiftEnd'],
-        message: 'O horário final deve ser depois do inicial.',
-      });
-    }
-  }
 });
 
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
@@ -115,6 +90,8 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [dateInput, setDateInput] = useState<string>("");
+  const [month, setMonth] = useState<Date>(getDateObject(child.birthDate) || new Date());
   
   const [usedColors, setUsedColors] = useState<HeroColor[]>([]);
   const [isLoadingColors, setIsLoadingColors] = useState(true);
@@ -439,9 +416,9 @@ const handleRemoveAvatar = async () => {
       digits = digits.slice(0, 8);
     }
     if (digits.length > 4) {
-      return `\${digits.slice(0, 2)}/\${digits.slice(2, 4)}/\${digits.slice(4)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
     } else if (digits.length > 2) {
-      return `\${digits.slice(0, 2)}/\${digits.slice(2)}`;
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
     }
     return digits;
   };
@@ -593,42 +570,82 @@ const handleRemoveAvatar = async () => {
                       <FormItem className="flex flex-col">
                         <FormLabel>Data de Nascimento</FormLabel>
                         <div className="flex items-center gap-4">
-                          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                            <PopoverTrigger asChild>
-                                <FormControl>
-                                <Button
-                                    variant={"outline"}
-                                    className={cn(
-                                    "w-full pl-3 text-left font-normal",
-                                    !field.value && "text-muted-foreground"
-                                    )}
-                                >
-                                    {field.value ? (
-                                    format(field.value, "PPP", { locale: ptBR })
-                                    ) : (
-                                    <span>Escolha uma data</span>
-                                    )}
-                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                                </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                                <Calendar
-                                locale={ptBR}
-                                mode="single"
-                                selected={field.value}
-                                onSelect={(date) => {
-                                    field.onChange(date);
-                                    setIsCalendarOpen(false);
-                                }}
-                                disabled={(date) =>
-                                    date > new Date() || date < new Date("1900-01-01")
+                            <Popover open={isCalendarOpen} onOpenChange={(open) => {
+                                if (open && field.value) {
+                                    setDateInput(format(field.value, 'dd/MM/yyyy'));
                                 }
-                                initialFocus
-                                weekStartsOn={1}
+                                setIsCalendarOpen(open);
+                            }}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                    <Button
+                                        variant={"outline"}
+                                        className={cn(
+                                        "w-full pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
+                                        )}
+                                    >
+                                        {field.value ? (
+                                        format(field.value, "PPP", { locale: ptBR })
+                                        ) : (
+                                        <span>Escolha uma data</span>
+                                        )}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                    </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                <div className="p-2 border-b">
+                                    <Input
+                                        placeholder="Digite: dd/mm/aaaa"
+                                        value={dateInput}
+                                        onChange={(e) => {
+                                            const maskedValue = handleDateMask(e.target.value);
+                                            setDateInput(maskedValue);
+                                            if (maskedValue.length === 10) {
+                                            const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                            if (isValid(parsedDate)) {
+                                                field.onChange(parsedDate);
+                                                setMonth(parsedDate);
+                                            }
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter') {
+                                            e.preventDefault();
+                                            const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                            if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                                field.onChange(date);
+                                                setMonth(date);
+                                                setIsCalendarOpen(false);
+                                            } else {
+                                                toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                            }
+                                            }
+                                        }}
+                                    />
+                                </div>
+                                <Calendar
+                                    locale={ptBR}
+                                    mode="single"
+                                    month={month}
+                                    onMonthChange={setMonth}
+                                    selected={field.value}
+                                    onSelect={(date) => {
+                                        if (date) {
+                                            field.onChange(date);
+                                            setDateInput(format(date, 'dd/MM/yyyy'));
+                                        }
+                                        setIsCalendarOpen(false);
+                                    }}
+                                    disabled={(date) =>
+                                        date > new Date() || date < new Date("1900-01-01")
+                                    }
+                                    initialFocus
+                                    weekStartsOn={1}
                                 />
-                            </PopoverContent>
-                          </Popover>
+                                </PopoverContent>
+                            </Popover>
                           {calculatedAge !== null && (
                           <div className="text-sm text-muted-foreground whitespace-nowrap">
                               ({calculatedAge} anos)
