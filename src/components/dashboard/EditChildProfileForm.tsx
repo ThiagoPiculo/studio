@@ -402,6 +402,7 @@ const handleRemoveAvatar = async () => {
 
 
   const onSubmit = async (data: ProfileFormValues) => {
+    if (!user) return; // Safeguard
     setIsLoading(true);
     
     try {
@@ -414,7 +415,7 @@ const handleRemoveAvatar = async () => {
         schoolShiftEnd: data.schoolShift !== 'not_applicable' ? data.schoolShiftEnd : '',
         color: data.color,
       };
-      await updateChildProfile(child.id, updates);
+      await updateChildProfile(child.id, updates, user);
       onProfileUpdate();
     } catch (error) {
       console.error("Error updating child profile:", error);
