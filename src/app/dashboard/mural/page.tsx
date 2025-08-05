@@ -40,7 +40,7 @@ import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays } from 'date-fns';
+import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays, isValid } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Loading from './loading';
 import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
@@ -61,8 +61,8 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Activity = 
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } })
-    | (ChildRewardInstance & { type: 'reward', completedAt: Timestamp, actorId?: string, actorName?: string });
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, xp: number, actorId?: string, actorName?: string } })
+    | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
 
 
 function MuralCompletoPageContent() {
@@ -376,8 +376,8 @@ function MuralCompletoPageContent() {
         const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
         const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
         
-        const dateA = timeA instanceof Timestamp ? timeA.toDate().getTime() : timeA ? new Date(timeA as any).getTime() : 0;
-        const dateB = timeB instanceof Timestamp ? timeB.toDate().getTime() : timeB ? new Date(timeB as any).getTime() : 0;
+        const dateA = timeA ? new Date(timeA as any).getTime() : 0;
+        const dateB = timeB ? new Date(timeB as any).getTime() : 0;
         
         return dateB - dateA;
     });
@@ -386,7 +386,8 @@ function MuralCompletoPageContent() {
   }, [missionInstances, childRewards, collaboratorsMap, child?.name]);
 
 
-  const calculateAge = (birthDateString: string): number | null => {
+  const calculateAge = (birthDateString?: string): number | null => {
+    if (!birthDateString) return null;
     const birthDate = new Date(birthDateString);
     if (!isValid(birthDate)) return null;
     return differenceInYears(new Date(), birthDate);
@@ -608,7 +609,7 @@ function MuralCompletoPageContent() {
     try {
       const actor = { id: user.uid, name: user.name };
       await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
-      await fetchData(child.id);
+      if (child) await fetchData(child.id);
       toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error: any) {
       console.error("Error marking reward as redeemed:", error);
@@ -822,7 +823,7 @@ function MuralCompletoPageContent() {
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
               <Link href="/dashboard/onboarding">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Heroi
+                  <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Herói
                 </Button>
               </Link>
             </CardContent>
@@ -1145,7 +1146,7 @@ function MuralCompletoPageContent() {
                     ) : (
                         <ul className="space-y-4">
                             {activities.map((activity, index) => {
-                                const completedDate = (activity.type === 'mission' ? activity.completionLogEntry?.completedAt?.toDate() : activity.completedAt?.toDate()) || new Date();
+                                const completedDate = getDateObject(activity.type === 'mission' ? activity.completionLogEntry?.completedAt : activity.completedAt) || new Date();
                                 const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
                                 const isActorTheChild = activity.actorId === child.id;
                                 
