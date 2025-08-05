@@ -20,7 +20,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, uploadAvatarAndUpdateProfile, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2 } from "lucide-react";
+import { Loader2, Save, Calendar as CalendarIcon, RotateCcw, AlertTriangle, User, Clock, RefreshCw, Camera, X, UploadCloud, Trash2, Shield } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import { Calendar } from "../ui/calendar";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,8 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const { toast } = useToast();
   const { user } = useAuth();
   const { currentContext, currentRole } = useFamily();
+  
+  const isOwner = user?.uid === child.ownerId;
   
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -383,7 +385,7 @@ const handleRemoveAvatar = async () => {
     try {
       const updates: Partial<ChildProfile> = {
         name: data.name,
-        birthDate: data.birthDate as any, // Send as Date object
+        birthDate: data.birthDate as any,
         gender: data.gender,
         schoolShift: data.schoolShift,
         schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : '',
@@ -504,7 +506,7 @@ const handleRemoveAvatar = async () => {
                     <Loader2 className="h-8 w-8 text-white animate-spin" />
                   </div>
                 )}
-                {canEdit && (
+                {isOwner && canEdit && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
@@ -544,7 +546,7 @@ const handleRemoveAvatar = async () => {
                   accept="image/png, image/jpeg, image/webp"
                   className="hidden"
                   onChange={handleAvatarChange}
-                  disabled={!canEdit}
+                  disabled={!isOwner || !canEdit}
                 />
               </div>
 
@@ -691,104 +693,118 @@ const handleRemoveAvatar = async () => {
               )}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
-                <div className="md:col-span-1">
-                    <FormField
-                        control={form.control}
-                        name="schoolShift"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Turno Escolar</FormLabel>
-                                <Select onValueChange={handleShiftChange} value={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        {schoolShifts.map(shift => (
-                                            <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                </div>
-                {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
-                    <>
-                        <FormField
-                            control={form.control}
-                            name="schoolShiftStart"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Início do Turno</FormLabel>
-                                    <FormControl><TimePicker {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="schoolShiftEnd"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Fim do Turno</FormLabel>
-                                    <FormControl><TimePicker {...field} /></FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </>
-                )}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <FormField
-                control={form.control}
-                name="color"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Cor do Heroi</FormLabel>
-                    <FormControl>
-                      {isLoadingColors ? (
-                          <div className="grid grid-cols-8 gap-2">
-                              {Array.from({ length: 16 }).map((_, i) => (
-                                <Skeleton key={i} className="h-10 w-10 rounded-full" />
-                              ))}
-                          </div>
-                      ) : (
-                          <ColorSelector
-                            value={field.value as HeroColor}
-                            onChange={field.onChange}
-                            disabledColors={usedColors}
+            <fieldset disabled={!isOwner}>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                  <div className="md:col-span-1">
+                      <FormField
+                          control={form.control}
+                          name="schoolShift"
+                          render={({ field }) => (
+                              <FormItem>
+                                  <FormLabel>Turno Escolar</FormLabel>
+                                  <Select onValueChange={handleShiftChange} value={field.value}>
+                                      <FormControl><SelectTrigger><SelectValue placeholder="Selecione o turno..."/></SelectTrigger></FormControl>
+                                      <SelectContent>
+                                          {schoolShifts.map(shift => (
+                                              <SelectItem key={shift.id} value={shift.id}>{shift.label}</SelectItem>
+                                          ))}
+                                      </SelectContent>
+                                  </Select>
+                                  <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                  </div>
+                  {watchedSchoolShift && watchedSchoolShift !== 'not_applicable' && (
+                      <>
+                          <FormField
+                              control={form.control}
+                              name="schoolShiftStart"
+                              render={({ field }) => (
+                                  <FormItem>
+                                      <FormLabel>Início do Turno</FormLabel>
+                                      <FormControl><TimePicker {...field} /></FormControl>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
                           />
-                      )}
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="space-y-3 rounded-lg border bg-muted/50 p-4 text-sm h-full">
-                  <h4 className="font-semibold text-foreground">Informações de Criação</h4>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                      <User className="h-4 w-4"/>
-                      <span>Criado por:</span>
-                      {isLoadingOwner ? <Skeleton className="h-4 w-24"/> : <span className="font-medium text-foreground">{owner?.name || 'Desconhecido'}</span>}
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                      <Clock className="h-4 w-4"/>
-                      <span>Data de Criação:</span>
-                      <span className="font-medium text-foreground">
-                          {child.createdAt ? format(getDateObject(child.createdAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
-                      </span>
-                  </div>
-                   <div className="flex items-center gap-2 text-muted-foreground">
-                      <RefreshCw className="h-4 w-4"/>
-                      <span>Última Atualização:</span>
-                      <span className="font-medium text-foreground">
-                          {child.updatedAt ? format(getDateObject(child.updatedAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
-                      </span>
-                  </div>
+                          <FormField
+                              control={form.control}
+                              name="schoolShiftEnd"
+                              render={({ field }) => (
+                                  <FormItem>
+                                      <FormLabel>Fim do Turno</FormLabel>
+                                      <FormControl><TimePicker {...field} /></FormControl>
+                                      <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                      </>
+                  )}
               </div>
-            </div>
+            </fieldset>
+            
+            <fieldset disabled={!isOwner}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                <FormField
+                  control={form.control}
+                  name="color"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cor do Heroi</FormLabel>
+                      <FormControl>
+                        {isLoadingColors ? (
+                            <div className="grid grid-cols-8 gap-2">
+                                {Array.from({ length: 16 }).map((_, i) => (
+                                  <Skeleton key={i} className="h-10 w-10 rounded-full" />
+                                ))}
+                            </div>
+                        ) : (
+                            <ColorSelector
+                              value={field.value as HeroColor}
+                              onChange={field.onChange}
+                              disabledColors={usedColors}
+                            />
+                        )}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="space-y-3 rounded-lg border bg-muted/50 p-4 text-sm h-full">
+                    <h4 className="font-semibold text-foreground">Informações de Criação</h4>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <User className="h-4 w-4"/>
+                        <span>Criado por:</span>
+                        {isLoadingOwner ? <Skeleton className="h-4 w-24"/> : <span className="font-medium text-foreground">{owner?.name || 'Desconhecido'}</span>}
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                        <Clock className="h-4 w-4"/>
+                        <span>Data de Criação:</span>
+                        <span className="font-medium text-foreground">
+                            {child.createdAt ? format(getDateObject(child.createdAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                        </span>
+                    </div>
+                     <div className="flex items-center gap-2 text-muted-foreground">
+                        <RefreshCw className="h-4 w-4"/>
+                        <span>Última Atualização:</span>
+                        <span className="font-medium text-foreground">
+                            {child.updatedAt ? format(getDateObject(child.updatedAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
+                        </span>
+                    </div>
+                </div>
+              </div>
+            </fieldset>
+
+            {!isOwner && canEdit && !isLoadingOwner && (
+                <Alert variant="default" className="border-primary/20 bg-primary/5">
+                    <Shield className="h-4 w-4 text-primary" />
+                    <AlertTitleShad className="font-semibold text-primary">Permissões de Edição</AlertTitleShad>
+                    <AlertDescriptionShad className="text-primary/90">
+                       Apenas o proprietário do perfil, <strong>{owner?.name || 'o dono'}</strong>, pode alterar a foto, a cor e as informações de turno escolar. Outras informações, como nome e gênero, podem ser editadas por você.
+                    </AlertDescriptionShad>
+                </Alert>
+            )}
 
             {canEdit && (
               <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">

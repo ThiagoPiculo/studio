@@ -2,19 +2,21 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    // Regras de segurança para avatares dos Mini-Herois
-    // Permite que um usuário autenticado escreva na sua própria pasta de avatares.
-    // A leitura é pública para que qualquer pessoa possa ver os avatares.
-    match /avatars/{userId}/{allPaths=**} {
+    
+    // Regras de Segurança para Avatares de Usuários (Responsáveis)
+    match /user_avatars/{userId}/{allPaths=**} {
+      // Qualquer um pode ler avatares
       allow read;
+      // Apenas o usuário autenticado pode escrever em seu próprio diretório
       allow write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Regras de segurança para avatares dos Usuários (pais/responsáveis)
-    // Mesma lógica: usuário autenticado pode escrever no seu próprio diretório.
-    match /user_avatars/{userId}/{allPaths=**} {
+    // Regras de Segurança para Avatares de Crianças (Mini Herois)
+    match /avatars/{ownerId}/{childId}/{allPaths=**} {
+      // Qualquer um pode ler avatares
       allow read;
-      allow write: if request.auth != null && request.auth.uid == userId;
+      // Apenas o "dono" do perfil da criança pode escrever
+      allow write: if request.auth != null && request.auth.uid == ownerId;
     }
   }
 }
