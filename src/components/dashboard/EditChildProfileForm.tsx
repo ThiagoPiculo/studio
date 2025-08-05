@@ -141,7 +141,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       }
       return;
     }
-
+  
     const getCameraPermission = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -163,18 +163,17 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
             description: 'Por favor, habilite a permissão de câmera no seu navegador para usar esta função.',
           });
         }
-        setIsCameraDialogOpen(false);
       }
     };
-
+  
     getCameraPermission();
-
+  
     return () => {
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
       }
     };
-  }, [isCameraDialogOpen]);
+  }, [isCameraDialogOpen, toast]);
 
   useEffect(() => {
       if (cameraStream && videoRef.current) {
@@ -293,12 +292,14 @@ const handleCropAndUpload = async () => {
         // 2. Poll for the resized image to exist
         const resizedFileRef = ref(storage, resizedPath);
         let newUrl = '';
-        const maxAttempts = 10; // Try for 10 seconds
+        const maxAttempts = 15; // Try for 15 seconds
         let attempt = 0;
         
         while (attempt < maxAttempts) {
             try {
-                // Try to get the download URL. This will fail if the object doesn't exist.
+                // Try to get metadata. This fails if the object doesn't exist.
+                await getMetadata(resizedFileRef);
+                // If the above line doesn't throw, the file exists. Get the URL.
                 newUrl = await getDownloadURL(resizedFileRef);
                 break; // Success! Exit the loop.
             } catch (error: any) {
@@ -318,7 +319,7 @@ const handleCropAndUpload = async () => {
         // 3. Update Firestore with the new URL
         await updateChildAvatarUrl(child.id, newUrl);
         setAvatarPreview(newUrl);
-        onProfileUpdate();
+        onProfileUpdate(); // Triggers data refetch in the parent component
 
         toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
     } catch (error) {
@@ -339,8 +340,8 @@ const handleRemoveAvatar = async () => {
     try {
         await deleteAvatar(child.id, user.uid);
         setAvatarPreview(null);
-        toast({ title: "Avatar removido!" });
         onProfileUpdate();
+        toast({ title: "Avatar removido!" });
     } catch (error) {
         console.error("Error removing avatar:", error);
         toast({ title: "Erro ao remover", description: "Não foi possível remover o avatar.", variant: "destructive" });
