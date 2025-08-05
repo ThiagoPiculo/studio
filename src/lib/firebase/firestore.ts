@@ -170,52 +170,6 @@ export const updateChildAvatarUrl = async (childId: string, avatarUrl: string): 
     });
 };
 
-export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blob): Promise<{ newUrl: string }> => {
-    if (!userId) throw new Error("User ID is required.");
-    if (!file) throw new Error("File is required.");
-    
-    const originalPath = `user_avatars/${userId}/avatar.png`;
-    const storageRef = ref(storage, originalPath);
-    
-    await uploadBytes(storageRef, file, { contentType: 'image/png' });
-    
-    const resizedPath = `user_avatars/${userId}/avatar_200x200.png`;
-    const resizedRef = ref(storage, resizedPath);
-    let downloadURL: string | null = null;
-    const maxRetries = 10;
-    const initialDelay = 1000;
-
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            await getMetadata(resizedRef);
-            downloadURL = await getDownloadURL(resizedRef);
-            break;
-        } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
-                if (i === maxRetries - 1) {
-                    downloadURL = await getDownloadURL(storageRef);
-                    break;
-                }
-                await new Promise(resolve => setTimeout(resolve, initialDelay * (i + 1)));
-            } else {
-                throw error;
-            }
-        }
-    }
-
-    if (!downloadURL) {
-        throw new Error("Failed to get a download URL for the avatar.");
-    }
-
-    const userDocRef = doc(db, 'users', userId);
-    await updateDoc(userDocRef, {
-      avatarUrl: downloadURL,
-      updatedAt: serverTimestamp(),
-    });
-    
-    return { newUrl: downloadURL };
-};
-
 export const deleteAvatar = async (profileId: string, userId: string, isUserAvatar = false): Promise<void> => {
     if (!profileId || !userId) throw new Error("Profile and User IDs are required.");
 
@@ -1950,7 +1904,7 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     if (longestPerfectStreak >= 7) finalBadgeSet.add('semana_perfeita_bronze');
     if (longestPerfectStreak >= 15) finalBadgeSet.add('semana_perfeita_prata');
     if (longestPerfectStreak >= 21) finalBadgeSet.add('semana_perfeita_ouro');
-
+    
     // 3. Compare and update
     const newlyAwardedBadges = [...finalBadgeSet].filter(badgeId => !currentBadgeIds.has(badgeId));
     const finalBadgeArray = Array.from(finalBadgeSet);
@@ -2250,7 +2204,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2440,6 +2394,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+
 
 
 

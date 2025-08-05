@@ -17,7 +17,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, updateChildProfile, deleteAvatar } from "@/lib/firebase/firestore";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, deleteAvatar } from "@/lib/firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
@@ -492,17 +492,16 @@ const handleRemoveAvatar = async () => {
         </DialogContent>
       </Dialog>
       
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="image/png, image/jpeg, image/webp"
-        className="hidden"
-        onChange={handleAvatarChange}
-        disabled={!isOwner || !canEdit}
-      />
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png, image/jpeg, image/webp"
+            className="hidden"
+            onChange={handleAvatarChange}
+            disabled={!isOwner || !canEdit}
+          />
           <fieldset disabled={!canEdit} className="space-y-6 group">
             <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
               <div className="relative group flex-shrink-0">
