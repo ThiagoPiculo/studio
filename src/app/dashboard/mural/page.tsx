@@ -566,10 +566,10 @@ function MuralCompletoPageContent() {
   }, [toast, child, fetchData]);
 
   const handleRegenerateAccessCode = async () => {
-    if (!child) return;
+    if (!child || !user) return;
     setIsRegeneratingCode(true);
     try {
-      const newAccessCode = await regenerateChildAccessCode(child.id);
+      const newAccessCode = await regenerateChildAccessCode(child.id, user);
       setChild(prev => prev ? { ...prev, accessCode: newAccessCode } : null);
       toast({
         title: "Nova Chave Secreta Gerada!",
@@ -585,10 +585,10 @@ function MuralCompletoPageContent() {
   };
 
   const handleDeleteProfile = async () => {
-    if (!child) return;
+    if (!child || !user) return;
     setIsDeleting(true);
     try {
-      await deleteChildProfile(child.id);
+      await deleteChildProfile(child.id, user);
       toast({ title: "Perfil de Herói Removido", description: `O perfil de ${child.name} e todos os seus dados foram excluídos com sucesso.` });
       router.push('/dashboard/heroes');
     } catch (error) {
@@ -662,7 +662,7 @@ function MuralCompletoPageContent() {
     if (!child || !user) return;
     setIsResettingProgress(true);
     try {
-      await resetChildProgress(user.uid, child.id);
+      await resetChildProgress(user, child.id);
       await fetchData(child.id); // Re-fetch all data to update the UI
       toast({ title: "Progresso Redefinido!", description: `Os dados de ${child.name} foram zerados com sucesso.` });
     } catch (error: any) {
@@ -680,8 +680,7 @@ function MuralCompletoPageContent() {
     }
     setIsMoving(true);
     try {
-      const newFamilyId = selectedMoveContext === 'my-space' ? null : selectedMoveContext;
-      await moveChildToNewContext(child.id, newFamilyId, user.uid);
+      await moveChildToNewContext(child.id, selectedMoveContext === 'my-space' ? null : selectedMoveContext, user);
 
       toast({
         title: 'Heroi Movido com Sucesso!',
@@ -695,6 +694,7 @@ function MuralCompletoPageContent() {
       toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
     } finally {
       setIsMoving(false);
+      setIsMoveDialogOpen(false);
     }
   };
 
@@ -703,7 +703,7 @@ function MuralCompletoPageContent() {
     if (!missionToDelete || !user) return;
     setIsDeleting(true);
     try {
-      await deleteMissionInstance(missionToDelete.id);
+      await deleteMissionInstance(user, missionToDelete.id);
       if (child) await fetchData(child.id);
       toast({
         title: "Missão Removida",
@@ -808,7 +808,7 @@ function MuralCompletoPageContent() {
     if (!instanceToManage || !user) return;
     setIsDeleting(true);
     try {
-      await deleteChildRewardInstance(instanceToManage.id);
+      await deleteChildRewardInstance(user, instanceToManage.id);
       if (child) await fetchData(child.id);
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
@@ -1805,3 +1805,4 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+

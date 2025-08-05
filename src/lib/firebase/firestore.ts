@@ -158,8 +158,10 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
     return null;
   }
   const userDoc = querySnapshot.docs[0];
-  return convertTimestampsInObject({ uid: userDoc.id, ...docSnap.data() }) as UserProfile;
+  const docData = userDoc.data();
+  return convertTimestampsInObject({ uid: userDoc.id, ...docData }) as UserProfile;
 };
+
 
 export const updateChildAvatarUrl = async (childId: string, avatarUrl: string): Promise<void> => {
     const childRef = doc(db, 'children', childId);
@@ -183,8 +185,7 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
     // Update Firestore document to remove the avatar URL
     const docRef = doc(db, isUserAvatar ? 'users' : 'children', profileId);
     await updateDoc(docRef, {
-        avatarUrl: deleteField(),
-        avatar: deleteField(), // Ensure both potential fields are cleared
+        avatar: deleteField(),
         updatedAt: serverTimestamp(),
     });
 
@@ -325,7 +326,7 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 };
 
 
-export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>): Promise<void> => {
+export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>, actor: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   const dataToUpdate: { [key: string]: any } = { ...updates };
 
@@ -345,21 +346,65 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
     ...dataToUpdate,
     updatedAt: serverTimestamp(),
   });
+
+  // Dispatch notification
+  await createAndDispatchNotifications(
+    childId,
+    {
+      type: 'template_updated', // Reusing a general type
+      title: 'Perfil de Herói Atualizado',
+      description: `${actor.name} atualizou o perfil de ${updates.name || 'um herói'}.`,
+      href: `/dashboard/mural?childId=${childId}&tab=edit`,
+      relatedChildId: childId,
+    },
+    actor
+  );
 };
 
-export const regenerateChildAccessCode = async (childId: string): Promise<string> => {
+export const regenerateChildAccessCode = async (childId: string, actor: UserProfile): Promise<string> => {
   const newAccessCode = Math.floor(100000 + Math.random() * 900000).toString();
   const childRef = doc(db, 'children', childId);
   await updateDoc(childRef, {
     accessCode: newAccessCode,
     updatedAt: serverTimestamp()
   });
+
+  const child = await getChildProfileById(childId);
+  if (child) {
+      await createAndDispatchNotifications(
+          childId,
+          {
+              type: 'template_updated',
+              title: 'Código de Acesso Alterado',
+              description: `A chave secreta de ${child.name} foi alterada.`,
+              href: `/dashboard/mural?childId=${childId}&tab=edit`,
+              relatedChildId: childId,
+          },
+          actor
+      );
+  }
+
   return newAccessCode;
 };
 
-export const deleteChildProfile = async (childId: string): Promise<void> => {
+export const deleteChildProfile = async (childId: string, actor: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
+  const childSnap = await getDoc(childRef);
+  if (!childSnap.exists()) return;
+  const childData = childSnap.data() as ChildProfile;
   
+  await createAndDispatchNotifications(
+      childId,
+      {
+          type: 'template_deleted',
+          title: 'Perfil Removido',
+          description: `O perfil de ${childData.name} foi removido por ${actor.name}.`,
+          href: '/dashboard/heroes', // Redirect to main heroes page
+          relatedChildId: childId,
+      },
+      actor
+  );
+
   const batch = writeBatch(db);
 
   // Delete associated reward instances
@@ -378,11 +423,15 @@ export const deleteChildProfile = async (childId: string): Promise<void> => {
   await batch.commit();
 };
 
-export const resetChildProgress = async (currentUserId: string, childId: string): Promise<void> => {
+export const resetChildProgress = async (actor: UserProfile, childId: string): Promise<void> => {
     const childRef = doc(db, 'children', childId);
     const childSnap = await getDoc(childRef);
 
-    if (!childSnap.exists() || childSnap.data().ownerId !== currentUserId) {
+    if (!childSnap.exists()) {
+        throw new Error("Criança não encontrada");
+    }
+
+    if (childSnap.data().ownerId !== actor.uid) {
         throw new Error("Permissão negada: você só pode redefinir o progresso de crianças que você cadastrou.");
     }
   
@@ -424,13 +473,29 @@ export const resetChildProgress = async (currentUserId: string, childId: string)
     });
 
     await batch.commit();
+    
+    // Send notification
+    const child = await getChildProfileById(childId);
+    if(child) {
+         await createAndDispatchNotifications(
+            childId,
+            {
+                type: 'template_deleted',
+                title: 'Progresso Zerado!',
+                description: `O progresso de ${child.name} foi zerado por ${actor.name}.`,
+                href: `/dashboard/mural?childId=${childId}&tab=edit`,
+                relatedChildId: childId,
+            },
+            actor
+        );
+    }
 };
 
-export const resetSelectedChildrenProgress = async (currentUserId: string, childIds: string[]): Promise<void> => {
+export const resetSelectedChildrenProgress = async (actor: UserProfile, childIds: string[]): Promise<void> => {
   if (childIds.length === 0) {
     return;
   }
-  const resetPromises = childIds.map(childId => resetChildProgress(currentUserId, childId));
+  const resetPromises = childIds.map(childId => resetChildProgress(actor, childId));
   await Promise.all(resetPromises);
 };
 
@@ -466,7 +531,7 @@ export const resetSchedulesForChildren = async (currentUserId: string, childIds:
   await batch.commit();
 };
 
-export const moveChildToNewContext = async (childId: string, newFamilyId: string | null, currentUserId: string): Promise<void> => {
+export const moveChildToNewContext = async (childId: string, newFamilyId: string | null, actor: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   
   // 1. Verify ownership BEFORE starting the batch
@@ -474,10 +539,12 @@ export const moveChildToNewContext = async (childId: string, newFamilyId: string
   if (!childSnap.exists()) {
     throw new Error("Perfil do Mini Heroi não encontrado.");
   }
-  if (childSnap.data().ownerId !== currentUserId) {
+  if (childSnap.data().ownerId !== actor.uid) {
     throw new Error("Apenas o proprietário do perfil pode movê-lo.");
   }
 
+  const oldFamilyId = childSnap.data().familyId || 'my-space';
+  
   // 2. Prepare the batch
   const batch = writeBatch(db);
 
@@ -508,6 +575,26 @@ export const moveChildToNewContext = async (childId: string, newFamilyId: string
 
   // 4. Commit the batch
   await batch.commit();
+
+  // 5. Send notifications
+  const childName = childSnap.data().name;
+  if (oldFamilyId !== 'my-space') {
+      await createAllianceNotification(oldFamilyId, actor, {
+          type: 'instance_unassigned',
+          title: 'Herói Movido',
+          description: `${actor.name} moveu ${childName} para fora desta aliança.`,
+          href: '/dashboard/heroes',
+      });
+  }
+  if (newFamilyId) {
+      await createAllianceNotification(newFamilyId, actor, {
+          type: 'instance_assigned',
+          title: 'Novo Herói na Aliança!',
+          description: `${actor.name} moveu ${childName} para esta aliança.`,
+          href: `/dashboard/mural?childId=${childId}`,
+          relatedChildId: childId,
+      });
+  }
 };
 
 
@@ -1792,6 +1879,8 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     // 1. Progress-based badges (Stars & Level)
     if (childProfile.level >= 5) finalBadgeSet.add('heroi_ascensao');
     if (childProfile.level >= 10) finalBadgeSet.add('campeao_herois');
+    if (childProfile.level >= 15) finalBadgeSet.add('arquiteto_sonhos');
+    if (childProfile.level >= 20) finalBadgeSet.add('heroi_lendario');
     if (childProfile.stars >= 100) finalBadgeSet.add('cacador_estrelas');
     if (childProfile.stars >= 500) finalBadgeSet.add('colecionador_tesouros');
     if (childProfile.stars >= 1000) finalBadgeSet.add('lenda_estelar');
@@ -1808,6 +1897,7 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
 
     const completedCategories = new Set<string>();
     let hasCompletedSocialOrEnv = false;
+    let hasCompletedSports = false;
 
     // Check for specific missions and categories
     for (const instance of allInstances) {
@@ -1817,17 +1907,22 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
             const missionTitle = instance.title.toLowerCase().trim();
             if (missionTitle === 'escovar os dentes') finalBadgeSet.add('defensor_sorriso');
             if (missionTitle === 'arrumar a cama') finalBadgeSet.add('guardiao_descanso');
-            if (instance.category === 'social' || instance.category === 'environmental') {
-                hasCompletedSocialOrEnv = true;
-            }
+            if (missionTitle === 'fazer lição de casa') finalBadgeSet.add('mente_brilhante');
+            if (missionTitle.includes('ajudar a p')) finalBadgeSet.add('maozinha_amiga');
+            if (instance.category === 'social' || instance.category === 'environmental') hasCompletedSocialOrEnv = true;
+            if (instance.category === 'sports') hasCompletedSports = true;
         }
     }
 
-    if (completedCategories.size >= 3) {
-        finalBadgeSet.add('heroi_versatil');
-    }
-    if (hasCompletedSocialOrEnv) {
-        finalBadgeSet.add('aventureiro_nato');
+    if (completedCategories.size >= 3) finalBadgeSet.add('heroi_versatil');
+    if (completedCategories.size >= 5) finalBadgeSet.add('explorador_talentos');
+    if (hasCompletedSocialOrEnv) finalBadgeSet.add('aventureiro_nato');
+    if (hasCompletedSports) finalBadgeSet.add('atleta_dedicado');
+
+    const rewardInstancesQuery = query(collection(db, 'childRewardInstances'), where('childId', '==', childId), where('status', '==', 'redeemed'));
+    const redeemedRewardsSnap = await getDocs(rewardInstancesQuery);
+    if (!redeemedRewardsSnap.empty) {
+        finalBadgeSet.add('conquistador_recompensas');
     }
 
     // Check for single-mission streaks
@@ -1866,39 +1961,27 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     // Check for "Semana Perfeita"
     let longestPerfectStreak = 0;
     let currentPerfectStreak = 0;
-    let missionsInCurrentStreak = 0;
-    const today = startOfDay(new Date());
-
-    for (let i = 0; i < 60; i++) {
-        const checkDate = subDays(today, i);
-        const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
+    const allCompletionDates = new Set(allInstances.flatMap(inst => Object.keys(inst.completionLog || {})).map(d => startOfDay(new Date(d))));
+    if (allCompletionDates.size > 0) {
+        const sortedDates = Array.from(allCompletionDates).sort((a, b) => a.getTime() - b.getTime());
+        const firstDate = sortedDates[0];
+        const daysInInterval = eachDayOfInterval({ start: firstDate, end: startOfDay(new Date()) });
         
-        let isDayPerfect = true;
-        if (scheduledMissions.length > 0) {
-            missionsInCurrentStreak++;
-            const allCompleted = scheduledMissions.every(inst => {
-                const dateKey = formatDateFns(checkDate, 'yyyy-MM-dd');
-                return inst.completionLog && inst.completionLog[dateKey];
-            });
-            if (!allCompleted) {
-                isDayPerfect = false;
+        for (const checkDate of daysInInterval) {
+            const scheduledMissions = allInstances.filter(inst => isMissionScheduledForDate(inst, checkDate));
+            if (scheduledMissions.length > 0) {
+                const isDayPerfect = scheduledMissions.every(inst => isMissionCompletedForDate(inst, checkDate));
+                if (isDayPerfect) {
+                    currentPerfectStreak++;
+                } else {
+                    if (currentPerfectStreak > longestPerfectStreak) longestPerfectStreak = currentPerfectStreak;
+                    currentPerfectStreak = 0;
+                }
             }
         }
-
-        if (isDayPerfect) {
-            currentPerfectStreak++;
-        } else {
-            if (missionsInCurrentStreak > 0 && currentPerfectStreak > longestPerfectStreak) {
-                longestPerfectStreak = currentPerfectStreak;
-            }
-            currentPerfectStreak = 0;
-            missionsInCurrentStreak = 0;
-        }
     }
+    if (currentPerfectStreak > longestPerfectStreak) longestPerfectStreak = currentPerfectStreak;
 
-    if (missionsInCurrentStreak > 0 && currentPerfectStreak > longestPerfectStreak) {
-        longestPerfectStreak = currentPerfectStreak;
-    }
     
     if (longestPerfectStreak >= 7) finalBadgeSet.add('semana_perfeita_bronze');
     if (longestPerfectStreak >= 15) finalBadgeSet.add('semana_perfeita_prata');
