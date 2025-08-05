@@ -11,7 +11,7 @@ import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, P
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
-import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary, getDateObject } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole } from '@/lib/types';
 import { missionCategories, weekdays, familyRoles } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -270,7 +270,7 @@ function AgendaPageContent() {
 
     // Process Mission Instances
     instancesToProcess.forEach(instance => {
-      const eventTimeSource = instance.startDate?.toDate() || instance.dueDate?.toDate();
+      const eventTimeSource = getDateObject(instance.startDate) || getDateObject(instance.dueDate);
       if (!eventTimeSource) return;
 
       const period = getPeriodForDate(eventTimeSource);
@@ -317,7 +317,7 @@ function AgendaPageContent() {
                                 childId: child.id,
                                 title: title,
                                 category: 'school',
-                                startDate: { toDate: () => eventDate } as any,
+                                startDate: eventDate,
                             } as any,
                         };
                     };
@@ -535,8 +535,8 @@ function AgendaPageContent() {
           const child = childrenMap.get(childId);
           if (!child) return null;
           const childEvents = eventsByChild[childId].sort((a, b) => {
-              const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate();
-              const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate();
+              const timeA = getDateObject(a.data.startDate) || getDateObject(a.data.dueDate);
+              const timeB = getDateObject(b.data.startDate) || getDateObject(b.data.dueDate);
               
               const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
               const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
@@ -565,7 +565,7 @@ function AgendaPageContent() {
                     {childEvents.map(event => {
                         const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
-                        const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                        const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                         
                         if (event.type === 'school') {
@@ -704,7 +704,7 @@ function AgendaPageContent() {
         workweek: 'grid-cols-1 md:grid-cols-2 lg:grid-cols-5',
     };
   
-    const finalGridClass = gridClasses[dateRangeFilter];
+    const finalGridClass = gridClasses[dateRangeFilter as keyof typeof gridClasses];
     const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
 
     // Different rendering logic for mobile vs desktop for 'week' view
@@ -823,8 +823,8 @@ function AgendaPageContent() {
                 const nameComparison = childA.localeCompare(childB);
                 if (nameComparison !== 0) return nameComparison;
 
-                const timeA = a.data.startDate?.toDate() || a.data.dueDate?.toDate();
-                const timeB = b.data.startDate?.toDate() || b.data.dueDate?.toDate();
+                const timeA = getDateObject(a.data.startDate) || getDateObject(a.data.dueDate);
+                const timeB = getDateObject(b.data.startDate) || getDateObject(b.data.dueDate);
                 
                 const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
                 const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
@@ -852,7 +852,7 @@ function AgendaPageContent() {
                         if (!child) return null;
                         const popoverId = `${event.data.id}-${dateKey}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
-                        const eventTime = event.data.startDate?.toDate() || event.data.dueDate?.toDate();
+                        const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                          const categoryDetails = categoryMap.get(event.data.category);
 
