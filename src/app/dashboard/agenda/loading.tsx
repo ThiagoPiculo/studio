@@ -1,77 +1,54 @@
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Loading() {
   return (
     <div className="space-y-6">
-      {/* Header Card */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <Skeleton className="h-8 w-64" />
-              <Skeleton className="h-4 w-80 mt-2" />
-            </div>
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-10 w-10" />
-              <Skeleton className="h-10 w-48" />
-              <Skeleton className="h-10 w-10" />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col md:flex-row gap-6">
-            {/* Child Filters */}
-            <div className="w-full md:w-72 space-y-2 border-r-0 md:border-r md:pr-6">
-              <Skeleton className="h-5 w-32 mb-3" />
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-3">
-                    <Skeleton className="h-5 w-5 rounded-sm" />
-                    <Skeleton className="h-8 w-8 rounded-full" />
-                    <Skeleton className="h-5 w-24" />
-                  </div>
-                ))}
-              </div>
-            </div>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-8" />
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-8 w-8" />
+        </div>
+        <div className="flex w-full sm:w-auto items-center justify-end gap-2">
+            <Skeleton className="h-10 w-48 flex-grow sm:flex-grow-0" />
+            <Skeleton className="h-10 w-32 flex-grow sm:flex-grow-0" />
+        </div>
+      </div>
 
-            {/* View and Sort Filters */}
-            <div className="flex-1 space-y-4">
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-10 w-80" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-20" />
-                <Skeleton className="h-10 w-48" />
-              </div>
-            </div>
+      <Card>
+        <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
+          <div className="flex items-center gap-2 flex-grow">
+            <Skeleton className="h-9 w-20 hidden sm:block" />
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-9 w-9" />
+            <Skeleton className="h-6 w-48 flex-grow sm:flex-grow-0" />
           </div>
-        </CardContent>
+          <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
+            <Skeleton className="h-9 w-20 sm:hidden flex-grow" />
+            <Skeleton className="h-9 w-36 flex-grow sm:flex-grow-0" />
+            <Skeleton className="h-9 w-32 flex-grow sm:flex-grow-0" />
+          </div>
+        </div>
       </Card>
       
-      {/* Timeline View */}
-      <div className="space-y-8">
-        {[1, 2].map(day => (
-          <div key={day} className="space-y-3">
-            <Skeleton className="h-7 w-48 rounded-lg" />
-            <Card className="shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {[1, 2, 3].map(day => (
+          <div key={day} className="flex flex-col space-y-2">
+             <Skeleton className="h-7 w-32" />
+            <Card className="shadow-sm flex-1">
               <CardContent className="p-4 space-y-4">
-                <div className="flex items-start gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full mt-1" />
-                  <div className="flex-1 space-y-3">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-5 w-full" />
-                    <Skeleton className="h-5 w-2/3" />
-                  </div>
-                </div>
-                 <div className="flex items-start gap-4">
-                  <Skeleton className="h-10 w-10 rounded-full mt-1" />
-                  <div className="flex-1 space-y-3">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-5 w-full" />
-                  </div>
-                </div>
+                 <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg">
+                    <Skeleton className="h-4 w-16 absolute top-2 right-2" />
+                     <div className="flex items-start gap-4 pt-8">
+                        <Skeleton className="h-9 w-9 rounded-full" />
+                        <div className="flex-1 space-y-3">
+                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-full" />
+                        </div>
+                    </div>
+                 </div>
               </CardContent>
             </Card>
           </div>
