@@ -41,6 +41,8 @@ import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceD
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import Link from 'next/link';
+import { getDateObject } from '@/lib/calendar-utils';
+
 
 const recurrenceRuleSchema = z.object({
   freq: z.enum(['DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY']),
@@ -174,26 +176,25 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
         if (instanceToEdit) {
             setIsLoading(true);
             try {
-                // When editing, we need both the template and child profile
-                const [template, child] = await Promise.all([
+                const [fetchedTemplate, fetchedChild] = await Promise.all([
                     getMissionTemplateById(instanceToEdit.templateId),
                     getChildProfileById(instanceToEdit.childId)
                 ]);
 
-                if (!template) {
+                if (!fetchedTemplate) {
                      toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
                      onOpenChange(false);
                      return;
                 }
-                if (!child) {
+                if (!fetchedChild) {
                     toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
                     onOpenChange(false);
                     return;
                 }
                 
-                setEffectiveTemplate(template);
-                setChildren([child]);
-                setSelectedChild(child);
+                setEffectiveTemplate(fetchedTemplate);
+                setChildren([fetchedChild]);
+                setSelectedChild(fetchedChild);
                 prepareScheduleForm(instanceToEdit);
                 setView('schedule');
 
@@ -242,27 +243,30 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     if (!effectiveTemplate) return;
     const source = instance || effectiveTemplate;
     
-    let startDate = source.startDate?.toDate() ?? null;
-    let dueDate = source.dueDate?.toDate() ?? new Date();
+    let startDate = getDateObject(source.startDate);
+    let dueDate = getDateObject(source.dueDate);
 
-    if(!instance) {
-        const today = new Date();
-        startDate = source.isRecurring ? today : null;
-        dueDate = !source.isRecurring ? today : new Date();
+    if (!instance) {
+      const today = new Date();
+      startDate = source.isRecurring ? today : null;
+      dueDate = !source.isRecurring ? today : new Date();
+    } else if (!startDate && !dueDate) {
+        // Fallback for older instances without due/start dates
+        dueDate = new Date();
     }
-
+    
     const initialValues: AssignmentFormValues = {
-        isRecurring: !!source.isRecurring,
-        startDate: startDate,
-        dueDate: dueDate,
-        recurrenceRule: null,
+      isRecurring: !!source.isRecurring,
+      startDate: startDate,
+      dueDate: dueDate || new Date(),
+      recurrenceRule: null,
     };
 
     if (source.recurrenceRule) {
         const rule = source.recurrenceRule as any;
         initialValues.recurrenceRule = { 
             ...rule, 
-            endDate: rule.endDate?.toDate ? rule.endDate.toDate() : (rule.endDate || null) 
+            endDate: getDateObject(rule.endDate) 
         };
     } else if (source.isRecurring) {
         initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
@@ -297,13 +301,12 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       const existingInstance = instanceToEdit || existingAssignments[selectedChild.id];
 
       if (existingInstance) {
-          const editDate = occurrenceDate || existingInstance.startDate?.toDate() || existingInstance.dueDate?.toDate();
+          const editDate = occurrenceDate || getDateObject(existingInstance.startDate) || getDateObject(existingInstance.dueDate);
           if (!editDate) throw new Error("Data da ocorrência não encontrada para edição.");
           
           await updateRecurringMissionInstance(existingInstance.id, recurrenceEditMode, data, editDate);
           toast({ title: "Agendamento Atualizado!" });
       } else {
-          // Asserting that effectiveTemplate is a MissionTemplate here, as this branch is for new assignments
           if (!('ownerId' in effectiveTemplate)) throw new Error("Cannot assign from an instance.");
 
           const instanceData = {
@@ -462,7 +465,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             onOpenChange={setIsRecurrenceEditModalOpen}
             onSelect={handleRecurrenceEditSelect}
             missionInstance={existingAssignments[selectedChild.id]}
-            occurrenceDate={occurrenceDate || existingAssignments[selectedChild.id].startDate?.toDate() || new Date()}
+            occurrenceDate={occurrenceDate || getDateObject(existingAssignments[selectedChild.id].startDate) || new Date()}
          />
       )}
     </>
