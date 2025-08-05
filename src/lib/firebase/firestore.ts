@@ -792,7 +792,7 @@ export const getFamilyMembers = async (familyId: string): Promise<UserProfile[]>
 
   const usersQuery = query(collection(db, 'users'), where('__name__', 'in', memberUserIds));
   const usersSnapshot = await getDocs(usersQuery);
-  const users = usersSnapshot.docs.map(doc => ({ uid: doc.id, ...doc.data() } as UserProfile));
+  const users = usersSnapshot.docs.map(doc => convertTimestampsInObject({ uid: doc.id, ...doc.data() }) as UserProfile);
   return users.sort((a,b) => (a.name || '').localeCompare(b.name || ''));
 };
 
@@ -2472,3 +2472,4 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+

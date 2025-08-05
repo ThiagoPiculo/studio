@@ -1,4 +1,5 @@
 
+
 "use client";
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -155,7 +156,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profileUnsubscribe();
       setProfileUnsubscribe(null);
     }
-    setChildProfile(profile);
+    setChildProfile(convertTimestampsInObject(profile));
     setUser(null); 
     setIsChildAuthenticated(true);
     setLoading(false);
@@ -176,4 +177,3 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
-
