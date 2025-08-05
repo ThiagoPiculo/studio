@@ -52,6 +52,7 @@ export function HeroesSummary() {
 
   const [isRegenerating, setIsRegenerating] = useState<string | null>(null);
   const [expandedHeroes, setExpandedHeroes] = useState<Set<string>>(new Set());
+  const [expandedSchool, setExpandedSchool] = useState<Set<string>>(new Set());
   const [selectedHeroId, setSelectedChildId] = useState<string | null>(null);
 
   const totalBadgesCount = allBadgesMap.size;
@@ -77,7 +78,6 @@ export function HeroesSummary() {
         setRewardTemplates(rewardData);
         setSchoolSchedule(scheduleData);
         
-        // Smart selection: if only one child, select it by default. Otherwise, default to all.
         if (childrenData.length === 1) {
             setSelectedChildId(childrenData[0].id);
         } else {
@@ -97,8 +97,9 @@ export function HeroesSummary() {
   }, [fetchData, authLoading, isFamilyLoading]);
 
 
-  const toggleMissionsExpansion = (childId: string) => {
-    setExpandedHeroes(prev => {
+  const toggleExpansion = (childId: string, type: 'missions' | 'school') => {
+    const stateSetter = type === 'missions' ? setExpandedHeroes : setExpandedSchool;
+    stateSetter(prev => {
         const newSet = new Set(prev);
         if (newSet.has(childId)) {
             newSet.delete(childId);
@@ -113,7 +114,8 @@ export function HeroesSummary() {
     if (isRegenerating) return;
     setIsRegenerating(childId);
     try {
-      const newCode = await regenerateChildAccessCode(childId);
+      if (!user) return;
+      const newCode = await regenerateChildAccessCode(childId, user);
       toast({
         title: "Nova Chave Secreta Gerada!",
         description: `A nova chave de ${childName} é ${newCode}.`,
@@ -140,13 +142,6 @@ export function HeroesSummary() {
     }
     return age;
   };
-  
-  const todaysSchoolEntries = useMemo(() => {
-    const todayWeekday = getDayToWeekday[new Date().getDay()];
-    return schoolSchedule
-        .filter(entry => entry.dayOfWeek === todayWeekday)
-        .sort((a,b) => a.startTime.localeCompare(b.startTime));
-  }, [schoolSchedule]);
   
   const today = format(new Date(), 'yyyy-MM-dd');
   
@@ -213,8 +208,14 @@ export function HeroesSummary() {
               const availableRewardsCount = rewardTemplates.filter(r => r.status === 'active' && child.stars >= r.starsCost).length;
               const unlockedAchievementsCount = child.earnedBadgeIds?.length || 0;
               
-              const isExpanded = expandedHeroes.has(child.id);
-              const missionsToShow = isExpanded ? todaysMissions : todaysMissions.slice(0, 5);
+              const isMissionsExpanded = expandedHeroes.has(child.id);
+              const missionsToShow = isMissionsExpanded ? todaysMissions : todaysMissions.slice(0, 5);
+
+              const todaysSchoolEntries = schoolSchedule
+                .filter(entry => entry.childId === child.id && entry.dayOfWeek === getDayToWeekday[new Date().getDay()])
+                .sort((a, b) => a.startTime.localeCompare(b.startTime));
+              const isSchoolExpanded = expandedSchool.has(child.id);
+              const schoolToShow = isSchoolExpanded ? todaysSchoolEntries : todaysSchoolEntries.slice(0, 5);
              
               return (
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
@@ -321,7 +322,7 @@ export function HeroesSummary() {
                             <TabsTrigger value="school" className="py-1.5 text-xs justify-center">Rotina Escolar</TabsTrigger>
                         </TabsList>
                         <TabsContent value="missions">
-                            <div className="h-auto w-full mt-2">
+                            <div className="h-auto min-h-[145px] w-full mt-2 space-y-1">
                                 <ul className="space-y-1 pr-1">
                                 {todaysMissions.length > 0 ? (
                                   missionsToShow.map(item => {
@@ -359,13 +360,25 @@ export function HeroesSummary() {
                                 </p>
                                 )}
                                 </ul>
+                                {todaysMissions.length > 5 && (
+                                    <button
+                                        onClick={() => toggleExpansion(child.id, 'missions')}
+                                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer mt-1"
+                                    >
+                                        {isMissionsExpanded ? (
+                                            <>Ver menos <ChevronUp className="h-4 w-4" /></>
+                                        ) : (
+                                            <>+ {todaysMissions.length - 5} missões <ChevronDown className="h-4 w-4" /></>
+                                        )}
+                                    </button>
+                                )}
                             </div>
                         </TabsContent>
                         <TabsContent value="school">
-                             <div className="h-[145px] w-full mt-2">
+                             <div className="h-auto min-h-[145px] w-full mt-2 space-y-1">
                                 <ul className="space-y-1 pr-3">
-                                {todaysSchoolEntries.filter(e => e.childId === child.id).length > 0 ? (
-                                    todaysSchoolEntries.filter(e => e.childId === child.id).map(entry => (
+                                {todaysSchoolEntries.length > 0 ? (
+                                    schoolToShow.map(entry => (
                                         <li key={entry.id}>
                                             <div className="text-xs flex items-center gap-1.5 p-1.5 rounded-md" style={{ borderLeft: `4px solid ${entry.color}`}}>
                                                 <NotebookPen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
@@ -380,23 +393,22 @@ export function HeroesSummary() {
                                     </p>
                                 )}
                                 </ul>
+                                {todaysSchoolEntries.length > 5 && (
+                                     <button
+                                        onClick={() => toggleExpansion(child.id, 'school')}
+                                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer mt-1"
+                                    >
+                                        {isSchoolExpanded ? (
+                                            <>Ver menos <ChevronUp className="h-4 w-4" /></>
+                                        ) : (
+                                            <>+ {todaysSchoolEntries.length - 5} matérias <ChevronDown className="h-4 w-4" /></>
+                                        )}
+                                    </button>
+                                )}
                              </div>
                         </TabsContent>
                     </Tabs>
                 </div>
-
-                {todaysMissions.length > 5 && (
-                    <button
-                        onClick={() => toggleMissionsExpansion(child.id)}
-                        className="w-full text-xs font-semibold text-primary p-2 flex items-center justify-center gap-2 hover:bg-primary/5 rounded-b-md cursor-pointer"
-                    >
-                        {isExpanded ? (
-                            <>Ver menos <ChevronUp className="h-4 w-4" /></>
-                        ) : (
-                            <>+ {todaysMissions.length - 5} missões <ChevronDown className="h-4 w-4" /></>
-                        )}
-                    </button>
-                )}
 
 
                 <CardFooter className="grid grid-cols-3 gap-1 text-center p-1 border-t bg-muted/20 mt-auto">
