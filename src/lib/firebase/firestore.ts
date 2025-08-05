@@ -419,18 +419,25 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 };
 
 
-export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>) => {
+export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   const dataToUpdate: { [key: string]: any } = { ...updates };
 
   // Convert Date object back to Firestore Timestamp before updating
-  if (dataToUpdate.birthDate && dataToUpdate.birthDate instanceof Date) {
-    dataToUpdate.birthDate = Timestamp.fromDate(dataToUpdate.birthDate);
+  if (dataToUpdate.birthDate) {
+    // It could be a string from the form or a Date object
+    const dateObject = getDateObject(dataToUpdate.birthDate);
+    if (dateObject) {
+      dataToUpdate.birthDate = Timestamp.fromDate(dateObject);
+    } else {
+      // Handle or remove invalid date
+      delete dataToUpdate.birthDate;
+    }
   }
 
   await updateDoc(childRef, {
     ...dataToUpdate,
-    updatedAt: serverTimestamp()
+    updatedAt: serverTimestamp(),
   });
 };
 
@@ -2480,6 +2487,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+
 
 
 

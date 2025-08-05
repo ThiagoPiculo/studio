@@ -383,7 +383,7 @@ const handleRemoveAvatar = async () => {
     try {
       const updates: Partial<ChildProfile> = {
         name: data.name,
-        birthDate: data.birthDate,
+        birthDate: data.birthDate as any, // Send as Date object
         gender: data.gender,
         schoolShift: data.schoolShift,
         schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : '',
@@ -570,12 +570,7 @@ const handleRemoveAvatar = async () => {
                       <FormItem className="flex flex-col">
                         <FormLabel>Data de Nascimento</FormLabel>
                         <div className="flex items-center gap-4">
-                            <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                                if (open && field.value) {
-                                    setDateInput(format(field.value, 'dd/MM/yyyy'));
-                                }
-                                setIsCalendarOpen(open);
-                            }}>
+                            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
                                 <PopoverTrigger asChild>
                                     <FormControl>
                                     <Button
@@ -586,9 +581,9 @@ const handleRemoveAvatar = async () => {
                                         )}
                                     >
                                         {field.value ? (
-                                        format(field.value, "PPP", { locale: ptBR })
+                                            format(field.value, "PPP", { locale: ptBR })
                                         ) : (
-                                        <span>Escolha uma data</span>
+                                            <span>Escolha uma data</span>
                                         )}
                                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                     </Button>
@@ -603,24 +598,24 @@ const handleRemoveAvatar = async () => {
                                             const maskedValue = handleDateMask(e.target.value);
                                             setDateInput(maskedValue);
                                             if (maskedValue.length === 10) {
-                                            const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                            if (isValid(parsedDate)) {
-                                                field.onChange(parsedDate);
-                                                setMonth(parsedDate);
-                                            }
+                                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                                if (isValid(parsedDate)) {
+                                                    field.onChange(parsedDate);
+                                                    setMonth(parsedDate);
+                                                }
                                             }
                                         }}
                                         onKeyDown={(e) => {
                                             if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            const date = parse(dateInput, 'dd/MM/yyyy', new Date());
-                                            if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                                field.onChange(date);
-                                                setMonth(date);
-                                                setIsCalendarOpen(false);
-                                            } else {
-                                                toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
-                                            }
+                                                e.preventDefault();
+                                                const date = parse(dateInput, 'dd/MM/yyyy', new Date());
+                                                if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
+                                                    field.onChange(date);
+                                                    setMonth(date);
+                                                    setIsCalendarOpen(false);
+                                                } else {
+                                                    toast({ title: "Data Inválida", description: "Use o formato dd/mm/aaaa e uma data válida.", variant: "destructive" });
+                                                }
                                             }
                                         }}
                                     />
