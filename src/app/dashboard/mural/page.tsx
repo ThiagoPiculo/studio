@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -560,9 +561,9 @@ function MuralCompletoPageContent() {
 
   const handleProfileUpdate = useCallback(async () => {
     if (!child) return;
-    // We only need to show a toast now, as the optimistic update is handled by the form.
     toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${child?.name || ''} foram salvas.` });
-  }, [toast, child]);
+    await fetchData(child.id);
+  }, [toast, child, fetchData]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child) return;

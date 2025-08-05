@@ -18,7 +18,7 @@ import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, deleteAvatar, updateChildProfile } from "@/lib/firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "firebase/storage";
 import { storage } from "@/lib/firebase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -276,7 +276,7 @@ const handleCropAndUpload = async () => {
 
     try {
         const croppedBlob = await getCroppedImg(imgRef.current, crop);
-        const storageRef = ref(storage, `avatars/${user.uid}/${child.id}/avatar.png`);
+        const storageRef = ref(storage, `avatars/${child.ownerId}/${child.id}/avatar.png`);
         await uploadBytes(storageRef, croppedBlob);
         const newUrl = await getDownloadURL(storageRef);
 
@@ -500,7 +500,6 @@ const handleRemoveAvatar = async () => {
             accept="image/png, image/jpeg, image/webp"
             className="hidden"
             onChange={handleAvatarChange}
-            disabled={!isOwner || !canEdit}
           />
           <fieldset disabled={!canEdit} className="space-y-6 group">
             <div className="flex flex-col sm:flex-row gap-6 mb-6 items-center sm:items-start">
