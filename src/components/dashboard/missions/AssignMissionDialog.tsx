@@ -173,19 +173,32 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     const initialize = async () => {
         if (instanceToEdit) {
             setIsLoading(true);
-            setEffectiveTemplate(instanceToEdit);
             try {
-                const child = await getChildProfileById(instanceToEdit.childId);
-                if (child) {
-                    setChildren([child]);
-                    setSelectedChild(child);
-                    prepareScheduleForm(instanceToEdit);
-                    setView('schedule');
-                } else {
+                // When editing, we need both the template and child profile
+                const [template, child] = await Promise.all([
+                    getMissionTemplateById(instanceToEdit.templateId),
+                    getChildProfileById(instanceToEdit.childId)
+                ]);
+
+                if (!template) {
+                     toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
+                     onOpenChange(false);
+                     return;
+                }
+                if (!child) {
                     toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
                     onOpenChange(false);
+                    return;
                 }
+                
+                setEffectiveTemplate(template);
+                setChildren([child]);
+                setSelectedChild(child);
+                prepareScheduleForm(instanceToEdit);
+                setView('schedule');
+
             } catch (error) {
+                console.error("Error initializing edit dialog:", error);
                 toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
                 onOpenChange(false);
             } finally {
