@@ -16,10 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getRewardTemplateById, updateRewardTemplate, getChildRewardInstancesForContext, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
-import type { RewardCategory, RewardTemplate, ChildRewardInstance, ChildProfile } from '@/lib/types';
+import type { RewardCategory, RewardTemplate, ChildRewardInstance, ChildProfile, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
-import { useUserRole } from '@/hooks/useUserRole';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from '@/lib/utils';
@@ -45,8 +44,7 @@ export default function EditRewardTemplatePage() {
   const params = useParams();
   const templateId = params.templateId as string;
   const { user } = useAuth();
-  const { canEdit, isLoading: isRoleLoading } = useUserRole();
-  const { currentContext } = useFamily();
+  const { currentContext, currentRole } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
@@ -54,6 +52,13 @@ export default function EditRewardTemplatePage() {
 
   const [assignedChildren, setAssignedChildren] = useState<ChildProfile[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  
+  const canEdit = useMemo(() => {
+    if (currentContext === 'my-space') return true;
+    if (!currentRole) return false;
+    const editableRoles: FamilyRole[] = ['Owner', 'Co-Owner', 'Guardian'];
+    return editableRoles.includes(currentRole as FamilyRole);
+  }, [currentContext, currentRole]);
 
   const form = useForm<RewardTemplateFormValues>({
     resolver: zodResolver(rewardTemplateFormSchema),
@@ -181,7 +186,7 @@ export default function EditRewardTemplatePage() {
     }
   };
 
-  if (isFetchingData || isRoleLoading) {
+  if (isFetchingData) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
