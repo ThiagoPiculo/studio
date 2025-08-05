@@ -1393,9 +1393,9 @@ function FamilyPageContent() {
                 <div className="flex items-center gap-2">
                     <Sparkles className="h-6 w-6 text-primary"/>Mini Herois no Meu Espaço
                 </div>
-                <Link href="/dashboard/onboarding" passHref>
-                    <Button variant="outline" size="sm">
-                        <UserPlus className="mr-2 h-4 w-4" /> Cadastrar Novo
+                <Link href="/dashboard/novo-heroi" passHref>
+                    <Button>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi
                     </Button>
                 </Link>
             </CardTitle>
