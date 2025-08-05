@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle, MoreHorizontal, ListCollapse } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -227,7 +227,7 @@ export function HeroesSummary() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}`}><ListCollapse className="mr-2 h-4 w-4" />Painel de Progresso</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}`}><LayoutGrid className="mr-2 h-4 w-4" />Painel de Progresso</Link></DropdownMenuItem>
                         <DropdownMenuItem asChild><Link href={`/dashboard/agenda?childId=${child.id}`}><Target className="mr-2 h-4 w-4" />Rotina de Missões</Link></DropdownMenuItem>
                         <DropdownMenuItem asChild><Link href={`/dashboard/school-schedule`}><NotebookPen className="mr-2 h-4 w-4" />Rotina Escolar</Link></DropdownMenuItem>
                         <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}&tab=badges`}><Medal className="mr-2 h-4 w-4" />Medalhas do Herói</Link></DropdownMenuItem>
