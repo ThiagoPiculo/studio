@@ -46,12 +46,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Alert, AlertTitle as AlertTitleShad, AlertDescription as AlertDescriptionShad } from "../ui/alert";
 import { useFamily } from "@/contexts/FamilyContext";
+import { getDateObject } from "@/lib/calendar-utils";
 
 
 const profileFormSchema = z.object({
   name: z.string().min(2, { message: "O nome deve ter pelo menos 2 caracteres." }).max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
   birthDate: z.date({
     required_error: "A data de nascimento é obrigatória.",
+    invalid_type_error: "Por favor, insira uma data válida."
   }),
   gender: z.enum(['boy', 'girl', 'not-informed'], {
     required_error: "Por favor, selecione o gênero.",
@@ -134,12 +136,11 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
 
-
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: child.name || "",
-      birthDate: child.birthDate ? new Date(child.birthDate as any) : undefined,
+      birthDate: getDateObject(child.birthDate) || undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -195,7 +196,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   useEffect(() => {
     form.reset({
       name: child.name || "",
-      birthDate: child.birthDate ? new Date(child.birthDate as any) : undefined,
+      birthDate: getDateObject(child.birthDate) || undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -763,14 +764,14 @@ const handleRemoveAvatar = async () => {
                       <Clock className="h-4 w-4"/>
                       <span>Data de Criação:</span>
                       <span className="font-medium text-foreground">
-                          {child.createdAt ? format(new Date(child.createdAt as any), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.createdAt ? format(getDateObject(child.createdAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
                    <div className="flex items-center gap-2 text-muted-foreground">
                       <RefreshCw className="h-4 w-4"/>
                       <span>Última Atualização:</span>
                       <span className="font-medium text-foreground">
-                          {child.updatedAt ? format(new Date(child.updatedAt as any), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.updatedAt ? format(getDateObject(child.updatedAt) || new Date(), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
               </div>
@@ -794,6 +795,3 @@ const handleRemoveAvatar = async () => {
     </>
   );
 }
-
-
-    
