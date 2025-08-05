@@ -17,8 +17,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useState, useEffect, useMemo, useRef } from "react";
-import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, deleteAvatar, updateChildProfile } from "@/lib/firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "firebase/storage";
+import { getChildProfilesByFamily, getChildProfilesByOwner, getUserProfile, updateChildAvatarUrl, deleteAvatar } from "@/lib/firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { storage } from "@/lib/firebase/config";
 import type { ChildProfile, HeroColor, UserProfile, SchoolShift, FamilyRole } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +38,7 @@ import { TimePicker } from "./school-schedule/TimePicker";
 import { useAuth } from "@/contexts/AuthContext";
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import ReactCrop, { type Crop, centerCrop, makeAspectCrop } from 'react-image-crop';
+import ReactCrop, { type Crop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import {
   DropdownMenu,
@@ -267,6 +267,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     });
   }
 
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const handleCropAndUpload = async () => {
     if (!user || !crop || !imgRef.current) return;
@@ -276,15 +277,25 @@ const handleCropAndUpload = async () => {
 
     try {
         const croppedBlob = await getCroppedImg(imgRef.current, crop);
-        const storageRef = ref(storage, `avatars/${child.ownerId}/${child.id}/avatar.png`);
+        const originalPath = `avatars/${child.ownerId}/${child.id}/avatar.png`;
+        const resizedPath = `avatars/${child.ownerId}/${child.id}/avatar_200x200.png`;
+
+        const storageRef = ref(storage, originalPath);
+        
         await uploadBytes(storageRef, croppedBlob);
-        const newUrl = await getDownloadURL(storageRef);
+        
+        // Wait for the resize extension to run. This is a simple delay.
+        // A more robust solution might use a Firestore trigger to confirm.
+        await delay(3000); 
 
+        const resizedFileRef = ref(storage, resizedPath);
+        const newUrl = await getDownloadURL(resizedFileRef);
+        
         await updateChildAvatarUrl(child.id, newUrl);
-
         setAvatarPreview(newUrl); // Optimistic update
+        onProfileUpdate(); // Notify parent to refetch all data
+
         toast({ title: "Avatar atualizado!", description: "A nova foto do seu herói foi salva." });
-        onProfileUpdate(); // Re-fetch other data
     } catch (error) {
         console.error("Error uploading avatar:", error);
         toast({
