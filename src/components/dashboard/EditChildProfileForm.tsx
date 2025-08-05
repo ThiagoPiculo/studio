@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -113,8 +112,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
 
   const [isLoading, setIsLoading] = useState(false);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [dateInput, setDateInput] = useState<string>("");
-  const [month, setMonth] = useState<Date>(child.birthDate ? new Date(child.birthDate) : new Date());
   
   const [usedColors, setUsedColors] = useState<HeroColor[]>([]);
   const [isLoadingColors, setIsLoadingColors] = useState(true);
@@ -142,7 +139,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
       name: child.name || "",
-      birthDate: child.birthDate ? new Date(child.birthDate) : undefined,
+      birthDate: child.birthDate ? new Date(child.birthDate as any) : undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -198,7 +195,7 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
   useEffect(() => {
     form.reset({
       name: child.name || "",
-      birthDate: child.birthDate ? new Date(child.birthDate) : undefined,
+      birthDate: child.birthDate ? new Date(child.birthDate as any) : undefined,
       gender: child.gender || "not-informed",
       schoolShift: child.schoolShift || 'not_applicable',
       schoolShiftStart: child.schoolShiftStart || '',
@@ -206,9 +203,6 @@ export function EditChildProfileForm({ child, onProfileUpdate }: EditChildProfil
       color: child.color || heroColors[0],
     });
     setAvatarPreview(child.avatar || null);
-    if (child.birthDate) {
-      setMonth(new Date(child.birthDate));
-    }
   }, [child, form]);
 
    const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -597,69 +591,41 @@ const handleRemoveAvatar = async () => {
                       <FormItem className="flex flex-col">
                         <FormLabel>Data de Nascimento</FormLabel>
                         <div className="flex items-center gap-4">
-                          <Popover open={isCalendarOpen} onOpenChange={(open) => {
-                          if (open) {
-                              setDateInput(field.value ? format(field.value, 'dd/MM/yyyy') : "");
-                          }
-                          setIsCalendarOpen(open);
-                          }}>
-                          <PopoverTrigger asChild>
-                              <FormControl>
-                              <Button
-                                  variant={"outline"}
-                                  className={cn(
-                                  "w-full pl-3 text-left font-normal",
-                                  !field.value && "text-muted-foreground"
-                                  )}
-                              >
-                                  {field.value ? (
-                                  format(field.value, "PPP", { locale: ptBR })
-                                  ) : (
-                                  <span>Escolha uma data</span>
-                                  )}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                              </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                              <div className="p-2 border-b">
-                              <Input
-                                  placeholder="Digite: dd/mm/aaaa"
-                                  value={dateInput}
-                                  onChange={(e) => {
-                                      const maskedValue = handleDateMask(e.target.value);
-                                      setDateInput(maskedValue);
-                                      if (maskedValue.length === 10) {
-                                      const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                      if (isValid(parsedDate)) {
-                                          field.onChange(parsedDate);
-                                          setMonth(parsedDate);
-                                      }
-                                      }
-                                  }}
-                                  />
-                              </div>
-                              <Calendar
-                              locale={ptBR}
-                              mode="single"
-                              month={month}
-                              onMonthChange={setMonth}
-                              selected={field.value}
-                              onSelect={(date) => {
-                                  if (date) {
+                          <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                            <PopoverTrigger asChild>
+                                <FormControl>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                    "w-full pl-3 text-left font-normal",
+                                    !field.value && "text-muted-foreground"
+                                    )}
+                                >
+                                    {field.value ? (
+                                    format(field.value, "PPP", { locale: ptBR })
+                                    ) : (
+                                    <span>Escolha uma data</span>
+                                    )}
+                                    <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                                </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                                <Calendar
+                                locale={ptBR}
+                                mode="single"
+                                selected={field.value}
+                                onSelect={(date) => {
                                     field.onChange(date);
-                                    setDateInput(format(date, 'dd/MM/yyyy'));
-                                    setMonth(date);
-                                  }
-                                  setIsCalendarOpen(false);
-                              }}
-                              disabled={(date) =>
-                                  date > new Date() || date < new Date("1900-01-01")
-                              }
-                              initialFocus
-                              weekStartsOn={1}
-                              />
-                          </PopoverContent>
+                                    setIsCalendarOpen(false);
+                                }}
+                                disabled={(date) =>
+                                    date > new Date() || date < new Date("1900-01-01")
+                                }
+                                initialFocus
+                                weekStartsOn={1}
+                                />
+                            </PopoverContent>
                           </Popover>
                           {calculatedAge !== null && (
                           <div className="text-sm text-muted-foreground whitespace-nowrap">
@@ -797,14 +763,14 @@ const handleRemoveAvatar = async () => {
                       <Clock className="h-4 w-4"/>
                       <span>Data de Criação:</span>
                       <span className="font-medium text-foreground">
-                          {child.createdAt ? format(new Date(child.createdAt), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.createdAt ? format(new Date(child.createdAt as any), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
                    <div className="flex items-center gap-2 text-muted-foreground">
                       <RefreshCw className="h-4 w-4"/>
                       <span>Última Atualização:</span>
                       <span className="font-medium text-foreground">
-                          {child.updatedAt ? format(new Date(child.updatedAt), 'PPPp', { locale: ptBR }) : 'N/A'}
+                          {child.updatedAt ? format(new Date(child.updatedAt as any), 'PPPp', { locale: ptBR }) : 'N/A'}
                       </span>
                   </div>
               </div>
@@ -829,3 +795,5 @@ const handleRemoveAvatar = async () => {
   );
 }
 
+
+    
