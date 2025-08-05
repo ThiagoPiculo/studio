@@ -489,6 +489,16 @@ const handleRemoveAvatar = async () => {
         </DialogContent>
       </Dialog>
       
+      {/* This input is now outside the form to prevent submission */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png, image/jpeg, image/webp"
+        className="hidden"
+        onChange={handleAvatarChange}
+        disabled={!isOwner || !canEdit}
+      />
+
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <fieldset disabled={!canEdit} className="space-y-6 group">
@@ -540,17 +550,9 @@ const handleRemoveAvatar = async () => {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/png, image/jpeg, image/webp"
-                  className="hidden"
-                  onChange={handleAvatarChange}
-                  disabled={!isOwner || !canEdit}
-                />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start flex-grow w-full">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-6 items-start flex-grow w-full">
                   <FormField
                     control={form.control}
                     name="name"
@@ -602,7 +604,7 @@ const handleRemoveAvatar = async () => {
                                             if (maskedValue.length === 10) {
                                                 const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
                                                 if (isValid(parsedDate)) {
-                                                    field.onChange(parsedDate);
+                                                    form.setValue("birthDate", parsedDate);
                                                     setMonth(parsedDate);
                                                 }
                                             }
@@ -612,7 +614,7 @@ const handleRemoveAvatar = async () => {
                                                 e.preventDefault();
                                                 const date = parse(dateInput, 'dd/MM/yyyy', new Date());
                                                 if (isValid(date) && date.getFullYear() > 1900 && date < new Date()) {
-                                                    field.onChange(date);
+                                                    form.setValue("birthDate", date);
                                                     setMonth(date);
                                                     setIsCalendarOpen(false);
                                                 } else {
@@ -630,7 +632,7 @@ const handleRemoveAvatar = async () => {
                                     selected={field.value}
                                     onSelect={(date) => {
                                         if (date) {
-                                            field.onChange(date);
+                                            form.setValue("birthDate", date);
                                             setDateInput(format(date, 'dd/MM/yyyy'));
                                         }
                                         setIsCalendarOpen(false);
