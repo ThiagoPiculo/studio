@@ -38,7 +38,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays, isValid } from 'date-fns';
+import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays, isValid, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import Loading from './loading';
 import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
@@ -971,7 +971,7 @@ function MuralCompletoPageContent() {
                   <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
               ) : (
                   <Avatar
-                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
+                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-offset-background"
                       style={{'--ring-color': child.color } as React.CSSProperties}
                   >
                       <AvatarImage src={child.avatar} alt={child.name} />
