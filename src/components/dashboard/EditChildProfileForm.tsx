@@ -406,7 +406,7 @@ const handleRemoveAvatar = async () => {
     try {
       const updates: Partial<ChildProfile> = {
         name: data.name,
-        birthDate: Timestamp.fromDate(data.birthDate),
+        birthDate: data.birthDate,
         gender: data.gender,
         schoolShift: data.schoolShift,
         schoolShiftStart: data.schoolShift !== 'not_applicable' ? data.schoolShiftStart : '',

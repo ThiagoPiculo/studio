@@ -421,8 +421,15 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 
 export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>) => {
   const childRef = doc(db, 'children', childId);
+  const dataToUpdate: { [key: string]: any } = { ...updates };
+
+  // Convert Date object back to Firestore Timestamp before updating
+  if (dataToUpdate.birthDate && dataToUpdate.birthDate instanceof Date) {
+    dataToUpdate.birthDate = Timestamp.fromDate(dataToUpdate.birthDate);
+  }
+
   await updateDoc(childRef, {
-    ...updates,
+    ...dataToUpdate,
     updatedAt: serverTimestamp()
   });
 };
@@ -1312,7 +1319,7 @@ export const addChildRewardInstance = async (
         type: 'instance_assigned',
         title: 'Recompensa Atribuída',
         description: `${actor.name} atribuiu "${newInstance.title}" para ${child?.name || 'um herói'}.`,
-        href: `/dashboard/child/${newInstance.childId}/manage?tab=rewards`,
+        href: `/dashboard/mural?childId=${newInstance.childId}&tab=rewards`,
         relatedChildId: newInstance.childId
     });
   }
@@ -2473,5 +2480,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 
 
       
+
 
 
