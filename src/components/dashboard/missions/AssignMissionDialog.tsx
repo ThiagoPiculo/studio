@@ -147,6 +147,42 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       setSelectedChild(null);
       form.reset({});
   }, [form]);
+  
+  const prepareScheduleForm = useCallback((instance: MissionInstance | null) => {
+    if (!effectiveTemplate) return;
+    const source = instance || effectiveTemplate;
+    
+    let startDate = getDateObject(source.startDate);
+    let dueDate = getDateObject(source.dueDate);
+
+    if (!instance) {
+      const today = new Date();
+      startDate = source.isRecurring ? today : null;
+      dueDate = !source.isRecurring ? today : new Date();
+    } else if (!startDate && !dueDate) {
+        // Fallback for older instances without due/start dates
+        dueDate = new Date();
+    }
+    
+    const initialValues: AssignmentFormValues = {
+      isRecurring: !!source.isRecurring,
+      startDate: startDate,
+      dueDate: dueDate || new Date(),
+      recurrenceRule: null,
+    };
+
+    if (source.recurrenceRule) {
+        const rule = source.recurrenceRule as any;
+        initialValues.recurrenceRule = { 
+            ...rule, 
+            endDate: getDateObject(rule.endDate) 
+        };
+    } else if (source.isRecurring) {
+        initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
+    }
+
+    form.reset(initialValues);
+  }, [form, effectiveTemplate]);
 
   const fetchData = useCallback(async () => {
     if (!user || !effectiveTemplate) return;
@@ -217,7 +253,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     } else {
         resetDialogState();
     }
-  }, [isOpen, instanceToEdit, template, fetchData, onOpenChange, resetDialogState, toast]);
+  }, [isOpen, instanceToEdit, template, prepareScheduleForm]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
@@ -237,42 +273,6 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       setRecurrenceEditMode(mode);
       prepareScheduleForm(existingAssignments[selectedChild!.id]);
       setView('schedule');
-  };
-
-  const prepareScheduleForm = (instance: MissionInstance | null) => {
-    if (!effectiveTemplate) return;
-    const source = instance || effectiveTemplate;
-    
-    let startDate = getDateObject(source.startDate);
-    let dueDate = getDateObject(source.dueDate);
-
-    if (!instance) {
-      const today = new Date();
-      startDate = source.isRecurring ? today : null;
-      dueDate = !source.isRecurring ? today : new Date();
-    } else if (!startDate && !dueDate) {
-        // Fallback for older instances without due/start dates
-        dueDate = new Date();
-    }
-    
-    const initialValues: AssignmentFormValues = {
-      isRecurring: !!source.isRecurring,
-      startDate: startDate,
-      dueDate: dueDate || new Date(),
-      recurrenceRule: null,
-    };
-
-    if (source.recurrenceRule) {
-        const rule = source.recurrenceRule as any;
-        initialValues.recurrenceRule = { 
-            ...rule, 
-            endDate: getDateObject(rule.endDate) 
-        };
-    } else if (source.isRecurring) {
-        initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
-    }
-
-    form.reset(initialValues);
   };
   
   const handleUnassign = async () => {
