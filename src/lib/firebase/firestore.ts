@@ -163,6 +163,46 @@ export const findUserByEmail = async (email: string): Promise<UserProfile | null
 };
 
 
+export const uploadUserAvatarAndUpdateProfile = async (userId: string, file: Blob): Promise<{ newUrl: string }> => {
+  const filePath = `user_avatars/${userId}/avatar.png`;
+  const fileRef = ref(storage, filePath);
+  
+  await uploadBytes(fileRef, file);
+
+  const resizedFilePath = `user_avatars/${userId}/avatar_200x200.png`;
+  const resizedFileRef = ref(storage, resizedFilePath);
+  let newUrl = '';
+  const maxAttempts = 10;
+  let attempt = 0;
+
+  while(attempt < maxAttempts) {
+    try {
+      await getMetadata(resizedFileRef);
+      newUrl = await getDownloadURL(resizedFileRef);
+      break;
+    } catch (error: any) {
+      if (error.code === 'storage/object-not-found') {
+        attempt++;
+        if (attempt >= maxAttempts) {
+          throw new Error("Timeout waiting for resized image.");
+        }
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      } else {
+        throw error;
+      }
+    }
+  }
+
+  if (newUrl) {
+    const userDocRef = doc(db, 'users', userId);
+    await updateDoc(userDocRef, { avatarUrl: newUrl });
+  } else {
+    throw new Error("Failed to get resized image URL.");
+  }
+  
+  return { newUrl };
+};
+
 export const updateChildAvatarUrl = async (childId: string, avatarUrl: string): Promise<void> => {
     const childRef = doc(db, 'children', childId);
     await updateDoc(childRef, {
@@ -178,28 +218,17 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
     const originalPath = `${basePath}/avatar.png`;
     const resizedPath = `${basePath}/avatar_200x200.png`;
 
-    // References to the files in storage
-    const originalRef = ref(storage, originalPath);
-    const resizedRef = ref(storage, resizedPath);
-
-    // Update Firestore document to remove the avatar URL
     const docRef = doc(db, isUserAvatar ? 'users' : 'children', profileId);
     await updateDoc(docRef, {
+        avatarUrl: deleteField(),
         avatar: deleteField(),
         updatedAt: serverTimestamp(),
     });
 
-    // Attempt to delete files from storage, ignoring errors if they don't exist
-    try {
-        await deleteObject(originalRef);
-    } catch (error: any) {
-        if (error.code !== 'storage/object-not-found') console.error("Error deleting original avatar:", error);
-    }
-    try {
-        await deleteObject(resizedRef);
-    } catch (error: any) {
-        if (error.code !== 'storage/object-not-found') console.error("Error deleting resized avatar:", error);
-    }
+    const originalRef = ref(storage, originalPath);
+    const resizedRef = ref(storage, resizedPath);
+    try { await deleteObject(originalRef); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.error(e); }
+    try { await deleteObject(resizedRef); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.error(e); }
 };
 
 // --- Child Profile ---
@@ -212,7 +241,6 @@ export const addChildProfile = async (
   
   const familyId = contextId && contextId !== 'my-space' ? contextId : null;
   
-  // Find available colors based on context and gender
   const existingChildren = familyId ? await getChildProfilesByFamily(familyId) : await getChildProfilesByOwner(ownerId);
   const usedColors = new Set(existingChildren.map(child => child.color));
 
@@ -222,7 +250,7 @@ export const addChildProfile = async (
   } else if (childData.gender === 'girl') {
     colorPalette = girlColors;
   } else {
-    colorPalette = heroColors; // Use all colors if not specified
+    colorPalette = heroColors;
   }
 
   const availableColor = colorPalette.find(color => !usedColors.has(color)) || heroColors.find(color => !usedColors.has(color)) || heroColors[Math.floor(Math.random() * heroColors.length)];
@@ -254,10 +282,6 @@ export const addChildProfile = async (
   const finalProfile = { id: newChildRef.id, ...newChildData };
   return convertTimestampsInObject(finalProfile) as ChildProfile;
 };
-
-
-// Helper function to delay execution
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export const getChildProfileById = async (childId: string): Promise<ChildProfile | null> => {
   const docRef = doc(db, 'children', childId);
@@ -330,14 +354,11 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
   const childRef = doc(db, 'children', childId);
   const dataToUpdate: { [key: string]: any } = { ...updates };
 
-  // Convert Date object back to Firestore Timestamp before updating
   if (dataToUpdate.birthDate) {
-    // It could be a string from the form or a Date object
     const dateObject = getDateObject(dataToUpdate.birthDate);
     if (dateObject) {
       dataToUpdate.birthDate = Timestamp.fromDate(dateObject);
     } else {
-      // Handle or remove invalid date
       delete dataToUpdate.birthDate;
     }
   }
@@ -347,11 +368,10 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
     updatedAt: serverTimestamp(),
   });
 
-  // Dispatch notification
   await createAndDispatchNotifications(
     childId,
     {
-      type: 'template_updated', // Reusing a general type
+      type: 'template_updated',
       title: 'Perfil de Herói Atualizado',
       description: `${actor.name} atualizou o perfil de ${updates.name || 'um herói'}.`,
       href: `/dashboard/mural?childId=${childId}&tab=edit`,
@@ -399,7 +419,7 @@ export const deleteChildProfile = async (childId: string, actor: UserProfile): P
           type: 'template_deleted',
           title: 'Perfil Removido',
           description: `O perfil de ${childData.name} foi removido por ${actor.name}.`,
-          href: '/dashboard/heroes', // Redirect to main heroes page
+          href: '/dashboard/heroes',
           relatedChildId: childId,
       },
       actor
@@ -407,17 +427,14 @@ export const deleteChildProfile = async (childId: string, actor: UserProfile): P
 
   const batch = writeBatch(db);
 
-  // Delete associated reward instances
   const rewardInstancesQuery = query(collection(db, "childRewardInstances"), where("childId", "==", childId));
   const rewardInstancesSnapshot = await getDocs(rewardInstancesQuery);
   rewardInstancesSnapshot.forEach(doc => batch.delete(doc.ref));
 
-  // Delete associated mission instances
   const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
   const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
   missionInstancesSnapshot.forEach(doc => batch.delete(doc.ref));
   
-  // Delete the child profile itself
   batch.delete(childRef);
 
   await batch.commit();
@@ -437,7 +454,6 @@ export const resetChildProgress = async (actor: UserProfile, childId: string): P
   
     const batch = writeBatch(db);
 
-    // 1. Reset the child's main profile stats
     batch.update(childRef, {
       stars: 0,
       xp: 0,
@@ -446,7 +462,6 @@ export const resetChildProgress = async (actor: UserProfile, childId: string): P
       updatedAt: serverTimestamp(),
     });
 
-    // 2. Find and reset all mission instances for this child
     const missionInstancesQuery = query(collection(db, "missionInstances"), where("childId", "==", childId));
     const missionInstancesSnapshot = await getDocs(missionInstancesQuery);
     missionInstancesSnapshot.forEach(missionDoc => {
@@ -457,7 +472,6 @@ export const resetChildProgress = async (actor: UserProfile, childId: string): P
       });
     });
 
-    // 3. Find and reset all redeemed reward instances for this child
     const rewardInstancesQuery = query(
       collection(db, "childRewardInstances"),
       where("childId", "==", childId),
@@ -474,7 +488,6 @@ export const resetChildProgress = async (actor: UserProfile, childId: string): P
 
     await batch.commit();
     
-    // Send notification
     const child = await getChildProfileById(childId);
     if(child) {
          await createAndDispatchNotifications(
@@ -502,7 +515,6 @@ export const resetSelectedChildrenProgress = async (actor: UserProfile, childIds
 export const resetSchedulesForChildren = async (currentUserId: string, childIds: string[]): Promise<void> => {
   if (childIds.length === 0) return;
 
-  // Verify ownership before proceeding
   for (const childId of childIds) {
     const childRef = doc(db, 'children', childId);
     const childSnap = await getDoc(childRef);
@@ -513,8 +525,6 @@ export const resetSchedulesForChildren = async (currentUserId: string, childIds:
 
   const batch = writeBatch(db);
 
-  // Firestore 'in' queries are limited to 30 items in the array for the web SDK.
-  // We chunk the childIds array to handle more than 30 children if needed.
   const chunks = [];
   for (let i = 0; i < childIds.length; i += 30) {
     chunks.push(childIds.slice(i, i + 30));
@@ -534,7 +544,6 @@ export const resetSchedulesForChildren = async (currentUserId: string, childIds:
 export const moveChildToNewContext = async (childId: string, newFamilyId: string | null, actor: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   
-  // 1. Verify ownership BEFORE starting the batch
   const childSnap = await getDoc(childRef);
   if (!childSnap.exists()) {
     throw new Error("Perfil do Mini Heroi não encontrado.");
@@ -545,38 +554,30 @@ export const moveChildToNewContext = async (childId: string, newFamilyId: string
 
   const oldFamilyId = childSnap.data().familyId || 'my-space';
   
-  // 2. Prepare the batch
   const batch = writeBatch(db);
 
-  // 3. Add operations to the batch
-  // Update Child Profile
   batch.update(childRef, { familyId: newFamilyId, updatedAt: serverTimestamp() });
 
-  // Update Mission Instances
   const missionQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
   const missionSnapshot = await getDocs(missionQuery);
   missionSnapshot.forEach(doc => {
     batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
   });
 
-  // Update Reward Instances
   const rewardQuery = query(collection(db, 'childRewardInstances'), where('childId', '==', childId));
   const rewardSnapshot = await getDocs(rewardQuery);
   rewardSnapshot.forEach(doc => {
     batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
   });
 
-  // Update School Schedule
   const scheduleQuery = query(collection(db, 'schoolSchedules'), where('childId', '==', childId));
   const scheduleSnapshot = await getDocs(scheduleQuery);
   scheduleSnapshot.forEach(doc => {
     batch.update(doc.ref, { familyId: newFamilyId, updatedAt: serverTimestamp() });
   });
 
-  // 4. Commit the batch
   await batch.commit();
 
-  // 5. Send notifications
   const childName = childSnap.data().name;
   if (oldFamilyId !== 'my-space') {
       await createAllianceNotification(oldFamilyId, actor, {
@@ -677,7 +678,6 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
   };
   await setDoc(newInvitationRef, newInvitation);
   
-  // Notify the invitee
   await addNotification({
     userId: invitee.uid,
     type: 'alliance_join_request',
@@ -768,12 +768,11 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
   });
   await batch.commit();
 
-  // Notify existing members
-  const existingMembers = await getFamilyMembers(family.id); // This will include the new member
+  const existingMembers = await getFamilyMembers(family.id);
   const notificationPromises = existingMembers
       .filter(member => member.uid !== userId)
       .map(member => {
-          return addNotification({ // Using the simpler addNotification here
+          return addNotification({
               userId: member.uid,
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
@@ -813,37 +812,30 @@ export const getFamilyById = async (familyId: string): Promise<Family | null> =>
 export const leaveFamily = async (userId: string, familyId: string): Promise<void> => {
   const batch = writeBatch(db);
 
-  // 1. Find and delete the user's membership document
   const membershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
   batch.delete(membershipRef);
 
-
-  // 2. Find all children owned by this user within this family and reset their familyId
   const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', familyId));
   const childrenSnapshot = await getDocs(childrenQuery);
   childrenSnapshot.forEach(childDoc => {
     batch.update(childDoc.ref, { familyId: null, updatedAt: serverTimestamp() });
   });
 
-  // Commit all batched writes
   await batch.commit();
 };
 
 export const deleteFamily = async (familyId: string): Promise<void> => {
   const batch = writeBatch(db);
 
-  // 1. Delete the family document itself
   const familyRef = doc(db, 'families', familyId);
   batch.delete(familyRef);
 
-  // 2. Find and delete all memberships for this family
   const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
   const membershipsSnapshot = await getDocs(membershipsQuery);
   membershipsSnapshot.forEach(membershipDoc => {
     batch.delete(membershipDoc.ref);
   });
 
-  // 3. Find all children in this family and reset their familyId
   const childrenQuery = query(collection(db, 'children'), where('familyId', '==', familyId));
   const childrenSnapshot = await getDocs(childrenQuery);
   childrenSnapshot.forEach(childDoc => {
@@ -869,35 +861,29 @@ export const removeFamilyMember = async (familyId: string, userIdToRemove: strin
     const familyRef = doc(db, 'families', familyId);
     const familySnap = await getDoc(familyRef);
 
-    // Security check: ensure the current user is the owner
     if (!familySnap.exists() || familySnap.data().ownerId !== ownerId) {
         throw new Error("Apenas o proprietário pode remover membros.");
     }
-    // Prevent owner from removing themselves
     if (userIdToRemove === ownerId) {
         throw new Error("O proprietário não pode remover a si mesmo.");
     }
 
     const batch = writeBatch(db);
 
-    // 1. Find and delete the user's membership document
     const membershipRef = doc(db, 'familyMemberships', `${userIdToRemove}_${familyId}`);
     batch.delete(membershipRef);
 
 
-    // 2. Find all children owned by the user being removed AND in the current family
     const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userIdToRemove), where('familyId', '==', familyId));
     const childrenSnapshot = await getDocs(childrenQuery);
     
-    // 3. For each of these children, reassign ownership to the family owner
     childrenSnapshot.forEach(childDoc => {
         batch.update(childDoc.ref, { 
-            ownerId: ownerId, // Transfer ownership to the family owner
+            ownerId: ownerId,
             updatedAt: serverTimestamp() 
         });
     });
 
-    // 4. Commit all batched writes
     await batch.commit();
 };
 
@@ -924,19 +910,13 @@ export const transferFamilyOwnership = async (familyId: string, currentOwnerId: 
     const oldOwnerMembershipRef = doc(db, 'familyMemberships', `${currentOwnerId}_${familyId}`);
     const newOwnerMembershipRef = doc(db, 'familyMemberships', `${newOwnerId}_${familyId}`);
 
-    // Ensure the new owner is actually a member
     const newOwnerMembershipSnap = await transaction.get(newOwnerMembershipRef);
     if (!newOwnerMembershipSnap.exists()) {
         throw new Error("O usuário alvo precisa ser um membro da aliança para se tornar proprietário.");
     }
 
-    // 1. Update family document
     transaction.update(familyRef, { ownerId: newOwnerId });
-
-    // 2. Update new owner's role
     transaction.update(newOwnerMembershipRef, { role: 'Owner' });
-
-    // 3. Update old owner's role
     transaction.update(oldOwnerMembershipRef, { role: 'Co-Owner' });
   });
 };
@@ -981,11 +961,11 @@ export const resendFamilyInvitationNotification = async (invitationId: string): 
     }
 
     const invite = invitationSnap.data() as FamilyInvitation;
-    await updateDoc(invitationRef, { createdAt: serverTimestamp() }); // Update timestamp to show it's recent
+    await updateDoc(invitationRef, { createdAt: serverTimestamp() });
     
     await addNotification({
       userId: invite.inviteeId,
-      type: 'alliance_join_request', // This type is fine for a reminder
+      type: 'alliance_join_request',
       title: `Lembrete de Convite`,
       description: `${invite.inviterName} está aguardando você na aliança "${invite.familyName}".`,
       href: '/dashboard/family',
@@ -1010,10 +990,8 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
 
   const batch = writeBatch(db);
   
-  // 1. Update invitation status
   batch.update(invitationRef, { status: 'accepted' });
 
-  // 2. Create new membership
   const newMembershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
   const newMembership: Omit<FamilyMembership, 'id'> = {
     familyId: familyId,
@@ -1023,7 +1001,6 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   };
   batch.set(newMembershipRef, newMembership);
 
-  // 3. Update children's familyId
   const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
   const childrenSnapshot = await getDocs(childrenQuery);
   childrenSnapshot.forEach(childDoc => {
@@ -1032,13 +1009,12 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   
   await batch.commit();
 
-  // Notify existing members
   const newMemberProfile = await getUserProfile(userId);
-  const existingMembers = await getFamilyMembers(familyId); // This will include the new member
+  const existingMembers = await getFamilyMembers(familyId);
   const notificationPromises = existingMembers
-      .filter(member => member.uid !== userId) // Don't notify the new member
+      .filter(member => member.uid !== userId)
       .map(member => {
-          return addNotification({ // Using the simpler addNotification here
+          return addNotification({
               userId: member.uid,
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
@@ -1090,7 +1066,6 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
       throw new Error("Apenas o proprietário da aliança pode aprovar pedidos.");
     }
 
-    // Add membership
     const newMembershipRef = doc(db, 'familyMemberships', `${inviteeId}_${familyId}`);
     const newMembership: Omit<FamilyMembership, 'id'> = {
       familyId: familyId,
@@ -1100,18 +1075,15 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
     };
     transaction.set(newMembershipRef, newMembership);
 
-    // Update children's familyId
     const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', inviteeId), where('familyId', '==', null));
     const childrenSnapshot = await getDocs(childrenQuery);
     childrenSnapshot.forEach(childDoc => {
       transaction.update(childDoc.ref, { familyId: familyId, updatedAt: serverTimestamp() });
     });
     
-    // Update invitation status
     transaction.update(invitationRef, { status: 'accepted' });
   });
 
-  // Send notification to the newly added member
   const updatedInvitation = (await getDoc(invitationRef)).data() as FamilyInvitation;
   await addNotification({
       userId: updatedInvitation.inviteeId,
@@ -1143,7 +1115,7 @@ export const resendJoinRequestNotification = async (requestId: string): Promise<
   }
   const request = requestSnap.data() as FamilyInvitation;
   await addNotification({
-    userId: request.inviterId, // The owner who needs to approve
+    userId: request.inviterId,
     type: 'alliance_join_request',
     title: 'Lembrete: Pedido de Entrada',
     description: `${request.inviterName} ainda aguarda sua aprovação para entrar na aliança "${request.familyName}".`,
@@ -1181,17 +1153,53 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
         type: 'alliance_ownership_request',
         title: 'Pedido de Transferência de Propriedade',
         description: `${requesterProfile.name} está solicitando a propriedade da aliança "${family.name}".`,
-        href: `/dashboard/family`, // Link to family page to manage
+        href: `/dashboard/family`,
         relatedContextId: familyId,
+    });
+};
+
+// --- Feature Votes ---
+export const getFeatureVoteCount = async (featureId: string): Promise<number> => {
+    const docRef = doc(db, 'featureVotes', featureId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data().count || 0;
+    }
+    return 0;
+};
+
+export const getUserFeatureVote = async (userId: string, featureId: string): Promise<boolean> => {
+    const docRef = doc(db, 'featureVotes', featureId, 'votes', userId);
+    const docSnap = await getDoc(docRef);
+    return docSnap.exists();
+};
+
+export const toggleUserFeatureVote = async (userId: string, featureId: string): Promise<void> => {
+    const voteDocRef = doc(db, 'featureVotes', featureId, 'votes', userId);
+    const featureDocRef = doc(db, 'featureVotes', featureId);
+
+    await runTransaction(db, async (transaction) => {
+        const voteDoc = await transaction.get(voteDocRef);
+        const featureDoc = await transaction.get(featureDocRef);
+
+        let newCount = (featureDoc.data()?.count || 0) as number;
+
+        if (voteDoc.exists()) {
+            // User has voted, so we remove the vote
+            transaction.delete(voteDocRef);
+            newCount = Math.max(0, newCount - 1);
+        } else {
+            // User has not voted, so we add the vote
+            transaction.set(voteDocRef, { votedAt: serverTimestamp() });
+            newCount += 1;
+        }
+
+        transaction.set(featureDocRef, { count: newCount }, { merge: true });
     });
 };
 
 
 // --- Reward Templates (Catálogo de Recompensas) ---
-// This function is no longer needed with the new architecture.
-// export const populateInitialRewardTemplates = async (userId: string): Promise<void> => {
-// };
-
 export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
   const newTemplateRef = doc(collection(db, 'rewardTemplates'));
   const now = serverTimestamp() as Timestamp;
@@ -1204,7 +1212,6 @@ export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<R
   };
   await setDoc(newTemplateRef, newTemplate);
 
-  // Notify alliance members if applicable
   if (templateData.familyId) {
     await createAllianceNotification(templateData.familyId, actor, {
       type: 'template_created',
@@ -1277,7 +1284,6 @@ export const getRewardTemplatesByOwnerOrFamily = async (ownerId: string, familyI
   const templates = querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as RewardTemplate);
   
   return templates.sort((a, b) => {
-    // Timestamps are now ISO strings
     const timeA = new Date(a.createdAt as string).getTime();
     const timeB = new Date(b.createdAt as string).getTime();
     return timeB - timeA;
@@ -1356,10 +1362,8 @@ export const getChildRewardInstancesByChild = async (childId: string): Promise<C
 export const getChildRewardInstancesForContext = async (ownerId: string, familyId: string | null): Promise<ChildRewardInstance[]> => {
   let q;
   if (familyId && familyId !== 'my-space') {
-    // Se um familyId é fornecido, buscamos todas as instâncias dessa família
     q = query(collection(db, 'childRewardInstances'), where('familyId', '==', familyId), orderBy('assignedAt', 'desc'));
   } else {
-    // Se for 'my-space' (ou familyId é null), buscamos instâncias do ownerId que não estão em nenhuma família
     q = query(collection(db, 'childRewardInstances'), where('ownerId', '==', ownerId), where('familyId', '==', null), orderBy('assignedAt', 'desc'));
   }
   const querySnapshot = await getDocs(q);
@@ -1397,13 +1401,11 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
           throw new Error("Esta recompensa já foi resgatada.");
       }
 
-      // Update child's stars
       transaction.update(childRef, {
           stars: childData.stars - instanceData.starsCost,
           updatedAt: serverTimestamp(),
       });
 
-      // Update reward instance
       transaction.update(instanceRef, {
           status: 'redeemed',
           isRedeemed: true,
@@ -1412,7 +1414,6 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
       });
   });
   
-  // After transaction, send notification
   const finalInstanceSnap = await getDoc(instanceRef);
   const finalChildSnap = await getDoc(childRef);
   if (!finalInstanceSnap.exists() || !finalChildSnap.exists()) return;
@@ -1465,7 +1466,7 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
-        return; // Nothing to delete
+        return;
     }
     const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
      if (instanceData.familyId) {
@@ -1526,31 +1527,25 @@ export const updateMissionTemplate = async (actor: UserProfile, templateId: stri
     if (!templateSnap.exists()) {
       throw new Error("Template de missão não encontrado.");
     }
-    const templateData = templateSnap.data();
     
-    // 1. Update the MissionTemplate
     transaction.update(templateRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     });
 
-    // 2. Find all pending MissionInstances
     const instancesQuery = query(
       collection(db, 'missionInstances'),
       where('templateId', '==', templateId),
       where('status', '==', 'pending')
     );
-    // Fetch outside transaction as per Firestore limitations
     const instancesSnapshot = await getDocs(instancesQuery);
     
     instancesSnapshot.forEach(docSnap => {
       const instance = docSnap.data() as MissionInstance;
-      // ONLY update if it's a recurring mission. One-off missions are snapshots.
       if (instance.isRecurring) {
         const instanceUpdates: any = {
           updatedAt: serverTimestamp(),
         };
-        // Selectively copy only the updatable fields from the template updates
         if (updates.title !== undefined) instanceUpdates.title = updates.title;
         if (updates.description !== undefined) instanceUpdates.description = updates.description;
         if (updates.emoji !== undefined) instanceUpdates.emoji = updates.emoji;
@@ -1769,7 +1764,7 @@ export const updateMissionInstancesByTemplateAndChild = async (
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
-        return; // Nothing to update
+        return;
     }
     
     const batch = writeBatch(db);
@@ -1842,7 +1837,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
     );
     const querySnapshot = await getDocs(q);
     if (querySnapshot.empty) {
-        return; // Nothing to delete
+        return;
     }
 
     const instanceData = querySnapshot.docs[0].data() as MissionInstance;
@@ -1876,7 +1871,6 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     const currentBadgeIds = new Set(childProfile.earnedBadgeIds || []);
     const finalBadgeSet = new Set<string>();
 
-    // 1. Progress-based badges (Stars & Level)
     if (childProfile.level >= 5) finalBadgeSet.add('heroi_ascensao');
     if (childProfile.level >= 10) finalBadgeSet.add('campeao_herois');
     if (childProfile.level >= 15) finalBadgeSet.add('arquiteto_sonhos');
@@ -1885,7 +1879,6 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     if (childProfile.stars >= 500) finalBadgeSet.add('colecionador_tesouros');
     if (childProfile.stars >= 1000) finalBadgeSet.add('lenda_estelar');
 
-    // 2. Completion-based badges
     const allInstancesQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
     const allInstancesSnapshot = await getDocs(allInstancesQuery);
     const allInstances = allInstancesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MissionInstance));
@@ -1899,7 +1892,6 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     let hasCompletedSocialOrEnv = false;
     let hasCompletedSports = false;
 
-    // Check for specific missions and categories
     for (const instance of allInstances) {
         const completions = Object.keys(instance.completionLog || {});
         if (completions.length > 0) {
@@ -1925,18 +1917,17 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
         finalBadgeSet.add('conquistador_recompensas');
     }
 
-    // Check for single-mission streaks
     let longestStreakForAnyMission = 0;
     for (const instance of allInstances) {
         const completionDates = Object.keys(instance.completionLog || {}).map(dateStr => startOfDay(new Date(dateStr))).sort((a,b) => a.getTime() - b.getTime());
-        if (completionDates.length > 1) { // Need at least 2 for a streak
+        if (completionDates.length > 1) {
             let currentMissionLongestStreak = 1;
             let currentStreak = 1;
             for (let i = 1; i < completionDates.length; i++) {
                 if (differenceInDays(completionDates[i], completionDates[i-1]) === 1) {
                     currentStreak++;
                 } else {
-                    currentStreak = 1; // Reset streak
+                    currentStreak = 1;
                 }
                 if (currentStreak > currentMissionLongestStreak) {
                     currentMissionLongestStreak = currentStreak;
@@ -1948,17 +1939,14 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
         }
     }
 
-    // Guardião da Rotina
     if (longestStreakForAnyMission >= 2) finalBadgeSet.add('guardiao_rotina_bronze');
     if (longestStreakForAnyMission >= 4) finalBadgeSet.add('guardiao_rotina_prata');
     if (longestStreakForAnyMission >= 6) finalBadgeSet.add('guardiao_rotina_ouro');
 
-    // Mestre da Persistência
     if (longestStreakForAnyMission >= 30) finalBadgeSet.add('mestre_persistencia_bronze');
     if (longestStreakForAnyMission >= 45) finalBadgeSet.add('mestre_persistencia_prata');
     if (longestStreakForAnyMission >= 60) finalBadgeSet.add('mestre_persistencia_ouro');
     
-    // Check for "Semana Perfeita"
     let longestPerfectStreak = 0;
     let currentPerfectStreak = 0;
     const allCompletionDates = new Set(allInstances.flatMap(inst => Object.keys(inst.completionLog || {})).map(d => startOfDay(new Date(d))));
@@ -1987,16 +1975,13 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     if (longestPerfectStreak >= 15) finalBadgeSet.add('semana_perfeita_prata');
     if (longestPerfectStreak >= 21) finalBadgeSet.add('semana_perfeita_ouro');
     
-    // 3. Compare and update
     const newlyAwardedBadges = [...finalBadgeSet].filter(badgeId => !currentBadgeIds.has(badgeId));
     const finalBadgeArray = Array.from(finalBadgeSet);
     
-    // Only write to DB if there's a change
     if (finalBadgeArray.length !== currentBadgeIds.size || newlyAwardedBadges.length > 0) {
         await updateDoc(childRef, { earnedBadgeIds: finalBadgeArray });
     }
 
-    // 4. Send notifications for newly awarded badges
     for (const badgeId of newlyAwardedBadges) {
         const badge = allBadgesMap.get(badgeId);
         if (badge) {
@@ -2035,7 +2020,6 @@ export const completeMissionInstance = async (
         const missionData = missionSnap.data() as MissionInstance;
         const completionDateKey = formatDateFns(completionDate, 'yyyy-MM-dd');
         
-        // Prevent re-completing for the same day
         if (missionData.completionLog && missionData.completionLog[completionDateKey]) {
             console.warn("Mission already completed for this date.");
             return null;
@@ -2051,7 +2035,6 @@ export const completeMissionInstance = async (
         const childData = childSnap.data() as ChildProfile;
         const originalLevel = childData.level;
         
-        // --- Child Stats Update ---
         const newStars = childData.stars + missionData.starsReward;
         const newXp = childData.xp + missionData.xpReward;
         let newLevel = childData.level;
@@ -2069,7 +2052,6 @@ export const completeMissionInstance = async (
             updatedAt: serverTimestamp(),
         });
 
-        // --- Mission Instance Update ---
         const newCompletionCount = Object.keys(missionData.completionLog || {}).length + 1;
         const isFullyCompleted = (!missionData.isRecurring && newCompletionCount >= 1) || (missionData.isRecurring && missionData.recurrenceRule?.count && newCompletionCount >= missionData.recurrenceRule.count);
 
@@ -2095,7 +2077,7 @@ export const completeMissionInstance = async (
             ...childData,
             ...{ stars: newStars, xp: newXp, level: newLevel },
             id: childSnap.id,
-            didLevelUp: newLevel > originalLevel, // Pass this info out
+            didLevelUp: newLevel > originalLevel,
         } as ChildProfile & { didLevelUp: boolean };
     });
 
@@ -2116,7 +2098,6 @@ export const completeMissionInstance = async (
           actor
       );
 
-      // Notification for level up
       if ((updatedChildProfile as any).didLevelUp) {
            await createAndDispatchNotifications(missionData.childId, {
               type: 'new_level',
@@ -2163,7 +2144,6 @@ export const reactivateMissionInstance = async (
         }
         const childData = childSnap.data() as ChildProfile;
 
-        // Revert rewards for the child
         const finalChildUpdates: any = { 
             stars: Math.max(0, childData.stars - (completionLogEntry.stars || missionData.starsReward)),
             xp: Math.max(0, childData.xp - (completionLogEntry.xp || missionData.xpReward)),
@@ -2171,7 +2151,6 @@ export const reactivateMissionInstance = async (
         };
         transaction.update(childRef, finalChildUpdates);
         
-        // Revert mission status
         const missionUpdates: any = {
             status: 'pending',
             updatedAt: serverTimestamp(),
@@ -2254,7 +2233,6 @@ export const updateRecurringMissionInstance = async (
     };
 
     if (editMode === 'all') {
-      // When editing the entire series, clear any past exceptions.
       scheduleUpdates.exceptionDates = {};
       transaction.update(originalInstanceRef, scheduleUpdates);
     } 
@@ -2278,7 +2256,7 @@ export const updateRecurringMissionInstance = async (
           completionLog: {},
           exceptionDates: {},
       };
-      delete (newOneOffInstanceData as any).id; // Firestore generates ID
+      delete (newOneOffInstanceData as any).id;
       transaction.set(newInstanceRef, newOneOffInstanceData);
 
     } 
@@ -2359,12 +2337,10 @@ export const addRecurringSchoolEntry = async (
     days: Weekday[],
     actor: UserProfile
 ): Promise<void> => {
-    // Permission check: ensure actor can edit for this child
     const child = await getChildProfileById(baseEntry.childId);
     if (!child) throw new Error("Criança não encontrada.");
 
     if (child.familyId) {
-        // In a family context, check if the actor has an editing role in that family
         const membershipRef = doc(db, 'familyMemberships', `${actor.uid}_${child.familyId}`);
         const membershipSnap = await getDoc(membershipRef);
         if (!membershipSnap.exists()) {
@@ -2375,7 +2351,6 @@ export const addRecurringSchoolEntry = async (
             throw new Error("Seu papel na aliança não permite editar a agenda escolar.");
         }
     } else {
-        // In a personal context, only the owner can edit
         if (child.ownerId !== actor.uid) {
             throw new Error("Apenas o proprietário do herói pode editar a agenda no espaço pessoal.");
         }
@@ -2451,39 +2426,3 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
-
-
-    
-
-    
-
-
-
-    
-
-
-
-
-    
-
-    
-
-    
-
-    
-
-
-
-
-      
-
-
-
-
-
-
-
-
-
-
-    
