@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle } from "lucide-react";
+import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle, MoreHorizontal } from "lucide-react";
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { ChildProfile, MissionTemplate, RewardTemplate, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { 
@@ -31,6 +31,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { HeroSelector } from "@/components/dashboard/dashboard/HeroSelector";
 import { Progress } from "@/components/ui/progress";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function HeroesSummary() {
   const router = useRouter();
@@ -214,23 +220,20 @@ export function HeroesSummary() {
               <Card key={child.id} className="shadow-md hover:shadow-lg transition-all duration-300 ease-in-out flex flex-col transform hover:-translate-y-1">
                 <CardHeader className="p-4 relative">
                   <div className="flex items-center justify-end gap-1 absolute top-2 right-2 z-10">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                           <Link href={`/dashboard/mural?childId=${child.id}&tab=edit`}>
-                             <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-primary">
-                               <Settings className="h-4 w-4"/>
-                             </Button>
-                           </Link>
-                        </TooltipTrigger>
-                        <TooltipContent><p>Editar Perfil do Herói</p></TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <Link href={`/dashboard/mural?childId=${child.id}`}>
-                      <Button variant="link" className="h-8 px-2 py-1 text-xs font-medium text-muted-foreground hover:text-primary rounded-full">
-                          Painel de Progresso <ArrowRight className="ml-1.5 h-4 w-4" />
-                      </Button>
-                    </Link>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
+                          <MoreHorizontal className="h-4 w-4"/>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}`}><ListCollapse className="mr-2 h-4 w-4" />Painel de Progresso</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href={`/dashboard/agenda?childId=${child.id}`}><Target className="mr-2 h-4 w-4" />Rotina de Missões</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href={`/dashboard/school-schedule`}><NotebookPen className="mr-2 h-4 w-4" />Rotina Escolar</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}&tab=badges`}><Medal className="mr-2 h-4 w-4" />Medalhas do Herói</Link></DropdownMenuItem>
+                        <DropdownMenuItem asChild><Link href={`/dashboard/mural?childId=${child.id}&tab=edit`}><Settings className="mr-2 h-4 w-4" />Editar Perfil do Herói</Link></DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                   <div className="flex items-center gap-4 mt-2">
                      <Avatar
