@@ -3,7 +3,7 @@
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
-import { useParams, useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
@@ -36,7 +36,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Timestamp, serverTimestamp } from 'firebase/firestore';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -64,6 +63,111 @@ type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, xp: number, actorId?: string, actorName?: string } })
     | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
 
+
+function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstance, onManage: (instance: MissionInstance) => void, onDelete: (instance: MissionInstance) => void }) {
+    const categoryDetails = missionCategories.find(cat => cat.id === instance.category);
+    const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
+    const time = scheduleDate ? format(scheduleDate, 'HH:mm') : null;
+    const period = scheduleDate ? getPeriodOfDay(scheduleDate) : null;
+    const periodIcons = { Manhã: Sun, Tarde: CloudSun, Noite: Moon };
+    const PeriodIcon = period ? periodIcons[period] : null;
+
+    return (
+        <Card key={instance.id} className="shadow-sm flex flex-col transition-all h-full">
+            <CardHeader className="p-4">
+                <div className="flex justify-between items-start">
+                    <CardTitle className="text-base font-semibold leading-tight pr-2 flex items-center gap-2">
+                      {instance.emoji && <span className="text-xl">{instance.emoji}</span>}
+                      <span>{instance.title}</span>
+                    </CardTitle>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-2 flex-grow text-xs p-4 pt-0">
+                {categoryDetails && (
+                    <div className="flex items-center">
+                        <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                            {categoryDetails.label}
+                        </Badge>
+                    </div>
+                )}
+                 <div className="space-y-1">
+                    <div className="flex items-center text-muted-foreground font-medium">
+                        {instance.isRecurring ? (
+                          <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
+                        ) : (
+                          <Target className="h-4 w-4 mr-1.5 text-chart-2 shrink-0" />
+                        )}
+                        <span className="truncate">{formatRecurrenceSummary(instance)}{time ? `, às ${time}` : ''}</span>
+                    </div>
+                    {period && PeriodIcon && (
+                        <div className={cn("flex items-center font-medium",
+                            period === 'Manhã' && "text-yellow-700 dark:text-yellow-400",
+                            period === 'Tarde' && "text-orange-700 dark:text-orange-400",
+                            period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
+                        )}>
+                            <PeriodIcon className={cn("h-4 w-4 mr-1.5 shrink-0", 
+                                period === 'Manhã' && "text-yellow-500",
+                                period === 'Tarde' && "text-orange-500",
+                                period === 'Noite' && "text-indigo-500"
+                            )} />
+                            <span>{period}</span>
+                        </div>
+                    )}
+                </div>
+                <div className="border-t pt-2 mt-2">
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                       {instance.status === 'completed' && instance.updatedAt && (
+                            <div className="flex items-center font-medium text-green-600">
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
+                                <span>Concluída</span>
+                            </div>
+                        )}
+                        {instance.isRecurring && instance.recurrenceRule?.count ? (
+                            <div className="flex items-center font-medium text-muted-foreground">
+                                <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
+                                <span>Progresso: {Object.keys(instance.completionLog || {}).length}/{instance.recurrenceRule.count}</span>
+                            </div>
+                        ) : instance.dueDate && (
+                             <div className="flex items-center font-medium text-destructive/80">
+                                <Clock className="h-3.5 w-3.5 mr-1.5" />
+                                <span>Vence em: getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')</span>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </CardContent>
+            <CardFooter className="p-3">
+                 <div className="flex w-full items-center gap-2">
+                    <Button
+                        size="sm"
+                        className="flex-grow"
+                        onClick={() => onManage(instance)}
+                    >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Ver na Rotina
+                    </Button>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="icon"
+                                    variant="destructive"
+                                    className="h-9 w-9"
+                                    onClick={() => onDelete(instance)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Remover Atribuição</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            </CardFooter>
+        </Card>
+    );
+}
 
 function MuralCompletoPageContent() {
   const router = useRouter();
@@ -176,7 +280,9 @@ function MuralCompletoPageContent() {
             if (a.status !== 'active' && b.status === 'active') return 1;
             if (a.status === 'disabled' && b.status === 'redeemed') return -1;
             if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            return (b.assignedAt as any).seconds - (a.assignedAt as any).seconds;
+            const timeA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
+            const timeB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
+            return timeB - timeA;
         }));
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
       
@@ -719,88 +825,6 @@ function MuralCompletoPageContent() {
     }
   };
 
-  const renderBadge = (badge: BadgeType) => {
-    if (!child) return null;
-    const isEarned = child.earnedBadgeIds?.includes(badge.id);
-    const hasProgress = !!badge.progressType && !!badge.goal;
-
-    let currentProgress = 0;
-
-    if (hasProgress && !isEarned) {
-      switch (badge.progressType) {
-        case 'singleMissionStreak':
-          currentProgress = badgeProgress.longestSingleMissionStreak;
-          break;
-        case 'perfectStreak':
-          currentProgress = badgeProgress.longestPerfectStreak;
-          break;
-        case 'stars':
-          currentProgress = child.stars;
-          break;
-        case 'level':
-          currentProgress = child.level;
-          break;
-      }
-    }
-    const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
-
-    return (
-      <DialogTrigger asChild key={badge.id} onClick={() => setSelectedBadge(badge)}>
-        <div className={cn(
-          "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden",
-          isEarned ? 'shadow-lg bg-card' : 'bg-muted/30'
-        )}>
-            {isEarned ? (
-              <Medal
-                className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg"
-                color={badge.color}
-              />
-            ) : (
-              <Lock className="absolute top-3 right-3 h-5 w-5 text-destructive" />
-            )}
-            <div className={cn(
-              "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative",
-              !isEarned && 'bg-gray-400 dark:bg-gray-700'
-            )} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                <badge.icon className={cn(
-                    "h-9 w-9 text-white",
-                    !isEarned && "opacity-30"
-                )} />
-            </div>
-            <div className="flex-grow h-24 flex flex-col justify-center w-full">
-                <p className={cn(
-                    "text-sm font-semibold",
-                    isEarned ? 'text-foreground' : 'text-muted-foreground'
-                )}>{badge.title}</p>
-                
-                {hasProgress && !isEarned ? (
-                  <div className="mt-2 space-y-1">
-                    {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
-                      <>
-                        <div className="h-2 w-full animate-pulse bg-muted-foreground/20 rounded-full" />
-                        <div className="h-3 w-1/2 mx-auto animate-pulse bg-muted-foreground/20 rounded-full" />
-                      </>
-                    ) : (
-                      <>
-                        <Progress value={progressPercentage} className="h-2" />
-                        <p className="text-xs text-muted-foreground">{currentProgress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})</p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <p className={cn(
-                      "text-xs text-muted-foreground mt-1",
-                      !isEarned && "opacity-70"
-                  )}>
-                      {badge.description}
-                  </p>
-                )}
-            </div>
-        </div>
-      </DialogTrigger>
-    );
-  };
-  
   const moveTargetContexts = useMemo(() => {
     return availableContexts.filter(c => c.id !== (child?.familyId || 'my-space'));
   }, [availableContexts, child]);
@@ -808,142 +832,33 @@ function MuralCompletoPageContent() {
   const hasRecess = useMemo(() => {
     return schoolSchedule.some(entry => entry.subject === 'Recreio/Intervalo');
   }, [schoolSchedule]);
-
+  
   if (isLoading || isFamilyLoading) {
     return <Loading />;
   }
   
   if (!child && !isLoading) {
      return (
-        <div className="text-center py-10">
-          <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
+        <Card className="text-center py-10 shadow-md bg-gradient-to-br from-card to-secondary/10">
             <CardContent>
               <Smile className="h-20 w-20 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-xl font-semibold mb-2">Nenhum Herói Cadastrado Ainda!</h3>
               <p className="text-muted-foreground mb-6">Parece um pouco vazio por aqui. Comece adicionando o primeiro herói.</p>
               <Link href="/dashboard/onboarding">
-                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
-                  <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Herói
-                </Button>
+                  <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg animate-pulse">
+                      <PlusCircle className="mr-2 h-4 w-4" /> Adicione Seu Primeiro Herói
+                  </Button>
               </Link>
             </CardContent>
-          </Card>
-        </div>
+        </Card>
     );
   }
   
   // Safeguard against rendering before child data is available.
   if (!child) return <Loading />;
 
-  const age = child.birthDate ? calculateAge(child.birthDate) : null;
+  const age = child.birthDate ? calculateAge(child.birthDate as any) : null;
   
-  const renderMissionCard = (instance: MissionInstance) => {
-    const categoryDetails = getMissionCategoryDetails(instance.category);
-      
-    const scheduleDate = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate);
-    const time = scheduleDate ? format(scheduleDate, 'HH:mm') : null;
-    const period = scheduleDate ? getPeriodOfDay(scheduleDate) : null;
-    const PeriodIcon = period ? periodIcons[period] : null;
-
-    return (
-        <Card key={instance.id} className="shadow-sm flex flex-col transition-all h-full">
-            <CardHeader className="p-4">
-                <div className="flex justify-between items-start">
-                    <CardTitle className="text-base font-semibold leading-tight pr-2 flex items-center gap-2">
-                      {instance.emoji && <span className="text-xl">{instance.emoji}</span>}
-                      <span>{instance.title}</span>
-                    </CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent className="space-y-2 flex-grow text-xs p-4 pt-0">
-                {categoryDetails && (
-                    <div className="flex items-center">
-                        <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                            {categoryDetails.label}
-                        </Badge>
-                    </div>
-                )}
-                 <div className="space-y-1">
-                    <div className="flex items-center text-muted-foreground font-medium">
-                        {instance.isRecurring ? (
-                          <Repeat className="h-4 w-4 mr-1.5 text-purple-500 shrink-0" />
-                        ) : (
-                          <Target className="h-4 w-4 mr-1.5 text-chart-2 shrink-0" />
-                        )}
-                        <span className="truncate">{formatRecurrenceSummary(instance)}{time ? `, às ${time}` : ''}</span>
-                    </div>
-                    {period && PeriodIcon && (
-                        <div className={cn("flex items-center font-medium",
-                            period === 'Manhã' && "text-yellow-700 dark:text-yellow-400",
-                            period === 'Tarde' && "text-orange-700 dark:text-orange-400",
-                            period === 'Noite' && "text-indigo-700 dark:text-indigo-400"
-                        )}>
-                            <PeriodIcon className={cn("h-4 w-4 mr-1.5 shrink-0", 
-                                period === 'Manhã' && "text-yellow-500",
-                                period === 'Tarde' && "text-orange-500",
-                                period === 'Noite' && "text-indigo-500"
-                            )} />
-                            <span>{period}</span>
-                        </div>
-                    )}
-                </div>
-                <div className="border-t pt-2 mt-2">
-                    <div className="space-y-1 text-xs text-muted-foreground">
-                       {instance.status === 'completed' && instance.updatedAt && (
-                            <div className="flex items-center font-medium text-green-600">
-                                <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Concluída</span>
-                            </div>
-                        )}
-                        {instance.isRecurring && instance.recurrenceRule?.count ? (
-                            <div className="flex items-center font-medium text-muted-foreground">
-                                <CheckSquare className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Progresso: {Object.keys(instance.completionLog || {}).length}/{instance.recurrenceRule.count}</span>
-                            </div>
-                        ) : instance.dueDate && (
-                             <div className="flex items-center font-medium text-destructive/80">
-                                <Clock className="h-3.5 w-3.5 mr-1.5" />
-                                <span>Vence em: {getDateObject(instance.dueDate)?.toLocaleDateString('pt-BR')}</span>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </CardContent>
-            <CardFooter className="p-3">
-                 <div className="flex w-full items-center gap-2">
-                    <Button
-                        size="sm"
-                        className="flex-grow"
-                        onClick={() => handleManageInAgenda(instance)}
-                    >
-                        <CalendarDays className="mr-2 h-4 w-4" />
-                        Ver na Rotina
-                    </Button>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    size="icon"
-                                    variant="destructive"
-                                    className="h-9 w-9"
-                                    onClick={() => setMissionToDelete(instance)}
-                                    disabled={isDeleting || !canEdit}
-                                >
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Remover Atribuição</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                </div>
-            </CardFooter>
-        </Card>
-    );
-};
-
-
   return (
     <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
@@ -1011,7 +926,7 @@ function MuralCompletoPageContent() {
                   <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
               ) : (
                   <Avatar
-                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-[var(--ring-color)] ring-offset-background flex-shrink-0"
+                      className="h-24 w-24 text-4xl shadow-md ring-4 ring-offset-2 ring-offset-background"
                       style={{ '--ring-color': child.color } as React.CSSProperties}
                   >
                       <AvatarImage src={child.avatar} alt={child.name} />
@@ -1253,7 +1168,9 @@ function MuralCompletoPageContent() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredMissions.map(instance => renderMissionCard(instance))}
+                          {filteredMissions.map(instance => (
+                            <MissionCard key={instance.id} instance={instance} onManage={handleManageInAgenda} onDelete={setMissionToDelete} />
+                          ))}
                       </div>
                     )}
                   </CardContent>
@@ -1486,35 +1403,67 @@ function MuralCompletoPageContent() {
                 </CardHeader>
                 <CardContent className="space-y-8">
                   <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
-                    {predefinedBadgeCategories.map((category, index) => {
-                       if (category.title === "Consistência e Hábitos") {
-                          const guardiao = category.items.filter(b => b.id.startsWith('guardiao_rotina'));
-                          const semana = category.items.filter(b => b.id.startsWith('semana_perfeita'));
-                          const mestre = category.items.filter(b => b.id.startsWith('mestre_persistencia'));
-                          return (
-                            <Fragment key={category.title}>
-                                {index > 0 && <Separator />}
-                                <div>
-                                    <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                                    {guardiao.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-6">{guardiao.map(badge => renderBadge(badge))}</div>}
-                                    {semana.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-6">{semana.map(badge => renderBadge(badge))}</div>}
-                                    {mestre.length > 0 && <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">{mestre.map(badge => renderBadge(badge))}</div>}
-                                </div>
-                            </Fragment>
-                          );
-                       }
-                       return (
-                          <Fragment key={category.title}>
-                            {index > 0 && <Separator />}
-                            <div>
-                              <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                                {category.items.map((badge) => renderBadge(badge))}
-                              </div>
+                    {predefinedBadgeCategories.map((category, index) => (
+                      <Fragment key={category.title}>
+                        {index > 0 && <Separator />}
+                        <div>
+                            <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                                {category.items.map((badge) => {
+                                    const isEarned = child.earnedBadgeIds?.includes(badge.id);
+                                    const hasProgress = !!badge.progressType && !!badge.goal;
+                                    let currentProgress = 0;
+                                    if (hasProgress && !isEarned) {
+                                      switch (badge.progressType) {
+                                        case 'singleMissionStreak': currentProgress = badgeProgress.longestSingleMissionStreak; break;
+                                        case 'perfectStreak': currentProgress = badgeProgress.longestPerfectStreak; break;
+                                        case 'stars': currentProgress = child.stars; break;
+                                        case 'level': currentProgress = child.level; break;
+                                      }
+                                    }
+                                    const progressPercentage = (badge.goal && badge.goal > 0) ? (currentProgress / badge.goal) * 100 : 0;
+
+                                    return (
+                                        <DialogTrigger asChild key={badge.id}>
+                                            <div onClick={() => setSelectedBadge(badge)} className={cn( "flex flex-col items-center justify-start text-center gap-2 p-4 border rounded-xl transition-all duration-300 transform hover:-translate-y-1 cursor-pointer relative overflow-hidden", isEarned ? 'shadow-lg bg-card' : 'bg-muted/30' )}>
+                                                {isEarned ? (
+                                                <Medal className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg" style={{ color: badge.color }} />
+                                                ) : (
+                                                <Lock className="absolute top-3 right-3 h-5 w-5 text-destructive" />
+                                                )}
+                                                <div className={cn( "w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative", !isEarned && 'bg-gray-400 dark:bg-gray-700' )} style={isEarned ? { backgroundColor: badge.color } : {}}>
+                                                    <badge.icon className={cn( "h-9 w-9 text-white", !isEarned && "opacity-30" )} />
+                                                </div>
+                                                <div className="flex-grow h-24 flex flex-col justify-center w-full">
+                                                    <p className={cn( "text-sm font-semibold", isEarned ? 'text-foreground' : 'text-muted-foreground' )}>{badge.title}</p>
+                                                    {hasProgress && !isEarned ? (
+                                                    <div className="mt-2 space-y-1">
+                                                        {isCalculatingProgress && (badge.progressType === 'singleMissionStreak' || badge.progressType === 'perfectStreak') ? (
+                                                        <>
+                                                            <div className="h-2 w-full animate-pulse bg-muted-foreground/20 rounded-full" />
+                                                            <div className="h-3 w-1/2 mx-auto animate-pulse bg-muted-foreground/20 rounded-full" />
+                                                        </>
+                                                        ) : (
+                                                        <>
+                                                            <Progress value={progressPercentage} className="h-2" />
+                                                            <p className="text-xs text-muted-foreground">{currentProgress} / {badge.goal} ({getProgressTypeLabel(badge.progressType)})</p>
+                                                        </>
+                                                        )}
+                                                    </div>
+                                                    ) : (
+                                                    <p className={cn( "text-xs text-muted-foreground mt-1", !isEarned && "opacity-70" )}>
+                                                        {badge.description}
+                                                    </p>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </DialogTrigger>
+                                    );
+                                })}
                             </div>
-                          </Fragment>
-                       );
-                    })}
+                        </div>
+                      </Fragment>
+                    ))}
                     {selectedBadge && (
                       <DialogContent>
                         <DialogHeader className="items-center text-center">
@@ -1849,7 +1798,6 @@ function MuralCompletoPageContent() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
     </div>
   );
 }
