@@ -109,11 +109,13 @@ export default function EditMissionTemplatePage() {
           getMissionInstancesForContext(user.uid, familyIdToQuery)
         ]);
         
-        setMissionInstances(allInstances);
+        const activeInstances = allInstances.filter(inst => inst.status === 'pending');
+        setMissionInstances(activeInstances);
 
         const childrenMap = new Map(allChildren.map(child => [child.id, child]));
         const assignedChildIds = new Set<string>();
-        allInstances.forEach(instance => {
+        
+        activeInstances.forEach(instance => {
             if (instance.templateId === missionId) {
                 assignedChildIds.add(instance.childId);
             }
@@ -149,9 +151,13 @@ export default function EditMissionTemplatePage() {
       setInstanceToEdit(instance);
       setIsAssignDialogOpen(true);
     } else {
-      toast({ title: 'Atribuição não encontrada', description: 'Não foi possível encontrar a atribuição para este herói.', variant: 'destructive' });
+      toast({ title: 'Atribuição não encontrada', description: 'Não foi possível encontrar uma atribuição ativa para este herói. Missões concluídas não podem ter a agenda editada por aqui.', variant: 'destructive' });
     }
   };
+
+  const handleEditTemplateClick = (instance: MissionInstance) => {
+    router.push(`/dashboard/missions/edit/${instance.templateId}`);
+  }
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user || !missionTemplate) {
