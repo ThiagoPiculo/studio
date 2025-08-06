@@ -93,9 +93,10 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
   const refetchData = useCallback(async () => {
     if (!user) return;
     try {
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
         const [fetchedChildren, fetchedEntries] = await Promise.all([
             getChildProfilesForAttribution(user.uid, currentContext),
-            getSchoolScheduleForContext(user.uid, currentContext === 'my-space' ? null : currentContext),
+            getSchoolScheduleForContext(user.uid, familyIdToQuery),
         ]);
         setChildren(fetchedChildren);
         setScheduleEntries(fetchedEntries);

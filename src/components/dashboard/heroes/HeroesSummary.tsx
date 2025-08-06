@@ -15,7 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getTodaysMissions, getSchoolScheduleForContext } from '@/lib/firebase/firestore';
+import { getTodaysMissions, getSchoolScheduleForChild } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay, getDayToWeekday, getDateObject } from '@/lib/calendar-utils';
 import { getDay, startOfDay } from 'date-fns';
@@ -50,7 +50,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
         if (newExpandedId && !schoolSchedules[newExpandedId]) {
             setIsLoadingSchedules(true);
             try {
-                const schedule = await getSchoolScheduleForContext(user!.uid, childId);
+                const schedule = await getSchoolScheduleForChild(newExpandedId);
                 setSchoolSchedules(prev => ({ ...prev, [newExpandedId]: schedule }));
             } catch (error) {
                 console.error("Error fetching school schedule:", error);
