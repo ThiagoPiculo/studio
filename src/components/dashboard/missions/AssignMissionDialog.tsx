@@ -160,7 +160,6 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       startDate = source.isRecurring ? today : null;
       dueDate = !source.isRecurring ? today : new Date();
     } else if (!startDate && !dueDate) {
-        // Fallback for older instances without due/start dates
         dueDate = new Date();
     }
     
@@ -191,7 +190,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
       const templateId = 'templateId' in effectiveTemplate ? effectiveTemplate.templateId : effectiveTemplate.id;
       const [fetchedChildren, activeInstances] = await Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getActiveMissionInstancesByTemplate(templateId, currentContext)
+        getActiveMissionInstancesByTemplate(user.uid, templateId, currentContext)
       ]);
       setChildren(fetchedChildren);
       const assignmentsMap = activeInstances.reduce((acc, instance) => {
@@ -207,53 +206,53 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     }
   }, [user, effectiveTemplate, currentContext, toast]);
   
-  useEffect(() => {
+   useEffect(() => {
     if (!isOpen) {
       resetDialogState();
       return;
     }
-
+    
     const initialize = async () => {
-      setIsLoading(true);
-      if (instanceToEdit) {
-        try {
-          const [fetchedTemplate, fetchedChild] = await Promise.all([
-            getMissionTemplateById(instanceToEdit.templateId),
-            getChildProfileById(instanceToEdit.childId)
-          ]);
-  
-          if (!fetchedTemplate) {
-            toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
-            onOpenChange(false);
-            return;
-          }
-          if (!fetchedChild) {
-            toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
-            onOpenChange(false);
-            return;
-          }
-  
-          setEffectiveTemplate(fetchedTemplate);
-          setChildren([fetchedChild]);
-          setSelectedChild(fetchedChild);
-          prepareScheduleForm(instanceToEdit);
-          setView('schedule');
-        } catch (error) {
-          console.error("Error initializing edit dialog:", error);
-          toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
-          onOpenChange(false);
-        } finally {
-          setIsLoading(false);
+        setIsLoading(true);
+        if (instanceToEdit) {
+            try {
+                const [fetchedTemplate, fetchedChild] = await Promise.all([
+                    getMissionTemplateById(instanceToEdit.templateId),
+                    getChildProfileById(instanceToEdit.childId)
+                ]);
+
+                if (!fetchedTemplate) {
+                    toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
+                    onOpenChange(false);
+                    return;
+                }
+                if (!fetchedChild) {
+                    toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
+                    onOpenChange(false);
+                    return;
+                }
+
+                setEffectiveTemplate(fetchedTemplate);
+                setChildren([fetchedChild]);
+                setSelectedChild(fetchedChild);
+                prepareScheduleForm(instanceToEdit);
+                setView('schedule');
+            } catch (error) {
+                console.error("Error initializing edit dialog:", error);
+                toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
+                onOpenChange(false);
+            } finally {
+                setIsLoading(false);
+            }
+        } else if (template) {
+            setEffectiveTemplate(template);
+            await fetchData();
+            setView('list');
         }
-      } else if (template) {
-        setEffectiveTemplate(template);
-        await fetchData();
-        setView('list');
-      }
     };
-  
+
     initialize();
-  }, [isOpen, instanceToEdit, template]);
+}, [isOpen, instanceToEdit, template]);
 
 
   const handleSelectChild = (child: ChildProfile) => {

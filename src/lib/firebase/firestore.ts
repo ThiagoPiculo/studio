@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -363,6 +364,11 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
     }
   }
 
+  const childSnap = await getDoc(childRef);
+  const childBeforeUpdate = childSnap.data() as ChildProfile;
+  const newName = (updates.name && updates.name !== childBeforeUpdate.name) ? updates.name : childBeforeUpdate.name;
+
+
   await updateDoc(childRef, {
     ...dataToUpdate,
     updatedAt: serverTimestamp(),
@@ -373,7 +379,7 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
     {
       type: 'template_updated',
       title: 'Perfil de Herói Atualizado',
-      description: `${actor.name} atualizou o perfil de ${updates.name || 'um herói'}.`,
+      description: `${actor.name} atualizou o perfil de ${newName}.`,
       href: `/dashboard/mural?childId=${childId}&tab=edit`,
       relatedChildId: childId,
     },
@@ -1706,7 +1712,7 @@ export const getActiveChildMissionInstancesByTemplateAndChild = async (templateI
   return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
-export const getActiveMissionInstancesByTemplate = async (templateId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
+export const getActiveMissionInstancesByTemplate = async (userId: string, templateId: string, contextId: string | 'my-space'): Promise<MissionInstance[]> => {
     let q;
     const constraints = [
       where('templateId', '==', templateId),
@@ -1714,9 +1720,8 @@ export const getActiveMissionInstancesByTemplate = async (templateId: string, co
     ];
 
     if (contextId === 'my-space') {
-      const currentUserId = auth.currentUser?.uid;
-      if (!currentUserId) throw new Error("Usuário não autenticado.");
-      constraints.push(where('ownerId', '==', currentUserId));
+      if (!userId) throw new Error("Usuário não autenticado.");
+      constraints.push(where('ownerId', '==', userId));
       constraints.push(where('familyId', '==', null));
     } else {
       constraints.push(where('familyId', '==', contextId));
