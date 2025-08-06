@@ -44,23 +44,17 @@ const subjectColors = [
     '#FCA5A5', '#FDBA74', '#FCD34D', '#A7F3D0', '#93C5FD', '#C4B5FD', '#F9A8D4'
 ];
 
-interface SchoolSchedulePageClientProps {
-    initialData: {
-        children: ChildProfile[];
-        scheduleEntries: SchoolScheduleEntry[];
-    };
-}
-
-function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps) {
-  const { user } = useAuth();
+function SchoolSchedulePageClient() {
+  const { user, loading: authLoading } = useAuth();
   const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [children, setChildren] = useState<ChildProfile[]>(initialData.children);
-  const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>(initialData.scheduleEntries);
-  const [selectedChildId, setSelectedChildId] = useState<string>(initialData.children[0]?.id || '');
+  const [isLoadingData, setIsLoadingData] = useState(true);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
+  const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
+  const [selectedChildId, setSelectedChildId] = useState<string>('');
   
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
@@ -90,22 +84,47 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
     not_applicable: 'Não se aplica'
   };
   
-  const refetchData = useCallback(async () => {
-    if (!user) return;
+  const fetchData = useCallback(async () => {
+    if (!user) {
+        setIsLoadingData(false);
+        return
+    };
+    setIsLoadingData(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
         const [fetchedChildren, fetchedEntries] = await Promise.all([
             getChildProfilesForAttribution(user.uid, currentContext),
             getSchoolScheduleForContext(user.uid, familyIdToQuery),
         ]);
+        
         setChildren(fetchedChildren);
         setScheduleEntries(fetchedEntries);
+
+        // Logic to set the selected child
+        if (fetchedChildren.length > 0) {
+            const currentSelected = selectedChildId && fetchedChildren.some(c => c.id === selectedChildId);
+            if (!currentSelected) {
+                setSelectedChildId(fetchedChildren[0].id);
+            }
+        } else {
+            setSelectedChildId('');
+        }
+
     } catch (error) {
         console.error("Error refetching schedule data:", error);
         toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
+    } finally {
+        setIsLoadingData(false);
     }
-  }, [user, currentContext, toast]);
+  }, [user, currentContext, toast, selectedChildId]);
   
+  useEffect(() => {
+    if(!authLoading && !isFamilyLoading) {
+        fetchData();
+    }
+  }, [authLoading, isFamilyLoading, currentContext, fetchData]);
+
+
   useEffect(() => {
     const savedDays = localStorage.getItem('school_schedule_visible_days');
     if (savedDays) {
@@ -129,15 +148,6 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
     setVisibleWeekdays(sortedDays);
     localStorage.setItem('school_schedule_visible_days', JSON.stringify(sortedDays));
   };
-
-  useEffect(() => {
-    if (!selectedChildId && children.length > 0) {
-        setSelectedChildId(children[0].id);
-    }
-    else if (selectedChildId && !children.find(c => c.id === selectedChildId)) {
-        setSelectedChildId(children.length > 0 ? children[0].id : '');
-    }
-  }, [children, selectedChildId]);
 
   useEffect(() => {
     const newSlots: string[] = [];
@@ -341,7 +351,7 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
     try {
       await deleteSchoolScheduleEntry(entryToDelete.id, user);
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
-      refetchData();
+      fetchData();
     } catch (error) {
       console.error("Error deleting entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
@@ -424,7 +434,7 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
     );
   };
   
-  if (isFamilyLoading) return <Loading />;
+  if (authLoading || isFamilyLoading || isLoadingData) return <Loading />;
   
   const mobileLayout = (
     <div ref={scrollRef} className="space-y-4">
@@ -627,7 +637,7 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
         <EditScheduleEntryDialog
           isOpen={isEntryDialogOpen}
           onOpenChange={setIsEntryDialogOpen}
-          onSave={refetchData}
+          onSave={fetchData}
           entryToEdit={entryToEdit}
           child={selectedChild}
           showRecessHint={!hasRecess}
@@ -644,7 +654,7 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
             isOpen={isShiftDialogOpen}
             onOpenChange={setIsShiftDialogOpen}
             child={selectedChild}
-            onSave={refetchData}
+            onSave={fetchData}
         />
       )}
 
@@ -674,37 +684,9 @@ function SchoolSchedulePageClient({ initialData }: SchoolSchedulePageClientProps
 
 
 export default function SchoolSchedulePage() {
-    const { user, loading: authLoading } = useAuth();
-    const { currentContext, isLoading: isFamilyLoading } = useFamily();
-    const [initialData, setInitialData] = useState<{ children: ChildProfile[]; scheduleEntries: SchoolScheduleEntry[] } | null>(null);
-
-    const fetchData = useCallback(async () => {
-        if (!user) return;
-        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        try {
-            const [children, scheduleEntries] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getSchoolScheduleForContext(user.uid, familyIdToQuery),
-            ]);
-            setInitialData({ children, scheduleEntries });
-        } catch (err) {
-            console.error("Error fetching initial data for schedule page:", err);
-        }
-    }, [user, currentContext]);
-
-    useEffect(() => {
-        if (!authLoading && !isFamilyLoading) {
-            fetchData();
-        }
-    }, [authLoading, isFamilyLoading, fetchData]);
-
-    if (authLoading || isFamilyLoading || !initialData) {
-        return <Loading />;
-    }
-
     return (
         <Suspense fallback={<Loading />}>
-            <SchoolSchedulePageClient initialData={initialData} />
+            <SchoolSchedulePageClient />
         </Suspense>
     )
 }
