@@ -4,7 +4,7 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Users, Star, PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Home, Link as LinkIcon, HelpCircle, MoreHorizontal, LayoutGrid } from "lucide-react";
 import { useRouter } from 'next/navigation';
@@ -92,8 +92,8 @@ export function HeroesSummary() {
       return (
           <GettingStartedGuide 
             hasChildren={false}
-            hasMissions={false} // Simplification for this view
-            hasRewards={false} // Simplification for this view
+            hasMissions={false}
+            hasRewards={false}
           />
       );
   }
@@ -128,13 +128,15 @@ export function HeroesSummary() {
                                 Ver Espaço <ArrowRight className="ml-1 h-4 w-4" />
                             </Button>
                         </div>
-                        {roleInfo && context.id !== 'my-space' && (
-                            <CardDescription className="pt-1">
-                                <span className="font-semibold text-foreground">{roleInfo.label}:</span> {roleInfo.description}
-                            </CardDescription>
-                        )}
+                        <CardDescription className="pt-1 text-xs">
+                          {context.id === 'my-space' ? (
+                            <span>Aqui sou <strong>proprietário:</strong> Tenho controle total para "Cuidar Solo" dos meus Mini Herois. Posso criar aliança e incluir colaboradores para "Cuidarmos Juntos" dos mini herois.</span>
+                          ) : roleInfo ? (
+                            <span>Aqui sou <strong className="text-foreground">{roleInfo.label}:</strong> {roleInfo.description}</span>
+                          ) : null}
+                        </CardDescription>
                     </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4 flex-grow">
+                    <CardContent className="grid grid-cols-2 gap-4 flex-grow pt-2">
                         {context.id !== 'my-space' && (
                            <div>
                              <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
