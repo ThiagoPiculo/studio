@@ -117,8 +117,8 @@ const createAndDispatchNotifications = async (
       ...notificationPayload,
       userId,
       relatedContextId: child.familyId || null,
-      actorId: actor?.id || null, // Ensure actorId is null, not undefined
-      actorName: actor?.name || null // Ensure actorName is null, not undefined
+      actorId: actor?.id || null, 
+      actorName: actor?.name || null
     });
   });
 
@@ -2089,7 +2089,8 @@ export const completeMissionInstance = async (
     if (updatedChildProfile) {
       const missionData = (await getDoc(missionRef)).data() as MissionInstance;
       
-      const description = `${actor.name || 'Alguém'} marcou "${missionData.title}" como concluída para ${updatedChildProfile.name} (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).`;
+      const description = actor.name ? `${actor.name} marcou "${missionData.title}" como concluída para ${updatedChildProfile.name} (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).` : `A missão "${missionData.title}" foi concluída para ${updatedChildProfile.name} (ref. a ${formatDateFns(completionDate, 'dd/MM/yyyy')}).`;
+
 
       await createAndDispatchNotifications(
           missionData.childId,
