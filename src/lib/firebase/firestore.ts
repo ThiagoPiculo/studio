@@ -2346,18 +2346,8 @@ export const addRecurringSchoolEntry = async (
     const child = await getChildProfileById(baseEntry.childId);
     if (!child) throw new Error("Criança não encontrada.");
 
-    if (child.familyId) {
-        const membershipRef = doc(db, 'familyMemberships', `${actor.uid}_${child.familyId}`);
-        const membershipSnap = await getDoc(membershipRef);
-        if (!membershipSnap.exists()) {
-            throw new Error("Você não é membro desta aliança.");
-        }
-        const membership = membershipSnap.data() as FamilyMembership;
-        if (!editableRoles.includes(membership.role)) {
-            throw new Error("Seu papel na aliança não permite editar a agenda escolar.");
-        }
-    } else {
-        if (child.ownerId !== actor.uid) {
+    if (child.ownerId !== actor.uid) {
+        if (!child.familyId) {
             throw new Error("Apenas o proprietário do herói pode editar a agenda no espaço pessoal.");
         }
     }
@@ -2369,6 +2359,7 @@ export const addRecurringSchoolEntry = async (
         const newEntryRef = doc(collection(db, 'schoolSchedules'));
         const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
             ...baseEntry,
+            ownerId: actor.uid,
             dayOfWeek: day,
             createdAt: now,
             updatedAt: now,
