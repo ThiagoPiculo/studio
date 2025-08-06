@@ -155,7 +155,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                                 <Tabs defaultValue="today" className="w-full">
                                     <TabsList className="grid w-full grid-cols-2 h-9">
                                         <TabsTrigger value="today" className="h-full">Missões de Hoje</TabsTrigger>
-                                        <TabsTrigger value="schedule" className="h-full">Rotina Escolar</TabsTrigger>
+                                        <TabsTrigger value="schedule" className="h-full" onClick={() => handleExpandClick(child.id)}>Rotina Escolar</TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="today" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
                                         {todaysMissions.length === 0 ? (
