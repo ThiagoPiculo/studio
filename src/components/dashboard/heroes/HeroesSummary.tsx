@@ -17,7 +17,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTodaysMissions, getSchoolScheduleForContext } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
-import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay } from '@/lib/calendar-utils';
 import { getDayToWeekday } from '@/lib/calendar-utils';
 import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
