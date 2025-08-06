@@ -21,6 +21,7 @@ import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay, g
 import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
+import { Badge } from '@/components/ui/badge';
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
