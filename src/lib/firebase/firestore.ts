@@ -117,7 +117,7 @@ const createAndDispatchNotifications = async (
       ...notificationPayload,
       userId,
       relatedContextId: child.familyId || null,
-      actorId: actor?.id || null, 
+      actorId: actor?.id || null,
       actorName: actor?.name || null
     });
   });
@@ -2423,3 +2423,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
+    
