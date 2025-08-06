@@ -181,7 +181,7 @@ function AgendaPageContent() {
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
           setSelectedChildId(childIdParam);
         } else if (fetchedChildren.length > 0) {
-          setSelectedChildId(null);
+          setSelectedChildId(fetchedChildren[0].id);
         } else {
           setSelectedChildId(null);
         }
