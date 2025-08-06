@@ -43,7 +43,7 @@ export function EditRecurrenceDialog({ isOpen, onOpenChange, onSelect, missionIn
         <div className="space-y-3 py-4">
           <Button
             variant="outline"
-            className="w-full justify-start h-auto p-4 text-left"
+            className="w-full justify-start h-auto p-4 text-left hover:bg-primary/10 hover:border-primary"
             onClick={() => onSelect('single')}
           >
             <Calendar className="mr-4 h-5 w-5 text-primary flex-shrink-0" />
@@ -54,7 +54,7 @@ export function EditRecurrenceDialog({ isOpen, onOpenChange, onSelect, missionIn
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-start h-auto p-4 text-left"
+            className="w-full justify-start h-auto p-4 text-left hover:bg-primary/10 hover:border-primary"
             onClick={() => onSelect('forward')}
           >
             <CalendarClock className="mr-4 h-5 w-5 text-primary flex-shrink-0" />
@@ -65,7 +65,7 @@ export function EditRecurrenceDialog({ isOpen, onOpenChange, onSelect, missionIn
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-start h-auto p-4 text-left"
+            className="w-full justify-start h-auto p-4 text-left hover:bg-primary/10 hover:border-primary"
             onClick={() => onSelect('all')}
           >
             <CalendarRange className="mr-4 h-5 w-5 text-primary flex-shrink-0" />
