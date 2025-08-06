@@ -183,7 +183,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
 
     form.reset(initialValues);
   }, [form, effectiveTemplate]);
-
+  
   const fetchData = useCallback(async () => {
     if (!user || !effectiveTemplate) return;
     setIsLoading(true);
@@ -208,52 +208,52 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   }, [user, effectiveTemplate, currentContext, toast]);
   
   useEffect(() => {
+    if (!isOpen) {
+      resetDialogState();
+      return;
+    }
+
     const initialize = async () => {
-        if (instanceToEdit) {
-            setIsLoading(true);
-            try {
-                const [fetchedTemplate, fetchedChild] = await Promise.all([
-                    getMissionTemplateById(instanceToEdit.templateId),
-                    getChildProfileById(instanceToEdit.childId)
-                ]);
+      setIsLoading(true);
+      if (instanceToEdit) {
+        try {
+          const [fetchedTemplate, fetchedChild] = await Promise.all([
+            getMissionTemplateById(instanceToEdit.templateId),
+            getChildProfileById(instanceToEdit.childId)
+          ]);
 
-                if (!fetchedTemplate) {
-                     toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
-                     onOpenChange(false);
-                     return;
-                }
-                if (!fetchedChild) {
-                    toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
-                    onOpenChange(false);
-                    return;
-                }
-                
-                setEffectiveTemplate(fetchedTemplate);
-                setChildren([fetchedChild]);
-                setSelectedChild(fetchedChild);
-                prepareScheduleForm(instanceToEdit);
-                setView('schedule');
+          if (!fetchedTemplate) {
+            toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
+            onOpenChange(false);
+            return;
+          }
+          if (!fetchedChild) {
+            toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
+            onOpenChange(false);
+            return;
+          }
 
-            } catch (error) {
-                console.error("Error initializing edit dialog:", error);
-                toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
-                onOpenChange(false);
-            } finally {
-                setIsLoading(false);
-            }
-        } else if (template) {
-            setEffectiveTemplate(template);
-            fetchData();
-            setView('list');
+          setEffectiveTemplate(fetchedTemplate);
+          setChildren([fetchedChild]);
+          setSelectedChild(fetchedChild);
+          prepareScheduleForm(instanceToEdit);
+          setView('schedule');
+        } catch (error) {
+          console.error("Error initializing edit dialog:", error);
+          toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
+          onOpenChange(false);
+        } finally {
+          setIsLoading(false);
         }
+      } else if (template) {
+        setEffectiveTemplate(template);
+        await fetchData(); // Fetch data for the list view
+        setView('list');
+      }
     };
     
-    if (isOpen) {
-        initialize();
-    } else {
-        resetDialogState();
-    }
-  }, [isOpen, instanceToEdit, template, prepareScheduleForm]);
+    initialize();
+  }, [isOpen, instanceToEdit, template, prepareScheduleForm, onOpenChange, resetDialogState, fetchData, toast]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
