@@ -23,6 +23,7 @@ import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
+import { Label } from "@/components/ui/label";
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
