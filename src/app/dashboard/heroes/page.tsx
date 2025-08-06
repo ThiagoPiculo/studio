@@ -1,14 +1,74 @@
 
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useState, useCallback } from 'react';
 import Loading from "./loading";
 import { HeroesSummary } from "@/components/dashboard/heroes/HeroesSummary";
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import type { ChildProfile, MissionInstance } from '@/lib/types';
+import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
+import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+
+function HeroesPageContent() {
+    const { user, loading: authLoading } = useAuth();
+    const { currentContext, isLoading: isFamilyLoading } = useFamily();
+    const [children, setChildren] = useState<ChildProfile[] | null>(null);
+    const [missions, setMissions] = useState<MissionInstance[] | null>(null);
+
+    const fetchData = useCallback(async () => {
+        if (!user) {
+            if (!authLoading) { // Ensure we don't flash content if auth is still resolving
+              setChildren([]);
+              setMissions([]);
+            }
+            return;
+        };
+        try {
+            const [childData, missionData] = await Promise.all([
+              getChildProfilesForAttribution(user.uid, currentContext),
+              getMissionInstancesForContext(user.uid, currentContext)
+            ]);
+            setChildren(childData);
+            setMissions(missionData);
+        } catch (error) {
+            console.error("Error fetching heroes data:", error);
+            setChildren([]);
+            setMissions([]);
+        }
+    }, [user, currentContext, authLoading]);
+
+    useEffect(() => {
+        if (!authLoading && !isFamilyLoading) {
+            fetchData();
+        }
+    }, [authLoading, isFamilyLoading, fetchData]);
+
+    // Show loading skeleton if data hasn't been fetched yet
+    if (children === null || missions === null) {
+        return <Loading />;
+    }
+    
+    // Show getting started guide if there are no children in the current context
+    if (children.length === 0) {
+        return (
+            <GettingStartedGuide 
+                hasChildren={false}
+                hasMissions={false} // You might want to adjust this logic based on catalog items
+                hasRewards={false} // You might want to adjust this logic based on catalog items
+            />
+        );
+    }
+    
+    // Once data is ready, render the summary
+    return <HeroesSummary children={children} missionInstances={missions} />;
+}
+
 
 export default function HeroesPage() {
     return (
         <Suspense fallback={<Loading />}>
-            <HeroesSummary />
+            <HeroesPageContent />
         </Suspense>
     )
 }
