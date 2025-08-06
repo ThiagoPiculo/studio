@@ -102,12 +102,14 @@ function SchoolSchedulePageClient() {
 
         // Logic to set the selected child
         if (fetchedChildren.length > 0) {
-            const currentSelected = selectedChildId && fetchedChildren.some(c => c.id === selectedChildId);
-            if (!currentSelected) {
+            // Check if the currently selected child is still in the new list of children.
+            const currentSelectedStillExists = fetchedChildren.some(c => c.id === selectedChildId);
+            // If not, or if no child is selected, default to the first one.
+            if (!currentSelectedStillExists) {
                 setSelectedChildId(fetchedChildren[0].id);
             }
         } else {
-            setSelectedChildId('');
+            setSelectedChildId(''); // No children, clear selection.
         }
 
     } catch (error) {
@@ -116,7 +118,7 @@ function SchoolSchedulePageClient() {
     } finally {
         setIsLoadingData(false);
     }
-  }, [user, currentContext, toast, selectedChildId]);
+  }, [user, currentContext, toast]);
   
   useEffect(() => {
     if(!authLoading && !isFamilyLoading) {
@@ -690,3 +692,5 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
+
+    
