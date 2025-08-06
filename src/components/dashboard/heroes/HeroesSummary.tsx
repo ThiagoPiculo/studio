@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -17,7 +17,8 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTodaysMissions, getSchoolScheduleForContext } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
-import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay, getDayToWeekday } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
+import { getDayToWeekday } from '@/lib/calendar-utils';
 import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
