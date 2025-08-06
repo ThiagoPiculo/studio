@@ -427,7 +427,7 @@ export default function EditMissionTemplatePage() {
       </Card>
 
       <AssignMissionDialog
-        template={null}
+        template={missionTemplate}
         instanceToEdit={instanceToEdit}
         isOpen={isAssignDialogOpen}
         onOpenChange={(isOpen) => {

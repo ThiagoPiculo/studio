@@ -221,7 +221,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             getMissionTemplateById(instanceToEdit.templateId),
             getChildProfileById(instanceToEdit.childId)
           ]);
-
+  
           if (!fetchedTemplate) {
             toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
             onOpenChange(false);
@@ -232,7 +232,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             onOpenChange(false);
             return;
           }
-
+  
           setEffectiveTemplate(fetchedTemplate);
           setChildren([fetchedChild]);
           setSelectedChild(fetchedChild);
@@ -247,13 +247,13 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
         }
       } else if (template) {
         setEffectiveTemplate(template);
-        await fetchData(); // Fetch data for the list view
+        await fetchData();
         setView('list');
       }
     };
-    
+  
     initialize();
-  }, [isOpen, instanceToEdit, template, prepareScheduleForm, onOpenChange, resetDialogState, fetchData, toast]);
+  }, [isOpen, instanceToEdit, template]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
