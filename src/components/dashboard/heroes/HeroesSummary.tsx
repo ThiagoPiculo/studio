@@ -17,8 +17,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTodaysMissions, getSchoolScheduleForContext } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
-import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay } from '@/lib/calendar-utils';
-import { getDayToWeekday } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay, getDayToWeekday, getDateObject } from '@/lib/calendar-utils';
 import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
@@ -165,9 +164,10 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                                             todaysMissions.map(m => {
                                                 const isCompleted = isMissionCompletedForDate(m, today);
                                                 const period = getPeriodOfDay(m.startDate || m.dueDate);
+                                                const dateForTime = getDateObject(m.startDate || m.dueDate);
                                                 return (
                                                 <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                    <div className="text-muted-foreground font-mono text-xs w-10 text-center">{m.startDate ? new Date(m.startDate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : ''}</div>
+                                                    <div className="text-muted-foreground font-mono text-xs w-10 text-center">{dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : ''}</div>
                                                     {isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
                                                     <span className={cn("truncate", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
                                                 </div>

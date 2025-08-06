@@ -43,7 +43,8 @@ export const getDateObject = (dateInput: Timestamp | Date | string | null | unde
     return null;
 }
 
-export const getPeriodOfDay = (date: Date | null | undefined): 'Manhã' | 'Tarde' | 'Noite' | null => {
+export const getPeriodOfDay = (dateInput: Date | Timestamp | string | null | undefined): 'Manhã' | 'Tarde' | 'Noite' | null => {
+    const date = getDateObject(dateInput);
     if (!date) return null;
     const hour = date.getHours();
     if (hour >= 6 && hour < 12) return 'Manhã';
