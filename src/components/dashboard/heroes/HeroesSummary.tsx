@@ -95,15 +95,21 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {heroesToDisplay.map(child => {
                     const today = startOfDay(new Date());
+                    
+                    const timeToMinutes = (date: Date): number => {
+                        return date.getHours() * 60 + date.getMinutes();
+                    };
+
                     const todaysMissions = missionInstances
                         .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today))
                         .sort((a, b) => {
-                            const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || 0;
-                            const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || 0;
-                            if (timeA && timeB) {
-                                return new Date(timeA).getTime() - new Date(timeB).getTime();
-                            }
-                            return 0;
+                            const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate);
+                            const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate);
+                            
+                            if (!dateA) return 1;
+                            if (!dateB) return -1;
+                            
+                            return timeToMinutes(dateA) - timeToMinutes(dateB);
                         });
 
                     const completedMissions = todaysMissions.filter(m => isMissionCompletedForDate(m, today));
