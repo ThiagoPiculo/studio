@@ -18,18 +18,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { user, loading, logout, isChildAuthenticated } = useAuth();
-  const router = useRouter();
   const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
 
-
-  useEffect(() => {
-    if (!loading) {
-      if (!user && !isChildAuthenticated) {
-        router.replace('/auth/login');
-      }
-    }
-  }, [user, loading, router, isChildAuthenticated]);
-  
   const handleBackClick = () => {
     setIsConfirmingLogout(true);
   };
@@ -39,7 +29,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     await logout();
   };
 
-
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -48,13 +37,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
+  // If loading is finished and there's still no user, the AuthContext will handle the redirect.
+  // This layout should only render if a user (admin or child) is confirmed.
   if (!user && !isChildAuthenticated) {
      return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="ml-4">Redirecionando para o login...</p>
-      </div>
-    );
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="ml-4">Verificando credenciais...</p>
+        </div>
+     );
   }
 
   return (

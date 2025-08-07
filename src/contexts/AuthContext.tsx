@@ -8,7 +8,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { auth, db } from '@/lib/firebase/config';
 import type { UserProfile, ChildProfile, AuthContextType } from '@/lib/types';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc } from 'firebase/firestore';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -36,6 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isChildAuthenticated, setIsChildAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
   const [profileUnsubscribe, setProfileUnsubscribe] = useState<(() => void) | null>(null);
 
   useEffect(() => {
@@ -89,6 +90,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setChildProfile(null);
         setIsChildAuthenticated(false);
         setLoading(false);
+
+        // If no user and not on a public page, redirect to login
+        const publicPaths = ['/', '/auth/login', '/auth/register', '/child-login'];
+        if (!publicPaths.includes(pathname)) {
+            router.replace('/auth/login');
+        }
       }
     });
 
@@ -145,6 +152,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await signOut(auth);
+      // The onAuthStateChanged listener will handle setting user to null and the redirect.
+      // Explicitly push to ensure the user lands on the homepage.
       router.push('/');
     } catch (error) {
       console.error("Error signing out:", error);
