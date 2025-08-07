@@ -115,7 +115,6 @@ const createAndDispatchNotifications = async (
 
 
   const notificationPromises = userIdsToNotify
-    .filter(userId => userId !== actorId) // Don't notify the person who made the action
     .map(userId => {
     return addNotification({
       ...notificationPayload,
@@ -2430,5 +2429,6 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
 
 
