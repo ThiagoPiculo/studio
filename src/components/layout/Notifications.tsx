@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon } from 'lucide-react';
@@ -25,6 +24,10 @@ import { ptBR } from 'date-fns/locale';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useRouter } from 'next/navigation';
+import { db } from '@/lib/firebase/config';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { convertTimestampsInObject } from '@/lib/utils';
+
 
 // Map notification types to icons
 const notificationIcons: { [key in Notification['type']]: React.ElementType } = {
@@ -94,27 +97,34 @@ export function Notifications() {
   
   const [pendingNavigation, setPendingNavigation] = useState<{ href: string; contextId: string } | null>(null);
   
-  const fetchNotifications = useCallback(async () => {
+  useEffect(() => {
     if (!user) {
       setNotifications([]);
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
-    try {
-      const updatedNotifications = await getUserNotifications(user.uid);
-      setNotifications(updatedNotifications);
-    } catch (error) {
-      console.error("Failed to fetch notifications:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
 
-  // Initial and on-user-change fetch
-  useEffect(() => {
-    fetchNotifications();
-  }, [fetchNotifications]);
+    setIsLoading(true);
+    const q = query(
+      collection(db, 'notifications'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      const fetchedNotifications = querySnapshot.docs.map(doc => 
+        convertTimestampsInObject({ id: doc.id, ...doc.data() }) as Notification
+      );
+      setNotifications(fetchedNotifications);
+      setIsLoading(false);
+    }, (error) => {
+      console.error("Failed to fetch notifications in real-time:", error);
+      setIsLoading(false);
+    });
+
+    // Cleanup listener on component unmount
+    return () => unsubscribe();
+  }, [user]);
 
 
   // Fetch children for filter dropdown
@@ -150,7 +160,11 @@ export function Notifications() {
     const unreadIds = notifications.filter(n => !n.isRead).map(n => n.id);
     try {
         await markNotificationsAsRead(user.uid, unreadIds);
-        fetchNotifications(); // Refetch to update the UI
+        // No need to refetch, onSnapshot will handle UI update if read status changes other documents
+        // But for our case, it's just a local state update essentially
+         setNotifications(prev => 
+          prev.map(n => unreadIds.includes(n.id) ? { ...n, isRead: true } : n)
+        );
     } catch (error) {
         console.error("Failed to mark notifications as read:", error);
         toast({ title: "Erro ao atualizar notificações", variant: 'destructive'});
@@ -311,5 +325,3 @@ export function Notifications() {
     </DropdownMenu>
   );
 }
-
-    
