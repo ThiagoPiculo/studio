@@ -1010,7 +1010,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
   const childrenQuery = query(collection(db, 'children'), where('ownerId', '==', userId), where('familyId', '==', null));
   const childrenSnapshot = await getDocs(childrenQuery);
   childrenSnapshot.forEach(childDoc => {
-    batch.update(childDoc.ref, { familyId: familyId, updatedAt: serverTimestamp() });
+    batch.update(doc(db, 'children', childDoc.id), { familyId: familyId, updatedAt: serverTimestamp() });
   });
   
   await batch.commit();
@@ -2313,7 +2313,7 @@ export const getSchoolScheduleForChild = async (childId: string): Promise<School
     return snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as SchoolScheduleEntry);
 }
 
-export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
+export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
   const newEntryRef = doc(collection(db, 'schoolSchedules'));
   const now = serverTimestamp() as Timestamp;
   const newEntry: SchoolScheduleEntry = {
