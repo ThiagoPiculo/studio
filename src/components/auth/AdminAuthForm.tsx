@@ -151,7 +151,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             }
           }
         } else {
-          toast({ title: "Sua Central de Comando Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
+          toast({ title: "Sua Central de Mini Herois Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
         router.push("/dashboard/heroes?initial_load=true");
       }
@@ -162,8 +162,8 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
 
       if (mode === "login") {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-             title = "Ops! Chave secreta errada...";
-             description = "Parece que a combinação de e-mail e senha não abriu o portal. Tente de novo ou, se for sua primeira vez, crie sua central de comando!";
+             title = "E-mail ou senha incorretos?";
+             description = "Acontece com os melhores heróis! Tente usar sua conta do Google para entrar com um clique. Se você ainda não tem uma Central de Mini Herois, crie uma agora e comece a diversão.";
         } else if (error.message) {
             description = error.message;
         }
