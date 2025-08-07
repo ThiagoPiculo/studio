@@ -67,8 +67,12 @@ function RegisterPageContent() {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-md shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
-        <CardHeader className="text-center p-6">
+      <Card className="relative w-full max-w-md shadow-clay rounded-2xl transition-all hover:shadow-clay-hover pt-12">
+        <Link href="/" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            <- voltar
+        </Link>
+        <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">
              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
                 <UserPlus className="h-12 w-12 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
@@ -93,22 +97,11 @@ function RegisterPageContent() {
                 Continuar com o Google
               </Button>
               
-               <div className="relative my-2">
-                <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">
-                    Ou
-                    </span>
-                </div>
-              </div>
-
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="item-1" className="border-none">
                   <AccordionTrigger className="w-full justify-center text-base rounded-xl h-12 bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:no-underline [&[data-state=open]>svg]:text-primary [&[data-state=open]>svg]:rotate-180">
                       <Mail className="mr-2 h-5 w-5"/>
-                      <span className="shrink-0 font-semibold">Crie sua conta com e-mail</span>
+                      <span className="shrink-0 font-semibold">Ou crie sua conta com e-mail</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-4">
                     <MasterUserAuthForm mode="register" inviteCode={inviteCode} />
@@ -124,10 +117,6 @@ function RegisterPageContent() {
             </p>
         </CardContent>
       </Card>
-      <Link href="/" className="mt-8 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar à tela inicial
-      </Link>
     </div>
   );
 }

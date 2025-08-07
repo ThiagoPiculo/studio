@@ -7,8 +7,12 @@ import Link from 'next/link';
 export default function ChildLoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
-      <Card className="w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover">
-        <CardHeader className="text-center p-6">
+      <Card className="relative w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover pt-12">
+        <Link href="/" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            <- voltar
+        </Link>
+        <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">
             <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
               <Sparkles className="h-12 w-12 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
@@ -43,10 +47,6 @@ export default function ChildLoginPage() {
           </p>
         </CardContent>
       </Card>
-      <Link href="/" className="mt-8 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar à tela inicial
-      </Link>
     </div>
   );
 }
