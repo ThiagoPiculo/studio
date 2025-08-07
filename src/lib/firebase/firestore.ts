@@ -2270,7 +2270,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2313,15 +2313,16 @@ export const getSchoolScheduleForChild = async (childId: string): Promise<School
     return snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as SchoolScheduleEntry);
 }
 
-export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
+export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
   const newEntryRef = doc(collection(db, 'schoolSchedules'));
-  const now = serverTimestamp() as Timestamp;
-  const newEntry: SchoolScheduleEntry = {
-    id: newEntryRef.id,
+  const now = serverTimestamp();
+
+  const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
     ...entryData,
-    createdAt: now,
-    updatedAt: now,
+    createdAt: now as Timestamp,
+    updatedAt: now as Timestamp,
   };
+
   await setDoc(newEntryRef, newEntry);
 
   if (newEntry.familyId) {
@@ -2335,8 +2336,9 @@ export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry
     });
   }
 
-  return convertTimestampsInObject(newEntry);
+  return convertTimestampsInObject({ id: newEntryRef.id, ...newEntry }) as SchoolScheduleEntry;
 };
+
 
 export const addRecurringSchoolEntry = async (
     baseEntry: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt' | 'dayOfWeek'>, 
@@ -2359,7 +2361,6 @@ export const addRecurringSchoolEntry = async (
         const newEntryRef = doc(collection(db, 'schoolSchedules'));
         const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
             ...baseEntry,
-            ownerId: actor.uid,
             dayOfWeek: day,
             createdAt: now,
             updatedAt: now,
