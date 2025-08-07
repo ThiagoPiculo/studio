@@ -28,7 +28,7 @@ import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
-import { isMissionScheduledForDate, getDateObject } from '../calendar-utils';
+import { isMissionScheduledForDate, getDateObject, isMissionCompletedForDate } from '../calendar-utils';
 import { predefinedRewardGroups } from '../predefined-reward-ideas';
 import { auth } from './config';
 
@@ -2274,7 +2274,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
