@@ -84,8 +84,8 @@ function RegisterPageContent() {
         <CardContent className="p-6 pt-0">
           <div className="space-y-4">
               <Button 
-                  variant="outline"
-                  className="w-full rounded-xl h-12 text-base font-semibold shadow-clay hover:shadow-clay-hover active:shadow-clay-inset bg-card" 
+                  variant="secondary"
+                  className="w-full rounded-xl h-12 text-base font-semibold shadow-clay hover:shadow-clay-hover active:shadow-clay-inset" 
                   onClick={handleGoogleSignUp} 
                   disabled={isLoading}
               >
@@ -99,7 +99,7 @@ function RegisterPageContent() {
               
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="item-1" className="border-none">
-                  <AccordionTrigger className="w-full justify-center text-base rounded-xl h-12 bg-primary text-primary-foreground shadow-clay hover:shadow-clay-hover hover:bg-primary/90 active:shadow-clay-inset hover:no-underline [&[data-state=open]>svg]:text-primary-foreground [&[data-state=open]>svg]:rotate-180">
+                  <AccordionTrigger className="w-full justify-center text-base rounded-xl h-12 bg-transparent border border-input shadow-clay hover:shadow-clay-hover active:shadow-clay-inset hover:no-underline [&[data-state=open]>svg]:rotate-180">
                       <Mail className="mr-2 h-5 w-5"/>
                       <span className="shrink-0 font-semibold">Ou crie sua conta com e-mail</span>
                   </AccordionTrigger>
