@@ -559,11 +559,10 @@ function MuralCompletoPageContent() {
     return differenceInYears(new Date(), birthDate);
   };
 
-  const handleProfileUpdate = useCallback(async () => {
-    if (!child) return;
-    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${child?.name || ''} foram salvas.` });
-    await fetchData(child.id);
-  }, [toast, child, fetchData]);
+  const handleProfileUpdate = useCallback(async (updatedChild: ChildProfile) => {
+    toast({ title: "Perfil Atualizado!", description: `As informações do(a) Mini Heroi ${updatedChild?.name || ''} foram salvas.` });
+    setChild(updatedChild);
+  }, [toast]);
 
   const handleRegenerateAccessCode = async () => {
     if (!child || !user) return;
@@ -704,7 +703,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteMissionInstance(user, missionToDelete.id);
-      if (child) await fetchData(child.id);
+      setMissionInstances(prev => prev.filter(m => m.id !== missionToDelete.id)); // Optimistic update
       toast({
         title: "Missão Removida",
         description: `A missão "${missionToDelete.title}" foi removida da lista de ${child?.name}.`
@@ -712,6 +711,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error("Error deleting mission instance:", error);
       toast({ title: "Erro ao Remover Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
+      if (child) await fetchData(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setMissionToDelete(null);
@@ -775,11 +775,16 @@ function MuralCompletoPageContent() {
     try {
       const actor = { id: user.uid, name: user.name };
       await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
-      if (child) await fetchData(child.id);
+      
+      // Optimistic update
+      setChild(prev => prev ? { ...prev, stars: prev.stars - instanceToManage.starsCost } : null);
+      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? { ...r, status: 'redeemed', redeemedAt: new Date().toISOString() as any } : r));
+
       toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
     } catch (error: any) {
       console.error("Error marking reward as redeemed:", error);
       toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
+      if (child) await fetchData(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setIsRedeemConfirmOpen(false);
@@ -791,7 +796,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await updateChildRewardInstance(instance.id, { status: newStatus });
-      if (child) await fetchData(child.id);
+      setChildRewards(prev => prev.map(r => r.id === instance.id ? { ...r, status: newStatus } : r)); // Optimistic update
       toast({
         title: "Status da Recompensa Atualizado",
         description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.`
@@ -799,6 +804,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error(`Error toggling reward instance status:`, error);
       toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
+      if (child) await fetchData(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
     }
@@ -809,11 +815,12 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteChildRewardInstance(user, instanceToManage.id);
-      if (child) await fetchData(child.id);
+      setChildRewards(prev => prev.filter(r => r.id !== instanceToManage.id)); // Optimistic update
       toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
     } catch (error) {
       console.error("Error deleting reward instance:", error);
       toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });
+      if (child) await fetchData(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setIsDeleteInstanceConfirmOpen(false);
@@ -831,11 +838,12 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       await deleteSchoolScheduleEntry(entryToDelete.id, user);
+      setSchoolSchedule(prev => prev.filter(e => e.id !== entryToDelete.id)); // Optimistic update
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
-      if (child) await fetchData(child.id); // Refetch data to update the UI
     } catch (error) {
       console.error("Error deleting school schedule entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
+      if (child) await fetchData(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setEntryToDelete(null);
@@ -1567,7 +1575,7 @@ function MuralCompletoPageContent() {
               <CardContent className="space-y-6">
                 <EditChildProfileForm
                   child={child}
-                  onProfileUpdate={handleProfileUpdate}
+                  onProfileUpdate={() => fetchData(child.id)}
                 />
                 <Separator className="my-8" />
                 <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
