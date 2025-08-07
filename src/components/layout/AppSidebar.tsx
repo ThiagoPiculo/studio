@@ -13,7 +13,7 @@ import {
     SidebarTrigger,
     SidebarGroupLabel,
 } from '@/components/ui/sidebar';
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -62,8 +62,14 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard" tooltip="Painel de Progressos" isActive={pathname === '/dashboard'}>
-                            <LayoutGrid className="text-chart-3" />
+                         <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
+                            <View className="text-chart-3" />
+                            <span>Visão Geral</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
+                            <LayoutGrid className="text-chart-1" />
                             <span>Painel de Progressos</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

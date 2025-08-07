@@ -50,7 +50,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
             <LayoutGrid className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-headline font-bold">Painel de Controle</h2>
+            <h2 className="text-3xl font-headline font-bold">Painel de Progressos</h2>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
@@ -58,7 +58,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
                     </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 text-sm">
-                  Sua central de análises e automações para acompanhar a jornada dos seus herois.
+                  Sua central de análises para acompanhar a jornada dos seus herois, com gráficos de desempenho, recompensas e medalhas.
                 </PopoverContent>
             </Popover>
         </div>

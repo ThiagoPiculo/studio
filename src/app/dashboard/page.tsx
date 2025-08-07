@@ -26,7 +26,7 @@ interface ContextData {
     members: UserProfile[];
 }
 
-function DashboardPageContent() {
+function DashboardRootPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { availableContexts, setCurrentContext, isLoading: isFamilyLoading } = useFamily();
     const router = useRouter();
@@ -96,10 +96,10 @@ function DashboardPageContent() {
                 <CardHeader>
                     <CardTitle className="text-2xl font-headline flex items-center gap-3">
                         <Home className="h-6 w-6 text-primary" />
-                        Visão Geral dos Contextos
+                        Visão Geral dos Espaços
                     </CardTitle>
                     <CardDescription>
-                        Acesse o painel de um espaço pessoal ou de uma aliança para gerenciar seus heróis.
+                        Acesse um espaço pessoal ou uma aliança para gerenciar seus heróis.
                     </CardDescription>
                 </CardHeader>
             </Card>
@@ -109,11 +109,11 @@ function DashboardPageContent() {
                     
                     let description = '';
                     if (context.id === 'my-space') {
-                        description = 'Aqui sou proprietário: Tenho controle total para "Cuidar Solo" dos meus Mini Herois. Posso criar aliança e incluir colaboradores para "Cuidarmos Juntos" dos mini herois.';
+                        description = 'Seu espaço pessoal para gerenciar os Mini Herois que você criou.';
                     } else if (context.role) {
                         const roleInfo = familyRoles.find(r => r.id === context.role);
                         if (roleInfo) {
-                           description = `Aqui sou ${roleInfo.label}: ${roleInfo.description}`;
+                           description = `Seu papel: ${roleInfo.label}. ${roleInfo.description}`;
                         }
                     }
 
@@ -126,7 +126,7 @@ function DashboardPageContent() {
                                         <CardTitle>{context.name}</CardTitle>
                                     </div>
                                     <Button variant="link" className="p-0 h-auto" onClick={() => handleContextClick(context.id)}>
-                                        Ver Espaço <ArrowRight className="ml-1 h-4 w-4" />
+                                        Acessar <ArrowRight className="ml-1 h-4 w-4" />
                                     </Button>
                                 </div>
                                 <CardDescription className="pt-1 text-xs">
@@ -175,10 +175,10 @@ function DashboardPageContent() {
     );
 }
 
-export default function DashboardPage() {
+export default function DashboardRootPage() {
     return (
         <Suspense fallback={<Loading />}>
-            <DashboardPageContent />
+            <DashboardRootPageContent />
         </Suspense>
     );
 }

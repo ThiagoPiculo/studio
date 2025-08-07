@@ -54,6 +54,11 @@ export function Breadcrumbs() {
       
       const relevantSegments = pathSegments[0] === 'dashboard' ? pathSegments.slice(1) : pathSegments;
 
+      if (pathname === '/dashboard') {
+          setBreadcrumbs([{ label: 'Visão Geral', href: '/dashboard' }]);
+          return;
+      }
+
       const crumbPromises = relevantSegments.map(async (segment, index) => {
         const href = `/dashboard/${relevantSegments.slice(0, index + 1).join('/')}`;
         let label = pathTranslations[segment] || titleCase(segment);
