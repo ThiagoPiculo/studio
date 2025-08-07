@@ -154,6 +154,27 @@ export function Notifications() {
 
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
+  
+  const unreadCountsByType = useMemo(() => {
+    return notifications.reduce((acc, notification) => {
+        if (!notification.isRead) {
+            const category = notificationTypeMap[notification.type];
+            if (category) {
+                acc[category] = (acc[category] || 0) + 1;
+            }
+        }
+        return acc;
+    }, {} as Record<string, number>);
+  }, [notifications]);
+
+  const unreadCountsByChild = useMemo(() => {
+      return notifications.reduce((acc, notification) => {
+          if (!notification.isRead && notification.relatedChildId) {
+              acc[notification.relatedChildId] = (acc[notification.relatedChildId] || 0) + 1;
+          }
+          return acc;
+      }, {} as Record<string, number>);
+  }, [notifications]);
 
   const handleMarkAllAsRead = async () => {
     if (!user || unreadCount === 0) return;
@@ -240,9 +261,17 @@ export function Notifications() {
                     <SelectValue placeholder="Tipo..." />
                 </SelectTrigger>
                 <SelectContent>
-                    {Object.entries(notificationCategoryLabels).map(([key, label]) => (
-                        <SelectItem key={key} value={key} className="text-xs">{label}</SelectItem>
-                    ))}
+                    {Object.entries(notificationCategoryLabels).map(([key, label]) => {
+                        const count = unreadCountsByType[key];
+                        return (
+                            <SelectItem key={key} value={key} className="text-xs">
+                                <div className="flex justify-between items-center w-full">
+                                    <span>{label}</span>
+                                    {count > 0 && <Badge variant="destructive" className="ml-2 h-4 px-1.5">{count}</Badge>}
+                                </div>
+                            </SelectItem>
+                        );
+                    })}
                 </SelectContent>
             </Select>
 
@@ -252,9 +281,17 @@ export function Notifications() {
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem value="all" className="text-xs">Todos os Heróis</SelectItem>
-                    {children.map(child => (
-                        <SelectItem key={child.id} value={child.id} className="text-xs">{child.name}</SelectItem>
-                    ))}
+                    {children.map(child => {
+                        const count = unreadCountsByChild[child.id];
+                        return (
+                            <SelectItem key={child.id} value={child.id} className="text-xs">
+                                <div className="flex justify-between items-center w-full">
+                                    <span>{child.name}</span>
+                                    {count > 0 && <Badge variant="destructive" className="ml-2 h-4 px-1.5">{count}</Badge>}
+                                </div>
+                            </SelectItem>
+                        );
+                    })}
                 </SelectContent>
             </Select>
         </div>
