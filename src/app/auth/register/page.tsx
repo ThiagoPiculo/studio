@@ -5,7 +5,7 @@ import { Suspense, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { MasterUserAuthForm } from '@/components/auth/AdminAuthForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UserPlus, ArrowLeft, Loader2 } from 'lucide-react';
+import { UserPlus, ArrowLeft, Loader2, Mail } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -95,10 +95,9 @@ function RegisterPageContent() {
               
               <Accordion type="single" collapsible className="w-full">
                 <AccordionItem value="item-1" className="border-none">
-                  <AccordionTrigger className="flex-no-wrap text-sm text-muted-foreground hover:no-underline [&[data-state=open]>svg]:text-primary">
-                      <Separator className="shrink mr-3" />
-                          <span className="shrink-0">Ou crie sua conta com e-mail</span>
-                      <Separator className="shrink ml-3" />
+                  <AccordionTrigger className="w-full justify-center text-base rounded-xl h-12 bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:no-underline [&[data-state=open]>svg]:text-primary [&[data-state=open]>svg]:rotate-180">
+                      <Mail className="mr-2 h-5 w-5"/>
+                      <span className="shrink-0 font-semibold">Ou crie sua conta com e-mail</span>
                   </AccordionTrigger>
                   <AccordionContent className="pt-4">
                     <MasterUserAuthForm mode="register" inviteCode={inviteCode} />
