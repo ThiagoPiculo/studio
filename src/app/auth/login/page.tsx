@@ -35,8 +35,8 @@ export default function LoginPage() {
       if (error.code !== 'auth/popup-closed-by-user') {
           console.error("Google Sign-In failed:", error);
           toast({
-            title: "Falha no Login com Google",
-            description: "Não foi possível fazer login com o Google. Tente novamente.",
+            title: "E-mail ou senha incorretos?",
+            description: "Acontece com os melhores heróis! Tente usar sua conta do Google para entrar com um clique. Se você ainda não tem uma Central de Mini Herois, crie uma agora e comece a diversão.",
             variant: "destructive",
           });
       }
@@ -51,7 +51,7 @@ export default function LoginPage() {
       <Card className="relative w-full max-w-md shadow-clay rounded-2xl transition-all hover:shadow-clay-hover pt-12">
         <Link href="/" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            <- voltar
+            voltar
         </Link>
         <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">

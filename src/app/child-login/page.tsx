@@ -10,7 +10,7 @@ export default function ChildLoginPage() {
       <Card className="relative w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover pt-12">
         <Link href="/" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="mr-1 h-4 w-4" />
-            <- voltar
+            voltar
         </Link>
         <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">
