@@ -32,7 +32,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { Timestamp } from 'firebase/firestore';
 import { heroColors } from '@/lib/hero-colors';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
@@ -145,8 +144,6 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     childId: child.id,
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
-                    createdAt: new Timestamp(0,0), // Will be replaced by server
-                    updatedAt: new Timestamp(0,0), // Will be replaced by server
                 };
                 await addSchoolScheduleEntry(newEntryData, user);
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
