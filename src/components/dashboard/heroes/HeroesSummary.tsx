@@ -95,7 +95,17 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {heroesToDisplay.map(child => {
                     const today = startOfDay(new Date());
-                    const todaysMissions = missionInstances.filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
+                    const todaysMissions = missionInstances
+                        .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today))
+                        .sort((a, b) => {
+                            const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || 0;
+                            const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || 0;
+                            if (timeA && timeB) {
+                                return new Date(timeA).getTime() - new Date(timeB).getTime();
+                            }
+                            return 0;
+                        });
+
                     const completedMissions = todaysMissions.filter(m => isMissionCompletedForDate(m, today));
                     const progress = todaysMissions.length > 0 ? (completedMissions.length / todaysMissions.length) * 100 : 0;
                     
