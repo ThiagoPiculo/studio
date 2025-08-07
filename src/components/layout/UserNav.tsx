@@ -11,36 +11,20 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { familyRoles } from "@/lib/types";
 import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield, ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
-import React, { useState } from 'react';
+import React from 'react';
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
   const { currentContext, availableContexts, currentRole } = useFamily();
-  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  const handleLogoutClick = (e: React.MouseEvent) => {
+  const handleLogoutClick = async (e: React.MouseEvent) => {
     e.preventDefault();
-    setIsLogoutDialogOpen(true);
-  };
-
-  const handleConfirmLogout = async () => {
     await logout();
-    setIsLogoutDialogOpen(false);
   };
 
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
@@ -65,23 +49,6 @@ export function UserNav() {
 
   return (
     <>
-      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Você tem certeza que deseja sair?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação irá encerrar sua sessão atual. Você precisará fazer login novamente para acessar o painel.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Permanecer</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmLogout}>
-              Confirmar Logout
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="w-full justify-start gap-2 p-2 text-left h-auto group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:justify-center">
