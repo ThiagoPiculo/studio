@@ -35,9 +35,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
   
   const handleConfirmLogout = async () => {
-    await logout();
-    // A função de logout já redireciona para a página inicial.
     setIsConfirmingLogout(false);
+    await logout();
   };
 
 
