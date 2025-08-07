@@ -111,7 +111,7 @@ const createAndDispatchNotifications = async (
   }
   
   const actorId = actor ? ('uid' in actor ? actor.uid : actor.id) : null;
-  const actorName = actor ? actor.name : null;
+  const actorName = actor?.name || null;
 
 
   const notificationPromises = userIdsToNotify
@@ -2319,12 +2319,12 @@ export const getSchoolScheduleForChild = async (childId: string): Promise<School
 
 export const addSchoolScheduleEntry = async (entryData: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt'>, actor: UserProfile): Promise<SchoolScheduleEntry> => {
   const newEntryRef = doc(collection(db, 'schoolSchedules'));
-  const now = serverTimestamp();
+  const now = serverTimestamp() as Timestamp;
 
   const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
     ...entryData,
-    createdAt: now as Timestamp,
-    updatedAt: now as Timestamp,
+    createdAt: now,
+    updatedAt: now,
   };
 
   await setDoc(newEntryRef, newEntry);
@@ -2353,10 +2353,6 @@ export const addRecurringSchoolEntry = async (
     if (!child) throw new Error("Criança não encontrada.");
 
     if (child.ownerId !== actor.uid) {
-        if (!child.familyId) {
-            throw new Error("Apenas o proprietário do herói pode editar a agenda no espaço pessoal.");
-        }
-        
         const membershipRef = doc(db, "familyMemberships", `${actor.uid}_${child.familyId}`);
         const membershipSnap = await getDoc(membershipRef);
         if (!membershipSnap.exists()) {
@@ -2434,4 +2430,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
 

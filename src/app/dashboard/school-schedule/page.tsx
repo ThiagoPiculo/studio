@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
@@ -85,10 +86,10 @@ function SchoolSchedulePageClient() {
   };
   
   const fetchData = useCallback(async () => {
-    if (!user) {
+    if (!user || isFamilyLoading) {
         setIsLoadingData(false);
-        return
-    };
+        return;
+    }
     setIsLoadingData(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
@@ -100,16 +101,13 @@ function SchoolSchedulePageClient() {
         setChildren(fetchedChildren);
         setScheduleEntries(fetchedEntries);
 
-        // Logic to set the selected child
         if (fetchedChildren.length > 0) {
-            // Check if the currently selected child is still in the new list of children.
             const currentSelectedStillExists = fetchedChildren.some(c => c.id === selectedChildId);
-            // If not, or if no child is selected, default to the first one.
             if (!currentSelectedStillExists) {
                 setSelectedChildId(fetchedChildren[0].id);
             }
         } else {
-            setSelectedChildId(''); // No children, clear selection.
+            setSelectedChildId('');
         }
 
     } catch (error) {
@@ -118,7 +116,7 @@ function SchoolSchedulePageClient() {
     } finally {
         setIsLoadingData(false);
     }
-  }, [user, currentContext, toast]);
+  }, [user, currentContext, toast, isFamilyLoading, selectedChildId]);
   
   useEffect(() => {
     if(!authLoading && !isFamilyLoading) {
@@ -210,7 +208,7 @@ function SchoolSchedulePageClient() {
     const outOfBounds: SchoolScheduleEntry[] = [];
     
     const child = children.find(c => c.id === selectedChildId);
-    const childEntries = scheduleEntries.filter(entry => entry.childId === selectedChildId);
+    const childEntries = scheduleEntries.filter(entry => entry.childId === selectedChildId).sort((a,b) => a.startTime.localeCompare(b.startTime));
 
     if (!child || !child.schoolShiftStart || !child.schoolShiftEnd || child.schoolShift === 'not_applicable') {
         return { inBoundsSchedule: childEntries, outOfBoundsSchedule: [] };
