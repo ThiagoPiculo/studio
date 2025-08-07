@@ -17,13 +17,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { user, loading, isChildAuthenticated } = useAuth();
+  const { user, loading, logout, isChildAuthenticated } = useAuth();
   const router = useRouter();
+  const [isConfirmingLogout, setIsConfirmingLogout] = useState(false);
+
 
   useEffect(() => {
     if (!loading) {
-      // This is the main check: if there is no authenticated entity (neither user nor child),
-      // redirect to the main login page.
       if (!user && !isChildAuthenticated) {
         router.replace('/auth/login');
       }
@@ -31,14 +31,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }, [user, loading, router, isChildAuthenticated]);
   
   const handleBackClick = () => {
-    // Check if there is history to go back to.
-    // window.history.length <= 2 means the user landed directly on a dashboard page
-    // (e.g., from an external link or new tab), so "back" would take them off-site.
-    if (window.history.length <= 2) {
-      router.push('/dashboard'); 
-    } else {
-      router.back();
-    }
+    setIsConfirmingLogout(true);
+  };
+  
+  const handleConfirmLogout = async () => {
+    await logout();
+    // A função de logout já redireciona para a página inicial.
+    setIsConfirmingLogout(false);
   };
 
 
@@ -50,8 +49,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // If there's no user and no authenticated child, show a loading state while redirecting.
-  // This prevents flashing the layout before the redirect happens.
   if (!user && !isChildAuthenticated) {
      return (
       <div className="flex min-h-screen items-center justify-center bg-background">
@@ -61,11 +58,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     );
   }
 
-  // This layout is now primarily for the "Master User" (responsible).
-  // The child-specific view is handled within the page components themselves,
-  // but they will still be wrapped by this layout structure.
   return (
     <>
+      <AlertDialog open={isConfirmingLogout} onOpenChange={setIsConfirmingLogout}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Você tem certeza que deseja sair?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Esta ação irá encerrar sua sessão atual. Você precisará fazer login novamente para acessar o painel.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Permanecer</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmLogout}>
+                    Confirmar Logout
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <SidebarProvider>
         <AppSidebar />
         <SidebarInset>
