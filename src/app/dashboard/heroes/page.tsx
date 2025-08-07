@@ -18,12 +18,15 @@ function HeroesPageContent() {
 
     const fetchData = useCallback(async () => {
         if (!user) {
-            if (!authLoading) { // Ensure we don't flash content if auth is still resolving
-              setChildren([]);
-              setMissions([]);
-            }
+            // Se não há usuário e a autenticação já terminou, significa que ele não está logado.
+            // Limpamos os dados para evitar mostrar conteúdo antigo.
+            setChildren([]);
+            setMissions([]);
             return;
         };
+
+        // Adicionamos um estado local de carregamento para a busca de dados em si
+        // Isso evita que a UI pisque se o contexto mudar rapidamente.
         try {
             const [childData, missionData] = await Promise.all([
               getChildProfilesForAttribution(user.uid, currentContext),
@@ -36,31 +39,32 @@ function HeroesPageContent() {
             setChildren([]);
             setMissions([]);
         }
-    }, [user, currentContext, authLoading]);
+    }, [user, currentContext]);
 
     useEffect(() => {
+        // A condição é clara: SÓ busca os dados quando a autenticação E o contexto da família estiverem prontos.
         if (!authLoading && !isFamilyLoading) {
             fetchData();
         }
     }, [authLoading, isFamilyLoading, fetchData]);
 
-    // Show loading skeleton if data hasn't been fetched yet
-    if (children === null || missions === null) {
+    // O estado de carregamento agora considera os contextos e a busca de dados.
+    if (authLoading || isFamilyLoading || children === null || missions === null) {
         return <Loading />;
     }
     
-    // Show getting started guide if there are no children in the current context
+    // Se, após tudo carregar, não houver crianças, exibe o guia de introdução.
     if (children.length === 0) {
         return (
             <GettingStartedGuide 
                 hasChildren={false}
-                hasMissions={false} // You might want to adjust this logic based on catalog items
-                hasRewards={false} // You might want to adjust this logic based on catalog items
+                hasMissions={false}
+                hasRewards={false}
             />
         );
     }
     
-    // Once data is ready, render the summary
+    // Uma vez que todos os dados estão prontos, renderiza o resumo.
     return <HeroesSummary children={children} missionInstances={missions} />;
 }
 
