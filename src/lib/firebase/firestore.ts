@@ -96,7 +96,7 @@ export const markNotificationsAsRead = async (userId: string, notificationIds: s
 const createAndDispatchNotifications = async (
   childId: string,
   notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId'>,
-  actor?: { id: string; name: string | null }
+  actor?: { id: string; name: string | null } | UserProfile
 ): Promise<void> => {
   const child = await getChildProfileById(childId);
   if (!child) return;
@@ -109,16 +109,20 @@ const createAndDispatchNotifications = async (
   } else {
     userIdsToNotify = [child.ownerId];
   }
+  
+  const actorId = actor ? ('uid' in actor ? actor.uid : actor.id) : null;
+  const actorName = actor ? actor.name : null;
+
 
   const notificationPromises = userIdsToNotify
-    .filter(userId => userId !== actor?.id) // Don't notify the person who made the action
+    .filter(userId => userId !== actorId) // Don't notify the person who made the action
     .map(userId => {
     return addNotification({
       ...notificationPayload,
       userId,
       relatedContextId: child.familyId || null,
-      actorId: actor?.id || null,
-      actorName: actor?.name || null
+      actorId: actorId,
+      actorName: actorName
     });
   });
 
@@ -127,18 +131,18 @@ const createAndDispatchNotifications = async (
 
 const createAllianceNotification = async (
     familyId: string,
-    actor: { id: string; name: string | null },
+    actor: UserProfile,
     notificationPayload: Omit<Notification, 'id' | 'createdAt' | 'isRead' | 'userId' | 'relatedContextId' | 'actorId' | 'actorName'>
 ) => {
     const members = await getFamilyMembers(familyId);
     const notificationPromises = members
-        .filter(member => member.uid !== actor.id) // Exclude the actor
+        .filter(member => member.uid !== actor.uid)
         .map(member => addNotification({
             ...notificationPayload,
             userId: member.uid,
             relatedContextId: familyId,
-            actorId: actor.id,
-            actorName: actor.name,
+            actorId: actor.uid,
+            actorName: actor.name || 'Um responsável',
         }));
     await Promise.all(notificationPromises);
 };
@@ -2352,6 +2356,12 @@ export const addRecurringSchoolEntry = async (
         if (!child.familyId) {
             throw new Error("Apenas o proprietário do herói pode editar a agenda no espaço pessoal.");
         }
+        
+        const membershipRef = doc(db, "familyMemberships", `${actor.uid}_${child.familyId}`);
+        const membershipSnap = await getDoc(membershipRef);
+        if (!membershipSnap.exists()) {
+            throw new Error("Você não é membro desta aliança.");
+        }
     }
 
     const batch = writeBatch(db);
@@ -2374,7 +2384,7 @@ export const addRecurringSchoolEntry = async (
         await createAllianceNotification(baseEntry.familyId, actor, {
             type: 'school_schedule_entry_created',
             title: 'Intervalo Adicionado',
-            description: `${actor.name} adicionou o intervalo de ${baseEntry.startTime} às ${baseEntry.endTime} para ${child.name}.`,
+            description: `${actor.name || 'Um responsável'} adicionou o intervalo de ${baseEntry.startTime} às ${baseEntry.endTime} para ${child.name}.`,
             href: `/dashboard/school-schedule`,
             relatedChildId: baseEntry.childId
         });
@@ -2425,4 +2435,3 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
   }
 };
 
-    
