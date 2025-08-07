@@ -135,7 +135,6 @@ const createAllianceNotification = async (
 ) => {
     const members = await getFamilyMembers(familyId);
     const notificationPromises = members
-        .filter(member => member.uid !== actor.uid)
         .map(member => addNotification({
             ...notificationPayload,
             userId: member.uid,
@@ -1824,10 +1823,12 @@ export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date
     const instanceData = instanceSnap.data() as MissionInstance;
     const rule = instanceData.recurrenceRule || { freq: 'DAILY', interval: 1 };
     
-    const startDate = instanceData.startDate?.toDate();
+    const startDate = getDateObject(instanceData.startDate);
     if (startDate && isBefore(newEndDate, startOfDay(startDate))) {
+      // If the new end date is before the series even started, just delete the whole thing.
       transaction.delete(instanceRef);
     } else {
+      // Otherwise, update the end date of the series.
       transaction.update(instanceRef, {
         recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) },
         updatedAt: serverTimestamp(),
@@ -2429,6 +2430,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
 
 
 
