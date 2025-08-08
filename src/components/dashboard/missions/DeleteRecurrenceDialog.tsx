@@ -56,7 +56,7 @@ export function DeleteRecurrenceDialog({ isOpen, onOpenChange, onSelect }: Delet
           </Button>
           <Button
             variant="outline"
-            className="w-full justify-start h-auto p-4 text-left border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground [&>svg]:hover:text-destructive-foreground"
+            className="w-full justify-start h-auto p-4 text-left border-destructive/50 text-destructive hover:bg-destructive hover:text-destructive-foreground [&>svg]:hover:text-destructive-foreground group"
             onClick={() => onSelect('all')}
           >
             <Trash2 className="mr-4 h-5 w-5 flex-shrink-0" />
