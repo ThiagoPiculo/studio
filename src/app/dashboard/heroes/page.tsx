@@ -15,46 +15,48 @@ function HeroesPageContent() {
     const { currentContext, isLoading: isFamilyLoading } = useFamily();
     const [children, setChildren] = useState<ChildProfile[] | null>(null);
     const [missions, setMissions] = useState<MissionInstance[] | null>(null);
-
-    const fetchData = useCallback(async () => {
-        if (!user) {
-            // Se não há usuário e a autenticação já terminou, significa que ele não está logado.
-            // Limpamos os dados para evitar mostrar conteúdo antigo.
-            setChildren([]);
-            setMissions([]);
-            return;
-        };
-
-        // Adicionamos um estado local de carregamento para a busca de dados em si
-        // Isso evita que a UI pisque se o contexto mudar rapidamente.
-        try {
-            const [childData, missionData] = await Promise.all([
-              getChildProfilesForAttribution(user.uid, currentContext),
-              getMissionInstancesForContext(user.uid, currentContext)
-            ]);
-            setChildren(childData);
-            setMissions(missionData);
-        } catch (error) {
-            console.error("Error fetching heroes data:", error);
-            setChildren([]);
-            setMissions([]);
-        }
-    }, [user, currentContext]);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        // A condição é clara: SÓ busca os dados quando a autenticação E o contexto da família estiverem prontos.
-        if (!authLoading && !isFamilyLoading) {
-            fetchData();
+        // Don't fetch if the user or context is not ready yet.
+        if (authLoading || isFamilyLoading || !user) {
+            // If the contexts are ready but there's no user, it means they are logged out.
+            if (!authLoading && !isFamilyLoading && !user) {
+                setIsLoading(false);
+                setChildren([]);
+                setMissions([]);
+            }
+            return;
         }
-    }, [authLoading, isFamilyLoading, fetchData]);
 
-    // O estado de carregamento agora considera os contextos e a busca de dados.
-    if (authLoading || isFamilyLoading || children === null || missions === null) {
+        const fetchData = async () => {
+            setIsLoading(true);
+            try {
+                const [childData, missionData] = await Promise.all([
+                    getChildProfilesForAttribution(user.uid, currentContext),
+                    getMissionInstancesForContext(user.uid, currentContext)
+                ]);
+                setChildren(childData);
+                setMissions(missionData);
+            } catch (error) {
+                console.error("Error fetching heroes data:", error);
+                setChildren([]);
+                setMissions([]);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchData();
+    }, [user, currentContext, authLoading, isFamilyLoading]);
+
+
+    if (isLoading || authLoading || isFamilyLoading) {
         return <Loading />;
     }
     
-    // Se, após tudo carregar, não houver crianças, exibe o guia de introdução.
-    if (children.length === 0) {
+    // After loading, if there are no children, show the guide.
+    if (!children || children.length === 0) {
         return (
             <GettingStartedGuide 
                 hasChildren={false}
@@ -64,8 +66,8 @@ function HeroesPageContent() {
         );
     }
     
-    // Uma vez que todos os dados estão prontos, renderiza o resumo.
-    return <HeroesSummary children={children} missionInstances={missions} />;
+    // Ensure missions is not null before rendering summary
+    return <HeroesSummary children={children} missionInstances={missions || []} />;
 }
 
 
