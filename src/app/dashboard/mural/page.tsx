@@ -241,7 +241,7 @@ function MuralCompletoPageContent() {
 
   // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
-  const [allChildren, setAllChildren] = useState<ChildProfile[]>([]);
+  const [allChildrenInContext, setAllChildrenInContext] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
@@ -256,7 +256,7 @@ function MuralCompletoPageContent() {
   const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
   const [isMoving, setIsMoving] = useState(false);
 
-  // Separate loading state for secondary data
+  // Separate loading state for secondary data (missions, rewards, etc.)
   const [isLoadingSecondaryData, setIsLoadingSecondaryData] = useState(true);
 
 
@@ -319,7 +319,8 @@ function MuralCompletoPageContent() {
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
         
-        const [missions, rewards, schedule, collaborators, memberships] = await Promise.all([
+        const [childData, missions, rewards, schedule, collaborators, memberships] = await Promise.all([
+            getChildProfileById(childIdToFetch),
             getMissionInstancesByChild(childIdToFetch),
             getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
@@ -327,6 +328,7 @@ function MuralCompletoPageContent() {
             familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
         ]);
         
+        setChild(childData);
         setMissionInstances(missions);
         setChildRewards(rewards.sort((a, b) => {
             if (a.status === 'active' && b.status !== 'active') return -1;
@@ -352,48 +354,43 @@ function MuralCompletoPageContent() {
 
   // Effect to decide which child to fetch data for
   useEffect(() => {
-    if (authLoading || isFamilyLoading) return;
+    if (authLoading || isFamilyLoading || !user) return;
 
-    const initializePage = async (id: string) => {
-        setIsLoading(true);
-        const profile = await getChildProfileById(id);
-        setChild(profile);
-        setIsLoading(false);
-        if (profile) {
-            fetchDataForChild(id);
-        } else {
-            setIsLoadingSecondaryData(false);
-        }
-    };
+    setIsLoading(true);
 
-    if (childIdFromParams) {
-        initializePage(childIdFromParams);
-    } else {
-        // If no childId in params, fetch all children for the context first
-        // to determine the default child to show.
-        setIsLoading(true);
-        if (user) {
-            getChildProfilesForAttribution(user.uid, currentContext).then(profiles => {
-                setAllChildren(profiles);
-                if (profiles.length > 0) {
-                    const firstChildId = profiles[0].id;
-                    router.replace(`${pathname}?childId=${firstChildId}`);
-                    // The navigation will trigger this effect again with childIdFromParams.
-                } else {
-                    // No children in this context, stop loading.
-                    setIsLoading(false);
-                    setIsLoadingSecondaryData(false);
-                    setChild(null);
-                }
-            }).catch(err => {
-                console.error("Error fetching children to determine default:", err);
+    const initializeContext = async () => {
+        try {
+            const profilesInContext = await getChildProfilesForAttribution(user.uid, currentContext);
+            setAllChildrenInContext(profilesInContext);
+
+            if (profilesInContext.length === 0) {
+                setChild(null);
                 setIsLoading(false);
-            });
-        } else {
+                setIsLoadingSecondaryData(false);
+                return;
+            }
+
+            const currentChildIsValid = profilesInContext.some(c => c.id === childIdFromParams);
+            const targetChildId = currentChildIsValid ? childIdFromParams : profilesInContext[0].id;
+            
+            if (targetChildId) {
+                if (targetChildId !== childIdFromParams) {
+                    router.replace(`${pathname}?childId=${targetChildId}`, { scroll: false });
+                }
+                await fetchDataForChild(targetChildId);
+            } else {
+                setChild(null);
+            }
+        } catch (error) {
+            console.error("Error initializing context:", error);
+            toast({ title: "Erro ao carregar heróis", variant: "destructive" });
+        } finally {
             setIsLoading(false);
         }
-    }
-}, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, router, pathname]);
+    };
+    
+    initializeContext();
+  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchData, router, pathname, toast]);
 
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -938,9 +935,9 @@ function MuralCompletoPageContent() {
             </Popover>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {allChildren.length > 0 && (
+          {allChildrenInContext.length > 1 && (
               <HeroSelector
-                  heroes={allChildren}
+                  heroes={allChildrenInContext}
                   selectedHeroId={childIdFromParams}
                   onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
                   showAllOption={false}
