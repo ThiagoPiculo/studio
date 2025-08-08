@@ -1,6 +1,6 @@
 
 import type { MissionCategory } from '@/lib/types';
-import { Home, School, HeartPulse, Smile, Users, Banknote, Leaf, Bike, type LucideIcon } from 'lucide-react';
+import { Home, School, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
   title: string;
@@ -171,7 +171,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
   },
   {
     userCategory: 'Financeiro',
-    icon: Banknote,
+    icon: Coins,
     description: 'Pequenas missões para introduzir conceitos de educação financeira de forma simples, prática e lúdica.',
     items: [
         { title: 'Guardar dinheiro no cofrinho', emoji: '🐖', suggestedAppCategory: 'financial', starsReward: 15, xpReward: 25 },
@@ -224,3 +224,5 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     ],
   },
 ];
+
+    
