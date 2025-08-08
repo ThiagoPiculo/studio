@@ -248,7 +248,7 @@ function MissionsHubContent() {
             <div className="flex flex-wrap gap-4">
                 <Link href="/dashboard/agenda">
                   <Button variant="outline" className="w-full sm:w-auto">
-                    <CalendarDays className="mr-2 h-5 w-5" /> Agenda de Missões
+                    <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
                   </Button>
                 </Link>
                 <Link href="/dashboard/missions/ideas">

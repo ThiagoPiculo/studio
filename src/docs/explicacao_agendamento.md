@@ -24,13 +24,13 @@ A arquitetura se baseia em duas coleções principais no Firestore:
     *   Crucialmente, ele também armazena um **agendamento padrão** (`isRecurring`, `recurrenceRule`, `startDate`, `dueDate`). Este agendamento serve como ponto de partida rápido e como a regra default.
 
 2.  **`missionInstances` (As Atribuições):**
-    *   Este é o documento que efetivamente coloca uma missão na agenda de uma criança.
+    *   Este é o documento que efetivamente coloca uma missão na rotina de uma criança.
     *   Quando uma missão é atribuída, um documento `MissionInstance` é criado para **cada criança selecionada**.
     *   Este documento é **independente e autossuficiente**. Ele copia os dados imutáveis do `MissionTemplate` (título, recompensas), mas armazena as **suas próprias regras de agendamento**.
 
 ### Fluxo Lógico
 
-1.  **Atribuição:** O processo começa quando o usuário clica em "Atribuir Missão" a partir do catálogo ou da agenda.
+1.  **Atribuição:** O processo começa quando o usuário clica em "Atribuir Missão" a partir do catálogo ou da rotina.
 2.  **Seleção de Crianças:** Uma janela de diálogo (`AssignMissionDialog`) é aberta, listando as crianças elegíveis.
 3.  **Herança de Agendamento:** Por padrão, cada criança na lista herda o agendamento do `MissionTemplate` que está sendo atribuído. Esse agendamento padrão é exibido ao lado do nome da criança.
 4.  **Personalização (Opcional):**

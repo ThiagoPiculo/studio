@@ -7,13 +7,13 @@ Bem-vindo ao centro de comando de missões! Agendar tarefas para seus Mini Heroi
 
 Esta é a forma mais comum e rápida, perfeita para tarefas como "arrumar a cama" ou "escovar os dentes", que geralmente têm o mesmo horário para todos.
 
-1.  **Comece na Agenda:** Na tela da "Agenda", clique no botão **+ Adicionar Missão**.
+1.  **Comece na Rotina de Missões:** Na tela da "Rotina de Missões", clique no botão **+ Adicionar Missão**.
 2.  **Escolha a Missão:** Uma janela aparecerá com todas as missões que você já criou no seu catálogo. Clique na missão que você quer agendar (ex: "Fazer o dever de casa").
 3.  **Selecione os Herois:** Agora você verá uma lista com os seus Mini Herois. Marque a caixa de seleção ao lado de cada criança que participará desta missão.
     *   *Dica:* Note que, por padrão, todos receberão o mesmo horário que você definiu quando criou a missão no catálogo.
 4.  **Confirme:** Clique em **"Confirmar Atribuições"**.
 
-**Pronto!** A missão agora aparecerá na agenda de todas as crianças selecionadas, seguindo a mesma regra de horário e repetição.
+**Pronto!** A missão agora aparecerá na rotina de todas as crianças selecionadas, seguindo a mesma regra de horário e repetição.
 
 ---
 

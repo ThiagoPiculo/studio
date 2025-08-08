@@ -997,7 +997,7 @@ function AgendaPageContent() {
                             <HelpCircle className="h-5 w-5" />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72">
+                    <PopoverContent className="w-80">
                         <div className="space-y-3">
                             <p className="text-sm">Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.</p>
                             <PopoverClose asChild>
