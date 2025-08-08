@@ -390,7 +390,7 @@ function MuralCompletoPageContent() {
     };
     
     initializeContext();
-  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchData, router, pathname, toast]);
+  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchDataForChild, router, pathname, toast]);
 
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
