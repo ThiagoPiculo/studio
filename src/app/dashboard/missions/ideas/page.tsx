@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
+import { AccordionHeader } from "@radix-ui/react-accordion";
 
 const rewardFilterOptions = [
     { value: 'all', label: 'Qualquer Recompensa' },
@@ -200,35 +201,35 @@ export default function MissionIdeasPage() {
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {filteredMissionGroups.map((group) => (
                         <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm break-inside-avoid">
-                           <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                            <div className="flex items-center gap-3">
-                                    <group.icon className="h-7 w-7 text-primary" />
-                                    <div className="flex items-center gap-2">
+                           <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
+                                <AccordionTrigger className="p-0 hover:no-underline flex-grow">
+                                    <div className="flex items-center gap-3">
+                                        <group.icon className="h-7 w-7 text-primary" />
                                         <h3 className="text-2xl font-headline">{group.userCategory}</h3>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-7 w-7 text-muted-foreground hover:bg-primary/10"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <HelpCircle className="h-4 w-4"/>
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
-                                                <div className="space-y-3">
-                                                    <h4 className="font-medium leading-none">{group.userCategory}</h4>
-                                                    <p className="text-sm text-muted-foreground">{group.description}</p>
-                                                    <PopoverClose asChild>
-                                                        <Button className="w-full">Entendi 👍</Button>
-                                                    </PopoverClose>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
                                     </div>
-                                </div>
-                            </AccordionTrigger>
+                                </AccordionTrigger>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-7 w-7 text-muted-foreground hover:bg-primary/10"
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <HelpCircle className="h-4 w-4"/>
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
+                                        <div className="space-y-3">
+                                            <h4 className="font-medium leading-none">{group.userCategory}</h4>
+                                            <p className="text-sm text-muted-foreground">{group.description}</p>
+                                            <PopoverClose asChild>
+                                                <Button className="w-full">Entendi 👍</Button>
+                                            </PopoverClose>
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                            </AccordionHeader>
                             <AccordionContent className="p-6 pt-0">
                                 <ul className="space-y-3 pt-1">
                                     {group.items.map((idea) => {
