@@ -25,7 +25,7 @@ import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "fir
 
 import type { ChildProfile, Family, FamilyMembership, MissionTemplate, RewardTemplate, ChildRewardInstance, Dream, UserProfile, FamilyInvitation, MissionInstance, RecurrenceRule, Notification, NotificationType, SchoolScheduleEntry, Weekday, FamilyRole } from '@/lib/types';
 import { boyColors, girlColors, heroColors } from '../hero-colors';
-import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse } from 'date-fns';
+import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse, endOfDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
 import { isMissionCompletedForDate, isMissionScheduledForDate, getDateObject } from '../calendar-utils';
@@ -1824,12 +1824,12 @@ export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date
     const instanceData = instanceSnap.data() as MissionInstance;
 
     if (!instanceData.isRecurring) {
-      // If it's not recurring, just delete it.
       transaction.delete(instanceRef);
       return;
     }
     
-    const newEndDate = subDays(startOfDay(fromDate), 1);
+    // Set the end date to the end of the previous day
+    const newEndDate = endOfDay(subDays(startOfDay(fromDate), 1));
     const startDate = getDateObject(instanceData.startDate);
     
     // If the new end date is before the series even started,
@@ -2440,6 +2440,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
 
 
 
