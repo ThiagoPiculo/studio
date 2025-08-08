@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -50,6 +50,8 @@ import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Loading from './loading';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 
 function MissionsHubContent() {
@@ -69,7 +71,6 @@ function MissionsHubContent() {
   
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
-  const [isAboutDialogOpen, setIsAboutDialogOpen] = useState(false);
   
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
@@ -137,8 +138,6 @@ function MissionsHubContent() {
     const family = availableContexts.find(f => f.id === currentContext);
     return family ? `a Aliança ${family.name}` : "o contexto atual";
   }, [availableContexts, currentContext]);
-
-  const templatesDescription = `Catálogo de missões em ${currentContextText}. Crie e gerencie missões para atribuir aos seus Mini Herois.`;
   
   const filteredTemplates = useMemo(() => {
     let templates = [...missionTemplates];
@@ -198,32 +197,38 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-8">
-      <Dialog open={isAboutDialogOpen} onOpenChange={setIsAboutDialogOpen}>
-        <Card className="shadow-lg">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-              <div>
-                <CardTitle className="text-3xl font-headline flex items-center">
-                  <Target className="mr-3 h-8 w-8 text-primary" />
-                  Quadro de Missões
-                </CardTitle>
-                <CardDescription>
-                  {templatesDescription}
-                </CardDescription>
-              </div>
-              <DialogTrigger asChild>
-                  <Button 
-                    variant="link" 
-                    className="p-0 h-auto sm:variant-outline sm:w-auto sm:flex-shrink-0 sm:p-2 sm:h-10 text-sm"
-                  >
-                    <Info className="mr-2 h-4 w-4" /> 
-                    <span className="sm:hidden">O que são as missões?</span>
-                    <span className="hidden sm:inline">Sobre Missões</span>
-                  </Button>
-              </DialogTrigger>
-            </div>
-          </CardHeader>
-          <CardContent className="flex flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+            <Target className="h-8 w-8 text-primary" />
+            <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Quadro de Missões</h2>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                        <h4 className="font-medium leading-none">O Motor da Aventura: Missões</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele. Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis para seus heróis.
+                        </p>
+                        <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                            <li><strong>Crie Primeiro Aqui:</strong> Antes de poder agendar uma missão, você precisa criá-la neste quadro.</li>
+                            <li><strong>Gerencie os Detalhes:</strong> Edite o título, a descrição e as recompensas de cada modelo de missão.</li>
+                            <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" em um card para agendar a missão na rotina de um ou mais heróis.</li>
+                        </ul>
+                         <p className="text-sm text-muted-foreground">
+                            Em resumo, aqui você constrói o seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
+                         </p>
+                        <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
+        <div className="flex flex-wrap gap-4">
             <Link href="/dashboard/agenda">
               <Button variant="outline" className="w-full sm:w-auto">
                 <CalendarDays className="mr-2 h-5 w-5" /> Ver Agenda de Missões
@@ -239,40 +244,8 @@ function MissionsHubContent() {
                 <Lightbulb className="mr-2 h-5 w-5" /> Ver Ideias de Missões
               </Button>
             </Link>
-          </CardContent>
-        </Card>
-
-        <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-                <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-                    <Target className="h-6 w-6 text-primary" />
-                    O Motor da Aventura: Missões
-                </DialogTitle>
-                <DialogDescription className="pt-2">
-                  Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele.
-                </DialogDescription>
-            </DialogHeader>
-            <ScrollArea className="max-h-[60vh] pr-4">
-              <div className="space-y-4 text-sm text-muted-foreground pb-4">
-                <p>Em termos simples, as missões são as tarefas, os hábitos e as responsabilidades que você quer incentivar no dia a dia da criança.</p>
-                <p>Elas transformam deveres em uma jornada heroica, e seu propósito é multifacetado:</p>
-                <ul className="list-disc pl-5 space-y-3">
-                    <li><strong className="text-foreground">Criar Estrutura e Rotina:</strong> Missões como "Arrumar a cama" dão previsibilidade e uma estrutura clara para o dia da criança, o que é fundamental para o desenvolvimento.</li>
-                    <li><strong className="text-foreground">Ensinar Responsabilidade:</strong> É a forma prática de ensinar sobre autocuidado (escovar os dentes), colaboração familiar (pôr a mesa) ou compromissos (estudar).</li>
-                    <li><strong className="text-foreground">Gerar Valor e Esforço (O "Trabalho"):</strong> Para conquistar recompensas, o heroi ganha Estrelas (⭐) e XP ao completar missões. As missões são o "trabalho" que gera o "salário" para alcançar seus objetivos.</li>
-                    <li><strong className="text-foreground">Tornar Grandes Hábitos Gerenciáveis:</strong> Um objetivo como "ser mais organizado" é quebrado em passos pequenos: "Guardar os sapatos", "Organizar a mochila". Cada missão concluída é uma pequena vitória.</li>
-                    <li><strong className="text-foreground">Dar um Propósito Claro:</strong> Em vez de uma ordem genérica, a criança tem um objetivo: "Preciso completar a 'Missão X' para ganhar 5 estrelas e ficar mais perto do meu prêmio".</li>
-                </ul>
-                <p className="pt-2">Em resumo, as missões são a base da gamificação. Elas são as ações que impulsionam o progresso, geram as recompensas e transformam a rotina de obrigações em uma jornada de conquistas e crescimento.</p>
-              </div>
-            </ScrollArea>
-            <DialogFooter className="mt-4">
-              <DialogClose asChild>
-                <Button variant="outline" className="w-full">Entendido!</Button>
-              </DialogClose>
-            </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        </div>
+      </div>
       
       {children.length > 1 && (
         <HeroSelector
