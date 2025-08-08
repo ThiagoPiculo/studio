@@ -13,6 +13,7 @@ import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { cn } from '@/lib/utils';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
