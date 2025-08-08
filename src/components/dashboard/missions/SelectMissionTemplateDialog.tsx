@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -40,33 +41,53 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingTemplates, setIsLoadingTemplates] = useState(false);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(false);
 
+  // Fetch Mission Templates (primary, fast load)
   useEffect(() => {
     if (isOpen && user) {
-      setIsLoading(true);
-      const fetchAllData = async () => {
+      setIsLoadingTemplates(true);
+      const fetchTemplates = async () => {
         try {
           const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-          const [templates, children, instances] = await Promise.all([
-            getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, familyIdToQuery)
-          ]);
+          const templates = await getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
           const activeTemplates = templates.filter(t => t.status === 'active');
           setMissionTemplates(activeTemplates);
-          setChildren(children);
-          setMissionInstances(instances.filter(i => i.status === 'pending'));
         } catch (error) {
-          console.error("Error fetching data for mission selection:", error);
-          toast({ title: "Erro ao Carregar Catálogo", description: "Não foi possível buscar os dados de missões.", variant: "destructive" });
+          console.error("Error fetching mission templates:", error);
+          toast({ title: "Erro ao Carregar Catálogo", description: "Não foi possível buscar as missões disponíveis.", variant: "destructive" });
         } finally {
-          setIsLoading(false);
+          setIsLoadingTemplates(false);
         }
       };
-      fetchAllData();
+      fetchTemplates();
     }
   }, [isOpen, user, currentContext, toast]);
+
+  // Fetch Children and Assignments (secondary load, happens after templates are ready)
+  useEffect(() => {
+    if (isOpen && user && !isLoadingTemplates) {
+        setIsLoadingAssignments(true);
+        const fetchAssignments = async () => {
+            try {
+                 const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+                 const [fetchedChildren, fetchedInstances] = await Promise.all([
+                    getChildProfilesForAttribution(user.uid, currentContext),
+                    getMissionInstancesForContext(user.uid, familyIdToQuery)
+                 ]);
+                 setChildren(fetchedChildren);
+                 setMissionInstances(fetchedInstances.filter(i => i.status === 'pending'));
+            } catch (error) {
+                 console.error("Error fetching assignment data:", error);
+            } finally {
+                setIsLoadingAssignments(false);
+            }
+        };
+        fetchAssignments();
+    }
+  }, [isOpen, user, currentContext, isLoadingTemplates]);
+
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
 
@@ -111,7 +132,7 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
             </Link>
         </div>
 
-        {isLoading ? (
+        {isLoadingTemplates ? (
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-primary mr-2" />
             <p>Carregando missões...</p>
@@ -151,41 +172,45 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
                                 {template.starsReward} ★ / {template.xpReward} XP
                             </p>
                         </div>
-                        {assignedChildren.length > 0 && (
-                          <div className="border-t pt-2 mt-2 flex items-center gap-2">
-                              <span className="text-xs text-muted-foreground">Ativo para:</span>
-                              <div className="flex -space-x-2">
-                              {assignedChildren.slice(0, 5).map(child => (
-                                  <TooltipProvider key={child.id} delayDuration={100}>
-                                      <Tooltip>
-                                          <TooltipTrigger asChild>
-                                          <Avatar
-                                              className="h-6 w-6 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                              style={{ '--ring-color': child.color } as React.CSSProperties}
-                                          >
-                                              <AvatarImage src={child.avatar} alt={child.name} />
-                                              <AvatarFallback
-                                                  className="text-xs"
-                                                  style={{ backgroundColor: child.color }}
-                                              >
-                                                  {getInitials(child.name)}
-                                              </AvatarFallback>
-                                          </Avatar>
-                                          </TooltipTrigger>
-                                          <TooltipContent>
-                                          <p>{child.name}</p>
-                                          </TooltipContent>
-                                      </Tooltip>
-                                  </TooltipProvider>
-                              ))}
-                              </div>
-                              {assignedChildren.length > 5 && (
-                                  <span className="text-xs font-medium text-muted-foreground">
-                                      + {assignedChildren.length - 5}
-                                  </span>
-                              )}
-                          </div>
-                        )}
+                        <div className="border-t pt-2 mt-2 flex items-center gap-2">
+                            <span className="text-xs text-muted-foreground">Ativo para:</span>
+                            {isLoadingAssignments ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                            ) : assignedChildren.length > 0 ? (
+                                <div className="flex -space-x-2">
+                                    {assignedChildren.slice(0, 5).map(child => (
+                                        <TooltipProvider key={child.id} delayDuration={100}>
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                <Avatar
+                                                    className="h-6 w-6 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                    style={{ '--ring-color': child.color } as React.CSSProperties}
+                                                >
+                                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                                    <AvatarFallback
+                                                        className="text-xs"
+                                                        style={{ backgroundColor: child.color }}
+                                                    >
+                                                        {getInitials(child.name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                <p>{child.name}</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        </TooltipProvider>
+                                    ))}
+                                    {assignedChildren.length > 5 && (
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            + {assignedChildren.length - 5}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <span className="text-xs italic text-muted-foreground">Ninguém</span>
+                            )}
+                        </div>
                     </button>
                 )
               })}
