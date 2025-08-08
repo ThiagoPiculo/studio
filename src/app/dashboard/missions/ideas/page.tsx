@@ -13,7 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { MissionTemplate } from '@/lib/types';
-import { Badge } from '@/components/ui/badge';
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -205,7 +205,7 @@ export default function MissionIdeasPage() {
                                 <AccordionTrigger className="p-0 hover:no-underline flex-grow">
                                     <div className="flex items-center gap-3">
                                         <group.icon className="h-7 w-7 text-primary" />
-                                        <h3 className="text-2xl font-headline">{group.userCategory}</h3>
+                                        <div className="text-2xl font-headline">{group.userCategory}</div>
                                     </div>
                                 </AccordionTrigger>
                                 <Popover>
@@ -296,4 +296,3 @@ export default function MissionIdeasPage() {
             )}
         </div>
     );
-}
