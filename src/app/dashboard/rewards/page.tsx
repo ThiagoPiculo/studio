@@ -42,6 +42,7 @@ import { getInitials } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import Loading from './loading';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 function RewardsHubContent() {
@@ -52,8 +53,8 @@ function RewardsHubContent() {
 
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -69,34 +70,46 @@ function RewardsHubContent() {
     return editableRoles.includes(currentRole as FamilyRole);
   }, [currentContext, currentRole]);
   
-  const fetchData = useCallback(async () => {
+  // First effect: Fetch only the templates for a fast initial load
+  useEffect(() => {
     if (!user) {
       setIsLoading(false);
       return;
     };
     setIsLoading(true);
-    try {
-      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-      const [fetchedTemplates, fetchedChildren, fetchedInstances] = await Promise.all([
-        getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-        getChildProfilesForAttribution(user.uid, currentContext),
-        getChildRewardInstancesForContext(user.uid, familyIdToQuery)
-      ]);
-      
-      setRewardTemplates(fetchedTemplates);
-      setChildren(fetchedChildren);
-      setRewardInstances(fetchedInstances);
-    } catch (err) {
-      console.error("Error refetching rewards data:", err);
-      toast({ title: "Erro ao atualizar dados", variant: "destructive" });
-    } finally {
-      setIsLoading(false);
-    }
+    const fetchTemplates = async () => {
+        try {
+          const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+          const templates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+          setRewardTemplates(templates);
+        } catch (err) {
+          console.error("Error fetching reward templates:", err);
+          toast({ title: "Erro ao buscar recompensas", variant: 'destructive' });
+        } finally {
+          setIsLoading(false);
+        }
+    };
+    fetchTemplates();
   }, [user, currentContext, toast]);
 
+  // Second effect: Fetch children and assignment data after templates are loaded
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (isLoading || !user) return; // Don't run if templates are still loading or no user
+    
+    setIsLoadingAssignments(true);
+    const fetchAssignments = async () => {
+        try {
+            const fetchedChildren = await getChildProfilesForAttribution(user.uid, currentContext);
+            setChildren(fetchedChildren);
+        } catch (err) {
+            console.error("Error fetching children for rewards page:", err);
+        } finally {
+            setIsLoadingAssignments(false);
+        }
+    };
+    fetchAssignments();
+  }, [isLoading, user, currentContext]);
+
 
   const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
       if (!user) return;
@@ -138,9 +151,12 @@ function RewardsHubContent() {
     if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
     try {
-      await deleteRewardTemplate(user, templateToDelete.id);
+      await deleteRewardTemplate(user, templateToDelete);
       toast({ title: "Recompensa Removida do Catálogo!", description: `A recompensa "${templateToDelete.title}" foi removida.` });
-      fetchData();
+      // Refetch templates after deletion
+      const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+      const templates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+      setRewardTemplates(templates);
     } catch (error) {
       console.error("Error deleting reward template:", error);
       toast({ title: "Erro ao Excluir Recompensa", description: "Não foi possível remover a recompensa.", variant: "destructive" });
@@ -203,7 +219,12 @@ function RewardsHubContent() {
                   <Users className="h-4 w-4" /> Desbloqueado por:
                 </h4>
                 <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
-                {children.length > 0 ? (
+                {isLoadingAssignments ? (
+                    <div className="flex -space-x-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                ) : children.length > 0 ? (
                   children.map(child => {
                     const canAfford = child.stars >= template.starsCost;
                     const progress = canAfford ? 100 : (child.stars / template.starsCost) * 100;
@@ -414,7 +435,7 @@ function RewardsHubContent() {
           template={templateToAssign}
           isOpen={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          onAssigned={fetchData}
+          onAssigned={() => {}}
         />
       )}
     </div>
