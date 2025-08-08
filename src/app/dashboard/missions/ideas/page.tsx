@@ -101,7 +101,11 @@ export default function MissionIdeasPage() {
     if (isLoading) {
         return (
             <div className="space-y-8 pb-10">
-                <Skeleton className="h-10 w-64" />
+                <div className="flex items-center gap-2">
+                    <Skeleton className="h-8 w-8" />
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-8 w-8" />
+                </div>
                 <Card className="shadow-lg">
                     <CardHeader>
                         <Skeleton className="h-8 w-1/2" />
@@ -114,8 +118,7 @@ export default function MissionIdeasPage() {
                         </div>
                     </CardContent>
                 </Card>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Skeleton className="h-24 w-full rounded-lg" />
+                <div className="space-y-4">
                     <Skeleton className="h-24 w-full rounded-lg" />
                     <Skeleton className="h-24 w-full rounded-lg" />
                     <Skeleton className="h-24 w-full rounded-lg" />
@@ -136,7 +139,7 @@ export default function MissionIdeasPage() {
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-80">
-                        <div className="space-y-3">
+                         <div className="space-y-3">
                             <h4 className="font-medium leading-none">Uma Fonte de Inspiração Heroica</h4>
                              <p className="text-sm text-muted-foreground">
                                 Ficou sem ideias para novas missões? Esta seção é a sua fonte de inspiração! Nós preparamos dezenas de sugestões baseadas em categorias de desenvolvimento infantil.
@@ -194,9 +197,9 @@ export default function MissionIdeasPage() {
             </Card>
 
             {filteredMissionGroups.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                <Accordion type="single" collapsible className="w-full space-y-4">
                     {filteredMissionGroups.map((group) => (
-                        <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-md break-inside-avoid">
+                        <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm break-inside-avoid">
                             <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
                             <div className="flex items-center gap-3">
                                     <group.icon className="h-7 w-7 text-primary" />
