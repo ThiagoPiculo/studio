@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -238,6 +237,7 @@ function MuralCompletoPageContent() {
   const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
 
   const childIdFromParams = searchParams.get('childId');
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
 
   // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -373,10 +373,9 @@ function MuralCompletoPageContent() {
             const currentChildIsValid = profilesInContext.some(c => c.id === childIdFromParams);
             const targetChildId = currentChildIsValid ? childIdFromParams : profilesInContext[0].id;
             
+            setSelectedChildId(targetChildId);
+
             if (targetChildId) {
-                if (targetChildId !== childIdFromParams) {
-                    router.replace(`${pathname}?childId=${targetChildId}`, { scroll: false });
-                }
                 await fetchDataForChild(targetChildId);
             } else {
                 setChild(null);
@@ -390,7 +389,15 @@ function MuralCompletoPageContent() {
     };
     
     initializeContext();
-  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchDataForChild, router, pathname, toast]);
+  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchDataForChild, toast]);
+
+  const handleHeroSelectionChange = (newChildId: string | null) => {
+    if (newChildId) {
+        setSelectedChildId(newChildId);
+        router.push(`${pathname}?childId=${newChildId}`, { scroll: false });
+    }
+  };
+
 
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -938,8 +945,8 @@ function MuralCompletoPageContent() {
           {allChildrenInContext.length > 1 && (
               <HeroSelector
                   heroes={allChildrenInContext}
-                  selectedHeroId={childIdFromParams}
-                  onSelectHero={(id) => router.push(`${pathname}?childId=${id}`)}
+                  selectedHeroId={selectedChildId}
+                  onSelectHero={handleHeroSelectionChange}
                   showAllOption={false}
               />
           )}
@@ -1827,3 +1834,4 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+ 
