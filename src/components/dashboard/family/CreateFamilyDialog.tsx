@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -18,6 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext"
 import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form"
 
 const formSchema = z.object({
   familyName: z.string().min(2, {
@@ -61,46 +63,41 @@ export function CreateFamilyDialog({ isOpen, onOpenChange }: { isOpen: boolean; 
   }
 
   return (
-    
-      
-        
-          
-            Nova Aliança
-          
-          
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Nova Aliança</AlertDialogTitle>
+          <AlertDialogDescription>
             Dê um nome para a sua aliança!
-          
-        
-        
-          
-            
-              
-                {...form.register("familyName")}
-                placeholder="Nome da família"
-              
-              
-                {form.formState.errors.familyName?.message}
-              
-            
-          
-        
-        
-          
-            
-              Cancelar
-            
-            
-              {isPending ? (
-                
-                  
-                
-              ) : (
-                "Criar"
-              )}
-            
-          
-        
-      
-    
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" id="create-family-form">
+                 <FormField
+                  control={form.control}
+                  name="familyName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Input {...field} placeholder="Nome da família" />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </form>
+        </Form>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancelar</AlertDialogCancel>
+          <AlertDialogAction type="submit" form="create-family-form" disabled={isPending}>
+            {isPending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              "Criar"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

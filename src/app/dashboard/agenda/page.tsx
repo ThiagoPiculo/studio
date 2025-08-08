@@ -28,6 +28,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -996,8 +997,13 @@ function AgendaPageContent() {
                             <HelpCircle className="h-5 w-5" />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72 text-sm">
-                        Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.
+                    <PopoverContent className="w-72">
+                        <div className="space-y-3">
+                            <p className="text-sm">Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.</p>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
                     </PopoverContent>
                 </Popover>
             </div>

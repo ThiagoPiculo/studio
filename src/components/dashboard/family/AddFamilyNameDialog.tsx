@@ -1,3 +1,4 @@
+
 import { useState } from "react"
 import { useForm } from "react-hook-form"
 import * as z from "zod"
@@ -17,6 +18,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useAuth } from "@/contexts/AuthContext"
 import { Loader2 } from "lucide-react"
+import { Form, FormField, FormControl, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+
 
 const formSchema = z.object({
   name: z.string().min(2, {
@@ -66,46 +69,41 @@ export function AddFamilyNameDialog({ isOpen, onOpenChange, familyId, onNameChan
   }
 
   return (
-    
-      
-        
-          
-            Nome da Família
-          
-          
+    <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Nome da Família</AlertDialogTitle>
+          <AlertDialogDescription>
             Qual nome gostaria de dar para sua família?
-          
-        
-        
-          
-            
-              
-                {...form.register("name")}
-                placeholder="Nome da família"
-              
-              
-                {form.formState.errors.name?.message}
-              
-            
-          
-        
-        
-          
-            
-              Cancelar
-            
-            
-              {isPending ? (
-                
-                  
-                
-              ) : (
-                "Salvar"
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+             <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Input {...field} placeholder="Nome da família" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-            
-          
-        
-      
-    
+            />
+             <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction type="submit" disabled={isPending}>
+                {isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                    "Salvar"
+                )}
+                </AlertDialogAction>
+            </AlertDialogFooter>
+          </form>
+        </Form>
+      </AlertDialogContent>
+    </AlertDialog>
   )
 }

@@ -35,6 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -936,8 +937,13 @@ function MuralCompletoPageContent() {
                         <HelpCircle className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm">
-                    Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.
+                <PopoverContent className="w-72">
+                    <div className="space-y-3">
+                        <p className="text-sm">Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.</p>
+                         <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </div>
                 </PopoverContent>
             </Popover>
         </div>
@@ -1834,4 +1840,3 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
- 

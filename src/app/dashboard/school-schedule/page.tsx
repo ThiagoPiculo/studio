@@ -28,6 +28,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import Loading from './loading';
@@ -511,8 +512,13 @@ function SchoolSchedulePageClient() {
                             <HelpCircle className="h-5 w-5" />
                         </Button>
                     </PopoverTrigger>
-                    <PopoverContent className="w-72 text-sm">
-                        Use esta grade para visualizar a rotina escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.
+                    <PopoverContent className="w-72">
+                        <div className="space-y-3">
+                            <p className="text-sm">Use esta grade para visualizar a rotina escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
                     </PopoverContent>
                 </Popover>
             </div>
@@ -690,5 +696,3 @@ export default function SchoolSchedulePage() {
         </Suspense>
     )
 }
-
-    

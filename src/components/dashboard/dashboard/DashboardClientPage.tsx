@@ -12,6 +12,7 @@ import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedReward
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import { Reports } from '@/components/dashboard/dashboard/Reports';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 import { Button } from '@/components/ui/button';
 
 interface DashboardClientPageProps {
@@ -57,8 +58,13 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
                         <HelpCircle className="h-5 w-5" />
                     </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-72 text-sm">
-                  Sua central de análises para acompanhar a jornada dos seus herois, com gráficos de desempenho, recompensas e medalhas.
+                <PopoverContent className="w-72">
+                    <div className="space-y-3">
+                        <p className="text-sm">Sua central de análises para acompanhar a jornada dos seus herois, com gráficos de desempenho, recompensas e medalhas.</p>
+                        <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </div>
                 </PopoverContent>
             </Popover>
         </div>

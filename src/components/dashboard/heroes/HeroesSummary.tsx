@@ -24,6 +24,7 @@ import { weekdayLabels } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
@@ -92,11 +93,11 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                               <ul className="text-sm text-muted-foreground space-y-2">
                                   <li className="flex items-start gap-2">
                                       <span className="font-bold text-foreground">*</span>
-                                      <div><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina de Missões" no menu lateral.</div>
+                                      <div><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em <strong>"Painel de Progresso"</strong> no card do herói ou acesse a <strong>"Rotina de Missões"</strong> no menu lateral.</div>
                                   </li>
                                   <li className="flex items-start gap-2">
                                      <span className="font-bold text-foreground">*</span>
-                                     <div><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Rotina Escolar" no menu lateral.</div>
+                                     <div><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a <strong>"Rotina Escolar"</strong> no menu lateral.</div>
                                   </li>
                                    <li className="flex items-start gap-2">
                                      <span className="font-bold text-foreground">*</span>
@@ -106,6 +107,9 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                                <p className="text-sm text-muted-foreground">
                                 Use esta página para dar aquele incentivo matinal e celebrar as conquistas no final do dia!
                                 </p>
+                                <PopoverClose asChild>
+                                    <Button className="w-full mt-2">Entendi 👍</Button>
+                                </PopoverClose>
                             </div>
                         </PopoverContent>
                     </Popover>

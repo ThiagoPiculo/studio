@@ -1,3 +1,4 @@
+
 import {
     Form,
     FormControl,
@@ -7,10 +8,10 @@ import {
     FormLabel,
     FormMessage,
   } from "@/components/ui/form"
-  import { Input } from "@/components/ui/input"
-  import { Label } from "@/components/ui/label"
-  import { Switch } from "@/components/ui/switch"
-  import {
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import {
     AlertDialog,
     AlertDialogAction,
     AlertDialogCancel,
@@ -19,7 +20,7 @@ import {
     AlertDialogFooter,
     AlertDialogHeader,
     AlertDialogTitle,
-  } from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog"
 
 import * as z from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -31,6 +32,7 @@ import { useToast } from "@/hooks/use-toast"
 import { Loader2 } from "lucide-react"
 import { Dream } from "@/lib/types"
 import { useState } from "react"
+import { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const formSchema = z.object({
     title: z.string().min(2, {
@@ -90,83 +92,69 @@ export function AddEditDreamDialog({ isOpen, onOpenChange, currentDream, onAssig
     }
    
     return (
-      
-        
-          
-            
-              {currentDream ? "Editar Sonho" : "Adicionar Sonho"}
-            
-            
-              
-              
-                
-                  
-                    
-                      Título
-                    
-                    
-                      Nome do sonho
-                    
-                    
-                      
-                        {...form.register("title")}
-                        placeholder="Cachorro, boneca, videogame..."
-                      
-                      
-                        {form.formState.errors.title?.message}
-                      
-                    
-                  
-                
-                
-                  
-                    
-                      Descrição
-                    
-                    
-                      Mais detalhes sobre o sonho
-                    
-                    
-                      
-                        {...form.register("description")}
-                        placeholder="Descreva o que você quer ganhar!"
-                      
-                      
-                        {form.formState.errors.description?.message}
-                      
-                    
-                  
-                
-                
-                  
-                    
-                      Compartilhado
-                    
-                    
-                      
-                        Compartilhar com sua familia
-                      
-                    
-                  
-                
-              
-            
-            
-              
-                Cancelar
-              
-              
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{currentDream ? "Editar Sonho" : "Adicionar Sonho"}</DialogTitle>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Título</FormLabel>
+                        <FormDescription>Nome do sonho</FormDescription>
+                        <FormControl>
+                          <Input {...field} placeholder="Cachorro, boneca, videogame..."/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Descrição</FormLabel>
+                        <FormDescription>Mais detalhes sobre o sonho</FormDescription>
+                        <FormControl>
+                          <Textarea {...field} placeholder="Descreva o que você quer ganhar!"/>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="isShared"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <Label htmlFor="isShared">Compartilhado</Label>
+                        <FormDescription>Compartilhar com sua familia</FormDescription>
+                        <FormControl>
+                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+              </form>
+            </Form>
+            <DialogFooter>
+              <DialogClose asChild>
+                <Button variant="outline">Cancelar</Button>
+              </DialogClose>
+              <Button type="submit" form="add-edit-dream-form" disabled={isPending}>
                 {isPending ? (
-                  
-                    
-                  
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   "Salvar"
                 )}
-              
-            
-          
-        
-      
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
     )
 }
