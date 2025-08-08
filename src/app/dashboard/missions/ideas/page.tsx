@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch, Star, BadgeCheckIcon, Sparkles } from "lucide-react";
+import { Lightbulb, ArrowRight, ArrowLeft, CheckCircle, Search, PackageSearch, Star, BadgeCheckIcon, Sparkles, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import type { PredefinedMissionIdea } from "@/lib/predefined-missions";
 import { useState, useEffect, useMemo } from 'react';
@@ -18,6 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PopoverClose } from "@radix-ui/react-popover";
 
 const rewardFilterOptions = [
     { value: 'all', label: 'Qualquer Recompensa' },
@@ -124,17 +126,38 @@ export default function MissionIdeasPage() {
 
     return (
         <div className="space-y-8 pb-10">
-            <Card className="shadow-lg">
-                <CardHeader>
-                    <CardTitle className="text-3xl font-headline flex items-center">
-                        <Lightbulb className="mr-3 h-8 w-8 text-accent" />
-                        Inspire-se: Ideias de Missões
-                    </CardTitle>
-                    <CardDescription>
-                        Use estas ideias como base para criar missões! Se uma ideia já existe no seu catálogo, você pode gerenciá-la diretamente.
-                    </CardDescription>
-                </CardHeader>
-                 <CardContent className="p-6 pt-0">
+            <div className="flex items-center gap-2">
+                <Lightbulb className="h-8 w-8 text-primary" />
+                <h2 className="text-3xl font-headline font-bold">Ideias de Missões</h2>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                        <div className="space-y-3">
+                            <h4 className="font-medium leading-none">Uma Fonte de Inspiração Heroica</h4>
+                             <p className="text-sm text-muted-foreground">
+                                Ficou sem ideias para novas missões? Esta seção é a sua fonte de inspiração! Nós preparamos dezenas de sugestões baseadas em categorias de desenvolvimento infantil.
+                            </p>
+                             <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                                <li><strong>Como usar?</strong> Simplesmente navegue pelas categorias e, ao encontrar uma missão que goste, clique em <strong>"Usar esta Ideia"</strong>.</li>
+                                <li><strong>O que acontece depois?</strong> Você será levado para a tela de criação de missão, já com os detalhes da ideia (título, categoria, recompensas) preenchidos. Você pode ajustar o que quiser antes de salvá-la em seu catálogo.</li>
+                                <li><strong>Já existe no seu catálogo?</strong> Se você já criou uma missão com o mesmo nome, o sistema irá te avisar e te dar a opção de ir direto para o seu catálogo para gerenciá-la.</li>
+                            </ul>
+                             <p className="text-sm text-muted-foreground">
+                                Use estas ideias como um ponto de partida rápido e criativo para manter a jornada dos seus heróis sempre interessante!
+                            </p>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+            <Card>
+                 <CardContent className="p-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <Label htmlFor="search-filter" className="sr-only">Busca</Label>
