@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -23,6 +23,7 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { Label } from "@/components/ui/label";
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
@@ -74,6 +75,40 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                 <CardTitle className="text-2xl font-headline flex items-center gap-3">
                     <Home className="h-6 w-6 text-primary" />
                     Resumo do Dia
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                                <HelpCircle className="h-5 w-5" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80">
+                           <div className="grid gap-4">
+                              <div className="space-y-2">
+                                <h4 className="font-medium leading-none">Seu Centro de Comando Diário</h4>
+                                <p className="text-sm text-muted-foreground">
+                                  Esta tela é o seu ponto de partida para a aventura! Aqui você tem uma visão rápida e poderosa de tudo o que está acontecendo com seus Mini Herois <strong>hoje</strong>.
+                                </p>
+                              </div>
+                              <ul className="text-sm text-muted-foreground space-y-2">
+                                  <li className="flex items-start gap-2">
+                                      <span className="font-bold text-foreground">*</span>
+                                      <div><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina de Missões" no menu lateral.</div>
+                                  </li>
+                                  <li className="flex items-start gap-2">
+                                     <span className="font-bold text-foreground">*</span>
+                                     <div><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Rotina Escolar" no menu lateral.</div>
+                                  </li>
+                                   <li className="flex items-start gap-2">
+                                     <span className="font-bold text-foreground">*</span>
+                                     <div><strong>Progresso e Recompensas:</strong> Acompanhe as Estrelas (⭐) e o XP, e veja os prêmios que eles podem resgatar.</div>
+                                  </li>
+                              </ul>
+                               <p className="text-sm text-muted-foreground">
+                                Use esta página para dar aquele incentivo matinal e celebrar as conquistas no final do dia!
+                                </p>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
                 </CardTitle>
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     {children.length > 1 && (
