@@ -444,7 +444,7 @@ function AgendaPageContent() {
   };
 
   const handleConfirmRecurrenceDelete = async (mode: 'single' | 'forward' | 'all') => {
-      if (!instanceToDeleteInfo) return;
+      if (!instanceToDeleteInfo || !user) return;
       
       const { instance, date } = instanceToDeleteInfo;
       setIsProcessingAction(instance.id);
