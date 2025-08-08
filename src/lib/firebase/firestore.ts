@@ -1812,31 +1812,32 @@ export const deleteMissionInstance = async (actor: UserProfile, instanceId: stri
 };
 
 export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date): Promise<void> => {
-  const instanceRef = doc(db, 'missionInstances', instanceId);
-  // Set the new end date to be the day BEFORE the date the user wants to delete from.
-  const newEndDate = subDays(startOfDay(fromDate), 1);
+    const instanceRef = doc(db, 'missionInstances', instanceId);
 
-  return runTransaction(db, async (transaction) => {
-    const instanceSnap = await transaction.get(instanceRef);
-    if (!instanceSnap.exists()) {
-      throw new Error("Missão não encontrada.");
-    }
-    const instanceData = instanceSnap.data() as MissionInstance;
-    const rule = instanceData.recurrenceRule || { freq: 'DAILY', interval: 1 };
-    
-    const startDate = getDateObject(instanceData.startDate);
-    
-    // If the new end date is before the series even started, it's safer to just delete the whole instance.
-    if (startDate && isBefore(newEndDate, startOfDay(startDate))) {
-      transaction.delete(instanceRef);
-    } else {
-      // Otherwise, just update the end date of the series.
-      transaction.update(instanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) },
-        updatedAt: serverTimestamp(),
-      });
-    }
-  });
+    return runTransaction(db, async (transaction) => {
+        const instanceSnap = await transaction.get(instanceRef);
+        if (!instanceSnap.exists()) {
+            throw new Error("Missão não encontrada.");
+        }
+        const instanceData = instanceSnap.data() as MissionInstance;
+        
+        // Define a nova data de término para o dia anterior à data de exclusão
+        const newEndDate = subDays(startOfDay(fromDate), 1);
+        
+        const startDate = getDateObject(instanceData.startDate);
+
+        // Se a nova data final é anterior ao início da série, significa que estamos
+        // efetivamente excluindo todas as ocorrências. É mais limpo excluir a instância.
+        if (startDate && isBefore(newEndDate, startOfDay(startDate))) {
+            transaction.delete(instanceRef);
+        } else {
+            const rule = instanceData.recurrenceRule || { freq: 'DAILY', interval: 1 };
+            transaction.update(instanceRef, {
+                recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate), count: null }, // Zera o 'count' para evitar conflito
+                updatedAt: serverTimestamp(),
+            });
+        }
+    });
 };
 
 
@@ -2432,6 +2433,7 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
 
 
 
