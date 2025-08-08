@@ -256,6 +256,10 @@ function MuralCompletoPageContent() {
   const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
   const [isMoving, setIsMoving] = useState(false);
 
+  // Separate loading state for secondary data
+  const [isLoadingSecondaryData, setIsLoadingSecondaryData] = useState(true);
+
+
   const activeTab = searchParams.get('tab') || 'overview';
 
   const handleTabChange = (newTab: string) => {
@@ -308,32 +312,21 @@ function MuralCompletoPageContent() {
     Noite: Moon,
   };
 
-
-  // Centralized data fetching function
-  const fetchData = useCallback(async (childIdToFetch: string) => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    }
-
-    setIsLoading(true);
+  const fetchDataForChild = useCallback(async (childIdToFetch: string) => {
+    if (!user) return;
+    
+    setIsLoadingSecondaryData(true);
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
-
-        const [allProfiles, fetchedCollaborators, fetchedMemberships, profile, missions, rewards, schedule] = await Promise.all([
-            getChildProfilesForAttribution(user.uid, currentContext),
-            familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
-            familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
-            getChildProfileById(childIdToFetch),
+        
+        const [missions, rewards, schedule, collaborators, memberships] = await Promise.all([
             getMissionInstancesByChild(childIdToFetch),
             getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
+            familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
+            familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
         ]);
-
-        setAllChildren(allProfiles);
-        setCollaborators(fetchedCollaborators);
-        setMemberships(fetchedMemberships);
-        setChild(profile);
+        
         setMissionInstances(missions);
         setChildRewards(rewards.sort((a, b) => {
             if (a.status === 'active' && b.status !== 'active') return -1;
@@ -345,12 +338,14 @@ function MuralCompletoPageContent() {
             return timeB - timeA;
         }));
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
+        setCollaborators(collaborators);
+        setMemberships(memberships);
 
     } catch (error) {
-      console.error("Error fetching child data:", error);
-      toast({ title: "Erro ao Carregar", description: "Não foi possível carregar os dados. Tente novamente.", variant: "destructive" });
+        console.error("Error fetching secondary child data:", error);
+        toast({ title: "Erro ao Carregar Detalhes", description: "Não foi possível carregar os dados complementares do herói.", variant: "destructive" });
     } finally {
-      setIsLoading(false);
+        setIsLoadingSecondaryData(false);
     }
   }, [user, currentContext, toast]);
 
@@ -359,8 +354,20 @@ function MuralCompletoPageContent() {
   useEffect(() => {
     if (authLoading || isFamilyLoading) return;
 
+    const initializePage = async (id: string) => {
+        setIsLoading(true);
+        const profile = await getChildProfileById(id);
+        setChild(profile);
+        setIsLoading(false);
+        if (profile) {
+            fetchDataForChild(id);
+        } else {
+            setIsLoadingSecondaryData(false);
+        }
+    };
+
     if (childIdFromParams) {
-        fetchData(childIdFromParams);
+        initializePage(childIdFromParams);
     } else {
         // If no childId in params, fetch all children for the context first
         // to determine the default child to show.
@@ -371,11 +378,11 @@ function MuralCompletoPageContent() {
                 if (profiles.length > 0) {
                     const firstChildId = profiles[0].id;
                     router.replace(`${pathname}?childId=${firstChildId}`);
-                    // The navigation will trigger this effect again with childIdFromParams,
-                    // which will then call fetchData with the correct ID.
+                    // The navigation will trigger this effect again with childIdFromParams.
                 } else {
                     // No children in this context, stop loading.
                     setIsLoading(false);
+                    setIsLoadingSecondaryData(false);
                     setChild(null);
                 }
             }).catch(err => {
@@ -386,7 +393,7 @@ function MuralCompletoPageContent() {
             setIsLoading(false);
         }
     }
-}, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchData, router, pathname]);
+}, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, router, pathname]);
 
   useEffect(() => {
     if (!missionInstances || missionInstances.length === 0) {
@@ -662,7 +669,7 @@ function MuralCompletoPageContent() {
     setIsResettingProgress(true);
     try {
       await resetChildProgress(user, child.id);
-      await fetchData(child.id); // Re-fetch all data to update the UI
+      if(child) await fetchDataForChild(child.id); // Re-fetch all data to update the UI
       toast({ title: "Progresso Redefinido!", description: `Os dados de ${child.name} foram zerados com sucesso.` });
     } catch (error: any) {
       console.error("Error resetting child progress:", error);
@@ -711,7 +718,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error("Error deleting mission instance:", error);
       toast({ title: "Erro ao Remover Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
-      if (child) await fetchData(child.id); // Revert on error
+      if (child) await fetchDataForChild(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setMissionToDelete(null);
@@ -784,7 +791,7 @@ function MuralCompletoPageContent() {
     } catch (error: any) {
       console.error("Error marking reward as redeemed:", error);
       toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
-      if (child) await fetchData(child.id); // Revert on error
+      if (child) await fetchDataForChild(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setIsRedeemConfirmOpen(false);
@@ -804,7 +811,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error(`Error toggling reward instance status:`, error);
       toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
-      if (child) await fetchData(child.id); // Revert on error
+      if (child) await fetchDataForChild(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
     }
@@ -820,7 +827,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error("Error deleting reward instance:", error);
       toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });
-      if (child) await fetchData(child.id); // Revert on error
+      if (child) await fetchDataForChild(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setIsDeleteInstanceConfirmOpen(false);
@@ -843,7 +850,7 @@ function MuralCompletoPageContent() {
     } catch (error) {
       console.error("Error deleting school schedule entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
-      if (child) await fetchData(child.id); // Revert on error
+      if (child) await fetchDataForChild(child.id); // Revert on error
     } finally {
       setIsDeleting(false);
       setEntryToDelete(null);
@@ -1057,585 +1064,595 @@ function MuralCompletoPageContent() {
         </TabsList>
 
         <div className="mt-4">
-          <TabsContent value="overview" className="space-y-6">
+          {isLoadingSecondaryData ? (
              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="shadow-sm flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
-                    <CheckSquare className="h-5 w-5 text-green-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.completedMissions}</div>
-                    <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
-                    <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.starsEarned}</div>
-                    <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
-                    <Trophy className="h-5 w-5 text-orange-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
-                    <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
-                  </CardContent>
-                </Card>
-                <Card className="shadow-sm flex flex-col">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Medalhas Desbloqueadas</CardTitle>
-                    <Medal className="h-5 w-5 text-blue-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.earnedBadges}</div>
-                    <p className="text-xs text-muted-foreground">Total de medalhas ganhas</p>
-                  </CardContent>
-                </Card>
-              </div>
+                {[...Array(8)].map((_, i) => (
+                    <Card key={i}><CardHeader><Skeleton className="h-20 w-full" /></CardHeader></Card>
+                ))}
+             </div>
+          ) : (
+            <>
+                <TabsContent value="overview" className="space-y-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <Card className="shadow-sm flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
+                        <CheckSquare className="h-5 w-5 text-green-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.completedMissions}</div>
+                        <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
+                    </CardContent>
+                    </Card>
+                    <Card className="shadow-sm flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
+                        <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.starsEarned}</div>
+                        <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
+                    </CardContent>
+                    </Card>
+                    <Card className="shadow-sm flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
+                        <Trophy className="h-5 w-5 text-orange-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
+                        <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
+                    </CardContent>
+                    </Card>
+                    <Card className="shadow-sm flex flex-col">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Medalhas Desbloqueadas</CardTitle>
+                        <Medal className="h-5 w-5 text-blue-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">{stats.earnedBadges}</div>
+                        <p className="text-xs text-muted-foreground">Total de medalhas ganhas</p>
+                    </CardContent>
+                    </Card>
+                </div>
 
-            <Card className="shadow-md">
-                <CardHeader>
-                    <CardTitle>Atividades Recentes</CardTitle>
-                    <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    {activities.length === 0 ? (
-                        <div className="text-center py-6 text-muted-foreground">
-                            <Clock className="h-10 w-10 mx-auto mb-2" />
-                            Nenhuma atividade recente registrada.
-                        </div>
-                    ) : (
-                        <ul className="space-y-4">
-                            {activities.map((activity, index) => {
-                                const completedDate = getDateObject(activity.type === 'mission' ? activity.completionLogEntry?.completedAt : activity.completedAt) || new Date();
-                                const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
-                                const isActorTheChild = activity.actorId === child.id;
+                <Card className="shadow-md">
+                    <CardHeader>
+                        <CardTitle>Atividades Recentes</CardTitle>
+                        <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {activities.length === 0 ? (
+                            <div className="text-center py-6 text-muted-foreground">
+                                <Clock className="h-10 w-10 mx-auto mb-2" />
+                                Nenhuma atividade recente registrada.
+                            </div>
+                        ) : (
+                            <ul className="space-y-4">
+                                {activities.map((activity, index) => {
+                                    const completedDate = getDateObject(activity.type === 'mission' ? activity.completionLogEntry?.completedAt : activity.completedAt) || new Date();
+                                    const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
+                                    const isActorTheChild = activity.actorId === child.id;
 
-                                let actorRoleLabel = '';
-                                if (!isActorTheChild && activity.actorId) {
-                                    const membership = memberships.find(m => m.userId === activity.actorId);
-                                    if(membership) {
-                                        actorRoleLabel = `(${familyRoles.find(r => r.id === membership.role)?.label || 'Membro'})`;
+                                    let actorRoleLabel = '';
+                                    if (!isActorTheChild && activity.actorId) {
+                                        const membership = memberships.find(m => m.userId === activity.actorId);
+                                        if(membership) {
+                                            actorRoleLabel = `(${familyRoles.find(r => r.id === membership.role)?.label || 'Membro'})`;
+                                        }
                                     }
-                                }
 
-                                const actorDisplayName = isActorTheChild
-                                    ? `pelo próprio ${child.name}!`
-                                    : `${activity.actorName || 'um responsável'} ${actorRoleLabel}`;
+                                    const actorDisplayName = isActorTheChild
+                                        ? `pelo próprio ${child.name}!`
+                                        : `${activity.actorName || 'um responsável'} ${actorRoleLabel}`;
 
-                                return (
-                                <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
-                                    <li className="flex items-start gap-4">
-                                        <div className={`p-2.5 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
-                                            {activity.type === 'mission' ? (
-                                            <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                            ) : (
-                                            <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                                            )}
-                                        </div>
-                                        <div className="flex-grow text-sm space-y-1">
-                                            {activity.type === 'mission' ? (
-                                                <>
-                                                    <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                                        <span>{child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida</span>
-                                                        <span className="font-bold text-green-600 text-xs flex items-center gap-1.5 whitespace-nowrap">
-                                                            (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
-                                                        </span>
-                                                    </p>
-                                                    <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
-                                                    <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                                        <span>{child.name.toUpperCase()} - Recompensa Resgatada</span>
-                                                        <span className="font-bold text-destructive text-xs flex items-center gap-1.5 whitespace-nowrap">
-                                                            (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
-                                                        </span>
-                                                    </p>
-                                                    <p className="font-medium text-foreground/80">- {activity.title}</p>
-                                                    <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
-                                                </>
-                                            )}
-                                            <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
-                                        </div>
-                                    </li>
-                                    {index < activities.length - 1 && <Separator />}
-                                </Fragment>
-                                );
-                            })}
-                        </ul>
+                                    return (
+                                    <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
+                                        <li className="flex items-start gap-4">
+                                            <div className={`p-2.5 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
+                                                {activity.type === 'mission' ? (
+                                                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
+                                                ) : (
+                                                <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                                                )}
+                                            </div>
+                                            <div className="flex-grow text-sm space-y-1">
+                                                {activity.type === 'mission' ? (
+                                                    <>
+                                                        <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                                            <span>{child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida</span>
+                                                            <span className="font-bold text-green-600 text-xs flex items-center gap-1.5 whitespace-nowrap">
+                                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
+                                                            </span>
+                                                        </p>
+                                                        <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
+                                                        <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
+                                                            <span>{child.name.toUpperCase()} - Recompensa Resgatada</span>
+                                                            <span className="font-bold text-destructive text-xs flex items-center gap-1.5 whitespace-nowrap">
+                                                                (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
+                                                            </span>
+                                                        </p>
+                                                        <p className="font-medium text-foreground/80">- {activity.title}</p>
+                                                        <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
+                                                    </>
+                                                )}
+                                                <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
+                                            </div>
+                                        </li>
+                                        {index < activities.length - 1 && <Separator />}
+                                    </Fragment>
+                                    );
+                                })}
+                            </ul>
+                        )}
+                    </CardContent>
+                </Card>
+                </TabsContent>
+                <TabsContent value="missions">
+                <Card className="shadow-md">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Quadro de Missões de {child.name}</CardTitle>
+                            </div>
+                            <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)} disabled={!canEdit}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
+                            </Button>
+                        </div>
+                        <div className="pt-4">
+                            <Label className="text-sm font-medium text-muted-foreground">Filtrar por Recorrência</Label>
+                            <RadioGroup
+                                value={recurrenceFilter}
+                                onValueChange={(v) => setRecurrenceFilter(v as 'all' | 'unique' | 'recurring')}
+                                className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
+                            >
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="all" id="filter-all-missions" />
+                                    <Label htmlFor="filter-all-missions" className="cursor-pointer font-normal">Todas</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="unique" id="filter-unique-missions" />
+                                    <Label htmlFor="filter-unique-missions" className="cursor-pointer font-normal">Únicas</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="recurring" id="filter-recurring-missions" />
+                                    <Label htmlFor="filter-recurring-missions" className="cursor-pointer font-normal">Recorrentes</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                        <Button onClick={() => router.push('/dashboard/missions')} variant="outline" className="shadow-sm">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Missões
+                        </Button>
+                        {filteredMissions.length === 0 ? (
+                        <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                            <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                            <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
+                            <p className="text-sm text-muted-foreground mt-1">Tente outro filtro ou clique em "Adicionar Nova Missão" para começar a jornada!</p>
+                        </div>
+                        ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                            {filteredMissions.map(instance => (
+                                <MissionCard key={instance.id} instance={instance} onManage={handleManageInAgenda} onDelete={setMissionToDelete} />
+                            ))}
+                        </div>
+                        )}
+                    </CardContent>
+                </Card>
+                </TabsContent>
+
+                <TabsContent value="rewards">
+                <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
+                    <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
+                    <div className="pt-4">
+                    <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
+                    <RadioGroup
+                        value={instanceStatusFilter}
+                        onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'redeemed' | 'disabled')}
+                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
+                    >
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="all" id={`instance-filter-all-${childIdFromParams}`} />
+                        <Label htmlFor={`instance-filter-all-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="active" id={`instance-filter-active-${childIdFromParams}`} />
+                        <Label htmlFor={`instance-filter-active-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childIdFromParams}`} />
+                        <Label htmlFor={`instance-filter-redeemed-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childIdFromParams}`} />
+                        <Label htmlFor={`instance-filter-disabled-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
+                        </div>
+                    </RadioGroup>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
+                    <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Recompensas
+                    </Button>
+                    {filteredChildRewards.length === 0 ? (
+                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                        <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                        <p className="text-lg text-muted-foreground">
+                        {childRewards.length === 0
+                            ? `${child.name} ainda não tem recompensas atribuídas.`
+                            : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
+                        }
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-1">
+                        {childRewards.length === 0
+                            ? 'Vá ao catálogo para atribuir algumas!'
+                            : 'Tente um filtro diferente ou verifique o catálogo.'
+                        }
+                        </p>
+                    </div>
+                    ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        {filteredChildRewards.map((instance) => {
+                        const categoryDetails = getCategoryDetails(instance.category);
+                        const CategoryIconComponent = categoryDetails?.icon;
+                        return (
+                            <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                <CardTitle className="text-lg">{instance.title}</CardTitle>
+                                <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                                    {getRewardStatusText(instance.status)}
+                                </Badge>
+                                </div>
+                                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+                            </CardHeader>
+                            <CardContent className="space-y-2 flex-grow text-sm">
+                                {categoryDetails && (
+                                <div className="flex items-center">
+                                    <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
+                                    {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
+                                    {categoryDetails.label}
+                                    </span>
+                                </div>
+                                )}
+                                <div className="flex items-center text-muted-foreground">
+                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
+                                Custo: {instance.starsCost} estrelas
+                                </div>
+                                <p className="text-xs text-muted-foreground">
+                                Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
+                                </p>
+                                {instance.status === 'redeemed' && instance.redeemedAt && (
+                                <p className="text-xs text-green-600 font-medium">
+                                    Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
+                                </p>
+                                )}
+                            </CardContent>
+                            <CardFooter>
+                                {instance.status !== 'redeemed' && canEdit ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
+                                        <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
+                                    </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {instance.status === 'active' && (
+                                        <>
+                                        <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting}>
+                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
+                                            <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
+                                        </DropdownMenuItem>
+                                        </>
+                                    )}
+                                    {instance.status === 'disabled' && (
+                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
+                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
+                                        </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem
+                                        onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
+                                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                                        disabled={isDeleting}
+                                    >
+                                        <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
+                                    </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                                ) : (
+                                <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
+                                    <CheckCircle className="mr-2 h-4 w-4" /> {instance.status === 'redeemed' ? 'Recompensa Já Resgatada' : 'Ações Indisponíveis'}
+                                </Button>
+                                )}
+                            </CardFooter>
+                            </Card>
+                        );
+                        })}
+                    </div>
                     )}
                 </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="missions">
-            <Card className="shadow-md">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="flex items-center gap-2"><Target className="h-5 w-5 text-red-500" />Quadro de Missões de {child.name}</CardTitle>
+                </Card>
+            </TabsContent>
+            <TabsContent value="school-schedule">
+                <Card className="shadow-md">
+                    <CardHeader>
+                        <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
+                            <div>
+                                <CardTitle>Rotina Escolar de {child.name}</CardTitle>
+                                <CardDescription>Veja o horário de aulas da semana.</CardDescription>
+                            </div>
+                            <div className="flex gap-2 w-full sm:w-auto">
+                                <Button asChild variant="outline" className="w-full sm:w-auto flex-1">
+                                    <Link href="/dashboard/school-schedule">
+                                        <ExternalLink className="mr-2 h-4 w-4" /> Ver Rotina Completa
+                                    </Link>
+                                </Button>
+                                {canEdit && (
+                                    <Button
+                                    variant="default"
+                                    className="w-full sm:w-auto flex-1"
+                                    onClick={() => { setEntryToEdit(null); setIsEntryDialogOpen(true); }}
+                                    >
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Aula
+                                    </Button>
+                                )}
+                            </div>
                         </div>
-                        <Button className="bg-accent text-accent-foreground hover:bg-accent/90" onClick={() => setIsAddMissionDialogOpen(true)} disabled={!canEdit}>
-                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Nova Missão
-                        </Button>
-                    </div>
-                     <div className="pt-4">
-                        <Label className="text-sm font-medium text-muted-foreground">Filtrar por Recorrência</Label>
-                        <RadioGroup
-                            value={recurrenceFilter}
-                            onValueChange={(v) => setRecurrenceFilter(v as 'all' | 'unique' | 'recurring')}
-                            className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2"
-                        >
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="all" id="filter-all-missions" />
-                                <Label htmlFor="filter-all-missions" className="cursor-pointer font-normal">Todas</Label>
+                    </CardHeader>
+                    <CardContent>
+                        {schoolSchedule.length === 0 ? (
+                            <p className="text-muted-foreground p-4 text-center">Nenhuma aula cadastrada na agenda escolar.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {weekdays.map(day => {
+                                    const dayEntries = schoolSchedule.filter(e => e.dayOfWeek === day);
+                                    if (dayEntries.length === 0) return null;
+                                    return (
+                                        <div key={day} className="space-y-3">
+                                            <h3 className="font-semibold mb-2">{weekdayLabels[day].long}</h3>
+                                            <ul className="space-y-2">
+                                                {dayEntries.map(entry => (
+                                                    <li key={entry.id} className="group p-3 rounded-md border" style={{ borderLeftColor: entry.color, borderLeftWidth: '4px' }}>
+                                                        <div className="flex justify-between items-start">
+                                                            <div>
+                                                                <p className="font-semibold">{entry.subject}</p>
+                                                                <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
+                                                            </div>
+                                                            {canEdit && (
+                                                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}><Edit className="h-4 w-4" /></Button>
+                                                                <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}><Trash2 className="h-4 w-4" /></Button>
+                                                            </div>
+                                                            )}
+                                                        </div>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )
+                                })}
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="unique" id="filter-unique-missions" />
-                                <Label htmlFor="filter-unique-missions" className="cursor-pointer font-normal">Únicas</Label>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="badges" className="space-y-6">
+                <Dialog open={isAboutBadgesOpen} onOpenChange={setIsAboutBadgesOpen}>
+                <Card className="shadow-md">
+                    <CardHeader>
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <CardTitle>Quadro de Medalhas de {child.name}</CardTitle>
+                                <CardDescription>Todas as medalhas heroicas e troféus especiais ganhos na jornada.</CardDescription>
                             </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="recurring" id="filter-recurring-missions" />
-                                <Label htmlFor="filter-recurring-missions" className="cursor-pointer font-normal">Recorrentes</Label>
+                            <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Info className="mr-2 h-4 w-4" /> Sobre as Medalhas
+                            </Button>
+                            </DialogTrigger>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                    <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
+                        {predefinedBadgeCategories.map((category, index) => (
+                        <Fragment key={category.title}>
+                            {index > 0 && <Separator />}
+                            <div>
+                                <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
+                                    {category.items.map((badge) => (
+                                        <DialogTrigger asChild key={badge.id}>
+                                        <BadgeCard badge={badge} child={child} badgeProgress={badgeProgress} isCalculatingProgress={isCalculatingProgress} onClick={() => setSelectedBadge(badge)} />
+                                        </DialogTrigger>
+                                    ))}
+                                </div>
                             </div>
-                        </RadioGroup>
-                    </div>
+                        </Fragment>
+                        ))}
+                        {selectedBadge && (
+                        <DialogContent>
+                            <DialogHeader className="items-center text-center">
+                            <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
+                                <selectedBadge.icon className="h-12 w-12 text-white" />
+                            </div>
+                            <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
+                            <DialogDescription className="text-base text-muted-foreground pt-2">
+                                {selectedBadge.description}
+                            </DialogDescription>
+                            </DialogHeader>
+                            {selectedBadge.progressType === 'singleMissionStreak' && badgeProgress.missionWithLongestStreak && (
+                            <div className="mt-2 text-center border-t pt-4">
+                                <p className="text-sm text-muted-foreground">Missão com a maior sequência atual:</p>
+                                <p className="font-semibold text-foreground flex items-center justify-center gap-2 mt-1">
+                                    {badgeProgress.missionWithLongestStreak.emoji && <span>{badgeProgress.missionWithLongestStreak.emoji}</span>}
+                                    <span>{badgeProgress.missionWithLongestStreak.title}</span>
+                                </p>
+                            </div>
+                            )}
+                            <div className="text-center pt-2">
+                            {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
+                                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">
+                                    <CheckCircle className="mr-2 h-4 w-4"/>Conquistado!
+                                </Badge>
+                            ) : (
+                                <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-sm">
+                                    Ainda não conquistado!
+                                </Badge>
+                            )}
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline" className="w-full">Fechar</Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </DialogContent>
+                        )}
+                    </Dialog>
+                    </CardContent>
+                </Card>
+
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                            <Medal className="h-6 w-6 text-primary" />
+                            O Quadro de Medalhas
+                        </DialogTitle>
+                        <DialogDescription className="pt-2">
+                            As medalhas celebram a jornada do seu heroi, reconhecendo desde os primeiros passos até a maestria.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ScrollArea className="max-h-[60vh] -mx-6 px-6">
+                        <div className="space-y-4 text-sm text-muted-foreground pb-4 pr-1">
+                            <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
+
+                            <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
+                            <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li><strong>Heroi Novato:</strong> Conquistada ao completar a primeira missão.</li>
+                                <li><strong>Defensor do Sorriso:</strong> Ganha ao fazer a missão "Escovar os dentes" pela primeira vez.</li>
+                                <li><strong>Guardião do Descanso:</strong> Recebida ao arrumar a cama pela primeira vez.</li>
+                            </ul>
+
+                            <h4 className="font-bold text-foreground pt-2">Consistência e Hábitos</h4>
+                            <p>Aqui, o que vale é a dedicação! Estas medalhas recompensam a criação de rotinas e a persistência, que são a base para a formação de hábitos sólidos.</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li><strong>Guardião da Rotina:</strong> Para quem completa a mesma missão por 7 dias seguidos.</li>
+                                <li><strong>Semana Perfeita:</strong> Um grande feito! Para quem completa todas as missões agendadas durante 7 dias consecutivos.</li>
+                                <li><strong>Mestre da Persistência:</strong> Uma medalha rara para quem completa a mesma missão por 30 dias seguidos.</li>
+                            </ul>
+
+                            <h4 className="font-bold text-foreground pt-2">Maestria e Progresso</h4>
+                            <p>Estas medalhas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li><strong>Caçador de Estrelas:</strong> Por acumular um total de 100 estrelas (⭐).</li>
+                                <li><strong>Heroi em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
+                                <li><strong>Campeão dos Herois:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
+                            </ul>
+
+                            <h4 className="font-bold text-foreground pt-2">Exploração e Diversidade</h4>
+                            <p>Estas incentivam a curiosidade e a versatilidade, motivando a criança a sair da zona de conforto e experimentar novas responsabilidades.</p>
+                            <ul className="list-disc pl-5 space-y-1">
+                                <li><strong>Heroi Versátil:</strong> Para quem completa missões de pelo menos 3 categorias diferentes (ex: Casa, Escola e Saúde).</li>
+                                <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
+                            </ul>
+
+                            <p className="pt-2">Em resumo, o sistema de medalhas cria um "mural de honra" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button variant="outline" className="w-full">Entendido!</Button>
+                        </DialogClose>
+                    </DialogFooter>
+                </DialogContent>
+                </Dialog>
+            </TabsContent>
+            <TabsContent value="edit">
+                <Card className="shadow-md">
+                <CardHeader>
+                    <CardTitle>Editar Perfil de {child.name}</CardTitle>
+                    <CardDescription>Atualize as informações do Mini Heroi e configurações.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                    <Button onClick={() => router.push('/dashboard/missions')} variant="outline" className="shadow-sm">
-                        <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Missões
-                    </Button>
-                    {filteredMissions.length === 0 ? (
-                      <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                          <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                          <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
-                          <p className="text-sm text-muted-foreground mt-1">Tente outro filtro ou clique em "Adicionar Nova Missão" para começar a jornada!</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredMissions.map(instance => (
-                            <MissionCard key={instance.id} instance={instance} onManage={handleManageInAgenda} onDelete={setMissionToDelete} />
-                          ))}
-                      </div>
-                    )}
-                  </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="rewards">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
-                <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
-                <div className="pt-4">
-                  <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
-                  <RadioGroup
-                    value={instanceStatusFilter}
-                    onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'redeemed' | 'disabled')}
-                    className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="all" id={`instance-filter-all-${childIdFromParams}`} />
-                      <Label htmlFor={`instance-filter-all-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="active" id={`instance-filter-active-${childIdFromParams}`} />
-                      <Label htmlFor={`instance-filter-active-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childIdFromParams}`} />
-                      <Label htmlFor={`instance-filter-redeemed-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childIdFromParams}`} />
-                      <Label htmlFor={`instance-filter-disabled-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
-                    </div>
-                  </RadioGroup>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
-                  <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Recompensas
-                </Button>
-                {filteredChildRewards.length === 0 ? (
-                  <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                    <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-lg text-muted-foreground">
-                      {childRewards.length === 0
-                        ? `${child.name} ainda não tem recompensas atribuídas.`
-                        : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
-                      }
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {childRewards.length === 0
-                        ? 'Vá ao catálogo para atribuir algumas!'
-                        : 'Tente um filtro diferente ou verifique o catálogo.'
-                      }
-                    </p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {filteredChildRewards.map((instance) => {
-                      const categoryDetails = getCategoryDetails(instance.category);
-                      const CategoryIconComponent = categoryDetails?.icon;
-                      return (
-                        <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                          <CardHeader>
-                            <div className="flex justify-between items-start">
-                              <CardTitle className="text-lg">{instance.title}</CardTitle>
-                              <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
-                                {getRewardStatusText(instance.status)}
-                              </Badge>
-                            </div>
-                            {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
-                          </CardHeader>
-                          <CardContent className="space-y-2 flex-grow text-sm">
-                            {categoryDetails && (
-                              <div className="flex items-center">
-                                 <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                                  {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                                 </span>
-                                <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                                  {categoryDetails.label}
-                                </span>
-                              </div>
-                            )}
-                            <div className="flex items-center text-muted-foreground">
-                              <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                              Custo: {instance.starsCost} estrelas
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                              Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
-                            </p>
-                            {instance.status === 'redeemed' && instance.redeemedAt && (
-                              <p className="text-xs text-green-600 font-medium">
-                                Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                          </CardContent>
-                          <CardFooter>
-                            {instance.status !== 'redeemed' && canEdit ? (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
-                                    <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-56">
-                                  <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  {instance.status === 'active' && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting}>
-                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
-                                        <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  {instance.status === 'disabled' && (
-                                    <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
-                                      <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
-                                    </DropdownMenuItem>
-                                  )}
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem
-                                    onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
-                                    className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                                    disabled={isDeleting}
-                                  >
-                                    <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            ) : (
-                              <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
-                                <CheckCircle className="mr-2 h-4 w-4" /> {instance.status === 'redeemed' ? 'Recompensa Já Resgatada' : 'Ações Indisponíveis'}
-                              </Button>
-                            )}
-                          </CardFooter>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="school-schedule">
-            <Card className="shadow-md">
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
-                        <div>
-                            <CardTitle>Rotina Escolar de {child.name}</CardTitle>
-                            <CardDescription>Veja o horário de aulas da semana.</CardDescription>
-                        </div>
-                        <div className="flex gap-2 w-full sm:w-auto">
-                            <Button asChild variant="outline" className="w-full sm:w-auto flex-1">
-                                <Link href="/dashboard/school-schedule">
-                                    <ExternalLink className="mr-2 h-4 w-4" /> Ver Rotina Completa
-                                </Link>
+                    <EditChildProfileForm
+                    child={child}
+                    onProfileUpdate={() => fetchDataForChild(child.id)}
+                    />
+                    <Separator className="my-8" />
+                    <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
+                    <h3 className="font-semibold text-lg text-destructive">Zona de Perigo</h3>
+                    <div className="flex flex-col sm:flex-row gap-2">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isDeleting || isResettingProgress || isMoving}>
+                                <RotateCcw className="mr-2 h-4 w-4" />
+                                Redefinir Progresso
                             </Button>
-                            {canEdit && (
-                                <Button
-                                  variant="default"
-                                  className="w-full sm:w-auto flex-1"
-                                  onClick={() => { setEntryToEdit(null); setIsEntryDialogOpen(true); }}
-                                >
-                                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Aula
-                                </Button>
-                            )}
-                        </div>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Redefinir o progresso de {child.name}?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    Esta ação é irreversível. Todas as estrelas, XP, níveis, missões concluídas e recompensas resgatadas serão zeradas. O perfil voltará ao estado inicial.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isResettingProgress}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleResetProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingProgress}>
+                                    {isResettingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Sim, Redefinir
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                        <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setIsMoveDialogOpen(true)} disabled={isDeleting || isResettingProgress || isMoving || moveTargetContexts.length === 0}>
+                            <Move className="mr-2 h-4 w-4" />
+                            Mover Heroi
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                            <Button type="button" variant="destructive" className="w-full" disabled={isDeleting || isResettingProgress || isMoving}>
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Excluir Perfil
+                            </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso, agenda).
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
+                                {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Sim, Excluir Perfil
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
                     </div>
-                </CardHeader>
-                <CardContent>
-                    {schoolSchedule.length === 0 ? (
-                        <p className="text-muted-foreground p-4 text-center">Nenhuma aula cadastrada na agenda escolar.</p>
-                    ) : (
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {weekdays.map(day => {
-                                const dayEntries = schoolSchedule.filter(e => e.dayOfWeek === day);
-                                if (dayEntries.length === 0) return null;
-                                return (
-                                    <div key={day} className="space-y-3">
-                                        <h3 className="font-semibold mb-2">{weekdayLabels[day].long}</h3>
-                                        <ul className="space-y-2">
-                                            {dayEntries.map(entry => (
-                                                <li key={entry.id} className="group p-3 rounded-md border" style={{ borderLeftColor: entry.color, borderLeftWidth: '4px' }}>
-                                                    <div className="flex justify-between items-start">
-                                                        <div>
-                                                            <p className="font-semibold">{entry.subject}</p>
-                                                            <p className="text-sm text-muted-foreground">{entry.startTime} - {entry.endTime}</p>
-                                                        </div>
-                                                        {canEdit && (
-                                                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => handleEditEntry(entry)}><Edit className="h-4 w-4" /></Button>
-                                                            <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => setEntryToDelete(entry)}><Trash2 className="h-4 w-4" /></Button>
-                                                          </div>
-                                                        )}
-                                                    </div>
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    )}
+                    </div>
                 </CardContent>
-            </Card>
-          </TabsContent>
-          <TabsContent value="badges" className="space-y-6">
-            <Dialog open={isAboutBadgesOpen} onOpenChange={setIsAboutBadgesOpen}>
-              <Card className="shadow-md">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>Quadro de Medalhas de {child.name}</CardTitle>
-                            <CardDescription>Todas as medalhas heroicas e troféus especiais ganhos na jornada.</CardDescription>
-                        </div>
-                        <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            <Info className="mr-2 h-4 w-4" /> Sobre as Medalhas
-                          </Button>
-                        </DialogTrigger>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                  <Dialog open={!!selectedBadge} onOpenChange={(isOpen) => !isOpen && setSelectedBadge(null)}>
-                    {predefinedBadgeCategories.map((category, index) => (
-                      <Fragment key={category.title}>
-                        {index > 0 && <Separator />}
-                        <div>
-                            <h3 className="text-xl font-headline mt-4 mb-4">{category.title}</h3>
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6">
-                                {category.items.map((badge) => (
-                                    <DialogTrigger asChild key={badge.id}>
-                                       <BadgeCard badge={badge} child={child} badgeProgress={badgeProgress} isCalculatingProgress={isCalculatingProgress} onClick={() => setSelectedBadge(badge)} />
-                                    </DialogTrigger>
-                                ))}
-                            </div>
-                        </div>
-                      </Fragment>
-                    ))}
-                    {selectedBadge && (
-                      <DialogContent>
-                        <DialogHeader className="items-center text-center">
-                          <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
-                              <selectedBadge.icon className="h-12 w-12 text-white" />
-                          </div>
-                          <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
-                          <DialogDescription className="text-base text-muted-foreground pt-2">
-                            {selectedBadge.description}
-                          </DialogDescription>
-                        </DialogHeader>
-                        {selectedBadge.progressType === 'singleMissionStreak' && badgeProgress.missionWithLongestStreak && (
-                          <div className="mt-2 text-center border-t pt-4">
-                              <p className="text-sm text-muted-foreground">Missão com a maior sequência atual:</p>
-                              <p className="font-semibold text-foreground flex items-center justify-center gap-2 mt-1">
-                                  {badgeProgress.missionWithLongestStreak.emoji && <span>{badgeProgress.missionWithLongestStreak.emoji}</span>}
-                                  <span>{badgeProgress.missionWithLongestStreak.title}</span>
-                              </p>
-                          </div>
-                        )}
-                        <div className="text-center pt-2">
-                          {child.earnedBadgeIds?.includes(selectedBadge.id) ? (
-                              <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-300 text-sm">
-                                  <CheckCircle className="mr-2 h-4 w-4"/>Conquistado!
-                              </Badge>
-                          ) : (
-                              <Badge variant="destructive" className="bg-red-100 text-red-800 border-red-300 text-sm">
-                                  Ainda não conquistado!
-                              </Badge>
-                          )}
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild>
-                                <Button variant="outline" className="w-full">Fechar</Button>
-                            </DialogClose>
-                        </DialogFooter>
-                      </DialogContent>
-                    )}
-                  </Dialog>
-                </CardContent>
-              </Card>
-
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle className="text-2xl font-headline flex items-center gap-2">
-                        <Medal className="h-6 w-6 text-primary" />
-                        O Quadro de Medalhas
-                    </DialogTitle>
-                    <DialogDescription className="pt-2">
-                        As medalhas celebram a jornada do seu heroi, reconhecendo desde os primeiros passos até a maestria.
-                    </DialogDescription>
-                </DialogHeader>
-                <ScrollArea className="max-h-[60vh] -mx-6 px-6">
-                    <div className="space-y-4 text-sm text-muted-foreground pb-4 pr-1">
-                        <p>As medalhas no Mini Herois são como troféus especiais que celebram todo tipo de conquista heroica, indo além das recompensas do dia a dia. Elas marcam momentos importantes na jornada da criança, desde o primeiro passo até a maestria, e são divididas em categorias para reconhecer diferentes tipos de esforço.</p>
-
-                        <h4 className="font-bold text-foreground pt-2">Iniciação e Primeiros Passos</h4>
-                        <p>Estas são as medalhas de boas-vindas! Elas celebram os primeiros momentos da jornada de um heroi, incentivando-o a começar com o pé direito.</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Heroi Novato:</strong> Conquistada ao completar a primeira missão.</li>
-                            <li><strong>Defensor do Sorriso:</strong> Ganha ao fazer a missão "Escovar os dentes" pela primeira vez.</li>
-                            <li><strong>Guardião do Descanso:</strong> Recebida ao arrumar a cama pela primeira vez.</li>
-                        </ul>
-
-                        <h4 className="font-bold text-foreground pt-2">Consistência e Hábitos</h4>
-                        <p>Aqui, o que vale é a dedicação! Estas medalhas recompensam a criação de rotinas e a persistência, que são a base para a formação de hábitos sólidos.</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Guardião da Rotina:</strong> Para quem completa a mesma missão por 7 dias seguidos.</li>
-                            <li><strong>Semana Perfeita:</strong> Um grande feito! Para quem completa todas as missões agendadas durante 7 dias consecutivos.</li>
-                            <li><strong>Mestre da Persistência:</strong> Uma medalha rara para quem completa a mesma missão por 30 dias seguidos.</li>
-                        </ul>
-
-                        <h4 className="font-bold text-foreground pt-2">Maestria e Progresso</h4>
-                        <p>Estas medalhas marcam os grandes marcos de progresso, celebrando o acúmulo de experiência e recompensas ao longo do tempo.</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Caçador de Estrelas:</strong> Por acumular um total de 100 estrelas (⭐).</li>
-                            <li><strong>Heroi em Ascensão:</strong> Ao atingir o Nível 5 de experiência (XP).</li>
-                            <li><strong>Campeão dos Herois:</strong> Uma grande honra, recebida ao alcançar o Nível 10.</li>
-                        </ul>
-
-                        <h4 className="font-bold text-foreground pt-2">Exploração e Diversidade</h4>
-                        <p>Estas incentivam a curiosidade e a versatilidade, motivando a criança a sair da zona de conforto e experimentar novas responsabilidades.</p>
-                        <ul className="list-disc pl-5 space-y-1">
-                            <li><strong>Heroi Versátil:</strong> Para quem completa missões de pelo menos 3 categorias diferentes (ex: Casa, Escola e Saúde).</li>
-                            <li><strong>Aventureiro Nato:</strong> Desbloqueada ao completar uma missão das categorias Social ou Ambiental pela primeira vez.</li>
-                        </ul>
-
-                        <p className="pt-2">Em resumo, o sistema de medalhas cria um "mural de honra" que mostra o crescimento e a evolução do Mini Heroi, valorizando não apenas a conclusão das tarefas, mas também a dedicação, a variedade e o progresso na jornada.</p>
-                    </div>
-                </ScrollArea>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline" className="w-full">Entendido!</Button>
-                    </DialogClose>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </TabsContent>
-          <TabsContent value="edit">
-            <Card className="shadow-md">
-              <CardHeader>
-                <CardTitle>Editar Perfil de {child.name}</CardTitle>
-                <CardDescription>Atualize as informações do Mini Heroi e configurações.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <EditChildProfileForm
-                  child={child}
-                  onProfileUpdate={() => fetchData(child.id)}
-                />
-                <Separator className="my-8" />
-                <div className="space-y-4 rounded-lg border border-destructive/50 bg-destructive/5 p-4">
-                  <h3 className="font-semibold text-lg text-destructive">Zona de Perigo</h3>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isDeleting || isResettingProgress || isMoving}>
-                            <RotateCcw className="mr-2 h-4 w-4" />
-                            Redefinir Progresso
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                              <AlertDialogTitle>Redefinir o progresso de {child.name}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                  Esta ação é irreversível. Todas as estrelas, XP, níveis, missões concluídas e recompensas resgatadas serão zeradas. O perfil voltará ao estado inicial.
-                              </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                              <AlertDialogCancel disabled={isResettingProgress}>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleResetProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingProgress}>
-                                  {isResettingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                  Sim, Redefinir
-                              </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setIsMoveDialogOpen(true)} disabled={isDeleting || isResettingProgress || isMoving || moveTargetContexts.length === 0}>
-                        <Move className="mr-2 h-4 w-4" />
-                        Mover Heroi
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button type="button" variant="destructive" className="w-full" disabled={isDeleting || isResettingProgress || isMoving}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir Perfil
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil de {child.name} e todos os seus dados associados (missões, recompensas, progresso, agenda).
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
-                              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                              Sim, Excluir Perfil
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                </Card>
+            </TabsContent>
+            </>
+          )}
         </div>
       </Tabs>
 
@@ -1644,7 +1661,7 @@ function MuralCompletoPageContent() {
             child={child}
             isOpen={isAddMissionDialogOpen}
             onOpenChange={setIsAddMissionDialogOpen}
-            onMissionAdded={() => fetchData(child.id)}
+            onMissionAdded={() => fetchDataForChild(child.id)}
         />
       )}
 
@@ -1660,7 +1677,7 @@ function MuralCompletoPageContent() {
             }
             setIsAssignMissionDialogOpen(isOpen);
           }}
-          onAssigned={() => fetchData(child.id)}
+          onAssigned={() => fetchDataForChild(child.id)}
         />
       )}
 
@@ -1669,7 +1686,7 @@ function MuralCompletoPageContent() {
             isOpen={isEntryDialogOpen}
             onOpenChange={setIsEntryDialogOpen}
             onSave={() => {
-              if (child) fetchData(child.id);
+              if (child) fetchDataForChild(child.id);
               setIsEntryDialogOpen(false);
               setEntryToEdit(null);
             }}
