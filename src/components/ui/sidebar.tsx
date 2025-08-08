@@ -123,7 +123,7 @@ const SidebarProvider = React.forwardRef<
         state,
         open,
         setOpen,
-        isMobile,
+        isMobile: !!isMobile, // Ensure it is boolean
         openMobile,
         setOpenMobile,
         toggleSidebar,
@@ -178,6 +178,16 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+    const [isClient, setIsClient] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsClient(true);
+    }, []);
+
+    if (!isClient) {
+        // Render nothing or a placeholder on the server
+        return null;
+    }
 
     if (collapsible === "none") {
       return (

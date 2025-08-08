@@ -12,6 +12,7 @@ import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -34,6 +35,7 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const isMobile = useIsMobile();
 
   const handleBackClick = () => {
     router.back();
@@ -47,11 +49,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col" style={{ minHeight: '100svh' }}>
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
-                <SidebarTrigger className="md:hidden" />
-                <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
-                  <ArrowLeft className="h-4 w-4" />
-                  <span className="sr-only">Voltar</span>
-                </Button>
+                <SidebarTrigger className={cn("md:hidden", isMobile && "block")} />
+                {!isMobile && (
+                    <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
+                      <ArrowLeft className="h-4 w-4" />
+                      <span className="sr-only">Voltar</span>
+                    </Button>
+                )}
                 <FamilyContextSwitcher />
                 <Separator orientation="vertical" className="h-6 hidden sm:block" />
                 <Breadcrumbs />
