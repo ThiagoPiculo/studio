@@ -200,12 +200,32 @@ export default function MissionIdeasPage() {
                 <Accordion type="single" collapsible className="w-full space-y-4">
                     {filteredMissionGroups.map((group) => (
                         <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm break-inside-avoid">
-                            <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                           <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
                             <div className="flex items-center gap-3">
                                     <group.icon className="h-7 w-7 text-primary" />
-                                    <div>
+                                    <div className="flex items-center gap-2">
                                         <h3 className="text-2xl font-headline">{group.userCategory}</h3>
-                                        <p className="text-sm text-muted-foreground font-normal mt-1">{group.description}</p>
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button 
+                                                    variant="ghost" 
+                                                    size="icon" 
+                                                    className="h-7 w-7 text-muted-foreground hover:bg-primary/10"
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <HelpCircle className="h-4 w-4"/>
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
+                                                <div className="space-y-3">
+                                                    <h4 className="font-medium leading-none">{group.userCategory}</h4>
+                                                    <p className="text-sm text-muted-foreground">{group.description}</p>
+                                                    <PopoverClose asChild>
+                                                        <Button className="w-full">Entendi 👍</Button>
+                                                    </PopoverClose>
+                                                </div>
+                                            </PopoverContent>
+                                        </Popover>
                                     </div>
                                 </div>
                             </AccordionTrigger>
