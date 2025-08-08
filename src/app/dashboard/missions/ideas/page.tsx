@@ -198,93 +198,95 @@ export default function MissionIdeasPage() {
             </Card>
 
             {filteredMissionGroups.length > 0 ? (
-                <Accordion type="single" collapsible className="w-full space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {filteredMissionGroups.map((group) => (
-                        <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm break-inside-avoid">
-                           <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
-                                <AccordionTrigger className="p-0 hover:no-underline flex-grow">
-                                    <div className="flex items-center gap-3">
-                                        <group.icon className="h-7 w-7 text-primary" />
-                                        <div className="text-2xl font-headline">{group.userCategory}</div>
-                                    </div>
-                                </AccordionTrigger>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-7 w-7 text-muted-foreground hover:bg-primary/10"
-                                            onClick={(e) => e.stopPropagation()}
-                                        >
-                                            <HelpCircle className="h-4 w-4"/>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
-                                        <div className="space-y-3">
-                                            <h4 className="font-medium leading-none">{group.userCategory}</h4>
-                                            <p className="text-sm text-muted-foreground">{group.description}</p>
-                                            <PopoverClose asChild>
-                                                <Button className="w-full">Entendi 👍</Button>
-                                            </PopoverClose>
+                        <Accordion type="single" collapsible className="w-full" key={group.userCategory}>
+                            <AccordionItem value={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm">
+                                <h3 className="flex items-center justify-between w-full p-6 text-left group">
+                                    <AccordionTrigger className="p-0 hover:no-underline flex-grow">
+                                        <div className="flex items-center gap-3">
+                                            <group.icon className="h-7 w-7 text-primary" />
+                                            <div className="text-xl font-headline">{group.userCategory}</div>
                                         </div>
-                                    </PopoverContent>
-                                </Popover>
-                            </AccordionHeader>
-                            <AccordionContent className="p-6 pt-0">
-                                <ul className="space-y-3 pt-1">
-                                    {group.items.map((idea) => {
-                                        const alreadyExists = existingTitles.has(idea.title.trim().toLowerCase());
-                                        return (
-                                        <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
-                                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                                <div className="flex-grow space-y-1">
-                                                    <h4 className="font-semibold text-md flex items-center gap-2">
-                                                        <span className="text-xl">{idea.emoji}</span>
-                                                        <span>{idea.title}</span>
-                                                    </h4>
-                                                    <div className="flex items-center gap-2 flex-wrap pl-8">
-                                                        <Badge variant="secondary" className="text-xs font-normal">
-                                                            <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
-                                                        </Badge>
-                                                        <Badge variant="secondary" className="text-xs font-normal">
-                                                            <BadgeCheckIcon className="mr-1.5 h-3 w-3 text-blue-500" /> {idea.xpReward} XP
-                                                        </Badge>
-                                                        {alreadyExists && (
-                                                            <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
-                                                                <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
-                                                                No Catálogo
-                                                            </Badge>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                                {alreadyExists ? (
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="secondary" 
-                                                        onClick={handleGoToCatalog}
-                                                        className="mt-2 sm:mt-0 flex-shrink-0"
-                                                    >
-                                                        Gerenciar no Catálogo <ArrowRight className="ml-2 h-4 w-4" />
-                                                    </Button>
-                                                ) : (
-                                                    <Button 
-                                                        size="sm" 
-                                                        variant="outline" 
-                                                        onClick={() => handleUseIdea(idea)}
-                                                        className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
-                                                    >
-                                                        Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
-                                                    </Button>
-                                                )}
+                                    </AccordionTrigger>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-7 w-7 text-muted-foreground hover:bg-primary/10"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <HelpCircle className="h-4 w-4"/>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
+                                            <div className="space-y-3">
+                                                <h4 className="font-medium leading-none">{group.userCategory}</h4>
+                                                <p className="text-sm text-muted-foreground">{group.description}</p>
+                                                <PopoverClose asChild>
+                                                    <Button className="w-full">Entendi 👍</Button>
+                                                </PopoverClose>
                                             </div>
-                                        </li>
-                                        )
-                                    })}
-                                </ul>
-                            </AccordionContent>
-                        </AccordionItem>
+                                        </PopoverContent>
+                                    </Popover>
+                                </h3>
+                                <AccordionContent className="p-6 pt-0">
+                                    <ul className="space-y-3 pt-1">
+                                        {group.items.map((idea) => {
+                                            const alreadyExists = existingTitles.has(idea.title.trim().toLowerCase());
+                                            return (
+                                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
+                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                                    <div className="flex-grow space-y-1">
+                                                        <h4 className="font-semibold text-md flex items-center gap-2">
+                                                            <span className="text-xl">{idea.emoji}</span>
+                                                            <span>{idea.title}</span>
+                                                        </h4>
+                                                        <div className="flex items-center gap-2 flex-wrap pl-8">
+                                                            <Badge variant="secondary" className="text-xs font-normal">
+                                                                <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
+                                                            </Badge>
+                                                            <Badge variant="secondary" className="text-xs font-normal">
+                                                                <BadgeCheckIcon className="mr-1.5 h-3 w-3 text-blue-500" /> {idea.xpReward} XP
+                                                            </Badge>
+                                                            {alreadyExists && (
+                                                                <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
+                                                                    <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
+                                                                    No Catálogo
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    {alreadyExists ? (
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="secondary" 
+                                                            onClick={handleGoToCatalog}
+                                                            className="mt-2 sm:mt-0 flex-shrink-0"
+                                                        >
+                                                            Gerenciar no Catálogo <ArrowRight className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    ) : (
+                                                        <Button 
+                                                            size="sm" 
+                                                            variant="outline" 
+                                                            onClick={() => handleUseIdea(idea)}
+                                                            className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                                                        >
+                                                            Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
+                                                        </Button>
+                                                    )}
+                                                </div>
+                                            </li>
+                                            )
+                                        })}
+                                    </ul>
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     ))}
-                </Accordion>
+                </div>
             ) : (
                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                   <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -296,3 +298,5 @@ export default function MissionIdeasPage() {
             )}
         </div>
     );
+
+    
