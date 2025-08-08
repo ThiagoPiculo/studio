@@ -14,21 +14,30 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 
 
+function DashboardMainContent({ children }: { children: ReactNode }) {
+    const { loading } = useAuth();
+    
+    if (loading) {
+        return (
+            <div className="flex flex-1 items-center justify-center">
+                <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    return (
+        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300">
+            {children}
+        </main>
+    );
+}
+
 export default function DashboardLayout({ children }: { children: ReactNode }) {
-  const { loading } = useAuth();
   const router = useRouter();
 
   const handleBackClick = () => {
     router.back();
   };
-
-  if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
 
   return (
     <>
@@ -51,9 +60,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <Notifications />
               </div>
             </header>
-            <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300">
-              {children}
-            </main>
+            <DashboardMainContent>{children}</DashboardMainContent>
             <Footer />
           </div>
         </SidebarInset>
