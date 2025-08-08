@@ -198,11 +198,11 @@ export default function MissionIdeasPage() {
             </Card>
 
             {filteredMissionGroups.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-4">
                     {filteredMissionGroups.map((group) => (
                         <Accordion type="single" collapsible className="w-full" key={group.userCategory}>
                             <AccordionItem value={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                                <h3 className="flex items-center justify-between w-full p-6 text-left group">
+                                <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
                                     <AccordionTrigger className="p-0 hover:no-underline flex-grow">
                                         <div className="flex items-center gap-3">
                                             <group.icon className="h-7 w-7 text-primary" />
@@ -230,7 +230,7 @@ export default function MissionIdeasPage() {
                                             </div>
                                         </PopoverContent>
                                     </Popover>
-                                </h3>
+                                </AccordionHeader>
                                 <AccordionContent className="p-6 pt-0">
                                     <ul className="space-y-3 pt-1">
                                         {group.items.map((idea) => {
@@ -300,3 +300,4 @@ export default function MissionIdeasPage() {
     );
 
     
+}
