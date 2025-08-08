@@ -28,7 +28,7 @@ import { boyColors, girlColors, heroColors } from '../hero-colors';
 import { startOfDay, isSameDay, subDays, format as formatDateFns, addDays, differenceInDays, eachDayOfInterval, isBefore, parse } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { allBadgesMap } from '../badges';
-import { isMissionScheduledForDate, getDateObject, isMissionCompletedForDate } from '../calendar-utils';
+import { isMissionCompletedForDate, isMissionScheduledForDate, getDateObject } from '../calendar-utils';
 import { predefinedRewardGroups } from '../predefined-reward-ideas';
 import { auth } from './config';
 
@@ -1813,9 +1813,10 @@ export const deleteMissionInstance = async (actor: UserProfile, instanceId: stri
 
 export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date): Promise<void> => {
   const instanceRef = doc(db, 'missionInstances', instanceId);
+  // Set the new end date to be the day BEFORE the date the user wants to delete from.
   const newEndDate = subDays(startOfDay(fromDate), 1);
 
-  await runTransaction(db, async (transaction) => {
+  return runTransaction(db, async (transaction) => {
     const instanceSnap = await transaction.get(instanceRef);
     if (!instanceSnap.exists()) {
       throw new Error("Missão não encontrada.");
@@ -1824,11 +1825,12 @@ export const deleteFutureOccurrences = async (instanceId: string, fromDate: Date
     const rule = instanceData.recurrenceRule || { freq: 'DAILY', interval: 1 };
     
     const startDate = getDateObject(instanceData.startDate);
+    
+    // If the new end date is before the series even started, it's safer to just delete the whole instance.
     if (startDate && isBefore(newEndDate, startOfDay(startDate))) {
-      // If the new end date is before the series even started, just delete the whole thing.
       transaction.delete(instanceRef);
     } else {
-      // Otherwise, update the end date of the series.
+      // Otherwise, just update the end date of the series.
       transaction.update(instanceRef, {
         recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) },
         updatedAt: serverTimestamp(),
@@ -2274,7 +2276,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));

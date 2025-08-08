@@ -458,7 +458,7 @@ function AgendaPageContent() {
               await deleteFutureOccurrences(instance.id, date);
               toast({ title: 'Ocorrências Futuras Removidas!', description: 'Esta e as futuras ocorrências da missão foram removidas.' });
           } else if (mode === 'all') {
-              await deleteMissionInstance(instance.id);
+              await deleteMissionInstance(user, instance.id);
               toast({ title: 'Série de Missões Removida!', description: 'Toda a série de missões recorrentes foi removida.' });
           }
           await refetchData();
@@ -472,13 +472,13 @@ function AgendaPageContent() {
   };
 
   const handleConfirmSimpleDelete = async () => {
-      if (!instanceToDeleteInfo) return;
+      if (!instanceToDeleteInfo || !user) return;
       const { instance } = instanceToDeleteInfo;
       setIsProcessingAction(instance.id);
       setIsConfirmSimpleDeleteOpen(false);
 
       try {
-          await deleteMissionInstance(instance.id);
+          await deleteMissionInstance(user, instance.id);
           toast({ title: 'Missão Removida!', description: 'A missão foi removida da agenda.' });
           await refetchData();
       } catch (error: any) {
