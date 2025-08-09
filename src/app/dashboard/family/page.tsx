@@ -1171,45 +1171,6 @@ function FamilyPageContent() {
             </DialogContent>
         </Dialog>
 
-        <Dialog open={isHelpDialogOpen} onOpenChange={setIsHelpDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>Como Convidar um Colaborador para sua Aliança de Herois</DialogTitle>
-                </DialogHeader>
-                <div className="py-4 space-y-4 text-sm text-muted-foreground">
-                    <p>Você tem duas maneiras de adicionar um novo responsável à sua equipe.</p>
-                    <Separator />
-                    <div>
-                        <h4 className="font-semibold text-foreground">Opção 1: Convite por E-mail (Mais Fácil)</h4>
-                        <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li><strong className="text-foreground">O que você faz:</strong> Digite o e-mail do colaborador e clique no botão de convite.</li>
-                            <li><strong className="text-foreground">O que ele(a) faz:</strong> O colaborador receberá uma notificação dentro do app para aceitar o convite e entrará na Aliança instantaneamente.</li>
-                            <li><strong className="text-foreground">Requisito:</strong> Este método funciona apenas se a pessoa <span className="font-bold">já tiver uma conta</span> no Mini Herois.</li>
-                        </ul>
-                    </div>
-                    <Separator />
-                    <div>
-                        <h4 className="font-semibold text-foreground">Opção 2: Convite por Código ou Link</h4>
-                        <ul className="list-disc pl-5 mt-1 space-y-1">
-                            <li><strong className="text-foreground">O que você faz:</strong> Copie o código de 6 dígitos ou o link de convite direto e envie para a pessoa.</li>
-                            <li><strong className="text-foreground">O que ele(a) faz:</strong>
-                                <ul className="list-circle pl-5 mt-1">
-                                    <li>Se já tem conta, deve usar o código na seção "Entrar em uma Aliança".</li>
-                                    <li>Se não tem conta, o link direto o levará para o cadastro, já com o convite incluso.</li>
-                                </ul>
-                            </li>
-                            <li><strong className="text-foreground">Aprovação necessária:</strong> Após o colaborador usar o código/link, você receberá um pedido na sua tela de Aliança para aprovar a entrada dele.</li>
-                        </ul>
-                    </div>
-                </div>
-                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button className="w-full">Entendi 👍</Button>
-                    </DialogClose>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
         <Card className="border-destructive bg-destructive/5">
             <CardHeader>
               <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
@@ -1258,7 +1219,6 @@ function FamilyPageContent() {
           <Home className="h-8 w-8 text-primary" />
           <div className="flex-grow">
               <h2 className="text-3xl font-headline font-bold">Meu Espaço</h2>
-              <p className="text-muted-foreground">Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.</p>
           </div>
           <div className="flex items-center gap-2">
               <Popover>
