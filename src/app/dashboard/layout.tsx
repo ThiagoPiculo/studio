@@ -50,8 +50,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col" style={{ minHeight: '100svh' }}>
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
-                <SidebarTrigger className={cn("md:hidden", isMobile && "block")} />
-                {!isMobile && (
+                <SidebarTrigger className="md:hidden" />
+                {isMobile && (
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                       <ArrowLeft className="h-4 w-4" />
                       <span className="sr-only">Voltar</span>
