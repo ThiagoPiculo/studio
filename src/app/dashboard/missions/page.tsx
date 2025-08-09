@@ -189,80 +189,76 @@ function MissionsHubContent() {
   return (
     <div className="space-y-6">
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                    <Target className="h-8 w-8 text-primary" />
-                    <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Quadro de Missões</h2>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                <HelpCircle className="h-5 w-5" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                            <div className="space-y-3">
-                                <h4 className="font-medium leading-none">O Motor da Aventura: Missões</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele. Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis para seus heróis.
-                                </p>
-                                <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                    <li><strong>Crie Primeiro Aqui:</strong> Antes de poder agendar uma missão, você precisa criá-la neste quadro.</li>
-                                    <li><strong>Gerencie os Detalhes:</strong> Edite o título, a descrição e as recompensas de cada modelo de missão.</li>
-                                    <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" em um card para agendar a missão na rotina de um ou mais heróis.</li>
-                                </ul>
-                                 <p className="text-sm text-muted-foreground">
-                                    Em resumo, aqui você constrói o seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
-                                 </p>
-                                <PopoverClose asChild>
-                                    <Button className="w-full">Entendi 👍</Button>
-                                </PopoverClose>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+            <CardHeader className="px-0 pt-0">
+                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-2">
+                        <Target className="h-8 w-8 text-primary" />
+                        <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Quadro de Missões</h2>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                                    <HelpCircle className="h-5 w-5" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-80">
+                                <div className="space-y-3">
+                                    <h4 className="font-medium leading-none">O Motor da Aventura: Missões</h4>
+                                    <p className="text-sm text-muted-foreground">
+                                        Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele. Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis para seus heróis.
+                                    </p>
+                                    <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                                        <li><strong>Crie Primeiro Aqui:</strong> Antes de poder agendar uma missão, você precisa criá-la neste quadro.</li>
+                                        <li><strong>Gerencie os Detalhes:</strong> Edite o título, a descrição e as recompensas de cada modelo de missão.</li>
+                                        <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" em um card para agendar a missão na rotina de um ou mais heróis.</li>
+                                    </ul>
+                                     <p className="text-sm text-muted-foreground">
+                                        Em resumo, aqui você constrói o seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
+                                     </p>
+                                    <PopoverClose asChild>
+                                        <Button className="w-full">Entendi 👍</Button>
+                                    </PopoverClose>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {children.length > 1 && (
+                          <HeroSelector
+                              heroes={children}
+                              selectedHeroId={selectedChildId}
+                              onSelectHero={setSelectedChildId}
+                              showAllOption={true}
+                          />
+                        )}
+                    </div>
                 </div>
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {children.length > 1 && (
-                      <HeroSelector
-                          heroes={children}
-                          selectedHeroId={selectedChildId}
-                          onSelectHero={setSelectedChildId}
-                          showAllOption={true}
-                      />
-                    )}
-                    <Link href="/dashboard/missions/new">
-                        <Button className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
-                            <PlusCircle className="mr-2 h-5 w-5" /> Criar Nova Missão
-                        </Button>
-                    </Link>
+                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-4">
+                    <Button asChild variant="outline" className="w-full sm:w-auto">
+                      <Link href="/dashboard/agenda">
+                        <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
+                      </Link>
+                    </Button>
+                    <Button asChild variant="secondary" className="w-full sm:w-auto">
+                      <Link href="/dashboard/missions/ideas">
+                        <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
+                      </Link>
+                    </Button>
+                     <Button asChild className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
+                        <Link href="/dashboard/missions/new">
+                            <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
+                        </Link>
+                    </Button>
                 </div>
-            </div>
-            <div className="flex flex-wrap gap-4">
-                <Link href="/dashboard/agenda">
-                  <Button variant="outline" className="w-full sm:w-auto">
-                    <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
-                  </Button>
-                </Link>
-                <Link href="/dashboard/missions/ideas">
-                  <Button variant="secondary" className="w-full sm:w-auto">
-                    <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
-                  </Button>
-                </Link>
-            </div>
+            </CardHeader>
         </div>
       
       <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
-        <div className="p-4 pt-0 md:p-6 md:pt-6">
-          <div className="md:hidden mb-4 pt-6">
+        <div className="md:p-6 px-0 md:px-2">
+          <div className="mb-4 px-2 md:px-0">
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
               <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
           </div>
-          <div className="hidden md:block">
-              <CardHeader className="p-0 mb-6">
-                <CardTitle>Missões do Catálogo</CardTitle>
-                <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
-              </CardHeader>
-          </div>
-
+          
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
               <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -280,7 +276,7 @@ function MissionsHubContent() {
                 
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-                    <CardHeader className="p-4 pb-2">
+                    <CardHeader className="p-4">
                         <div className="flex justify-between items-start gap-2">
                            <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
                                 {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
