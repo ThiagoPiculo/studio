@@ -202,7 +202,7 @@ function MissionsHubContent() {
     const assignedChildren = assignmentsByTemplate.get(template.id) || [];
     
     return (
-        <div key={template.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+        <div key={template.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm hover:shadow-md">
             <span className="text-3xl">{template.emoji}</span>
             <div className="flex-grow space-y-2">
                 <div className="flex items-center justify-between">
@@ -351,7 +351,12 @@ function MissionsHubContent() {
                 </Badge>
             </div>
              <div className="min-h-[32px] mt-2">
-                {assignedChildren.length > 0 ? (
+                {isLoadingAssignments ? (
+                     <div className="flex -space-x-2">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                ) : assignedChildren.length > 0 ? (
                     <div className="flex items-center space-x-2">
                         <div className="flex -space-x-2">
                             {assignedChildren.slice(0, 5).map(child => (
@@ -402,7 +407,7 @@ function MissionsHubContent() {
   return (
     <div className="space-y-6">
         <div className="flex flex-col gap-4">
-            <div className="px-0 pt-0">
+            <div className="p-0 md:p-6 md:pb-0 md:pt-0">
                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Target className="h-8 w-8 text-primary" />
@@ -465,7 +470,7 @@ function MissionsHubContent() {
             </div>
         </div>
       
-      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm px-2 py-4 md:px-6 md:py-6 sm:px-0">
+      <div className="px-0 md:px-6 md:py-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
