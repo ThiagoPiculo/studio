@@ -13,7 +13,7 @@ import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/cale
 import { differenceInDays, eachDayOfInterval, startOfDay } from 'date-fns';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Medal, ArrowRight, Gem, Trophy, PlusCircle } from "lucide-react";
+import { Medal, ArrowRight, Gem, Trophy, PlusCircle, HelpCircle } from "lucide-react";
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -22,6 +22,8 @@ import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 interface UpcomingBadge {
   child: ChildProfile;
@@ -242,17 +244,39 @@ export default function AchievementsPage() {
 
   return (
     <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline flex items-center">
-            <Medal className="mr-3 h-8 w-8 text-primary" />
-            Mural de Medalhas
-          </CardTitle>
-          <CardDescription>
-            Acompanhe todas as medalhas e troféus que seus heróis desbloquearam em suas jornadas.
-          </CardDescription>
-        </CardHeader>
-      </Card>
+      <div className="flex items-center gap-2">
+          <Medal className="h-8 w-8 text-primary" />
+          <div className="flex-grow">
+              <h2 className="text-3xl font-headline font-bold">Mural de Medalhas</h2>
+              <p className="text-muted-foreground">Acompanhe todas as medalhas e troféus que seus heróis desbloquearam.</p>
+          </div>
+          <Popover>
+              <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <HelpCircle className="h-5 w-5" />
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                   <div className="space-y-3">
+                      <h4 className="font-medium leading-none">O Hall da Fama Heroica</h4>
+                       <p className="text-sm text-muted-foreground">
+                          Aqui você celebra as grandes conquistas! Diferente das recompensas, as medalhas são prêmios <strong>automáticos</strong> e <strong>não custam estrelas</strong>. Elas são desbloqueadas quando os heróis atingem marcos importantes, como:
+                      </p>
+                       <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                          <li>Manter uma sequência de tarefas por vários dias.</li>
+                          <li>Alcançar um novo nível de experiência (XP).</li>
+                          <li>Acumular uma grande quantidade de estrelas.</li>
+                      </ul>
+                       <p className="text-sm text-muted-foreground">
+                          Use esta tela para visualizar o progresso de todos e identificar as medalhas mais raras e as próximas a serem conquistadas.
+                       </p>
+                      <PopoverClose asChild>
+                          <Button className="w-full">Entendi 👍</Button>
+                      </PopoverClose>
+                  </div>
+              </PopoverContent>
+          </Popover>
+      </div>
 
       {allChildren.length > 1 && (
         <HeroSelector

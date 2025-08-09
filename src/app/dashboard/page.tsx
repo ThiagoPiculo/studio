@@ -10,11 +10,13 @@ import type { ChildProfile, UserProfile, FamilyRole } from '@/lib/types';
 import { getChildProfilesForAttribution, getFamilyMembers } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { cn, getInitials } from '@/lib/utils';
-import { Home, Link as LinkIcon, ArrowRight } from 'lucide-react';
+import { Home, Link as LinkIcon, ArrowRight, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
 import { familyRoles } from "@/lib/types";
+import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 interface ContextData {
     context: {
@@ -108,17 +110,39 @@ function DashboardRootPageContent() {
 
     return (
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-2xl font-headline flex items-center gap-3">
-                        <Home className="h-6 w-6 text-primary" />
-                        Visão Geral dos Espaços
-                    </CardTitle>
-                    <CardDescription>
-                        Acesse um espaço pessoal ou uma aliança para gerenciar seus heróis.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+             <div className="flex items-center gap-2">
+                <Home className="h-8 w-8 text-primary" />
+                <div className="flex-grow">
+                    <h2 className="text-3xl font-headline font-bold">Visão Geral dos Espaços</h2>
+                    <p className="text-muted-foreground">Acesse um espaço pessoal ou uma aliança para gerenciar seus heróis.</p>
+                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                         <div className="space-y-3">
+                            <h4 className="font-medium leading-none">Seu Ponto de Partida Estratégico</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Esta tela é sua central de comando, oferecendo uma visão geral de todos os seus espaços de trabalho.
+                            </p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                                <li><strong>Meu Espaço:</strong> Seu ambiente privado para gerenciar os heróis que só você acompanha. Ideal para missões e recompensas pessoais.</li>
+                                <li><strong>Alianças:</strong> Espaços compartilhados onde você colabora com outros responsáveis (como co-pais, avós ou terapeutas). As missões, recompensas e heróis aqui são visíveis a todos os membros da aliança.</li>
+                            </ul>
+                            <p className="text-sm text-muted-foreground">
+                                Clique em um card para mergulhar no universo daquele espaço e começar a gerenciar o progresso dos heróis.
+                            </p>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {contextData.map(({ context, children, members }) => {
                     const Icon = context.id === 'my-space' ? Home : LinkIcon;

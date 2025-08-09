@@ -18,7 +18,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -43,6 +43,8 @@ import { cn } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 
 function RewardsHubContent() {
@@ -339,26 +341,47 @@ function RewardsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-      <Card className="shadow-lg">
-          <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                  <div>
-                      <CardTitle className="text-3xl font-headline flex items-center">
-                          <Gift className="mr-3 h-8 w-8 text-primary" />
-                          Quadro de Recompensas
-                      </CardTitle>
-                      <CardDescription>
-                          Inspire-se, crie e gerencie as recompensas para o seu espaço.
-                      </CardDescription>
-                  </div>
-                  <Link href="/dashboard/rewards/new">
-                      <Button className="w-full sm:w-auto" disabled={!canEdit}>
-                          <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
-                      </Button>
-                  </Link>
-              </div>
-          </CardHeader>
-           <CardContent>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-2">
+                <Gift className="h-8 w-8 text-primary" />
+                <div className="flex-grow">
+                    <h2 className="text-3xl font-headline font-bold">Quadro de Recompensas</h2>
+                    <p className="text-muted-foreground">Inspire-se, crie e gerencie as recompensas para o seu espaço.</p>
+                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                         <div className="space-y-3">
+                            <h4 className="font-medium leading-none">A Lojinha de Tesouros do Herói</h4>
+                            <p className="text-sm text-muted-foreground">
+                                Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
+                            </p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                                <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
+                                <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
+                            </ul>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+             <div className="flex w-full flex-row sm:w-auto items-center justify-end gap-2">
+                 <Link href="/dashboard/rewards/new">
+                    <Button className="w-full sm:w-auto" disabled={!canEdit}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
+                    </Button>
+                </Link>
+            </div>
+        </div>
+
+        <Card>
+           <CardContent className="p-6">
              <Accordion type="single" collapsible className="w-full" defaultValue="strategy">
                 <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
                   <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">

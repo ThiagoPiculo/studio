@@ -66,6 +66,8 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -666,56 +668,36 @@ function FamilyPageContent() {
 
     return (
       <div className="space-y-8">
-        <Card className="shadow-lg">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-start gap-4 flex-grow">
-                <LinkIcon className="h-8 w-8 text-primary mt-1 flex-shrink-0" />
-                <div className='flex-grow'>
-                  {isOwner && isEditingName ? (
-                    <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
-                      <Input
-                        value={familyNameInput}
-                        onChange={(e) => setFamilyNameInput(e.target.value)}
-                        className="h-auto text-3xl font-headline p-0 border-0 border-b-2 border-primary/50 rounded-none bg-transparent focus-visible:ring-0 focus-visible:border-primary"
-                        autoFocus
-                        onKeyDown={(e) => { if (e.key === 'Escape') { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}}
-                      />
-                      <Button type="submit" size="icon" className="h-9 w-9 shrink-0" disabled={isUpdatingName || !familyNameInput.trim() || familyNameInput.trim() === familyDetails.name}>
-                        {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-5 w-5" />}
-                      </Button>
-                      <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={() => { setIsEditingName(false); if(familyDetails) setFamilyNameInput(familyDetails.name); }}>
-                        <X className="h-5 w-5" />
-                      </Button>
-                    </form>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <CardTitle className="text-3xl font-headline">{familyDetails.name}</CardTitle>
-                      {isOwner && (
-                        <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setIsEditingName(true)}>
-                          <Edit3 className="h-5 w-5 text-muted-foreground hover:text-primary" />
-                        </Button>
-                      )}
-                    </div>
-                  )}
-                  <CardDescription>Gerencie os membros e as configurações da sua aliança.</CardDescription>
-                </div>
-              </div>
-              <Button variant="secondary" onClick={() => setCurrentContext('my-space')} className="w-full sm:w-auto flex-shrink-0">
-                <Home className="mr-2 h-4 w-4" />
-                Mudar para Meu Espaço
-              </Button>
+        <div className="flex items-center gap-2">
+            <Users className="h-8 w-8 text-primary" />
+            <div className="flex-grow">
+                <h2 className="text-3xl font-headline font-bold">Aliança de Herois</h2>
+                <p className="text-muted-foreground">Gerencie sua equipe de apoio, convide membros e mova heróis.</p>
             </div>
-          </CardHeader>
-          {isCoOwner && (
-            <CardFooter>
-              <Button onClick={handleRequestOwnership} disabled={isRequestingOwnership}>
-                {isRequestingOwnership ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Shield className="mr-2 h-4 w-4"/>}
-                Solicitar Propriedade da Aliança
-              </Button>
-            </CardFooter>
-          )}
-        </Card>
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                     <div className="space-y-3">
+                        <h4 className="font-medium leading-none">Gerenciando sua Equipe de Apoio</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Este é o seu centro de comando para a Aliança. Uma aliança é um espaço colaborativo para gerenciar heróis em conjunto.
+                        </p>
+                         <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                            <li><strong>Membros:</strong> Convide outros responsáveis (co-pais, avós, terapeutas) para participar.</li>
+                            <li><strong>Mini Herois:</strong> Adicione os perfis das crianças a esta aliança para que todos os membros possam ver e gerenciar suas missões.</li>
+                            <li><strong>Criação:</strong> Para criar uma nova aliança ou entrar em uma, volte para o "Meu Espaço" e use os cards de ação na parte inferior da tela.</li>
+                        </ul>
+                        <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </div>
+                </PopoverContent>
+            </Popover>
+        </div>
         
         {isOwner && (isLoadingJoinRequests ? (
           <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando pedidos...</CardContent></Card>
@@ -1221,6 +1203,11 @@ function FamilyPageContent() {
                         </ul>
                     </div>
                 </div>
+                 <DialogFooter>
+                    <DialogClose asChild>
+                        <Button className="w-full">Entendi 👍</Button>
+                    </DialogClose>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
 
@@ -1268,39 +1255,31 @@ function FamilyPageContent() {
   // View when user is in "My Space" (not in a family)
   return (
     <div className="space-y-6">
-      <Card className="shadow-lg">
-        <CardHeader>
-           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-              <div>
-                <CardTitle className="text-3xl font-headline flex items-center">
-                  <Home className="mr-3 h-8 w-8 text-primary" />
-                  Meu Espaço
-                </CardTitle>
-                <CardDescription>
-                    Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.
-                </CardDescription>
-              </div>
-              {userAlliances.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" className="w-full sm:w-auto justify-between flex-shrink-0">
-                    Mudar para uma aliança
-                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                  {userAlliances.map(alliance => (
-                    <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                      <LinkIcon className="mr-2 h-4 w-4" />
-                      <span>{`Aliança: ${alliance.name}`}</span>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+       <div className="flex items-center gap-2">
+          <Home className="h-8 w-8 text-primary" />
+          <div className="flex-grow">
+              <h2 className="text-3xl font-headline font-bold">Meu Espaço</h2>
+              <p className="text-muted-foreground">Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.</p>
           </div>
-        </CardHeader>
-      </Card>
+          {userAlliances.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" className="w-full sm:w-auto justify-between flex-shrink-0">
+                  Mudar para uma aliança
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                {userAlliances.map(alliance => (
+                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                    <LinkIcon className="mr-2 h-4 w-4" />
+                    <span>{`Aliança: ${alliance.name}`}</span>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+      </div>
       
       {isLoadingInvitations ? (
         <Card><CardContent className="p-6 text-center text-muted-foreground">Carregando convites...</CardContent></Card>
@@ -1538,5 +1517,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
-    
