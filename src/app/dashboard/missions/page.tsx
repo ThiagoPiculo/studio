@@ -251,8 +251,8 @@ function MissionsHubContent() {
         </div>
       
       <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
-        <div className="p-6 pt-0 md:pt-6">
-          <div className="md:hidden mb-4">
+        <div className="p-4 pt-0 md:p-6 md:pt-6">
+          <div className="md:hidden mb-4 pt-6">
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
               <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
           </div>
@@ -466,5 +466,3 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
-
-    
