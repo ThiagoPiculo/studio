@@ -675,28 +675,28 @@ function FamilyPageContent() {
                 <p className="text-muted-foreground">Gerencie sua equipe de apoio, convide membros e mova heróis.</p>
             </div>
             <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <HelpCircle className="h-5 w-5" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                     <div className="space-y-3">
-                        <h4 className="font-medium leading-none">Gerenciando sua Equipe de Apoio</h4>
-                        <p className="text-sm text-muted-foreground">
-                            Este é o seu centro de comando para a Aliança. Uma aliança é um espaço colaborativo para gerenciar heróis em conjunto.
-                        </p>
-                         <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                            <li><strong>Membros:</strong> Convide outros responsáveis (co-pais, avós, terapeutas) para participar.</li>
-                            <li><strong>Mini Herois:</strong> Adicione os perfis das crianças a esta aliança para que todos os membros possam ver e gerenciar suas missões.</li>
-                            <li><strong>Criação:</strong> Para criar uma nova aliança ou entrar em uma, volte para o "Meu Espaço" e use os cards de ação na parte inferior da tela.</li>
-                        </ul>
-                        <PopoverClose asChild>
-                            <Button className="w-full">Entendi 👍</Button>
-                        </PopoverClose>
-                    </div>
-                </PopoverContent>
-            </Popover>
+              <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <HelpCircle className="h-5 w-5" />
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                   <div className="space-y-3">
+                      <h4 className="font-medium leading-none">Gerenciando sua Equipe de Apoio</h4>
+                      <p className="text-sm text-muted-foreground">
+                          Este é o seu centro de comando para a Aliança. Uma aliança é um espaço colaborativo para gerenciar heróis em conjunto.
+                      </p>
+                       <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                          <li><strong>Membros:</strong> Convide outros responsáveis (co-pais, avós, terapeutas) para participar.</li>
+                          <li><strong>Mini Herois:</strong> Adicione os perfis das crianças a esta aliança para que todos os membros possam ver e gerenciar suas missões.</li>
+                          <li><strong>Criação:</strong> Para criar uma nova aliança ou entrar em uma, volte para o "Meu Espaço" e use os cards de ação na parte inferior da tela.</li>
+                      </ul>
+                      <PopoverClose asChild>
+                          <Button className="w-full">Entendi 👍</Button>
+                      </PopoverClose>
+                  </div>
+              </PopoverContent>
+          </Popover>
         </div>
         
         {isOwner && (isLoadingJoinRequests ? (
