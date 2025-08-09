@@ -42,6 +42,7 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Loading from './loading';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 
 function MissionsHubContent() {
@@ -273,16 +274,35 @@ function MissionsHubContent() {
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
-                        <div className="flex justify-between items-start">
-                           <div className="flex items-start gap-3 pr-2 min-h-14">
+                        <div className="flex justify-between items-start gap-2">
+                           <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
                                 {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
                                 <CardTitle className="text-xl line-clamp-2">
                                 {template.title}
                                 </CardTitle>
                             </div>
-                            <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
-                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                            </Badge>
+                             <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                        <span className="sr-only">Opções da missão</span>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
+                                        <Users className="mr-2 h-4 w-4" />
+                                        Atribuir / Gerenciar
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
+                                        <Edit3 className="mr-2 h-4 w-4" />
+                                        Editar Missão
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Excluir Missão
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </div>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow p-6 pt-0">
@@ -301,98 +321,55 @@ function MissionsHubContent() {
 
                       <div className="pt-2">
                         <Separator className="mb-3" />
-                        <div className="space-y-2">
+                        <div className="flex items-center justify-between gap-2">
                           <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
                             <Users className="h-4 w-4" />
                             Atribuído a:
                           </h4>
-                          {assignedChildren.length > 0 ? (
-                              <div className="flex items-center space-x-2">
-                                  <div className="flex -space-x-2">
-                                      {assignedChildren.slice(0, 5).map(child => (
-                                          <TooltipProvider key={child.id} delayDuration={100}>
-                                              <Tooltip>
-                                                  <TooltipTrigger asChild>
-                                                      <Avatar
-                                                        className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                                      >
-                                                          <AvatarImage src={child.avatar} alt={child.name} />
-                                                          <AvatarFallback
+                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
+                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                            </Badge>
+                        </div>
+                         <div className="min-h-[32px] mt-2">
+                            {assignedChildren.length > 0 ? (
+                                <div className="flex items-center space-x-2">
+                                    <div className="flex -space-x-2">
+                                        {assignedChildren.slice(0, 5).map(child => (
+                                            <TooltipProvider key={child.id} delayDuration={100}>
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Avatar
+                                                            className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                        >
+                                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                                            <AvatarFallback
                                                             className="text-xs"
                                                             style={{ backgroundColor: child.color }}
-                                                          >
-                                                              {getInitials(child.name)}
-                                                          </AvatarFallback>
-                                                      </Avatar>
-                                                  </TooltipTrigger>
-                                                  <TooltipContent>
-                                                      <p>{child.name}</p>
-                                                  </TooltipContent>
-                                              </Tooltip>
-                                          </TooltipProvider>
-                                      ))}
-                                  </div>
-                                  {assignedChildren.length > 5 && (
-                                      <span className="text-xs font-medium text-muted-foreground">
-                                          + {assignedChildren.length - 5}
-                                      </span>
-                                  )}
-                              </div>
-                          ) : (
-                              <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
-                          )}
-                        </div>
+                                                            >
+                                                                {getInitials(child.name)}
+                                                            </AvatarFallback>
+                                                        </Avatar>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>{child.name}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            </TooltipProvider>
+                                        ))}
+                                    </div>
+                                    {assignedChildren.length > 5 && (
+                                        <span className="text-xs font-medium text-muted-foreground">
+                                            + {assignedChildren.length - 5}
+                                        </span>
+                                    )}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
+                            )}
+                         </div>
                       </div>
                     </CardContent>
-                    <CardFooter className="flex items-center gap-2 pt-4">
-                      <Button
-                        variant="default"
-                        className="w-full"
-                        disabled={isProcessingAction || template.status === 'archived' || !canEdit}
-                        onClick={() => handleOpenAssignDialog(template)}
-                      >
-                        <Users className="mr-2 h-4 w-4" /> Atribuir
-                      </Button>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}
-                              disabled={isProcessingAction || !canEdit}
-                              className="flex-shrink-0"
-                            >
-                              <Edit3 className="h-4 w-4" />
-                              <span className="sr-only">Editar Missão</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Editar Missão</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => setTemplateToDelete(template)}
-                              disabled={isProcessingAction || !canEdit}
-                              className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Excluir Missão</span>
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Excluir Missão</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </CardFooter>
                   </Card>
                 );
               })}
@@ -474,12 +451,10 @@ function MissionsHubContent() {
   );
 }
 
-export default function MissionsHubPage() {
+export default function MissionsHubPageWrapper() {
     return (
         <Suspense fallback={<Loading />}>
             <MissionsHubContent />
         </Suspense>
     );
 }
-
-    
