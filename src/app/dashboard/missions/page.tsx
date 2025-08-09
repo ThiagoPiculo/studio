@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreVertical, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreVertical, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle, LayoutGrid, List } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -43,6 +43,7 @@ import Loading from './loading';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 
 
 function MissionsHubContent() {
@@ -64,6 +65,7 @@ function MissionsHubContent() {
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -181,6 +183,217 @@ function MissionsHubContent() {
   };
 
   const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
+  
+  const renderCardView = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {filteredTemplates.map(renderMissionCard)}
+    </div>
+  );
+
+  const renderListView = () => (
+    <div className="space-y-2">
+      {filteredTemplates.map(renderMissionListItem)}
+    </div>
+  );
+
+  const renderMissionListItem = (template: MissionTemplate) => {
+    const categoryDetails = getCategoryDetails(template.category);
+    const CategoryIconComponent = categoryDetails?.icon;
+    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
+    
+    return (
+        <div key={template.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+            <span className="text-3xl">{template.emoji}</span>
+            <div className="flex-grow space-y-2">
+                <div className="flex items-center justify-between">
+                    <h4 className="font-semibold">{template.title}</h4>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                    {categoryDetails && (
+                        <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                            {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
+                            {categoryDetails.label}
+                        </Badge>
+                    )}
+                    <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
+                    <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
+                </div>
+                 <div className="flex items-center justify-between pt-1">
+                    <div className="flex items-center gap-2">
+                       <span className="text-xs text-muted-foreground">Ativo para:</span>
+                       {assignedChildren.length > 0 ? (
+                           <div className="flex -space-x-2">
+                               {assignedChildren.slice(0, 5).map(child => (
+                                   <TooltipProvider key={child.id} delayDuration={100}>
+                                       <Tooltip>
+                                           <TooltipTrigger asChild>
+                                           <Avatar
+                                               className="h-6 w-6 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                               style={{ '--ring-color': child.color } as React.CSSProperties}
+                                           >
+                                               <AvatarImage src={child.avatar} alt={child.name} />
+                                               <AvatarFallback
+                                               className="text-xs"
+                                               style={{ backgroundColor: child.color }}
+                                               >
+                                                   {getInitials(child.name)}
+                                               </AvatarFallback>
+                                           </Avatar>
+                                           </TooltipTrigger>
+                                           <TooltipContent>
+                                           <p>{child.name}</p>
+                                           </TooltipContent>
+                                       </Tooltip>
+                                   </TooltipProvider>
+                               ))}
+                               {assignedChildren.length > 5 && (
+                                   <span className="text-xs font-medium text-muted-foreground self-center pl-3">
+                                       + {assignedChildren.length - 5}
+                                   </span>
+                               )}
+                           </div>
+                       ) : (
+                           <span className="text-xs italic text-muted-foreground">Ninguém</span>
+                       )}
+                   </div>
+                   <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">{template.status === 'active' ? 'Ativa' : 'Arquivada'}</Badge>
+                </div>
+            </div>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
+                        <MoreVertical className="h-4 w-4" />
+                        <span className="sr-only">Opções da missão</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
+                        <Users className="mr-2 h-4 w-4" />
+                        Atribuir / Gerenciar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Editar Missão
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Excluir Missão
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+    )
+  }
+
+  const renderMissionCard = (template: MissionTemplate) => {
+    const categoryDetails = getCategoryDetails(template.category);
+    const CategoryIconComponent = categoryDetails?.icon;
+    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
+    
+    return (
+      <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
+        <CardHeader className="p-4">
+            <div className="flex justify-between items-start gap-2">
+               <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
+                    {template.emoji && <span className="text-3xl mt-1">{template.emoji}</span>}
+                    <CardTitle className="text-lg leading-tight line-clamp-2">
+                    {template.title}
+                    </CardTitle>
+                </div>
+                 <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
+                            <MoreVertical className="h-4 w-4" />
+                            <span className="sr-only">Opções da missão</span>
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
+                            <Users className="mr-2 h-4 w-4" />
+                            Atribuir / Gerenciar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
+                            <Edit3 className="mr-2 h-4 w-4" />
+                            Editar Missão
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Excluir Missão
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </CardHeader>
+        <CardContent className="flex flex-col flex-grow p-4 pt-0">
+           <div className="flex flex-wrap items-center gap-2 mb-3">
+                {categoryDetails && (
+                    <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                        {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
+                        {categoryDetails.label}
+                    </Badge>
+                )}
+                <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
+                <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
+            </div>
+
+          <Separator className="mb-3"/>
+
+          <div className="flex-grow" />
+
+          <div className="pt-1">
+            <div className="flex items-center justify-between gap-2">
+              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                <Users className="h-4 w-4" />
+                Atribuído a:
+              </h4>
+               <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
+                    {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                </Badge>
+            </div>
+             <div className="min-h-[32px] mt-2">
+                {assignedChildren.length > 0 ? (
+                    <div className="flex items-center space-x-2">
+                        <div className="flex -space-x-2">
+                            {assignedChildren.slice(0, 5).map(child => (
+                                <TooltipProvider key={child.id} delayDuration={100}>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Avatar
+                                                className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
+                                                style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                            >
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback
+                                                className="text-xs"
+                                                style={{ backgroundColor: child.color }}
+                                                >
+                                                    {getInitials(child.name)}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <p>{child.name}</p>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </TooltipProvider>
+                            ))}
+                        </div>
+                        {assignedChildren.length > 5 && (
+                            <span className="text-xs font-medium text-muted-foreground">
+                                + {assignedChildren.length - 5}
+                            </span>
+                        )}
+                    </div>
+                ) : (
+                    <p className="text-xs text-muted-foreground italic">Nenhum herói com esta missão ativa.</p>
+                )}
+             </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
 
   if (isLoading || isFamilyLoading) {
       return <Loading />;
@@ -252,11 +465,21 @@ function MissionsHubContent() {
             </div>
         </div>
       
-      <div className={cn("md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm")}>
-        <div className="px-2 md:px-6 md:py-6">
-          <div className="mb-4">
+      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
+        <div className="px-2 py-4 md:px-4 md:py-6">
+          <div className="mb-4 flex items-center justify-between">
+            <div>
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
               <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
+            </div>
+            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')} aria-label="Modo de visualização">
+                <ToggleGroupItem value="grid" aria-label="Ver em Grade">
+                    <LayoutGrid className="h-4 w-4" />
+                </ToggleGroupItem>
+                <ToggleGroupItem value="list" aria-label="Ver em Lista">
+                    <List className="h-4 w-4" />
+                </ToggleGroupItem>
+            </ToggleGroup>
           </div>
           
           {filteredTemplates.length === 0 ? (
@@ -268,116 +491,7 @@ function MissionsHubContent() {
               </p>
             </div>
           ) : (
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((template) => {
-                const categoryDetails = getCategoryDetails(template.category);
-                const CategoryIconComponent = categoryDetails?.icon;
-                const assignedChildren = assignmentsByTemplate.get(template.id) || [];
-                
-                return (
-                  <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-                    <CardHeader className="p-4">
-                        <div className="flex justify-between items-start gap-2">
-                           <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
-                                {template.emoji && <span className="text-3xl mt-1">{template.emoji}</span>}
-                                <CardTitle className="text-lg leading-tight line-clamp-2">
-                                {template.title}
-                                </CardTitle>
-                            </div>
-                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
-                                        <MoreVertical className="h-4 w-4" />
-                                        <span className="sr-only">Opções da missão</span>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
-                                        <Users className="mr-2 h-4 w-4" />
-                                        Atribuir / Gerenciar
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
-                                        <Edit3 className="mr-2 h-4 w-4" />
-                                        Editar Missão
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Excluir Missão
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="flex flex-col flex-grow p-4 pt-0">
-                       <div className="flex flex-wrap items-center gap-2 mb-3">
-                            {categoryDetails && (
-                                <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                                    {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
-                                    {categoryDetails.label}
-                                </Badge>
-                            )}
-                            <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
-                            <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
-                        </div>
-
-                      <Separator className="mb-3"/>
-
-                      <div className="flex-grow" />
-
-                      <div className="pt-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                            <Users className="h-4 w-4" />
-                            Atribuído a:
-                          </h4>
-                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
-                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                            </Badge>
-                        </div>
-                         <div className="min-h-[32px] mt-2">
-                            {assignedChildren.length > 0 ? (
-                                <div className="flex items-center space-x-2">
-                                    <div className="flex -space-x-2">
-                                        {assignedChildren.slice(0, 5).map(child => (
-                                            <TooltipProvider key={child.id} delayDuration={100}>
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <Avatar
-                                                            className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                                            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                                        >
-                                                            <AvatarImage src={child.avatar} alt={child.name} />
-                                                            <AvatarFallback
-                                                            className="text-xs"
-                                                            style={{ backgroundColor: child.color }}
-                                                            >
-                                                                {getInitials(child.name)}
-                                                            </AvatarFallback>
-                                                        </Avatar>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <p>{child.name}</p>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </TooltipProvider>
-                                        ))}
-                                    </div>
-                                    {assignedChildren.length > 5 && (
-                                        <span className="text-xs font-medium text-muted-foreground">
-                                            + {assignedChildren.length - 5}
-                                        </span>
-                                    )}
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum heroi com esta missão ativa.</p>
-                            )}
-                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
+            viewMode === 'grid' ? renderCardView() : renderListView()
           )}
         </div>
       </div>
