@@ -198,11 +198,11 @@ export default function MissionIdeasPage() {
             </Card>
 
             {filteredMissionGroups.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-2 gap-4">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                     {filteredMissionGroups.map((group) => (
                         <Accordion type="single" collapsible className="w-full" key={group.userCategory}>
                             <AccordionItem value={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                                <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
+                                 <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
                                     <AccordionTrigger className="p-0 hover:no-underline flex-grow">
                                         <div className="flex items-center gap-3">
                                             <group.icon className="h-7 w-7 text-primary" />
@@ -232,38 +232,39 @@ export default function MissionIdeasPage() {
                                     </Popover>
                                 </AccordionHeader>
                                 <AccordionContent className="p-6 pt-0">
-                                    <ul className="space-y-3 pt-1">
+                                    <ul className="grid grid-cols-1 gap-3 pt-1">
                                         {group.items.map((idea) => {
                                             const alreadyExists = existingTitles.has(idea.title.trim().toLowerCase());
                                             return (
-                                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow">
-                                                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-                                                    <div className="flex-grow space-y-1">
-                                                        <h4 className="font-semibold text-md flex items-center gap-2">
-                                                            <span className="text-xl">{idea.emoji}</span>
-                                                            <span>{idea.title}</span>
-                                                        </h4>
-                                                        <div className="flex items-center gap-2 flex-wrap pl-8">
-                                                            <Badge variant="secondary" className="text-xs font-normal">
-                                                                <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
+                                            <li key={idea.title} className="p-3 border rounded-md bg-muted/30 hover:shadow-sm transition-shadow flex flex-col justify-between h-full">
+                                                <div className="flex-grow space-y-2 mb-3">
+                                                    <h4 className="font-semibold text-md flex items-center gap-2">
+                                                        <span className="text-xl">{idea.emoji}</span>
+                                                        <span className="flex-1">{idea.title}</span>
+                                                    </h4>
+                                                    <div className="flex items-center gap-2 flex-wrap pl-8">
+                                                        <Badge variant="secondary" className="text-xs font-normal">
+                                                            <Star className="mr-1.5 h-3 w-3 text-yellow-500 fill-yellow-500" /> {idea.starsReward}
+                                                        </Badge>
+                                                        <Badge variant="secondary" className="text-xs font-normal">
+                                                            <BadgeCheckIcon className="mr-1.5 h-3 w-3 text-blue-500" /> {idea.xpReward} XP
+                                                        </Badge>
+                                                        {alreadyExists && (
+                                                            <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
+                                                                <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
+                                                                No Catálogo
                                                             </Badge>
-                                                            <Badge variant="secondary" className="text-xs font-normal">
-                                                                <BadgeCheckIcon className="mr-1.5 h-3 w-3 text-blue-500" /> {idea.xpReward} XP
-                                                            </Badge>
-                                                            {alreadyExists && (
-                                                                <Badge variant="secondary" className="whitespace-nowrap bg-green-100 text-green-800 border-green-200">
-                                                                    <CheckCircle className="mr-1.5 h-3.5 w-3.5"/>
-                                                                    No Catálogo
-                                                                </Badge>
-                                                            )}
-                                                        </div>
+                                                        )}
                                                     </div>
+                                                </div>
+                                                
+                                                <div className="mt-auto">
                                                     {alreadyExists ? (
                                                         <Button 
                                                             size="sm" 
                                                             variant="secondary" 
                                                             onClick={handleGoToCatalog}
-                                                            className="mt-2 sm:mt-0 flex-shrink-0"
+                                                            className="w-full"
                                                         >
                                                             Gerenciar no Catálogo <ArrowRight className="ml-2 h-4 w-4" />
                                                         </Button>
@@ -272,7 +273,7 @@ export default function MissionIdeasPage() {
                                                             size="sm" 
                                                             variant="outline" 
                                                             onClick={() => handleUseIdea(idea)}
-                                                            className="mt-2 sm:mt-0 flex-shrink-0 border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
+                                                            className="w-full border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"
                                                         >
                                                             Usar esta Ideia <ArrowRight className="ml-2 h-4 w-4" />
                                                         </Button>
@@ -301,3 +302,5 @@ export default function MissionIdeasPage() {
 
     
 }
+
+    
