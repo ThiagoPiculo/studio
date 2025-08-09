@@ -415,9 +415,9 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-6">
-        <div className="flex flex-col gap-4">
-            <div className="px-0 md:p-6 md:pb-0 md:pt-0">
-                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <Card>
+            <CardHeader>
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Target className="h-8 w-8 text-primary" />
                         <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Quadro de Missões</h2>
@@ -431,15 +431,14 @@ function MissionsHubContent() {
                                 <div className="space-y-3">
                                     <h4 className="font-medium leading-none">O Motor da Aventura: Missões</h4>
                                     <p className="text-sm text-muted-foreground">
-                                        Se as recompensas são o "tesouro", as missões são o mapa e os desafios que levam até ele. Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis para seus heróis.
+                                        Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis.
                                     </p>
                                     <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                        <li><strong>Crie Primeiro Aqui:</strong> Antes de poder agendar uma missão, você precisa criá-la neste quadro.</li>
-                                        <li><strong>Gerencie os Detalhes:</strong> Edite o título, a descrição e as recompensas de cada modelo de missão.</li>
-                                        <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" em um card para agendar a missão na rotina de um ou mais heróis.</li>
+                                        <li><strong>Crie Primeiro Aqui:</strong> Antes de agendar uma missão, crie-a neste quadro.</li>
+                                        <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" para agendar a missão na rotina de um ou mais heróis.</li>
                                     </ul>
                                      <p className="text-sm text-muted-foreground">
-                                        Em resumo, aqui você constrói o seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
+                                        Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
                                      </p>
                                     <PopoverClose asChild>
                                         <Button className="w-full">Entendi 👍</Button>
@@ -448,15 +447,17 @@ function MissionsHubContent() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        {children.length > 1 && (
-                          <HeroSelector
-                              heroes={children}
-                              selectedHeroId={selectedChildId}
-                              onSelectHero={setSelectedChildId}
-                              showAllOption={true}
-                          />
-                        )}
+                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                         {children.length > 1 && (
+                            <div className="flex-grow sm:flex-grow-0">
+                                <HeroSelector
+                                    heroes={children}
+                                    selectedHeroId={selectedChildId}
+                                    onSelectHero={setSelectedChildId}
+                                    showAllOption={true}
+                                />
+                            </div>
+                         )}
                     </div>
                 </div>
                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-4">
@@ -476,10 +477,10 @@ function MissionsHubContent() {
                         </Link>
                     </Button>
                 </div>
-            </div>
-        </div>
+            </CardHeader>
+        </Card>
       
-      <div className="px-0 md:px-6 md:py-6">
+      <div className="px-2 md:px-6 md:py-6">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
