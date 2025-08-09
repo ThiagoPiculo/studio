@@ -11,12 +11,15 @@ import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info } from 'lucide-react';
+import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info, HelpCircle } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import { FamilySwitcherClient } from './FamilySwitcherClient';
 import Loading from './loading';
 import Link from 'next/link';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
+
 
 type AllianceDetails = {
   id: string;
@@ -85,17 +88,36 @@ function AlliancesPageClient() {
 
     return (
         <div className="space-y-8">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-3xl font-headline flex items-center">
-                        <Users className="mr-3 h-8 w-8 text-primary" />
-                        Minhas Alianças
-                    </CardTitle>
-                    <CardDescription>
-                        Gerencie todas as equipes de herois que você faz parte.
-                    </CardDescription>
-                </CardHeader>
-            </Card>
+             <div className="flex items-center gap-2">
+                <Users className="h-8 w-8 text-primary" />
+                <div className="flex-grow">
+                    <h2 className="text-3xl font-headline font-bold">Minhas Alianças</h2>
+                    <p className="text-muted-foreground">Gerencie todas as equipes de herois que você faz parte.</p>
+                </div>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                         <div className="space-y-3">
+                            <h4 className="font-medium leading-none">Gerenciando suas Equipes</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Esta tela centraliza todas as Alianças das quais você faz parte. Cada card representa uma equipe de colaboração para gerenciar um ou mais Mini Herois.
+                            </p>
+                             <ul className="text-sm text-muted-foreground space-y-2">
+                                <li><strong className="text-foreground">Ver Detalhes:</strong> Acesse o painel de uma aliança para ver os membros, os heróis associados e gerenciar as configurações.</li>
+                                <li><strong className="text-foreground">Convidar:</strong> Use o botão "Convidar" para adicionar novos colaboradores diretamente a uma aliança específica.</li>
+                                <li><strong className="text-foreground">Criar/Entrar:</strong> Para criar uma nova aliança ou entrar em uma com um código, você precisa primeiro voltar para o seu **"Meu Espaço"** através do seletor de contexto no topo da página.</li>
+                             </ul>
+                            <PopoverClose asChild>
+                                <Button className="w-full">Entendi 👍</Button>
+                            </PopoverClose>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
             
             {alliancesDetails.length === 0 ? (
                 <Card>
