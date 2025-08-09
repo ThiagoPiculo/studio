@@ -48,7 +48,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 
 function MissionsHubContent() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
@@ -56,8 +56,7 @@ function MissionsHubContent() {
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -77,31 +76,34 @@ function MissionsHubContent() {
   }, [currentContext, currentRole]);
   
   const refetchAllData = useCallback(async () => {
-    if (!user) return;
-    setIsLoading(true);
-    setIsLoadingAssignments(true);
+    if (!user) {
+        setIsDataLoading(false);
+        return;
+    };
+    setIsDataLoading(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [templates, children, instances] = await Promise.all([
+        const [templates, childrenData, instances] = await Promise.all([
           getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
           getChildProfilesForAttribution(user.uid, currentContext),
           getMissionInstancesForContext(user.uid, familyIdToQuery)
         ]);
         setMissionTemplates(templates);
-        setChildren(children);
+        setChildren(childrenData);
         setMissionInstances(instances.filter(i => i.status === 'pending'));
     } catch (err) {
       console.error("Error refetching missions data:", err)
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
     } finally {
-      setIsLoading(false);
-      setIsLoadingAssignments(false);
+      setIsDataLoading(false);
     }
   }, [user, currentContext, toast]);
 
   useEffect(() => {
-    refetchAllData();
-  }, [refetchAllData]);
+    if (!authLoading && !isFamilyLoading) {
+      refetchAllData();
+    }
+  }, [authLoading, isFamilyLoading, refetchAllData]);
   
   const childrenMap = useMemo(() => {
     return new Map(children.map(child => [child.id, child]));
@@ -225,7 +227,7 @@ function MissionsHubContent() {
                  <div className="flex items-center justify-between pt-1">
                     <div className="flex items-center gap-2">
                        <span className="text-xs text-muted-foreground">Ativo para:</span>
-                       {isLoadingAssignments ? (
+                       {isDataLoading ? (
                             <div className="flex -space-x-2">
                                 <Skeleton className="h-6 w-6 rounded-full" />
                                 <Skeleton className="h-6 w-6 rounded-full" />
@@ -360,7 +362,7 @@ function MissionsHubContent() {
                 </Badge>
             </div>
              <div className="min-h-[32px] mt-2">
-                {isLoadingAssignments ? (
+                {isDataLoading ? (
                      <div className="flex -space-x-2">
                         <Skeleton className="h-8 w-8 rounded-full" />
                         <Skeleton className="h-8 w-8 rounded-full" />
@@ -409,7 +411,7 @@ function MissionsHubContent() {
   };
 
 
-  if (isLoading || isFamilyLoading) {
+  if (isDataLoading || isFamilyLoading) {
       return <Loading />;
   }
 
@@ -447,7 +449,7 @@ function MissionsHubContent() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                     <div className="flex w-full sm:w-auto items-center gap-2">
+                     <div className="flex w-full flex-row sm:w-auto items-center gap-2">
                          {children.length > 1 && (
                             <div className="flex-grow sm:flex-grow-0">
                                 <HeroSelector

@@ -15,48 +15,40 @@ function HeroesPageContent() {
     const { currentContext, isLoading: isFamilyLoading } = useFamily();
     const [children, setChildren] = useState<ChildProfile[] | null>(null);
     const [missions, setMissions] = useState<MissionInstance[] | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        // Don't fetch if the user or context is not ready yet.
-        if (authLoading || isFamilyLoading || !user) {
-            // If the contexts are ready but there's no user, it means they are logged out.
-            if (!authLoading && !isFamilyLoading && !user) {
-                setIsLoading(false);
-                setChildren([]);
-                setMissions([]);
-            }
+    const fetchData = useCallback(async () => {
+        if (!user) {
+            setChildren([]);
+            setMissions([]);
             return;
         }
-
-        const fetchData = async () => {
-            setIsLoading(true);
-            try {
-                const [childData, missionData] = await Promise.all([
-                    getChildProfilesForAttribution(user.uid, currentContext),
-                    getMissionInstancesForContext(user.uid, currentContext)
-                ]);
-                setChildren(childData);
-                setMissions(missionData);
-            } catch (error) {
-                console.error("Error fetching heroes data:", error);
-                setChildren([]);
-                setMissions([]);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [user, currentContext, authLoading, isFamilyLoading]);
+        try {
+            const [childData, missionData] = await Promise.all([
+                getChildProfilesForAttribution(user.uid, currentContext),
+                getMissionInstancesForContext(user.uid, currentContext)
+            ]);
+            setChildren(childData);
+            setMissions(missionData);
+        } catch (error) {
+            console.error("Error fetching heroes data:", error);
+            setChildren([]);
+            setMissions([]);
+        }
+    }, [user, currentContext]);
 
 
-    if (isLoading || authLoading || isFamilyLoading) {
+    useEffect(() => {
+        if (!authLoading && !isFamilyLoading) {
+            fetchData();
+        }
+    }, [authLoading, isFamilyLoading, fetchData]);
+
+
+    if (authLoading || isFamilyLoading || children === null || missions === null) {
         return <Loading />;
     }
     
-    // After loading, if there are no children, show the guide.
-    if (!children || children.length === 0) {
+    if (children.length === 0) {
         return (
             <GettingStartedGuide 
                 hasChildren={false}
@@ -66,8 +58,7 @@ function HeroesPageContent() {
         );
     }
     
-    // Ensure missions is not null before rendering summary
-    return <HeroesSummary children={children} missionInstances={missions || []} />;
+    return <HeroesSummary children={children} missionInstances={missions} />;
 }
 
 

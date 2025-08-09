@@ -50,14 +50,14 @@ function DashboardPageContent() {
         return <Loading />;
     }
     
-    const hasAnyContent = initialData.children.length > 0 || initialData.missions.length > 0 || initialData.rewards.length > 0;
+    const hasAnyContent = initialData.children.length > 0;
 
     if (!hasAnyContent) {
         return (
             <GettingStartedGuide 
-                hasChildren={initialData.children.length > 0}
+                hasChildren={false}
                 hasMissions={false} 
-                hasRewards={initialData.rewards.length > 0}
+                hasRewards={false}
             />
         );
     }
