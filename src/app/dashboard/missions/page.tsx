@@ -44,6 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PopoverClose } from '@radix-ui/react-popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 function MissionsHubContent() {
@@ -56,6 +57,7 @@ function MissionsHubContent() {
   const [children, setChildren] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
   
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -77,6 +79,7 @@ function MissionsHubContent() {
   const refetchAllData = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
+    setIsLoadingAssignments(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
         const [templates, children, instances] = await Promise.all([
@@ -92,6 +95,7 @@ function MissionsHubContent() {
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
     } finally {
       setIsLoading(false);
+      setIsLoadingAssignments(false);
     }
   }, [user, currentContext, toast]);
 
@@ -221,7 +225,12 @@ function MissionsHubContent() {
                  <div className="flex items-center justify-between pt-1">
                     <div className="flex items-center gap-2">
                        <span className="text-xs text-muted-foreground">Ativo para:</span>
-                       {assignedChildren.length > 0 ? (
+                       {isLoadingAssignments ? (
+                            <div className="flex -space-x-2">
+                                <Skeleton className="h-6 w-6 rounded-full" />
+                                <Skeleton className="h-6 w-6 rounded-full" />
+                            </div>
+                        ) : assignedChildren.length > 0 ? (
                            <div className="flex -space-x-2">
                                {assignedChildren.slice(0, 5).map(child => (
                                    <TooltipProvider key={child.id} delayDuration={100}>
@@ -407,7 +416,7 @@ function MissionsHubContent() {
   return (
     <div className="space-y-6">
         <div className="flex flex-col gap-4">
-            <div className="p-0 md:p-6 md:pb-0 md:pt-0">
+            <div className="px-0 md:p-6 md:pb-0 md:pt-0">
                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Target className="h-8 w-8 text-primary" />
