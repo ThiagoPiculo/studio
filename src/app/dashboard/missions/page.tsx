@@ -447,7 +447,7 @@ function MissionsHubContent() {
                             </PopoverContent>
                         </Popover>
                     </div>
-                     <div className="flex items-center gap-2 w-full sm:w-auto">
+                     <div className="flex w-full sm:w-auto items-center gap-2">
                          {children.length > 1 && (
                             <div className="flex-grow sm:flex-grow-0">
                                 <HeroSelector
@@ -458,6 +458,13 @@ function MissionsHubContent() {
                                 />
                             </div>
                          )}
+                         <div className="flex-shrink-0">
+                            <Button asChild className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
+                                <Link href="/dashboard/missions/new">
+                                    <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
+                                </Link>
+                            </Button>
+                         </div>
                     </div>
                 </div>
                  <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-4">
@@ -470,11 +477,6 @@ function MissionsHubContent() {
                       <Link href="/dashboard/missions/ideas">
                         <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
                       </Link>
-                    </Button>
-                     <Button asChild className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
-                        <Link href="/dashboard/missions/new">
-                            <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
-                        </Link>
                     </Button>
                 </div>
             </CardHeader>
@@ -589,3 +591,5 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
+
+    
