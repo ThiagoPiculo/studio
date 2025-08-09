@@ -118,7 +118,6 @@ function FamilyPageContent() {
   const [isEditingName, setIsEditingName] = useState(false);
   const [familyNameInput, setFamilyNameInput] = useState('');
   const [isUpdatingName, setIsUpdatingName] = useState(false);
-  const [isHelpDialogOpen, setIsHelpDialogOpen] = useState(false);
   const [isRequestingOwnership, setIsRequestingOwnership] = useState(false);
   const [isTransferringOwnership, setIsTransferringOwnership] = useState(false);
   
@@ -839,7 +838,7 @@ function FamilyPageContent() {
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
-                    <Button variant="link" className="p-0 h-auto" onClick={() => setIsHelpDialogOpen(true)}>
+                    <Button variant="link" className="p-0 h-auto" onClick={() => {}}>
                         <Info className="mr-2 h-4 w-4"/> Como usar os convites?
                     </Button>
                 </div>
@@ -1261,24 +1260,48 @@ function FamilyPageContent() {
               <h2 className="text-3xl font-headline font-bold">Meu Espaço</h2>
               <p className="text-muted-foreground">Seu ambiente pessoal para gerenciar seus Mini Herois. Crie ou entre em uma aliança para colaborar.</p>
           </div>
-          {userAlliances.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" className="w-full sm:w-auto justify-between flex-shrink-0">
-                  Mudar para uma aliança
-                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
-                {userAlliances.map(alliance => (
-                  <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
-                    <LinkIcon className="mr-2 h-4 w-4" />
-                    <span>{`Aliança: ${alliance.name}`}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
+          <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                        <HelpCircle className="h-5 w-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80">
+                    <div className="space-y-3">
+                        <h4 className="font-medium leading-none">Gerenciando sua Equipe de Apoio</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Esta tela é o seu centro de comando para criar e gerenciar suas equipes.
+                        </p>
+                        <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                            <li><strong>Meu Espaço:</strong> Quando você está em "Meu Espaço", você vê os heróis que gerencia individualmente e tem as opções para criar uma nova Aliança ou entrar em uma já existente usando um código.</li>
+                            <li><strong>Aliança:</strong> Ao selecionar uma aliança, a tela muda para mostrar os membros e heróis daquele grupo. Você poderá convidar novos colaboradores, gerenciar perfis e colaborar nas missões e recompensas da equipe.</li>
+                        </ul>
+                        <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </div>
+                </PopoverContent>
+            </Popover>
+            {userAlliances.length > 0 && (
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="secondary" className="w-full sm:w-auto justify-between flex-shrink-0">
+                    Mudar para uma aliança
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                    {userAlliances.map(alliance => (
+                    <DropdownMenuItem key={alliance.id} onSelect={() => setCurrentContext(alliance.id)} className="cursor-pointer">
+                        <LinkIcon className="mr-2 h-4 w-4" />
+                        <span>{`Aliança: ${alliance.name}`}</span>
+                    </DropdownMenuItem>
+                    ))}
+                </DropdownMenuContent>
+                </DropdownMenu>
+            )}
+          </div>
       </div>
       
       {isLoadingInvitations ? (
