@@ -1,4 +1,5 @@
 
+// src/app/dashboard/missions/ideas/page.tsx
 "use client";
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -20,7 +21,6 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { PopoverClose } from "@radix-ui/react-popover";
-import { AccordionHeader } from "@radix-ui/react-accordion";
 
 const rewardFilterOptions = [
     { value: 'all', label: 'Qualquer Recompensa' },
@@ -152,7 +152,7 @@ export default function MissionIdeasPage() {
                             </ul>
                              <p className="text-sm text-muted-foreground">
                                 Use estas ideias como um ponto de partida rápido e criativo para manter a jornada dos seus heróis sempre interessante!
-                            </p>
+                             </p>
                             <PopoverClose asChild>
                                 <Button className="w-full">Entendi 👍</Button>
                             </PopoverClose>
@@ -202,35 +202,35 @@ export default function MissionIdeasPage() {
                     <Accordion type="single" collapsible className="w-full col-span-1 md:col-span-2 lg:col-span-3 xl:col-span-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                         {filteredMissionGroups.map((group) => (
                             <AccordionItem value={group.userCategory} key={group.userCategory} className="rounded-lg border bg-card text-card-foreground shadow-sm">
-                                <AccordionHeader className="flex items-center justify-between w-full p-6 text-left group">
-                                        <AccordionTrigger className="p-0 hover:no-underline flex-grow">
-                                            <div className="flex items-center gap-3">
-                                                <group.icon className="h-7 w-7 text-primary" />
-                                                <div className="text-xl font-headline">{group.userCategory}</div>
+                                <div className="flex items-center justify-between w-full p-6 text-left group">
+                                    <AccordionTrigger className="p-0 hover:no-underline flex-grow">
+                                        <div className="flex items-center gap-3">
+                                            <group.icon className="h-7 w-7 text-primary" />
+                                            <div className="text-xl font-headline">{group.userCategory}</div>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-7 w-7 text-muted-foreground hover:bg-primary/10 ml-2"
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <HelpCircle className="h-4 w-4"/>
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
+                                            <div className="space-y-3">
+                                                <h4 className="font-medium leading-none">{group.userCategory}</h4>
+                                                <p className="text-sm text-muted-foreground">{group.description}</p>
+                                                <PopoverClose asChild>
+                                                    <Button className="w-full">Entendi 👍</Button>
+                                                </PopoverClose>
                                             </div>
-                                        </AccordionTrigger>
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button 
-                                                    variant="ghost" 
-                                                    size="icon" 
-                                                    className="h-7 w-7 text-muted-foreground hover:bg-primary/10 ml-2"
-                                                    onClick={(e) => e.stopPropagation()}
-                                                >
-                                                    <HelpCircle className="h-4 w-4"/>
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-72" onClick={(e) => e.stopPropagation()}>
-                                                <div className="space-y-3">
-                                                    <h4 className="font-medium leading-none">{group.userCategory}</h4>
-                                                    <p className="text-sm text-muted-foreground">{group.description}</p>
-                                                    <PopoverClose asChild>
-                                                        <Button className="w-full">Entendi 👍</Button>
-                                                    </PopoverClose>
-                                                </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                </AccordionHeader>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                                 <AccordionContent className="p-6 pt-0">
                                     <ul className="grid grid-cols-1 gap-3 pt-1">
                                         {group.items.map((idea) => {
@@ -299,8 +299,4 @@ export default function MissionIdeasPage() {
             )}
         </div>
     );
-
-    
 }
-
-    
