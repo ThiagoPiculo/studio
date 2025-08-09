@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreVertical, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -284,7 +284,7 @@ function MissionsHubContent() {
                              <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
-                                        <MoreHorizontal className="h-4 w-4" />
+                                        <MoreVertical className="h-4 w-4" />
                                         <span className="sr-only">Opções da missão</span>
                                     </Button>
                                 </DropdownMenuTrigger>
