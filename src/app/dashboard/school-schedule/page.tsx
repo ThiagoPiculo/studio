@@ -118,6 +118,17 @@ function SchoolSchedulePageClient() {
         setIsLoadingData(false);
     }
   }, [user, currentContext, toast, isFamilyLoading, selectedChildId]);
+
+  const handleSaveEntry = (savedEntryOrEntries: SchoolScheduleEntry | SchoolScheduleEntry[]) => {
+      const newEntries = Array.isArray(savedEntryOrEntries) ? savedEntryOrEntries : [savedEntryOrEntries];
+      
+      setScheduleEntries(prevEntries => {
+          const updatedEntriesMap = new Map(prevEntries.map(e => [e.id, e]));
+          newEntries.forEach(entry => updatedEntriesMap.set(entry.id, entry));
+          return Array.from(updatedEntriesMap.values());
+      });
+  };
+
   
   useEffect(() => {
     if(!authLoading && !isFamilyLoading) {
@@ -351,15 +362,15 @@ function SchoolSchedulePageClient() {
     setIsDeleting(true);
     try {
       await deleteSchoolScheduleEntry(entryToDelete.id, user);
+      setScheduleEntries(prev => prev.filter(e => e.id !== entryToDelete.id)); // Optimistic update
       toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
-      fetchData();
     } catch (error) {
       console.error("Error deleting entry:", error);
       toast({ title: "Erro ao remover aula", variant: 'destructive' });
+      fetchData(); // Re-fetch on error
     } finally {
       setIsDeleting(false);
       setEntryToDelete(null);
-      setIsEntryDialogOpen(false); // Close edit dialog if delete is triggered from there
     }
   };
   
@@ -643,13 +654,14 @@ function SchoolSchedulePageClient() {
         <EditScheduleEntryDialog
           isOpen={isEntryDialogOpen}
           onOpenChange={setIsEntryDialogOpen}
-          onSave={fetchData}
+          onSave={handleSaveEntry}
           entryToEdit={entryToEdit}
           child={selectedChild}
           showRecessHint={!hasRecess}
           onDelete={() => {
             if (entryToEdit) {
               setEntryToDelete(entryToEdit);
+              setIsEntryDialogOpen(false); // Close the dialog from which delete was triggered
             }
           }}
         />

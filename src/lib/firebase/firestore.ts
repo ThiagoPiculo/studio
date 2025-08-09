@@ -353,7 +353,7 @@ export const removeChildFromFamily = async (childId: string): Promise<void> => {
 };
 
 
-export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>, actor: UserProfile): Promise<void> => {
+export const updateChildProfile = async (childId: string, updates: Partial<ChildProfile>, actor?: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   const dataToUpdate: { [key: string]: any } = { ...updates };
 
@@ -376,17 +376,19 @@ export const updateChildProfile = async (childId: string, updates: Partial<Child
     updatedAt: serverTimestamp(),
   });
 
-  await createAndDispatchNotifications(
-    childId,
-    {
-      type: 'template_updated',
-      title: 'Perfil de Herói Atualizado',
-      description: `${actor.name} atualizou o perfil de ${newName}.`,
-      href: `/dashboard/mural?childId=${childId}&tab=edit`,
-      relatedChildId: childId,
-    },
-    actor
-  );
+  if (actor) {
+    await createAndDispatchNotifications(
+      childId,
+      {
+        type: 'template_updated',
+        title: 'Perfil de Herói Atualizado',
+        description: `${actor.name} atualizou o perfil de ${newName}.`,
+        href: `/dashboard/mural?childId=${childId}&tab=edit`,
+        relatedChildId: childId,
+      },
+      actor
+    );
+  }
 };
 
 export const regenerateChildAccessCode = async (childId: string, actor: UserProfile): Promise<string> => {
@@ -415,23 +417,25 @@ export const regenerateChildAccessCode = async (childId: string, actor: UserProf
   return newAccessCode;
 };
 
-export const deleteChildProfile = async (childId: string, actor: UserProfile): Promise<void> => {
+export const deleteChildProfile = async (childId: string, actor?: UserProfile): Promise<void> => {
   const childRef = doc(db, 'children', childId);
   const childSnap = await getDoc(childRef);
   if (!childSnap.exists()) return;
   const childData = childSnap.data() as ChildProfile;
   
-  await createAndDispatchNotifications(
-      childId,
-      {
-          type: 'template_deleted',
-          title: 'Perfil Removido',
-          description: `O perfil de ${childData.name} foi removido por ${actor.name}.`,
-          href: '/dashboard/heroes',
-          relatedChildId: childId,
-      },
-      actor
-  );
+  if (actor) {
+    await createAndDispatchNotifications(
+        childId,
+        {
+            type: 'template_deleted',
+            title: 'Perfil Removido',
+            description: `O perfil de ${childData.name} foi removido por ${actor.name}.`,
+            href: '/dashboard/heroes',
+            relatedChildId: childId,
+        },
+        actor
+    );
+  }
 
   const batch = writeBatch(db);
 
@@ -2358,7 +2362,7 @@ export const addRecurringSchoolEntry = async (
     baseEntry: Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'updatedAt' | 'dayOfWeek'>, 
     days: Weekday[],
     actor: UserProfile
-): Promise<void> => {
+): Promise<SchoolScheduleEntry[]> => {
     const child = await getChildProfileById(baseEntry.childId);
     if (!child) throw new Error("Criança não encontrada.");
 
@@ -2372,16 +2376,19 @@ export const addRecurringSchoolEntry = async (
 
     const batch = writeBatch(db);
     const now = serverTimestamp() as Timestamp;
+    const newEntries: SchoolScheduleEntry[] = [];
 
     days.forEach(day => {
         const newEntryRef = doc(collection(db, 'schoolSchedules'));
-        const newEntry: Omit<SchoolScheduleEntry, 'id'> = {
+        const newEntry: SchoolScheduleEntry = {
+            id: newEntryRef.id,
             ...baseEntry,
             dayOfWeek: day,
             createdAt: now,
             updatedAt: now,
         };
         batch.set(newEntryRef, newEntry);
+        newEntries.push(newEntry);
     });
 
     await batch.commit();
@@ -2395,19 +2402,29 @@ export const addRecurringSchoolEntry = async (
             relatedChildId: baseEntry.childId
         });
     }
+
+    return convertTimestampsInObject(newEntries);
 }
 
-export const updateSchoolScheduleEntry = async (entryId: string, updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>, actor: UserProfile): Promise<void> => {
+export const updateSchoolScheduleEntry = async (
+    entryId: string, 
+    updates: Partial<Omit<SchoolScheduleEntry, 'id' | 'createdAt' | 'ownerId' | 'childId' | 'familyId'>>, 
+    actor: UserProfile
+): Promise<SchoolScheduleEntry> => {
   const entryRef = doc(db, 'schoolSchedules', entryId);
   
   const originalSnap = await getDoc(entryRef);
-  if (!originalSnap.exists()) return;
+  if (!originalSnap.exists()) {
+    throw new Error("Entrada da agenda não encontrada.");
+  }
   const originalData = originalSnap.data() as SchoolScheduleEntry;
 
   await updateDoc(entryRef, {
     ...updates,
     updatedAt: serverTimestamp(),
   });
+
+  const updatedEntry = { ...originalData, ...updates, id: entryId };
 
   if (originalData.familyId) {
     const child = await getChildProfileById(originalData.childId);
@@ -2419,6 +2436,8 @@ export const updateSchoolScheduleEntry = async (entryId: string, updates: Partia
         relatedChildId: originalData.childId
     });
   }
+
+  return convertTimestampsInObject(updatedEntry);
 };
 
 export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProfile): Promise<void> => {
@@ -2440,10 +2459,3 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
-
-
-
-
-
-
-

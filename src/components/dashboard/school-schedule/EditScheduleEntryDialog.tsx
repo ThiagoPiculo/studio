@@ -57,7 +57,7 @@ const orderedSubjects = [
 interface EditScheduleEntryDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onSave: () => void;
+  onSave: (entry: SchoolScheduleEntry | SchoolScheduleEntry[]) => void;
   entryToEdit?: SchoolScheduleEntry | null;
   child: ChildProfile | null;
   showRecessHint?: boolean;
@@ -133,10 +133,12 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     ownerId: child.ownerId,
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
-                await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
+                const newEntries = await addRecurringSchoolEntry(baseEntry, daysToRepeat, user);
+                onSave(newEntries); // Pass array of new entries
                 toast({ title: 'Intervalo adicionado!', description: `O intervalo foi adicionado de Segunda a Sexta.` });
             } else if (entryToEdit && entryToEdit.id) {
-                await updateSchoolScheduleEntry(entryToEdit.id, payload, user);
+                const updatedEntry = await updateSchoolScheduleEntry(entryToEdit.id, payload, user);
+                onSave(updatedEntry); // Pass single updated entry
                 toast({ title: 'Aula atualizada!', description: `A aula de ${payload.subject} foi atualizada no horário.` });
             } else {
                 const newEntryData = {
@@ -145,10 +147,10 @@ export function EditScheduleEntryDialog({ isOpen, onOpenChange, onSave, entryToE
                     ownerId: user.uid,
                     familyId: currentContext === 'my-space' ? null : currentContext,
                 };
-                await addSchoolScheduleEntry(newEntryData, user);
+                const newEntry = await addSchoolScheduleEntry(newEntryData, user);
+                onSave(newEntry); // Pass single new entry
                 toast({ title: 'Nova aula adicionada!', description: `A aula de ${payload.subject} foi adicionada ao horário.` });
             }
-            onSave();
             onOpenChange(false);
         } catch (error) {
             console.error('Error saving schedule entry', error);
