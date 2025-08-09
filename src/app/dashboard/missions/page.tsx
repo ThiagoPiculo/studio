@@ -15,16 +15,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogClose,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle } from 'lucide-react';
@@ -283,47 +273,39 @@ function MissionsHubContent() {
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
                     <CardHeader>
-                      <div className="flex items-start gap-3 pr-2 min-h-14">
-                        {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
-                        <CardTitle className="text-xl line-clamp-2">
-                          {template.title}
-                        </CardTitle>
-                      </div>
+                        <div className="flex justify-between items-start">
+                           <div className="flex items-start gap-3 pr-2 min-h-14">
+                                {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
+                                <CardTitle className="text-xl line-clamp-2">
+                                {template.title}
+                                </CardTitle>
+                            </div>
+                            <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
+                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                            </Badge>
+                        </div>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow p-6 pt-0">
-                      <div className="space-y-2">
-                        {categoryDetails && (
-                          <div className="flex items-center gap-2">
-                            {CategoryIconComponent && <CategoryIconComponent className="h-4 w-4 text-muted-foreground" />}
-                            <Badge variant="outline" className={categoryDetails.colorClasses}>
-                              {categoryDetails.label}
-                            </Badge>
-                          </div>
-                        )}
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <StarIcon className="h-5 w-5 mr-1.5 text-yellow-400 fill-yellow-400" />
-                          Recompensa: {template.starsReward} estrelas
+                       <div className="flex flex-wrap items-center gap-2 mb-4">
+                            {categoryDetails && (
+                                <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                    {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
+                                    {categoryDetails.label}
+                                </Badge>
+                            )}
+                            <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
+                            <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
                         </div>
-                        <div className="flex items-center text-sm text-muted-foreground">
-                          <BadgeCheck className="h-5 w-5 mr-1.5 text-blue-500" />
-                          Experiência (XP): {template.xpReward}
-                        </div>
-                      </div>
 
                       <div className="flex-grow" />
 
-                      <div className="pt-4">
+                      <div className="pt-2">
                         <Separator className="mb-3" />
                         <div className="space-y-2">
-                          <div className="flex justify-between items-center">
-                              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                                <Users className="h-4 w-4" />
-                                Atribuído a:
-                              </h4>
-                              <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
-                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                              </Badge>
-                          </div>
+                          <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                            <Users className="h-4 w-4" />
+                            Atribuído a:
+                          </h4>
                           {assignedChildren.length > 0 ? (
                               <div className="flex items-center space-x-2">
                                   <div className="flex -space-x-2">
@@ -499,3 +481,5 @@ export default function MissionsHubPage() {
         </Suspense>
     );
 }
+
+    
