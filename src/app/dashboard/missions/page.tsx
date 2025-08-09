@@ -191,7 +191,7 @@ function MissionsHubContent() {
   );
 
   const renderListView = () => (
-    <div className="space-y-2">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {filteredTemplates.map(renderMissionListItem)}
     </div>
   );
@@ -295,7 +295,7 @@ function MissionsHubContent() {
         <CardHeader className="p-4">
             <div className="flex justify-between items-start gap-2">
                <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
-                    {template.emoji && <span className="text-3xl mt-1">{template.emoji}</span>}
+                    <span className="text-3xl mt-1">{template.emoji}</span>
                     <CardTitle className="text-lg leading-tight line-clamp-2">
                     {template.title}
                     </CardTitle>
@@ -465,8 +465,7 @@ function MissionsHubContent() {
             </div>
         </div>
       
-      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
-        <div className="px-2 py-4 md:px-4 md:py-6">
+      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm px-2 py-4 md:px-6 md:py-6 sm:px-0">
           <div className="mb-4 flex items-center justify-between">
             <div>
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
@@ -493,7 +492,6 @@ function MissionsHubContent() {
           ) : (
             viewMode === 'grid' ? renderCardView() : renderListView()
           )}
-        </div>
       </div>
 
       {templateToDelete && (
