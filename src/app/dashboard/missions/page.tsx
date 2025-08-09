@@ -250,12 +250,19 @@ function MissionsHubContent() {
             </div>
         </div>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Missões do Catálogo</CardTitle>
-          <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
+        <div className="p-6 pt-0 md:pt-6">
+          <div className="md:hidden mb-4">
+              <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
+              <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
+          </div>
+          <div className="hidden md:block">
+              <CardHeader className="p-0 mb-6">
+                <CardTitle>Missões do Catálogo</CardTitle>
+                <CardDescription>Abaixo estão as missões que você já criou para {currentContextText}.</CardDescription>
+              </CardHeader>
+          </div>
+
           {filteredTemplates.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
               <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
@@ -273,7 +280,7 @@ function MissionsHubContent() {
                 
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-                    <CardHeader className="p-4">
+                    <CardHeader className="p-4 pb-2">
                         <div className="flex justify-between items-start gap-2">
                            <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
                                 {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
@@ -306,7 +313,7 @@ function MissionsHubContent() {
                         </div>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow p-4 pt-0">
-                       <div className="flex flex-wrap items-center gap-2 mb-4">
+                       <div className="flex flex-wrap items-center gap-2 mb-3">
                             {categoryDetails && (
                                 <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
                                     {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
@@ -317,10 +324,11 @@ function MissionsHubContent() {
                             <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
                         </div>
 
+                      <Separator className="mb-3"/>
+
                       <div className="flex-grow" />
 
-                      <div className="pt-2">
-                        <Separator className="mb-3" />
+                      <div className="pt-1">
                         <div className="flex items-center justify-between gap-2">
                           <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
                             <Users className="h-4 w-4" />
@@ -375,8 +383,8 @@ function MissionsHubContent() {
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
@@ -458,3 +466,5 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
+
+    
