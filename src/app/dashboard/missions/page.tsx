@@ -273,11 +273,11 @@ function MissionsHubContent() {
                 
                 return (
                   <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-                    <CardHeader>
+                    <CardHeader className="p-4">
                         <div className="flex justify-between items-start gap-2">
                            <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
                                 {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
-                                <CardTitle className="text-xl line-clamp-2">
+                                <CardTitle className="text-lg leading-tight line-clamp-2">
                                 {template.title}
                                 </CardTitle>
                             </div>
@@ -305,7 +305,7 @@ function MissionsHubContent() {
                             </DropdownMenu>
                         </div>
                     </CardHeader>
-                    <CardContent className="flex flex-col flex-grow p-6 pt-0">
+                    <CardContent className="flex flex-col flex-grow p-4 pt-0">
                        <div className="flex flex-wrap items-center gap-2 mb-4">
                             {categoryDetails && (
                                 <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
