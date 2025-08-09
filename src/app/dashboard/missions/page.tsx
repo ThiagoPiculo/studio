@@ -189,7 +189,7 @@ function MissionsHubContent() {
   return (
     <div className="space-y-6">
         <div className="flex flex-col gap-4">
-            <CardHeader className="px-0 pt-0">
+            <div className="px-0 pt-0">
                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-2">
                         <Target className="h-8 w-8 text-primary" />
@@ -249,12 +249,12 @@ function MissionsHubContent() {
                         </Link>
                     </Button>
                 </div>
-            </CardHeader>
+            </div>
         </div>
       
-      <div className="md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm">
-        <div className="md:p-6 px-0 md:px-2">
-          <div className="mb-4 px-2 md:px-0">
+      <div className={cn("md:rounded-lg md:border md:bg-card md:text-card-foreground md:shadow-sm")}>
+        <div className="px-2 md:px-6 md:py-6">
+          <div className="mb-4">
               <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
               <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
           </div>
@@ -279,7 +279,7 @@ function MissionsHubContent() {
                     <CardHeader className="p-4">
                         <div className="flex justify-between items-start gap-2">
                            <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
-                                {template.emoji && <span className="text-2xl mt-1">{template.emoji}</span>}
+                                {template.emoji && <span className="text-3xl mt-1">{template.emoji}</span>}
                                 <CardTitle className="text-lg leading-tight line-clamp-2">
                                 {template.title}
                                 </CardTitle>
