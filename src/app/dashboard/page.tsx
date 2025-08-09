@@ -34,7 +34,11 @@ function DashboardRootPageContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
 
-    const hasChildrenInAnyContext = useMemo(() => contextData.some(cd => cd.children.length > 0), [contextData]);
+    const hasChildrenInMySpace = useMemo(() => {
+        const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
+        return (mySpaceData?.children.length || 0) > 0;
+    }, [contextData]);
+
     const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
   
     const fetchData = useCallback(async () => {
@@ -73,12 +77,24 @@ function DashboardRootPageContent() {
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
+    
+    useEffect(() => {
+        if (!isLoading && !authLoading && !isFamilyLoading) {
+            const isNewUser = !hasChildrenInMySpace && !hasAlliances;
+            if (isNewUser) {
+                // Already showing GettingStartedGuide, no redirect needed
+            } else if (hasChildrenInMySpace && !hasAlliances) {
+                router.replace('/dashboard/heroes');
+            }
+            // For other cases, we stay on this page to let the user choose.
+        }
+    }, [isLoading, authLoading, isFamilyLoading, hasChildrenInMySpace, hasAlliances, router]);
 
     if (authLoading || isFamilyLoading || isLoading) {
         return <Loading />;
     }
   
-    const isNewUserExperience = !hasChildrenInAnyContext && !hasAlliances;
+    const isNewUserExperience = !hasChildrenInMySpace && !hasAlliances;
 
     if (isNewUserExperience) {
         return (

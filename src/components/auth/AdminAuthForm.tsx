@@ -134,7 +134,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
 
         const userProfile = await signInAdmin(email, password);
         toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
-        router.push("/dashboard/heroes?initial_load=true");
+        router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         const userProfile = await signUpAdmin(name, email, password);
@@ -153,7 +153,7 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         } else {
           toast({ title: "Sua Central de Mini Herois Foi Criada!", description: "Que comecem as grandes aventuras no Mini Herois!" });
         }
-        router.push("/dashboard/heroes?initial_load=true");
+        router.push("/dashboard");
       }
     } catch (error: any) {
       console.error(`${mode} failed:`, error);

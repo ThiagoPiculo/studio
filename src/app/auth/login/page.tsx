@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       await loginWithGoogle();
       toast({ title: "Boas-vindas!", description: "Sua aventura continua." });
-      router.push("/dashboard/heroes?initial_load=true");
+      router.push("/dashboard");
     } catch (error: any) {
       // The error for popup closed by user is handled in the auth function itself
       if (error.code !== 'auth/popup-closed-by-user') {
