@@ -11,7 +11,7 @@ import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info, HelpCircle, Copy } from 'lucide-react';
+import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -58,14 +58,14 @@ function AlliancesPageClient() {
     const { toast } = useToast();
 
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-    const [allianceToInvite, setAllianceToInvite] = useState<{ id: string, name: string } | null>(null);
+    const [allianceToInvite, setAllianceToInvite] = useState<{ id: string, name: string, inviteCode: string } | null>(null);
 
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code);
         toast({ title: "Código Copiado!", description: "Pronto para chamar reforços!" });
     };
     
-    const handleInviteClick = (alliance: { id: string, name: string }) => {
+    const handleInviteClick = (alliance: { id: string, name: string, inviteCode: string }) => {
         setAllianceToInvite(alliance);
         setIsInviteDialogOpen(true);
     };
@@ -238,6 +238,7 @@ function AlliancesPageClient() {
                     onOpenChange={setIsInviteDialogOpen}
                     familyId={allianceToInvite.id}
                     familyName={allianceToInvite.name}
+                    inviteCode={allianceToInvite.inviteCode}
                 />
             )}
         </>

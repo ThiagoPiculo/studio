@@ -21,8 +21,10 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { createFamilyInvitation } from '@/lib/firebase/firestore';
-import { Loader2, UserPlus, Copy, Link as LinkIcon, AlertCircle } from 'lucide-react';
+import { Loader2, UserPlus, Copy, Link as LinkIcon, Info } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 const inviteFormSchema = z.object({
   email: z.string().email({ message: "Por favor, insira um e-mail válido." }),
@@ -112,9 +114,26 @@ export function InviteMemberDialog({
       <DialogContent>
         <DialogHeader>
           <DialogTitle>Convidar para a Aliança "{familyName}"</DialogTitle>
-          <DialogDescription>
-            Adicione um novo colaborador por e-mail ou compartilhe o código de convite.
-          </DialogDescription>
+           <div className="flex items-center gap-2">
+                <DialogDescription>
+                    Adicione um colaborador por e-mail ou código.
+                </DialogDescription>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="link" size="icon" className="h-5 w-5 text-muted-foreground"><Info className="h-4 w-4"/></Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 space-y-3">
+                        <h4 className="font-medium leading-none">Como Convidar?</h4>
+                        <div className="text-sm text-muted-foreground space-y-2">
+                          <p><b>1. Convite por E-mail (Recomendado):</b> Use se a pessoa já tem conta no Mini Herois. Ela receberá uma notificação para aceitar.</p>
+                          <p><b>2. Convite por Código ou Link:</b> Ideal para novos usuários. Envie o link ou código para eles. Você precisará aprovar a entrada deles na sua aliança depois que se cadastrarem.</p>
+                        </div>
+                        <PopoverClose asChild>
+                            <Button className="w-full">Entendi 👍</Button>
+                        </PopoverClose>
+                    </PopoverContent>
+                </Popover>
+           </div>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-2">
