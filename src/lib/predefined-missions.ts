@@ -1,6 +1,6 @@
 
 import type { MissionCategory } from '@/lib/types';
-import { Home, School, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon } from 'lucide-react';
+import { Home, School, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
   title: string;
@@ -18,6 +18,23 @@ export interface PredefinedMissionGroup {
 }
 
 export const predefinedMissionGroups: PredefinedMissionGroup[] = [
+  {
+    userCategory: 'Rotina Base',
+    icon: ListChecks,
+    description: 'Missões essenciais que formam a espinha dorsal de um dia produtivo e saudável para qualquer Mini Herói.',
+    items: [
+      { title: 'Hora de acordar', emoji: '☀️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar café da manhã', emoji: '🥣', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes após acordar', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Almoçar', emoji: '🍝', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes após almoço', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar banho antes da escola', emoji: '🚿', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Sair para escola', emoji: '🏫', suggestedAppCategory: 'school', starsReward: 5, xpReward: 10 },
+      { title: 'Jantar', emoji: '🍲', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes após jantar', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+    ],
+  },
   {
     userCategory: 'Casa',
     icon: Home,
