@@ -49,12 +49,12 @@ export function FamilyContextSwitcher() {
             <div className="flex w-full items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Icon className="h-4 w-4 shrink-0" />
-                    <span className="font-semibold">Trocar de espaço</span>
+                    <span className="font-semibold">{getDisplayName(currentContextData)}</span>
                 </div>
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </div>
             <span className="text-xs text-muted-foreground truncate pl-6">
-               {getDisplayName(currentContextData)}
+               Trocar de espaço
             </span>
         </Button>
       </DropdownMenuTrigger>
