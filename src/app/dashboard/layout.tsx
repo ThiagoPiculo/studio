@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
-import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
+import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { UserNav } from '@/components/layout/UserNav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -108,6 +108,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </div>
             
             <SheetContent side="right" className="p-0">
+                <SheetHeader className="p-4 border-b">
+                    <SheetTitle>Perfil e Contexto</SheetTitle>
+                    <SheetDescription>
+                        Gerencie seu perfil, troque de aliança ou saia da sua conta.
+                    </SheetDescription>
+                </SheetHeader>
                 <div className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground">
                     <UserNav />
                 </div>
