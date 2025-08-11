@@ -14,6 +14,8 @@ import { Reports } from '@/components/dashboard/dashboard/Reports';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { Button } from '@/components/ui/button';
+import { RecentActivities } from './RecentActivities';
+
 
 interface DashboardClientPageProps {
     initialData: {
@@ -81,10 +83,14 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
           <ProgressAnalysis childrenProfiles={selectedChildData.children} missionInstances={selectedChildData.missions} />
-          <RecentMedals childrenProfiles={selectedChildData.children} />
+          <RecentActivities
+            childrenProfiles={selectedChildData.children}
+            missionInstances={selectedChildData.missions}
+          />
         </div>
         <div className="space-y-6">
           <UnlockedRewards childrenProfiles={selectedChildData.children} rewardTemplates={selectedChildData.rewards} />
+          <RecentMedals childrenProfiles={selectedChildData.children} />
           <Reports />
         </div>
       </div>

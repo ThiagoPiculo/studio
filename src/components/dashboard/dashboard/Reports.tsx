@@ -27,12 +27,12 @@ export function Reports() {
             <FileText className="text-chart-4" />
             Relatórios
         </CardTitle>
-        <CardDescription>Exporte relatórios de desempenho e evolução para compartilhar e comemorar.</CardDescription>
+        <CardDescription>Exporte o progresso dos seus heróis para compartilhar e comemorar.</CardDescription>
       </CardHeader>
       <CardContent>
         <Button onClick={handleExport} variant="secondary" className="w-full" disabled={isLoading}>
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileText className="mr-2 h-4 w-4" />}
-          Gerar PDF de Rotinas (Em Breve)
+          Gerar Relatório em PDF (Em Breve)
         </Button>
       </CardContent>
     </Card>
