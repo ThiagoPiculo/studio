@@ -40,6 +40,11 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const isMobile = useIsMobile();
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleBackClick = () => {
     router.back();
@@ -53,7 +58,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col" style={{ minHeight: '100svh' }}>
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
-                {isMobile && (
+                {isClient && isMobile && (
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                       <ArrowLeft className="h-4 w-4" />
                       <span className="sr-only">Voltar</span>
@@ -68,7 +73,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </div>
             </header>
             <DashboardMainContent>{children}</DashboardMainContent>
-            {isMobile && <BottomNavbar />}
+            {isClient && isMobile && <BottomNavbar />}
             <Footer />
           </div>
         </SidebarInset>
