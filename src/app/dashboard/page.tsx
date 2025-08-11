@@ -36,6 +36,7 @@ interface ContextData {
 function ContextCard({ contextData, isMobile, viewMode }: { contextData: ContextData, isMobile: boolean, viewMode: 'grid' | 'list' }) {
     const { context, children, members } = contextData;
     const { user } = useAuth();
+    const { setCurrentContext } = useFamily();
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -43,11 +44,8 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
 
     const handleHeaderClick = () => {
         const targetPath = isMySpaceAndEmpty ? '/dashboard/novo-heroi' : `/dashboard/heroes`;
-        if (context.id !== 'my-space') {
-          router.push(`${targetPath}?contextId=${context.id}`);
-        } else {
-          router.push(targetPath);
-        }
+        setCurrentContext(context.id);
+        router.push(targetPath);
     };
     
     const Icon = context.id === 'my-space' ? Home : LinkIcon;
