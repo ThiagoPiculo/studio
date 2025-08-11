@@ -43,14 +43,21 @@ function DashboardRootPageContent() {
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+    
+    const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
 
-    const hasChildrenInMySpace = useMemo(() => {
-        const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
-        return (mySpaceData?.children.length || 0) > 0;
+    const mySpaceData = useMemo(() => {
+        return contextData.find(cd => cd.context.id === 'my-space');
     }, [contextData]);
 
-    const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
-    
+    const hasChildrenInMySpace = useMemo(() => {
+        return (mySpaceData?.children.length || 0) > 0;
+    }, [mySpaceData]);
+
+    const mySpaceIsEmptyButHasAlliances = useMemo(() => {
+        return mySpaceData?.children.length === 0 && hasAlliances;
+    }, [mySpaceData, hasAlliances]);
+
     const defaultOpenAccordionItems = useMemo(() => {
         if (isMobile) {
             return contextData
@@ -97,24 +104,12 @@ function DashboardRootPageContent() {
         router.push('/dashboard/heroes');
     };
     
-    useEffect(() => {
-        if (!isLoading && !authLoading && !isFamilyLoading) {
-            const isNewUser = !hasChildrenInMySpace && !hasAlliances;
-            if (isNewUser) {
-                // Already showing GettingStartedGuide, no redirect needed
-            } else if (hasChildrenInMySpace && !hasAlliances) {
-                // router.replace('/dashboard/heroes');
-            }
-            // For other cases, we stay on this page to let the user choose.
-        }
-    }, [isLoading, authLoading, isFamilyLoading, hasChildrenInMySpace, hasAlliances, router]);
-
+    const isNewUserExperience = !isLoading && !authLoading && !isFamilyLoading && !hasChildrenInMySpace && !hasAlliances;
+    
     if (authLoading || isFamilyLoading || isLoading) {
         return <Loading />;
     }
   
-    const isNewUserExperience = !hasChildrenInMySpace && !hasAlliances;
-    
     if (isNewUserExperience) {
         return (
             <GettingStartedGuide 
@@ -124,9 +119,6 @@ function DashboardRootPageContent() {
             />
         );
     }
-
-    const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
-    const mySpaceIsEmptyButHasAlliances = mySpaceData?.children.length === 0 && hasAlliances;
     
     const renderContextCard = (context: ContextData['context'], children: ContextData['children'], members: ContextData['members']) => {
         const Icon = context.id === 'my-space' ? Home : LinkIcon;
@@ -201,7 +193,24 @@ function DashboardRootPageContent() {
             return (
                  <AccordionItem value={context.id} key={context.id} className="border bg-card rounded-lg shadow-sm">
                     <AccordionTrigger className="p-4 hover:no-underline">
-                        {cardHeaderContent}
+                        <div className="flex flex-col items-start w-full gap-2">
+                            <div className="flex items-center gap-3">
+                                <Icon className="h-5 w-5 text-muted-foreground mt-0.5" />
+                                <CardTitle>{context.name}</CardTitle>
+                            </div>
+                            <div className="flex items-center -space-x-2 pl-8">
+                                {children.length > 0 ? (
+                                    children.map(child => (
+                                        <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
+                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                            <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                    ))
+                                ) : (
+                                     <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
+                                )}
+                            </div>
+                        </div>
                     </AccordionTrigger>
                     <AccordionContent className="p-4 pt-0">
                         {cardBodyContent}
@@ -281,14 +290,13 @@ function DashboardRootPageContent() {
         if (isMobile) {
             return (
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={defaultOpenAccordionItems}>
-                    {mySpaceIsEmptyButHasAlliances ? (
-                         <AccordionItem value="getting-started" className="border-none p-0">
-                            <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
-                        </AccordionItem>
-                    ) : (
-                        mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)
-                    )}
+                    {mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)}
                     {allianceContexts.map(({ context, children, members }) => renderContextCard(context, children, members))}
+                    {mySpaceIsEmptyButHasAlliances && (
+                        <div className="pt-4">
+                           <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
+                        </div>
+                    )}
                 </Accordion>
             );
         }
@@ -296,12 +304,13 @@ function DashboardRootPageContent() {
         return (
             <div className={cn(
                 "grid grid-cols-1 md:grid-cols-2 gap-6",
-                viewMode === 'list' && "space-y-4 grid-cols-1"
+                viewMode === 'list' && "grid-cols-1"
             )}>
-                 {mySpaceIsEmptyButHasAlliances ? (
-                     <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
-                 ) : (
-                    mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)
+                 {mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)}
+                 {mySpaceIsEmptyButHasAlliances && (
+                     <div className="md:col-span-2">
+                        <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
+                     </div>
                  )}
                  {allianceContexts.map(({ context, children, members }) => renderContextCard(context, children, members))}
             </div>
@@ -365,4 +374,3 @@ export default function DashboardRootPage() {
         </Suspense>
     );
 }
-
