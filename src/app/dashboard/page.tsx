@@ -50,6 +50,14 @@ function DashboardRootPageContent() {
     }, [contextData]);
 
     const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
+    
+    // Moved useMemo to be unconditional
+    const defaultOpenAccordionItems = useMemo(() => {
+        if (!isMobile) return [];
+        return contextData
+            .filter(cd => cd.context.id !== 'my-space' && cd.context.id !== 'getting-started') // Only alliances
+            .map(cd => cd.context.id);
+    }, [isMobile, contextData]);
   
     const fetchData = useCallback(async () => {
         if (!user) {
@@ -94,7 +102,7 @@ function DashboardRootPageContent() {
             if (isNewUser) {
                 // Already showing GettingStartedGuide, no redirect needed
             } else if (hasChildrenInMySpace && !hasAlliances) {
-                router.replace('/dashboard/heroes');
+                // router.replace('/dashboard/heroes');
             }
             // For other cases, we stay on this page to let the user choose.
         }
@@ -118,12 +126,6 @@ function DashboardRootPageContent() {
 
     const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
     const mySpaceIsEmptyButHasAlliances = mySpaceData?.children.length === 0 && hasAlliances;
-    
-    const defaultOpenAccordionItems = useMemo(() => {
-        return contextData
-            .filter(cd => cd.context.id !== 'my-space') // Only alliances
-            .map(cd => cd.context.id);
-    }, [contextData]);
     
     const renderContextCard = (context: ContextData['context'], children: ContextData['children'], members: ContextData['members']) => {
         const Icon = context.id === 'my-space' ? Home : LinkIcon;
@@ -365,4 +367,3 @@ export default function DashboardRootPage() {
         </Suspense>
     );
 }
-
