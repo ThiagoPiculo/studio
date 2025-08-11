@@ -95,6 +95,12 @@ export function AppSidebar() {
                             <span>Resumo do Dia</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                     <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
+                            <LayoutGrid className="text-chart-1" />
+                            <span>Painel de Progressos</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
                         <AccordionItem value="item-1" className="border-none">
@@ -106,12 +112,6 @@ export function AppSidebar() {
                                      <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
                                         <View className="text-chart-3" />
                                         <span>Visão Geral</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
-                                        <LayoutGrid className="text-chart-1" />
-                                        <span>Painel de Progressos</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                  <SidebarMenuItem>
