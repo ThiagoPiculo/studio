@@ -34,29 +34,33 @@ interface ContextData {
     members: UserProfile[];
 }
 
-function ContextCard({ contextData, isMobile }: { contextData: ContextData, isMobile: boolean }) {
+function ContextCard({ contextData, isMobile, viewMode }: { contextData: ContextData, isMobile: boolean, viewMode: 'grid' | 'list' }) {
     const { context, children, members } = contextData;
     const { user } = useAuth();
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const handleContextClick = (contextId: string) => {
-        router.push(`/dashboard/heroes?contextId=${contextId}`);
+    const isMySpaceAndEmpty = context.id === 'my-space' && children.length === 0;
+
+    const handleHeaderClick = () => {
+        const targetPath = isMySpaceAndEmpty ? '/dashboard' : `/dashboard/heroes`;
+        const query = context.id !== 'my-space' ? `?contextId=${context.id}` : '';
+        router.push(`${targetPath}${query}`);
     };
     
     const Icon = context.id === 'my-space' ? Home : LinkIcon;
     const roleInfo = context.id === 'my-space' 
       ? { label: 'Proprietário (sem colaboração)', description: 'Seu espaço pessoal para gerenciar os heróis que só você acompanha.' }
       : familyRoles.find(r => r.id === context.role);
-
+    
     const cardHeaderContent = (
          <div className="flex items-start justify-between w-full">
             <div className="flex items-center gap-3">
                 <Icon className="h-5 w-5 text-muted-foreground mt-1" />
                 <CardTitle className={isMobile ? "text-lg" : ""}>{context.name}</CardTitle>
             </div>
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleContextClick(context.id); }}>
-                Resumo do dia <ArrowRight className="ml-1 h-3 w-3" />
+            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
+                {isMySpaceAndEmpty ? "Começar a usar" : "Resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
             </Button>
         </div>
     );
@@ -85,7 +89,6 @@ function ContextCard({ contextData, isMobile }: { contextData: ContextData, isMo
     const expandedContent = (
       <div className="space-y-4 pt-4 border-t">
           <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-muted-foreground">Seu Papel</h4>
               <p className="font-semibold text-foreground/90">{roleInfo?.label}</p>
               <p className="text-xs text-muted-foreground">{roleInfo?.description}</p>
           </div>
@@ -125,7 +128,6 @@ function ContextCard({ contextData, isMobile }: { contextData: ContextData, isMo
         );
     }
     
-    // Desktop views
     if (viewMode === 'list') {
         return (
              <Card key={context.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center">
@@ -223,13 +225,19 @@ let viewMode: 'grid' | 'list' = 'grid'; // Define outside to persist across re-r
 
 function DashboardRootPageContent() {
     const { user, loading: authLoading } = useAuth();
-    const { availableContexts, setCurrentContext, isLoading: isFamilyLoading } = useFamily();
+    const { availableContexts, isLoading: isFamilyLoading } = useFamily();
     const router = useRouter();
     const isMobile = useIsMobile();
     
     const [localViewMode, setLocalViewMode] = useState(viewMode);
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
+
+    const defaultOpenAccordionItems = useMemo(() => {
+        return contextData
+            .filter(cd => cd.context.id !== 'my-space')
+            .map(cd => cd.context.id);
+    }, [contextData]);
 
     useEffect(() => {
         viewMode = localViewMode;
@@ -258,6 +266,10 @@ function DashboardRootPageContent() {
                 let members: UserProfile[] = [];
                 if (context.id !== 'my-space') {
                     members = await getFamilyMembers(context.id);
+                } else {
+                    if (user) {
+                        members = [user as UserProfile];
+                    }
                 }
                 return { context, children, members };
             });
@@ -296,17 +308,13 @@ function DashboardRootPageContent() {
     const renderContent = () => {
         const mySpaceContext = contextData.find(cd => cd.context.id === 'my-space');
         const allianceContexts = contextData.filter(cd => cd.context.id !== 'my-space');
-        
-        const sortedContexts = [
-            ...(mySpaceContext ? [mySpaceContext] : []),
-            ...allianceContexts,
-        ];
 
         if (isMobile) {
             return (
                 <div className="space-y-4">
-                    {sortedContexts.map(cd => (
-                        <ContextCard key={cd.context.id} contextData={cd} isMobile={true} />
+                    {mySpaceContext && <ContextCard key={mySpaceContext.context.id} contextData={mySpaceContext} isMobile={true} viewMode={localViewMode} />}
+                    {allianceContexts.map(cd => (
+                        <ContextCard key={cd.context.id} contextData={cd} isMobile={true} viewMode={localViewMode}/>
                     ))}
                     {mySpaceIsEmptyButHasAlliances && (
                         <div className="pt-4">
@@ -322,13 +330,13 @@ function DashboardRootPageContent() {
                 "grid grid-cols-1 md:grid-cols-2 gap-6",
                 localViewMode === 'list' && "grid-cols-1"
             )}>
-                 {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={false} />}
+                 {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={false} viewMode={localViewMode} />}
                  {mySpaceIsEmptyButHasAlliances && (
                      <div className="md:col-span-2">
                         <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
                      </div>
                  )}
-                 {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={false} />)}
+                 {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={false} viewMode={localViewMode} />)}
             </div>
         );
     }
