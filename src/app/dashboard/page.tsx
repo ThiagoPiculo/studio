@@ -173,7 +173,7 @@ function DashboardRootPageContent() {
                     </CardContent>
                     <CardFooter className="p-2 md:p-6 md:pl-2">
                          <Button variant="ghost" className="w-full justify-center" onClick={() => handleContextClick(context.id)}>
-                            Acessar <ArrowRight className="ml-2 h-4 w-4" />
+                            Resumo do dia <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </CardFooter>
                 </Card>
@@ -206,7 +206,7 @@ function DashboardRootPageContent() {
                             <CardTitle>{context.name}</CardTitle>
                         </div>
                          <Button variant="link" className="p-0 h-auto text-sm" onClick={() => handleContextClick(context.id)}>
-                            Acessar <ArrowRight className="ml-1 h-4 w-4" />
+                            Resumo do dia <ArrowRight className="ml-1 h-4 w-4" />
                         </Button>
                     </div>
                     <CardDescription className="pt-1 text-xs">
