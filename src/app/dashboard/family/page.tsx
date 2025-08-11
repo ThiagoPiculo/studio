@@ -738,7 +738,7 @@ function FamilyPageContent() {
                       size="sm" 
                       variant="ghost" 
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={()={() => handleDeclineRequest(req.id)}
+                      onClick={() => handleDeclineRequest(req.id)}
                       disabled={isProcessingJoinRequest === req.id}
                     >
                       {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
@@ -747,7 +747,7 @@ function FamilyPageContent() {
                     <Button 
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
-                      onClick={()={() => handleApproveRequest(req.id)}
+                      onClick={() => handleApproveRequest(req.id)}
                       disabled={isProcessingJoinRequest === req.id}
                     >
                       {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-1 h-4 w-4" />}
@@ -779,7 +779,7 @@ function FamilyPageContent() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={()={() => handleResendInvitation(invite.id)}
+                      onClick={() => handleResendInvitation(invite.id)}
                       disabled={isProcessingInvitationAction === invite.id}
                     >
                        {isProcessingInvitationAction === invite.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <SendToBack className="mr-2 h-4 w-4" />}
@@ -788,7 +788,7 @@ function FamilyPageContent() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={()={() => handleCancelInvitation(invite.id)}
+                      onClick={() => handleCancelInvitation(invite.id)}
                       disabled={isProcessingInvitationAction === invite.id}
                     >
                        {isProcessingInvitationAction === invite.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
@@ -858,7 +858,7 @@ function FamilyPageContent() {
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
-                    <Button variant="link" className="p-0 h-auto" onClick={()={() => {}}>
+                    <Button variant="link" className="p-0 h-auto" onClick={() => {}}>
                         <Info className="mr-2 h-4 w-4"/> Como usar os convites?
                     </Button>
                 </div>
@@ -1520,5 +1520,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-
-    
