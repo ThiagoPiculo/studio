@@ -67,17 +67,17 @@ export function UserNav() {
   return (
     <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="w-full h-auto justify-between p-2">
+            <Button variant="ghost" className="w-full h-auto justify-between p-2 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:p-0 group-data-[collapsible=icon]:justify-center">
                 <div className="flex items-center gap-2 truncate">
                     <Avatar className="h-8 w-8">
                         <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
                         <AvatarFallback style={avatarColor ? {backgroundColor: avatarColor} : {}}>{getInitials(displayName)}</AvatarFallback>
                     </Avatar>
-                    <div className="truncate text-left">
+                    <div className="truncate text-left group-data-[collapsible=icon]:hidden">
                         <p className="font-semibold text-sm truncate">{displayName}</p>
                     </div>
                 </div>
-                <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden" />
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] mb-2" side="top" align="start">
