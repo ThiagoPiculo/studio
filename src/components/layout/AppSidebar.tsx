@@ -107,12 +107,6 @@ export function AppSidebar() {
                             <span>Painel de Progressos</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente" isActive={pathname.startsWith('/dashboard/assistente')}>
-                           <Sparkles className="text-chart-4" />
-                           <span>Assistente</span>
-                       </SidebarMenuButton>
-                   </SidebarMenuItem>
                     
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
                         <AccordionItem value="item-2" className="border-none">
@@ -132,6 +126,12 @@ export function AppSidebar() {
                                         <span>Novo Mini Heroi</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente de Criação" isActive={pathname.startsWith('/dashboard/assistente')}>
+                                       <Sparkles className="text-chart-4" />
+                                       <span>Assistente de Criação</span>
+                                   </SidebarMenuButton>
+                               </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
 
