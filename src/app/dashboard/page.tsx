@@ -101,10 +101,7 @@ function DashboardRootPageContent() {
     }
   
     const isNewUserExperience = !hasChildrenInMySpace && !hasAlliances;
-    const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
-    const mySpaceIsEmpty = !hasChildrenInMySpace && hasAlliances;
-
-
+    
     if (isNewUserExperience) {
         return (
             <GettingStartedGuide 
@@ -114,6 +111,9 @@ function DashboardRootPageContent() {
             />
         );
     }
+
+    const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
+    const mySpaceIsEmptyButHasAlliances = mySpaceData?.children.length === 0 && hasAlliances;
     
     const renderContextCard = (context: ContextData['context'], children: ContextData['children'], members: ContextData['members']) => {
         const Icon = context.id === 'my-space' ? Home : LinkIcon;
@@ -172,27 +172,10 @@ function DashboardRootPageContent() {
                         </div>
                     </CardContent>
                     <CardFooter className="p-2 md:p-6 md:pl-2">
-                         <Button variant="ghost" className="w-full justify-center" onClick={() => handleContextClick(context.id)}>
+                         <Button variant="link" className="w-full justify-center" onClick={() => handleContextClick(context.id)}>
                             Resumo do dia <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                     </CardFooter>
-                </Card>
-            );
-        }
-
-        // Grid View
-        if (mySpaceIsEmpty && context.id === 'my-space') {
-             return (
-                <Card key={context.id} className="shadow-lg bg-secondary/50 border-dashed flex flex-col items-center justify-center text-center p-6">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Home className="h-5 w-5 text-muted-foreground mt-1" /> Meu Espaço</CardTitle>
-                    </CardHeader>
-                    <CardContent className="flex-grow flex flex-col items-center justify-center">
-                        <p className="text-sm text-muted-foreground mb-4">Este é seu espaço para heróis que você gerencia individualmente. Parece que seus heróis estão em suas Alianças no momento!</p>
-                         <Link href="/dashboard/novo-heroi">
-                            <Button variant="outline"><PlusCircle className="mr-2 h-4 w-4" /> Criar Herói Pessoal</Button>
-                        </Link>
-                    </CardContent>
                 </Card>
             );
         }
@@ -258,7 +241,6 @@ function DashboardRootPageContent() {
                     <Home className="h-8 w-8 text-primary" />
                      <div>
                         <h2 className="text-3xl font-headline font-bold">Visão Geral dos Espaços</h2>
-                        <p className="text-muted-foreground">Acesse um espaço pessoal ou uma aliança para gerenciar seus heróis.</p>
                     </div>
                     <Popover>
                         <PopoverTrigger asChild>
@@ -300,7 +282,15 @@ function DashboardRootPageContent() {
                 ? "grid grid-cols-1 md:grid-cols-2 gap-6"
                 : "space-y-4"
             )}>
-                {contextData.map(({ context, children, members }) => renderContextCard(context, children, members))}
+                {contextData.map(({ context, children, members }) => {
+                    if (context.id === 'my-space' && mySpaceIsEmptyButHasAlliances) {
+                        return <GettingStartedGuide key="getting-started" hasChildren={false} hasMissions={false} hasRewards={false} />;
+                    }
+                    if (context.id === 'my-space' && children.length === 0 && !hasAlliances) {
+                        return null;
+                    }
+                    return renderContextCard(context, children, members)
+                })}
             </div>
         </div>
     );

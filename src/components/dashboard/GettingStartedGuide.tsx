@@ -10,6 +10,8 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { UserPlus, Target, Gift, CheckCircle, Circle, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 
 interface GettingStartedGuideProps {
   hasChildren: boolean;
@@ -47,14 +49,23 @@ function Step({ isComplete, title, href, icon: Icon }: StepProps) {
 
 
 export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: GettingStartedGuideProps) {
+  const { user } = useAuth();
+  const { availableContexts } = useFamily();
   const [isVisible, setIsVisible] = useState(false);
   
+  const hasAlliances = availableContexts.length > 1;
+
   useEffect(() => {
+    // This logic is simplified. It shows if the user is new OR if they are in an alliance but have no personal heroes.
+    const isNewUser = !hasChildren && !hasAlliances;
+    const isEmptyPersonalSpace = hasAlliances && !hasChildren;
+    
+    // Check if dismissed only if it's not the "empty personal space" scenario which should always appear
     const dismissed = localStorage.getItem('gettingStartedDismissed');
-    if (dismissed !== 'true') {
-      setIsVisible(true);
+    if (isEmptyPersonalSpace || (isNewUser && dismissed !== 'true')) {
+        setIsVisible(true);
     }
-  }, []);
+  }, [hasChildren, hasAlliances]);
 
   const handleDismiss = (dismissed: boolean) => {
     if (dismissed) {
@@ -66,7 +77,7 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   };
 
   const steps = [
-    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Heroi', href: '/dashboard/onboarding', icon: UserPlus },
+    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Heroi', href: '/dashboard/novo-heroi', icon: UserPlus },
     { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: Target },
     { name: 'rewards', complete: hasRewards, title: 'Crie sua primeira Recompensa', href: '/dashboard/rewards/new', icon: Gift },
   ];
@@ -74,16 +85,26 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const completedSteps = steps.filter(step => step.complete).length;
   const progress = (completedSteps / steps.length) * 100;
   
-  if (!isVisible || completedSteps === steps.length) {
+  if (!isVisible && !hasAlliances) {
     return null;
   }
+  
+  const isForEmptyPersonalSpace = hasAlliances && !hasChildren;
+
+  if (!isVisible) return null;
+
 
   return (
     <Card className="shadow-lg overflow-hidden">
       <CardHeader>
-        <CardTitle className="text-2xl font-headline">Primeiros Passos</CardTitle>
+        <CardTitle className="text-2xl font-headline">
+          {isForEmptyPersonalSpace ? 'Comece a Usar seu Espaço Pessoal' : 'Primeiros Passos'}
+        </CardTitle>
         <CardDescription>
-          Siga estes passos para configurar sua central de missões e começar a aventura!
+          {isForEmptyPersonalSpace
+            ? "Seus Mini Heróis estão em suas Alianças. Para 'cuidar solo' de seus heróis, comece por aqui!"
+            : "Siga estes passos para configurar sua central de missões e começar a aventura!"
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -102,12 +123,14 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
             />
           ))}
         </div>
-        <div className="flex items-center space-x-2 pt-2">
-          <Checkbox id="dismiss-guide" onCheckedChange={handleDismiss} />
-          <Label htmlFor="dismiss-guide" className="text-sm font-normal text-muted-foreground">
-            Não exibir mais esta seção.
-          </Label>
-        </div>
+        {!isForEmptyPersonalSpace && (
+             <div className="flex items-center space-x-2 pt-2">
+                <Checkbox id="dismiss-guide" onCheckedChange={handleDismiss} />
+                <Label htmlFor="dismiss-guide" className="text-sm font-normal text-muted-foreground">
+                    Não exibir mais esta seção.
+                </Label>
+            </div>
+        )}
       </CardContent>
     </Card>
   );
