@@ -2,21 +2,13 @@
 "use client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { familyRoles } from "@/lib/types";
-import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield, ChevronsUpDown } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
+import { Separator } from "../ui/separator";
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
@@ -48,82 +40,80 @@ export function UserNav() {
   }
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="w-full justify-start gap-2 p-2 text-left h-auto group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:justify-center">
-              <Avatar
-                className="h-8 w-8 flex-shrink-0"
-                style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
-              >
-                {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
-                <AvatarFallback
-                  className="font-bold text-xs"
-                  style={avatarColor ? { backgroundColor: avatarColor } : {}}
-                >
-                  {getInitials(displayName)}
-                </AvatarFallback>
-              </Avatar>
-              <div className="truncate group-data-[collapsible=icon]:hidden flex-grow">
-                  <p className="text-sm font-medium leading-tight">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
-                  {displayEmail && <p className="text-xs leading-tight text-muted-foreground">{displayEmail}</p>}
-              </div>
-              <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0 group-data-[collapsible=icon]:hidden" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56" align="end" forceMount>
-          <DropdownMenuLabel className="font-normal">
-            {currentAlliance && roleLabel ? (
-              <div className="text-xs text-muted-foreground">
-                  <div className="flex items-center gap-1.5">
-                      <LinkIcon className="h-3 w-3" />
-                      <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
-                  </div>
-                   <div className="flex items-center gap-1.5 mt-1">
-                      <Shield className="h-3 w-3" />
-                      <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
-                  </div>
-              </div>
-            ) : (
-               <div className="text-xs text-muted-foreground">
-                  <p>Você está no seu espaço pessoal.</p>
-               </div>
-            )}
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuGroup>
-            {!isChildAuthenticated && user && (
-              <>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/dashboard/profile">
-                    <UserCircle className="mr-2 h-4 w-4" />
-                    <span>Perfil</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/dashboard/settings">
-                    <Settings className="mr-2 h-4 w-4" />
-                    <span>Configurações</span>
-                  </Link>
-                </DropdownMenuItem>
-              </>
-            )}
-             {isChildAuthenticated && childProfile && (
-              <DropdownMenuItem asChild className="cursor-pointer">
-                <Link href={`/dashboard/mural?childId=${childProfile.id}`}>
-                  <Rocket className="mr-2 h-4 w-4" />
-                  <span>Minha Página de Heroi</span>
+    <div className="flex flex-col h-full p-4 space-y-4">
+      <div className="flex items-center gap-3">
+        <Avatar
+            className="h-12 w-12 flex-shrink-0"
+            style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
+        >
+            {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
+            <AvatarFallback
+            className="font-bold"
+            style={avatarColor ? { backgroundColor: avatarColor } : {}}
+            >
+            {getInitials(displayName)}
+            </AvatarFallback>
+        </Avatar>
+        <div className="truncate">
+            <p className="text-base font-semibold leading-tight">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
+            {displayEmail && <p className="text-sm leading-tight text-muted-foreground">{displayEmail}</p>}
+        </div>
+      </div>
+      
+      <Separator/>
+
+      <div className="text-sm">
+        {currentAlliance && roleLabel ? (
+            <div className="space-y-2 text-muted-foreground">
+                <div className="flex items-center gap-2">
+                    <LinkIcon className="h-4 w-4" />
+                    <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <Shield className="h-4 w-4" />
+                    <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
+                </div>
+            </div>
+        ) : (
+            <div className="text-sm text-muted-foreground">
+                <p>Você está no seu espaço pessoal.</p>
+            </div>
+        )}
+      </div>
+
+      <Separator/>
+      
+      <nav className="flex flex-col gap-2 flex-grow">
+          {!isChildAuthenticated && user && (
+            <>
+                <Link href="/dashboard/profile" passHref>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                        <UserCircle className="h-5 w-5" />
+                        <span>Meu Perfil</span>
+                    </Button>
                 </Link>
-              </DropdownMenuItem>
-             )}
-          </DropdownMenuGroup>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={handleLogoutClick} className="cursor-pointer text-destructive focus:text-destructive-foreground focus:bg-destructive">
-            <LogOut className="mr-2 h-4 w-4" />
-            <span>Sair</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+                <Link href="/dashboard/settings" passHref>
+                    <Button variant="ghost" className="w-full justify-start gap-2">
+                        <Settings className="h-5 w-5" />
+                        <span>Configurações</span>
+                    </Button>
+                </Link>
+            </>
+          )}
+          {isChildAuthenticated && childProfile && (
+            <Link href={`/dashboard/mural?childId=${childProfile.id}`} passHref>
+                <Button variant="ghost" className="w-full justify-start gap-2">
+                    <Rocket className="h-5 w-5" />
+                    <span>Minha Página de Heroi</span>
+                </Button>
+            </Link>
+          )}
+      </nav>
+      
+      <Button variant="destructive" onClick={handleLogoutClick} className="w-full mt-auto">
+        <LogOut className="mr-2 h-4 w-4" />
+        Sair
+      </Button>
+    </div>
   );
 }
