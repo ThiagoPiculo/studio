@@ -181,7 +181,7 @@ export function AppSidebar() {
                                 <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/family" tooltip="Criar ou Entrar em Aliança">
                                         <PlusCircle className="text-primary" />
-                                        <span>Criar ou Entrar</span>
+                                        <span>Criar ou Entrar em Aliança</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {isInAnyAlliance && (
