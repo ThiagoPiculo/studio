@@ -25,7 +25,7 @@ export function FamilySwitcherClient({ contextId, action }: FamilySwitcherClient
 
     return (
         <Button onClick={handleClick} disabled={isLoading}>
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <>Ver Detalhes <ArrowRight className="ml-2 h-4 w-4" /></>}
+             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <>Gerenciar Aliança <ArrowRight className="ml-2 h-4 w-4" /></>}
         </Button>
     )
 }
