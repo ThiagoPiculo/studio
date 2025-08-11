@@ -10,14 +10,15 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Home, ChevronsUpDown, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Home, ChevronsUpDown, Loader2, Link as LinkIcon, Check } from 'lucide-react';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { useState, useEffect, useMemo } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
-import { getInitials } from '@/lib/utils';
+import { getInitials, cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 
 
@@ -75,7 +76,7 @@ export function FamilyContextSwitcher() {
   const getDisplayName = (context?: { id: string; name: string }) => {
     if (!context) return "Carregando...";
     if (context.id === 'my-space') return context.name;
-    return context.name; // Removed "Aliança: " prefix
+    return context.name;
   }
 
   const Icon = currentContext === 'my-space' ? Home : LinkIcon;
@@ -96,18 +97,21 @@ export function FamilyContextSwitcher() {
             </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
+      <DropdownMenuContent className="w-80" align="start">
         <DropdownMenuLabel>Espaços que Acesso</DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuRadioGroup value={currentContext} onValueChange={handleContextChange}>
-          {availableContexts.map((context) => {
+        {availableContexts.map((context) => {
             const childrenInContext = childrenByContext[context.id];
+            const isSelected = context.id === currentContext;
             return (
-                <DropdownMenuRadioItem key={context.id} value={context.id} className="cursor-pointer h-auto py-2">
+                <DropdownMenuItem key={context.id} onSelect={() => handleContextChange(context.id)} className="cursor-pointer h-auto py-2 data-[highlighted]:bg-accent/50" textValue={context.name}>
                     <div className="flex flex-col gap-1.5 w-full">
-                       <div className="flex items-center gap-2">
-                            {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <LinkIcon className="h-4 w-4 text-chart-4" />}
-                            <span className="font-medium">{getDisplayName(context)}</span>
+                       <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <LinkIcon className="h-4 w-4 text-chart-4" />}
+                                <span className="font-medium">{getDisplayName(context)}</span>
+                            </div>
+                            {isSelected && <Check className="h-4 w-4 text-primary" />}
                         </div>
                         <div className="pl-6 flex items-center gap-2">
                             <span className="text-xs text-muted-foreground whitespace-nowrap">Mini Herois:</span>
@@ -134,10 +138,9 @@ export function FamilyContextSwitcher() {
                             )}
                         </div>
                     </div>
-                </DropdownMenuRadioItem>
+                </DropdownMenuItem>
             )
           })}
-        </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>
   );
