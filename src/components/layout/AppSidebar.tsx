@@ -127,11 +127,11 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente de Criação" isActive={pathname.startsWith('/dashboard/assistente')}>
-                                       <Sparkles className="text-chart-4" />
-                                       <span>Assistente de Criação</span>
-                                   </SidebarMenuButton>
-                               </SidebarMenuItem>
+                                     <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente de Criação" isActive={pathname.startsWith('/dashboard/assistente')}>
+                                        <Sparkles className="text-chart-4" />
+                                        <span>Assistente de Criação</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
 
@@ -192,9 +192,9 @@ export function AppSidebar() {
                                 </SidebarMenuItem>
                                 {isInAnyAlliance && (
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton href="/dashboard/alliances" tooltip="Ver Minhas Alianças" isActive={pathname.startsWith('/dashboard/alliances')}>
+                                        <SidebarMenuButton href="/dashboard/alliances" tooltip="Minhas Alianças" isActive={pathname.startsWith('/dashboard/alliances')}>
                                             <Users className="text-primary" />
-                                            <span>Ver Alianças</span>
+                                            <span>Minhas Alianças</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
                                 )}
