@@ -29,6 +29,7 @@ type AllianceDetails = {
   role: FamilyRole | 'Personal' | null;
   members: UserProfile[];
   children: ChildProfile[];
+  owner: UserProfile | null;
 };
 
 function FamilySwitcherClient({ contextId, action }: { contextId: string; action: 'details' }) {
@@ -97,13 +98,15 @@ function AlliancesPageClient() {
                         getChildProfilesByFamily(context.id),
                         getFamilyById(context.id)
                     ]);
+                    const owner = members.find(m => m.uid === familyDetails?.ownerId) || null;
                     return {
                         id: context.id,
                         name: context.name,
                         inviteCode: familyDetails?.inviteCode || '------',
                         role: context.role || null,
                         members,
-                        children
+                        children,
+                        owner
                     };
                 });
                 const results = await Promise.all(detailsPromises);
@@ -168,6 +171,8 @@ function AlliancesPageClient() {
                     <div className="grid md:grid-cols-2 gap-6">
                         {alliancesDetails.map(alliance => {
                         const roleInfo = familyRoles.find(r => r.id === alliance.role);
+                        const otherMembers = alliance.members.filter(m => m.uid !== alliance.owner?.uid);
+
                         return (
                             <Card key={alliance.id} className="flex flex-col">
                             <CardHeader className="flex-grow">
@@ -177,7 +182,7 @@ function AlliancesPageClient() {
                                 </CardTitle>
                                 <CardDescription className="flex items-center gap-2 text-xs pt-1">
                                     Cód. Convite: 
-                                    <span className="font-mono font-semibold text-foreground tracking-widest">{alliance.inviteCode}</span>
+                                    <span className="font-mono font-semibold text-foreground tracking-widest text-lg">{alliance.inviteCode}</span>
                                     <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleCopyCode(alliance.inviteCode)}>
                                         <Copy className="h-3.5 w-3.5" />
                                     </Button>
@@ -196,18 +201,6 @@ function AlliancesPageClient() {
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div>
-                                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
-                                    <div className="flex -space-x-2">
-                                        {alliance.members.map(member => (
-                                        <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                            <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                            <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                        </Avatar>
-                                        ))}
-                                    </div>
-                                </div>
-                                <Separator />
-                                <div>
                                     <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Herois</h4>
                                     <div className="flex -space-x-2">
                                         {alliance.children.map(child => (
@@ -217,6 +210,38 @@ function AlliancesPageClient() {
                                         </Avatar>
                                         ))}
                                         {alliance.children.length === 0 && <p className="text-xs text-muted-foreground italic">Nenhum herói nesta aliança ainda.</p>}
+                                    </div>
+                                </div>
+                                <Separator />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Proprietário</h4>
+                                        {alliance.owner ? (
+                                            <div className="flex items-center gap-2">
+                                                <Avatar className="h-8 w-8 border-2 border-background">
+                                                    <AvatarImage src={alliance.owner.avatarUrl ?? undefined} alt={alliance.owner.name || ''} />
+                                                    <AvatarFallback>{getInitials(alliance.owner.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <span className="text-sm font-medium truncate">{alliance.owner.name}</span>
+                                            </div>
+                                        ) : (
+                                            <p className="text-xs text-muted-foreground italic">Não definido</p>
+                                        )}
+                                    </div>
+                                    <div>
+                                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
+                                        <div className="flex -space-x-2">
+                                            {otherMembers.length > 0 ? (
+                                                otherMembers.map(member => (
+                                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
+                                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
+                                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                ))
+                                            ) : (
+                                                 <p className="text-xs text-muted-foreground italic">Nenhum.</p>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             </CardContent>
