@@ -43,7 +43,7 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
     const isMySpaceAndEmpty = context.id === 'my-space' && children.length === 0;
 
     const handleHeaderClick = () => {
-        const targetPath = isMySpaceAndEmpty ? '/dashboard/novo-heroi' : `/dashboard/heroes`;
+        const targetPath = isMySpaceAndEmpty ? '/dashboard/assistente' : `/dashboard/heroes`;
         setCurrentContext(context.id);
         router.push(targetPath);
     };
