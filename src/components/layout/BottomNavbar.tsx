@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, LayoutGrid, CalendarDays, Users, Menu } from 'lucide-react';
+import { Home, LayoutGrid, CalendarDays, Settings, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import type { ReactNode } from 'react';
@@ -14,11 +14,7 @@ const navItems = [
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
 
-interface BottomNavbarProps {
-    profileTrigger: ReactNode;
-}
-
-export function BottomNavbar({ profileTrigger }: BottomNavbarProps) {
+export function BottomNavbar() {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
 
@@ -45,7 +41,12 @@ export function BottomNavbar({ profileTrigger }: BottomNavbarProps) {
             </Link>
           );
         })}
-        {profileTrigger}
+        <Link href="/dashboard/settings" className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+            <Settings className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && 'text-purple-500')} />
+            <span className={cn("text-xs text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && "text-primary font-semibold")}>
+            Ajustes
+            </span>
+        </Link>
       </div>
     </div>
   );

@@ -68,21 +68,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const handleBackClick = () => {
     router.back();
   };
-  
-  const ProfileSheetTrigger = (
-      <SheetTrigger asChild>
-        <button
-            type="button"
-            className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group"
-        >
-            <Avatar className="h-6 w-6 mb-1">
-              <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
-              <AvatarFallback style={avatarColor ? {backgroundColor: avatarColor} : {}} className="text-xs">{getInitials(displayName)}</AvatarFallback>
-            </Avatar>
-            <span className="text-xs text-muted-foreground group-hover:text-primary">Perfil</span>
-        </button>
-      </SheetTrigger>
-  );
 
   return (
     <>
@@ -123,7 +108,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               <DashboardMainContent>{children}</DashboardMainContent>
-              {isClient && isMobile && <BottomNavbar profileTrigger={ProfileSheetTrigger} />}
+              {isClient && isMobile && <BottomNavbar />}
               <Footer />
             </div>
             
