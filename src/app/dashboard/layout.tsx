@@ -14,10 +14,12 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
+import { BottomNavbar } from '@/components/layout/BottomNavbar';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
     const { loading } = useAuth();
+    const isMobile = useIsMobile();
     
     if (loading) {
         return (
@@ -28,7 +30,7 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
     }
     
     return (
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300">
+        <main className={cn("flex-1 p-4 sm:p-6 lg:p-8 animate-in fade-in duration-300", isMobile && "pb-24")}>
             {children}
         </main>
     );
@@ -50,12 +52,13 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <div className="flex flex-col" style={{ minHeight: '100svh' }}>
             <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
               <div className="flex items-center gap-2 sm:gap-4">
-                <SidebarTrigger className="md:hidden" />
-                {isMobile && (
+                {isMobile ? (
                     <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                       <ArrowLeft className="h-4 w-4" />
                       <span className="sr-only">Voltar</span>
                     </Button>
+                ) : (
+                    <SidebarTrigger />
                 )}
                 <FamilyContextSwitcher />
                 <Separator orientation="vertical" className="h-6 hidden sm:block" />
@@ -66,6 +69,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </div>
             </header>
             <DashboardMainContent>{children}</DashboardMainContent>
+            {isMobile && <BottomNavbar />}
             <Footer />
           </div>
         </SidebarInset>

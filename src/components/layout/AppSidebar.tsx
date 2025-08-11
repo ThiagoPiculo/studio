@@ -20,12 +20,13 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 function AppLogo() {
@@ -75,6 +76,9 @@ export function AppSidebar() {
         }
         router.push(`/dashboard/family?action=${action}`);
     };
+    
+    const isMobile = useIsMobile();
+    const defaultAccordionValue = isMobile ? [] : ['item-1', 'item-2', 'item-3', 'item-4'];
 
     return (
         <Sidebar>
@@ -91,55 +95,49 @@ export function AppSidebar() {
                             <span>Resumo do Dia</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
-                     <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
-                            <View className="text-chart-3" />
-                            <span>Visão Geral</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
-                            <LayoutGrid className="text-chart-1" />
-                            <span>Painel de Progressos</span>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
                     
-                    <Accordion type="multiple" className="w-full" defaultValue={['item-1', 'item-2', 'item-3', 'item-4']}>
+                    <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
                         <AccordionItem value="item-1" className="border-none">
                             <CustomAccordionTrigger>
-                                Meus Mini Herois
+                               Análises
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/novo-heroi')}>
-                                        <UserPlus className="text-chart-2" />
-                                        <span>Novo Mini Heroi</span>
+                                     <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
+                                        <View className="text-chart-3" />
+                                        <span>Visão Geral</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                     <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
+                                        <LayoutGrid className="text-chart-1" />
+                                        <span>Painel de Progressos</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                     <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                                        <Medal className="text-chart-5" />
+                                        <span>Quadro de Medalhas</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                             </AccordionContent>
+                        </AccordionItem>
+                        
+                        <AccordionItem value="item-2" className="border-none">
+                            <CustomAccordionTrigger>
+                                Gerenciamento
+                            </CustomAccordionTrigger>
+                            <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/mural" tooltip="Mural Completo" isActive={pathname.startsWith('/dashboard/mural')}>
                                         <ListCollapse className="text-chart-1" />
                                         <span>Mural Completo</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                            </AccordionContent>
-                        </AccordionItem>
-                        
-                        <AccordionItem value="item-2" className="border-none">
-                            <CustomAccordionTrigger>
-                                Rotinas dos Herois
-                            </CustomAccordionTrigger>
-                            <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
-                                        <CalendarDays className="text-chart-5" />
-                                        <span>Rotina de Missões</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
-                                        <NotebookPen className="text-chart-4" />
-                                        <span>Rotina Escolar</span>
+                                    <SidebarMenuButton href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/novo-heroi')}>
+                                        <UserPlus className="text-chart-2" />
+                                        <span>Novo Mini Heroi</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             </AccordionContent>
@@ -147,7 +145,7 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-3" className="border-none">
                              <CustomAccordionTrigger>
-                                Quadros
+                                Quadros e Rotinas
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
@@ -163,9 +161,15 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
-                                        <Medal className="text-chart-5" />
-                                        <span>Quadro de Medalhas</span>
+                                    <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
+                                        <CalendarDays className="text-chart-5" />
+                                        <span>Rotina de Missões</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
+                                        <NotebookPen className="text-chart-4" />
+                                        <span>Rotina Escolar</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             </AccordionContent>
