@@ -42,9 +42,12 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
     const isMySpaceAndEmpty = context.id === 'my-space' && children.length === 0;
 
     const handleHeaderClick = () => {
-        const targetPath = isMySpaceAndEmpty ? '/dashboard' : `/dashboard/heroes`;
-        const query = context.id !== 'my-space' ? `?contextId=${context.id}` : '';
-        router.push(`${targetPath}${query}`);
+        const targetPath = isMySpaceAndEmpty ? '/dashboard/novo-heroi' : `/dashboard/heroes`;
+        if (context.id !== 'my-space') {
+          router.push(`${targetPath}?contextId=${context.id}`);
+        } else {
+          router.push(targetPath);
+        }
     };
     
     const Icon = context.id === 'my-space' ? Home : LinkIcon;
@@ -242,10 +245,6 @@ function DashboardRootPageContent() {
         return contextData.find(cd => cd.context.id === 'my-space');
     }, [contextData]);
 
-    const mySpaceIsEmptyButHasAlliances = useMemo(() => {
-        return mySpaceData?.children.length === 0 && hasAlliances;
-    }, [mySpaceData, hasAlliances]);
-
     const fetchData = useCallback(async () => {
         if (!user) {
             setIsLoading(false);
@@ -309,11 +308,6 @@ function DashboardRootPageContent() {
                     {allianceContexts.map(cd => (
                         <ContextCard key={cd.context.id} contextData={cd} isMobile={true} viewMode={localViewMode}/>
                     ))}
-                    {mySpaceIsEmptyButHasAlliances && (
-                        <div className="pt-4">
-                           <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
-                        </div>
-                    )}
                 </div>
             );
         }
@@ -324,11 +318,6 @@ function DashboardRootPageContent() {
                 localViewMode === 'list' && "grid-cols-1"
             )}>
                  {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={false} viewMode={localViewMode} />}
-                 {mySpaceIsEmptyButHasAlliances && (
-                     <div className="md:col-span-2">
-                        <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
-                     </div>
-                 )}
                  {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={false} viewMode={localViewMode} />)}
             </div>
         );
