@@ -667,13 +667,35 @@ function FamilyPageContent() {
 
     return (
       <div className="space-y-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-2">
-                <Users className="h-8 w-8 text-primary" />
-                <h2 className="text-3xl font-headline font-bold">Aliança de Herois</h2>
-                <Popover>
+                <Users className="h-8 w-8 text-primary shrink-0" />
+                <div className="flex flex-col sm:flex-row sm:items-center sm:gap-2">
+                    {isEditingName ? (
+                        <form onSubmit={handleUpdateFamilyName} className="flex items-center gap-2">
+                            <Input
+                                value={familyNameInput}
+                                onChange={(e) => setFamilyNameInput(e.target.value)}
+                                className="h-9 text-2xl font-headline font-bold"
+                                autoFocus
+                            />
+                            <Button type="submit" size="sm" disabled={isUpdatingName}>
+                                {isUpdatingName ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
+                            </Button>
+                        </form>
+                    ) : (
+                        <h2 className="text-3xl font-headline font-bold">{familyDetails.name}</h2>
+                    )}
+                    {isOwner && !isEditingName && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground" onClick={() => setIsEditingName(true)}>
+                            <Edit3 className="h-4 w-4" />
+                        </Button>
+                    )}
+                </div>
+            </div>
+             <Popover>
                   <PopoverTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
                           <HelpCircle className="h-5 w-5" />
                       </Button>
                   </PopoverTrigger>
@@ -694,7 +716,6 @@ function FamilyPageContent() {
                       </div>
                   </PopoverContent>
               </Popover>
-            </div>
         </div>
         
         {isOwner && (isLoadingJoinRequests ? (
@@ -717,7 +738,7 @@ function FamilyPageContent() {
                       size="sm" 
                       variant="ghost" 
                       className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() => handleDeclineRequest(req.id)}
+                      onClick={()={() => handleDeclineRequest(req.id)}
                       disabled={isProcessingJoinRequest === req.id}
                     >
                       {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
@@ -726,7 +747,7 @@ function FamilyPageContent() {
                     <Button 
                       size="sm"
                       className="bg-green-600 hover:bg-green-700"
-                      onClick={() => handleApproveRequest(req.id)}
+                      onClick={()={() => handleApproveRequest(req.id)}
                       disabled={isProcessingJoinRequest === req.id}
                     >
                       {isProcessingJoinRequest === req.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="mr-1 h-4 w-4" />}
@@ -758,7 +779,7 @@ function FamilyPageContent() {
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleResendInvitation(invite.id)}
+                      onClick={()={() => handleResendInvitation(invite.id)}
                       disabled={isProcessingInvitationAction === invite.id}
                     >
                        {isProcessingInvitationAction === invite.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <SendToBack className="mr-2 h-4 w-4" />}
@@ -767,7 +788,7 @@ function FamilyPageContent() {
                     <Button
                       size="sm"
                       variant="destructive"
-                      onClick={() => handleCancelInvitation(invite.id)}
+                      onClick={()={() => handleCancelInvitation(invite.id)}
                       disabled={isProcessingInvitationAction === invite.id}
                     >
                        {isProcessingInvitationAction === invite.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="mr-1 h-4 w-4" />}
@@ -837,7 +858,7 @@ function FamilyPageContent() {
             <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                     <CardTitle className="whitespace-nowrap flex items-center gap-2"><Users className="h-6 w-6 text-primary"/>Membros Responsáveis</CardTitle>
-                    <Button variant="link" className="p-0 h-auto" onClick={() => {}}>
+                    <Button variant="link" className="p-0 h-auto" onClick={()={() => {}}>
                         <Info className="mr-2 h-4 w-4"/> Como usar os convites?
                     </Button>
                 </div>
@@ -1499,3 +1520,5 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
+    
