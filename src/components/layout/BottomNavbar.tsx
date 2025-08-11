@@ -8,10 +8,10 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 
 const navItems = [
-  { href: '/dashboard/heroes', label: 'Hoje', icon: Home, color: 'text-primary' },
-  { href: '/dashboard/dashboard', label: 'Painel', icon: LayoutGrid, color: 'text-chart-1' },
-  { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
   { href: '/dashboard/family', label: 'Alianças', icon: Users, color: 'text-primary' },
+  { href: '/dashboard/dashboard', label: 'Painel', icon: LayoutGrid, color: 'text-chart-1' },
+  { href: '/dashboard/heroes', label: 'Hoje', icon: Home, color: 'text-primary' },
+  { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
 
 export function BottomNavbar() {
