@@ -1,11 +1,13 @@
 import { db } from '@/lib/firebase/config';
-import { collection, query, where, getDocs, deleteDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, where, getDocs, deleteDoc } from 'firebase/firestore';
 import { subDays } from 'date-fns';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const cutoffDate = subDays(serverTimestamp() as any, 30);
+    // Correctly calculate the cutoff date using the server's current time.
+    // serverTimestamp() is a sentinel value for writes, not for calculations.
+    const cutoffDate = subDays(new Date(), 30);
 
     const q = query(
       collection(db, 'familyInvitations'),
@@ -13,12 +15,14 @@ export async function GET() {
     );
 
     const querySnapshot = await getDocs(q);
-
-    querySnapshot.forEach(async (doc) => {
-      await deleteDoc(doc.ref);
+    const deletionPromises: Promise<void>[] = [];
+    querySnapshot.forEach((doc) => {
+      deletionPromises.push(deleteDoc(doc.ref));
     });
 
-    return NextResponse.json({ message: 'Successfully deleted old invitations' }, { status: 200 });
+    await Promise.all(deletionPromises);
+
+    return NextResponse.json({ message: `Successfully deleted ${deletionPromises.length} old invitations` }, { status: 200 });
 
   } catch (error) {
     console.error('Failed to clear old invitations:', error);
