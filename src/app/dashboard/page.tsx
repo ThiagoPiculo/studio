@@ -110,12 +110,9 @@ function DashboardRootPageContent() {
 
     return (
         <div className="space-y-8">
-             <div className="flex items-center gap-2">
+            <div className="flex items-center gap-4">
                 <Home className="h-8 w-8 text-primary" />
-                <div className="flex-grow">
-                    <h2 className="text-3xl font-headline font-bold">Visão Geral dos Espaços</h2>
-                    <p className="text-muted-foreground">Acesse um espaço pessoal ou uma aliança para gerenciar seus heróis.</p>
-                </div>
+                <h2 className="text-3xl font-headline font-bold">Visão Geral dos Espaços</h2>
                 <Popover>
                     <PopoverTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
