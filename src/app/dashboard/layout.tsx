@@ -90,21 +90,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Notifications />
-                   {isClient && !isMobile && (
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
-                                  <Avatar className="h-9 w-9">
-                                      <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
-                                      <AvatarFallback style={avatarColor ? { backgroundColor: avatarColor } : {}}>{getInitials(displayName)}</AvatarFallback>
-                                  </Avatar>
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-64 p-0" align="end" forceMount>
-                               <UserNav />
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                   )}
                 </div>
               </header>
               <DashboardMainContent>{children}</DashboardMainContent>
