@@ -20,6 +20,9 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 interface ContextData {
     context: {
@@ -35,6 +38,7 @@ function DashboardRootPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { availableContexts, setCurrentContext, isLoading: isFamilyLoading } = useFamily();
     const router = useRouter();
+    const isMobile = useIsMobile();
 
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
@@ -127,15 +131,85 @@ function DashboardRootPageContent() {
             }
         }
 
+        const cardHeaderContent = (
+             <div className="flex items-start justify-between w-full">
+                <div className="flex items-center gap-3">
+                    <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                    <CardTitle>{context.name}</CardTitle>
+                </div>
+                {!isMobile && (
+                    <Button variant="link" className="p-0 h-auto text-sm" onClick={() => handleContextClick(context.id)}>
+                        Resumo do dia <ArrowRight className="ml-1 h-4 w-4" />
+                    </Button>
+                )}
+            </div>
+        );
+
+        const cardBodyContent = (
+            <>
+                <CardDescription className={cn("pt-1 text-xs", isMobile && "mb-4")}>
+                    {description}
+                </CardDescription>
+                <div className={cn("grid gap-4 flex-grow pt-2", context.id === 'my-space' ? "grid-cols-1" : "grid-cols-2")}>
+                    {context.id !== 'my-space' && (
+                       <div>
+                         <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
+                         {members.length > 0 ? (
+                            <div className="flex -space-x-2">
+                                {members.map(member => (
+                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
+                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
+                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
+                        )}
+                       </div>
+                    )}
+                    <div className={cn(context.id === 'my-space' && 'col-span-2')}>
+                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Heróis</h4>
+                        {children.length > 0 ? (
+                            <div className="flex -space-x-2">
+                                {children.map(child => (
+                                    <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
+                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                        <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
+                        )}
+                    </div>
+                </div>
+            </>
+        );
+
+
+        if (isMobile) {
+            return (
+                 <AccordionItem value={context.id} key={context.id} className="border bg-card rounded-lg shadow-sm">
+                    <AccordionTrigger className="p-4 hover:no-underline">
+                        {cardHeaderContent}
+                    </AccordionTrigger>
+                    <AccordionContent className="p-4 pt-0">
+                        {cardBodyContent}
+                        <Button variant="outline" size="sm" className="w-full mt-4" onClick={() => handleContextClick(context.id)}>
+                            Ver Resumo do Dia <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                    </AccordionContent>
+                </AccordionItem>
+            )
+        }
+
         if (viewMode === 'list') {
             return (
                 <Card key={context.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center">
                     <CardHeader className="flex-1 p-4 md:p-6">
-                        <div className="flex items-center gap-3">
-                            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                            <CardTitle>{context.name}</CardTitle>
-                        </div>
-                        <CardDescription className="pt-1 text-xs">{description}</CardDescription>
+                       {cardHeaderContent}
+                       <CardDescription className="pt-1 text-xs">{description}</CardDescription>
                     </CardHeader>
                     <CardContent className="p-4 md:p-6 pt-0 md:pt-4 grid grid-cols-2 gap-4 flex-shrink-0 md:border-l">
                          {context.id !== 'my-space' && (
@@ -183,56 +257,52 @@ function DashboardRootPageContent() {
         return (
             <Card key={context.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                 <CardHeader>
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                            <CardTitle>{context.name}</CardTitle>
-                        </div>
-                         <Button variant="link" className="p-0 h-auto text-sm" onClick={() => handleContextClick(context.id)}>
-                            Resumo do dia <ArrowRight className="ml-1 h-4 w-4" />
-                        </Button>
-                    </div>
-                    <CardDescription className="pt-1 text-xs">
-                        {description}
-                    </CardDescription>
+                   {cardHeaderContent}
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 gap-4 flex-grow pt-2">
-                    {context.id !== 'my-space' && (
-                       <div>
-                         <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
-                         {members.length > 0 ? (
-                            <div className="flex -space-x-2">
-                                {members.map(member => (
-                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
-                        )}
-                       </div>
-                    )}
-                    <div className={cn(context.id === 'my-space' && 'col-span-2')}>
-                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Heróis</h4>
-                        {children.length > 0 ? (
-                            <div className="flex -space-x-2">
-                                {children.map(child => (
-                                    <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                        )}
-                    </div>
+                <CardContent className="flex-grow">
+                  {cardBodyContent}
                 </CardContent>
             </Card>
         );
     };
+
+    const renderContent = () => {
+        const contentToRender = contextData.map(({ context, children, members }) => {
+            if (context.id === 'my-space' && mySpaceIsEmptyButHasAlliances) {
+                return null;
+            }
+            if (context.id === 'my-space' && children.length === 0 && !hasAlliances) {
+                return null;
+            }
+            return renderContextCard(context, children, members);
+        }).filter(Boolean);
+
+        if (isMobile) {
+            return (
+                <Accordion type="multiple" className="w-full space-y-4">
+                    {mySpaceIsEmptyButHasAlliances && (
+                        <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
+                    )}
+                    {contentToRender}
+                </Accordion>
+            );
+        }
+
+        return (
+            <>
+                {mySpaceIsEmptyButHasAlliances && (
+                     <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
+                 )}
+                 <div className={cn(
+                    viewMode === 'grid' 
+                    ? "grid grid-cols-1 md:grid-cols-2 gap-6"
+                    : "space-y-4"
+                )}>
+                    {contentToRender}
+                 </div>
+            </>
+        );
+    }
 
     return (
         <div className="space-y-8">
@@ -268,30 +338,18 @@ function DashboardRootPageContent() {
                         </PopoverContent>
                     </Popover>
                 </div>
-                 <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as any)} className="w-full sm:w-auto">
-                    <ToggleGroupItem value="grid" aria-label="Ver em grade" className="flex-1 sm:flex-initial">
-                        <LayoutGrid className="h-4 w-4" />
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="list" aria-label="Ver em lista" className="flex-1 sm:flex-initial">
-                        <List className="h-4 w-4" />
-                    </ToggleGroupItem>
-                </ToggleGroup>
+                 {!isMobile && (
+                     <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as any)} className="w-full sm:w-auto">
+                        <ToggleGroupItem value="grid" aria-label="Ver em grade" className="flex-1 sm:flex-initial">
+                            <LayoutGrid className="h-4 w-4" />
+                        </ToggleGroupItem>
+                        <ToggleGroupItem value="list" aria-label="Ver em lista" className="flex-1 sm:flex-initial">
+                            <List className="h-4 w-4" />
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                 )}
             </div>
-            <div className={cn(
-                viewMode === 'grid' 
-                ? "grid grid-cols-1 md:grid-cols-2 gap-6"
-                : "space-y-4"
-            )}>
-                {contextData.map(({ context, children, members }) => {
-                    if (context.id === 'my-space' && mySpaceIsEmptyButHasAlliances) {
-                        return <GettingStartedGuide key="getting-started" hasChildren={false} hasMissions={false} hasRewards={false} />;
-                    }
-                    if (context.id === 'my-space' && children.length === 0 && !hasAlliances) {
-                        return null;
-                    }
-                    return renderContextCard(context, children, members)
-                })}
-            </div>
+            {renderContent()}
         </div>
     );
 }
