@@ -56,13 +56,9 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const hasAlliances = availableContexts.length > 1;
 
   useEffect(() => {
-    // This logic is simplified. It shows if the user is new OR if they are in an alliance but have no personal heroes.
     const isNewUser = !hasChildren && !hasAlliances;
-    const isEmptyPersonalSpace = hasAlliances && !hasChildren;
-    
-    // Check if dismissed only if it's not the "empty personal space" scenario which should always appear
     const dismissed = localStorage.getItem('gettingStartedDismissed');
-    if (isEmptyPersonalSpace || (isNewUser && dismissed !== 'true')) {
+    if (isNewUser && dismissed !== 'true') {
         setIsVisible(true);
     }
   }, [hasChildren, hasAlliances]);
@@ -77,7 +73,7 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   };
 
   const steps = [
-    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Heroi', href: '/dashboard/novo-heroi', icon: UserPlus },
+    { name: 'children', complete: hasChildren, title: 'Cadastre seu primeiro Herói', href: '/dashboard/novo-heroi', icon: UserPlus },
     { name: 'missions', complete: hasMissions, title: 'Crie sua primeira Missão', href: '/dashboard/missions/new', icon: Target },
     { name: 'rewards', complete: hasRewards, title: 'Crie sua primeira Recompensa', href: '/dashboard/rewards/new', icon: Gift },
   ];
@@ -85,14 +81,11 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const completedSteps = steps.filter(step => step.complete).length;
   const progress = (completedSteps / steps.length) * 100;
   
-  if (!isVisible && !hasAlliances) {
-    return null;
-  }
-  
   const isForEmptyPersonalSpace = hasAlliances && !hasChildren;
 
-  if (!isVisible) return null;
-
+  if (!isVisible && !isForEmptyPersonalSpace) {
+    return null;
+  }
 
   return (
     <Card className="shadow-lg overflow-hidden">

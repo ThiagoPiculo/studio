@@ -119,6 +119,12 @@ function DashboardRootPageContent() {
     const mySpaceData = contextData.find(cd => cd.context.id === 'my-space');
     const mySpaceIsEmptyButHasAlliances = mySpaceData?.children.length === 0 && hasAlliances;
     
+    const defaultOpenAccordionItems = useMemo(() => {
+        return contextData
+            .filter(cd => cd.context.id !== 'my-space') // Only alliances
+            .map(cd => cd.context.id);
+    }, [contextData]);
+    
     const renderContextCard = (context: ContextData['context'], children: ContextData['children'], members: ContextData['members']) => {
         const Icon = context.id === 'my-space' ? Home : LinkIcon;
         let description = '';
@@ -127,7 +133,7 @@ function DashboardRootPageContent() {
         } else if (context.role) {
             const roleInfo = familyRoles.find(r => r.id === context.role);
             if (roleInfo) {
-                description = `Seu papel: ${roleInfo.label}. ${roleInfo.description}`;
+                description = `Seu papel: ${roleInfo.label}.`;
             }
         }
 
@@ -268,22 +274,20 @@ function DashboardRootPageContent() {
 
     const renderContent = () => {
         const contentToRender = contextData.map(({ context, children, members }) => {
-            if (context.id === 'my-space' && mySpaceIsEmptyButHasAlliances) {
-                return null;
-            }
-            if (context.id === 'my-space' && children.length === 0 && !hasAlliances) {
-                return null;
-            }
+            if (context.id === 'my-space') return null; // My Space is handled separately
             return renderContextCard(context, children, members);
         }).filter(Boolean);
 
         if (isMobile) {
             return (
-                <Accordion type="multiple" className="w-full space-y-4">
-                    {mySpaceIsEmptyButHasAlliances && (
-                        <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
-                    )}
+                <Accordion type="multiple" className="w-full space-y-4" defaultValue={defaultOpenAccordionItems}>
+                    {mySpaceData && !mySpaceIsEmptyButHasAlliances && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)}
                     {contentToRender}
+                    {mySpaceIsEmptyButHasAlliances && (
+                        <AccordionItem value="getting-started" className="border-none p-0">
+                            <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
+                        </AccordionItem>
+                    )}
                 </Accordion>
             );
         }
@@ -294,10 +298,10 @@ function DashboardRootPageContent() {
                      <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
                  )}
                  <div className={cn(
-                    viewMode === 'grid' 
-                    ? "grid grid-cols-1 md:grid-cols-2 gap-6"
-                    : "space-y-4"
+                    "grid grid-cols-1 md:grid-cols-2 gap-6",
+                    viewMode === 'list' && "space-y-4 grid-cols-1"
                 )}>
+                    {!mySpaceIsEmptyButHasAlliances && mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)}
                     {contentToRender}
                  </div>
             </>
@@ -361,3 +365,4 @@ export default function DashboardRootPage() {
         </Suspense>
     );
 }
+
