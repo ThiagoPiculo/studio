@@ -91,7 +91,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                      <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard" tooltip="Espaços com Mini Herois" isActive={pathname === '/dashboard'}>
-                            <View className="text-chart-3" />
+                            <Home className="text-chart-3" />
                             <span>Espaços</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -126,7 +126,7 @@ export function AppSidebar() {
                                         <span>Novo Mini Heroi</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
+                                 <SidebarMenuItem>
                                      <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente de Criação" isActive={pathname.startsWith('/dashboard/assistente')}>
                                         <Sparkles className="text-chart-4" />
                                         <span>Assistente de Criação</span>
@@ -179,21 +179,15 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton asChild={false} onClick={() => handleAllianceAction('create')} tooltip="Criar Aliança">
+                                    <SidebarMenuButton href="/dashboard/family" tooltip="Criar ou Entrar em Aliança">
                                         <PlusCircle className="text-primary" />
-                                        <span>Criar Aliança</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                     <SidebarMenuButton asChild={false} onClick={() => handleAllianceAction('join')} tooltip="Entrar em Aliança">
-                                        <LinkIcon className="text-primary" />
-                                        <span>Entrar em Aliança</span>
+                                        <span>Criar ou Entrar</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {isInAnyAlliance && (
                                     <SidebarMenuItem>
                                         <SidebarMenuButton href="/dashboard/alliances" tooltip="Minhas Alianças" isActive={pathname.startsWith('/dashboard/alliances')}>
-                                            <Users className="text-primary" />
+                                            <LinkIcon className="text-primary" />
                                             <span>Minhas Alianças</span>
                                         </SidebarMenuButton>
                                     </SidebarMenuItem>
