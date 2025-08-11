@@ -19,6 +19,11 @@ import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet, SheetTrigger, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { UserNav } from '@/components/layout/UserNav';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -100,6 +105,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
                 <div className="flex items-center gap-2">
                   <Notifications />
+                   {isClient && !isMobile && (
+                      <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" className="relative h-9 w-9 rounded-full">
+                                  <Avatar className="h-9 w-9">
+                                      <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
+                                      <AvatarFallback style={avatarColor ? { backgroundColor: avatarColor } : {}}>{getInitials(displayName)}</AvatarFallback>
+                                  </Avatar>
+                              </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-64 p-0" align="end" forceMount>
+                               <UserNav />
+                          </DropdownMenuContent>
+                      </DropdownMenu>
+                   )}
                 </div>
               </header>
               <DashboardMainContent>{children}</DashboardMainContent>
