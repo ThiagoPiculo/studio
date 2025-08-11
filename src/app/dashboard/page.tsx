@@ -20,7 +20,6 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -69,7 +68,7 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
       <div className="flex flex-col gap-2 w-full">
           {cardHeaderContent}
           <div className="flex items-center gap-2 pl-8">
-              <p className="text-xs text-muted-foreground shrink-0">Mini Heróis:</p>
+              <p className="text-xs text-muted-foreground shrink-0">Mini Herois:</p>
               <div className="flex items-center -space-x-2 min-w-0">
                   {children.length > 0 ? (
                       children.map(child => (
@@ -154,7 +153,7 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
                        </div>
                     )}
                     <div className={cn(context.id === 'my-space' && 'col-span-2')}>
-                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Heróis</h4>
+                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Herois</h4>
                         {children.length > 0 ? (
                             <div className="flex -space-x-2">
                                 {children.map(child => (
@@ -232,12 +231,6 @@ function DashboardRootPageContent() {
     const [localViewMode, setLocalViewMode] = useState(viewMode);
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
-
-    const defaultOpenAccordionItems = useMemo(() => {
-        return contextData
-            .filter(cd => cd.context.id !== 'my-space')
-            .map(cd => cd.context.id);
-    }, [contextData]);
 
     useEffect(() => {
         viewMode = localViewMode;
@@ -347,7 +340,7 @@ function DashboardRootPageContent() {
                 <div className="flex items-center gap-2">
                     <Home className="h-8 w-8 text-primary" />
                      <div>
-                        <h2 className="text-3xl font-headline font-bold">Visão Geral dos Espaços</h2>
+                        <h2 className="text-3xl font-headline font-bold">Espaços com Mini Herois</h2>
                     </div>
                     <Popover>
                         <PopoverTrigger asChild>

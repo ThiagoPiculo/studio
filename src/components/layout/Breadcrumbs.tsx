@@ -16,7 +16,7 @@ interface Breadcrumb {
 }
 
 const pathTranslations: { [key: string]: string } = {
-  dashboard: 'Painel de Progressos',
+  dashboard: 'Espaços',
   heroes: 'Resumo do Dia',
   mural: 'Mural Completo',
   agenda: 'Rotina de Missões',
@@ -55,7 +55,7 @@ export function Breadcrumbs() {
       const relevantSegments = pathSegments[0] === 'dashboard' ? pathSegments.slice(1) : pathSegments;
 
       if (pathname === '/dashboard') {
-          setBreadcrumbs([{ label: 'Visão Geral', href: '/dashboard' }]);
+          setBreadcrumbs([{ label: 'Espaços', href: '/dashboard' }]);
           return;
       }
 

@@ -90,9 +90,9 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
+                         <SidebarMenuButton href="/dashboard" tooltip="Espaços com Mini Herois" isActive={pathname === '/dashboard'}>
                             <View className="text-chart-3" />
-                            <span>Visão Geral</span>
+                            <span>Espaços</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
