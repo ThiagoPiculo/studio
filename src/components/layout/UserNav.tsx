@@ -5,10 +5,18 @@ import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { familyRoles } from "@/lib/types";
-import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield } from "lucide-react";
+import { LogOut, UserCircle, Rocket, Settings, Link as LinkIcon, Shield, ChevronsUpDown } from "lucide-react";
 import Link from "next/link";
 import React from 'react';
 import { Separator } from "../ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function UserNav() {
   const { user, logout, childProfile, isChildAuthenticated } = useAuth();
@@ -21,7 +29,7 @@ export function UserNav() {
 
   const displayName = isChildAuthenticated ? childProfile?.name : user?.name;
   const displayEmail = isChildAuthenticated ? `Código de Acesso: ${childProfile?.accessCode}` : user?.email;
-  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : user?.avatarUrl; 
+  const avatarSrc = isChildAuthenticated ? childProfile?.avatar : user?.avatarUrl;
   const avatarColor = isChildAuthenticated ? childProfile?.color : undefined;
   
   const currentAlliance = currentContext !== 'my-space' 
@@ -38,82 +46,93 @@ export function UserNav() {
   if (!user && !isChildAuthenticated) {
     return null;
   }
-
-  return (
-    <div className="flex flex-col h-full p-4 space-y-4">
-      <div className="flex items-center gap-3">
-        <Avatar
-            className="h-12 w-12 flex-shrink-0"
-            style={avatarColor ? { '--ring-color': avatarColor } as React.CSSProperties : {}}
-        >
-            {avatarSrc && <AvatarImage src={avatarSrc} alt={displayName || "User"} />}
-            <AvatarFallback
-            className="font-bold"
-            style={avatarColor ? { backgroundColor: avatarColor } : {}}
-            >
-            {getInitials(displayName)}
-            </AvatarFallback>
-        </Avatar>
-        <div className="truncate">
-            <p className="text-base font-semibold leading-tight">{displayName || (isChildAuthenticated ? "Heroi" : "Admin")}</p>
-            {displayEmail && <p className="text-sm leading-tight text-muted-foreground">{displayEmail}</p>}
-        </div>
-      </div>
-      
-      <Separator/>
-
-      <div className="text-sm">
-        {currentAlliance && roleLabel ? (
-            <div className="space-y-2 text-muted-foreground">
-                <div className="flex items-center gap-2">
-                    <LinkIcon className="h-4 w-4" />
-                    <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Shield className="h-4 w-4" />
-                    <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
-                </div>
-            </div>
-        ) : (
-            <div className="text-sm text-muted-foreground">
-                <p>Você está no seu espaço pessoal.</p>
-            </div>
-        )}
-      </div>
-
-      <Separator/>
-      
-      <nav className="flex flex-col gap-2 flex-grow">
-          {!isChildAuthenticated && user && (
-            <>
-                <Link href="/dashboard/profile" passHref>
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                        <UserCircle className="h-5 w-5" />
-                        <span>Meu Perfil</span>
-                    </Button>
-                </Link>
-                <Link href="/dashboard/settings" passHref>
-                    <Button variant="ghost" className="w-full justify-start gap-2">
-                        <Settings className="h-5 w-5" />
-                        <span>Configurações</span>
-                    </Button>
-                </Link>
-            </>
-          )}
-          {isChildAuthenticated && childProfile && (
-            <Link href={`/dashboard/mural?childId=${childProfile.id}`} passHref>
+  
+  if (isChildAuthenticated) {
+    return (
+        <div className="flex flex-col h-full p-2 space-y-2">
+            <Link href={`/dashboard/mural?childId=${childProfile?.id}`} passHref>
                 <Button variant="ghost" className="w-full justify-start gap-2">
                     <Rocket className="h-5 w-5" />
                     <span>Minha Página de Heroi</span>
                 </Button>
             </Link>
-          )}
-      </nav>
-      
-      <Button variant="destructive" onClick={handleLogoutClick} className="w-full mt-auto">
-        <LogOut className="mr-2 h-4 w-4" />
-        Sair
-      </Button>
-    </div>
+             <Button variant="destructive" onClick={handleLogoutClick} className="w-full mt-auto">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+            </Button>
+        </div>
+    )
+  }
+
+  return (
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="w-full h-auto justify-between p-2">
+                <div className="flex items-center gap-2 truncate">
+                    <Avatar className="h-8 w-8">
+                        <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
+                        <AvatarFallback style={avatarColor ? {backgroundColor: avatarColor} : {}}>{getInitials(displayName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="truncate text-left">
+                        <p className="font-semibold text-sm truncate">{displayName}</p>
+                    </div>
+                </div>
+                <ChevronsUpDown className="h-4 w-4 text-muted-foreground shrink-0" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)] mb-2" side="top" align="start">
+             <div className="flex flex-col h-full p-2 space-y-2">
+                <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                        <AvatarImage src={avatarSrc || ''} alt={displayName || 'User'} />
+                        <AvatarFallback style={avatarColor ? {backgroundColor: avatarColor} : {}}>{getInitials(displayName)}</AvatarFallback>
+                    </Avatar>
+                    <div className="truncate">
+                        <p className="text-sm font-semibold leading-tight">{displayName}</p>
+                        <p className="text-xs leading-tight text-muted-foreground">{displayEmail}</p>
+                    </div>
+                </div>
+                <DropdownMenuSeparator />
+                <div className="text-xs text-muted-foreground">
+                    {currentAlliance && roleLabel ? (
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                                <LinkIcon className="h-3 w-3" />
+                                <span>Aliança: <span className="font-medium text-foreground">{currentAlliance.name}</span></span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Shield className="h-3 w-3" />
+                                <span>Papel: <span className="font-medium text-foreground">{roleLabel}</span></span>
+                            </div>
+                        </div>
+                    ) : (
+                        <p>Você está no seu espaço pessoal.</p>
+                    )}
+                </div>
+                 <DropdownMenuSeparator />
+                <nav className="flex flex-col gap-1">
+                     <DropdownMenuItem asChild>
+                        <Link href="/dashboard/profile">
+                            <UserCircle className="mr-2 h-4 w-4" />
+                            <span>Meu Perfil</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                         <Link href="/dashboard/settings">
+                            <Settings className="mr-2 h-4 w-4" />
+                            <span>Configurações</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </nav>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Button variant="destructive" size="sm" onClick={handleLogoutClick} className="w-full">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sair
+                    </Button>
+                 </DropdownMenuItem>
+            </div>
+        </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
