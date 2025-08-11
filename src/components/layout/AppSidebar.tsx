@@ -20,7 +20,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu, Sparkles } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -107,6 +107,12 @@ export function AppSidebar() {
                             <span>Painel de Progressos</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente" isActive={pathname.startsWith('/dashboard/assistente')}>
+                           <Sparkles className="text-chart-4" />
+                           <span>Assistente</span>
+                       </SidebarMenuButton>
+                   </SidebarMenuItem>
                     
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
                         <AccordionItem value="item-2" className="border-none">
