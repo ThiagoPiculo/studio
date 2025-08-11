@@ -59,13 +59,10 @@ function DashboardRootPageContent() {
     }, [mySpaceData, hasAlliances]);
 
     const defaultOpenAccordionItems = useMemo(() => {
-        if (isMobile) {
-            return contextData
-                .filter(cd => cd.context.id !== 'my-space' && cd.context.id !== 'getting-started') // Only alliances
-                .map(cd => cd.context.id);
-        }
-        return [];
-    }, [isMobile, contextData]);
+        return contextData
+            .filter(cd => cd.context.id !== 'my-space' && cd.context.id !== 'getting-started') // Only alliances
+            .map(cd => cd.context.id);
+    }, [contextData]);
   
     const fetchData = useCallback(async () => {
         if (!user) {
@@ -220,18 +217,18 @@ function DashboardRootPageContent() {
                     </div>
                     <AccordionContent className="px-4 pb-4 pt-0">
                         <div className="space-y-4 pt-2 border-t">
-                            <div className="space-y-2">
+                            <div className="space-y-1">
                                 <h4 className="text-sm font-semibold text-muted-foreground">Seu Papel</h4>
-                                <p className="text-sm text-foreground/90">{roleInfo ? roleInfo.label : 'Pessoal'}</p>
+                                <p className="text-sm text-foreground/90 font-semibold">{roleInfo ? roleInfo.label : 'Pessoal'}</p>
                                 {roleInfo && <p className="text-xs text-muted-foreground">{roleInfo.description}</p>}
                             </div>
                             {context.id !== 'my-space' && (
-                                <div>
-                                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
-                                    {members.length > 0 ? (
+                                <div className="flex items-center gap-2">
+                                    <h4 className="text-sm font-semibold text-muted-foreground">Colaboradores:</h4>
+                                    {members.length > 1 ? (
                                         <div className="flex -space-x-2">
-                                            {members.map(member => (
-                                                <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
+                                            {members.filter(m => m.uid !== user?.uid).map(member => (
+                                                <Avatar key={member.uid} className="h-7 w-7 border-2 border-background">
                                                     <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
                                                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                                                 </Avatar>
@@ -311,13 +308,14 @@ function DashboardRootPageContent() {
     };
 
     const renderContent = () => {
+        const mySpaceContext = contextData.find(cd => cd.context.id === 'my-space');
         const allianceContexts = contextData.filter(cd => cd.context.id !== 'my-space');
-        const sortedContexts = [mySpaceData, ...allianceContexts].filter(Boolean) as ContextData[];
 
         if (isMobile) {
             return (
                 <Accordion type="multiple" className="w-full space-y-4" defaultValue={defaultOpenAccordionItems}>
-                    {sortedContexts.map(({ context, children, members }) => renderContextCard(context, children, members))}
+                    {mySpaceContext && renderContextCard(mySpaceContext.context, mySpaceContext.children, mySpaceContext.members)}
+                    {allianceContexts.map(({ context, children, members }) => renderContextCard(context, children, members))}
                     {mySpaceIsEmptyButHasAlliances && (
                         <div className="pt-4">
                            <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
@@ -332,7 +330,7 @@ function DashboardRootPageContent() {
                 "grid grid-cols-1 md:grid-cols-2 gap-6",
                 viewMode === 'list' && "grid-cols-1"
             )}>
-                 {mySpaceData && renderContextCard(mySpaceData.context, mySpaceData.children, mySpaceData.members)}
+                 {mySpaceContext && renderContextCard(mySpaceContext.context, mySpaceContext.children, mySpaceContext.members)}
                  {mySpaceIsEmptyButHasAlliances && (
                      <div className="md:col-span-2">
                         <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />
