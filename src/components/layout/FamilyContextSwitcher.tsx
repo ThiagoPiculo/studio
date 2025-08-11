@@ -40,15 +40,22 @@ export function FamilyContextSwitcher() {
     return `Aliança: ${context.name}`;
   }
 
+  const Icon = currentContext === 'my-space' ? Home : LinkIcon;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="w-full max-w-[240px] justify-between h-9">
-          <div className="flex items-center gap-2 truncate">
-            {currentContext === 'my-space' ? <Home className="h-4 w-4 shrink-0" /> : <LinkIcon className="h-4 w-4 shrink-0 text-chart-4" />}
-            <span className="truncate text-sm font-medium">{getDisplayName(currentContextData)}</span>
-          </div>
-          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        <Button variant="secondary" className="w-full max-w-[240px] justify-between h-auto p-2 text-left flex-col items-start">
+            <div className="flex w-full items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4 shrink-0" />
+                    <span className="font-semibold">Trocar de espaço</span>
+                </div>
+                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </div>
+            <span className="text-xs text-muted-foreground truncate pl-6">
+               {getDisplayName(currentContextData)}
+            </span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
