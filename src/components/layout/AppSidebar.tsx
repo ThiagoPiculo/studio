@@ -89,6 +89,12 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarMenu>
+                     <SidebarMenuItem>
+                         <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
+                            <View className="text-chart-3" />
+                            <span>Visão Geral</span>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/heroes" tooltip="Resumo do Dia" isActive={pathname.startsWith('/dashboard/heroes')}>
                             <Home className="text-primary"/>
@@ -103,26 +109,6 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                     
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
-                        <AccordionItem value="item-1" className="border-none">
-                            <CustomAccordionTrigger>
-                               Análises
-                            </CustomAccordionTrigger>
-                            <AccordionContent className="pt-1">
-                                <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard" tooltip="Visão Geral" isActive={pathname === '/dashboard'}>
-                                        <View className="text-chart-3" />
-                                        <span>Visão Geral</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
-                                        <Medal className="text-chart-5" />
-                                        <span>Quadro de Medalhas</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                             </AccordionContent>
-                        </AccordionItem>
-                        
                         <AccordionItem value="item-2" className="border-none">
                             <CustomAccordionTrigger>
                                 Gerenciamento
@@ -149,6 +135,18 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
+                                    <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
+                                        <CalendarDays className="text-chart-5" />
+                                        <span>Rotina de Missões</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
+                                        <NotebookPen className="text-chart-4" />
+                                        <span>Rotina Escolar</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/missions" tooltip="Quadro de Missões" isActive={pathname.startsWith('/dashboard/missions')}>
                                         <Target className="text-destructive" />
                                         <span>Quadro de Missões</span>
@@ -161,15 +159,9 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
-                                        <CalendarDays className="text-chart-5" />
-                                        <span>Rotina de Missões</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
-                                        <NotebookPen className="text-chart-4" />
-                                        <span>Rotina Escolar</span>
+                                     <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                                        <Medal className="text-chart-5" />
+                                        <span>Quadro de Medalhas</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                             </AccordionContent>
