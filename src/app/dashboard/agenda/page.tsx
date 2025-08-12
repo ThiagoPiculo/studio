@@ -494,7 +494,7 @@ function AgendaPageContent() {
   };
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
-    if (range === 'day') return format(date, "EEEE, dd 'de' MMMM", { locale: ptBR });
+    if (range === 'day') return format(date, "EEEE, dd/MM/yy", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
     
     const start = interval.start;
@@ -712,7 +712,7 @@ function AgendaPageContent() {
                         return (
                             <div key={dateKey} className="w-[75vw] flex-shrink-0 space-y-2">
                                 <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                    {format(day, "EEEE, dd", { locale: ptBR })}
+                                    {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
                                     {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
                                 </h2>
                                {selectedChildId && child ? (
@@ -770,7 +770,7 @@ function AgendaPageContent() {
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
               <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap", isToday(day) && "text-primary")}>
-                {format(day, "EEEE, dd", { locale: ptBR })}
+                {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
               {selectedChildId ? (
@@ -830,11 +830,18 @@ function AgendaPageContent() {
         return acc;
     }, {} as Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }>);
     
+    const sortedChildKeys = Object.keys(eventsByChild).sort((a,b) => {
+        const nameA = childrenMap.get(a)?.name || '';
+        const nameB = childrenMap.get(b)?.name || '';
+        return nameA.localeCompare(nameB);
+    });
+
     return (
         <Accordion type="multiple" className="w-full space-y-2">
-            {Object.entries(eventsByChild).map(([childId, childEvents]) => {
+            {sortedChildKeys.map((childId) => {
                 const child = childrenMap.get(childId);
                 if (!child) return null;
+                const childEvents = eventsByChild[childId];
                 
                 const morningTotal = childEvents.morning.length;
                 const morningCompleted = childEvents.morning.filter(e => e.type === 'mission' && isMissionCompletedForDate(e.data, day)).length;
@@ -849,7 +856,7 @@ function AgendaPageContent() {
                     <AccordionItem value={childId} key={childId} className="border-none">
                          <div className="rounded-lg border overflow-hidden" style={{ backgroundColor: `${child.color}10`}}>
                             <AccordionTrigger className="p-3 hover:no-underline">
-                                <div className="flex justify-between items-center w-full">
+                                <div className="flex flex-col items-start gap-2 w-full text-left">
                                     <div className="flex items-center gap-3">
                                         <Avatar className="h-9 w-9">
                                             <AvatarImage src={child.avatar} alt={child.name} />
@@ -857,7 +864,7 @@ function AgendaPageContent() {
                                         </Avatar>
                                         <h4 className="font-semibold">{child.name}</h4>
                                     </div>
-                                    <div className="text-xs text-muted-foreground space-x-2 font-mono pr-2">
+                                    <div className="text-xs text-muted-foreground space-x-2 font-mono pl-12">
                                         <span>Manhã: {morningCompleted}/{morningTotal}</span>
                                         <span>Tarde: {afternoonCompleted}/{afternoonTotal}</span>
                                         <span>Noite: {nightCompleted}/{nightTotal}</span>
@@ -865,7 +872,7 @@ function AgendaPageContent() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent className="p-4 pt-0 border-t bg-card" style={{borderColor: `${child.color}30`}}>
-                                <div className="space-y-4 pt-4">
+                                <div className="space-y-4 pt-2">
                                   {childEvents.morning.length > 0 && (
                                     <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, true)}</div>
                                   )}
