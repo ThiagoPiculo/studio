@@ -182,7 +182,8 @@ function AgendaPageContent() {
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
           setSelectedChildId(childIdParam);
         } else if (fetchedChildren.length > 0) {
-          setSelectedChildId(fetchedChildren[0].id);
+          // If no specific child is selected, default to null (all heroes view)
+          setSelectedChildId(null);
         } else {
           setSelectedChildId(null);
         }
@@ -517,170 +518,172 @@ function AgendaPageContent() {
   });
 
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date, showEmoji: boolean) => {
-    const eventsByChild = events.reduce((acc, event) => {
-        const childId = event.data.childId;
-        if (!acc[childId]) acc[childId] = [];
-        acc[childId].push(event);
-        return acc;
-    }, {} as Record<string, CalendarEvent[]>);
+      const eventsByChild = events.reduce((acc, event) => {
+          const childId = event.data.childId;
+          if (!acc[childId]) acc[childId] = [];
+          acc[childId].push(event);
+          return acc;
+      }, {} as Record<string, CalendarEvent[]>);
 
-    const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
-        const childA = childrenMap.get(a)?.name || '';
-        const childB = childrenMap.get(b)?.name || '';
-        return childA.localeCompare(childB);
-    });
+      const sortedChildIds = Object.keys(eventsByChild).sort((a, b) => {
+          const childA = childrenMap.get(a)?.name || '';
+          const childB = childrenMap.get(b)?.name || '';
+          return childA.localeCompare(childB);
+      });
 
-    return (
-      <ul className="space-y-4">
-        {sortedChildIds.map(childId => {
-          const child = childrenMap.get(childId);
-          if (!child) return null;
-          const childEvents = eventsByChild[childId].sort((a, b) => {
-              const timeA = getDateObject(a.data.startDate) || getDateObject(a.data.dueDate);
-              const timeB = getDateObject(b.data.startDate) || getDateObject(b.data.dueDate);
-              
-              const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
-              const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
+      return (
+        <ul className={cn("space-y-4", selectedChildId && 'pt-0')}>
+          {sortedChildIds.map(childId => {
+            const child = childrenMap.get(childId);
+            if (!child) return null;
+            const childEvents = eventsByChild[childId].sort((a, b) => {
+                const timeA = getDateObject(a.data.startDate) || getDateObject(a.data.dueDate);
+                const timeB = getDateObject(b.data.startDate) || getDateObject(b.data.dueDate);
+                
+                const minutesA = timeA ? timeA.getHours() * 60 + timeA.getMinutes() : Number.MAX_SAFE_INTEGER;
+                const minutesB = timeB ? timeB.getHours() * 60 + timeB.getMinutes() : Number.MAX_SAFE_INTEGER;
 
-              if (minutesA !== minutesB) {
-                  return minutesA - minutesB;
-              }
-              return a.title.localeCompare(b.title);
-          });
+                if (minutesA !== minutesB) {
+                    return minutesA - minutesB;
+                }
+                return a.title.localeCompare(b.title);
+            });
 
-          return (
-            <li key={childId} className="relative pt-12">
-                <div className="absolute top-0 left-0 flex items-center gap-3">
-                    <Avatar
-                        className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
-                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                    >
-                        <AvatarImage src={child.avatar} alt={child.name} />
-                        <AvatarFallback style={{backgroundColor: child.color}}>
-                            {getInitials(child.name)}
-                        </AvatarFallback>
-                    </Avatar>
-                    <h4 className="font-semibold text-foreground/90">{child.name}</h4>
-                </div>
-                <ul className="mt-2 border-l-2 pl-4 ml-4" style={{ borderColor: child.color }}>
-                    {childEvents.map(event => {
-                        const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
-                        const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
-                        const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
-                        const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
-                        
-                        if (event.type === 'school') {
-                            return (
-                                <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex items-center p-1 -m-1">
-                                    <NotebookPen className="h-4 w-4 inline-block text-gray-500 shrink-0" />
-                                    <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5 text-xs">{formattedTime}</span>
-                                    <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
-                                </li>
-                            )
-                        }
-                        
-                        const categoryDetails = categoryMap.get(event.data.category);
+            return (
+              <li key={childId} className={cn(!selectedChildId && "relative pt-12")}>
+                  {!selectedChildId && (
+                      <div className="absolute top-0 left-0 flex items-center gap-3">
+                          <Avatar
+                              className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                              style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                          >
+                              <AvatarImage src={child.avatar} alt={child.name} />
+                              <AvatarFallback style={{backgroundColor: child.color}}>
+                                  {getInitials(child.name)}
+                              </AvatarFallback>
+                          </Avatar>
+                          <h4 className="font-semibold text-foreground/90">{child.name}</h4>
+                      </div>
+                  )}
+                  <ul className={cn(!selectedChildId && "mt-2 border-l-2 pl-4 ml-4")} style={!selectedChildId ? { borderColor: child.color } : {}}>
+                      {childEvents.map(event => {
+                          const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
+                          const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
+                          const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
+                          const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
+                          
+                          if (event.type === 'school') {
+                              return (
+                                  <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex items-center p-1 -m-1">
+                                      <NotebookPen className="h-4 w-4 inline-block text-gray-500 shrink-0" />
+                                      <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5 text-xs">{formattedTime}</span>
+                                      <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
+                                  </li>
+                              )
+                          }
+                          
+                          const categoryDetails = categoryMap.get(event.data.category);
 
-                        return(
-                        <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
-                            <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
-                              setActivePopover(isOpen ? popoverId : null);
-                              if (!isOpen) {
-                                setHighlightedMissionId(null);
-                              }
-                            }}>
-                              <PopoverTrigger asChild>
-                                  <button 
-                                      data-mission-id={popoverId}
-                                      disabled={isProcessingAction === event.data.id || isFamilyLoading} 
-                                      className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
-                                        "hover:bg-accent/50",
-                                        isCompleted && "text-muted-foreground/70",
-                                        highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                          return(
+                          <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
+                              <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
+                                setActivePopover(isOpen ? popoverId : null);
+                                if (!isOpen) {
+                                  setHighlightedMissionId(null);
+                                }
+                              }}>
+                                <PopoverTrigger asChild>
+                                    <button 
+                                        data-mission-id={popoverId}
+                                        disabled={isProcessingAction === event.data.id || isFamilyLoading} 
+                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
+                                          "hover:bg-accent/50",
+                                          isCompleted && "text-muted-foreground/70",
+                                          highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                                        )}
+                                    >
+                                      {isProcessingAction === event.data.id ? (
+                                        <Loader2 className="h-4 w-4 animate-spin inline-block shrink-0" />
+                                      ) : isCompleted ? (
+                                        <CheckSquare className="h-4 w-4 inline-block text-green-500 shrink-0" />
+                                      ) : (
+                                        <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                       )}
-                                  >
-                                    {isProcessingAction === event.data.id ? (
-                                      <Loader2 className="h-4 w-4 animate-spin inline-block shrink-0" />
-                                    ) : isCompleted ? (
-                                      <CheckSquare className="h-4 w-4 inline-block text-green-500 shrink-0" />
-                                    ) : (
-                                      <Square className="h-4 w-4 inline-block text-primary shrink-0" />
-                                    )}
-                                    <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
-                                    {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
-                                    <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                  </button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-80 p-0">
-                                  <div className="p-4 space-y-3">
-                                      <div className="flex items-start justify-between">
-                                        <div className="flex items-center gap-3">
-                                          <Avatar className="h-10 w-10">
-                                            <AvatarImage src={child.avatar} alt={child.name}/>
-                                            <AvatarFallback style={{backgroundColor: child.color}}>
-                                              {getInitials(child.name)}
-                                            </AvatarFallback>
-                                          </Avatar>
-                                          <div>
-                                            <p className="font-semibold">{child.name}</p>
-                                            <p className="text-xs text-muted-foreground">
-                                                Ocorrência de {format(day, 'dd/MM/yyyy')}
-                                            </p>
+                                      <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
+                                      {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                      <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
+                                    </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80 p-0">
+                                    <div className="p-4 space-y-3">
+                                        <div className="flex items-start justify-between">
+                                          <div className="flex items-center gap-3">
+                                            <Avatar className="h-10 w-10">
+                                              <AvatarImage src={child.avatar} alt={child.name}/>
+                                              <AvatarFallback style={{backgroundColor: child.color}}>
+                                                {getInitials(child.name)}
+                                              </AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                              <p className="font-semibold">{child.name}</p>
+                                              <p className="text-xs text-muted-foreground">
+                                                  Ocorrência de {format(day, 'dd/MM/yyyy')}
+                                              </p>
+                                            </div>
                                           </div>
                                         </div>
-                                      </div>
-                                      <h3 className="text-lg font-semibold flex items-center gap-2">
-                                        {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
-                                        {event.data.title}
-                                      </h3>
-                                      <div className="flex flex-wrap items-center gap-2">
-                                          {categoryDetails && (
-                                              <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                                                  {categoryDetails.label}
-                                              </Badge>
-                                          )}
-                                          <Badge variant="secondary" className="flex items-center gap-1">
-                                            <Repeat className="h-3 w-3"/>
-                                            <span className="text-xs">{formatRecurrenceSummary(event.data)}</span>
-                                          </Badge>
-                                      </div>
-                                      
-                                      <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
-                                        <span className="flex items-center gap-1.5">
-                                          <StarIcon className="h-4 w-4 text-yellow-500"/>
-                                          <span className="font-semibold text-foreground">{event.data.starsReward}</span>
-                                        </span>
-                                         <span className="flex items-center gap-1.5">
-                                          <BadgeCheck className="h-4 w-4 text-blue-500"/>
-                                           <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
-                                        </span>
-                                      </div>
+                                        <h3 className="text-lg font-semibold flex items-center gap-2">
+                                          {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                          {event.data.title}
+                                        </h3>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                            {categoryDetails && (
+                                                <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                    {categoryDetails.label}
+                                                </Badge>
+                                            )}
+                                            <Badge variant="secondary" className="flex items-center gap-1">
+                                              <Repeat className="h-3 w-3"/>
+                                              <span className="text-xs">{formatRecurrenceSummary(event.data)}</span>
+                                            </Badge>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
+                                          <span className="flex items-center gap-1.5">
+                                            <StarIcon className="h-4 w-4 text-yellow-500"/>
+                                            <span className="font-semibold text-foreground">{event.data.starsReward}</span>
+                                          </span>
+                                           <span className="flex items-center gap-1.5">
+                                            <BadgeCheck className="h-4 w-4 text-blue-500"/>
+                                             <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
+                                          </span>
+                                        </div>
 
-                                  </div>
-                                  <Separator/>
-                                  <div className="p-2 flex flex-col gap-1">
-                                    {isCompleted ? (
-                                      <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                    ) : (
-                                      <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                    )}
-                                    <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                    <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
-                                    <Separator />
-                                    <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
-                                  </div>
-                              </PopoverContent>
-                            </Popover>
-                        </li>
-                        )
-                    })}
-                </ul>
-            </li>
-          );
-        })}
-      </ul>
-    );
-  };
+                                    </div>
+                                    <Separator/>
+                                    <div className="p-2 flex flex-col gap-1">
+                                      {isCompleted ? (
+                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                      ) : (
+                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                      )}
+                                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
+                                      <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
+                                      <Separator />
+                                      <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
+                                    </div>
+                                </PopoverContent>
+                              </Popover>
+                          </li>
+                          )
+                      })}
+                  </ul>
+              </li>
+            );
+          })}
+        </ul>
+      );
+    };
   
   const renderGridView = () => {
     const days = eachDayOfInterval(viewInterval);
@@ -717,12 +720,28 @@ function AgendaPageContent() {
                         const dateKey = format(day, 'yyyy-MM-dd');
                         const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
                         const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+                        const child = selectedChildId ? childrenMap.get(selectedChildId) : null;
+                        
                         return (
                             <div key={dateKey} className="w-[75vw] flex-shrink-0 space-y-2">
-                                 <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
+                                <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
                                     {format(day, "EEEE, dd", { locale: ptBR })}
                                     {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
                                 </h2>
+                                {child && (
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <Avatar
+                                        className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                      >
+                                          <AvatarImage src={child.avatar} alt={child.name} />
+                                          <AvatarFallback style={{backgroundColor: child.color}}>
+                                              {getInitials(child.name)}
+                                          </AvatarFallback>
+                                      </Avatar>
+                                      <h4 className="font-semibold text-foreground/90">{child.name}</h4>
+                                    </div>
+                                )}
                                 <Card className="shadow-sm flex-1">
                                     {!hasEventsForDay ? (
                                         <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
@@ -758,6 +777,7 @@ function AgendaPageContent() {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
           const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+          const child = selectedChildId ? childrenMap.get(selectedChildId) : null;
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -765,6 +785,20 @@ function AgendaPageContent() {
                 {format(day, "EEEE, dd", { locale: ptBR })}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
+              {child && (
+                  <div className="flex items-center gap-3">
+                      <Avatar
+                          className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                          style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                      >
+                          <AvatarImage src={child.avatar} alt={child.name} />
+                          <AvatarFallback style={{backgroundColor: child.color}}>
+                              {getInitials(child.name)}
+                          </AvatarFallback>
+                      </Avatar>
+                      <h4 className="font-semibold text-foreground/90">{child.name}</h4>
+                  </div>
+              )}
               
               <Card className="shadow-sm flex-1">
                 {!hasEventsForDay ? (
