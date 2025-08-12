@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -182,11 +181,12 @@ function AgendaPageContent() {
         const childIdParam = searchParams.get('childId');
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
           setSelectedChildId(childIdParam);
-        } else if (fetchedChildren.length > 0) {
-          // If no specific child is selected, default to null (all heroes view)
-          setSelectedChildId(null);
+        } else if (fetchedChildren.length === 1) {
+            // If there's only one child, select it automatically
+            setSelectedChildId(fetchedChildren[0].id);
         } else {
-          setSelectedChildId(null);
+            // Otherwise, default to all heroes view
+            setSelectedChildId(null);
         }
 
       } catch (error) {
@@ -1260,3 +1260,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
