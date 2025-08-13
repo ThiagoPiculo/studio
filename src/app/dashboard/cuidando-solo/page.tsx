@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Loader2, User, PlusCircle, ArrowRight, Sparkles } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
-import Loading from '../loading';
+import { Skeleton } from '@/components/ui/skeleton';
 
 function CuidandoSoloPageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -42,7 +42,22 @@ function CuidandoSoloPageContent() {
     }, [user, authLoading]);
 
     if (isLoading || authLoading) {
-        return <Loading />;
+        return (
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <Skeleton className="h-8 w-64" />
+                        <Skeleton className="h-4 w-full mt-2" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <Skeleton className="h-16 w-full" />
+                            <Skeleton className="h-16 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
     }
 
     if (children.length > 0) {
