@@ -176,7 +176,7 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-4" className="border-none">
                             <CustomAccordionTrigger>
-                                Aliança de Herois
+                                Solo ou Aliança de Herois
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
