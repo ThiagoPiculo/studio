@@ -74,7 +74,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="text-2xl font-headline flex items-center gap-3">
-                    <Home className="h-6 w-6 text-primary" />
+                    <CalendarDays className="h-6 w-6 text-chart-5" />
                     Resumo do Dia
                     <Popover>
                         <PopoverTrigger asChild>
