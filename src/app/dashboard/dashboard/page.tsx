@@ -7,8 +7,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
-import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { DashboardClientPage } from '@/components/dashboard/dashboard/DashboardClientPage';
+import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+
 
 function DashboardPageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -50,16 +51,17 @@ function DashboardPageContent() {
         return <Loading />;
     }
     
+    // The getting started guide is now primarily handled by the root dashboard page logic
+    // but we can keep a fallback here for direct navigation.
     const hasAnyContent = initialData.children.length > 0;
-
     if (!hasAnyContent) {
         return (
-            <GettingStartedGuide 
+             <GettingStartedGuide 
                 hasChildren={false}
                 hasMissions={false} 
                 hasRewards={false}
             />
-        );
+        )
     }
     
     return <DashboardClientPage initialData={initialData} />;

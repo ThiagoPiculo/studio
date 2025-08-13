@@ -1,299 +1,47 @@
-
+// src/app/dashboard/page.tsx
 "use client";
 
-import { Suspense, useEffect, useState, useCallback, useMemo, useRef } from 'react';
-import Loading from './loading';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { ChildProfile, UserProfile, FamilyRole } from '@/lib/types';
-import { getChildProfilesForAttribution, getFamilyMembers } from '@/lib/firebase/firestore';
+import Loading from './loading';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { cn, getInitials } from '@/lib/utils';
-import { Home, Link as LinkIcon, ArrowRight, HelpCircle, LayoutGrid, List, ChevronDown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useRouter } from 'next/navigation';
-import { familyRoles } from "@/lib/types";
-import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { Separator } from '@/components/ui/separator';
+import { getChildProfilesForAttribution, getMissionTemplatesByOwnerOrFamily, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 
-
-interface ContextData {
-    context: {
-        id: string;
-        name: string;
-        role?: 'Personal' | FamilyRole;
-    };
-    children: ChildProfile[];
-    members: UserProfile[];
-}
-
-function ContextCard({ contextData, isMobile, viewMode }: { contextData: ContextData, isMobile: boolean, viewMode: 'grid' | 'list' }) {
-    const { context, children, members } = contextData;
-    const { user } = useAuth();
-    const { setCurrentContext } = useFamily();
-    const router = useRouter();
-    const [isExpanded, setIsExpanded] = useState(false);
-
-    const isMySpace = context.id === 'my-space';
-    const isMySpaceAndEmpty = isMySpace && children.length === 0;
-
-    const handleHeaderClick = () => {
-        const targetPath = isMySpaceAndEmpty ? '/dashboard/assistente' : `/dashboard/heroes`;
-        setCurrentContext(context.id);
-        router.push(targetPath);
-    };
-    
-    const Icon = isMySpace ? Home : LinkIcon;
-    const roleInfo = isMySpace
-      ? { label: 'Proprietário solo (sem colaboração)', description: 'Seu espaço pessoal para gerenciar os heróis que só você acompanha.' }
-      : familyRoles.find(r => r.id === context.role);
-
-    if (isMobile) {
-        return (
-            <div className="border bg-card rounded-lg shadow-sm p-4 space-y-2">
-                 <div className="flex flex-col gap-2 w-full">
-                    <div className="flex items-start justify-between w-full">
-                        <div className="flex items-center gap-3">
-                            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                            <CardTitle className="text-lg">{context.name}</CardTitle>
-                        </div>
-                        <Button variant="link" className="p-0 h-auto text-xs sm:text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
-                            {isMySpaceAndEmpty ? "Começar a usar" : "Resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
-                        </Button>
-                    </div>
-                    <div className="flex items-center gap-2 pl-8">
-                        <p className="text-xs text-muted-foreground shrink-0">Mini Herois:</p>
-                        <div className="flex items-center -space-x-2 min-w-0">
-                            {children.length > 0 ? (
-                                children.map(child => (
-                                    <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))
-                            ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum herói.</p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-                {isExpanded && <div className="animate-accordion-down pt-2 border-t">
-                     <div className="space-y-4 pt-4">
-                        <div className="space-y-1">
-                            <p className="font-semibold text-foreground/90">{roleInfo?.label}</p>
-                        </div>
-                        {!isMySpace && (
-                            <div className="flex items-center gap-2">
-                                <h4 className="text-sm font-semibold text-muted-foreground">Colaboradores:</h4>
-                                {members.length > 1 ? (
-                                    <div className="flex -space-x-2">
-                                        {members.filter(m => m.uid !== user?.uid).map(member => (
-                                            <Avatar key={member.uid} className="h-7 w-7 border-2 border-background">
-                                                <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                            </Avatar>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-muted-foreground italic">Nenhum.</p>
-                                )}
-                            </div>
-                        )}
-                    </div>
-                </div>}
-                 <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="w-full text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1 pt-2"
-                >
-                    {isExpanded ? "Ver menos" : "Ver mais"}
-                    <ChevronDown className={cn("h-4 w-4 transition-transform", isExpanded && "rotate-180")} />
-                </button>
-            </div>
-        );
-    }
-    
-    // Desktop view
-    return (
-        <Card key={context.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
-            <CardContent className="p-4 flex flex-col gap-4 flex-grow">
-                 <div className="flex items-start justify-between w-full">
-                    <div className="flex items-center gap-3">
-                        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                        <CardTitle>{isMySpace ? context.name : `Aliança: ${context.name}`}</CardTitle>
-                    </div>
-                    <Button variant="link" className="p-0 h-auto text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
-                        {isMySpaceAndEmpty ? "Começar a usar" : "Ver resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
-                    </Button>
-                </div>
-
-                <div className="space-y-1">
-                    <h4 className="text-sm font-semibold text-muted-foreground">Mini Heróis:</h4>
-                     {children.length > 0 ? (
-                        <div className="flex -space-x-2">
-                            {children.map(child => (
-                                <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                    )}
-                </div>
-
-                <Separator />
-                
-                {isMySpace ? (
-                     <div className="space-y-1">
-                        <p className="text-sm text-muted-foreground">
-                            <span className="font-semibold">Aqui sou:</span> {roleInfo?.label}
-                        </p>
-                    </div>
-                ) : (
-                     <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-1">
-                           <p className="text-sm text-muted-foreground">
-                                <span className="font-semibold">Aqui sou:</span> <span className="font-medium text-foreground">{roleInfo?.label}</span>
-                           </p>
-                           <p className="text-xs text-muted-foreground">({roleInfo?.description})</p>
-                        </div>
-                        <div className="space-y-1">
-                           <h4 className="text-sm font-semibold text-muted-foreground">Membros da Aliança:</h4>
-                            {members.length > 1 ? (
-                                <div className="flex -space-x-2">
-                                {members.filter(m => m.uid !== user?.uid).map(member => (
-                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                                </div>
-                            ) : (
-                                <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </CardContent>
-        </Card>
-    );
-};
-
-
-function DashboardRootPageContent() {
+export default function DashboardRedirectPage() {
     const { user, loading: authLoading } = useAuth();
-    const { availableContexts, isLoading: isFamilyLoading } = useFamily();
-    const isMobile = useIsMobile();
-    
-    const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>('grid');
-    const [isLoading, setIsLoading] = useState(true);
-    const [contextData, setContextData] = useState<ContextData[]>([]);
+    const { availableContexts, isLoading: familyLoading } = useFamily();
+    const router = useRouter();
 
-    const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
-
-    const mySpaceData = useMemo(() => {
-        return contextData.find(cd => cd.context.id === 'my-space');
-    }, [contextData]);
-
-    const fetchData = useCallback(async () => {
-        if (!user) {
-            setIsLoading(false);
+    useEffect(() => {
+        if (authLoading || familyLoading) {
             return;
         }
-        setIsLoading(true);
 
-        try {
-            const dataPromises = availableContexts.map(async (context) => {
-                const children = await getChildProfilesForAttribution(user.uid, context.id);
-                let members: UserProfile[] = [];
-                if (context.id !== 'my-space') {
-                    members = await getFamilyMembers(context.id);
-                } else {
-                    if (user) {
-                        members = [user as UserProfile];
-                    }
-                }
-                return { context, children, members };
-            });
-
-            const allContextData = await Promise.all(dataPromises);
-            setContextData(allContextData);
-        } catch (error) {
-            console.error("Error fetching context data:", error);
-        } finally {
-            setIsLoading(false);
+        if (!user) {
+            router.replace('/auth/login');
+            return;
         }
-    }, [user, availableContexts]);
-  
-    useEffect(() => {
-        if (!authLoading && !isFamilyLoading) {
-          fetchData();
-        }
-    }, [fetchData, authLoading, isFamilyLoading]);
-    
-    const isNewUserExperience = !isLoading && !authLoading && !isFamilyLoading && mySpaceData?.children.length === 0 && !hasAlliances;
-    
-    if (authLoading || isFamilyLoading || isLoading) {
-        return <Loading />;
-    }
-  
-    if (isNewUserExperience) {
-        return (
-            <GettingStartedGuide 
-                hasChildren={false}
-                hasMissions={false}
-                hasRewards={false}
-            />
-        );
-    }
-    
-    const renderContent = () => {
-        const mySpaceContext = contextData.find(cd => cd.context.id === 'my-space');
-        const allianceContexts = contextData.filter(cd => cd.context.id !== 'my-space');
 
-        return (
-            <div className={cn(
-                "grid gap-6",
-                isMobile ? "grid-cols-1" : 
-                localViewMode === 'grid' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
-            )}>
-                 {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={isMobile} viewMode={localViewMode} />}
-                 {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={isMobile} viewMode={localViewMode} />)}
-            </div>
-        );
-    }
+        const checkInitialState = async () => {
+            const hasAlliances = availableContexts.some(c => c.id !== 'my-space');
+            const children = await getChildProfilesForAttribution(user.uid, 'my-space');
+            
+            if (children.length === 0 && !hasAlliances) {
+                // This is a new user, stay on a page that will show the GettingStartedGuide
+                // But let's route to the main summary page, which handles this case.
+                 router.replace('/dashboard/heroes');
+            } else {
+                const initialPage = user.settings?.initialPage || 'heroes';
+                router.replace(`/dashboard/${initialPage}`);
+            }
+        };
 
-    return (
-        <div className="space-y-8">
-             {!isMobile && (
-                 <div className="flex items-start justify-start">
-                     <ToggleGroup type="single" value={localViewMode} onValueChange={(value) => value && setLocalViewMode(value as any)} className="w-full sm:w-auto">
-                        <ToggleGroupItem value="grid" aria-label="Ver em grade" className="flex-1 sm:flex-initial">
-                            <LayoutGrid className="h-4 w-4" />
-                        </ToggleGroupItem>
-                        <ToggleGroupItem value="list" aria-label="Ver em lista" className="flex-1 sm:flex-initial">
-                            <List className="h-4 w-4" />
-                        </ToggleGroupItem>
-                    </ToggleGroup>
-                 </div>
-             )}
-            {renderContent()}
-        </div>
-    );
-}
+        checkInitialState();
 
-export default function DashboardRootPage() {
-    return (
-        <Suspense fallback={<Loading />}>
-            <DashboardRootPageContent />
-        </Suspense>
-    );
+    }, [user, authLoading, familyLoading, availableContexts, router]);
+    
+    // Render a full-page loader while contexts are resolving and redirection is happening.
+    return <Loading />;
 }
