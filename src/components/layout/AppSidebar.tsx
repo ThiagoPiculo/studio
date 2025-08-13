@@ -180,6 +180,12 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
+                                    <SidebarMenuButton href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" isActive={pathname.startsWith('/dashboard/cuidando-solo')}>
+                                        <User className="text-chart-2" />
+                                        <span>Cuidando Solo</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/family" tooltip="Criar ou Entrar em Aliança">
                                         <PlusCircle className="text-primary" />
                                         <span>Criar ou Entrar em Aliança</span>
