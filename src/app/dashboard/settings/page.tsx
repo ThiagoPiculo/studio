@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, School, ThumbsUp, Palette, Bell, CheckCircle, UserPlus, Award, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users, PlusCircle } from 'lucide-react';
+import { Loader2, Save, Settings, Sparkles, Bell, CheckCircle, UserPlus, Award, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users, PlusCircle, Calendar, Workflow, School } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import type { InitialPage, NotificationPreferences, NotificationType } from '@/lib/types';
 import { FeatureVoteCard } from '@/components/dashboard/settings/FeatureVoteCard';
@@ -21,10 +21,15 @@ import { Switch } from '@/components/ui/switch';
 
 
 const initialPages: { id: InitialPage; label: string }[] = [
+    { id: 'dashboard', label: 'Espaços com Mini Herois' },
     { id: 'heroes', label: 'Resumo do Dia' },
+    { id: 'dashboard', label: 'Painel de Progressos' },
+    { id: 'mural', label: 'Mural Completo' },
     { id: 'agenda', label: 'Rotina de Missões' },
+    { id: 'school-schedule', label: 'Rotina Escolar'},
     { id: 'missions', label: 'Quadro de Missões' },
     { id: 'rewards', label: 'Quadro de Recompensas' },
+    { id: 'achievements', label: 'Quadro de Medalhas'},
     { id: 'family', label: 'Aliança de Herois' },
 ];
 
@@ -37,7 +42,7 @@ const notificationSettings: {
     items: [
       { id: 'mission_completed', label: 'Missão Concluída', description: 'Quando uma criança marca uma missão como concluída.', icon: CheckCircle },
       { id: 'reward_redeemed', label: 'Recompensa Resgatada', description: 'Quando uma criança usa suas estrelas para resgatar uma recompensa.', icon: Award },
-      { id: 'new_level', label: 'Subiu de Nível', description: 'Quando uma criança acumula XP suficiente para subir de nível.', icon: Zap },
+      { id: 'new_level', label: 'Subiu de Nível', description: 'Quando uma criança acumula XP suficiente para subir de nível.', icon: Sparkles },
       { id: 'new_badge', label: 'Nova Medalha Desbloqueada', description: 'Quando uma criança atinge os critérios para desbloquear uma nova medalha.', icon: Award },
     ],
   },
