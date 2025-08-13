@@ -19,7 +19,7 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>('my-space');
-  const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
+  const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
   const [isLoading, setIsLoading] = React.useState(true);
 
   useEffect(() => {
@@ -33,7 +33,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
     if (user) {
       setIsLoading(true);
-      const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }];
+      const initialContexts: EnrichedContext[] = [{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }];
       
       const membershipsQuery = query(collection(db, 'familyMemberships'), where('userId', '==', user.uid));
       
@@ -91,7 +91,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       
     } else { // No user
       setCurrentContextState('my-space');
-      setAvailableContextsState([{ id: 'my-space', name: 'Meu Espaço', role: 'Personal' }]);
+      setAvailableContextsState([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
       setIsLoading(false);
     }
     

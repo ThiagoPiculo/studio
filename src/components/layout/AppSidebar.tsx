@@ -182,7 +182,7 @@ export function AppSidebar() {
                                 <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" isActive={pathname.startsWith('/dashboard/cuidando-solo')}>
                                         <User className="text-chart-2" />
-                                        <span>Cuidando Solo</span>
+                                        <span>Cuidar Solo</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>

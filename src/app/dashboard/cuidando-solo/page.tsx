@@ -67,7 +67,7 @@ function CuidandoSoloPageContent() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <User className="h-6 w-6 text-primary"/>
-                            Mini Herois no Meu Espaço
+                            Mini Herois em Cuidar Solo
                         </CardTitle>
                         <CardDescription>Estes são os heróis que você gerencia pessoalmente.</CardDescription>
                     </CardHeader>

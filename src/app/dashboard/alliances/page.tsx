@@ -146,7 +146,7 @@ function AlliancesPageClient() {
                                  <ul className="text-sm text-muted-foreground space-y-2">
                                     <li><strong className="text-foreground">Ver Detalhes:</strong> Acesse o painel de uma aliança para ver os membros, os heróis associados e gerenciar as configurações.</li>
                                     <li><strong className="text-foreground">Convidar:</strong> Use o botão "Convidar" para adicionar novos colaboradores diretamente a uma aliança específica.</li>
-                                    <li><strong className="text-foreground">Criar/Entrar:</strong> Para criar uma nova aliança ou entrar em uma com um código, você precisa primeiro voltar para o seu **"Meu Espaço"** através do seletor de contexto no topo da página.</li>
+                                    <li><strong className="text-foreground">Criar/Entrar:</strong> Para criar uma nova aliança ou entrar em uma com um código, você precisa primeiro voltar para "Cuidar Solo" através do seletor de contexto no topo da página.</li>
                                  </ul>
                                 <PopoverClose asChild>
                                     <Button className="w-full">Entendi 👍</Button>

@@ -189,7 +189,7 @@ function FamilyPageContent() {
           setPendingRequests(requests);
           setChildrenInContext(children);
         } catch (error) {
-          console.error("Error fetching 'My Space' data:", error);
+          console.error("Error fetching 'Cuidar Solo' data:", error);
           toast({ title: "Erro ao carregar dados", variant: "destructive" });
         } finally {
           setIsLoading(false);
@@ -709,7 +709,7 @@ function FamilyPageContent() {
                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
                               <li><strong>Membros:</strong> Convide outros responsáveis (co-pais, avós, terapeutas) para participar.</li>
                               <li><strong>Mini Herois:</strong> Adicione os perfis das crianças a esta aliança para que todos os membros possam ver e gerenciar suas missões.</li>
-                              <li><strong>Criação:</strong> Para criar uma nova aliança ou entrar em uma, volte para o "Meu Espaço" e use os cards de ação na parte inferior da tela.</li>
+                              <li><strong>Criação:</strong> Para criar uma nova aliança ou entrar em uma, volte para o "Cuidar Solo" e use os cards de ação na parte inferior da tela.</li>
                           </ul>
                           <PopoverClose asChild>
                               <Button className="w-full">Entendi 👍</Button>
@@ -1104,7 +1104,7 @@ function FamilyPageContent() {
                   >
                       <Home className="h-6 w-6 text-primary flex-shrink-0" />
                       <div className="flex-grow">
-                          <p className="font-semibold text-foreground">Mover para Meu Espaço</p>
+                          <p className="font-semibold text-foreground">Mover para "Cuidar Solo"</p>
                           <p className="text-sm text-muted-foreground">O herói volta para o espaço pessoal do seu criador. Nenhum progresso será perdido.</p>
                       </div>
                   </div>
@@ -1233,13 +1233,13 @@ function FamilyPageContent() {
     );
   }
 
-  // View when user is in "My Space" (not in a family)
+  // View when user is in "Cuidar Solo" (not in a family)
   return (
     <div className="space-y-6">
        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
               <Home className="h-8 w-8 text-primary" />
-              <h2 className="text-3xl font-headline font-bold">Meu Espaço</h2>
+              <h2 className="text-3xl font-headline font-bold">Cuidar Solo</h2>
               <Popover>
                   <PopoverTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
@@ -1253,7 +1253,7 @@ function FamilyPageContent() {
                               Esta tela é o seu centro de comando para criar e gerenciar suas equipes.
                           </p>
                           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                              <li><strong>Meu Espaço:</strong> Quando você está em "Meu Espaço", você vê os heróis que gerencia individualmente e tem as opções para criar uma nova Aliança ou entrar em uma já existente usando um código.</li>
+                              <li><strong>Cuidar Solo:</strong> Quando você está em "Cuidar Solo", você vê os heróis que gerencia individualmente e tem as opções para criar uma nova Aliança ou entrar em uma já existente usando um código.</li>
                               <li><strong>Aliança:</strong> Ao selecionar uma aliança, a tela muda para mostrar os membros e heróis daquele grupo. Você poderá convidar novos colaboradores, gerenciar perfis e colaborar nas missões e recompensas da equipe.</li>
                           </ul>
                           <PopoverClose asChild>
@@ -1374,7 +1374,7 @@ function FamilyPageContent() {
         <CardHeader>
             <CardTitle className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
-                    <Sparkles className="h-6 w-6 text-primary"/>Mini Herois no Meu Espaço
+                    <Sparkles className="h-6 w-6 text-primary"/>Mini Herois em "Cuidar Solo"
                 </div>
                 <Link href="/dashboard/novo-heroi" passHref>
                     <Button>
