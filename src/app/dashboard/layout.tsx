@@ -13,7 +13,7 @@ import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
@@ -57,6 +57,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
   const isHeroesDashboard = pathname === '/dashboard/heroes';
+
+  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings'].includes(pathname);
 
   const headerContent = {
     '/dashboard': {
@@ -146,10 +148,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   {!isChildAuthenticated && <Notifications />}
                 </div>
               </header>
-
-              <div className="px-4 sm:px-6 py-2">
-                <FamilyContextSwitcher />
-              </div>
+              
+              {showContextSwitcher && (
+                <div className="px-4 sm:px-6 py-2">
+                  <FamilyContextSwitcher />
+                </div>
+              )}
 
               <DashboardMainContent>{children}</DashboardMainContent>
               {isClient && isMobile && <BottomNavbar />}
