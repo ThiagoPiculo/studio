@@ -110,11 +110,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </header>
 
               {isRootDashboard ? (
-                <div className="flex items-center justify-between border-b px-4 sm:px-6 py-2">
+                <div className="px-4 sm:px-6 py-2">
                     <FamilyContextSwitcher />
                 </div>
               ) : (
-                 <div className="flex items-center border-b px-4 sm:px-6 py-2">
+                 <div className="border-b px-4 sm:px-6 py-2">
                     <FamilyContextSwitcher />
                  </div>
               )}
