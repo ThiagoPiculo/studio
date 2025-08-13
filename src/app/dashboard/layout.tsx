@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   )}
                   {isRootDashboard ? (
                     <div className="flex items-center gap-2">
-                        <Home className="h-6 w-6 text-primary hidden sm:block"/>
+                        <Home className="h-6 w-6 text-primary"/>
                         <h1 className="text-xl font-bold font-headline">Espaços com Mini Herois</h1>
                         <Popover>
                             <PopoverTrigger asChild>
@@ -100,8 +100,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     </div>
                   ) : (
                     <>
-                      <FamilyContextSwitcher />
-                      <Separator orientation="vertical" className="h-6 hidden sm:block" />
                       <Breadcrumbs />
                     </>
                   )}
@@ -111,10 +109,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
 
-              {isRootDashboard && (
-                <div className="flex items-center justify-between border-b bg-card px-4 sm:px-6 py-2">
+              {isRootDashboard ? (
+                <div className="flex items-center justify-between border-b px-4 sm:px-6 py-2">
                     <FamilyContextSwitcher />
                 </div>
+              ) : (
+                 <div className="flex items-center border-b px-4 sm:px-6 py-2">
+                    <FamilyContextSwitcher />
+                 </div>
               )}
 
               <DashboardMainContent>{children}</DashboardMainContent>
