@@ -27,6 +27,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Calendar1Icon } from '../icons/Calendar1Icon';
 
 
 function AppLogo() {
@@ -97,7 +98,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton href="/dashboard/heroes" tooltip="Resumo do Dia" isActive={pathname.startsWith('/dashboard/heroes')}>
-                            <Home className="text-primary"/>
+                            <Calendar1Icon className="text-chart-5"/>
                             <span>Resumo do Dia</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
