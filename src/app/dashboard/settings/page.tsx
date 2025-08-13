@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -82,92 +83,96 @@ export default function SettingsPage() {
             </Card>
 
             <Accordion type="single" collapsible className="w-full" defaultValue="general-settings">
-                 <Card as={AccordionItem} value="integrations">
-                    <CardHeader>
+                <AccordionItem value="integrations" asChild>
+                    <Card>
+                        <CardHeader>
+                            <AccordionTrigger className="w-full p-0 hover:no-underline">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Sparkles className="h-5 w-5 text-primary"/> Futuras Integrações
+                                </CardTitle>
+                            </AccordionTrigger>
+                            <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
+                        </CardHeader>
+                        <AccordionContent asChild>
+                            <CardContent>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <FeatureVoteCard
+                                        featureId="google_calendar"
+                                        icon={Calendar}
+                                        title="Google Agenda"
+                                        description="Sincronize missões e prazos automaticamente com a sua agenda do Google para nunca perder uma aventura."
+                                    />
+                                    <FeatureVoteCard
+                                        featureId="amazon_alexa"
+                                        icon={BotMessageSquare}
+                                        title="Amazon Alexa"
+                                        description="Receba lembretes de missões e marque-as como concluídas usando simples comandos de voz."
+                                    />
+                                    <FeatureVoteCard
+                                        featureId="ifttt"
+                                        icon={Workflow}
+                                        title="IFTTT (If This Then That)"
+                                        description="Crie automações personalizadas, como acender uma luz inteligente quando uma missão for concluída."
+                                    />
+                                    <FeatureVoteCard
+                                        featureId="google_classroom"
+                                        icon={School}
+                                        title="Google Classroom"
+                                        description="Importe automaticamente tarefas e trabalhos escolares como missões para seus herois."
+                                    />
+                                </div>
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
+                <AccordionItem value="general-settings" asChild>
+                     <Card>
+                        <CardHeader>
                         <AccordionTrigger className="w-full p-0 hover:no-underline">
-                             <CardTitle className="flex items-center gap-2">
-                                <Sparkles className="h-5 w-5 text-primary"/> Futuras Integrações
-                            </CardTitle>
-                        </AccordionTrigger>
-                        <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
-                    </CardHeader>
-                    <AccordionContent asChild>
-                         <CardContent>
-                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <FeatureVoteCard
-                                    featureId="google_calendar"
-                                    icon={Calendar}
-                                    title="Google Agenda"
-                                    description="Sincronize missões e prazos automaticamente com a sua agenda do Google para nunca perder uma aventura."
-                                />
-                                <FeatureVoteCard
-                                    featureId="amazon_alexa"
-                                    icon={BotMessageSquare}
-                                    title="Amazon Alexa"
-                                    description="Receba lembretes de missões e marque-as como concluídas usando simples comandos de voz."
-                                />
-                                <FeatureVoteCard
-                                    featureId="ifttt"
-                                    icon={Workflow}
-                                    title="IFTTT (If This Then That)"
-                                    description="Crie automações personalizadas, como acender uma luz inteligente quando uma missão for concluída."
-                                />
-                                <FeatureVoteCard
-                                    featureId="google_classroom"
-                                    icon={School}
-                                    title="Google Classroom"
-                                    description="Importe automaticamente tarefas e trabalhos escolares como missões para seus herois."
-                                />
-                            </div>
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
-                 <Card as={AccordionItem} value="general-settings">
-                    <CardHeader>
-                       <AccordionTrigger className="w-full p-0 hover:no-underline">
-                             <CardTitle className="flex items-center gap-2">
-                                <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
-                            </CardTitle>
-                        </AccordionTrigger>
-                        <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
-                    </CardHeader>
-                     <AccordionContent asChild>
-                        <CardContent className="space-y-6 pt-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="initial-page">Tela inicial após login</Label>
-                                    <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
-                                        <SelectTrigger id="initial-page">
-                                            <SelectValue placeholder="Selecione uma tela..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {initialPages.map(page => (
-                                                <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
+                                <CardTitle className="flex items-center gap-2">
+                                    <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
+                                </CardTitle>
+                            </AccordionTrigger>
+                            <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
+                        </CardHeader>
+                        <AccordionContent asChild>
+                            <CardContent className="space-y-6 pt-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initial-page">Tela inicial após login</Label>
+                                        <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
+                                            <SelectTrigger id="initial-page">
+                                                <SelectValue placeholder="Selecione uma tela..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {initialPages.map(page => (
+                                                    <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
+                                        <Select value={initialContext} onValueChange={setInitialContext}>
+                                            <SelectTrigger id="initial-context">
+                                                <SelectValue placeholder="Selecione um espaço..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableContexts.map(context => (
+                                                    <SelectItem key={context.id} value={context.id}>
+                                                        {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</p>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
-                                     <Select value={initialContext} onValueChange={setInitialContext}>
-                                        <SelectTrigger id="initial-context">
-                                            <SelectValue placeholder="Selecione um espaço..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {availableContexts.map(context => (
-                                                <SelectItem key={context.id} value={context.id}>
-                                                    {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </AccordionContent>
-                </Card>
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
             </Accordion>
             
             <div className="flex justify-end">
