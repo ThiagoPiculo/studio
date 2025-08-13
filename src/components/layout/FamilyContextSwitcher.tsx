@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Home, ChevronsUpDown, Loader2, Link as LinkIcon, Check } from 'lucide-react';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
@@ -25,6 +25,11 @@ export function FamilyContextSwitcher() {
   const { user } = useAuth();
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  // Refs and state for dynamic avatar calculation
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const contentRef = useRef<HTMLDivElement>(null);
+  const [visibleAvatars, setVisibleAvatars] = useState(0);
 
   useEffect(() => {
     if (!user || availableContexts.length === 0) {
@@ -60,12 +65,42 @@ export function FamilyContextSwitcher() {
   
   const currentContextData = availableContexts.find(c => c.id === currentContext);
   const currentChildren = childrenByContext[currentContext] || [];
+  
+  const calculateVisibleAvatars = useCallback(() => {
+    if (isLoadingChildren || !triggerRef.current || !contentRef.current) {
+        if(currentChildren.length > 0) setVisibleAvatars(currentChildren.length);
+        return;
+    };
+    
+    const GAP = 4; // gap-1 in flex = 4px
+    const AVATAR_WIDTH = 28; // h-7 w-7 = 28px
+    const COUNTER_WIDTH = 28; // width for the "+N" avatar
+
+    const triggerWidth = triggerRef.current.offsetWidth;
+    const contentWidth = contentRef.current.offsetWidth;
+    const availableSpace = triggerWidth - contentWidth - GAP;
+    
+    let maxAvatars = Math.floor(availableSpace / (AVATAR_WIDTH - 8)); // -8 for negative space-x-2 overlap
+    
+    if (currentChildren.length > maxAvatars) {
+        const spaceWithCounter = availableSpace - (COUNTER_WIDTH - 8);
+        maxAvatars = Math.floor(spaceWithCounter / (AVATAR_WIDTH - 8));
+    }
+    
+    setVisibleAvatars(Math.max(0, maxAvatars));
+  }, [isLoadingChildren, currentChildren.length]);
+
+  useEffect(() => {
+    calculateVisibleAvatars();
+    window.addEventListener('resize', calculateVisibleAvatars);
+    return () => window.removeEventListener('resize', calculateVisibleAvatars);
+  }, [calculateVisibleAvatars]);
 
   if (!user || availableContexts.length <= 1) return null;
   
   if (isFamilyLoading) {
     return (
-      <Button variant="secondary" className="w-[240px] justify-start h-auto p-2" disabled>
+      <Button variant="secondary" className="w-[240px] justify-start h-10 p-2" disabled>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Carregando...
       </Button>
@@ -79,42 +114,43 @@ export function FamilyContextSwitcher() {
   }
 
   const Icon = currentContext === 'my-space' ? Home : LinkIcon;
+  const showCounter = currentChildren.length > visibleAvatars;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="w-full max-w-[240px] justify-between h-auto p-2 text-left flex-col items-start">
-            <div className="flex items-center gap-2">
-                <Icon className="h-4 w-4 shrink-0" />
+        <Button variant="secondary" ref={triggerRef} className="w-full max-w-[280px] h-10 justify-between p-2">
+            <div ref={contentRef} className="flex items-center gap-2 overflow-hidden">
+                <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-semibold truncate">{getDisplayName(currentContextData)}</span>
             </div>
-            <div className="flex items-center justify-between w-full pl-6 mt-1">
-                 <div className="flex items-center -space-x-2 min-w-0">
+            <div className="flex items-center gap-1">
+                <div className="flex items-center -space-x-2 min-w-0">
                     {isLoadingChildren ? (
-                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-7 w-20 rounded-full" />
                     ) : currentChildren.length > 0 ? (
                         <>
-                            {currentChildren.slice(0, 5).map(child => (
-                                <Avatar key={child.id} className="h-6 w-6 border-2 border-background">
+                            {currentChildren.slice(0, visibleAvatars).map(child => (
+                                <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
                                     <AvatarImage src={child.avatar} alt={child.name} />
                                     <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
                                 </Avatar>
                             ))}
-                             {currentChildren.length > 5 && (
-                                <Avatar className="h-6 w-6 border-2 border-background">
-                                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{currentChildren.length - 5}</AvatarFallback>
+                             {showCounter && (
+                                <Avatar className="h-7 w-7 border-2 border-background">
+                                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{currentChildren.length - visibleAvatars}</AvatarFallback>
                                 </Avatar>
                             )}
                         </>
                     ) : (
-                        <span className="text-xs text-muted-foreground italic">Nenhum Mini Heroi</span>
+                        <span className="text-xs text-muted-foreground italic pr-1">Nenhum Mini Heroi</span>
                     )}
-                 </div>
+                </div>
                 <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
             </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-80" align="start">
+      <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
         <DropdownMenuLabel>Espaços que Acesso</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {availableContexts.map((context) => {
