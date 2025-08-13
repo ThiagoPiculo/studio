@@ -1238,8 +1238,8 @@ function FamilyPageContent() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-              <Home className="h-8 w-8 text-primary" />
-              <h2 className="text-3xl font-headline font-bold">Cuidar Solo</h2>
+              <LinkIcon className="h-8 w-8 text-primary" />
+              <h2 className="text-3xl font-headline font-bold">Cuidar em Aliança</h2>
               <Popover>
                   <PopoverTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
@@ -1248,13 +1248,13 @@ function FamilyPageContent() {
                   </PopoverTrigger>
                   <PopoverContent className="w-80">
                       <div className="space-y-3">
-                          <h4 className="font-medium leading-none">Gerenciando sua Equipe de Apoio</h4>
+                          <h4 className="font-medium leading-none">Comece uma Nova Aliança</h4>
                           <p className="text-sm text-muted-foreground">
-                              Esta tela é o seu centro de comando para criar e gerenciar suas equipes.
+                            Use esta tela para criar uma nova aliança de heróis ou para se juntar a uma já existente usando um código de convite.
                           </p>
                           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                              <li><strong>Cuidar Solo:</strong> Quando você está em "Cuidar Solo", você vê os heróis que gerencia individualmente e tem as opções para criar uma nova Aliança ou entrar em uma já existente usando um código.</li>
-                              <li><strong>Aliança:</strong> Ao selecionar uma aliança, a tela muda para mostrar os membros e heróis daquele grupo. Você poderá convidar novos colaboradores, gerenciar perfis e colaborar nas missões e recompensas da equipe.</li>
+                              <li><strong>Criar Aliança:</strong> Dê um nome à sua equipe e comece a convidar outros responsáveis para colaborar.</li>
+                              <li><strong>Entrar com Código:</strong> Se você recebeu um código de 6 dígitos, insira-o aqui para enviar um pedido de entrada para uma aliança.</li>
                           </ul>
                           <PopoverClose asChild>
                               <Button className="w-full">Entendi 👍</Button>
