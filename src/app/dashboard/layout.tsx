@@ -1,4 +1,3 @@
-
 "use client";
 import type { ReactNode } from 'react';
 import React, from 'react';
@@ -13,7 +12,7 @@ import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
