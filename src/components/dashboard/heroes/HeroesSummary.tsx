@@ -25,7 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
-import { Calendar1Icon } from '../icons/Calendar1Icon';
+import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
