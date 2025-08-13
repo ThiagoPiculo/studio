@@ -21,6 +21,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Separator } from '@/components/ui/separator';
 
 
 interface ContextData {
@@ -40,7 +41,8 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
     const router = useRouter();
     const [isExpanded, setIsExpanded] = useState(false);
 
-    const isMySpaceAndEmpty = context.id === 'my-space' && children.length === 0;
+    const isMySpace = context.id === 'my-space';
+    const isMySpaceAndEmpty = isMySpace && children.length === 0;
 
     const handleHeaderClick = () => {
         const targetPath = isMySpaceAndEmpty ? '/dashboard/assistente' : `/dashboard/heroes`;
@@ -48,75 +50,64 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
         router.push(targetPath);
     };
     
-    const Icon = context.id === 'my-space' ? Home : LinkIcon;
-    const roleInfo = context.id === 'my-space' 
-      ? { label: 'Proprietário (sem colaboração)', description: 'Seu espaço pessoal para gerenciar os heróis que só você acompanha.' }
+    const Icon = isMySpace ? Home : LinkIcon;
+    const roleInfo = isMySpace
+      ? { label: 'Proprietário solo (sem colaboração)', description: 'Seu espaço pessoal para gerenciar os heróis que só você acompanha.' }
       : familyRoles.find(r => r.id === context.role);
-    
-    const cardHeaderContent = (
-         <div className="flex items-start justify-between w-full">
-            <div className="flex items-center gap-3">
-                <Icon className="h-5 w-5 text-muted-foreground mt-1" />
-                <CardTitle className={isMobile ? "text-lg" : ""}>{context.name}</CardTitle>
-            </div>
-            <Button variant="link" className="p-0 h-auto text-xs sm:text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
-                {isMySpaceAndEmpty ? "Começar a usar" : "Resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
-            </Button>
-        </div>
-    );
 
-    const mobileHeaderContent = (
-      <div className="flex flex-col gap-2 w-full">
-          {cardHeaderContent}
-          <div className="flex items-center gap-2 pl-8">
-              <p className="text-xs text-muted-foreground shrink-0">Mini Herois:</p>
-              <div className="flex items-center -space-x-2 min-w-0">
-                  {children.length > 0 ? (
-                      children.map(child => (
-                          <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
-                              <AvatarImage src={child.avatar} alt={child.name} />
-                              <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                          </Avatar>
-                      ))
-                  ) : (
-                      <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                  )}
-              </div>
-          </div>
-      </div>
-    );
-
-    const expandedContent = (
-      <div className="space-y-4 pt-4 border-t">
-          <div className="space-y-1">
-              <p className="font-semibold text-foreground/90">{roleInfo?.label}</p>
-              <p className="text-xs text-muted-foreground">{roleInfo?.description}</p>
-          </div>
-          {context.id !== 'my-space' && (
-              <div className="flex items-center gap-2">
-                  <h4 className="text-sm font-semibold text-muted-foreground">Colaboradores:</h4>
-                  {members.length > 1 ? (
-                      <div className="flex -space-x-2">
-                          {members.filter(m => m.uid !== user?.uid).map(member => (
-                              <Avatar key={member.uid} className="h-7 w-7 border-2 border-background">
-                                  <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                  <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                              </Avatar>
-                          ))}
-                      </div>
-                  ) : (
-                      <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
-                  )}
-              </div>
-          )}
-      </div>
-    );
-    
     if (isMobile) {
         return (
             <div className="border bg-card rounded-lg shadow-sm p-4 space-y-2">
-                {mobileHeaderContent}
-                {isExpanded && <div className="animate-accordion-down">{expandedContent}</div>}
+                 <div className="flex flex-col gap-2 w-full">
+                    <div className="flex items-start justify-between w-full">
+                        <div className="flex items-center gap-3">
+                            <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                            <CardTitle className="text-lg">{context.name}</CardTitle>
+                        </div>
+                        <Button variant="link" className="p-0 h-auto text-xs sm:text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
+                            {isMySpaceAndEmpty ? "Começar a usar" : "Resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
+                        </Button>
+                    </div>
+                    <div className="flex items-center gap-2 pl-8">
+                        <p className="text-xs text-muted-foreground shrink-0">Mini Herois:</p>
+                        <div className="flex items-center -space-x-2 min-w-0">
+                            {children.length > 0 ? (
+                                children.map(child => (
+                                    <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
+                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                        <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                    </Avatar>
+                                ))
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Nenhum herói.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
+                {isExpanded && <div className="animate-accordion-down pt-2 border-t">
+                     <div className="space-y-4 pt-4">
+                        <div className="space-y-1">
+                            <p className="font-semibold text-foreground/90">{roleInfo?.label}</p>
+                        </div>
+                        {!isMySpace && (
+                            <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-semibold text-muted-foreground">Colaboradores:</h4>
+                                {members.length > 1 ? (
+                                    <div className="flex -space-x-2">
+                                        {members.filter(m => m.uid !== user?.uid).map(member => (
+                                            <Avatar key={member.uid} className="h-7 w-7 border-2 border-background">
+                                                <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
+                                                <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                            </Avatar>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground italic">Nenhum.</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>}
                  <button
                     onClick={() => setIsExpanded(!isExpanded)}
                     className="w-full text-xs text-muted-foreground font-semibold flex items-center justify-center gap-1 pt-2"
@@ -128,81 +119,23 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
         );
     }
     
-    if (viewMode === 'list') {
-        return (
-             <Card key={context.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col md:flex-row md:items-center">
-                <CardHeader className="flex-1 p-4 md:p-6">
-                   {cardHeaderContent}
-                   <CardDescription className="pt-1 text-xs">{roleInfo?.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="p-4 md:p-6 pt-0 md:pt-4 grid grid-cols-2 gap-4 flex-shrink-0 md:border-l">
-                     {context.id !== 'my-space' && (
-                       <div>
-                         <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
-                         {members.length > 1 ? (
-                            <div className="flex -space-x-2">
-                                {members.filter(m => m.uid !== user?.uid).map(member => (
-                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
-                        )}
-                       </div>
-                    )}
-                    <div className={cn(context.id === 'my-space' && 'col-span-2')}>
-                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Herois</h4>
-                        {children.length > 0 ? (
-                            <div className="flex -space-x-2">
-                                {children.map(child => (
-                                    <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-muted-foreground italic">Nenhum herói aqui.</p>
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    }
-
+    // Desktop view
     return (
-        <Card key={context.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
-            <CardHeader>
-               {cardHeaderContent}
-            </CardHeader>
-            <CardContent className="flex-grow">
-              <div className="grid gap-4 flex-grow pt-2">
-                <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">{roleInfo?.description}</p>
-                </div>
-                {context.id !== 'my-space' && (
-                    <div>
-                        <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Colaboradores</h4>
-                        {members.length > 1 ? (
-                        <div className="flex -space-x-2">
-                           {members.filter(m => m.uid !== user?.uid).map(member => (
-                                <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                    <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                        </div>
-                    ) : (
-                        <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
-                    )}
+        <Card key={context.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
+            <CardContent className="p-4 flex flex-col gap-4 flex-grow">
+                 <div className="flex items-start justify-between w-full">
+                    <div className="flex items-center gap-3">
+                        <Icon className="h-5 w-5 text-muted-foreground mt-1" />
+                        <CardTitle>{isMySpace ? context.name : `Aliança: ${context.name}`}</CardTitle>
                     </div>
-                )}
-                <div className={cn(context.id === 'my-space' && 'col-span-2')}>
-                    <h4 className="text-sm font-semibold mb-2 text-muted-foreground">Mini Heróis</h4>
-                    {children.length > 0 ? (
+                    <Button variant="link" className="p-0 h-auto text-sm shrink-0" onClick={(e) => { e.stopPropagation(); handleHeaderClick(); }}>
+                        {isMySpaceAndEmpty ? "Começar a usar" : "Ver resumo do dia"} <ArrowRight className="ml-1 h-3 w-3" />
+                    </Button>
+                </div>
+
+                <div className="space-y-1">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Mini Heróis:</h4>
+                     {children.length > 0 ? (
                         <div className="flex -space-x-2">
                             {children.map(child => (
                                 <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
@@ -215,27 +148,52 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
                         <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
                     )}
                 </div>
-              </div>
+
+                <Separator />
+                
+                {isMySpace ? (
+                     <div className="space-y-1">
+                        <h4 className="text-sm font-semibold text-muted-foreground">Aqui sou:</h4>
+                        <p className="font-medium text-sm text-foreground">{roleInfo?.label}</p>
+                    </div>
+                ) : (
+                     <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                           <h4 className="text-sm font-semibold text-muted-foreground">Aqui sou:</h4>
+                           <p className="font-medium text-sm text-foreground">{roleInfo?.label}</p>
+                           <p className="text-xs text-muted-foreground">({roleInfo?.description})</p>
+                        </div>
+                        <div className="space-y-1">
+                           <h4 className="text-sm font-semibold text-muted-foreground">Membros da Aliança:</h4>
+                            {members.length > 1 ? (
+                                <div className="flex -space-x-2">
+                                {members.filter(m => m.uid !== user?.uid).map(member => (
+                                    <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
+                                        <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
+                                        <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                                </div>
+                            ) : (
+                                <p className="text-xs text-muted-foreground italic">Nenhum outro colaborador.</p>
+                            )}
+                        </div>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
 };
 
-let viewMode: 'grid' | 'list' = 'grid'; // Define outside to persist across re-renders without state
 
 function DashboardRootPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { availableContexts, isLoading: isFamilyLoading } = useFamily();
-    const router = useRouter();
     const isMobile = useIsMobile();
     
-    const [localViewMode, setLocalViewMode] = useState(viewMode);
+    const [localViewMode, setLocalViewMode] = useState<'grid' | 'list'>('grid');
     const [isLoading, setIsLoading] = useState(true);
     const [contextData, setContextData] = useState<ContextData[]>([]);
-
-    useEffect(() => {
-        viewMode = localViewMode;
-    }, [localViewMode]);
 
     const hasAlliances = useMemo(() => availableContexts.length > 1, [availableContexts]);
 
@@ -299,24 +257,14 @@ function DashboardRootPageContent() {
         const mySpaceContext = contextData.find(cd => cd.context.id === 'my-space');
         const allianceContexts = contextData.filter(cd => cd.context.id !== 'my-space');
 
-        if (isMobile) {
-            return (
-                <div className="space-y-4">
-                    {mySpaceContext && <ContextCard key={mySpaceContext.context.id} contextData={mySpaceContext} isMobile={true} viewMode={localViewMode} />}
-                    {allianceContexts.map(cd => (
-                        <ContextCard key={cd.context.id} contextData={cd} isMobile={true} viewMode={localViewMode}/>
-                    ))}
-                </div>
-            );
-        }
-
         return (
             <div className={cn(
-                "grid grid-cols-1 md:grid-cols-2 gap-6",
-                localViewMode === 'list' && "grid-cols-1"
+                "grid gap-6",
+                isMobile ? "grid-cols-1" : 
+                localViewMode === 'grid' ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"
             )}>
-                 {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={false} viewMode={localViewMode} />}
-                 {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={false} viewMode={localViewMode} />)}
+                 {mySpaceContext && <ContextCard contextData={mySpaceContext} isMobile={isMobile} viewMode={localViewMode} />}
+                 {allianceContexts.map(cd => <ContextCard key={cd.context.id} contextData={cd} isMobile={isMobile} viewMode={localViewMode} />)}
             </div>
         );
     }
