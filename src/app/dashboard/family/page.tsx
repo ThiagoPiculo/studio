@@ -1370,54 +1370,6 @@ function FamilyPageContent() {
           </Card>
         )}
 
-      <Card>
-        <CardHeader>
-            <CardTitle className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                    <Sparkles className="h-6 w-6 text-primary"/>Mini Herois em "Cuidar Solo"
-                </div>
-                <Link href="/dashboard/novo-heroi" passHref>
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi
-                    </Button>
-                </Link>
-            </CardTitle>
-            <CardDescription>Estes são os heróis que você gerencia pessoalmente.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            {childrenInContext.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {childrenInContext.map(child => (
-                        <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                            <div className="flex items-center gap-4 min-w-0">
-                                <Avatar
-                                    className="h-10 w-10 text-lg ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
-                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                >
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
-                                        {getInitials(child.name)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <div className="min-w-0">
-                                    <span className="font-semibold truncate block">{child.name}</span>
-                                    <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
-                                </div>
-                            </div>
-                            <Link href={`/dashboard/mural?childId=${child.id}`}>
-                                <Button variant="ghost" size="sm">
-                                    Ver Painel <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
-                            </Link>
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <p className="text-muted-foreground text-center py-4">Nenhum Mini Heroi cadastrado no seu espaço pessoal ainda.</p>
-            )}
-        </CardContent>
-      </Card>
-
       <div className="grid md:grid-cols-2 gap-6">
         <Card ref={createCardRef}>
             <CardHeader>
