@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -772,7 +773,7 @@ function FamilyPageContent() {
                   <div>
                       <p className="font-semibold truncate">{invite.inviteeEmail}</p>
                       <p className="text-xs text-muted-foreground">
-                          Pendente há {formatDistanceToNowStrict(invite.createdAt.toDate(), { locale: ptBR })}
+                          Pendente há {formatDistanceToNowStrict(new Date(invite.createdAt as any), { locale: ptBR })}
                       </p>
                   </div>
                   <div className="flex items-center gap-2 self-end sm:self-center">
