@@ -22,13 +22,6 @@ export default function WelcomePage() {
 
       <main className="flex flex-col items-center w-full max-w-5xl mx-auto text-center mt-4 md:mt-8">
         
-        <h1 className="text-3xl md:text-4xl font-bold text-primary mb-2 md:mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
-          Crianças em Missões Heroicas!
-        </h1>
-        <p className="text-lg text-foreground/80 max-w-2xl mb-8 md:mb-12">
-          Fortalecendo laços familiares com reforço positivo e diversão gamificada.
-        </p>
-
         <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8">
             <Card className="shadow-clay rounded-2xl p-6 text-center transition-all hover:shadow-clay-hover hover:-translate-y-1">
                 <CardHeader className="p-0 items-center mb-4">
@@ -64,11 +57,19 @@ export default function WelcomePage() {
             </Card>
         </div>
 
-        <div className="relative w-full max-w-4xl mt-8 md:mt-12 mb-4 h-0">
+        <div className="relative w-full max-w-4xl mt-12 mb-8 h-0">
             <CornerIcon icon={Star} className="top-0 left-0 -translate-x-1/3 -translate-y-1/3 rotate-[-15deg]" />
             <CornerIcon icon={Award} className="top-0 right-0 translate-x-1/3 -translate-y-1/3 rotate-[15deg]" />
             <CornerIcon icon={Sparkles} className="bottom-0 right-1/2 translate-x-1/2 translate-y-1/3" />
         </div>
+        
+        <h1 className="text-3xl md:text-4xl font-bold text-primary mt-8 mb-2 md:mb-4 font-headline [text-shadow:1px_1px_2px_hsl(var(--primary)/0.2)]">
+          Crianças em Missões Heroicas!
+        </h1>
+        <p className="text-lg text-foreground/80 max-w-2xl">
+          Fortalecendo laços familiares com reforço positivo e diversão gamificada.
+        </p>
+
       </main>
 
       <div className="flex-grow" />
