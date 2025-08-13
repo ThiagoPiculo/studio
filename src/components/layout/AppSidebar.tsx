@@ -20,7 +20,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, LayoutGrid, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2 } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -104,7 +104,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                          <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
-                            <LayoutGrid className="text-chart-1" />
+                            <CalendarCheck2 className="text-chart-1" />
                             <span>Painel de Progressos</span>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -176,13 +176,13 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-4" className="border-none">
                             <CustomAccordionTrigger>
-                                Solo ou Aliança de Herois
+                                Cuidando Solo ou Aliança
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
                                     <SidebarMenuButton href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" isActive={pathname.startsWith('/dashboard/cuidando-solo')}>
                                         <User className="text-chart-2" />
-                                        <span>Cuidar Solo</span>
+                                        <span>Cuidando Solo</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>

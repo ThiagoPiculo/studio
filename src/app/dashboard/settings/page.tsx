@@ -1,510 +1,792 @@
 
+
 "use client";
 
-import Link from 'next/link';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Settings as SettingsIcon, User, Palette, Bell, Blocks, ArrowRight, ThumbsUp, Loader2, UserPlus, CheckCircle, Award, CalendarDays, Mic, Zap, School, Medal, Edit3, Trash2, UserCheck, UserX, NotebookPen, PlusCircle } from 'lucide-react';
-import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getFeatureVoteCount, toggleUserFeatureVote, getUserFeatureVote } from '@/lib/firebase/firestore';
-import { cn } from '@/lib/utils';
+import { Loader2, UserCircle, Edit3, Save, KeyRound, Mail, AlertTriangle, Trash2, RotateCcw, CalendarOff, Shield, UploadCloud, Camera } from 'lucide-react';
+import { updateProfile as updateAuthProfile, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
 import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase/config';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import type { NotificationType } from '@/lib/types';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { auth, db } from '@/lib/firebase/config';
+import { resetPassword, deleteUserAccount } from '@/lib/firebase/auth';
+import { getChildProfilesByOwner, getChildProfilesByFamily, getFamilyMembers, resetSelectedChildrenProgress, resetSchedulesForChildren, getUserProfile, uploadUserAvatarAndUpdateProfile, deleteAvatar } from '@/lib/firebase/firestore';
+import type { ChildProfile, UserProfile } from '@/lib/types';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Separator } from '@/components/ui/separator';
+import { useRouter } from 'next/navigation';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import ReactCrop, { type Crop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 
-const notificationSettingsConfig: {
-  category: string;
-  items: {
-    key: NotificationType;
-    icon: React.ElementType;
-    label: string;
-    description: string;
-    confirmation: {
-        title: string;
-        description: string;
-    }
-  }[]
-}[] = [
-  {
-    category: "Progresso dos Herois",
-    items: [
-      {
-        key: 'mission_completed',
-        icon: CheckCircle,
-        label: "Missão Concluída",
-        description: "Quando uma criança marca uma missão como concluída.",
-        confirmation: {
-            title: "Desativar alertas de Missão Concluída?",
-            description: "Você não será mais notificado imediatamente quando uma missão for concluída. Você ainda poderá ver o progresso na página da criança."
-        }
-      },
-      {
-        key: 'reward_redeemed',
-        icon: Award,
-        label: "Recompensa Resgatada",
-        description: "Quando uma criança usa suas estrelas para resgatar uma recompensa.",
-        confirmation: {
-            title: "Desativar alertas de Recompensa Resgatada?",
-            description: "Você não saberá imediatamente quando uma recompensa for resgatada, o que pode ser importante para recompensas que exigem sua ação (como um passeio)."
-        }
-      },
-      {
-        key: 'new_level',
-        icon: Award,
-        label: "Subiu de Nível",
-        description: "Quando uma criança acumula XP suficiente para subir de nível.",
-         confirmation: {
-            title: "Desativar alertas de Nível?",
-            description: "Você não verá mais as comemorações quando uma criança atingir um novo nível de progresso."
-        }
-      },
-      {
-        key: 'new_badge',
-        icon: Award,
-        label: "Nova Medalha Desbloqueada",
-        description: "Quando uma criança atinge os critérios para desbloquear uma nova medalha.",
-        confirmation: {
-            title: "Desativar alertas de Novas Medalhas?",
-            description: "Você não será mais notificado quando uma nova medalha for desbloqueada, o que pode diminuir a celebração dos feitos."
-        }
-      },
-    ]
-  },
-  {
-    category: "Atividade da Aliança",
-    items: [
-      {
-        key: 'alliance_join_request',
-        icon: UserPlus,
-        label: "Pedido para Entrar na Aliança",
-        description: "Alerta para aprovar um novo membro que usou o código de convite.",
-         confirmation: {
-            title: "Desativar alertas de Pedidos para Entrar?",
-            description: "Você não será notificado sobre novos pedidos para entrar na sua aliança, o que pode fazer com que novos membros não consigam participar."
-        }
-      },
-      {
-        key: 'alliance_join_approved',
-        icon: CheckCircle,
-        label: "Novo Membro na Aliança",
-        description: "Avisa quando um novo membro foi aprovado e entrou na sua aliança.",
-        confirmation: {
-            title: "Desativar alertas de Novos Membros?",
-            description: "Você não saberá quando novos colaboradores se juntarem à sua aliança para gerenciar os herois."
-        }
-      }
-    ]
-  },
-  {
-    category: "Gestão dos Quadros",
-    items: [
-      {
-        key: 'template_created',
-        icon: PlusCircle,
-        label: "Nova Missão/Recompensa Criada",
-        description: "Quando um colaborador adiciona um novo item a um quadro da aliança.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novos itens adicionados aos quadros." }
-      },
-      {
-        key: 'template_updated',
-        icon: Edit3,
-        label: "Missão/Recompensa Atualizada",
-        description: "Quando um item de um quadro da aliança é modificado.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nos itens dos quadros." }
-      },
-      {
-        key: 'template_deleted',
-        icon: Trash2,
-        label: "Missão/Recompensa Removida",
-        description: "Quando um item é removido de um quadro da aliança.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de itens dos quadros." }
-      },
-    ]
-  },
-  {
-    category: "Gestão de Rotinas",
-    items: [
-      {
-        key: 'instance_assigned',
-        icon: UserCheck,
-        label: "Atividade Atribuída a Herói",
-        description: "Quando uma missão ou recompensa é atribuída a um herói na aliança.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado quando atividades forem atribuídas." }
-      },
-      {
-        key: 'instance_unassigned',
-        icon: UserX,
-        label: "Atribuição Removida de Herói",
-        description: "Quando uma atribuição de missão/recompensa é removida de um herói.",
-        confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado quando atribuições forem removidas." }
-      }
-    ]
-  },
-  {
-    category: "Rotina Escolar",
-    items: [
-        {
-            key: 'school_schedule_entry_created',
-            icon: PlusCircle,
-            label: "Aula Adicionada",
-            description: "Quando um colaborador adiciona uma nova aula na rotina escolar.",
-            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre novas aulas na rotina." }
-        },
-        {
-            key: 'school_schedule_entry_updated',
-            icon: Edit3,
-            label: "Aula Atualizada",
-            description: "Quando um colaborador modifica uma aula existente na rotina escolar.",
-            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre alterações nas aulas." }
-        },
-        {
-            key: 'school_schedule_entry_deleted',
-            icon: Trash2,
-            label: "Aula Removida",
-            description: "Quando um colaborador remove uma aula da rotina escolar.",
-            confirmation: { title: "Desativar estes alertas?", description: "Você não será notificado sobre remoções de aulas." }
-        },
-    ]
-  }
-];
-
-const featureIdeas = [
-  {
-    id: 'integration_google_calendar',
-    icon: CalendarDays,
-    title: 'Google Agenda',
-    description: 'Sincronize missões e prazos automaticamente com a sua agenda do Google para nunca perder uma aventura.'
-  },
-  {
-    id: 'integration_amazon_alexa',
-    icon: Mic,
-    title: 'Amazon Alexa',
-    description: 'Receba lembretes de missões e marque-as como concluídas usando simples comandos de voz.'
-  },
-  {
-    id: 'integration_ifttt',
-    icon: Zap,
-    title: 'IFTTT (If This Then That)',
-    description: 'Crie automações personalizadas, como acender uma luz inteligente quando uma missão for concluída.'
-  },
-  {
-    id: 'integration_google_classroom',
-    icon: School,
-    title: 'Google Classroom',
-    description: 'Importe automaticamente tarefas e trabalhos escolares como missões para seus herois.'
-  }
-];
-
-
-export default function SettingsPage() {
-  const { user } = useAuth();
+export default function ProfilePage() {
+  const { user, loading, logout } = useAuth();
   const { availableContexts } = useFamily();
   const { toast } = useToast();
+  const router = useRouter();
+
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [displayName, setDisplayName] = useState('');
+  const [isSavingName, setIsSavingName] = useState(false);
+  const [isSendingResetEmail, setIsSendingResetEmail] = useState(false);
   
-  const [featureVotes, setFeatureVotes] = useState<Record<string, { count: number; liked: boolean }>>({});
-  const [isLoadingVotes, setIsLoadingVotes] = useState(true);
-  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false);
+  const [isResettingProgress, setIsResettingProgress] = useState(false);
+  const [isResetProgressDialogOpen, setIsResetProgressDialogOpen] = useState(false);
+  const [selectedChildrenForProgress, setSelectedChildrenForProgress] = useState<Record<string, boolean>>({});
+
+  const [isResettingRoutines, setIsResettingRoutines] = useState(false);
+  const [isResetRoutinesDialogOpen, setIsResetRoutinesDialogOpen] = useState(false);
+  const [selectedChildrenForRoutines, setSelectedChildrenForRoutines] = useState<Record<string, boolean>>({});
   
-  const [confirmationDetails, setConfirmationDetails] = useState<{ key: NotificationType; title: string; description: string; } | null>(null);
+  const [allContextChildren, setAllContextChildren] = useState<ChildProfile[]>([]);
+  const [memberProfiles, setMemberProfiles] = useState<Record<string, UserProfile>>({});
+  const [isLoadingDialogData, setIsLoadingDialogData] = useState(true);
+
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
+  const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+
+  // States for avatar
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [crop, setCrop] = useState<Crop>();
+  const [imageSrc, setImageSrc] = useState<string | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const [isCameraDialogOpen, setIsCameraDialogOpen] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+
 
   useEffect(() => {
-    if (!user) {
-      setIsLoadingVotes(false);
+    if (user) {
+      setDisplayName(user.name || '');
+      setAvatarPreview(user.avatarUrl || null);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    if (!isCameraDialogOpen) {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+      }
       return;
     }
   
-    async function fetchAllVoteData() {
-      setIsLoadingVotes(true);
-      const voteData: Record<string, { count: number; liked: boolean }> = {};
-      
-      const promises = featureIdeas.map(async (feature) => {
-        try {
-          const [count, hasLiked] = await Promise.all([
-            getFeatureVoteCount(feature.id),
-            getUserFeatureVote(user.uid, feature.id)
-          ]);
-          voteData[feature.id] = { count, liked: hasLiked };
-        } catch (error) {
-           console.error(`Failed to load votes for ${feature.id}`, error);
-           voteData[feature.id] = { count: 0, liked: false };
+    const getCameraPermission = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setCameraStream(stream);
+        setHasCameraPermission(true);
+      } catch (error) {
+        setHasCameraPermission(false);
+        setIsCameraDialogOpen(false);
+      }
+    };
+  
+    getCameraPermission();
+  
+    return () => {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [isCameraDialogOpen, toast]);
+
+  useEffect(() => {
+    if (cameraStream && videoRef.current) {
+      videoRef.current.srcObject = cameraStream;
+    }
+  }, [cameraStream]);
+
+   useEffect(() => {
+    if (!user || !availableContexts.length) return;
+
+    const fetchDialogData = async () => {
+        setIsLoadingDialogData(true);
+        const childrenPromises: Promise<ChildProfile[]>[] = [];
+        const membersMap = new Map<string, UserProfile>();
+        if(user) membersMap.set(user.uid, user);
+
+        for (const context of availableContexts) {
+            if (context.id === 'my-space') {
+                childrenPromises.push(getChildProfilesByOwner(user.uid, true)); // true for only unassigned
+            } else {
+                childrenPromises.push(getChildProfilesByFamily(context.id));
+                const members = await getFamilyMembers(context.id);
+                members.forEach(member => membersMap.set(member.uid, member));
+            }
         }
-      });
+        
+        try {
+            const childrenResults = await Promise.all(childrenPromises);
+            const allChildren = childrenResults.flat();
+             const uniqueChildren = allChildren.filter((child, index, self) =>
+                index === self.findIndex((c) => c.id === child.id)
+            );
 
-      await Promise.all(promises);
-      setFeatureVotes(voteData);
-      setIsLoadingVotes(false);
-    }
+            setAllContextChildren(uniqueChildren);
+            setMemberProfiles(Object.fromEntries(membersMap));
+        } catch (error) {
+            console.error("Error fetching data for dialogs:", error);
+            toast({ title: "Erro ao carregar dados", description: "Não foi possível carregar a lista completa de crianças e membros.", variant: "destructive" });
+        } finally {
+            setIsLoadingDialogData(false);
+        }
+    };
 
-    fetchAllVoteData();
-  }, [user]);
-
-  const handleLikeFeature = async (featureId: string) => {
-    if (!user) {
-      toast({ title: "Você precisa estar logado para votar.", variant: "destructive" });
-      return;
-    }
+    fetchDialogData();
+  }, [user, availableContexts, toast]);
+  
+  const groupedChildren = useMemo(() => {
+    const groups: Record<string, ChildProfile[]> = { 'my-space': [] };
     
-    const originalState = featureVotes[featureId] || { count: 0, liked: false };
-
-    setFeatureVotes(prevVotes => {
-        const newLikedState = !originalState.liked;
-        const newCount = newLikedState ? originalState.count + 1 : Math.max(0, originalState.count - 1);
-        return {
-            ...prevVotes,
-            [featureId]: { count: newCount, liked: newLikedState }
-        };
+    allContextChildren.forEach(child => {
+        const contextId = child.familyId || 'my-space';
+        if (!groups[contextId]) {
+            groups[contextId] = [];
+        }
+        groups[contextId].push(child);
     });
 
-    try {
-      await toggleUserFeatureVote(user.uid, featureId);
-      if (!originalState.liked) {
-          const feature = featureIdeas.find(f => f.id === featureId);
-          toast({
-              title: "Obrigado pelo seu feedback!",
-              description: `Seu voto para "${feature?.title}" nos ajuda a priorizar novas funcionalidades.`,
-          });
-      }
-    } catch (error) {
-      console.error("Error toggling feature vote:", error);
-      toast({ title: "Erro", description: "Não foi possível registrar seu voto.", variant: "destructive"});
-      setFeatureVotes(prevVotes => ({ ...prevVotes, [featureId]: originalState }));
-    }
+    return Object.entries(groups).map(([contextId, childrenInGroup]) => {
+      const contextInfo = availableContexts.find(c => c.id === contextId);
+      const contextName = contextId === 'my-space' 
+        ? 'No Meu Espaço' 
+        : `Na Aliança "${contextInfo?.name || 'Desconhecida'}"`;
+      return { contextId, contextName, children: childrenInGroup.sort((a,b) => a.name.localeCompare(b.name)) };
+    }).filter(group => group.children.length > 0);
+  }, [allContextChildren, availableContexts]);
+
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDisplayName(e.target.value);
   };
 
+  const handleSaveName = async () => {
+    if (!user || !auth.currentUser) {
+      toast({ title: "Erro", description: "Usuário não autenticado.", variant: "destructive" });
+      return;
+    }
+    if (displayName.trim().length < 2) {
+      toast({ title: "Nome Inválido", description: "O nome deve ter pelo menos 2 caracteres.", variant: "destructive" });
+      return;
+    }
 
-  const handleSettingUpdate = async (key: string, value: any) => {
-    if (!user) return;
-    setIsUpdatingSettings(true);
+    setIsSavingName(true);
     try {
+      await updateAuthProfile(auth.currentUser, { displayName: displayName.trim() });
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        [`settings.${key}`]: value,
-      });
-      toast({
-        title: "Configuração Salva!",
-        description: "Sua preferência foi atualizada.",
-      });
+      await updateDoc(userDocRef, { name: displayName.trim() });
+      toast({ title: "Identidade de Heroi Atualizada!", description: "Seu nome foi atualizado com sucesso." });
+      setIsEditingName(false);
     } catch (error) {
-      console.error("Error updating setting:", error);
-      toast({ title: "Erro ao Salvar", description: "Não foi possível salvar a configuração.", variant: "destructive" });
+      console.error("Error updating name:", error);
+      toast({ title: "Erro ao Salvar", description: "Não foi possível atualizar seu nome. Tente novamente.", variant: "destructive" });
     } finally {
-      setIsUpdatingSettings(false);
+      setIsSavingName(false);
     }
   };
 
-  const handleSwitchChange = (key: NotificationType, checked: boolean, confirmation: { title: string; description: string; }) => {
-    if (checked) {
-      handleSettingUpdate(`notifications.${key}`, true);
-    } else {
-      setConfirmationDetails({ key, ...confirmation });
+  const handlePasswordReset = async () => {
+    if (!user || !user.email) {
+      toast({ title: "Erro", description: "E-mail do usuário não encontrado.", variant: "destructive" });
+      return;
+    }
+    setIsSendingResetEmail(true);
+    try {
+      await resetPassword(user.email);
+      toast({ title: "Mapa Secreto Enviado!", description: "Enviamos um link para o seu e-mail para que você possa criar uma nova senha." });
+    } catch (error) {
+      console.error("Error sending password reset email:", error);
+      toast({ title: "Erro ao Enviar E-mail", description: "Não foi possível enviar o e-mail de redefinição. Tente novamente.", variant: "destructive" });
+    } finally {
+      setIsSendingResetEmail(false);
     }
   };
 
-  const handleConfirmChange = () => {
-    if (confirmationDetails) {
-      handleSettingUpdate(`notifications.${confirmationDetails.key}`, false);
-      setConfirmationDetails(null);
+  const handleResetSelectedProgress = async () => {
+    if (!user) return;
+    const childIdsToReset = Object.entries(selectedChildrenForProgress).filter(([, selected]) => selected).map(([id]) => id);
+    if (childIdsToReset.length === 0) {
+        toast({ title: "Nenhuma criança selecionada." });
+        return;
+    }
+    setIsResettingProgress(true);
+    try {
+      await resetSelectedChildrenProgress(user.uid, childIdsToReset);
+      const childNames = allContextChildren.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      toast({ title: "Progresso Redefinido!", description: `O progresso de ${formatChildNames(childNames)} foi zerado.` });
+      setIsResetProgressDialogOpen(false);
+      setSelectedChildrenForProgress({});
+    } catch (error: any) {
+      console.error("Error resetting progress for selected children:", error);
+      toast({ title: "Erro ao Redefinir", description: error.message || "Não foi possível redefinir o progresso.", variant: "destructive" });
+    } finally {
+      setIsResettingProgress(false);
     }
   };
 
+  const handleResetSelectedRoutines = async () => {
+    if (!user) return;
+    const childIdsToReset = Object.entries(selectedChildrenForRoutines).filter(([, selected]) => selected).map(([id]) => id);
+    if (childIdsToReset.length === 0) {
+        toast({ title: "Nenhuma criança selecionada." });
+        return;
+    }
+    setIsResettingRoutines(true);
+    try {
+      await resetSchedulesForChildren(user.uid, childIdsToReset);
+      const childNames = allContextChildren.filter(c => childIdsToReset.includes(c.id)).map(c => c.name);
+      toast({ title: "Rotinas Removidas!", description: `Todas as missões agendadas para ${formatChildNames(childNames)} foram removidas.` });
+      setIsResetRoutinesDialogOpen(false);
+      setSelectedChildrenForRoutines({});
+    } catch (error: any) {
+      console.error("Error resetting routines for selected children:", error);
+      toast({ title: "Erro ao Remover Rotinas", description: error.message || "Não foi possível limpar a agenda das crianças selecionadas.", variant: "destructive" });
+    } finally {
+      setIsResettingRoutines(false);
+    }
+  };
+  
+  const handleDeleteAccount = async () => {
+    if (!user) return;
+    
+    // Prompt for password
+    const password = prompt("Para sua segurança, por favor, insira sua senha para confirmar a exclusão da conta.");
+    if (password === null) { // User clicked cancel
+      return;
+    }
+    if (!password) {
+      toast({ title: "Senha necessária", description: "A senha é obrigatória para excluir a conta.", variant: "destructive" });
+      return;
+    }
 
-  const settings = {
-    initialPage: user?.settings?.initialPage || 'heroes',
-    initialContext: user?.settings?.initialContext || 'my-space',
-    notifications: user?.settings?.notifications || {},
+    setIsDeletingAccount(true);
+    try {
+      await deleteUserAccount(password);
+      toast({ title: "Conta Excluída", description: "Sua conta foi excluída permanentemente. Sentiremos sua falta!" });
+      // The logout is handled inside deleteUserAccount which will trigger the AuthProvider to redirect.
+    } catch (error: any) {
+      let description = "Ocorreu um erro ao excluir a conta.";
+      if (error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        description = "A senha informada está incorreta. A exclusão foi cancelada.";
+      } else if (error.code === 'auth/requires-recent-login') {
+        description = "Sua sessão expirou. Por favor, faça login novamente e tente excluir sua conta mais uma vez.";
+         // Force logout so user has to log in again with fresh credentials
+        await logout();
+      }
+      toast({
+        title: "Falha na Exclusão",
+        description: description,
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeletingAccount(false);
+      setIsDeleteConfirmOpen(false);
+    }
+  };
+  
+  const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "MH";
+
+  const formatChildNames = (names: string[]) => {
+    if (names.length === 0) return "";
+    if (names.length === 1) return names[0];
+    if (names.length === 2) return `${names[0]} e ${names[1]}`;
+    const last = names.pop();
+    return `${names.join(', ')} e ${last}`;
+  };
+
+  const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.files && event.target.files.length > 0) {
+      const reader = new FileReader();
+      reader.addEventListener('load', () => setImageSrc(reader.result as string));
+      reader.readAsDataURL(event.target.files[0]);
+    }
+  };
+
+  const handleTakePicture = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement('canvas');
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/png');
+        setImageSrc(dataUrl);
+        setIsCameraDialogOpen(false);
+      }
+    }
+  };
+
+  const onImageLoad = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const { width, height } = e.currentTarget;
+    setCrop({
+      unit: 'px',
+      x: 0,
+      y: 0,
+      width: Math.min(width, height),
+      height: Math.min(width, height)
+    });
+  };
+
+  function getCroppedImg(image: HTMLImageElement, crop: Crop): Promise<Blob> {
+    const canvas = document.createElement("canvas");
+    const scaleX = image.naturalWidth / image.width;
+    const scaleY = image.naturalHeight / image.height;
+    canvas.width = Math.floor(crop.width * scaleX);
+    canvas.height = Math.floor(crop.height * scaleY);
+    const ctx = canvas.getContext("2d");
+
+    if (!ctx) {
+      return Promise.reject(new Error("Canvas context could not be created."));
+    }
+
+    const pixelRatio = window.devicePixelRatio;
+    canvas.width = Math.floor(crop.width * scaleX * pixelRatio);
+    canvas.height = Math.floor(crop.height * scaleY * pixelRatio);
+    ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    ctx.imageSmoothingQuality = "high";
+
+    ctx.drawImage(
+      image,
+      crop.x * scaleX,
+      crop.y * scaleY,
+      crop.width * scaleX,
+      crop.height * scaleY,
+      0,
+      0,
+      crop.width * scaleX,
+      crop.height * scaleY
+    );
+    
+    return new Promise((resolve, reject) => {
+        canvas.toBlob(
+            (blob) => {
+                if (!blob) {
+                    reject(new Error('Canvas is empty'));
+                    return;
+                }
+                resolve(blob);
+            },
+            'image/png',
+            0.9
+        );
+    });
+  }
+
+  const handleCropAndUpload = async () => {
+    if (!user || !crop || !imgRef.current) return;
+    
+    setIsUploadingAvatar(true);
+    setImageSrc(null);
+
+    try {
+        const croppedBlob = await getCroppedImg(imgRef.current, crop);
+        const { newUrl } = await uploadUserAvatarAndUpdateProfile(user.uid, croppedBlob);
+        setAvatarPreview(newUrl);
+        toast({ title: "Avatar atualizado!" });
+    } catch (error) {
+        toast({ title: "Erro no Upload", variant: "destructive" });
+    } finally {
+        setIsUploadingAvatar(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    if (!user || !user.avatarUrl) return;
+    setIsUploadingAvatar(true);
+    try {
+        await deleteAvatar(user.uid, user.uid, true);
+        setAvatarPreview(null);
+        toast({ title: "Avatar removido!" });
+    } catch (error) {
+        console.error("Error removing avatar:", error);
+        toast({ title: "Erro ao remover", description: "Não foi possível remover o avatar.", variant: "destructive" });
+    } finally {
+        setIsUploadingAvatar(false);
+    }
+  };
+
+  const selectedProgressCount = useMemo(() => Object.values(selectedChildrenForProgress).filter(Boolean).length, [selectedChildrenForProgress]);
+  const selectedRoutinesCount = useMemo(() => Object.values(selectedChildrenForRoutines).filter(Boolean).length, [selectedChildrenForRoutines]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="text-center py-10">
+        <p>Usuário não encontrado. Por favor, faça login novamente.</p>
+        <Button onClick={() => router.push('/auth/login')} className="mt-4">Ir para Login</Button>
+      </div>
+    );
+  }
+
+  const renderChildSelection = (
+    child: ChildProfile,
+    selectionState: Record<string, boolean>,
+    onSelectionChange: (id: string, checked: boolean) => void
+  ) => {
+    const isOwner = child.ownerId === user.uid;
+    const ownerName = isOwner ? 'Você' : memberProfiles[child.ownerId]?.name || 'Desconhecido';
+    const id = `reset-child-${child.id}`;
+
+    return (
+      <div
+        key={child.id}
+        className={cn(
+          "flex items-center gap-3 p-2 rounded-md border hover:bg-muted/50 transition-colors",
+          !isOwner && "bg-muted/50 opacity-70 cursor-not-allowed"
+        )}
+      >
+        <Checkbox
+          id={id}
+          checked={!!selectionState[child.id]}
+          onCheckedChange={(checked) => onSelectionChange(child.id, !!checked)}
+          disabled={!isOwner}
+        />
+        <Label htmlFor={id} className={cn("flex-grow flex items-center gap-3", isOwner ? "cursor-pointer" : "cursor-not-allowed")}>
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={child.avatar} alt={child.name} />
+            <AvatarFallback style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
+          </Avatar>
+          <div className="flex flex-col">
+            <span>{child.name}</span>
+            {!isOwner && (
+                <span className="text-xs italic text-muted-foreground/80">(Proprietário: {ownerName})</span>
+            )}
+          </div>
+        </Label>
+      </div>
+    );
   };
 
 
   return (
-    <div className="space-y-8">
-      <Card className="shadow-lg">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+    <>
+      <Dialog open={isCameraDialogOpen} onOpenChange={setIsCameraDialogOpen}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>Tirar Foto para o Avatar</DialogTitle>
+                  <DialogDescription>
+                      Posicione seu rosto no centro da câmera e clique em "Capturar!".
+                  </DialogDescription>
+              </DialogHeader>
+              <div className="my-4">
+                  <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
+                  {hasCameraPermission === false && (
+                      <div className="text-destructive text-sm text-center mt-2">Câmera não acessível. Por favor, habilite a permissão no seu navegador.</div>
+                  )}
+              </div>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsCameraDialogOpen(false)}>Cancelar</Button>
+                  <Button onClick={handleTakePicture} disabled={!hasCameraPermission || !cameraStream}>
+                      <Camera className="mr-2 h-4 w-4" /> Capturar!
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+      <Dialog open={!!imageSrc} onOpenChange={(open) => !open && setImageSrc(null)}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Recortar Foto de Perfil</DialogTitle>
+                <DialogDescription>
+                    Ajuste a imagem para criar o avatar perfeito. O formato já está travado em 1:1.
+                </DialogDescription>
+            </DialogHeader>
+            {imageSrc && (
+                <div className="flex justify-center my-4">
+                    <ReactCrop
+                        crop={crop}
+                        onChange={c => setCrop(c)}
+                        aspect={1}
+                        circularCrop
+                    >
+                        <img ref={imgRef} src={imageSrc} onLoad={onImageLoad} alt="Recorte" style={{ maxHeight: '70vh' }} />
+                    </ReactCrop>
+                </div>
+            )}
+            <DialogFooter>
+                <Button variant="outline" onClick={() => setImageSrc(null)} disabled={isUploadingAvatar}>Cancelar</Button>
+                <Button onClick={handleCropAndUpload} disabled={isUploadingAvatar}>
+                    {isUploadingAvatar ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar Avatar
+                </Button>
+            </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <div className="space-y-8 max-w-2xl mx-auto">
+        <Card className="shadow-xl">
+          <CardHeader>
             <div className="flex items-center gap-4">
-              <SettingsIcon className="h-8 w-8 text-primary" />
+               <div className="relative group flex-shrink-0">
+                <Avatar className="h-20 w-20 text-3xl shadow-md ring-4 ring-offset-2 ring-primary ring-offset-background">
+                  <AvatarImage src={avatarPreview || undefined} alt={user.name || 'User'} />
+                  <AvatarFallback className="font-bold">{getInitials(user.name)}</AvatarFallback>
+                </Avatar>
+                {isUploadingAvatar && (
+                  <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-8 w-8 text-white animate-spin" />
+                  </div>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="icon"
+                      className="absolute bottom-0 right-0 rounded-full h-8 w-8 shadow-md group-hover:bg-primary group-hover:text-primary-foreground"
+                      disabled={isUploadingAvatar}
+                    >
+                      <Camera className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onSelect={() => fileInputRef.current?.click()}>
+                      <UploadCloud className="mr-2 h-4 w-4" />
+                      Carregar Imagem
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setIsCameraDialogOpen(true)}>
+                      <Camera className="mr-2 h-4 w-4" />
+                      Tirar Foto
+                    </DropdownMenuItem>
+                    {avatarPreview && (
+                      <>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onSelect={handleRemoveAvatar} className="text-destructive focus:text-destructive">
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Remover Imagem
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                 <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  className="hidden"
+                  onChange={handleAvatarChange}
+                />
+              </div>
               <div>
-                <CardTitle className="text-3xl font-headline">Configurações</CardTitle>
-                <CardDescription>
-                  Gerencie as configurações da sua conta e preferências do aplicativo.
-                </CardDescription>
+                <CardTitle className="text-3xl font-headline">Meu Perfil</CardTitle>
+                <CardDescription>Gerencie suas informações pessoais.</CardDescription>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <Label htmlFor="theme-switcher-button" className="text-sm font-medium">Tema visual</Label>
-              <ThemeSwitcher />
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div>
+              <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">E-mail</Label>
+              <div className="flex items-center gap-2 mt-1">
+                <Mail className="h-5 w-5 text-muted-foreground" />
+                <p id="email" className="text-lg">{user.email}</p>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">Seu e-mail de login não pode ser alterado por aqui.</p>
             </div>
-          </div>
-        </CardHeader>
-      </Card>
-      
-      <AlertDialog open={!!confirmationDetails} onOpenChange={(isOpen) => !isOpen && setConfirmationDetails(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{confirmationDetails?.title}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmationDetails?.description}
-              <br/><br/>
-              Recomendamos manter esta notificação ativada para uma melhor experiência. Deseja mesmo desativá-la?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmChange} className="bg-destructive hover:bg-destructive/90">
-                Desativar Mesmo Assim
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <Card className="lg:col-span-2 p-0">
-            <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="integrations" className="border-b-0">
-                    <AccordionTrigger className="p-6 hover:no-underline">
-                        <div className="flex flex-col items-start text-left space-y-1.5">
-                            <h2 className="text-2xl font-semibold leading-none tracking-tight flex items-center gap-2">
-                                <Blocks className="h-5 w-5 text-primary" /> Futuras Integrações
-                            </h2>
-                            <p className="text-sm text-muted-foreground">
-                                Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!
-                            </p>
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent>
-                        <div className="px-6 pb-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {featureIdeas.map((feature) => {
-                                const Icon = feature.icon;
-                                const voteInfo = featureVotes[feature.id] || { count: 0, liked: false };
-                                return (
-                                    <div key={feature.id} className="p-4 border rounded-lg flex flex-col justify-between">
-                                        <div>
-                                            <h4 className="font-semibold flex items-center gap-2"><Icon className="h-4 w-4 text-muted-foreground" /> {feature.title}</h4>
-                                            <p className="text-sm text-muted-foreground mt-1 mb-3">{feature.description}</p>
-                                        </div>
-                                        <Button
-                                            variant={voteInfo.liked ? 'secondary' : 'outline'}
-                                            size="sm"
-                                            onClick={() => handleLikeFeature(feature.id)}
-                                            disabled={isLoadingVotes}
-                                            className="shadow-sm w-fit"
-                                        >
-                                            {isLoadingVotes ? (
-                                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            ) : (
-                                                <ThumbsUp className={cn("mr-2 h-4 w-4", voteInfo.liked && "fill-current text-primary")} />
-                                            )}
-                                            {voteInfo.count} {voteInfo.count === 1 ? 'Like' : 'Likes'}
-                                        </Button>
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            </Accordion>
-        </Card>
-
-        <Card className="lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><SettingsIcon className="h-5 w-5 text-primary" /> Configurações Gerais</CardTitle>
-                <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
-                    <Label htmlFor="initial-page-select" className="flex flex-col gap-1 pr-4">
-                        <span className="font-semibold">Tela inicial após login</span>
-                        <span className="font-normal text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</span>
-                    </Label>
-                    <Select
-                        value={settings.initialPage}
-                        onValueChange={(value) => handleSettingUpdate('initialPage', value)}
-                        disabled={isUpdatingSettings}
-                    >
-                        <SelectTrigger id="initial-page-select" className="w-auto sm:w-[180px] flex-shrink-0">
-                            <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="heroes">Resumo do Dia</SelectItem>
-                            <SelectItem value="dashboard">Painel de Progressos</SelectItem>
-                            <SelectItem value="mural">Mural Completo</SelectItem>
-                            <SelectItem value="agenda">Rotina de Missões</SelectItem>
-                            <SelectItem value="school-schedule">Rotina Escolar</SelectItem>
-                            <SelectItem value="missions">Quadro de Missões</SelectItem>
-                            <SelectItem value="rewards">Quadro de Recompensas</SelectItem>
-                            <SelectItem value="achievements">Quadro de Medalhas</SelectItem>
-                            <SelectItem value="family">Aliança de Herois</SelectItem>
-                        </SelectContent>
-                    </Select>
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium text-muted-foreground">Nome de Exibição</Label>
+              {!isEditingName ? (
+                <div className="flex items-center justify-between gap-4 p-3 border rounded-md bg-muted/20">
+                  <p id="name" className="text-lg">{user.name || 'Não definido'}</p>
+                  <Button variant="outline" size="sm" onClick={() => setIsEditingName(true)} className="shadow-sm">
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Editar Nome
+                  </Button>
                 </div>
-                 <div className="flex items-center justify-between p-3 rounded-lg border bg-muted">
-                    <Label htmlFor="initial-context-select" className="flex flex-col gap-1 pr-4">
-                        <span className="font-semibold">Espaço de trabalho inicial</span>
-                        <span className="font-normal text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</span>
-                    </Label>
-                    <Select
-                        value={settings.initialContext}
-                        onValueChange={(value) => handleSettingUpdate('initialContext', value)}
-                        disabled={isUpdatingSettings || availableContexts.length <= 1}
-                    >
-                        <SelectTrigger id="initial-context-select" className="w-auto sm:w-[180px] flex-shrink-0">
-                            <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {availableContexts.map(context => (
-                                <SelectItem key={context.id} value={context.id}>
-                                    {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+              ) : (
+                <div className="space-y-3 p-4 border rounded-md shadow-sm bg-card">
+                  <Input
+                    id="name"
+                    value={displayName}
+                    onChange={handleNameChange}
+                    className="text-lg"
+                    placeholder="Seu nome de exibição"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button variant="ghost" onClick={() => { setIsEditingName(false); setDisplayName(user.name || ''); }}>
+                      Cancelar
+                    </Button>
+                    <Button onClick={handleSaveName} disabled={isSavingName} className="bg-primary hover:bg-primary/90">
+                      {isSavingName ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                      Salvar Nome
+                    </Button>
+                  </div>
                 </div>
-            </CardContent>
+              )}
+            </div>
+          </CardContent>
         </Card>
-
-        <div className="lg:col-span-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary" /> Preferências de Notificação</CardTitle>
-                    <CardDescription>Escolha quais alertas você deseja receber.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-                    {notificationSettingsConfig.map(category => (
-                        <div key={category.category} className="space-y-3 break-inside-avoid">
-                            <h3 className="font-semibold text-md">{category.category}</h3>
-                            {category.items.map(item => {
-                                const Icon = item.icon;
-                                const isChecked = settings.notifications[item.key] !== false; // Default to true if undefined
-                                return (
-                                    <div key={item.key} className="flex items-start justify-between p-3 rounded-lg border bg-muted/50">
-                                        <Label htmlFor={item.key} className="flex flex-col gap-1 pr-4 cursor-pointer">
-                                            <span className="font-medium flex items-center gap-2"><Icon className="h-4 w-4"/> {item.label}</span>
-                                            <span className="font-normal text-xs text-muted-foreground">{item.description}</span>
-                                        </Label>
-                                        <Switch
-                                            id={item.key}
-                                            checked={isChecked}
-                                            onCheckedChange={(checked) => handleSwitchChange(item.key, checked, item.confirmation)}
-                                            disabled={isUpdatingSettings}
-                                        />
+        
+        <Card className="border-destructive/50 shadow-lg">
+          <CardHeader className="bg-destructive/5">
+              <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle className="h-6 w-6"/> Zona de Perigo</CardTitle>
+              <CardDescription className="text-destructive/90">As ações abaixo são importantes e, em alguns casos, irreversíveis. Use com cuidado.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+              <div className="space-y-1">
+                  <h4 className="font-semibold">Redefinir Senha</h4>
+                  <p className="text-sm text-muted-foreground">Será enviado um link para seu e-mail (<span className="font-semibold text-foreground">{user.email}</span>) para que você possa criar uma nova senha de acesso.</p>
+                  <Button 
+                    variant="outline" 
+                    onClick={handlePasswordReset} 
+                    disabled={isSendingResetEmail}
+                    className="w-full sm:w-auto shadow-sm"
+                  >
+                    {isSendingResetEmail ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                    Enviar E-mail de Redefinição
+                  </Button>
+              </div>
+              
+              <Separator className="my-8" />
+              
+              <div className="space-y-1">
+                  <h4 className="font-semibold">Redefinir Progresso dos Herois</h4>
+                  <p className="text-sm text-muted-foreground">Zera as estrelas, XP e o histórico de missões das crianças selecionadas. Ideal para começar uma "nova temporada".</p>
+                   <AlertDialog open={isResetProgressDialogOpen} onOpenChange={setIsResetProgressDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoadingDialogData || allContextChildren.length === 0 || isResettingProgress}>
+                              <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Progresso
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Redefinir o progresso de quais heróis?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Apenas os herois que você cadastrou podem ser selecionados. Esta ação é irreversível e afetará estrelas, XP, níveis e históricos.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <ScrollArea className="max-h-[40vh] my-4 pr-3">
+                             <div className="space-y-4">
+                               {groupedChildren.map(group => (
+                                 <div key={group.contextId}>
+                                   <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
+                                   <div className="space-y-2 mt-2">
+                                    {group.children.map(child => renderChildSelection(child, selectedChildrenForProgress, (id, checked) => setSelectedChildrenForProgress(prev => ({...prev, [id]: checked}))
+                                    ))}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    ))}
-                </CardContent>
-            </Card>
-        </div>
+                                 </div>
+                               ))}
+                             </div>
+                          </ScrollArea>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel disabled={isResettingProgress}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetSelectedProgress} className="bg-destructive hover:bg-destructive/90" disabled={isResettingProgress || selectedProgressCount === 0}>
+                                  {isResettingProgress && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Redefinir ({selectedProgressCount})
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                   </AlertDialog>
+              </div>
+
+              <Separator className="my-8" />
+
+              <div className="space-y-1">
+                  <h4 className="font-semibold">Redefinir Rotina Agendada</h4>
+                  <p className="text-sm text-muted-foreground">Remove TODAS as missões (únicas e recorrentes) da agenda das crianças selecionadas. Use para limpar a agenda e começar do zero.</p>
+                   <AlertDialog open={isResetRoutinesDialogOpen} onOpenChange={setIsResetRoutinesDialogOpen}>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={isLoadingDialogData || allContextChildren.length === 0 || isResettingRoutines}>
+                              <CalendarOff className="mr-2 h-4 w-4" /> Redefinir Rotinas
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Limpar a agenda de quais heróis?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Apenas os herois que você cadastrou podem ser selecionados. Esta ação não pode ser desfeita.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <ScrollArea className="max-h-[40vh] my-4 pr-3">
+                             <div className="space-y-4">
+                               {groupedChildren.map(group => (
+                                 <div key={group.contextId}>
+                                   <Label className="font-semibold text-muted-foreground">{group.contextName}</Label>
+                                   <div className="space-y-2 mt-2">
+                                    {group.children.map(child => renderChildSelection(child, selectedChildrenForRoutines, (id, checked) => setSelectedChildrenForRoutines(prev => ({...prev, [id]: checked}))
+                                    ))}
+                                    </div>
+                                 </div>
+                               ))}
+                             </div>
+                          </ScrollArea>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel disabled={isResettingRoutines}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleResetSelectedRoutines} className="bg-destructive hover:bg-destructive/90" disabled={isResettingRoutines || selectedRoutinesCount === 0}>
+                                  {isResettingRoutines && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Limpar Agenda ({selectedRoutinesCount})
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                   </AlertDialog>
+              </div>
+              
+              <Separator className="my-8" />
+              
+               <div className="space-y-1">
+                  <h4 className="font-semibold">Excluir Conta Permanentemente</h4>
+                  <p className="text-sm text-muted-foreground">Isso removerá sua conta de Mestre e todos os dados associados (perfis de crianças, missões, etc.) de forma permanente.</p>
+                  <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                      <AlertDialogTrigger asChild>
+                          <Button variant="destructive" className="w-full sm:w-auto shadow-sm">
+                              <Trash2 className="mr-2 h-4 w-4" /> Excluir Minha Conta
+                          </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                          <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza ABSOLUTA?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                  Esta ação é final e não pode ser desfeita. Para confirmar a exclusão, por favor, insira sua senha abaixo. Todos os seus dados, incluindo perfis de crianças, missões e recompensas, serão **excluídos permanentemente**.
+                              </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                              <AlertDialogCancel onClick={() => setIsDeleteConfirmOpen(false)} disabled={isDeletingAccount}>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteAccount} className="bg-destructive hover:bg-destructive/90" disabled={isDeletingAccount}>
+                                  {isDeletingAccount && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                  Confirmar Exclusão
+                              </AlertDialogAction>
+                          </AlertDialogFooter>
+                      </AlertDialogContent>
+                   </AlertDialog>
+              </div>
+
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </>
   );
 }
+
+    

@@ -6,7 +6,7 @@ import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, N
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
-export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family';
+export type InitialPage = 'dashboard' | 'heroes' | 'agenda' | 'missions' | 'rewards' | 'family' | 'mural' | 'school-schedule' | 'achievements';
 export type RewardMode = 'automatic' | 'manual';
 
 export type NotificationType = 
@@ -384,5 +384,3 @@ export interface Notification {
   actorId?: string | null; // Optional, who performed the action
   actorName?: string | null; // Optional, name of the actor
 }
-
-    

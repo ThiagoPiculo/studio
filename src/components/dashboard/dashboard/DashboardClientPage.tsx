@@ -4,7 +4,7 @@
 import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { LayoutGrid, HelpCircle } from "lucide-react";
+import { CalendarCheck2, HelpCircle } from "lucide-react";
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
@@ -52,8 +52,8 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-            <LayoutGrid className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-headline font-bold">Painel de Progressos</h2>
+            <CalendarCheck2 className="h-8 w-8 text-primary" />
+            <h2 className="text-3xl font-headline font-bold">Progressos do Herói</h2>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
@@ -62,7 +62,8 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-72">
                     <div className="space-y-3">
-                        <p className="text-sm">Sua central de análises para acompanhar a jornada dos seus herois, com gráficos de desempenho, recompensas e medalhas.</p>
+                         <h4 className="font-medium leading-none">Central de Análises</h4>
+                        <p className="text-sm text-muted-foreground">Esta é a sua central de análises para acompanhar a jornada dos seus heróis, com gráficos de desempenho, recompensas desbloqueadas e as últimas medalhas conquistadas.</p>
                         <PopoverClose asChild>
                             <Button className="w-full">Entendi 👍</Button>
                         </PopoverClose>
