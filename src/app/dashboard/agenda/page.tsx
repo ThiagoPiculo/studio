@@ -178,7 +178,6 @@ function AgendaPageContent() {
         
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
-        setOpenAccordionItems(fetchedChildren.map(c => c.id));
         
         const childIdParam = searchParams.get('childId');
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
