@@ -65,7 +65,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
               <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  {isClient && isMobile && (
+                  {isClient && isMobile && !isRootDashboard && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                         <ArrowLeft className="h-4 w-4" />
                         <span className="sr-only">Voltar</span>
@@ -74,7 +74,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   {isRootDashboard ? (
                     <div className="flex items-center gap-2">
                         <Home className="h-6 w-6 text-primary hidden sm:block"/>
-                        <h1 className="text-xl font-bold font-headline hidden sm:block">Espaços com Mini Herois</h1>
+                        <h1 className="text-xl font-bold font-headline">Espaços com Mini Herois</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
