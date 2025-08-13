@@ -3,52 +3,43 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
-import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Loader2, Bell, Palette, Save } from 'lucide-react';
+import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, Classroom, ThumbsUp, Palette } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
-import type { NotificationPreferences, NotificationType } from '@/lib/types';
+import type { InitialPage } from '@/lib/types';
+import { FeatureVoteCard } from '@/components/dashboard/settings/FeatureVoteCard';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
-
-const notificationCategories: {
-    id: keyof NotificationPreferences;
-    label: string;
-    description: string;
-}[] = [
-    { id: 'alliance_join_request', label: 'Pedidos de Aliança', description: 'Quando alguém pede para entrar na sua aliança.' },
-    { id: 'mission_completed', label: 'Missões Concluídas', description: 'Quando um herói completa uma missão agendada.' },
-    { id: 'reward_redeemed', label: 'Recompensas Resgatadas', description: 'Quando um herói usa as estrelas para resgatar um prêmio.' },
-    { id: 'new_badge', label: 'Novas Medalhas e Níveis', description: 'Quando um herói sobe de nível ou ganha uma medalha.' },
+const initialPages: { id: InitialPage; label: string }[] = [
+    { id: 'heroes', label: 'Resumo do Dia' },
+    { id: 'agenda', label: 'Rotina de Missões' },
+    { id: 'missions', label: 'Quadro de Missões' },
+    { id: 'rewards', label: 'Quadro de Recompensas' },
+    { id: 'family', label: 'Aliança de Herois' },
 ];
 
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth();
+    const { availableContexts } = useFamily();
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
-    const [notificationPrefs, setNotificationPrefs] = useState<Partial<NotificationPreferences>>({});
+    
+    const [initialPage, setInitialPage] = useState<InitialPage>('heroes');
+    const [initialContext, setInitialContext] = useState<string>('my-space');
 
     useEffect(() => {
-        if (user?.settings?.notifications) {
-            setNotificationPrefs(user.settings.notifications);
-        } else {
-            // Default all to true if not set
-            const defaultPrefs: Partial<NotificationPreferences> = {};
-            notificationCategories.forEach(cat => {
-                defaultPrefs[cat.id] = true;
-            });
-            setNotificationPrefs(defaultPrefs);
+        if (user?.settings) {
+            setInitialPage(user.settings.initialPage || 'heroes');
+            setInitialContext(user.settings.initialContext || 'my-space');
         }
     }, [user]);
-
-    const handlePrefChange = (key: keyof NotificationPreferences, value: boolean) => {
-        setNotificationPrefs(prev => ({ ...prev, [key]: value }));
-    };
 
     const handleSaveChanges = async () => {
         if (!user) {
@@ -59,9 +50,10 @@ export default function SettingsPage() {
         try {
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, {
-                'settings.notifications': notificationPrefs
+                'settings.initialPage': initialPage,
+                'settings.initialContext': initialContext,
             });
-            toast({ title: "Configurações Salvas!", description: "Suas preferências de notificação foram atualizadas." });
+            toast({ title: "Configurações Salvas!", description: "Suas preferências foram atualizadas." });
         } catch (error) {
             console.error("Error saving settings:", error);
             toast({ title: "Erro ao Salvar", description: "Não foi possível salvar suas configurações.", variant: "destructive" });
@@ -75,54 +67,115 @@ export default function SettingsPage() {
     }
 
     return (
-        <div className="space-y-8 max-w-2xl mx-auto">
-            <Card className="shadow-xl">
-                <CardHeader>
-                    <CardTitle className="text-3xl font-headline">Configurações</CardTitle>
-                    <CardDescription>Gerencie suas preferências de notificação e aparência do aplicativo.</CardDescription>
-                </CardHeader>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5 text-primary"/> Preferências de Notificação</CardTitle>
-                    <CardDescription>Escolha quais notificações por e-mail você deseja receber. As notificações dentro do app continuarão ativas.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    {notificationCategories.map(category => (
-                        <div key={category.id} className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                            <div className="space-y-0.5">
-                                <Label htmlFor={`notif-${category.id}`}>{category.label}</Label>
-                                <p className="text-xs text-muted-foreground">{category.description}</p>
-                            </div>
-                            <Switch
-                                id={`notif-${category.id}`}
-                                checked={notificationPrefs[category.id] ?? true}
-                                onCheckedChange={(checked) => handlePrefChange(category.id, checked)}
-                            />
-                        </div>
-                    ))}
-                </CardContent>
-                <CardFooter>
-                     <Button onClick={handleSaveChanges} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Salvar Preferências
-                    </Button>
-                </CardFooter>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5 text-primary"/> Aparência</CardTitle>
-                    <CardDescription>Personalize a aparência do aplicativo.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex items-center justify-between">
-                        <Label>Tema</Label>
-                        <ThemeSwitcher />
+        <div className="space-y-8 max-w-4xl mx-auto">
+             <Card>
+                <CardHeader className="flex flex-row justify-between items-start">
+                    <div>
+                        <CardTitle className="flex items-center gap-2 text-3xl font-headline">
+                            <Settings className="h-8 w-8 text-primary"/>
+                            Configurações
+                        </CardTitle>
+                        <CardDescription>Gerencie as configurações da sua conta e preferências do aplicativo.</CardDescription>
                     </div>
-                </CardContent>
+                     <ThemeSwitcher />
+                </CardHeader>
             </Card>
+
+            <Accordion type="single" collapsible className="w-full" defaultValue="general-settings">
+                 <Card as={AccordionItem} value="integrations">
+                    <CardHeader>
+                        <AccordionTrigger className="w-full p-0 hover:no-underline">
+                             <CardTitle className="flex items-center gap-2">
+                                <Sparkles className="h-5 w-5 text-primary"/> Futuras Integrações
+                            </CardTitle>
+                        </AccordionTrigger>
+                        <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
+                    </CardHeader>
+                    <AccordionContent asChild>
+                         <CardContent>
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FeatureVoteCard
+                                    featureId="google_calendar"
+                                    icon={Calendar}
+                                    title="Google Agenda"
+                                    description="Sincronize missões e prazos automaticamente com a sua agenda do Google para nunca perder uma aventura."
+                                />
+                                <FeatureVoteCard
+                                    featureId="amazon_alexa"
+                                    icon={BotMessageSquare}
+                                    title="Amazon Alexa"
+                                    description="Receba lembretes de missões e marque-as como concluídas usando simples comandos de voz."
+                                />
+                                <FeatureVoteCard
+                                    featureId="ifttt"
+                                    icon={Workflow}
+                                    title="IFTTT (If This Then That)"
+                                    description="Crie automações personalizadas, como acender uma luz inteligente quando uma missão for concluída."
+                                />
+                                <FeatureVoteCard
+                                    featureId="google_classroom"
+                                    icon={Classroom}
+                                    title="Google Classroom"
+                                    description="Importe automaticamente tarefas e trabalhos escolares como missões para seus herois."
+                                />
+                            </div>
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+                 <Card as={AccordionItem} value="general-settings">
+                    <CardHeader>
+                       <AccordionTrigger className="w-full p-0 hover:no-underline">
+                             <CardTitle className="flex items-center gap-2">
+                                <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
+                            </CardTitle>
+                        </AccordionTrigger>
+                        <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
+                    </CardHeader>
+                     <AccordionContent asChild>
+                        <CardContent className="space-y-6 pt-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="initial-page">Tela inicial após login</Label>
+                                    <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
+                                        <SelectTrigger id="initial-page">
+                                            <SelectValue placeholder="Selecione uma tela..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {initialPages.map(page => (
+                                                <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
+                                     <Select value={initialContext} onValueChange={setInitialContext}>
+                                        <SelectTrigger id="initial-context">
+                                            <SelectValue placeholder="Selecione um espaço..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {availableContexts.map(context => (
+                                                <SelectItem key={context.id} value={context.id}>
+                                                    {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <p className="text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </AccordionContent>
+                </Card>
+            </Accordion>
+            
+            <div className="flex justify-end">
+                <Button onClick={handleSaveChanges} disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                    Salvar Alterações
+                </Button>
+            </div>
         </div>
     );
 }
