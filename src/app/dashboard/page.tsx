@@ -323,13 +323,8 @@ function DashboardRootPageContent() {
 
     return (
         <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
-                <div className="flex items-center gap-2">
-                     <div>
-                        <h2 className="text-3xl font-headline font-bold">Espaços com Mini Herois</h2>
-                    </div>
-                </div>
-                 {!isMobile && (
+             {!isMobile && (
+                 <div className="flex items-start justify-start">
                      <ToggleGroup type="single" value={localViewMode} onValueChange={(value) => value && setLocalViewMode(value as any)} className="w-full sm:w-auto">
                         <ToggleGroupItem value="grid" aria-label="Ver em grade" className="flex-1 sm:flex-initial">
                             <LayoutGrid className="h-4 w-4" />
@@ -338,8 +333,8 @@ function DashboardRootPageContent() {
                             <List className="h-4 w-4" />
                         </ToggleGroupItem>
                     </ToggleGroup>
-                 )}
-            </div>
+                 </div>
+             )}
             {renderContent()}
         </div>
     );
