@@ -12,11 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, School, ThumbsUp, Palette } from 'lucide-react';
+import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, School, ThumbsUp, Palette, Bell, CheckCircle, UserPlus, Award, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users, PlusCircle } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
-import type { InitialPage } from '@/lib/types';
+import type { InitialPage, NotificationPreferences, NotificationType } from '@/lib/types';
 import { FeatureVoteCard } from '@/components/dashboard/settings/FeatureVoteCard';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Switch } from '@/components/ui/switch';
+
 
 const initialPages: { id: InitialPage; label: string }[] = [
     { id: 'heroes', label: 'Resumo do Dia' },
@@ -26,6 +28,52 @@ const initialPages: { id: InitialPage; label: string }[] = [
     { id: 'family', label: 'Aliança de Herois' },
 ];
 
+const notificationSettings: {
+  category: string;
+  items: { id: NotificationType; label: string; description: string; icon: React.ElementType }[];
+}[] = [
+  {
+    category: 'Progresso dos Herois',
+    items: [
+      { id: 'mission_completed', label: 'Missão Concluída', description: 'Quando uma criança marca uma missão como concluída.', icon: CheckCircle },
+      { id: 'reward_redeemed', label: 'Recompensa Resgatada', description: 'Quando uma criança usa suas estrelas para resgatar uma recompensa.', icon: Award },
+      { id: 'new_level', label: 'Subiu de Nível', description: 'Quando uma criança acumula XP suficiente para subir de nível.', icon: Zap },
+      { id: 'new_badge', label: 'Nova Medalha Desbloqueada', description: 'Quando uma criança atinge os critérios para desbloquear uma nova medalha.', icon: Award },
+    ],
+  },
+  {
+    category: 'Atividade da Aliança',
+    items: [
+      { id: 'alliance_join_request', label: 'Pedido para Entrar na Aliança', description: 'Alerta para aprovar um novo membro que usou o código de convite.', icon: UserPlus },
+      { id: 'alliance_join_approved', label: 'Novo Membro na Aliança', description: 'Avisa quando um novo membro foi aprovado e entrou na sua aliança.', icon: UserCheck },
+    ],
+  },
+  {
+    category: 'Gestão dos Quadros',
+    items: [
+      { id: 'template_created', label: 'Nova Missão/Recompensa Criada', description: 'Quando um colaborador adiciona um novo item a um quadro da aliança.', icon: PlusCircle },
+      { id: 'template_updated', label: 'Missão/Recompensa Atualizada', description: 'Quando um item de um quadro da aliança é modificado.', icon: Edit3 },
+      { id: 'template_deleted', label: 'Missão/Recompensa Removida', description: 'Quando um item é removido de um quadro da aliança.', icon: Trash2 },
+    ],
+  },
+  {
+    category: 'Gestão de Rotinas',
+    items: [
+      { id: 'instance_assigned', label: 'Atividade Atribuída a Herói', description: 'Quando uma missão ou recompensa é atribuída a um herói na aliança.', icon: UserCheck },
+      { id: 'instance_unassigned', label: 'Atribuição Removida de Herói', description: 'Quando uma atribuição de missão/recompensa é removida de um herói.', icon: UserX },
+    ],
+  },
+  {
+    category: 'Rotina Escolar',
+    items: [
+      { id: 'school_schedule_entry_created', label: 'Aula Adicionada', description: 'Quando um colaborador adiciona uma nova aula na rotina escolar.', icon: PlusCircle },
+      { id: 'school_schedule_entry_updated', label: 'Aula Atualizada', description: 'Quando um colaborador modifica uma aula existente na rotina escolar.', icon: Edit3 },
+      { id: 'school_schedule_entry_deleted', label: 'Aula Removida', description: 'Quando um colaborador remove uma aula da rotina escolar.', icon: Trash2 },
+    ],
+  },
+];
+
+
 export default function SettingsPage() {
     const { user, loading: authLoading } = useAuth();
     const { availableContexts } = useFamily();
@@ -34,13 +82,25 @@ export default function SettingsPage() {
     
     const [initialPage, setInitialPage] = useState<InitialPage>('heroes');
     const [initialContext, setInitialContext] = useState<string>('my-space');
+    const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({});
+
 
     useEffect(() => {
         if (user?.settings) {
             setInitialPage(user.settings.initialPage || 'heroes');
             setInitialContext(user.settings.initialContext || 'my-space');
+            // Set all preferences to true by default if not specified
+            const defaultPrefs: NotificationPreferences = {};
+            notificationSettings.flatMap(cat => cat.items).forEach(item => {
+                defaultPrefs[item.id] = true;
+            });
+            setNotificationPrefs({ ...defaultPrefs, ...(user.settings.notifications || {}) });
         }
     }, [user]);
+
+    const handleNotificationChange = (id: NotificationType, checked: boolean) => {
+        setNotificationPrefs(prev => ({ ...prev, [id]: checked }));
+    };
 
     const handleSaveChanges = async () => {
         if (!user) {
@@ -53,6 +113,7 @@ export default function SettingsPage() {
             await updateDoc(userDocRef, {
                 'settings.initialPage': initialPage,
                 'settings.initialContext': initialContext,
+                'settings.notifications': notificationPrefs,
             });
             toast({ title: "Configurações Salvas!", description: "Suas preferências foram atualizadas." });
         } catch (error) {
@@ -82,7 +143,44 @@ export default function SettingsPage() {
                 </CardHeader>
             </Card>
 
-            <Accordion type="single" collapsible className="w-full" defaultValue="general-settings">
+            <Accordion type="multiple" defaultValue={['general-settings', 'notifications']} className="w-full space-y-4">
+                 <AccordionItem value="notifications" asChild>
+                    <Card>
+                        <CardHeader>
+                            <AccordionTrigger className="w-full p-0 hover:no-underline">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Bell className="h-5 w-5 text-primary"/> Preferências de Notificação
+                                </CardTitle>
+                            </AccordionTrigger>
+                            <CardDescription>Escolha quais alertas você deseja receber.</CardDescription>
+                        </CardHeader>
+                        <AccordionContent asChild>
+                            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-2">
+                                {notificationSettings.map(category => (
+                                    <div key={category.category} className="space-y-4">
+                                        <h3 className="font-semibold text-lg">{category.category}</h3>
+                                        {category.items.map(item => (
+                                            <div key={item.id} className="flex items-start justify-between gap-4 p-3 rounded-lg border bg-muted/30">
+                                                <div className="flex items-start gap-3">
+                                                    <item.icon className="h-5 w-5 text-muted-foreground mt-0.5"/>
+                                                    <div>
+                                                        <Label htmlFor={`notif-${item.id}`} className="font-medium cursor-pointer">{item.label}</Label>
+                                                        <p className="text-xs text-muted-foreground">{item.description}</p>
+                                                    </div>
+                                                </div>
+                                                <Switch
+                                                    id={`notif-${item.id}`}
+                                                    checked={notificationPrefs[item.id] !== false} // default to true if undefined
+                                                    onCheckedChange={(checked) => handleNotificationChange(item.id, checked)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ))}
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
                 <AccordionItem value="integrations" asChild>
                     <Card>
                         <CardHeader>
