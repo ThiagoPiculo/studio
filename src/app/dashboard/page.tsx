@@ -153,14 +153,16 @@ function ContextCard({ contextData, isMobile, viewMode }: { contextData: Context
                 
                 {isMySpace ? (
                      <div className="space-y-1">
-                        <h4 className="text-sm font-semibold text-muted-foreground">Aqui sou:</h4>
-                        <p className="font-medium text-sm text-foreground">{roleInfo?.label}</p>
+                        <p className="text-sm text-muted-foreground">
+                            <span className="font-semibold">Aqui sou:</span> {roleInfo?.label}
+                        </p>
                     </div>
                 ) : (
                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1">
-                           <h4 className="text-sm font-semibold text-muted-foreground">Aqui sou:</h4>
-                           <p className="font-medium text-sm text-foreground">{roleInfo?.label}</p>
+                           <p className="text-sm text-muted-foreground">
+                                <span className="font-semibold">Aqui sou:</span> <span className="font-medium text-foreground">{roleInfo?.label}</span>
+                           </p>
                            <p className="text-xs text-muted-foreground">({roleInfo?.description})</p>
                         </div>
                         <div className="space-y-1">
