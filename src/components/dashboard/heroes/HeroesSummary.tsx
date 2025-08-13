@@ -73,48 +73,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
     
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <CardTitle className="text-2xl font-headline flex items-center gap-3">
-                    <Calendar1Icon className="h-6 w-6 text-chart-5" />
-                    Resumo do Dia
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                <HelpCircle className="h-5 w-5" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                           <div className="grid gap-4">
-                              <div className="space-y-2">
-                                <h4 className="font-medium leading-none">Seu Centro de Comando Diário</h4>
-                                <p className="text-sm text-muted-foreground">
-                                  Esta tela é o seu ponto de partida para a aventura! Aqui você tem uma visão rápida e poderosa de tudo o que está acontecendo com seus Mini Herois <strong>hoje</strong>.
-                                </p>
-                              </div>
-                              <ul className="text-sm text-muted-foreground space-y-2">
-                                  <li className="flex items-start gap-2">
-                                      <span className="font-bold text-foreground">*</span>
-                                      <div><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em <strong>"Painel de Progresso"</strong> no card do herói ou acesse a <strong>"Rotina de Missões"</strong> no menu lateral.</div>
-                                  </li>
-                                  <li className="flex items-start gap-2">
-                                     <span className="font-bold text-foreground">*</span>
-                                     <div><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a <strong>"Rotina Escolar"</strong> no menu lateral.</div>
-                                  </li>
-                                   <li className="flex items-start gap-2">
-                                     <span className="font-bold text-foreground">*</span>
-                                     <div><strong>Progresso e Recompensas:</strong> Acompanhe as Estrelas (⭐) e o XP, e veja os prêmios que eles podem resgatar.</div>
-                                  </li>
-                              </ul>
-                               <p className="text-sm text-muted-foreground">
-                                Use esta página para dar aquele incentivo matinal e celebrar as conquistas no final do dia!
-                                </p>
-                                <PopoverClose asChild>
-                                    <Button className="w-full mt-2">Entendi 👍</Button>
-                                </PopoverClose>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                </CardTitle>
+            <div className="flex flex-col sm:flex-row items-start sm:items-start justify-start gap-4">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     {children.length > 1 && (
                          <HeroSelector

@@ -18,6 +18,7 @@ import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
+import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -55,6 +56,51 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const isRootDashboard = pathname === '/dashboard';
+  const isHeroesDashboard = pathname === '/dashboard/heroes';
+
+  const headerContent = {
+    '/dashboard': {
+      title: 'Espaços com Mini Herois',
+      icon: Home,
+      help: {
+        title: 'Comece escolhendo um espaço',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Esta tela é sua central de comando, oferecendo uma visão geral de todos os seus espaços de trabalho que você tem acesso e crianças para cuidar.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-2">
+                <li><strong>Meu Espaço:</strong> Seu ambiente privado para cuidar dos heróis que só você acompanha, sem qualquer colaboração. Ideal para missões e recompensas pessoais. Se não quiser cuidar solo, não precisa usar este espaço.</li>
+                <li><strong>Alianças:</strong> Espaços compartilhados onde você colabora com outros responsáveis (como co-pais, babás, cuidadoras, avós ou terapeutas). As missões, recompensas e heróis aqui são visíveis a todos os membros da aliança.</li>
+            </ul>
+            <p className="text-sm text-muted-foreground">
+              Clique em um card para mergulhar no universo daquele espaço e começar a gerenciar o progresso dos heróis.
+            </p>
+          </>
+        )
+      }
+    },
+    '/dashboard/heroes': {
+      title: 'Resumo do Dia',
+      icon: Calendar1Icon,
+      help: {
+        title: 'Missões na palma da mão',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">Esta tela é o seu ponto de partida para a aventura! Aqui você tem uma visão rápida e poderosa de tudo o que está acontecendo com seus Mini Herois hoje.</p>
+            <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-4">
+              <li><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina de Missões" no menu lateral.</li>
+              <li><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Rotina Escolar" no menu lateral.</li>
+              <li><strong>Progresso e Recompensas:</strong> Acompanhe as Estrelas (⭐) e o XP, e veja os prêmios que eles podem resgatar.</li>
+            </ul>
+            <p className="text-sm text-muted-foreground">Use esta página para dar aquele incentivo matinal e celebrar as conquistas no final do dia!</p>
+          </>
+        )
+      }
+    }
+  }
+
+  const currentHeader = headerContent[pathname as keyof typeof headerContent];
 
   return (
     <>
@@ -65,15 +111,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
               <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  {isClient && isMobile && !isRootDashboard && (
+                  {isClient && isMobile && !isRootDashboard && !isHeroesDashboard && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                         <ArrowLeft className="mr-1 h-4 w-4" />
                         <span className="sr-only">Voltar</span>
                       </Button>
                   )}
-                  {isRootDashboard ? (
+                  {currentHeader ? (
                     <div className="flex items-center gap-2">
-                        <h1 className="text-xl font-bold font-headline">Espaços com Mini Herois</h1>
+                        <currentHeader.icon className="h-8 w-8 text-primary" />
+                        <h1 className="text-xl font-bold font-headline">{currentHeader.title}</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
@@ -82,17 +129,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             </PopoverTrigger>
                             <PopoverContent className="w-80">
                                 <div className="space-y-3">
-                                    <h4 className="font-medium leading-none">Comece escolhendo um espaço</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        Esta tela é sua central de comando, oferecendo uma visão geral de todos os seus espaços de trabalho que você tem acesso e crianças para cuidar.
-                                    </p>
-                                    <ul className="text-sm text-muted-foreground space-y-2">
-                                        <li><strong>Meu Espaço:</strong> Seu ambiente privado para cuidar dos heróis que só você acompanha, sem qualquer colaboração. Ideal para missões e recompensas pessoais. Se não quiser cuidar solo, não precisa usar este espaço.</li>
-                                        <li><strong>Alianças:</strong> Espaços compartilhados onde você colabora com outros responsáveis (como co-pais, babás, cuidadoras, avós ou terapeutas). As missões, recompensas e heróis aqui são visíveis a todos os membros da aliança.</li>
-                                    </ul>
-                                     <p className="text-sm text-muted-foreground">
-                                        Clique em um card para mergulhar no universo daquele espaço e começar a gerenciar o progresso dos heróis.
-                                     </p>
+                                    <h4 className="font-medium leading-none">{currentHeader.help.title}</h4>
+                                    {currentHeader.help.content}
                                     <PopoverClose asChild>
                                         <Button className="w-full">Entendi 👍</Button>
                                     </PopoverClose>
@@ -101,9 +139,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         </Popover>
                     </div>
                   ) : (
-                    <>
                       <Breadcrumbs />
-                    </>
                   )}
                 </div>
                 <div className="flex items-center gap-2">
