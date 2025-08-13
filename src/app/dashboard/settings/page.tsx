@@ -148,8 +148,56 @@ export default function SettingsPage() {
                 </CardHeader>
             </Card>
 
-            <Accordion type="multiple" defaultValue={['general-settings', 'notifications']} className="w-full space-y-4">
-                 <AccordionItem value="notifications" asChild>
+            <Accordion type="multiple" defaultValue={['general-settings']} className="w-full space-y-4">
+                <AccordionItem value="general-settings" asChild>
+                     <Card>
+                        <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                            <CardHeader className="p-0">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
+                                </CardTitle>
+                                <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
+                            </CardHeader>
+                        </AccordionTrigger>
+                        <AccordionContent asChild>
+                            <CardContent className="space-y-6 pt-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initial-page">Tela inicial após login</Label>
+                                        <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
+                                            <SelectTrigger id="initial-page">
+                                                <SelectValue placeholder="Selecione uma tela..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {initialPages.map(page => (
+                                                    <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
+                                        <Select value={initialContext} onValueChange={setInitialContext}>
+                                            <SelectTrigger id="initial-context">
+                                                <SelectValue placeholder="Selecione um espaço..." />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {availableContexts.map(context => (
+                                                    <SelectItem key={context.id} value={context.id}>
+                                                        {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                        <p className="text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</p>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </AccordionContent>
+                    </Card>
+                </AccordionItem>
+                <AccordionItem value="notifications" asChild>
                     <Card>
                         <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
                             <CardHeader className="p-0">
@@ -223,54 +271,6 @@ export default function SettingsPage() {
                                         title="Google Classroom"
                                         description="Importe automaticamente tarefas e trabalhos escolares como missões para seus herois."
                                     />
-                                </div>
-                            </CardContent>
-                        </AccordionContent>
-                    </Card>
-                </AccordionItem>
-                <AccordionItem value="general-settings" asChild>
-                     <Card>
-                        <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                            <CardHeader className="p-0">
-                                <CardTitle className="flex items-center gap-2">
-                                    <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
-                                </CardTitle>
-                                <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
-                            </CardHeader>
-                        </AccordionTrigger>
-                        <AccordionContent asChild>
-                            <CardContent className="space-y-6 pt-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="initial-page">Tela inicial após login</Label>
-                                        <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
-                                            <SelectTrigger id="initial-page">
-                                                <SelectValue placeholder="Selecione uma tela..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {initialPages.map(page => (
-                                                    <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
-                                        <Select value={initialContext} onValueChange={setInitialContext}>
-                                            <SelectTrigger id="initial-context">
-                                                <SelectValue placeholder="Selecione um espaço..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableContexts.map(context => (
-                                                    <SelectItem key={context.id} value={context.id}>
-                                                        {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">Escolha qual espaço abrir ao iniciar o aplicativo.</p>
-                                    </div>
                                 </div>
                             </CardContent>
                         </AccordionContent>
