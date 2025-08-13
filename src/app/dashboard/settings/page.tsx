@@ -23,7 +23,7 @@ import { Switch } from '@/components/ui/switch';
 const initialPages: { id: InitialPage; label: string }[] = [
     { id: 'dashboard', label: 'Espaços com Mini Herois' },
     { id: 'heroes', label: 'Resumo do Dia' },
-    { id: 'dashboard', label: 'Painel de Progressos' },
+    { id: 'dashboard/dashboard', label: 'Painel de Progressos' },
     { id: 'mural', label: 'Mural Completo' },
     { id: 'agenda', label: 'Rotina de Missões' },
     { id: 'school-schedule', label: 'Rotina Escolar'},
