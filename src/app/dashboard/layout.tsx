@@ -57,7 +57,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const isRootDashboard = pathname === '/dashboard';
   const isHeroesDashboard = pathname === '/dashboard/heroes';
 
-  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings'].includes(pathname);
+  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances'].includes(pathname);
 
   const headerContent = {
     '/dashboard': {
