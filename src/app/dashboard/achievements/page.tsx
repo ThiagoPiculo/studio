@@ -22,8 +22,7 @@ import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
+import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
 
 interface UpcomingBadge {
   child: ChildProfile;
