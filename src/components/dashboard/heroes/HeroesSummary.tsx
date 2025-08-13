@@ -25,6 +25,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { Calendar1Icon } from '../icons/Calendar1Icon';
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
@@ -74,7 +75,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <CardTitle className="text-2xl font-headline flex items-center gap-3">
-                    <CalendarDays className="h-6 w-6 text-chart-5" />
+                    <Calendar1Icon className="h-6 w-6 text-chart-5" />
                     Resumo do Dia
                     <Popover>
                         <PopoverTrigger asChild>
