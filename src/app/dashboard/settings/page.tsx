@@ -12,7 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Loader2, Save, Settings, Sparkles, Bell, CheckCircle, UserPlus, Award, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users, PlusCircle, Calendar, Workflow, School } from 'lucide-react';
+import { Loader2, Save, Settings, Sparkles, Bell, CheckCircle, UserPlus, Award, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users, PlusCircle, Calendar, Workflow, School, BotMessageSquare } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import type { InitialPage, NotificationPreferences, NotificationType } from '@/lib/types';
 import { FeatureVoteCard } from '@/components/dashboard/settings/FeatureVoteCard';
@@ -151,14 +151,14 @@ export default function SettingsPage() {
             <Accordion type="multiple" defaultValue={['general-settings', 'notifications']} className="w-full space-y-4">
                  <AccordionItem value="notifications" asChild>
                     <Card>
-                        <CardHeader>
-                            <AccordionTrigger className="w-full p-0 hover:no-underline">
+                        <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                            <CardHeader className="p-0">
                                 <CardTitle className="flex items-center gap-2">
                                     <Bell className="h-5 w-5 text-primary"/> Preferências de Notificação
                                 </CardTitle>
-                            </AccordionTrigger>
-                            <CardDescription>Escolha quais alertas você deseja receber.</CardDescription>
-                        </CardHeader>
+                                <CardDescription>Escolha quais alertas você deseja receber.</CardDescription>
+                            </CardHeader>
+                        </AccordionTrigger>
                         <AccordionContent asChild>
                             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-2">
                                 {notificationSettings.map(category => (
@@ -188,14 +188,14 @@ export default function SettingsPage() {
                 </AccordionItem>
                 <AccordionItem value="integrations" asChild>
                     <Card>
-                        <CardHeader>
-                            <AccordionTrigger className="w-full p-0 hover:no-underline">
+                         <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                            <CardHeader className="p-0">
                                 <CardTitle className="flex items-center gap-2">
                                     <Sparkles className="h-5 w-5 text-primary"/> Futuras Integrações
                                 </CardTitle>
-                            </AccordionTrigger>
-                            <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
-                        </CardHeader>
+                                <CardDescription>Conecte o Mini Herois a outros serviços. Vote nas suas ideias favoritas para nos ajudar a priorizar!</CardDescription>
+                            </CardHeader>
+                        </AccordionTrigger>
                         <AccordionContent asChild>
                             <CardContent>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -230,14 +230,14 @@ export default function SettingsPage() {
                 </AccordionItem>
                 <AccordionItem value="general-settings" asChild>
                      <Card>
-                        <CardHeader>
-                        <AccordionTrigger className="w-full p-0 hover:no-underline">
+                        <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
+                            <CardHeader className="p-0">
                                 <CardTitle className="flex items-center gap-2">
                                     <Settings className="h-5 w-5 text-primary"/> Configurações Gerais
                                 </CardTitle>
-                            </AccordionTrigger>
-                            <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
-                        </CardHeader>
+                                <CardDescription>Personalize o comportamento do aplicativo de acordo com suas preferências.</CardDescription>
+                            </CardHeader>
+                        </AccordionTrigger>
                         <AccordionContent asChild>
                             <CardContent className="space-y-6 pt-2">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
