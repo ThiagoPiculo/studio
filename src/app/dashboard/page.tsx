@@ -325,35 +325,9 @@ function DashboardRootPageContent() {
         <div className="space-y-8">
             <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
                 <div className="flex items-center gap-2">
-                    <Home className="h-8 w-8 text-primary" />
                      <div>
                         <h2 className="text-3xl font-headline font-bold">Espaços com Mini Herois</h2>
                     </div>
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
-                                <HelpCircle className="h-5 w-5" />
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80">
-                            <div className="space-y-3">
-                                <h4 className="font-medium leading-none">Seu Ponto de Partida Estratégico</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Esta tela é sua central de comando, oferecendo uma visão geral de todos os seus espaços de trabalho.
-                                </p>
-                                <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                    <li><strong>Meu Espaço:</strong> Seu ambiente privado para gerenciar os heróis que só você acompanha. Ideal para missões e recompensas pessoais.</li>
-                                    <li><strong>Alianças:</strong> Espaços compartilhados onde você colabora com outros responsáveis (como co-pais, avós ou terapeutas). As missões, recompensas e heróis aqui são visíveis a todos os membros da aliança.</li>
-                                </ul>
-                                <p className="text-sm text-muted-foreground">
-                                    Clique em um card para mergulhar no universo daquele espaço e começar a gerenciar o progresso dos heróis.
-                                </p>
-                                <PopoverClose asChild>
-                                    <Button className="w-full">Entendi 👍</Button>
-                                </PopoverClose>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
                 </div>
                  {!isMobile && (
                      <ToggleGroup type="single" value={localViewMode} onValueChange={(value) => value && setLocalViewMode(value as any)} className="w-full sm:w-auto">
