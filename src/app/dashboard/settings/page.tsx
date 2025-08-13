@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
-import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, Classroom, ThumbsUp, Palette } from 'lucide-react';
+import { Loader2, Save, Settings, Sparkles, Wand2, Bot, Zap, Network, BotMessageSquare, Calendar, Workflow, School, ThumbsUp, Palette } from 'lucide-react';
 import { ThemeSwitcher } from '@/components/dashboard/settings/ThemeSwitcher';
 import type { InitialPage } from '@/lib/types';
 import { FeatureVoteCard } from '@/components/dashboard/settings/FeatureVoteCard';
@@ -114,7 +114,7 @@ export default function SettingsPage() {
                                 />
                                 <FeatureVoteCard
                                     featureId="google_classroom"
-                                    icon={Classroom}
+                                    icon={School}
                                     title="Google Classroom"
                                     description="Importe automaticamente tarefas e trabalhos escolares como missões para seus herois."
                                 />
