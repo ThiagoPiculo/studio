@@ -114,6 +114,8 @@ function AgendaPageContent() {
     () => (searchParams.get('period') || 'all') as TimePeriod
   );
   
+  const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
   }
@@ -176,6 +178,7 @@ function AgendaPageContent() {
         
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
+        setOpenAccordionItems(fetchedChildren.map(c => c.id));
         
         const childIdParam = searchParams.get('childId');
         if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
@@ -836,7 +839,7 @@ function AgendaPageContent() {
     });
 
     return (
-        <Accordion type="multiple" className="w-full space-y-2">
+        <Accordion type="multiple" className="w-full space-y-2" value={openAccordionItems} onValueChange={setOpenAccordionItems}>
             {sortedChildKeys.map((childId) => {
                 const child = childrenMap.get(childId);
                 if (!child) return null;
@@ -977,7 +980,7 @@ function AgendaPageContent() {
                                           className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
                                             "hover:bg-accent/50",
                                             isCompleted && "text-muted-foreground/70",
-                                            highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                                            highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary-offset"
                                           )}
                                         >
                                           {isProcessingAction === event.data.id ? (
