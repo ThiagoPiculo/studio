@@ -17,6 +17,12 @@ import { getInitials } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import { startOfDay } from 'date-fns';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type SpaceDetails = {
     id: string;
@@ -34,7 +40,6 @@ export function SpaceSelector() {
     const router = useRouter();
 
     const [spaces, setSpaces] = useState<SpaceDetails[]>([]);
-    const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
     const [isLoadingSpaces, setIsLoadingSpaces] = useState(true);
 
     useEffect(() => {
@@ -48,10 +53,6 @@ export function SpaceSelector() {
         const fetchSpaceDetails = async () => {
             setIsLoadingSpaces(true);
             try {
-                // Fetch all missions for all contexts at once
-                const allMissions = await getMissionInstancesForContext(user.uid, 'all');
-                setMissionInstances(allMissions);
-
                 const spacePromises = availableContexts.map(async (context) => {
                     if (context.id === 'my-space') {
                         const children = await getChildProfilesForAttribution(user.uid, context.id);
@@ -97,7 +98,8 @@ export function SpaceSelector() {
         router.push(`/dashboard/heroes?childId=${childId}`);
     };
     
-    const handleAccessSpace = (contextId: string) => {
+    const handleAccessSpace = (e: React.MouseEvent, contextId: string) => {
+        e.stopPropagation(); // Prevent accordion from toggling
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
@@ -113,74 +115,72 @@ export function SpaceSelector() {
         return <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />;
     }
 
-    const today = startOfDay(new Date());
-
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
                         <Users className="h-6 w-6 text-primary" />
-                        Escolha o espaço do Mini Heroi
+                        Escolha o Espaço do Mini Heroi
                     </CardTitle>
                     <CardDescription>Selecione um herói para ver suas missões de hoje ou acesse um espaço para uma visão geral.</CardDescription>
                 </CardHeader>
             </Card>
-            <div className="space-y-8">
+            <Accordion type="multiple" className="space-y-4">
                 {spaces.map(space => (
-                    <Card key={space.id} className="flex flex-col">
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle className="flex items-center gap-3">
-                                    <space.icon className="h-6 w-6 text-primary" />
-                                    {space.name}
-                                </CardTitle>
-                                <CardDescription className="mt-1">{space.description}</CardDescription>
-                            </div>
-                             <Button onClick={() => handleAccessSpace(space.id)} className="hidden sm:inline-flex">
-                                Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {space.children.length > 0 ? (
-                                space.children.map(child => {
-                                    const childMissionsToday = missionInstances.filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
-                                    const completedToday = childMissionsToday.filter(m => isMissionCompletedForDate(m, today)).length;
-                                    const totalToday = childMissionsToday.length;
-
-                                    return (
-                                        <Card key={child.id} className="p-4 flex flex-col items-center gap-4 hover:bg-muted/50 transition-colors sm:flex-row">
-                                            <Avatar
-                                                className="h-16 w-16 text-2xl ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
-                                                style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                            >
-                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback style={{backgroundColor: child.color}} className="font-bold">{getInitials(child.name)}</AvatarFallback>
-                                            </Avatar>
-                                            <div className="flex-grow space-y-2 text-center sm:text-left w-full">
-                                                <h4 className="font-semibold text-lg">{child.name}</h4>
-                                                <p className="text-sm font-medium text-muted-foreground">
-                                                    {totalToday > 0 ? `${completedToday} de ${totalToday} missões hoje` : "Nenhuma missão hoje"}
-                                                </p>
-                                                 <Button onClick={() => handleSelectHero(space.id, child.id)} className="w-full sm:w-auto" size="sm">
-                                                    <Target className="mr-2 h-4 w-4"/> Missões de Hoje
-                                                </Button>
-                                            </div>
-                                        </Card>
-                                    )
-                                })
-                            ) : (
-                                <p className="text-sm text-muted-foreground italic col-span-full text-center py-4">Nenhum herói neste espaço ainda.</p>
-                            )}
-                        </CardContent>
-                         <CardFooter className="sm:hidden">
-                            <Button onClick={() => handleAccessSpace(space.id)} className="w-full">
-                                Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                        </CardFooter>
-                    </Card>
+                    <AccordionItem value={space.id} key={space.id} className="border-none">
+                        <Card className="flex flex-col overflow-hidden">
+                            <AccordionTrigger className="p-6 hover:no-underline group">
+                                <div className="flex items-center justify-between w-full">
+                                    <div>
+                                        <CardTitle className="flex items-center gap-3 text-left">
+                                            <space.icon className="h-6 w-6 text-primary" />
+                                            {space.name}
+                                        </CardTitle>
+                                        <CardDescription className="mt-1 text-left">{space.description}</CardDescription>
+                                    </div>
+                                    <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex ml-4 group-data-[state=open]:hidden">
+                                        Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                    <div className="sm:hidden ml-4 p-2 rounded-md group-data-[state=open]:rotate-180 transition-transform">
+                                        <ChevronDown className="h-5 w-5" />
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {space.children.length > 0 ? (
+                                        space.children.map(child => (
+                                            <Card key={child.id} className="p-4 flex flex-col items-center gap-4 hover:bg-muted/50 transition-colors sm:flex-row shadow-sm">
+                                                <Avatar
+                                                    className="h-16 w-16 text-2xl ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
+                                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                >
+                                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                                    <AvatarFallback style={{backgroundColor: child.color}} className="font-bold">{getInitials(child.name)}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex-grow space-y-3 text-center sm:text-left w-full">
+                                                    <h4 className="font-semibold text-lg">{child.name}</h4>
+                                                    <Button onClick={() => handleSelectHero(space.id, child.id)} className="w-full sm:w-auto" size="sm">
+                                                        <Target className="mr-2 h-4 w-4"/> Missões de Hoje
+                                                    </Button>
+                                                </div>
+                                            </Card>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic col-span-full text-center py-4">Nenhum herói neste espaço ainda.</p>
+                                    )}
+                                </CardContent>
+                                <CardFooter className="sm:hidden">
+                                    <Button onClick={(e) => handleAccessSpace(e, space.id)} className="w-full">
+                                        Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                                    </Button>
+                                </CardFooter>
+                            </AccordionContent>
+                        </Card>
+                    </AccordionItem>
                 ))}
-            </div>
+            </Accordion>
         </div>
     );
 }
