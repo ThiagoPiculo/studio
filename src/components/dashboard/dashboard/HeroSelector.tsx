@@ -33,7 +33,10 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
             <Button variant="outline" className="w-full sm:w-[280px] justify-between shadow-sm">
                 <div className="flex items-center gap-3 truncate">
                     {selectedHero ? (
-                         <Avatar className="h-6 w-6">
+                         <Avatar 
+                            className="h-6 w-6 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                            style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}
+                         >
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
                                 {getInitials(selectedHero.name)}
@@ -68,7 +71,10 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                  {heroes.map(hero => (
                     <DropdownMenuRadioItem key={hero.id} value={hero.id} className="cursor-pointer">
                         <div className="flex items-center gap-3">
-                            <Avatar className="h-6 w-6">
+                            <Avatar 
+                                className="h-6 w-6 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                style={hero.color ? { '--ring-color': hero.color } as React.CSSProperties : {}}
+                            >
                                 <AvatarImage src={hero.avatar} alt={hero.name} />
                                 <AvatarFallback style={{ backgroundColor: hero.color }}>
                                     {getInitials(hero.name)}
