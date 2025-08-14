@@ -1,4 +1,5 @@
 
+
 "use client";
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
@@ -67,12 +68,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            const preferredContextId = user.settings?.initialContext || 'my-space';
-            if (allContexts.some(c => c.id === preferredContextId)) {
+            const preferredContextId = user.settings?.initialContext;
+
+            // Only set a specific context if the user has explicitly chosen one (not 'default')
+            if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
                 if (currentContext !== preferredContextId) {
                     setCurrentContextState(preferredContextId);
                 }
             } else if (!allContexts.some(c => c.id === currentContext)) {
+                 // Fallback if current context is no longer valid
                 setCurrentContextState('my-space');
             }
             

@@ -1,3 +1,4 @@
+
 // src/app/dashboard/page.tsx
 "use client";
 
@@ -26,6 +27,15 @@ export default function DashboardRedirectPage() {
 
         const checkInitialState = async () => {
             const hasAlliances = availableContexts.some(c => c.id !== 'my-space');
+            
+            const preferredInitialPage = user.settings?.initialPage;
+            // Se o usuário escolheu uma página específica (diferente de 'default'), vá para ela.
+            if (preferredInitialPage && preferredInitialPage !== 'default') {
+                router.replace(`/dashboard/${preferredInitialPage}`);
+                return;
+            }
+
+            // Lógica "Padrão do App"
             const childrenInPersonalSpace = await getChildProfilesForAttribution(user.uid, 'my-space');
             
             // Cenário 1: Novo usuário total
@@ -34,17 +44,15 @@ export default function DashboardRedirectPage() {
             
             // Cenário 2: Usuário padrão, com filhos no espaço pessoal e sem alianças
             } else if (childrenInPersonalSpace.length > 0 && !hasAlliances) {
-                 const initialPage = user.settings?.initialPage || 'heroes';
-                 router.replace(`/dashboard/${initialPage}`);
+                 router.replace(`/dashboard/heroes`);
             
             // Cenário 3 e 4: Usuário é colaborador em alianças, pode ou não ter filhos no espaço pessoal
             } else if (hasAlliances) {
-                 router.replace('/dashboard/heroes'); // Esta página mostrará os cards dos espaços para escolher
+                 router.replace('/dashboard'); // Mostra os cards dos espaços para escolher
             
             // Fallback para qualquer outro caso
             } else {
-                const initialPage = user.settings?.initialPage || 'heroes';
-                router.replace(`/dashboard/${initialPage}`);
+                router.replace(`/dashboard/heroes`);
             }
         };
 

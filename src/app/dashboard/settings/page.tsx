@@ -20,7 +20,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Switch } from '@/components/ui/switch';
 
 
-const initialPages: { id: InitialPage; label: string }[] = [
+const initialPages: { id: InitialPage | 'default'; label: string }[] = [
+    { id: 'default', label: 'Padrão do App (Recomendado)' },
     { id: 'dashboard', label: 'Espaços com Mini Herois' },
     { id: 'heroes', label: 'Resumo do Dia' },
     { id: 'dashboard/dashboard', label: 'Painel de Progressos' },
@@ -85,15 +86,15 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
-    const [initialPage, setInitialPage] = useState<InitialPage>('heroes');
-    const [initialContext, setInitialContext] = useState<string>('my-space');
+    const [initialPage, setInitialPage] = useState<InitialPage | 'default'>('default');
+    const [initialContext, setInitialContext] = useState<string>('default');
     const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({});
 
 
     useEffect(() => {
         if (user?.settings) {
-            setInitialPage(user.settings.initialPage || 'heroes');
-            setInitialContext(user.settings.initialContext || 'my-space');
+            setInitialPage(user.settings.initialPage || 'default');
+            setInitialContext(user.settings.initialContext || 'default');
             // Set all preferences to true by default if not specified
             const defaultPrefs: NotificationPreferences = {};
             notificationSettings.flatMap(cat => cat.items).forEach(item => {
@@ -132,6 +133,11 @@ export default function SettingsPage() {
     if (authLoading) {
         return <div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>;
     }
+
+    const contextOptions = [
+        { id: 'default', name: 'Padrão do App (Recomendado)' },
+        ...availableContexts,
+    ]
 
     return (
         <div className="space-y-8 max-w-4xl mx-auto">
@@ -183,9 +189,11 @@ export default function SettingsPage() {
                                                 <SelectValue placeholder="Selecione um espaço..." />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {availableContexts.map(context => (
+                                                {contextOptions.map(context => (
                                                     <SelectItem key={context.id} value={context.id}>
-                                                        {context.id === 'my-space' ? context.name : `Aliança: ${context.name}`}
+                                                        {context.id === 'my-space' ? context.name : 
+                                                         context.id === 'default' ? context.name :
+                                                         `Aliança: ${context.name}`}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
