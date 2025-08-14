@@ -47,12 +47,10 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            // Don't set a default context if there are none other than personal.
-            // Let the user choose.
             setCurrentContextState('my-space'); 
             setIsContextSelected(false);
             setIsLoading(false);
-            if (pathname !== '/dashboard') {
+             if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/family') && !pathname.startsWith('/dashboard/novo-heroi')) {
                 router.replace('/dashboard');
             }
             return;
@@ -60,6 +58,14 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
         const familyIds = memberships.map(m => m.familyId);
         const familyRoles = new Map(memberships.map(m => [m.familyId, m.role]));
+
+        if (familyIds.length === 0) {
+            setAvailableContextsState(initialContexts);
+            setCurrentContextState('my-space');
+            setIsContextSelected(false);
+            setIsLoading(false);
+            return;
+        }
 
         const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
         
@@ -76,18 +82,14 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            const preferredContextId = user.settings?.initialContext;
+            // Force user to choose a context by not setting a default one
+            setIsContextSelected(false);
+            setCurrentContextState(''); // Reset context to force selection
 
-            if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
-                setCurrentContextState(preferredContextId);
-                setIsContextSelected(true);
-            } else {
-                // Force selection if multiple contexts exist and no valid preference is set.
-                setIsContextSelected(false);
-                if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile')) {
-                    router.replace('/dashboard');
-                }
+            if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/family') && !pathname.startsWith('/dashboard/novo-heroi') ) {
+                router.replace('/dashboard');
             }
+
             setIsLoading(false);
 
         }, (error) => {
@@ -118,8 +120,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     setCurrentContextState(contextId);
     setIsContextSelected(true);
-    // Removed saving to localStorage to avoid confusion.
-    // localStorage.setItem('lastContextId', contextId);
   }, []);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
