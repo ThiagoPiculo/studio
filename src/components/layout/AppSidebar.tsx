@@ -70,7 +70,7 @@ const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: st
     const router = useRouter();
     const { toast } = useToast();
     const { isContextSelected, availableContexts } = useFamily();
-    const isActive = pathname.startsWith(href);
+    const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
 
     const contextFreePaths = [
         '/dashboard', 
