@@ -30,16 +30,22 @@ import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 interface HeroesSummaryProps {
   children: ChildProfile[];
   missionInstances: MissionInstance[];
+  initialSelectedChildId?: string | null;
 }
 
-export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps) {
+export function HeroesSummary({ children, missionInstances, initialSelectedChildId = null }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
-    const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
+    const [selectedHeroId, setSelectedHeroId] = useState<string | null>(initialSelectedChildId);
+
+    useEffect(() => {
+        setSelectedHeroId(initialSelectedChildId);
+    }, [initialSelectedChildId]);
+
 
     const heroesToDisplay = useMemo(() => {
         if (!selectedHeroId) return children;

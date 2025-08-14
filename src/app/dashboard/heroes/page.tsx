@@ -9,12 +9,15 @@ import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { getChildProfilesForAttribution, getMissionInstancesForContext } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+import { useSearchParams } from 'next/navigation';
 
 function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { currentContext, isLoading: isFamilyLoading } = useFamily();
     const [children, setChildren] = useState<ChildProfile[] | null>(null);
     const [missions, setMissions] = useState<MissionInstance[] | null>(null);
+    const searchParams = useSearchParams();
+    const childIdFromUrl = searchParams.get('childId');
 
     const fetchData = useCallback(async () => {
         if (!user) {
@@ -58,7 +61,7 @@ function HeroesPageContent() {
         );
     }
     
-    return <HeroesSummary children={children} missionInstances={missions} />;
+    return <HeroesSummary children={children} missionInstances={missions} initialSelectedChildId={childIdFromUrl} />;
 }
 
 

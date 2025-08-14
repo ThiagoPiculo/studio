@@ -12,7 +12,7 @@ import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Users, ArrowRight, Loader2, Link as LinkIcon } from 'lucide-react';
+import { Home, Users, ArrowRight, Loader2, Link as LinkIcon, Target } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 
@@ -51,7 +51,7 @@ export function SpaceSelector() {
                         return {
                             id: context.id,
                             name: "Cuidar Solo",
-                            role: "Personal",
+                            role: "Personal" as const,
                             description: "Seu espaço privado para gerenciar heróis que só você acompanha.",
                             icon: Home,
                             children,
@@ -85,7 +85,12 @@ export function SpaceSelector() {
         fetchSpaceDetails();
     }, [user, authLoading, familyLoading, availableContexts, router]);
 
-    const handleSelectContext = (contextId: string) => {
+    const handleSelectHero = (contextId: string, childId: string) => {
+        setCurrentContext(contextId);
+        router.push(`/dashboard/heroes?childId=${childId}`);
+    };
+    
+    const handleAccessSpace = (contextId: string) => {
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
@@ -98,7 +103,6 @@ export function SpaceSelector() {
     const hasAlliances = availableContexts.some(c => c.id !== 'my-space');
     
     if (!hasAnyChildren && !hasAlliances) {
-        // This will redirect to /novo-heroi eventually, which is what we want for a truly new user.
         return <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />;
     }
 
@@ -108,59 +112,50 @@ export function SpaceSelector() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
                         <Users className="h-6 w-6 text-primary" />
-                        Escolha seu Espaço de Trabalho
+                        Escolha o espaço do Mini Heroi
                     </CardTitle>
-                    <CardDescription>Selecione um espaço para gerenciar as missões e o progresso dos seus Mini Herois.</CardDescription>
+                    <CardDescription>Selecione um herói para ver suas missões de hoje ou acesse um espaço para uma visão geral.</CardDescription>
                 </CardHeader>
             </Card>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-8">
                 {spaces.map(space => (
                     <Card key={space.id} className="flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3">
-                                <space.icon className="h-6 w-6 text-primary" />
-                                {space.name}
-                            </CardTitle>
-                            <CardDescription>{space.description}</CardDescription>
-                        </CardHeader>
-                        <CardContent className="flex-grow space-y-4">
-                           <div className="space-y-2">
-                                <h4 className="text-sm font-semibold text-muted-foreground">Mini Herois</h4>
-                                {space.children.length > 0 ? (
-                                    <div className="flex -space-x-2">
-                                        {space.children.map(child => (
-                                            <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
-                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                            </Avatar>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-xs text-muted-foreground italic">Nenhum herói aqui.</p>
-                                )}
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div>
+                                <CardTitle className="flex items-center gap-3">
+                                    <space.icon className="h-6 w-6 text-primary" />
+                                    {space.name}
+                                </CardTitle>
+                                <CardDescription className="mt-1">{space.description}</CardDescription>
                             </div>
-                           {space.id !== 'my-space' && (
-                                <>
-                                    <Separator />
-                                    <div className="space-y-2">
-                                        <h4 className="text-sm font-semibold text-muted-foreground">Membros da Aliança</h4>
-                                        <div className="flex -space-x-2">
-                                            {space.members.map(member => (
-                                                <Avatar key={member.uid} className="h-8 w-8 border-2 border-background">
-                                                    <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
-                                                    <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
-                                                </Avatar>
-                                            ))}
-                                        </div>
-                                    </div>
-                                </>
-                           )}
-                        </CardContent>
-                        <CardFooter>
-                            <Button className="w-full" onClick={() => handleSelectContext(space.id)}>
-                                Acessar Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                            <Button onClick={() => handleAccessSpace(space.id)}>
+                                Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
-                        </CardFooter>
+                        </CardHeader>
+                        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {space.children.length > 0 ? (
+                                space.children.map(child => (
+                                    <div key={child.id} className="p-4 border rounded-lg flex flex-col sm:flex-row items-center gap-4 hover:bg-muted/50 transition-colors">
+                                        <Avatar
+                                            className="h-16 w-16 text-2xl ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
+                                            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                        >
+                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                            <AvatarFallback style={{backgroundColor: child.color}} className="font-bold">{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="flex-grow text-center sm:text-left">
+                                            <h4 className="font-semibold text-lg">{child.name}</h4>
+                                            <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
+                                        </div>
+                                        <Button onClick={() => handleSelectHero(space.id, child.id)} className="w-full sm:w-auto">
+                                            <Target className="mr-2 h-4 w-4"/> Missões de Hoje
+                                        </Button>
+                                    </div>
+                                ))
+                            ) : (
+                                <p className="text-sm text-muted-foreground italic col-span-full text-center py-4">Nenhum herói neste espaço ainda.</p>
+                            )}
+                        </CardContent>
                     </Card>
                 ))}
             </div>
