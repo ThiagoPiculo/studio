@@ -127,21 +127,40 @@ export function SpaceSelector() {
                 {spaces.map(space => (
                     <AccordionItem value={space.id} key={space.id} className="border-none">
                         <Card className="flex flex-col overflow-hidden">
-                            <div className="flex items-center p-6 group">
-                                <AccordionTrigger className="p-0 hover:no-underline flex-grow">
-                                    <div className="flex items-center justify-between w-full">
-                                        <div>
-                                            <CardTitle className="flex items-center gap-3 text-left">
-                                                <space.icon className="h-6 w-6 text-primary" />
-                                                {space.name}
-                                            </CardTitle>
-                                            <CardDescription className="mt-1 text-left">{space.description}</CardDescription>
+                            <div className="p-4 group">
+                                <AccordionTrigger className="p-0 hover:no-underline w-full text-left">
+                                     <div className="flex items-center justify-between w-full flex-wrap gap-4">
+                                        <div className="flex items-center gap-3 flex-grow min-w-0">
+                                            <space.icon className="h-6 w-6 text-primary" />
+                                            <div className="flex-grow">
+                                                <CardTitle className="text-xl">
+                                                    {space.name}
+                                                </CardTitle>
+                                            </div>
                                         </div>
+                                         <div className="flex items-center gap-4 justify-end">
+                                            <div className="flex items-center -space-x-2 group-data-[state=closed]:flex group-data-[state=open]:hidden">
+                                                {space.children.slice(0, 4).map(child => (
+                                                     <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
+                                                        <AvatarImage src={child.avatar} alt={child.name} />
+                                                        <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                    </Avatar>
+                                                ))}
+                                                {space.children.length > 4 && (
+                                                    <Avatar className="h-8 w-8 border-2 border-background">
+                                                        <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{space.children.length - 4}</AvatarFallback>
+                                                    </Avatar>
+                                                )}
+                                            </div>
+                                            <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex group-data-[state=open]:hidden">
+                                                Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                                            </Button>
+                                             <div className="p-2 rounded-md group-data-[state=open]:rotate-180 transition-transform">
+                                                <ChevronDown className="h-5 w-5" />
+                                            </div>
+                                         </div>
                                     </div>
                                 </AccordionTrigger>
-                                <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex ml-4 group-data-[state=open]:hidden">
-                                    Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                                </Button>
                             </div>
 
                             <AccordionContent>
