@@ -18,6 +18,10 @@ const navItems = [
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
 
+const contextFreePaths = [
+    '/dashboard/settings'
+];
+
 const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
     const pathname = usePathname();
     const router = useRouter();
@@ -25,8 +29,10 @@ const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
     const { isContextSelected, availableContexts } = useFamily();
     const isActive = pathname.startsWith(href);
 
+    const needsContextCheck = !contextFreePaths.some(p => href.startsWith(p));
+
     const handleClick = (e: React.MouseEvent) => {
-        if (availableContexts.length > 1 && !isContextSelected) {
+        if (needsContextCheck && availableContexts.length > 1 && !isContextSelected) {
             e.preventDefault();
             router.push('/dashboard');
             toast({
