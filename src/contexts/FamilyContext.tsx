@@ -20,12 +20,10 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
-  const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>('my-space');
+  const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>(''); // Start with no context selected
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isContextSelected, setIsContextSelected] = useState(false);
-  const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     if (authLoading) {
@@ -47,25 +45,14 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            setCurrentContextState('my-space'); 
-            setIsContextSelected(false);
+            setCurrentContextState('my-space'); // Default for users with only one space
+            setIsContextSelected(true); // It's their only context, so it's "selected"
             setIsLoading(false);
-             if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/family') && !pathname.startsWith('/dashboard/novo-heroi')) {
-                router.replace('/dashboard');
-            }
             return;
         }
 
         const familyIds = memberships.map(m => m.familyId);
         const familyRoles = new Map(memberships.map(m => [m.familyId, m.role]));
-
-        if (familyIds.length === 0) {
-            setAvailableContextsState(initialContexts);
-            setCurrentContextState('my-space');
-            setIsContextSelected(false);
-            setIsLoading(false);
-            return;
-        }
 
         const familiesQuery = query(collection(db, 'families'), where('__name__', 'in', familyIds));
         
@@ -82,14 +69,10 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            // Force user to choose a context by not setting a default one
+            // Logic to persist or reset context selection could go here
+            // For now, we reset to force selection if there's more than one option.
+            setCurrentContextState('');
             setIsContextSelected(false);
-            setCurrentContextState(''); // Reset context to force selection
-
-            if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile') && !pathname.startsWith('/dashboard/family') && !pathname.startsWith('/dashboard/novo-heroi') ) {
-                router.replace('/dashboard');
-            }
-
             setIsLoading(false);
 
         }, (error) => {
@@ -105,8 +88,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       });
       
     } else { // No user
-      setCurrentContextState('my-space');
-      setAvailableContextsState([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
+      setCurrentContextState('');
+      setAvailableContextsState([]);
       setIsLoading(false);
       setIsContextSelected(false);
     }
@@ -115,7 +98,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading, router, pathname]);
+  }, [user, authLoading]);
 
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     setCurrentContextState(contextId);

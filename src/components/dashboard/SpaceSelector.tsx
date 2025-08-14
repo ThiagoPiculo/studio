@@ -31,6 +31,7 @@ export function SpaceSelector() {
 
     const [spaces, setSpaces] = useState<SpaceDetails[]>([]);
     const [isLoadingSpaces, setIsLoadingSpaces] = useState(true);
+    const [totalChildrenCount, setTotalChildrenCount] = useState(0);
 
     useEffect(() => {
         if (authLoading || familyLoading) return;
@@ -60,7 +61,7 @@ export function SpaceSelector() {
                         ]);
                         return {
                             id: context.id,
-                            name: context.name, // Nome já vem sem "Aliança:"
+                            name: context.name,
                             role: context.role,
                             children,
                             members,
@@ -69,6 +70,7 @@ export function SpaceSelector() {
                 });
                 const resolvedSpaces = await Promise.all(spacePromises);
                 setSpaces(resolvedSpaces);
+                setTotalChildrenCount(resolvedSpaces.reduce((acc, space) => acc + space.children.length, 0));
             } catch (error) {
                 console.error("Error fetching space details:", error);
             } finally {
@@ -88,13 +90,19 @@ export function SpaceSelector() {
         return <Loading />;
     }
     
-    const hasAnyChildren = spaces.some(s => s.children.length > 0);
-    const hasAlliances = availableContexts.some(c => c.id !== 'my-space');
-    
-    if (!hasAnyChildren && !hasAlliances) {
+    const isNewUser = totalChildrenCount === 0 && availableContexts.length <= 1;
+    if (isNewUser) {
         return <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />;
     }
 
+    const isSoloUser = availableContexts.length === 1 && totalChildrenCount > 0;
+    if (isSoloUser) {
+        // Automatically redirect solo users to their main dashboard
+        router.replace('/dashboard/heroes');
+        return <Loading />; // Show loading while redirecting
+    }
+    
+    // Default case: User has multiple contexts (alliances or solo + alliance)
     return (
         <div className="space-y-6">
             <Card>
@@ -112,8 +120,8 @@ export function SpaceSelector() {
                     const Icon = space.id === 'my-space' ? Home : LinkIcon;
                     return (
                         <Card key={space.id} className="flex flex-col shadow-sm hover:shadow-md transition-shadow">
-                            <CardContent className="p-4 flex flex-col flex-grow">
-                                <div className="flex items-center justify-between">
+                            <CardHeader>
+                               <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
                                         <div className="p-2 rounded-md bg-primary/10">
                                             <Icon className="h-5 w-5 text-primary" />
@@ -124,20 +132,20 @@ export function SpaceSelector() {
                                         Ver Espaço <ArrowRight className="ml-1 h-4 w-4" />
                                     </Button>
                                 </div>
-                                <div className="mt-3 pt-3 border-t flex-grow flex items-center min-h-[40px]">
-                                    {space.children.length > 0 ? (
-                                        <div className="flex items-center -space-x-2">
-                                            {space.children.map(child => (
-                                                <Avatar key={child.id} className="h-9 w-9 border-2 border-background">
-                                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                                    <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                                </Avatar>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                                    )}
-                                </div>
+                            </CardHeader>
+                             <CardContent className="flex-grow flex items-center min-h-[40px]">
+                                {space.children.length > 0 ? (
+                                    <div className="flex items-center -space-x-2">
+                                        {space.children.map(child => (
+                                            <Avatar key={child.id} className="h-9 w-9 border-2 border-background">
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-muted-foreground italic">Nenhum herói neste espaço.</p>
+                                )}
                             </CardContent>
                         </Card>
                     );
