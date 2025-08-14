@@ -1,4 +1,5 @@
 
+
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -31,7 +32,6 @@ export const signUpAdmin = async (name: string, email: string, password: string)
     name: name,
     createdAt: serverTimestamp() as any,
     settings: {
-      initialPage: 'heroes',
       rewardMode: 'automatic', // Default to automatic mode for new users
     },
   };
@@ -73,7 +73,6 @@ export const signInWithGoogle = async (): Promise<UserProfile> => {
         avatarUrl: user.photoURL,
         createdAt: serverTimestamp() as any,
         settings: {
-          initialPage: 'heroes',
           rewardMode: 'automatic',
         },
       };

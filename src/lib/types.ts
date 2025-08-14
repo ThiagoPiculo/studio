@@ -33,7 +33,6 @@ export type NotificationPreferences = {
 };
 
 export interface UserSettings {
-  initialPage: InitialPage;
   initialContext?: string;
   notifications?: Partial<NotificationPreferences>;
   rewardMode?: RewardMode;

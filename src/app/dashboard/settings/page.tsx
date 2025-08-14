@@ -86,14 +86,12 @@ export default function SettingsPage() {
     const { toast } = useToast();
     const [isSaving, setIsSaving] = useState(false);
     
-    const [initialPage, setInitialPage] = useState<InitialPage | 'default'>('default');
     const [initialContext, setInitialContext] = useState<string>('default');
     const [notificationPrefs, setNotificationPrefs] = useState<NotificationPreferences>({});
 
 
     useEffect(() => {
         if (user?.settings) {
-            setInitialPage(user.settings.initialPage || 'default');
             setInitialContext(user.settings.initialContext || 'default');
             // Set all preferences to true by default if not specified
             const defaultPrefs: NotificationPreferences = {};
@@ -117,7 +115,6 @@ export default function SettingsPage() {
         try {
             const userDocRef = doc(db, 'users', user.uid);
             await updateDoc(userDocRef, {
-                'settings.initialPage': initialPage,
                 'settings.initialContext': initialContext,
                 'settings.notifications': notificationPrefs,
             });
@@ -168,20 +165,6 @@ export default function SettingsPage() {
                         <AccordionContent asChild>
                             <CardContent className="space-y-6 pt-2">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="initial-page">Tela inicial após login</Label>
-                                        <Select value={initialPage} onValueChange={(v) => setInitialPage(v as InitialPage)}>
-                                            <SelectTrigger id="initial-page">
-                                                <SelectValue placeholder="Selecione uma tela..." />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {initialPages.map(page => (
-                                                    <SelectItem key={page.id} value={page.id}>{page.label}</SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        <p className="text-xs text-muted-foreground">Escolha para qual tela você é direcionado ao entrar.</p>
-                                    </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="initial-context">Espaço de trabalho inicial</Label>
                                         <Select value={initialContext} onValueChange={setInitialContext}>

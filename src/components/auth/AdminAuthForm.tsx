@@ -61,25 +61,6 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
     defaultValues: mode === 'login' ? { email: "", password: "" } : { name: "", email: "", password: "", confirmPassword: "" },
   });
 
-  const getLoginToastDescription = (userProfile: UserProfile | null): string => {
-    const pageInfo: { [key: string]: { name: string, gender: 'f' | 'm' } } = {
-        dashboard: { name: 'Painel', gender: 'm' },
-        heroes: { name: 'Central de Herois', gender: 'f' },
-        agenda: { name: 'Agenda', gender: 'f' },
-        missions: { name: 'Central de Missões', gender: 'f' },
-        rewards: { name: 'Catálogo de Recompensas', gender: 'm' },
-        family: { name: 'Aliança', gender: 'f' },
-    };
-
-    const initialPage = userProfile?.settings?.initialPage || 'agenda';
-    const info = pageInfo[initialPage] || pageInfo['heroes'];
-    
-    const article = info.gender === 'f' ? 'Sua' : 'Seu';
-    const adjective = info.gender === 'f' ? 'pronta' : 'pronto';
-    
-    return `${article} ${info.name} está ${adjective} para novas aventuras.`;
-  }
-
   const handlePasswordReset = async () => {
     if (!resetEmail) {
       toast({
@@ -132,8 +113,8 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
             return;
         }
 
-        const userProfile = await signInAdmin(email, password);
-        toast({ title: "Que bom te ver de novo!", description: getLoginToastDescription(userProfile) });
+        await signInAdmin(email, password);
+        toast({ title: "Que bom te ver de novo!", description: "Sua Central de Heróis está pronta para a aventura." });
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
