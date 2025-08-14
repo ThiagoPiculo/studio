@@ -3,11 +3,12 @@
 "use client";
 import type { UserProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface EnrichedContext {
     id: string;
@@ -22,6 +23,9 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>('my-space');
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isContextSelected, setIsContextSelected] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (authLoading) {
@@ -43,9 +47,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            if (currentContext !== 'my-space') {
-              setCurrentContextState('my-space');
-            }
+            setCurrentContextState('my-space');
+            setIsContextSelected(true); // Only one context, so it's selected by default
             setIsLoading(false);
             return;
         }
@@ -68,19 +71,32 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
+            const lastContext = localStorage.getItem('lastContextId');
             const preferredContextId = user.settings?.initialContext;
 
-            // Only set a specific context if the user has explicitly chosen one (not 'default')
-            if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
-                if (currentContext !== preferredContextId) {
-                    setCurrentContextState(preferredContextId);
+            let newContext = 'my-space'; // Default fallback
+            
+            if (allContexts.length === 1) {
+                newContext = allContexts[0].id;
+                setIsContextSelected(true);
+            } else if (lastContext && allContexts.some(c => c.id === lastContext)) {
+                newContext = lastContext;
+                setIsContextSelected(true);
+            } else if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
+                newContext = preferredContextId;
+                setIsContextSelected(true);
+            } else {
+                 // User has multiple contexts but no preference or last used, force selection
+                setIsContextSelected(false);
+                 // If the current path is not the dashboard, and a choice is needed, redirect.
+                if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile')) {
+                    router.replace('/dashboard');
                 }
-            } else if (!allContexts.some(c => c.id === currentContext)) {
-                 // Fallback if current context is no longer valid
-                setCurrentContextState('my-space');
             }
             
+            setCurrentContextState(newContext);
             setIsLoading(false);
+
         }, (error) => {
             console.error("Error fetching families:", error);
             setAvailableContextsState(initialContexts);
@@ -97,17 +113,20 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       setCurrentContextState('my-space');
       setAvailableContextsState([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
       setIsLoading(false);
+      setIsContextSelected(false);
     }
     
     return () => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading]);
+  }, [user, authLoading, router, pathname]);
 
-  const setCurrentContext = (contextId: 'my-space' | string) => {
+  const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     setCurrentContextState(contextId);
-  };
+    setIsContextSelected(true);
+    localStorage.setItem('lastContextId', contextId);
+  }, []);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
@@ -120,7 +139,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   }, [currentContext, availableContexts]);
 
   return (
-    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole }}>
+    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole, isContextSelected }}>
       {children}
     </FamilyContext.Provider>
   );

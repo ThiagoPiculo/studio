@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from 'react';
@@ -28,7 +29,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
-
+import { useToast } from '@/hooks/use-toast';
 
 function AppLogo() {
     return (
@@ -64,6 +65,33 @@ const CustomAccordionTrigger = React.forwardRef<
 ));
 CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
+const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: string; label: string, children: React.ReactNode }) => {
+    const pathname = usePathname();
+    const router = useRouter();
+    const { toast } = useToast();
+    const { isContextSelected, availableContexts } = useFamily();
+    const isActive = pathname.startsWith(href);
+
+    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (availableContexts.length > 1 && !isContextSelected && href !== '/dashboard' && !href.startsWith('/dashboard/settings') && !href.startsWith('/dashboard/profile')) {
+            e.preventDefault();
+            router.push('/dashboard');
+            toast({
+                title: 'Ação Necessária',
+                description: `Por favor, escolha um Espaço para ver a ${label}.`,
+                variant: 'default',
+            });
+        }
+    };
+
+    return (
+        <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive} onClick={handleClick}>
+            {children}
+            <span>{label}</span>
+        </SidebarMenuButton>
+    );
+};
+
 
 export function AppSidebar() {
     const pathname = usePathname();
@@ -91,22 +119,19 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard" tooltip="Espaços com Mini Herois" isActive={pathname === '/dashboard'}>
+                         <NavLink href="/dashboard" tooltip="Espaços com Mini Herois" label="Espaços">
                             <Home className="text-chart-3" />
-                            <span>Espaços</span>
-                        </SidebarMenuButton>
+                         </NavLink>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton href="/dashboard/heroes" tooltip="Resumo do Dia" isActive={pathname.startsWith('/dashboard/heroes')}>
+                        <NavLink href="/dashboard/heroes" tooltip="Resumo do Dia" label="Resumo do Dia">
                             <Calendar1Icon className="text-chart-5"/>
-                            <span>Resumo do Dia</span>
-                        </SidebarMenuButton>
+                        </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <SidebarMenuButton href="/dashboard/dashboard" tooltip="Painel de Progressos" isActive={pathname.startsWith('/dashboard/dashboard')}>
+                         <NavLink href="/dashboard/dashboard" tooltip="Painel de Progressos" label="Painel de Progressos">
                             <CalendarCheck2 className="text-chart-1" />
-                            <span>Painel de Progressos</span>
-                        </SidebarMenuButton>
+                        </NavLink>
                     </SidebarMenuItem>
                     
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
@@ -116,22 +141,19 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/mural" tooltip="Mural Completo" isActive={pathname.startsWith('/dashboard/mural')}>
+                                    <NavLink href="/dashboard/mural" tooltip="Mural Completo" label="Mural Completo">
                                         <ListCollapse className="text-chart-1" />
-                                        <span>Mural Completo</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" isActive={pathname.startsWith('/dashboard/novo-heroi')}>
+                                    <NavLink href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" label="Novo Mini Heroi">
                                         <UserPlus className="text-chart-2" />
-                                        <span>Novo Mini Heroi</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                  <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard/assistente" tooltip="Assistente de Criação" isActive={pathname.startsWith('/dashboard/assistente')}>
+                                     <NavLink href="/dashboard/assistente" tooltip="Assistente de Criação" label="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
-                                        <span>Assistente de Criação</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
@@ -142,34 +164,29 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/agenda" tooltip="Rotina de Missões" isActive={pathname.startsWith('/dashboard/agenda')}>
+                                    <NavLink href="/dashboard/agenda" tooltip="Rotina de Missões" label="Rotina de Missões">
                                         <CalendarDays className="text-chart-5" />
-                                        <span>Rotina de Missões</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/school-schedule" tooltip="Rotina Escolar" isActive={pathname.startsWith('/dashboard/school-schedule')}>
+                                    <NavLink href="/dashboard/school-schedule" tooltip="Rotina Escolar" label="Rotina Escolar">
                                         <NotebookPen className="text-chart-4" />
-                                        <span>Rotina Escolar</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/missions" tooltip="Quadro de Missões" isActive={pathname.startsWith('/dashboard/missions')}>
+                                    <NavLink href="/dashboard/missions" tooltip="Quadro de Missões" label="Quadro de Missões">
                                         <Target className="text-destructive" />
-                                        <span>Quadro de Missões</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/rewards" tooltip="Quadro de Recompensas" isActive={pathname.startsWith('/dashboard/rewards')}>
+                                    <NavLink href="/dashboard/rewards" tooltip="Quadro de Recompensas" label="Quadro de Recompensas">
                                         <Gift className="text-chart-2" />
-                                        <span>Quadro de Recompensas</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                     <SidebarMenuButton href="/dashboard/achievements" tooltip="Quadro de Medalhas" isActive={pathname.startsWith('/dashboard/achievements')}>
+                                     <NavLink href="/dashboard/achievements" tooltip="Quadro de Medalhas" label="Quadro de Medalhas">
                                         <Medal className="text-chart-5" />
-                                        <span>Quadro de Medalhas</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
@@ -180,23 +197,21 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" isActive={pathname.startsWith('/dashboard/cuidando-solo')}>
+                                    <NavLink href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" label="Cuidando Solo">
                                         <User className="text-chart-2" />
-                                        <span>Cuidando Solo</span>
-                                    </SidebarMenuButton>
+                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <SidebarMenuButton href="/dashboard/family" tooltip="Criar ou Entrar em Aliança">
+                                    <SidebarMenuButton onClick={() => handleAllianceAction('create')} tooltip="Criar ou Entrar em Aliança">
                                         <PlusCircle className="text-primary" />
                                         <span>Criar ou Entrar em Aliança</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 {isInAnyAlliance && (
                                     <SidebarMenuItem>
-                                        <SidebarMenuButton href="/dashboard/alliances" tooltip="Minhas Alianças" isActive={pathname.startsWith('/dashboard/alliances')}>
+                                        <NavLink href="/dashboard/alliances" tooltip="Minhas Alianças" label="Minhas Alianças">
                                             <LinkIcon className="text-primary" />
-                                            <span>Minhas Alianças</span>
-                                        </SidebarMenuButton>
+                                        </NavLink>
                                     </SidebarMenuItem>
                                 )}
                             </AccordionContent>

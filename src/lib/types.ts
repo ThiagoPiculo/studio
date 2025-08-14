@@ -356,6 +356,7 @@ export type FamilyContextType = {
   setAvailableContexts: (contexts: { id: string; name: string; role?: FamilyRole | 'Personal' }[]) => void;
   isLoading: boolean;
   currentRole: FamilyRole | 'Personal' | null;
+  isContextSelected: boolean;
 };
 
 export type AuthContextType = {

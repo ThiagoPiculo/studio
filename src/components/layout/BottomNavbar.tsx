@@ -1,19 +1,51 @@
 
+
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { CalendarCheck2, CalendarDays, Settings, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import type { ReactNode } from 'react';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
+import { useFamily } from '@/contexts/FamilyContext';
+import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard/dashboard', label: 'Progressos', icon: CalendarCheck2, color: 'text-chart-1' },
   { href: '/dashboard/heroes', label: 'Hoje', icon: Calendar1Icon, color: 'text-chart-5' },
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
+
+const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
+    const pathname = usePathname();
+    const router = useRouter();
+    const { toast } = useToast();
+    const { isContextSelected, availableContexts } = useFamily();
+    const isActive = pathname.startsWith(href);
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (availableContexts.length > 1 && !isContextSelected) {
+            e.preventDefault();
+            router.push('/dashboard');
+            toast({
+                title: 'Ação Necessária',
+                description: `Por favor, escolha um Espaço para ver a ${label}.`,
+                variant: 'default',
+            });
+        }
+    };
+    
+    return (
+        <Link href={href} onClick={handleClick} className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+          <Icon className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", isActive && color)} />
+          <span className={cn("text-xs text-muted-foreground group-hover:text-primary", isActive && "text-primary font-semibold")}>
+            {label}
+          </span>
+        </Link>
+    )
+}
 
 export function BottomNavbar() {
   const pathname = usePathname();
@@ -30,18 +62,9 @@ export function BottomNavbar() {
           <Menu className="w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary" />
           <span className="text-xs text-muted-foreground group-hover:text-primary">Mais</span>
         </button>
-        {navItems.map((item) => {
-          const isActive = pathname.startsWith(item.href);
-          const Icon = item.icon;
-          return (
-            <Link key={item.href} href={item.href} className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
-              <Icon className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", isActive && item.color)} />
-              <span className={cn("text-xs text-muted-foreground group-hover:text-primary", isActive && "text-primary font-semibold")}>
-                {item.label}
-              </span>
-            </Link>
-          );
-        })}
+        {navItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+        ))}
         <Link href="/dashboard/settings" className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
             <Settings className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && 'text-purple-500')} />
             <span className={cn("text-xs text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && "text-primary font-semibold")}>
