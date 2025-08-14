@@ -25,8 +25,6 @@ type SpaceDetails = {
     id: string;
     name: string;
     role?: FamilyRole | 'Personal';
-    description: string;
-    icon: React.ElementType;
     children: ChildProfile[];
     members: UserProfile[];
 }
@@ -57,8 +55,6 @@ export function SpaceSelector() {
                             id: context.id,
                             name: "Cuidar Solo",
                             role: "Personal" as const,
-                            description: "Seu espaço privado para gerenciar heróis que só você acompanha.",
-                            icon: Home,
                             children,
                             members: [user as UserProfile],
                         };
@@ -71,8 +67,6 @@ export function SpaceSelector() {
                             id: context.id,
                             name: `Aliança: ${context.name}`,
                             role: context.role,
-                            description: "Espaço compartilhado para colaborar com outros responsáveis.",
-                            icon: LinkIcon,
                             children,
                             members,
                         };
@@ -127,40 +121,35 @@ export function SpaceSelector() {
                 {spaces.map(space => (
                     <AccordionItem value={space.id} key={space.id} className="border-none">
                         <Card className="flex flex-col overflow-hidden">
-                            <div className="p-4 group">
-                                <AccordionTrigger className="p-0 hover:no-underline w-full text-left">
-                                     <div className="flex items-center justify-between w-full flex-wrap gap-4">
-                                        <div className="flex items-center gap-3 flex-grow min-w-0">
-                                            <space.icon className="h-6 w-6 text-primary" />
-                                            <div className="flex-grow">
-                                                <CardTitle className="text-xl">
-                                                    {space.name}
-                                                </CardTitle>
-                                            </div>
+                             <div className="flex items-center justify-between w-full p-4 group">
+                                <AccordionTrigger className="p-0 hover:no-underline flex-grow text-left">
+                                     <div className="flex items-center gap-3 flex-grow min-w-0">
+                                        <div className="p-2 rounded-md bg-primary/10">
+                                            {space.id === 'my-space' ? <Home className="h-6 w-6 text-primary" /> : <LinkIcon className="h-6 w-6 text-primary" />}
                                         </div>
-                                         <div className="flex items-center gap-4 justify-end">
-                                            <div className="flex items-center -space-x-2 group-data-[state=closed]:flex group-data-[state=open]:hidden">
-                                                {space.children.slice(0, 4).map(child => (
-                                                     <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
-                                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                                        <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                                    </Avatar>
-                                                ))}
-                                                {space.children.length > 4 && (
-                                                    <Avatar className="h-8 w-8 border-2 border-background">
-                                                        <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{space.children.length - 4}</AvatarFallback>
-                                                    </Avatar>
-                                                )}
-                                            </div>
-                                            <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex group-data-[state=open]:hidden">
-                                                Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                                            </Button>
-                                             <div className="p-2 rounded-md group-data-[state=open]:rotate-180 transition-transform">
-                                                <ChevronDown className="h-5 w-5" />
-                                            </div>
-                                         </div>
+                                        <CardTitle className="text-xl">
+                                            {space.name}
+                                        </CardTitle>
                                     </div>
                                 </AccordionTrigger>
+                                <div className="flex items-center gap-2 sm:gap-4 pl-4 group-data-[state=open]:hidden">
+                                    <div className="flex items-center -space-x-2">
+                                        {space.children.slice(0, 4).map(child => (
+                                             <Avatar key={child.id} className="h-8 w-8 border-2 border-background">
+                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                            </Avatar>
+                                        ))}
+                                        {space.children.length > 4 && (
+                                            <Avatar className="h-8 w-8 border-2 border-background">
+                                                <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{space.children.length - 4}</AvatarFallback>
+                                            </Avatar>
+                                        )}
+                                    </div>
+                                    <Button onClick={(e) => handleAccessSpace(e, space.id)}>
+                                        Ver Espaço <ArrowRight className="ml-2 h-4 w-4 hidden sm:inline-block" />
+                                    </Button>
+                                </div>
                             </div>
 
                             <AccordionContent>
@@ -187,11 +176,6 @@ export function SpaceSelector() {
                                         <p className="text-sm text-muted-foreground italic col-span-full text-center py-4">Nenhum herói neste espaço ainda.</p>
                                     )}
                                 </CardContent>
-                                <CardFooter className="sm:hidden">
-                                    <Button onClick={(e) => handleAccessSpace(e, space.id)} className="w-full">
-                                        Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                </CardFooter>
                             </AccordionContent>
                         </Card>
                     </AccordionItem>

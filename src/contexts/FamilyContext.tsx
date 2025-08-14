@@ -47,9 +47,14 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            setCurrentContextState('my-space');
-            setIsContextSelected(true); // Only one context, so it's selected by default
+            // Don't set a default context if there are none other than personal.
+            // Let the user choose.
+            setCurrentContextState('my-space'); 
+            setIsContextSelected(false);
             setIsLoading(false);
+            if (pathname !== '/dashboard') {
+                router.replace('/dashboard');
+            }
             return;
         }
 
@@ -71,30 +76,18 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            const lastContext = localStorage.getItem('lastContextId');
             const preferredContextId = user.settings?.initialContext;
 
-            let newContext = 'my-space'; // Default fallback
-            
-            if (allContexts.length === 1) {
-                newContext = allContexts[0].id;
-                setIsContextSelected(true);
-            } else if (lastContext && allContexts.some(c => c.id === lastContext)) {
-                newContext = lastContext;
-                setIsContextSelected(true);
-            } else if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
-                newContext = preferredContextId;
+            if (preferredContextId && preferredContextId !== 'default' && allContexts.some(c => c.id === preferredContextId)) {
+                setCurrentContextState(preferredContextId);
                 setIsContextSelected(true);
             } else {
-                 // User has multiple contexts but no preference or last used, force selection
+                // Force selection if multiple contexts exist and no valid preference is set.
                 setIsContextSelected(false);
-                 // If the current path is not the dashboard, and a choice is needed, redirect.
                 if (pathname !== '/dashboard' && !pathname.startsWith('/dashboard/settings') && !pathname.startsWith('/dashboard/profile')) {
                     router.replace('/dashboard');
                 }
             }
-            
-            setCurrentContextState(newContext);
             setIsLoading(false);
 
         }, (error) => {
@@ -125,7 +118,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     setCurrentContextState(contextId);
     setIsContextSelected(true);
-    localStorage.setItem('lastContextId', contextId);
+    // Removed saving to localStorage to avoid confusion.
+    // localStorage.setItem('lastContextId', contextId);
   }, []);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
