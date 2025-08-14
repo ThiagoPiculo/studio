@@ -5,8 +5,8 @@ import { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution, getFamilyMembers, getMissionInstancesForContext } from '@/lib/firebase/firestore';
-import type { ChildProfile, UserProfile, FamilyRole, MissionInstance } from '@/lib/types';
+import { getChildProfilesForAttribution, getFamilyMembers } from '@/lib/firebase/firestore';
+import type { ChildProfile, UserProfile, FamilyRole } from '@/lib/types';
 import Loading from '@/app/dashboard/loading';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,9 +14,6 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Home, Users, ArrowRight, Loader2, Link as LinkIcon, Target, ChevronDown } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
-import { Separator } from '../ui/separator';
-import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
-import { startOfDay } from 'date-fns';
 import {
   Accordion,
   AccordionContent,
@@ -99,7 +96,7 @@ export function SpaceSelector() {
     };
     
     const handleAccessSpace = (e: React.MouseEvent, contextId: string) => {
-        e.stopPropagation(); // Prevent accordion from toggling
+        e.stopPropagation(); 
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
@@ -130,23 +127,23 @@ export function SpaceSelector() {
                 {spaces.map(space => (
                     <AccordionItem value={space.id} key={space.id} className="border-none">
                         <Card className="flex flex-col overflow-hidden">
-                            <AccordionTrigger className="p-6 hover:no-underline group">
-                                <div className="flex items-center justify-between w-full">
-                                    <div>
-                                        <CardTitle className="flex items-center gap-3 text-left">
-                                            <space.icon className="h-6 w-6 text-primary" />
-                                            {space.name}
-                                        </CardTitle>
-                                        <CardDescription className="mt-1 text-left">{space.description}</CardDescription>
+                            <div className="flex items-center p-6 group">
+                                <AccordionTrigger className="p-0 hover:no-underline flex-grow">
+                                    <div className="flex items-center justify-between w-full">
+                                        <div>
+                                            <CardTitle className="flex items-center gap-3 text-left">
+                                                <space.icon className="h-6 w-6 text-primary" />
+                                                {space.name}
+                                            </CardTitle>
+                                            <CardDescription className="mt-1 text-left">{space.description}</CardDescription>
+                                        </div>
                                     </div>
-                                    <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex ml-4 group-data-[state=open]:hidden">
-                                        Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
-                                    </Button>
-                                    <div className="sm:hidden ml-4 p-2 rounded-md group-data-[state=open]:rotate-180 transition-transform">
-                                        <ChevronDown className="h-5 w-5" />
-                                    </div>
-                                </div>
-                            </AccordionTrigger>
+                                </AccordionTrigger>
+                                <Button onClick={(e) => handleAccessSpace(e, space.id)} className="hidden sm:inline-flex ml-4 group-data-[state=open]:hidden">
+                                    Ver Espaço <ArrowRight className="ml-2 h-4 w-4" />
+                                </Button>
+                            </div>
+
                             <AccordionContent>
                                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     {space.children.length > 0 ? (
