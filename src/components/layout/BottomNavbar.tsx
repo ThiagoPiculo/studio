@@ -9,8 +9,6 @@ import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import type { ReactNode } from 'react';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
-import { useFamily } from '@/contexts/FamilyContext';
-import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
   { href: '/dashboard/dashboard', label: 'Progressos', icon: CalendarCheck2, color: 'text-chart-1' },
@@ -18,33 +16,12 @@ const navItems = [
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
 
-const contextFreePaths = [
-    '/dashboard/settings'
-];
-
 const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
     const pathname = usePathname();
-    const router = useRouter();
-    const { toast } = useToast();
-    const { isContextSelected, availableContexts } = useFamily();
     const isActive = pathname.startsWith(href);
-
-    const needsContextCheck = !contextFreePaths.some(p => href.startsWith(p));
-
-    const handleClick = (e: React.MouseEvent) => {
-        if (needsContextCheck && availableContexts.length > 1 && !isContextSelected) {
-            e.preventDefault();
-            router.push('/dashboard');
-            toast({
-                title: 'Ação Necessária',
-                description: `Por favor, escolha um Espaço para ver a ${label}.`,
-                variant: 'default',
-            });
-        }
-    };
     
     return (
-        <Link href={href} onClick={handleClick} className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+        <Link href={href} className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
           <Icon className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", isActive && color)} />
           <span className={cn("text-xs text-muted-foreground group-hover:text-primary", isActive && "text-primary font-semibold")}>
             {label}

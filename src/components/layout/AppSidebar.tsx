@@ -67,38 +67,10 @@ CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
 const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: string; label: string, children: React.ReactNode }) => {
     const pathname = usePathname();
-    const router = useRouter();
-    const { toast } = useToast();
-    const { isContextSelected, availableContexts } = useFamily();
     const isActive = href === '/dashboard' ? pathname === href : pathname.startsWith(href);
 
-    const contextFreePaths = [
-        '/dashboard', 
-        '/dashboard/settings', 
-        '/dashboard/profile',
-        '/dashboard/novo-heroi',
-        '/dashboard/assistente',
-        '/dashboard/cuidando-solo',
-        '/dashboard/alliances',
-        '/dashboard/family'
-    ];
-
-    const needsContextCheck = !contextFreePaths.some(p => href.startsWith(p));
-
-    const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (needsContextCheck && availableContexts.length > 1 && !isContextSelected) {
-            e.preventDefault();
-            router.push('/dashboard');
-            toast({
-                title: 'Ação Necessária',
-                description: `Por favor, escolha um Mini Heroi em um Espaço para ver a ${label}.`,
-                variant: 'default',
-            });
-        }
-    };
-
     return (
-        <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive} onClick={handleClick}>
+        <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>
