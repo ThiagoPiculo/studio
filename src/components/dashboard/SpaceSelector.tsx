@@ -12,7 +12,7 @@ import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Home, Users, ArrowRight, Loader2, Link as LinkIcon, Target } from 'lucide-react';
+import { Home, Users, ArrowRight, Loader2, Link as LinkIcon, Target, ChevronDown } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '../ui/separator';
 import { isMissionScheduledForDate, isMissionCompletedForDate } from '@/lib/calendar-utils';
