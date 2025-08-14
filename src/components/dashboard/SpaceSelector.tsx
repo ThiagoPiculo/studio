@@ -149,7 +149,7 @@ export function SpaceSelector() {
                                     const totalToday = childMissionsToday.length;
 
                                     return (
-                                        <div key={child.id} className="p-4 border rounded-lg flex items-center gap-4 hover:bg-muted/50 transition-colors">
+                                        <Card key={child.id} className="p-4 flex flex-col items-center gap-4 hover:bg-muted/50 transition-colors sm:flex-row">
                                             <Avatar
                                                 className="h-16 w-16 text-2xl ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
                                                 style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
@@ -157,16 +157,16 @@ export function SpaceSelector() {
                                                 <AvatarImage src={child.avatar} alt={child.name} />
                                                 <AvatarFallback style={{backgroundColor: child.color}} className="font-bold">{getInitials(child.name)}</AvatarFallback>
                                             </Avatar>
-                                            <div className="flex-grow space-y-2">
+                                            <div className="flex-grow space-y-2 text-center sm:text-left w-full">
                                                 <h4 className="font-semibold text-lg">{child.name}</h4>
                                                 <p className="text-sm font-medium text-muted-foreground">
-                                                    {totalToday > 0 ? `${completedToday}/${totalToday} missões hoje` : "Nenhuma missão hoje"}
+                                                    {totalToday > 0 ? `${completedToday} de ${totalToday} missões hoje` : "Nenhuma missão hoje"}
                                                 </p>
                                                  <Button onClick={() => handleSelectHero(space.id, child.id)} className="w-full sm:w-auto" size="sm">
                                                     <Target className="mr-2 h-4 w-4"/> Missões de Hoje
                                                 </Button>
                                             </div>
-                                        </div>
+                                        </Card>
                                     )
                                 })
                             ) : (
