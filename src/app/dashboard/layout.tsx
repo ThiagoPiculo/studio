@@ -200,9 +200,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               
-              {showContextSwitcher && (
+              {isClient && showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2 border-b">
-                   {isClient && (
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                         <FamilyContextSwitcher />
                         {showHeroSelector && (
@@ -211,7 +210,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             </div>
                         )}
                       </div>
-                    )}
                 </div>
               )}
 
