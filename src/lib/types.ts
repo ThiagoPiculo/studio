@@ -359,6 +359,7 @@ export type FamilyContextType = {
   isContextSelected: boolean;
   selectedChildId: string | null;
   setSelectedChildId: (childId: string | null) => void;
+  childrenInContext: ChildProfile[];
 };
 
 export type AuthContextType = {

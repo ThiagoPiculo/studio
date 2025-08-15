@@ -1,7 +1,6 @@
 
-
 "use client";
-import type { UserProfile } from '@/lib/types';
+import type { UserProfile, ChildProfile } from '@/lib/types';
 import type { ReactNode } from 'react';
 import React, { useEffect, useState, useCallback } from 'react';
 import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/lib/types';
@@ -9,6 +8,7 @@ import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
+import { convertTimestampsInObject } from '@/lib/utils';
 
 interface EnrichedContext {
     id: string;
@@ -25,6 +25,9 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isContextSelected, setIsContextSelected] = useState(false);
+  
+  const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
   // Load from session storage on initial mount
   useEffect(() => {
@@ -144,6 +147,33 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       };
   }, [user, authLoading, setCurrentContext]);
 
+  // New listener for children in the current context
+  useEffect(() => {
+    if (!user || !currentContext) {
+      setChildrenInContext([]);
+      return;
+    }
+    setIsLoadingChildren(true);
+    
+    let q;
+    if (currentContext === 'my-space') {
+      q = query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
+    } else {
+      q = query(collection(db, 'children'), where('familyId', '==', currentContext));
+    }
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const children = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
+      setChildrenInContext(children.sort((a, b) => a.name.localeCompare(b.name)));
+      setIsLoadingChildren(false);
+    }, (error) => {
+        console.error("Error fetching children for context:", error);
+        setIsLoadingChildren(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, currentContext]);
+
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
   };
@@ -154,8 +184,21 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     return context?.role || null
   }, [currentContext, availableContexts]);
 
+  const value = {
+    currentContext,
+    setCurrentContext,
+    availableContexts,
+    setAvailableContexts,
+    isLoading: isLoading || isLoadingChildren, // Combine loading states
+    currentRole,
+    isContextSelected,
+    selectedChildId,
+    setSelectedChildId,
+    childrenInContext, // Expose children
+  };
+
   return (
-    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole, isContextSelected, selectedChildId, setSelectedChildId }}>
+    <FamilyContext.Provider value={value}>
       {children}
     </FamilyContext.Provider>
   );

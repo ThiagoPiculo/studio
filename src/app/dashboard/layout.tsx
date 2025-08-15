@@ -22,7 +22,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Link from 'next/link';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { CalendarDays } from 'lucide-react';
 
@@ -50,26 +49,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const { currentContext, selectedChildId, setSelectedChildId } = useFamily();
+  const { currentContext, selectedChildId, setSelectedChildId, childrenInContext, isLoading: isFamilyLoading } = useFamily();
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = React.useState(false);
-  const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
-  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
 
-  useEffect(() => {
-    if (user && isClient) {
-      setIsLoadingChildren(true);
-      getChildProfilesForAttribution(user.uid, currentContext)
-        .then(setChildrenInContext)
-        .catch(console.error)
-        .finally(() => setIsLoadingChildren(false));
-    }
-  }, [user, currentContext, isClient]);
-  
   const handleBackClick = () => {
     router.back();
   };
@@ -208,14 +195,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     <FamilyContextSwitcher />
                     {isClient && (
                       <div className="w-full sm:w-auto">
-                         <div className="hidden sm:flex items-center gap-2">
+                         <div className="hidden sm:block">
                             {showHeroSelector && (
                                 <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                            )}
-                            {pathname === '/dashboard/agenda' && (
-                                <Button>
-                                  <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
-                                </Button>
                             )}
                          </div>
                          <div className="flex sm:hidden items-center gap-2">
@@ -223,11 +205,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 <div className="flex-grow">
                                   <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
                                 </div>
-                            )}
-                            {pathname === '/dashboard/agenda' && (
-                              <Button size="icon">
-                                <PlusCircle className="h-4 w-4" />
-                              </Button>
                             )}
                          </div>
                        </div>
