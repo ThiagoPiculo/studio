@@ -203,12 +203,16 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                             <CardHeader className="p-4">
                                 <div className="flex items-center justify-between">
-                                    <Badge variant="secondary" className="font-semibold text-xs">
+                                     <Badge
+                                        variant="secondary"
+                                        className="absolute top-2 left-2 z-10 font-semibold text-xs border-2 border-background shadow-md"
+                                        style={{ backgroundColor: child.color, color: 'white' }}
+                                    >
                                         NÍVEL {child.level}
                                     </Badge>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto">
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -229,7 +233,10 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     </DropdownMenu>
                                 </div>
                                 <div className="flex items-center gap-4 mt-2">
-                                    <Avatar className="h-16 w-16 text-2xl">
+                                    <Avatar
+                                        className="h-16 w-16 text-2xl ring-4 ring-offset-background ring-[--ring-color]"
+                                        style={{ '--ring-color': child.color } as React.CSSProperties}
+                                    >
                                         <AvatarImage src={child.avatar} alt={child.name} />
                                         <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
                                     </Avatar>
