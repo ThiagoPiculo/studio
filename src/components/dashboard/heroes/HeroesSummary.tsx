@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Circle, CheckCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -137,8 +138,20 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
     
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <HeroSelector heroes={children} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button asChild variant="secondary" className="w-full sm:w-auto">
+                        <Link href="/dashboard/missions/ideas">
+                            <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
+                        </Link>
+                    </Button>
+                    <Button asChild className="w-full sm:w-auto">
+                        <Link href="/dashboard/missions/new">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                        </Link>
+                    </Button>
+                </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredChildren.map(child => {
@@ -238,12 +251,12 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
 
                                                 return (
                                                      <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleToggleCompletion(m, today, isCompleted)} disabled={processingMissionId === m.id}>
-                                                            {processingMissionId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
-                                                        </Button>
                                                         <div className="text-muted-foreground font-mono text-xs w-10 text-center">{timeString}</div>
                                                         <span className="text-xl shrink-0 w-5 text-center">{m.emoji || '🎯'}</span>
                                                         <span className={cn("truncate font-medium flex-grow", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(m, today, isCompleted)} disabled={processingMissionId === m.id}>
+                                                            {processingMissionId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
+                                                        </Button>
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className="h-6 w-6">
