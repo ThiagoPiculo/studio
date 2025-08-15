@@ -21,7 +21,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2, Settings } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, ListCollapse, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2, Settings, Radar } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -196,7 +196,7 @@ export function AppSidebar() {
                                 )}
                                 <SidebarMenuItem>
                                      <NavLink href="/dashboard" tooltip="Ver Todos os Espaços" label="Espaços e Alianças">
-                                        <Home className="text-chart-3" />
+                                        <Radar className="text-chart-3" />
                                      </NavLink>
                                 </SidebarMenuItem>
                             </AccordionContent>

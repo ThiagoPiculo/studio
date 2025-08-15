@@ -5,7 +5,7 @@ import React, from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -64,7 +64,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const headerContent = {
     '/dashboard': {
       title: 'Espaços e Alianças',
-      icon: Home,
+      icon: Radar,
       help: {
         title: 'Comece escolhendo um espaço',
         content: (
