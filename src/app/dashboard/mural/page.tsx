@@ -928,35 +928,6 @@ function MuralCompletoPageContent() {
       
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
-            <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
-                <span className="text-sm text-muted-foreground align-middle">
-                    Chave Secreta do Heroi:
-                </span>
-                <div className="flex items-center gap-2">
-                    <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                      {child.accessCode}
-                    </span>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleRegenerateAccessCode}
-                            disabled={isRegeneratingCode || !canEdit}
-                            className="shadow-sm h-9 w-9"
-                          >
-                            {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Regenerar Chave Secreta</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                </div>
-            </div>
-
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left">
               {isLoading ? (
                   <Skeleton className="h-24 w-24 rounded-full flex-shrink-0" />
@@ -979,34 +950,33 @@ function MuralCompletoPageContent() {
                   <CardDescription className="text-base mt-1">
                       {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
                   </CardDescription>
+                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
+                        <span className="text-sm text-muted-foreground align-middle">
+                            Chave Secreta:
+                        </span>
+                        <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
+                            {child.accessCode}
+                        </span>
+                        <TooltipProvider>
+                            <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleRegenerateAccessCode}
+                                disabled={isRegeneratingCode || !canEdit}
+                                className="shadow-sm h-9 w-9"
+                                >
+                                {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Regenerar Chave Secreta</p>
+                            </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    </div>
               </div>
-            </div>
-
-            <div className="flex sm:hidden items-center justify-center gap-2 mt-4">
-              <span className="text-sm text-muted-foreground align-middle">
-                  Chave Secreta:
-              </span>
-              <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                  {child.accessCode}
-              </span>
-              <TooltipProvider>
-                  <Tooltip>
-                  <TooltipTrigger asChild>
-                      <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={handleRegenerateAccessCode}
-                      disabled={isRegeneratingCode || !canEdit}
-                      className="shadow-sm h-9 w-9"
-                      >
-                      {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                      </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                      <p>Regenerar Chave Secreta</p>
-                  </TooltipContent>
-                  </Tooltip>
-              </TooltipProvider>
             </div>
 
             <div className="mt-4 flex flex-col gap-4 font-semibold">
