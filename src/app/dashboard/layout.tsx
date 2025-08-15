@@ -61,7 +61,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const headerContent = {
     '/dashboard': {
-      title: 'Espaços com Mini Herois',
+      title: 'Espaços e Alianças',
       icon: Home,
       help: {
         title: 'Comece escolhendo um espaço',

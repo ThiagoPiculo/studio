@@ -104,7 +104,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                      <SidebarMenuItem>
-                         <NavLink href="/dashboard" tooltip="Espaços com Mini Herois" label="Espaços">
+                         <NavLink href="/dashboard" tooltip="Espaços e Alianças" label="Espaços e Alianças">
                             <Home className="text-chart-3" />
                          </NavLink>
                     </SidebarMenuItem>
