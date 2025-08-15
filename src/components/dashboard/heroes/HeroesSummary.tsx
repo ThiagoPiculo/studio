@@ -88,9 +88,10 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
         setProcessingMissionId(mission.id);
 
         try {
+            const actor = { id: user.uid, name: user.name };
             const updatedChild = isCompleted
-                ? await reactivateMissionInstance(mission.id, date, user)
-                : await completeMissionInstance(mission.id, date, user);
+                ? await reactivateMissionInstance(mission.id, date, actor)
+                : await completeMissionInstance(mission.id, date, actor);
 
             // Optimistically update the UI
             setMissionInstances(prev => prev.map(m => {
@@ -99,7 +100,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                     if (isCompleted) {
                         delete newLog[formatDateFns(date, 'yyyy-MM-dd')];
                     } else {
-                        newLog[formatDateFns(date, 'yyyy-MM-dd')] = { completedAt: new Date().toISOString() } as any;
+                        newLog[formatDateFns(date, 'yyyy-MM-dd')] = { completedAt: new Date().toISOString(), actorId: actor.id, actorName: actor.name } as any;
                     }
                     return { ...m, completionLog: newLog };
                 }
@@ -300,13 +301,13 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                             </CardContent>
                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
-                                    <div className="font-semibold flex items-center justify-center gap-2 text-green-600">
-                                        <div className="flex items-center gap-1">
-                                          +{todaysGains.stars} <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+                                    <div className="font-semibold flex items-center justify-center gap-2">
+                                        <div className="flex items-center gap-1 text-amber-600">
+                                          +{todaysGains.stars} <Star className="h-4 w-4 fill-current" />
                                         </div>
-                                        /
-                                        <div className="flex items-center gap-1">
-                                          +{todaysGains.xp} <BadgeCheck className="h-4 w-4 text-blue-500" />
+                                        <span className="text-muted-foreground">/</span>
+                                        <div className="flex items-center gap-1 text-blue-600">
+                                          +{todaysGains.xp} <BadgeCheck className="h-4 w-4" />
                                         </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
@@ -354,5 +355,3 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
         </div>
     );
 }
-
-    
