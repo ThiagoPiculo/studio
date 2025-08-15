@@ -43,35 +43,6 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-            <CalendarCheck2 className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-headline font-bold">Progressos do Herói</h2>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <HelpCircle className="h-5 w-5" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72">
-                    <div className="space-y-3">
-                         <h4 className="font-medium leading-none">Central de Análises</h4>
-                        <p className="text-sm text-muted-foreground">Esta é a sua central de análises para acompanhar a jornada dos seus heróis, com gráficos de desempenho, recompensas desbloqueadas e as últimas medalhas conquistadas.</p>
-                        <PopoverClose asChild>
-                            <Button className="w-full">Entendi 👍</Button>
-                        </PopoverClose>
-                    </div>
-                </PopoverContent>
-            </Popover>
-        </div>
-        <HeroSelector
-            heroes={allChildren}
-            selectedHeroId={selectedChildId}
-            onSelectHero={setSelectedChildId}
-            showAllOption={true}
-        />
-      </div>
-      
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
           <ProgressAnalysis childrenProfiles={filteredChildren} missionInstances={filteredMissions} />

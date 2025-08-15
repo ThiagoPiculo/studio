@@ -5,7 +5,7 @@ import React, from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2 } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -113,6 +113,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </>
         )
       }
+    },
+    '/dashboard/progressos': {
+        title: 'Painel de Progressos',
+        icon: CalendarCheck2,
+        help: {
+            title: 'Central de Análises',
+            content: (
+                <p className="text-sm text-muted-foreground">Esta é a sua central de análises para acompanhar a jornada dos seus heróis, com gráficos de desempenho, recompensas desbloqueadas e as últimas medalhas conquistadas.</p>
+            )
+        }
     }
   }
 
@@ -170,7 +180,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <FamilyContextSwitcher />
                     <div className="hidden sm:block">
-                        {pathname === '/dashboard/mural' && (
+                        {(pathname === '/dashboard/mural' || pathname === '/dashboard/progressos') && (
                            <div className="flex items-center gap-2 w-full sm:w-auto">
                               <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
                               <Link href="/dashboard/novo-heroi">
@@ -181,7 +191,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     </div>
                   </div>
                    <div className="block sm:hidden mt-4">
-                        {pathname === '/dashboard/mural' && (
+                        {(pathname === '/dashboard/mural' || pathname === '/dashboard/progressos') && (
                            <div className="flex items-center gap-2 w-full sm:w-auto">
                               <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
                               <Link href="/dashboard/novo-heroi">
