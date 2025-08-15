@@ -11,7 +11,7 @@ import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
-import { useToast } from "@/hooks/use-toast";
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -301,7 +301,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                             </CardContent>
                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
-                                    <div className="font-semibold flex items-center justify-center gap-2">
+                                    <div className="font-semibold flex items-center justify-center gap-1.5">
                                         <div className="flex items-center gap-1 text-amber-600">
                                           +{todaysGains.stars} <Star className="h-4 w-4 fill-current" />
                                         </div>
