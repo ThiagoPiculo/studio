@@ -90,9 +90,9 @@ function CuidandoSoloPageContent() {
                                             <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
                                         </div>
                                     </div>
-                                    <Link href={`/dashboard/mural?childId=${child.id}`}>
+                                    <Link href={`/dashboard/heroes?childId=${child.id}`}>
                                         <Button variant="ghost" size="sm">
-                                            Ver Painel <ArrowRight className="ml-2 h-4 w-4" />
+                                            Ver Resumo do Dia <ArrowRight className="ml-2 h-4 w-4" />
                                         </Button>
                                     </Link>
                                 </div>
