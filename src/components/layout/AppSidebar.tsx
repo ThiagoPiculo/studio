@@ -189,7 +189,7 @@ export function AppSidebar() {
                                 </SidebarMenuItem>
                                 {isInAnyAlliance && (
                                     <SidebarMenuItem>
-                                        <NavLink href="/dashboard/alliances" tooltip="Minhas Alianças" label="Minhas Alianças">
+                                        <NavLink href="/dashboard/alliances" tooltip="Gerenciar Alianças" label="Gerenciar Alianças">
                                             <LinkIcon className="text-primary" />
                                         </NavLink>
                                     </SidebarMenuItem>

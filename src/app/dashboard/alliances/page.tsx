@@ -130,7 +130,7 @@ function AlliancesPageClient() {
             <div className="space-y-8">
                  <div className="flex items-center gap-2">
                     <LinkIcon className="h-8 w-8 text-primary" />
-                    <h2 className="text-3xl font-headline font-bold">Minhas Alianças</h2>
+                    <h2 className="text-3xl font-headline font-bold">Gerenciar Alianças</h2>
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
