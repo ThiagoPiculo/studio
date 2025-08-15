@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -206,7 +206,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-4">
                                         <Avatar
-                                            className="h-16 w-16 text-2xl ring-4 ring-offset-background ring-[--ring-color]"
+                                            className="h-16 w-16 text-2xl ring-4 ring-offset-background"
                                             style={{ '--ring-color': child.color } as React.CSSProperties}
                                         >
                                             <AvatarImage src={child.avatar} alt={child.name} />
@@ -230,6 +230,11 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                 <Contact className="mr-2 h-4 w-4" />
                                                 <span>Perfil Completo</span>
                                             </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}&tab=edit`)}>
+                                                <Edit3 className="mr-2 h-4 w-4" />
+                                                <span>Editar Perfil</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuSeparator />
                                             <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
                                                 <CalendarDays className="mr-2 h-4 w-4" />
                                                 <span>Rotina de Missões</span>
@@ -244,7 +249,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-center gap-8">
+                                    <div className="flex items-center justify-center gap-4">
                                         <div className="flex items-center gap-2 text-amber-600">
                                             <Star className="h-5 w-5 fill-current" />
                                             <span className="text-lg font-bold">{child.stars}</span>
