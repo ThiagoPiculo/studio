@@ -5,13 +5,12 @@ import React, from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
-import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -20,6 +19,8 @@ import { Sheet } from '@/components/ui/sheet';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
+import Link from 'next/link';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
