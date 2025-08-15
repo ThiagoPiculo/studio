@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Circle, CheckCircle } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, CheckSquare } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -299,8 +299,16 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                                 </Tabs>
                             </CardContent>
                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
-                                <div className="p-2 text-center">
-                                    <p className="font-semibold flex items-center justify-center gap-1 text-green-600">+{todaysGains.stars} <Star className="h-4 w-4" /> / +{todaysGains.xp} XP</p>
+                                <div className="p-2 text-center space-y-1">
+                                    <div className="font-semibold flex items-center justify-center gap-2 text-green-600">
+                                        <div className="flex items-center gap-1">
+                                          +{todaysGains.stars} <Star className="h-4 w-4 fill-amber-400 text-amber-500" />
+                                        </div>
+                                        /
+                                        <div className="flex items-center gap-1">
+                                          +{todaysGains.xp} <BadgeCheck className="h-4 w-4 text-blue-500" />
+                                        </div>
+                                    </div>
                                     <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
                                 </div>
                                 <Button asChild variant="ghost" size="sm" className="h-full flex-col gap-1">
