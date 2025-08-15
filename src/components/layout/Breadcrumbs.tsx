@@ -18,7 +18,7 @@ interface Breadcrumb {
 const pathTranslations: { [key: string]: string } = {
   dashboard: 'Espaços',
   heroes: 'Resumo do Dia',
-  mural: 'Mural Completo',
+  mural: 'Perfil Completo',
   agenda: 'Rotina de Missões',
   family: 'Aliança de Herois',
   missions: 'Quadro de Missões',

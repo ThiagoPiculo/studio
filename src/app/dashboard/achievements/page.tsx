@@ -143,7 +143,7 @@ export default function AchievementsPage() {
               }
           }
           if (currentPerfectStreak > longestPerfectStreak) {
-              longestPerfectStreak = currentPerfectStreak;
+              longestPerfectStreak = longestPerfectStreak;
           }
       }
       
@@ -364,7 +364,7 @@ export default function AchievementsPage() {
                     <CardFooter>
                       <Link href={`/dashboard/mural?childId=${child.id}&tab=badges`} className="w-full">
                         <Button variant="outline" className="w-full">
-                          Ver Mural Completo <ArrowRight className="ml-2 h-4 w-4" />
+                          Ver Perfil Completo <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </Link>
                     </CardFooter>

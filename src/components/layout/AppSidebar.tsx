@@ -121,7 +121,7 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/mural" tooltip="Mural Completo" label="Mural Completo">
+                                    <NavLink href="/dashboard/mural" tooltip="Perfil Completo" label="Perfil Completo">
                                         <ListCollapse className="text-chart-1" />
                                     </NavLink>
                                 </SidebarMenuItem>
@@ -195,7 +195,7 @@ export function AppSidebar() {
                                     </SidebarMenuItem>
                                 )}
                                 <SidebarMenuItem>
-                                     <NavLink href="/dashboard" tooltip="Ver Todos os Espaços" label="Ver Todos os Espaços">
+                                     <NavLink href="/dashboard" tooltip="Ver Todos os Espaços" label="Espaços e Alianças">
                                         <Home className="text-chart-3" />
                                      </NavLink>
                                 </SidebarMenuItem>

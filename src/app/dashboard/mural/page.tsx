@@ -930,7 +930,7 @@ function MuralCompletoPageContent() {
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
             <ListCollapse className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-headline font-bold">Mural Completo</h2>
+            <h2 className="text-3xl font-headline font-bold">Perfil Completo</h2>
             <Popover>
                 <PopoverTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
