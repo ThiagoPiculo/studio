@@ -26,7 +26,7 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
@@ -277,6 +277,13 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                                     </Button>
                                                                 </DropdownMenuTrigger>
                                                                 <DropdownMenuContent align="end">
+                                                                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                                                                        <div className="flex items-center justify-between gap-4">
+                                                                            <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{m.starsReward}</span>
+                                                                            <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{m.xpReward} XP</span>
+                                                                        </div>
+                                                                    </DropdownMenuLabel>
+                                                                    <DropdownMenuSeparator />
                                                                     <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
                                                                         Ver na Agenda
                                                                     </DropdownMenuItem>
