@@ -35,10 +35,11 @@ interface HeroesSummaryProps {
   missionInstances: MissionInstance[];
 }
 
-export function HeroesSummary({ children, missionInstances: initialMissionInstances }: HeroesSummaryProps) {
+export function HeroesSummary({ children: initialChildren, missionInstances: initialMissionInstances }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
+    const [children, setChildren] = useState(initialChildren);
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
@@ -51,6 +52,10 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
     useEffect(() => {
         setMissionInstances(initialMissionInstances);
     }, [initialMissionInstances]);
+    
+    useEffect(() => {
+        setChildren(initialChildren);
+    }, [initialChildren]);
 
 
     const handleExpandClick = async (childId: string) => {
@@ -108,6 +113,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
             }));
             
             if (updatedChild) {
+                 setChildren(prev => prev.map(c => c.id === updatedChild.id ? updatedChild : c));
                 toast({
                     title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
                     description: `A missão "${mission.title}" foi atualizada.`
@@ -246,7 +252,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                                             Rotina Escolar
                                         </TabsTrigger>
                                     </TabsList>
-                                    <TabsContent value="today" className="mt-2 space-y-1.5 min-h-[145px] pr-2">
+                                    <TabsContent value="today" className="mt-2 space-y-1.5 min-h-[200px] pr-2">
                                         {todaysMissions.length === 0 ? (
                                             <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">Nenhuma missão para hoje.</div>
                                         ) : (
@@ -287,7 +293,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                                                     )
                                                 })}
                                                 {remainingCount > 0 && (
-                                                    <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => setExpandedChildId(isExpanded ? null : child.id)}>
+                                                    <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => handleExpandClick(child.id)}>
                                                         {isExpanded ? "Mostrar menos" : `Ver +${remainingCount} missões`}
                                                         {isExpanded ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
                                                     </Button>
@@ -314,7 +320,7 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                             </CardContent>
                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
-                                    <div className="font-semibold flex items-center justify-center gap-1.5">
+                                    <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5">
                                         <div className="flex items-center gap-1 text-amber-600">
                                           +{todaysGains.stars} <Star className="h-4 w-4 fill-current" />
                                         </div>
