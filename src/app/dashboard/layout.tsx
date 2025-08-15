@@ -58,7 +58,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const isRootDashboard = pathname === '/dashboard';
-  const isHeroesDashboard = pathname === '/dashboard/heroes';
 
   const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances'].includes(pathname);
 
@@ -127,6 +126,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
+  const showHeroSelector = isClient && (pathname === '/dashboard/heroes' || pathname === '/dashboard/mural' || pathname === '/dashboard/progressos');
 
   return (
     <>
@@ -137,16 +137,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
               <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
                 <div className="flex items-center gap-2 sm:gap-4">
-                  {isClient && isMobile && !isRootDashboard && !isHeroesDashboard && (
+                  {isClient && isMobile && !currentHeader && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
-                        <ArrowLeft className="mr-1 h-4 w-4" />
+                        <ArrowLeft className="h-4 w-4" />
                         <span className="sr-only">Voltar</span>
                       </Button>
                   )}
                   {isClient && currentHeader ? (
-                    <div className="flex items-center gap-2">
-                        <currentHeader.icon className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold font-headline">{currentHeader.title}</h1>
+                    <div className="flex items-center gap-3">
+                        <currentHeader.icon className="h-6 w-6 text-primary" />
+                        <h1 className="text-2xl font-bold font-headline">{currentHeader.title}</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
@@ -177,25 +177,23 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               
               {showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <FamilyContextSwitcher />
-                    <div className="hidden sm:block">
-                        {(pathname === '/dashboard/mural' || pathname === '/dashboard/progressos') && (
-                           <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
-                              <Link href="/dashboard/novo-heroi">
-                                <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
-                              </Link>
-                           </div>
+                    <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
+                        {showHeroSelector && (
+                          <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
                         )}
+                        <Link href="/dashboard/novo-heroi">
+                          <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+                        </Link>
                     </div>
                   </div>
                    <div className="block sm:hidden mt-4">
-                        {(pathname === '/dashboard/mural' || pathname === '/dashboard/progressos') && (
+                        {showHeroSelector && (
                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
+                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
                               <Link href="/dashboard/novo-heroi">
-                                <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+                                <Button size="icon"><PlusCircle className="h-4 w-4" /></Button>
                               </Link>
                            </div>
                         )}

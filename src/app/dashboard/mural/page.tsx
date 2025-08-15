@@ -450,7 +450,7 @@ function MuralCompletoPageContent() {
                     currentPerfectStreak++;
                 } else {
                     if (currentPerfectStreak > longestPerfectStreak) {
-                        longestPerfectStreak = currentPerfectStreak;
+                        longestPerfectStreak = longestPerfectStreak;
                     }
                     currentPerfectStreak = 0;
                 }
@@ -950,38 +950,8 @@ function MuralCompletoPageContent() {
                   <CardDescription className="text-base mt-1">
                       {age !== null ? `Idade: ${age} Anos` : 'Idade não informada'}
                   </CardDescription>
-                   <div className="flex items-center justify-center sm:justify-start gap-2 mt-4">
-                        <span className="text-sm text-muted-foreground align-middle">
-                            Chave Secreta:
-                        </span>
-                        <span className="text-lg font-bold text-accent tracking-wider bg-accent/10 px-2 py-1 rounded-md shadow-sm">
-                            {child.accessCode}
-                        </span>
-                        <TooltipProvider>
-                            <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleRegenerateAccessCode}
-                                disabled={isRegeneratingCode || !canEdit}
-                                className="shadow-sm h-9 w-9"
-                                >
-                                {isRegeneratingCode ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Regenerar Chave Secreta</p>
-                            </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    </div>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-col gap-4 font-semibold">
-                <div className="flex items-end justify-between gap-4">
-                      <div className="flex items-center gap-4 text-amber-600 dark:text-amber-400">
+                  <div className="mt-4 flex items-center justify-center sm:justify-start gap-4">
+                      <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                           <StarIcon className="h-7 w-7 fill-current"/>
                           <span className="text-2xl font-bold">{child.stars}</span>
                       </div>
@@ -991,6 +961,10 @@ function MuralCompletoPageContent() {
                           <span className="text-sm font-normal">XP</span>
                       </div>
                   </div>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-col gap-4 font-semibold">
                 <div className="w-full">
                     <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
                 </div>
