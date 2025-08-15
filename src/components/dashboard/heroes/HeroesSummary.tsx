@@ -202,7 +202,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
 
                     return (
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
-                            <CardHeader className="p-4">
+                             <CardHeader className="p-4">
                                <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-4">
                                         <Avatar
@@ -222,7 +222,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     <div className="flex items-center gap-2">
                                         <Link href={`/dashboard/progressos?childId=${child.id}`}>
                                             <Button variant="link" className="p-0 h-auto text-xs">
-                                                Progresso <ArrowRight className="ml-1 h-3 w-3" />
+                                                Progressos <ArrowRight className="ml-1 h-3 w-3" />
                                             </Button>
                                         </Link>
                                         <DropdownMenu>
