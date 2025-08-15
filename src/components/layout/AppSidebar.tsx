@@ -103,11 +103,6 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarMenu>
-                     <SidebarMenuItem>
-                         <NavLink href="/dashboard" tooltip="Espaços e Alianças" label="Espaços e Alianças">
-                            <Home className="text-chart-3" />
-                         </NavLink>
-                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <NavLink href="/dashboard/heroes" tooltip="Resumo do Dia" label="Resumo do Dia">
                             <Calendar1Icon className="text-chart-5"/>
@@ -178,7 +173,7 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-4" className="border-none">
                             <CustomAccordionTrigger>
-                                Cuidando Solo ou Aliança
+                                Cuidando Solo ou Alianças
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
@@ -199,6 +194,11 @@ export function AppSidebar() {
                                         </NavLink>
                                     </SidebarMenuItem>
                                 )}
+                                <SidebarMenuItem>
+                                     <NavLink href="/dashboard" tooltip="Ver Todos os Espaços" label="Ver Todos os Espaços">
+                                        <Home className="text-chart-3" />
+                                     </NavLink>
+                                </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
