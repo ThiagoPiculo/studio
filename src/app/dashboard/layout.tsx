@@ -24,6 +24,7 @@ import Link from 'next/link';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
+import { CalendarDays } from 'lucide-react';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -138,11 +139,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <p className="text-sm text-muted-foreground">Esta é a sua central de análises para acompanhar a jornada dos seus heróis, com gráficos de desempenho, recompensas desbloqueadas e as últimas medalhas conquistadas.</p>
             )
         }
+    },
+     '/dashboard/agenda': {
+        title: 'Rotina de Missões',
+        icon: CalendarDays,
+        help: {
+            title: 'O Comando da Rotina',
+            content: (
+                <p className="text-sm text-muted-foreground">Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.</p>
+            )
+        }
     }
   }
 
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
-  const showHeroSelector = isClient && (pathname === '/dashboard/heroes' || pathname === '/dashboard/mural' || pathname === '/dashboard/progressos');
+  const showHeroSelector = isClient && (pathname === '/dashboard/heroes' || pathname === '/dashboard/mural' || pathname === '/dashboard/progressos' || pathname === '/dashboard/agenda');
 
   return (
     <>

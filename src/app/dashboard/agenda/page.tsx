@@ -57,7 +57,7 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
 };
 
 function AgendaPageContent() {
-  const { user } = useAuth();
+  const { user } from useAuth();
   const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
@@ -1073,46 +1073,12 @@ function AgendaPageContent() {
   return (
     <>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-                <CalendarDays className="h-8 w-8 text-primary" />
-                <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Rotina de Missões</h2>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                        <div className="space-y-3">
-                            <p className="text-sm">Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.</p>
-                            <PopoverClose asChild>
-                                <Button className="w-full">Entendi 👍</Button>
-                            </PopoverClose>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
-             <div className="flex w-full flex-row items-center justify-end gap-2">
-                {children.length > 1 && (
-                    <div className="flex-grow sm:flex-grow-0">
-                        <HeroSelector
-                            heroes={children}
-                            selectedHeroId={selectedChildId}
-                            onSelectHero={handleSelectedChildChange}
-                            showAllOption={true}
-                        />
-                    </div>
-                )}
-                {canEdit && (
-                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-shrink-0">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        <span className="hidden sm:inline">Adicionar Missão</span>
-                         <span className="sm:hidden">Adicionar</span>
-                    </Button>
-                )}
-            </div>
-        </div>
+         {isMobile && canEdit && (
+            <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="w-full">
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Adicionar Missão na Agenda
+            </Button>
+         )}
 
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
