@@ -39,12 +39,13 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
+    const { selectedChildId, setSelectedChildId } = useFamily(); // Use global state
+    
     const [children, setChildren] = useState(initialChildren);
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
-    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-
+    
     const [missionInstances, setMissionInstances] = useState(initialMissionInstances);
     const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
     const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
@@ -102,10 +103,17 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
             setMissionInstances(prev => prev.map(m => {
                 if (m.id === mission.id) {
                     const newLog = { ...m.completionLog };
+                    const dateKey = formatDateFns(date, 'yyyy-MM-dd');
                     if (isCompleted) {
-                        delete newLog[formatDateFns(date, 'yyyy-MM-dd')];
+                        delete newLog[dateKey];
                     } else {
-                        newLog[formatDateFns(date, 'yyyy-MM-dd')] = { completedAt: new Date().toISOString(), actorId: actor.id, actorName: actor.name } as any;
+                        newLog[dateKey] = { 
+                            completedAt: new Date().toISOString(), 
+                            actorId: actor.id, 
+                            actorName: actor.name,
+                            stars: m.starsReward,
+                            xp: m.xpReward
+                        } as any;
                     }
                     return { ...m, completionLog: newLog };
                 }
