@@ -43,10 +43,10 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                             </AvatarFallback>
                         </Avatar>
                     ) : (
-                        <LinkIcon className="h-5 w-5 text-muted-foreground" />
+                        <Users className="h-5 w-5 text-muted-foreground" />
                     )}
                     <span className="truncate font-semibold">
-                        {selectedHero ? selectedHero.name : 'Explorar Alianças'}
+                        {selectedHero ? selectedHero.name : 'Todos os Mini Herois'}
                     </span>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -59,9 +59,9 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                         <DropdownMenuRadioItem value="all" className="cursor-pointer">
                            <div className="flex items-center gap-3">
                                 <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                                    <Users className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                                <span className="font-medium">Explorar Alianças</span>
+                                <span className="font-medium">Todos os Mini Herois</span>
                             </div>
                         </DropdownMenuRadioItem>
                         <DropdownMenuSeparator />
