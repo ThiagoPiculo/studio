@@ -15,9 +15,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { getTodaysMissions, getSchoolScheduleForChild } from '@/lib/firebase/firestore';
+import { getTodaysMissions, getSchoolScheduleForChild, completeMissionInstance, reactivateMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
-import { isMissionScheduledForDate, isMissionCompletedForDate, getPeriodOfDay, getDayToWeekday, getDateObject } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday, getDateObject } from '@/lib/calendar-utils';
 import { getDay, startOfDay } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
@@ -26,13 +26,16 @@ import { Label } from "@/components/ui/label";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 interface HeroesSummaryProps {
   children: ChildProfile[];
   missionInstances: MissionInstance[];
 }
 
-export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps) {
+export function HeroesSummary({ children, missionInstances: initialMissionInstances }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
@@ -40,6 +43,15 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
     const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+    const [missionInstances, setMissionInstances] = useState(initialMissionInstances);
+    const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
+    const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
+    
+    useEffect(() => {
+        setMissionInstances(initialMissionInstances);
+    }, [initialMissionInstances]);
+
 
     const handleExpandClick = async (childId: string) => {
         const newExpandedId = expandedChildId === childId ? null : childId;
@@ -71,22 +83,52 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
         return children.filter(child => child.id === selectedChildId);
     }, [children, selectedChildId]);
     
+    const handleToggleCompletion = async (mission: MissionInstance, date: Date, isCompleted: boolean) => {
+        if (!user) return;
+        setProcessingMissionId(mission.id);
+
+        try {
+            const updatedChild = isCompleted
+                ? await reactivateMissionInstance(mission.id, date, user)
+                : await completeMissionInstance(mission.id, date, user);
+
+            // Optimistically update the UI
+            setMissionInstances(prev => prev.map(m => m.id === mission.id ? { ...m, completionLog: { ...(m.completionLog || {}), [formatDateFns(date, 'yyyy-MM-dd')]: !isCompleted ? { completedAt: new Date().toISOString() } as any : undefined } } : m));
+            
+            if (updatedChild) {
+                toast({
+                    title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
+                    description: `A missão "${mission.title}" foi atualizada.`
+                });
+            }
+        } catch (error) {
+            console.error("Error toggling mission completion:", error);
+            toast({ title: "Erro ao atualizar missão", variant: "destructive" });
+        } finally {
+            setProcessingMissionId(null);
+        }
+    };
+    
+    const handleDeleteInstance = async () => {
+        if (!missionToDelete || !user) return;
+        setProcessingMissionId(missionToDelete.id);
+        try {
+            await deleteMissionInstance(user, missionToDelete.id);
+            setMissionInstances(prev => prev.filter(m => m.id !== missionToDelete.id));
+            toast({ title: "Atribuição Removida", description: "A missão foi removida da lista deste herói."});
+        } catch (error) {
+            console.error("Error deleting mission instance", error);
+            toast({ title: "Erro ao remover", variant: "destructive"});
+        } finally {
+            setProcessingMissionId(null);
+            setMissionToDelete(null);
+        }
+    }
+    
     return (
         <div className="space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
                 <HeroSelector heroes={children} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button asChild variant="secondary" className="w-full">
-                        <Link href="/dashboard/missions/new">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
-                        </Link>
-                    </Button>
-                    <Button asChild variant="outline" className="w-full">
-                        <Link href="/dashboard/missions/ideas">
-                            <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
-                        </Link>
-                    </Button>
-                </div>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredChildren.map(child => {
@@ -185,14 +227,32 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                                                 const timeString = dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : '';
 
                                                 return (
-                                                    <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                        {isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
+                                                     <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => handleToggleCompletion(m, today, isCompleted)} disabled={processingMissionId === m.id}>
+                                                            {processingMissionId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
+                                                        </Button>
                                                         <div className="text-muted-foreground font-mono text-xs w-10 text-center">{timeString}</div>
                                                         <span className="text-xl shrink-0 w-5 text-center">{m.emoji || '🎯'}</span>
                                                         <span className={cn("truncate font-medium flex-grow", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
-                                                            <MoreVertical className="h-4 w-4" />
-                                                        </Button>
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                    <MoreVertical className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                                    Ver na Agenda
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${m.templateId}`)}>
+                                                                    Editar Missão
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem onSelect={() => setMissionToDelete(m)} className="text-destructive">
+                                                                    Remover Atribuição
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </div>
                                                 )
                                             })
@@ -237,6 +297,31 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                     );
                 })}
             </div>
+             {missionToDelete && (
+                <AlertDialog open={!!missionToDelete} onOpenChange={() => setMissionToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Remover Atribuição?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Tem certeza que deseja remover permanentemente a missão "{missionToDelete.title}" da lista de tarefas de {children.find(c => c.id === missionToDelete.childId)?.name}?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={processingMissionId === missionToDelete.id}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                                onClick={handleDeleteInstance}
+                                className="bg-destructive hover:bg-destructive/90"
+                                disabled={processingMissionId === missionToDelete.id}
+                            >
+                                {processingMissionId === missionToDelete.id ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Sim, Remover
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 }
+
+    
