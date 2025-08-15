@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -181,15 +181,21 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
                                         ) : (
                                             todaysMissions.map(m => {
                                                 const isCompleted = isMissionCompletedForDate(m, today);
-                                                const period = getPeriodOfDay(m.startDate || m.dueDate);
-                                                const dateForTime = getDateObject(m.startDate || m.dueDate);
+                                                const dateForTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate);
+                                                const timeString = dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : '';
+
                                                 return (
-                                                <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                    <div className="text-muted-foreground font-mono text-xs w-10 text-center">{dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : ''}</div>
-                                                    {isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
-                                                    <span className={cn("truncate", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
-                                                </div>
-                                            )})
+                                                    <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
+                                                        {isCompleted ? <CheckSquare className="h-4 w-4 text-green-600" /> : <Square className="h-4 w-4 text-primary" />}
+                                                        <div className="text-muted-foreground font-mono text-xs w-10 text-center">{timeString}</div>
+                                                        <span className="text-xl shrink-0 w-5 text-center">{m.emoji || '🎯'}</span>
+                                                        <span className={cn("truncate font-medium flex-grow", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
+                                                        <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                )
+                                            })
                                         )}
                                     </TabsContent>
                                     <TabsContent value="schedule" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
