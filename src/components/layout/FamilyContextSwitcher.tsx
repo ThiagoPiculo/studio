@@ -1,4 +1,3 @@
-
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -108,7 +107,7 @@ export function FamilyContextSwitcher() {
   }
 
   const getDisplayName = (context?: { id: string; name: string }) => {
-    if (!context) return "Ver Espaços e Alianças";
+    if (!context) return "Trocar de Espaço e Aliança";
     if (context.id === 'my-space') return context.name;
     return `Aliança: ${context.name}`;
   }
@@ -151,7 +150,7 @@ export function FamilyContextSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
-        <DropdownMenuLabel>Sua Missão Atual:</DropdownMenuLabel>
+        <DropdownMenuLabel>Mini Heróis nos Espaços</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {availableContexts.map((context) => {
             const childrenInContext = childrenByContext[context.id];
