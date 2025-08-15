@@ -1073,14 +1073,6 @@ function AgendaPageContent() {
   return (
     <>
       <div className="space-y-6">
-         {isMobile && canEdit && (
-            <div className="flex items-center gap-2 w-full">
-              <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-1">
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Adicionar Missão
-              </Button>
-            </div>
-         )}
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
                 <div className="flex items-center gap-2 flex-grow">
