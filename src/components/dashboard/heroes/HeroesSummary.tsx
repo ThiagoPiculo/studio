@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -203,13 +204,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                             <CardHeader className="p-4">
                                 <div className="flex items-center justify-between">
-                                     <Badge
-                                        variant="secondary"
-                                        className="absolute top-2 left-2 z-10 font-semibold text-xs border-2 border-background shadow-md"
-                                        style={{ backgroundColor: child.color, color: 'white' }}
-                                    >
-                                        NÍVEL {child.level}
-                                    </Badge>
+                                    <div/>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto">
@@ -260,6 +255,13 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                             <span className="text-lg font-bold">{child.xp}</span>
                                             <span className="text-sm font-normal">XP</span>
                                         </div>
+                                        <Badge
+                                            variant="secondary"
+                                            className="font-semibold text-xs border-2 border-background shadow-md"
+                                            style={{ backgroundColor: child.color, color: 'white' }}
+                                        >
+                                            NÍVEL {child.level}
+                                        </Badge>
                                     </div>
                                     <div className="space-y-1">
                                         <Label className="text-xs text-muted-foreground">Missões de Hoje: {completedMissions.length} de {todaysMissions.length}</Label>
