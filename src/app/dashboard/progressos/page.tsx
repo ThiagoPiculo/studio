@@ -11,7 +11,7 @@ import { DashboardClientPage } from '@/components/dashboard/dashboard/DashboardC
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 
 
-function DashboardPageContent() {
+function ProgressosPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { currentContext, isLoading: isFamilyLoading } = useFamily();
     
@@ -51,8 +51,6 @@ function DashboardPageContent() {
         return <Loading />;
     }
     
-    // The getting started guide is now primarily handled by the root dashboard page logic
-    // but we can keep a fallback here for direct navigation.
     const hasAnyContent = initialData.children.length > 0;
     if (!hasAnyContent) {
         return (
@@ -67,10 +65,10 @@ function DashboardPageContent() {
     return <DashboardClientPage initialData={initialData} />;
 }
 
-export default function DashboardPage() {
+export default function ProgressosPage() {
     return (
         <Suspense fallback={<Loading />}>
-            <DashboardPageContent />
+            <ProgressosPageContent />
         </Suspense>
     );
 }

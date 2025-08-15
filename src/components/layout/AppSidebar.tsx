@@ -109,7 +109,7 @@ export function AppSidebar() {
                         </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                         <NavLink href="/dashboard/dashboard" tooltip="Painel de Progressos" label="Painel de Progressos">
+                         <NavLink href="/dashboard/progressos" tooltip="Painel de Progressos" label="Painel de Progressos">
                             <CalendarCheck2 className="text-chart-1" />
                         </NavLink>
                     </SidebarMenuItem>

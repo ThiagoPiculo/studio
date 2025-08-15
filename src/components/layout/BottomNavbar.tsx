@@ -11,7 +11,7 @@ import type { ReactNode } from 'react';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 
 const navItems = [
-  { href: '/dashboard/dashboard', label: 'Progressos', icon: CalendarCheck2, color: 'text-chart-1' },
+  { href: '/dashboard/progressos', label: 'Progressos', icon: CalendarCheck2, color: 'text-chart-1' },
   { href: '/dashboard/heroes', label: 'Hoje', icon: Calendar1Icon, color: 'text-chart-5' },
   { href: '/dashboard/agenda', label: 'Agenda', icon: CalendarDays, color: 'text-chart-5' },
 ];
