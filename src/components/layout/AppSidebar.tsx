@@ -177,7 +177,7 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/cuidando-solo" tooltip="Cuidando Solo" label="Cuidando Solo">
+                                    <NavLink href="/dashboard/cuidando-solo" tooltip="Gerenciar Cuidar Solo" label="Gerenciar Cuidar Solo">
                                         <User className="text-chart-2" />
                                     </NavLink>
                                 </SidebarMenuItem>
