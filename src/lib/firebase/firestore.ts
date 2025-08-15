@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import {
@@ -2085,8 +2083,8 @@ export const completeMissionInstance = async (
               completedAt: Timestamp.now(),
               stars: missionData.starsReward,
               xp: missionData.xpReward,
-              actorId: actor.id,
-              actorName: actor.name
+              actorId: actor.id || null,
+              actorName: actor.name || null,
             },
             updatedAt: serverTimestamp(),
         };

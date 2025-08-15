@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -18,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTodaysMissions, getSchoolScheduleForChild, completeMissionInstance, reactivateMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday, getDateObject } from '@/lib/calendar-utils';
-import { getDay, startOfDay } from 'date-fns';
+import { getDay, startOfDay, format as formatDateFns } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
@@ -93,7 +92,18 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                 : await completeMissionInstance(mission.id, date, user);
 
             // Optimistically update the UI
-            setMissionInstances(prev => prev.map(m => m.id === mission.id ? { ...m, completionLog: { ...(m.completionLog || {}), [formatDateFns(date, 'yyyy-MM-dd')]: !isCompleted ? { completedAt: new Date().toISOString() } as any : undefined } } : m));
+            setMissionInstances(prev => prev.map(m => {
+                if (m.id === mission.id) {
+                    const newLog = { ...m.completionLog };
+                    if (isCompleted) {
+                        delete newLog[formatDateFns(date, 'yyyy-MM-dd')];
+                    } else {
+                        newLog[formatDateFns(date, 'yyyy-MM-dd')] = { completedAt: new Date().toISOString() } as any;
+                    }
+                    return { ...m, completionLog: newLog };
+                }
+                return m;
+            }));
             
             if (updatedChild) {
                 toast({
