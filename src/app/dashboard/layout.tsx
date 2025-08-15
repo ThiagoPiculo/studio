@@ -5,7 +5,7 @@ import React, from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -100,6 +100,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </>
         )
       }
+    },
+    '/dashboard/mural': {
+      title: 'Perfil Completo',
+      icon: Contact,
+      help: {
+        title: 'O Painel de Controle do Herói',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.</p>
+          </>
+        )
+      }
     }
   }
 
@@ -123,7 +135,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   {isClient && currentHeader ? (
                     <div className="flex items-center gap-2">
                         <currentHeader.icon className="h-8 w-8 text-primary" />
-                        <h1 className="text-xl font-bold font-headline">{currentHeader.title}</h1>
+                        <h1 className="text-3xl font-bold font-headline">{currentHeader.title}</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
@@ -153,8 +165,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </header>
               
               {showContextSwitcher && (
-                <div className="px-4 sm:px-6 py-2">
-                  <FamilyContextSwitcher />
+                 <div className="px-4 sm:px-6 py-2 border-b">
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <FamilyContextSwitcher />
+                    <div className="hidden sm:block">
+                        {pathname === '/dashboard/mural' && (
+                           <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
+                              <Link href="/dashboard/novo-heroi">
+                                <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+                              </Link>
+                           </div>
+                        )}
+                    </div>
+                  </div>
+                   <div className="block sm:hidden mt-4">
+                        {pathname === '/dashboard/mural' && (
+                           <div className="flex items-center gap-2 w-full sm:w-auto">
+                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={false} />
+                              <Link href="/dashboard/novo-heroi">
+                                <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
+                              </Link>
+                           </div>
+                        )}
+                    </div>
                 </div>
               )}
 

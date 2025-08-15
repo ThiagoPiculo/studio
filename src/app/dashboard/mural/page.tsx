@@ -457,7 +457,7 @@ function MuralCompletoPageContent() {
             }
         }
         if (currentPerfectStreak > longestPerfectStreak) {
-            longestPerfectStreak = currentPerfectStreak;
+            longestPerfectStreak = longestPerfectStreak;
         }
     }
 
@@ -925,40 +925,7 @@ function MuralCompletoPageContent() {
 
   return (
     <div className="space-y-6 pb-8">
-      <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-4">
-            <Contact className="h-8 w-8 text-primary" />
-            <h2 className="text-3xl font-headline font-bold">Perfil Completo</h2>
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                        <HelpCircle className="h-5 w-5" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-72">
-                    <div className="space-y-3">
-                        <p className="text-sm">Este é o painel de controle completo para um herói. Use as abas para gerenciar missões, recompensas, perfil e muito mais.</p>
-                         <PopoverClose asChild>
-                            <Button className="w-full">Entendi 👍</Button>
-                        </PopoverClose>
-                    </div>
-                </PopoverContent>
-            </Popover>
-        </div>
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          {allChildrenInContext.length > 1 && (
-              <HeroSelector
-                  heroes={allChildrenInContext}
-                  selectedHeroId={selectedChildId}
-                  onSelectHero={handleHeroSelectionChange}
-                  showAllOption={false}
-              />
-          )}
-          <Link href="/dashboard/novo-heroi">
-              <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
-          </Link>
-        </div>
-      </div>
+      
       <Card className="shadow-xl overflow-hidden">
         <div className="p-4 bg-gradient-to-br from-primary/10 via-background to-accent/5 relative">
             <div className="absolute top-2 right-2 z-10 hidden sm:flex flex-col items-end gap-1 flex-shrink-0">
