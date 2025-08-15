@@ -153,20 +153,17 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
     
     return (
         <div className="space-y-6">
-             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-                <HeroSelector heroes={children} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    <Button asChild variant="secondary" className="w-full sm:w-auto">
-                        <Link href="/dashboard/missions/ideas">
-                            <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
-                        </Link>
-                    </Button>
-                    <Button asChild className="w-full sm:w-auto">
-                        <Link href="/dashboard/missions/new">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
-                        </Link>
-                    </Button>
-                </div>
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+                <Button asChild variant="secondary" className="w-full sm:w-auto">
+                    <Link href="/dashboard/missions/ideas">
+                        <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
+                    </Link>
+                </Button>
+                <Button asChild className="w-full sm:w-auto">
+                    <Link href="/dashboard/missions/new">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                    </Link>
+                </Button>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
                 {filteredChildren.map(child => {
