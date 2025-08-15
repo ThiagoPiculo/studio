@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckSquare, Target, ArrowRight, Square, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -39,6 +39,7 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
+    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
     const handleExpandClick = async (childId: string) => {
         const newExpandedId = expandedChildId === childId ? null : childId;
@@ -64,11 +65,31 @@ export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps
             .filter(entry => entry.dayOfWeek === todayWeekday)
             .sort((a,b) => a.startTime.localeCompare(b.startTime));
     };
+
+    const filteredChildren = useMemo(() => {
+        if (!selectedChildId) return children;
+        return children.filter(child => child.id === selectedChildId);
+    }, [children, selectedChildId]);
     
     return (
         <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                <HeroSelector heroes={children} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button asChild variant="secondary" className="w-full">
+                        <Link href="/dashboard/missions/new">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
+                        </Link>
+                    </Button>
+                    <Button asChild variant="outline" className="w-full">
+                        <Link href="/dashboard/missions/ideas">
+                            <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
+                        </Link>
+                    </Button>
+                </div>
+            </div>
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {children.map(child => {
+                {filteredChildren.map(child => {
                     const today = startOfDay(new Date());
                     
                     const timeToMinutes = (date: Date): number => {

@@ -27,6 +27,19 @@ interface DashboardClientPageProps {
 
 export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
   const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
+  const searchParams = useSearchParams();
+  const childIdFromParams = searchParams.get('childId');
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
+
+  const filteredChildren = useMemo(() => {
+    if (!selectedChildId) return allChildren;
+    return allChildren.filter(child => child.id === selectedChildId);
+  }, [allChildren, selectedChildId]);
+  
+  const filteredMissions = useMemo(() => {
+    if (!selectedChildId) return missionInstances;
+    return missionInstances.filter(mission => mission.childId === selectedChildId);
+  }, [missionInstances, selectedChildId]);
 
   return (
     <div className="space-y-8">
@@ -51,19 +64,25 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
                 </PopoverContent>
             </Popover>
         </div>
+        <HeroSelector
+            heroes={allChildren}
+            selectedHeroId={selectedChildId}
+            onSelectHero={setSelectedChildId}
+            showAllOption={true}
+        />
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
-          <ProgressAnalysis childrenProfiles={allChildren} missionInstances={missionInstances} />
+          <ProgressAnalysis childrenProfiles={filteredChildren} missionInstances={filteredMissions} />
           <RecentActivities
-            childrenProfiles={allChildren}
-            missionInstances={missionInstances}
+            childrenProfiles={filteredChildren}
+            missionInstances={filteredMissions}
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childrenProfiles={allChildren} rewardTemplates={rewardTemplates} />
-          <RecentMedals childrenProfiles={allChildren} />
+          <UnlockedRewards childrenProfiles={filteredChildren} rewardTemplates={rewardTemplates} />
+          <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>
       </div>
