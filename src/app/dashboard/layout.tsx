@@ -179,8 +179,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                  <div className="px-4 sm:px-6 py-2">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <FamilyContextSwitcher />
-                    <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
-                        {showHeroSelector && (
+                     <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
+                        {isClient && showHeroSelector && (
                           <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
                         )}
                         <Link href="/dashboard/novo-heroi">
@@ -189,7 +189,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     </div>
                   </div>
                    <div className="block sm:hidden mt-4">
-                        {showHeroSelector && (
+                        {isClient && showHeroSelector && (
                            <div className="flex items-center gap-2 w-full sm:w-auto">
                               <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
                               <Link href="/dashboard/novo-heroi">
