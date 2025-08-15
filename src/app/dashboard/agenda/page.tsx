@@ -57,7 +57,7 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
 };
 
 function AgendaPageContent() {
-  const { user } from useAuth();
+  const { user } = useAuth();
   const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
@@ -1074,12 +1074,13 @@ function AgendaPageContent() {
     <>
       <div className="space-y-6">
          {isMobile && canEdit && (
-            <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="w-full">
-                <PlusCircle className="mr-2 h-4 w-4" />
-                Adicionar Missão na Agenda
-            </Button>
+            <div className="flex items-center gap-2 w-full">
+              <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-1">
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Adicionar Missão
+              </Button>
+            </div>
          )}
-
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
                 <div className="flex items-center gap-2 flex-grow">
