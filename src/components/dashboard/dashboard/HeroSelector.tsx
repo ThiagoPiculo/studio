@@ -45,7 +45,7 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
   return (
      <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm">
+            <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm p-2">
                 <div className="flex items-center gap-3 truncate">
                     {selectedHero ? (
                          <Avatar 
