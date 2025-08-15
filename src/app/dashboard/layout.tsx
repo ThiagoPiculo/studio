@@ -206,15 +206,19 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                  <div className="px-4 sm:px-6 py-2 border-b">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                     <FamilyContextSwitcher />
-                     <div className="hidden sm:block">
-                        {isClient && showHeroSelector && (
-                          <div className="flex items-center gap-2 w-full sm:w-auto">
-                            {isLoadingChildren ? (
-                              <Skeleton className="h-10 w-72" />
-                            ) : (
-                              <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                            )}
-                            {pathname === '/dashboard/agenda' && (
+                     {isClient && (
+                       <>
+                         <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
+                           {showHeroSelector && (
+                               <>
+                                 {isLoadingChildren ? (
+                                   <Skeleton className="h-10 w-72" />
+                                 ) : (
+                                   <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                                 )}
+                               </>
+                           )}
+                           {pathname === '/dashboard/agenda' && (
                                <Button onClick={() => {
                                 const dialogTrigger = document.getElementById('add-mission-dialog-trigger');
                                 dialogTrigger?.click();
@@ -223,29 +227,29 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
                               </Button>
                             )}
-                          </div>
-                        )}
-                    </div>
+                         </div>
+                         <div className="flex sm:hidden items-center gap-2 w-full sm:w-auto">
+                            {showHeroSelector && (
+                               <>
+                                 {isLoadingChildren ? (
+                                   <Skeleton className="h-10 flex-grow" />
+                                 ) : (
+                                   <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                                 )}
+                               </>
+                            )}
+                            {pathname === '/dashboard/agenda' && (
+                              <Button size="icon" onClick={() => {
+                                const dialogTrigger = document.getElementById('add-mission-dialog-trigger');
+                                dialogTrigger?.click();
+                              }}>
+                                <PlusCircle className="h-4 w-4" />
+                              </Button>
+                            )}
+                         </div>
+                       </>
+                     )}
                   </div>
-                   <div className="block sm:hidden mt-4">
-                        {isClient && showHeroSelector && (
-                           <div className="flex items-center gap-2 w-full sm:w-auto">
-                              {isLoadingChildren ? (
-                                <Skeleton className="h-10 flex-grow" />
-                              ) : (
-                                <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                              )}
-                              {pathname === '/dashboard/agenda' && (
-                                <Button size="icon" onClick={() => {
-                                  const dialogTrigger = document.getElementById('add-mission-dialog-trigger');
-                                  dialogTrigger?.click();
-                                }}>
-                                  <PlusCircle className="h-4 w-4" />
-                                </Button>
-                              )}
-                           </div>
-                        )}
-                    </div>
                 </div>
               )}
 
