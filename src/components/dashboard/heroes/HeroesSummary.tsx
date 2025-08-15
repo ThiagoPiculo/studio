@@ -203,11 +203,25 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     return (
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                             <CardHeader className="p-4">
-                                <div className="flex items-center justify-between">
-                                    <div/>
+                               <div className="flex items-start justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar
+                                            className="h-16 w-16 text-2xl ring-4 ring-offset-background ring-[--ring-color]"
+                                            style={{ '--ring-color': child.color } as React.CSSProperties}
+                                        >
+                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                            <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="min-w-0">
+                                            <CardTitle className="text-2xl truncate">{child.name}</CardTitle>
+                                            <CardDescription className="text-sm flex items-center gap-1">
+                                                Chave Secreta: <span className="font-mono">{child.accessCode}</span>
+                                            </CardDescription>
+                                        </div>
+                                    </div>
                                     <DropdownMenu>
                                         <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 ml-auto">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
                                                 <MoreVertical className="h-4 w-4" />
                                             </Button>
                                         </DropdownMenuTrigger>
@@ -226,21 +240,6 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
-                                </div>
-                                <div className="flex items-center gap-4 mt-2">
-                                    <Avatar
-                                        className="h-16 w-16 text-2xl ring-4 ring-offset-background ring-[--ring-color]"
-                                        style={{ '--ring-color': child.color } as React.CSSProperties}
-                                    >
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="min-w-0">
-                                        <CardTitle className="text-2xl truncate">{child.name}</CardTitle>
-                                        <CardDescription className="text-sm flex items-center gap-1">
-                                            Chave Secreta: <span className="font-mono">{child.accessCode}</span>
-                                        </CardDescription>
-                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
