@@ -30,27 +30,15 @@ import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 interface HeroesSummaryProps {
   children: ChildProfile[];
   missionInstances: MissionInstance[];
-  initialSelectedChildId?: string | null;
 }
 
-export function HeroesSummary({ children, missionInstances, initialSelectedChildId = null }: HeroesSummaryProps) {
+export function HeroesSummary({ children, missionInstances }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
-    const [selectedHeroId, setSelectedHeroId] = useState<string | null>(initialSelectedChildId);
-
-    useEffect(() => {
-        setSelectedHeroId(initialSelectedChildId);
-    }, [initialSelectedChildId]);
-
-
-    const heroesToDisplay = useMemo(() => {
-        if (!selectedHeroId) return children;
-        return children.filter(c => c.id === selectedHeroId);
-    }, [children, selectedHeroId]);
 
     const handleExpandClick = async (childId: string) => {
         const newExpandedId = expandedChildId === childId ? null : childId;
@@ -79,26 +67,8 @@ export function HeroesSummary({ children, missionInstances, initialSelectedChild
     
     return (
         <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-start justify-start gap-4">
-                <div className="flex items-center gap-2 w-full sm:w-auto">
-                    {children.length > 1 && (
-                         <HeroSelector
-                            heroes={children}
-                            selectedHeroId={selectedHeroId}
-                            onSelectHero={setSelectedHeroId}
-                            showAllOption={true}
-                        />
-                    )}
-                    <Link href="/dashboard/novo-heroi" passHref>
-                        <Button className="flex-shrink-0">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi
-                        </Button>
-                    </Link>
-                </div>
-            </div>
-
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                {heroesToDisplay.map(child => {
+                {children.map(child => {
                     const today = startOfDay(new Date());
                     
                     const timeToMinutes = (date: Date): number => {

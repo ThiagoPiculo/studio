@@ -110,7 +110,7 @@ export function FamilyContextSwitcher() {
   const getDisplayName = (context?: { id: string; name: string }) => {
     if (!context) return "Carregando...";
     if (context.id === 'my-space') return context.name;
-    return context.name;
+    return `Aliança: ${context.name}`;
   }
 
   const Icon = currentContext === 'my-space' ? Home : LinkIcon;
@@ -119,7 +119,7 @@ export function FamilyContextSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" ref={triggerRef} className="w-full max-w-[280px] h-10 justify-between p-2">
+        <Button variant="secondary" ref={triggerRef} className="w-full max-w-[320px] h-10 justify-between p-2">
             <div ref={contentRef} className="flex items-center gap-2 overflow-hidden">
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-semibold truncate">{getDisplayName(currentContextData)}</span>
@@ -151,7 +151,7 @@ export function FamilyContextSwitcher() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
-        <DropdownMenuLabel>Espaços que Acesso</DropdownMenuLabel>
+        <DropdownMenuLabel>Sua Missão Atual:</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {availableContexts.map((context) => {
             const childrenInContext = childrenByContext[context.id];

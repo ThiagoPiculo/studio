@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import type { ChildProfile } from "@/lib/types";
 import { getInitials, cn } from "@/lib/utils";
-import { ChevronsUpDown, Users, User } from "lucide-react";
+import { ChevronsUpDown, Users, User, Link as LinkIcon } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -43,10 +43,10 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                             </AvatarFallback>
                         </Avatar>
                     ) : (
-                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <LinkIcon className="h-5 w-5 text-muted-foreground" />
                     )}
                     <span className="truncate font-semibold">
-                        {selectedHero ? selectedHero.name : 'Todos os Heróis'}
+                        {selectedHero ? selectedHero.name : 'Explorar Alianças'}
                     </span>
                 </div>
                 <ChevronsUpDown className="h-4 w-4 opacity-50 shrink-0" />
@@ -59,9 +59,9 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                         <DropdownMenuRadioItem value="all" className="cursor-pointer">
                            <div className="flex items-center gap-3">
                                 <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                    <LinkIcon className="h-4 w-4 text-muted-foreground" />
                                 </div>
-                                <span className="font-medium">Todos os Heróis</span>
+                                <span className="font-medium">Explorar Alianças</span>
                             </div>
                         </DropdownMenuRadioItem>
                         <DropdownMenuSeparator />
