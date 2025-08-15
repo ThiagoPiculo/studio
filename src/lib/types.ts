@@ -2,7 +2,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, Heart, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, Heart, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
@@ -122,6 +122,7 @@ export const missionCategories = [
   { id: 'school', label: 'Escola', icon: NotebookPen, color: 'hsl(142 71% 45%)', colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
   { id: 'health', label: 'Saúde', icon: Heart, color: 'hsl(0 84% 60%)', colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
   { id: 'sports', label: 'Esportes', icon: Bike, color: 'hsl(22 83% 53%)', colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30' },
+  { id: 'hobbies', label: 'Hobbies e Artes', icon: Palette, color: 'hsl(300 84% 60%)', colorClasses: 'bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30' },
   { id: 'behavior', label: 'Comportamento', icon: Smile, color: 'hsl(48 96% 53%)', colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
   { id: 'social', label: 'Social', icon: Users, color: 'hsl(322 84% 60%)', colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30' },
   { id: 'financial', label: 'Financeiro', icon: Coins, color: 'hsl(262 88% 65%)', colorClasses: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30' },
