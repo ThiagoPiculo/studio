@@ -1,7 +1,7 @@
 
 "use client";
 import type { ReactNode } from 'react';
-import React, from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
@@ -21,6 +21,9 @@ import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Skeleton } from '@/components/ui/skeleton';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Link from 'next/link';
+import { useFamily } from '@/contexts/FamilyContext';
+import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import type { ChildProfile } from '@/lib/types';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -45,13 +48,26 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { isChildAuthenticated } = useAuth();
+  const { user } = useAuth();
+  const { currentContext, selectedChildId, setSelectedChildId } = useFamily();
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = React.useState(false);
+  const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
   React.useEffect(() => {
     setIsClient(true);
   }, []);
+
+  useEffect(() => {
+    if (user && isClient) {
+      setIsLoadingChildren(true);
+      getChildProfilesForAttribution(user.uid, currentContext)
+        .then(setChildrenInContext)
+        .catch(console.error)
+        .finally(() => setIsLoadingChildren(false));
+    }
+  }, [user, currentContext, isClient]);
   
   const handleBackClick = () => {
     router.back();
@@ -171,17 +187,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {!isChildAuthenticated && <Notifications />}
+                  {!user?.isAnonymous && <Notifications />}
                 </div>
               </header>
               
               {showContextSwitcher && (
-                 <div className="px-4 sm:px-6 py-2">
+                 <div className="px-4 sm:px-6 py-4">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
                     <FamilyContextSwitcher />
                      <div className="hidden sm:flex items-center gap-2 w-full sm:w-auto">
                         {isClient && showHeroSelector && (
-                          <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
+                          isLoadingChildren ? (
+                            <Skeleton className="h-10 w-72" />
+                          ) : (
+                            <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                          )
                         )}
                         <Link href="/dashboard/novo-heroi">
                           <Button><PlusCircle className="mr-2 h-4 w-4" /> Novo Mini Heroi</Button>
@@ -191,7 +211,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                    <div className="block sm:hidden mt-4">
                         {isClient && showHeroSelector && (
                            <div className="flex items-center gap-2 w-full sm:w-auto">
-                              <HeroSelector heroes={[]} selectedHeroId={null} onSelectHero={() => {}} showAllOption={true} />
+                              {isLoadingChildren ? (
+                                <Skeleton className="h-10 flex-grow" />
+                              ) : (
+                                <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                              )}
                               <Link href="/dashboard/novo-heroi">
                                 <Button size="icon"><PlusCircle className="h-4 w-4" /></Button>
                               </Link>
