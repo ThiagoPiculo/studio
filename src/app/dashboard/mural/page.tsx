@@ -10,7 +10,7 @@ import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRol
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit, Smile, HelpCircle, ListCollapse } from 'lucide-react';
+import { ArrowLeft, User, Star as StarIcon, Edit3, Loader2, Trash2, RefreshCw, Gift, EllipsisVertical, CheckCircle, XCircle, ExternalLink, MoreHorizontal, Info, CheckSquare, Trophy, Clock, BadgeCheck, PlusCircle, CalendarDays, CheckCircle2, Repeat, Undo2, Medal, RotateCcw, Target, Lock, Sun, CloudSun, Moon, NotebookPen, Move, Edit, Smile, HelpCircle, Contact } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { EditChildProfileForm } from '@/components/dashboard/EditChildProfileForm';
@@ -927,7 +927,7 @@ function MuralCompletoPageContent() {
     <div className="space-y-6 pb-8">
       <div className="flex flex-col sm:flex-row items-center sm:justify-between gap-4">
         <div className="flex items-center gap-4">
-            <ListCollapse className="h-8 w-8 text-primary" />
+            <Contact className="h-8 w-8 text-primary" />
             <h2 className="text-3xl font-headline font-bold">Perfil Completo</h2>
             <Popover>
                 <PopoverTrigger asChild>
