@@ -219,32 +219,39 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                             </CardDescription>
                                         </div>
                                     </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
-                                                <MoreVertical className="h-4 w-4" />
+                                    <div className="flex items-center gap-2">
+                                        <Link href={`/dashboard/progressos?childId=${child.id}`}>
+                                            <Button variant="link" className="p-0 h-auto text-xs">
+                                                Progresso <ArrowRight className="ml-1 h-3 w-3" />
                                             </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}`)}>
-                                                <Contact className="mr-2 h-4 w-4" />
-                                                <span>Perfil Completo</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}&tab=edit`)}>
-                                                <Edit3 className="mr-2 h-4 w-4" />
-                                                <span>Editar Perfil</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
-                                                <CalendarDays className="mr-2 h-4 w-4" />
-                                                <span>Rotina de Missões</span>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
-                                                <NotebookPen className="mr-2 h-4 w-4" />
-                                                <span>Rotina Escolar</span>
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                        </Link>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}`)}>
+                                                    <Contact className="mr-2 h-4 w-4" />
+                                                    <span>Perfil Completo</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}&tab=edit`)}>
+                                                    <Edit3 className="mr-2 h-4 w-4" />
+                                                    <span>Editar Perfil</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                    <CalendarDays className="mr-2 h-4 w-4" />
+                                                    <span>Rotina de Missões</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
+                                                    <NotebookPen className="mr-2 h-4 w-4" />
+                                                    <span>Rotina Escolar</span>
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </div>
                                 </div>
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
