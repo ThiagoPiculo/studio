@@ -229,7 +229,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     </DropdownMenu>
                                 </div>
                                 <div className="flex items-center gap-4 mt-2">
-                                    <Avatar className="h-16 w-16 text-2xl ring-4 ring-offset-2 ring-offset-background" style={{ '--ring-color': child.color } as React.CSSProperties}>
+                                    <Avatar className="h-16 w-16 text-2xl">
                                         <AvatarImage src={child.avatar} alt={child.name} />
                                         <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
                                     </Avatar>
@@ -243,7 +243,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-around">
+                                    <div className="flex items-center justify-center gap-8">
                                         <div className="flex items-center gap-2 text-amber-600">
                                             <Star className="h-5 w-5 fill-current" />
                                             <span className="text-lg font-bold">{child.stars}</span>
