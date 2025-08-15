@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -57,7 +58,7 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
 
 function AgendaPageContent() {
   const { user } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -88,8 +89,6 @@ function AgendaPageContent() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(searchParams.get('childId'));
-  
   // States for the add/edit mission flow
   const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
@@ -179,15 +178,10 @@ function AgendaPageContent() {
         setChildren(fetchedChildren);
         setMissionInstances(fetchedInstances);
         
-        const childIdParam = searchParams.get('childId');
-        if (childIdParam && fetchedChildren.some(c => c.id === childIdParam)) {
-          setSelectedChildId(childIdParam);
-        } else if (fetchedChildren.length === 1) {
-            // If there's only one child, select it automatically
-            setSelectedChildId(fetchedChildren[0].id);
-        } else {
-            // Otherwise, default to all heroes view
+        if (selectedChildId && !fetchedChildren.some(c => c.id === selectedChildId)) {
             setSelectedChildId(null);
+        } else if (!selectedChildId && fetchedChildren.length === 1) {
+            setSelectedChildId(fetchedChildren[0].id);
         }
 
       } catch (error) {
@@ -199,7 +193,7 @@ function AgendaPageContent() {
     };
 
     loadDataForContext();
-  }, [user, currentContext, toast, searchParams]);
+  }, [user, currentContext, toast, selectedChildId, setSelectedChildId]);
   
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);

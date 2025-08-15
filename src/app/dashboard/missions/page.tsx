@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
@@ -49,7 +50,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -65,7 +66,6 @@ function MissionsHubContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   const canEdit = useMemo(() => {
@@ -103,7 +103,7 @@ function MissionsHubContent() {
     if (!authLoading && !isFamilyLoading) {
       refetchAllData();
     }
-  }, [authLoading, isFamilyLoading, refetchAllData]);
+  }, [authLoading, isFamilyLoading, refetchAllData, currentContext]);
   
   const childrenMap = useMemo(() => {
     return new Map(children.map(child => [child.id, child]));

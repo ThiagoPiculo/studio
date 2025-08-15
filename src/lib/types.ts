@@ -357,6 +357,8 @@ export type FamilyContextType = {
   isLoading: boolean;
   currentRole: FamilyRole | 'Personal' | null;
   isContextSelected: boolean;
+  selectedChildId: string | null;
+  setSelectedChildId: (childId: string | null) => void;
 };
 
 export type AuthContextType = {

@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -235,10 +236,7 @@ function MuralCompletoPageContent() {
   const pathname = usePathname();
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
-
-  const childIdFromParams = searchParams.get('childId');
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
+  const { currentContext, availableContexts, setCurrentContext, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
 
   // Primary data states
   const [child, setChild] = useState<ChildProfile | null>(null);
@@ -260,11 +258,10 @@ function MuralCompletoPageContent() {
   // Separate loading state for secondary data (missions, rewards, etc.)
   const [isLoadingSecondaryData, setIsLoadingSecondaryData] = useState(true);
 
-
   const activeTab = searchParams.get('tab') || 'overview';
 
   const handleTabChange = (newTab: string) => {
-    const current = new URLSearchParams(searchParams.toString());
+    const current = new URLSearchParams(Array.from(searchParams.entries()));
     current.set('tab', newTab);
     router.replace(`${pathname}?${current.toString()}`, { scroll: false });
   };
@@ -370,17 +367,18 @@ function MuralCompletoPageContent() {
                 setIsLoadingSecondaryData(false);
                 return;
             }
-
-            const currentChildIsValid = profilesInContext.some(c => c.id === childIdFromParams);
-            const targetChildId = currentChildIsValid ? childIdFromParams : profilesInContext[0].id;
             
-            setSelectedChildId(targetChildId);
-
-            if (targetChildId) {
-                await fetchDataForChild(targetChildId);
-            } else {
-                setChild(null);
+            const targetChildId = selectedChildId && profilesInContext.some(c => c.id === selectedChildId)
+                ? selectedChildId
+                : profilesInContext[0].id;
+            
+            // Set the child ID in context if it changed
+            if (targetChildId !== selectedChildId) {
+                setSelectedChildId(targetChildId);
             }
+
+            await fetchDataForChild(targetChildId);
+            
         } catch (error) {
             console.error("Error initializing context:", error);
             toast({ title: "Erro ao carregar heróis", variant: "destructive" });
@@ -390,12 +388,12 @@ function MuralCompletoPageContent() {
     };
     
     initializeContext();
-  }, [authLoading, isFamilyLoading, user, currentContext, childIdFromParams, fetchDataForChild, toast]);
+  }, [authLoading, isFamilyLoading, user, currentContext, selectedChildId, fetchDataForChild, toast, setSelectedChildId]);
 
   const handleHeroSelectionChange = (newChildId: string | null) => {
     if (newChildId) {
         setSelectedChildId(newChildId);
-        router.push(`${pathname}?childId=${newChildId}`, { scroll: false });
+        // The useEffect above will trigger the data refetch for the new child
     }
   };
 
@@ -1269,20 +1267,20 @@ function MuralCompletoPageContent() {
                         className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
                     >
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="all" id={`instance-filter-all-${childIdFromParams}`} />
-                        <Label htmlFor={`instance-filter-all-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                        <RadioGroupItem value="all" id={`instance-filter-all-${selectedChildId}`} />
+                        <Label htmlFor={`instance-filter-all-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="active" id={`instance-filter-active-${childIdFromParams}`} />
-                        <Label htmlFor={`instance-filter-active-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
+                        <RadioGroupItem value="active" id={`instance-filter-active-${selectedChildId}`} />
+                        <Label htmlFor={`instance-filter-active-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${childIdFromParams}`} />
-                        <Label htmlFor={`instance-filter-redeemed-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
+                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${selectedChildId}`} />
+                        <Label htmlFor={`instance-filter-redeemed-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
                         </div>
                         <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${childIdFromParams}`} />
-                        <Label htmlFor={`instance-filter-disabled-${childIdFromParams}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
+                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${selectedChildId}`} />
+                        <Label htmlFor={`instance-filter-disabled-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
                         </div>
                     </RadioGroup>
                     </div>

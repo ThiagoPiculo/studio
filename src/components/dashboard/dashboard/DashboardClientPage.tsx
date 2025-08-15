@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from 'react';
@@ -15,6 +16,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { PopoverClose } from '@radix-ui/react-popover';
 import { Button } from '@/components/ui/button';
 import { RecentActivities } from './RecentActivities';
+import { useFamily } from '@/contexts/FamilyContext';
 
 
 interface DashboardClientPageProps {
@@ -27,9 +29,7 @@ interface DashboardClientPageProps {
 
 export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
   const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
-  const searchParams = useSearchParams();
-  const childIdFromParams = searchParams.get('childId');
-  const [selectedChildId, setSelectedChildId] = useState<string | null>(childIdFromParams);
+  const { selectedChildId, setSelectedChildId } = useFamily();
 
   const filteredChildren = useMemo(() => {
     if (!selectedChildId) return allChildren;

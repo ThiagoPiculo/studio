@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
@@ -41,7 +42,7 @@ function HeroesPageContent() {
         if (!authLoading && !isFamilyLoading) {
             fetchData();
         }
-    }, [authLoading, isFamilyLoading, fetchData]);
+    }, [authLoading, isFamilyLoading, fetchData, currentContext]);
 
 
     if (authLoading || isFamilyLoading || children === null || missions === null) {

@@ -45,7 +45,7 @@ function ProgressosPageContent() {
         if (!authLoading && !isFamilyLoading) {
             fetchData();
         }
-    }, [authLoading, isFamilyLoading, fetchData]);
+    }, [authLoading, isFamilyLoading, fetchData, currentContext]);
 
     if (authLoading || isFamilyLoading || !initialData) {
         return <Loading />;

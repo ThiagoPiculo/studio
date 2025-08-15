@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -15,6 +16,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator
 } from "@/components/ui/dropdown-menu";
+import { useFamily } from "@/contexts/FamilyContext";
+import { useEffect } from "react";
 
 interface HeroSelectorProps {
   heroes: ChildProfile[];
@@ -26,6 +29,18 @@ interface HeroSelectorProps {
 export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOption = false }: HeroSelectorProps) {
 
   const selectedHero = heroes.find(h => h.id === selectedHeroId);
+  const { currentContext } = useFamily();
+
+  // Effect to deselect hero if they don't belong to the current context
+  useEffect(() => {
+      if (selectedHeroId) {
+          const heroBelongsToContext = heroes.some(h => h.id === selectedHeroId);
+          if (!heroBelongsToContext) {
+              onSelectHero(null);
+          }
+      }
+  }, [heroes, selectedHeroId, onSelectHero, currentContext]);
+
 
   return (
      <DropdownMenu>

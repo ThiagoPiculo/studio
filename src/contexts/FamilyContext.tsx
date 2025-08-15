@@ -20,10 +20,46 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
-  const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>(''); // Start with no context selected
+  const [currentContext, _setCurrentContext] = React.useState<'my-space' | string>('');
+  const [selectedChildId, _setSelectedChildId] = React.useState<string | null>(null);
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isContextSelected, setIsContextSelected] = useState(false);
+
+  // Load from session storage on initial mount
+  useEffect(() => {
+    try {
+      const storedContext = sessionStorage.getItem('currentContext');
+      const storedChildId = sessionStorage.getItem('selectedChildId');
+      if (storedContext) {
+        _setCurrentContext(storedContext);
+        setIsContextSelected(true);
+      }
+       if (storedChildId) {
+        _setSelectedChildId(storedChildId);
+      }
+    } catch (e) {
+      console.error("Could not access session storage:", e);
+    }
+  }, []);
+  
+  const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
+    _setCurrentContext(contextId);
+    _setSelectedChildId(null); // Reset child when context changes
+    sessionStorage.setItem('currentContext', contextId);
+    sessionStorage.removeItem('selectedChildId'); // Clear child selection
+    setIsContextSelected(true);
+  }, []);
+
+  const setSelectedChildId = useCallback((childId: string | null) => {
+    _setSelectedChildId(childId);
+    if (childId) {
+        sessionStorage.setItem('selectedChildId', childId);
+    } else {
+        sessionStorage.removeItem('selectedChildId');
+    }
+  }, []);
+
 
   useEffect(() => {
     if (authLoading) {
@@ -45,8 +81,9 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            setCurrentContextState('my-space'); // Default for users with only one space
-            setIsContextSelected(true); // It's their only context, so it's "selected"
+            if (!sessionStorage.getItem('currentContext')) {
+                setCurrentContext('my-space');
+            }
             setIsLoading(false);
             return;
         }
@@ -69,10 +106,11 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            // Logic to persist or reset context selection could go here
-            // For now, we reset to force selection if there's more than one option.
-            setCurrentContextState('');
-            setIsContextSelected(false);
+            const storedContext = sessionStorage.getItem('currentContext');
+            if (!storedContext || !allContexts.some(c => c.id === storedContext)) {
+                 setCurrentContextState('');
+                 setIsContextSelected(false);
+            }
             setIsLoading(false);
 
         }, (error) => {
@@ -98,12 +136,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading]);
-
-  const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
-    setCurrentContextState(contextId);
-    setIsContextSelected(true);
-  }, []);
+  }, [user, authLoading, setCurrentContext]);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
@@ -116,7 +149,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   }, [currentContext, availableContexts]);
 
   return (
-    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole, isContextSelected }}>
+    <FamilyContext.Provider value={{ currentContext, setCurrentContext, availableContexts, setAvailableContexts, isLoading, currentRole, isContextSelected, selectedChildId, setSelectedChildId }}>
       {children}
     </FamilyContext.Provider>
   );
