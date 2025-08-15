@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, CheckSquare } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -183,6 +183,11 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                         return acc;
                     }, { stars: 0, xp: 0 });
 
+                    const isExpanded = expandedChildId === child.id;
+                    const displayMissions = isExpanded ? todaysMissions : todaysMissions.slice(0, 5);
+                    const remainingCount = todaysMissions.length - 5;
+
+
                     return (
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                             <CardHeader className="p-4">
@@ -241,45 +246,53 @@ export function HeroesSummary({ children, missionInstances: initialMissionInstan
                                             Rotina Escolar
                                         </TabsTrigger>
                                     </TabsList>
-                                    <TabsContent value="today" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
+                                    <TabsContent value="today" className="mt-2 space-y-1.5 min-h-[145px] pr-2">
                                         {todaysMissions.length === 0 ? (
                                             <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">Nenhuma missão para hoje.</div>
                                         ) : (
-                                            todaysMissions.map(m => {
-                                                const isCompleted = isMissionCompletedForDate(m, today);
-                                                const dateForTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate);
-                                                const timeString = dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : '';
+                                            <>
+                                                {displayMissions.map(m => {
+                                                    const isCompleted = isMissionCompletedForDate(m, today);
+                                                    const dateForTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate);
+                                                    const timeString = dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : '';
 
-                                                return (
-                                                     <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                        <div className="text-muted-foreground font-mono text-xs w-10 text-center">{timeString}</div>
-                                                        <span className="text-xl shrink-0 w-5 text-center">{m.emoji || '🎯'}</span>
-                                                        <span className={cn("truncate font-medium flex-grow", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
-                                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(m, today, isCompleted)} disabled={processingMissionId === m.id}>
-                                                            {processingMissionId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
-                                                        </Button>
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                    <MoreVertical className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
-                                                                    Ver na Agenda
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${m.templateId}`)}>
-                                                                    Editar Missão
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuSeparator />
-                                                                <DropdownMenuItem onSelect={() => setMissionToDelete(m)} className="text-destructive">
-                                                                    Remover Atribuição
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                )
-                                            })
+                                                    return (
+                                                        <div key={m.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
+                                                            <div className="text-muted-foreground font-mono text-xs w-10 text-center">{timeString}</div>
+                                                            <span className="text-xl shrink-0 w-5 text-center">{m.emoji || '🎯'}</span>
+                                                            <span className={cn("truncate font-medium flex-grow", isCompleted && "line-through text-muted-foreground")}>{m.title}</span>
+                                                             <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(m, today, isCompleted)} disabled={processingMissionId === m.id}>
+                                                                {processingMissionId === m.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
+                                                            </Button>
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                        <MoreVertical className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end">
+                                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                                        Ver na Agenda
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${m.templateId}`)}>
+                                                                        Editar Missão
+                                                                    </DropdownMenuItem>
+                                                                    <DropdownMenuSeparator />
+                                                                    <DropdownMenuItem onSelect={() => setMissionToDelete(m)} className="text-destructive">
+                                                                        Remover Atribuição
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    )
+                                                })}
+                                                {remainingCount > 0 && (
+                                                    <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => setExpandedChildId(isExpanded ? null : child.id)}>
+                                                        {isExpanded ? "Mostrar menos" : `Ver +${remainingCount} missões`}
+                                                        {isExpanded ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
+                                                    </Button>
+                                                )}
+                                            </>
                                         )}
                                     </TabsContent>
                                     <TabsContent value="schedule" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
