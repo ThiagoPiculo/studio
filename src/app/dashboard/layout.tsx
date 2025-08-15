@@ -1,3 +1,4 @@
+
 "use client";
 import type { ReactNode } from 'react';
 import React, from 'react';
@@ -18,6 +19,7 @@ import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
 import { Popover, PopoverTrigger, PopoverContent, PopoverClose } from '@/components/ui/popover';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -101,7 +103,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }
 
-  const currentHeader = headerContent[pathname as keyof typeof headerContent];
+  const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
 
   return (
     <>
@@ -118,7 +120,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         <span className="sr-only">Voltar</span>
                       </Button>
                   )}
-                  {currentHeader ? (
+                  {isClient && currentHeader ? (
                     <div className="flex items-center gap-2">
                         <currentHeader.icon className="h-8 w-8 text-primary" />
                         <h1 className="text-xl font-bold font-headline">{currentHeader.title}</h1>
@@ -139,8 +141,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             </PopoverContent>
                         </Popover>
                     </div>
-                  ) : (
+                  ) : isClient && !currentHeader ? (
                       <Breadcrumbs />
+                  ) : (
+                    <Skeleton className="h-8 w-48" />
                   )}
                 </div>
                 <div className="flex items-center gap-2">
