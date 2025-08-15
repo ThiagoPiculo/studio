@@ -21,7 +21,7 @@ import { Skeleton } from '../ui/skeleton';
 
 
 export function FamilyContextSwitcher() {
-  const { currentContext, setCurrentContext, availableContexts, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, setCurrentContext, availableContexts, isLoading: isFamilyLoading, isContextSelected } = useFamily();
   const { user } = useAuth();
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
@@ -108,7 +108,7 @@ export function FamilyContextSwitcher() {
   }
 
   const getDisplayName = (context?: { id: string; name: string }) => {
-    if (!context) return "Carregando...";
+    if (!context) return "Ver Espaços e Alianças";
     if (context.id === 'my-space') return context.name;
     return `Aliança: ${context.name}`;
   }
@@ -128,7 +128,7 @@ export function FamilyContextSwitcher() {
                 <div className="flex items-center -space-x-2 min-w-0">
                     {isLoadingChildren ? (
                         <Skeleton className="h-7 w-20 rounded-full" />
-                    ) : currentChildren.length > 0 ? (
+                    ) : isContextSelected && currentChildren.length > 0 ? (
                         <>
                             {currentChildren.slice(0, visibleAvatars).map(child => (
                                 <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
@@ -143,7 +143,7 @@ export function FamilyContextSwitcher() {
                             )}
                         </>
                     ) : (
-                        <span className="text-xs text-muted-foreground italic pr-1">Nenhum Mini Heroi</span>
+                        isContextSelected && <span className="text-xs text-muted-foreground italic pr-1">Nenhum Mini Heroi</span>
                     )}
                 </div>
                 <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />

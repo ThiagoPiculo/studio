@@ -21,7 +21,7 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
   const [currentContext, setCurrentContextState] = React.useState<'my-space' | string>(''); // Start with no context selected
-  const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([{ id: 'my-space', name: 'Cuidar Solo', role: 'Personal' }]);
+  const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isContextSelected, setIsContextSelected] = useState(false);
 
