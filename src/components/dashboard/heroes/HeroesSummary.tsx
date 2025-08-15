@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -206,11 +206,27 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     <Badge variant="secondary" className="font-semibold text-xs">
                                         NÍVEL {child.level}
                                     </Badge>
-                                    <Link href={`/dashboard/mural?childId=${child.id}`} passHref>
-                                        <Button variant="link" className="p-0 h-auto text-sm">
-                                            Painel de Progresso <ArrowRight className="ml-1 h-3 w-3" />
-                                        </Button>
-                                    </Link>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreVertical className="h-4 w-4" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}`)}>
+                                                <Contact className="mr-2 h-4 w-4" />
+                                                <span>Perfil Completo</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                <CalendarDays className="mr-2 h-4 w-4" />
+                                                <span>Rotina de Missões</span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
+                                                <NotebookPen className="mr-2 h-4 w-4" />
+                                                <span>Rotina Escolar</span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
                                 <div className="flex items-center gap-4 mt-2">
                                     <Avatar className="h-16 w-16 text-2xl ring-4 ring-offset-2 ring-offset-background" style={{ '--ring-color': child.color } as React.CSSProperties}>
