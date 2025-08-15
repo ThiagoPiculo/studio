@@ -2,6 +2,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -13,7 +14,8 @@ import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide'
 
 function ProgressosPageContent() {
     const { user, loading: authLoading } = useAuth();
-    const { currentContext, isLoading: isFamilyLoading } = useFamily();
+    const { currentContext, isLoading: isFamilyLoading, setSelectedChildId } = useFamily();
+    const searchParams = useSearchParams();
     
     const [initialData, setInitialData] = useState<{
         children: ChildProfile[];
@@ -35,11 +37,17 @@ function ProgressosPageContent() {
                 getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
             ]);
             setInitialData({ children, missions, rewards });
+
+            const childIdFromUrl = searchParams.get('childId');
+            if (childIdFromUrl && children.some(c => c.id === childIdFromUrl)) {
+              setSelectedChildId(childIdFromUrl);
+            }
+
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
             setInitialData({ children: [], missions: [], rewards: [] });
         }
-    }, [user, currentContext]);
+    }, [user, currentContext, searchParams, setSelectedChildId]);
   
     useEffect(() => {
         if (!authLoading && !isFamilyLoading) {
