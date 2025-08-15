@@ -23,7 +23,7 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Link from 'next/link';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
-import { CalendarDays } from 'lucide-react';
+import { CalendarDays, NotebookPen } from 'lucide-react';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -136,11 +136,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <p className="text-sm text-muted-foreground">Esta é a sua central de comando para visualizar e gerenciar o dia a dia dos seus heróis. Agende missões recorrentes ou únicas e acompanhe o que precisa ser feito a cada dia. Use os filtros para alternar entre as visualizações de dia, semana ou mês.</p>
             )
         }
+    },
+    '/dashboard/school-schedule': {
+        title: 'Rotina Escolar',
+        icon: NotebookPen,
+        help: {
+            title: 'O Quadro de Horários',
+            content: (
+                <p className="text-sm text-muted-foreground">Use esta grade para visualizar a rotina escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
+            )
+        }
     }
   }
 
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
-  const showHeroSelector = isClient && (pathname === '/dashboard/heroes' || pathname === '/dashboard/mural' || pathname === '/dashboard/progressos' || pathname === '/dashboard/agenda');
+  const showHeroSelector = isClient && ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname);
+
 
   return (
     <>
@@ -191,25 +202,16 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               
               {showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2 border-b">
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                    <FamilyContextSwitcher />
-                    {isClient && (
-                      <div className="w-full sm:w-auto">
-                         <div className="hidden sm:block">
-                            {showHeroSelector && (
+                   {isClient && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <FamilyContextSwitcher />
+                        {showHeroSelector && (
+                            <div className="w-full sm:w-auto">
                                 <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                            )}
-                         </div>
-                         <div className="flex sm:hidden items-center gap-2">
-                            {showHeroSelector && (
-                                <div className="flex-grow">
-                                  <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                                </div>
-                            )}
-                         </div>
-                       </div>
-                     )}
-                  </div>
+                            </div>
+                        )}
+                      </div>
+                    )}
                 </div>
               )}
 

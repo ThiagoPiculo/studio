@@ -13,7 +13,6 @@ import { allWeekdays, weekdayLabels } from '@/lib/types';
 import { getDayToWeekday, parseTime, format as formatTime } from '@/lib/calendar-utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { NotebookPen, User, PlusCircle, Trash2, Edit, AlertCircle, Loader2, Settings2, Clock, AlertTriangle, Target, FileText, HelpCircle } from 'lucide-react';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
 import { cn } from '@/lib/utils';
@@ -48,15 +47,13 @@ const subjectColors = [
 
 function SchoolSchedulePageClient() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, currentRole, isLoading: isFamilyLoading, childrenInContext, selectedChildId, setSelectedChildId } = useFamily();
   const { toast } = useToast();
   const isMobile = useIsMobile();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [isLoadingData, setIsLoadingData] = useState(true);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
   const [scheduleEntries, setScheduleEntries] = useState<SchoolScheduleEntry[]>([]);
-  const [selectedChildId, setSelectedChildId] = useState<string>('');
   
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [isShiftDialogOpen, setIsShiftDialogOpen] = useState(false);
@@ -70,7 +67,7 @@ function SchoolSchedulePageClient() {
   const [visibleWeekdays, setVisibleWeekdays] = useState<Weekday[]>([]);
   const [useColors, setUseColors] = useState<boolean>(true);
 
-  const selectedChild = useMemo(() => children.find(c => c.id === selectedChildId), [children, selectedChildId]);
+  const selectedChild = useMemo(() => childrenInContext.find(c => c.id === selectedChildId), [childrenInContext, selectedChildId]);
   
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -94,30 +91,15 @@ function SchoolSchedulePageClient() {
     setIsLoadingData(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [fetchedChildren, fetchedEntries] = await Promise.all([
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getSchoolScheduleForContext(user.uid, familyIdToQuery),
-        ]);
-        
-        setChildren(fetchedChildren);
+        const fetchedEntries = await getSchoolScheduleForContext(user.uid, familyIdToQuery);
         setScheduleEntries(fetchedEntries);
-
-        if (fetchedChildren.length > 0) {
-            const currentSelectedStillExists = fetchedChildren.some(c => c.id === selectedChildId);
-            if (!currentSelectedStillExists) {
-                setSelectedChildId(fetchedChildren[0].id);
-            }
-        } else {
-            setSelectedChildId('');
-        }
-
     } catch (error) {
         console.error("Error refetching schedule data:", error);
         toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
     } finally {
         setIsLoadingData(false);
     }
-  }, [user, currentContext, toast, isFamilyLoading, selectedChildId]);
+  }, [user, currentContext, toast, isFamilyLoading]);
 
   const handleSaveEntry = (savedEntryOrEntries: SchoolScheduleEntry | SchoolScheduleEntry[]) => {
       const newEntries = Array.isArray(savedEntryOrEntries) ? savedEntryOrEntries : [savedEntryOrEntries];
@@ -133,8 +115,11 @@ function SchoolSchedulePageClient() {
   useEffect(() => {
     if(!authLoading && !isFamilyLoading) {
         fetchData();
+        if (childrenInContext.length > 0 && !selectedChildId) {
+            setSelectedChildId(childrenInContext[0].id);
+        }
     }
-  }, [authLoading, isFamilyLoading, currentContext, fetchData]);
+  }, [authLoading, isFamilyLoading, currentContext, fetchData, childrenInContext, selectedChildId, setSelectedChildId]);
 
 
   useEffect(() => {
@@ -163,18 +148,17 @@ function SchoolSchedulePageClient() {
 
   useEffect(() => {
     const newSlots: string[] = [];
-    const child = children.find(c => c.id === selectedChildId);
-
+    
     let startHour = 7;
     let endHour = 19;
     
-    if (child?.schoolShiftStart && child?.schoolShiftEnd && child.schoolShift !== 'not_applicable') {
-        startHour = parseInt(child.schoolShiftStart.split(':')[0], 10);
-        const endHourRaw = parseInt(child.schoolShiftEnd.split(':')[0], 10);
-        const endMinutesRaw = parseInt(child.schoolShiftEnd.split(':')[1], 10);
+    if (selectedChild?.schoolShiftStart && selectedChild?.schoolShiftEnd && selectedChild.schoolShift !== 'not_applicable') {
+        startHour = parseInt(selectedChild.schoolShiftStart.split(':')[0], 10);
+        const endHourRaw = parseInt(selectedChild.schoolShiftEnd.split(':')[0], 10);
+        const endMinutesRaw = parseInt(selectedChild.schoolShiftEnd.split(':')[1], 10);
         endHour = endMinutesRaw > 0 ? endHourRaw + 1 : endHourRaw;
     } else {
-        switch (child?.schoolShift) {
+        switch (selectedChild?.schoolShift) {
             case 'morning': startHour = 7; endHour = 13; break;
             case 'afternoon': startHour = 13; endHour = 19; break;
             case 'full_time': case 'not_applicable': default: startHour = 7; endHour = 21; break;
@@ -187,7 +171,7 @@ function SchoolSchedulePageClient() {
     }
 
     setTimeSlots(newSlots);
-  }, [selectedChildId, children]);
+  }, [selectedChild]);
   
   const handleScrollToToday = () => {
     if (scrollRef.current) {
@@ -213,21 +197,20 @@ function SchoolSchedulePageClient() {
         }, 100);
       }
     }
-  }, [isMobile, visibleWeekdays, children, selectedChildId]);
+  }, [isMobile, visibleWeekdays, selectedChild]);
   
   const { inBoundsSchedule, outOfBoundsSchedule } = useMemo(() => {
     const inBounds: SchoolScheduleEntry[] = [];
     const outOfBounds: SchoolScheduleEntry[] = [];
     
-    const child = children.find(c => c.id === selectedChildId);
     const childEntries = scheduleEntries.filter(entry => entry.childId === selectedChildId).sort((a,b) => a.startTime.localeCompare(b.startTime));
 
-    if (!child || !child.schoolShiftStart || !child.schoolShiftEnd || child.schoolShift === 'not_applicable') {
+    if (!selectedChild || !selectedChild.schoolShiftStart || !selectedChild.schoolShiftEnd || selectedChild.schoolShift === 'not_applicable') {
         return { inBoundsSchedule: childEntries, outOfBoundsSchedule: [] };
     }
     
-    const shiftStartMinutes = parseTime(child.schoolShiftStart);
-    const shiftEndMinutes = parseTime(child.schoolShiftEnd);
+    const shiftStartMinutes = parseTime(selectedChild.schoolShiftStart);
+    const shiftEndMinutes = parseTime(selectedChild.schoolShiftEnd);
 
     childEntries.forEach(entry => {
         const entryStartMinutes = parseTime(entry.startTime);
@@ -240,7 +223,7 @@ function SchoolSchedulePageClient() {
     });
 
     return { inBoundsSchedule: inBounds, outOfBoundsSchedule: outOfBounds.sort((a,b) => a.startTime.localeCompare(b.startTime)) };
-  }, [scheduleEntries, selectedChildId, children]);
+  }, [scheduleEntries, selectedChildId, selectedChild]);
 
   const scheduleLayout = useMemo(() => {
     const layoutMap = new Map<string, { width: string; left: string }>();
@@ -513,95 +496,69 @@ function SchoolSchedulePageClient() {
 
   return (
     <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-                <NotebookPen className="h-8 w-8 text-primary" />
-                <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Agenda Escolar</h2>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-72">
-                        <div className="space-y-3">
-                            <p className="text-sm">Use esta grade para visualizar a rotina escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
-                            <PopoverClose asChild>
-                                <Button className="w-full">Entendi 👍</Button>
-                            </PopoverClose>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
-             <div className="flex w-full flex-row items-center justify-end gap-2">
-                {children.length > 1 && (
-                    <div className="flex-grow sm:flex-grow-0">
-                        <HeroSelector
-                          heroes={children}
-                          selectedHeroId={selectedChildId}
-                          onSelectHero={setSelectedChildId}
-                          showAllOption={false}
-                        />
-                    </div>
-                )}
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="outline" size="icon">
-                            <Settings2 className="h-4 w-4" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-4">
-                        <div className="grid gap-4">
-                          <div className="space-y-2">
-                              <Label className="font-semibold">Exibir Dias da Semana</Label>
-                                <div className="space-y-2">
-                                  {allWeekdays.map(day => (
-                                    <div key={day} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`day-select-${day}`}
-                                        checked={visibleWeekdays.includes(day)}
-                                        onCheckedChange={(checked) => {
-                                          const newDays = checked
-                                            ? [...visibleWeekdays, day]
-                                            : visibleWeekdays.filter(d => d !== day);
-                                          handleVisibleDaysChange(newDays);
-                                        }}
-                                      />
-                                      <Label htmlFor={`day-select-${day}`} className="font-normal cursor-pointer w-full">
-                                        {weekdayLabels[day].long}
-                                      </Label>
-                                    </div>
-                                  ))}
-                                </div>
-                          </div>
-                          {selectedChildId && <Separator />}
-                          {selectedChildId && (
+        <Card>
+             <CardHeader>
+                 <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="outline" size="icon">
+                                <Settings2 className="h-4 w-4" />
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-4">
+                            <div className="grid gap-4">
                               <div className="space-y-2">
-                                  <Label className="font-semibold">Turno Escolar</Label>
-                                  <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
-                                      <Edit className="mr-2 h-4 w-4" />
-                                      Editar Turno do Herói
-                                  </Button>
+                                  <Label className="font-semibold">Exibir Dias da Semana</Label>
+                                    <div className="space-y-2">
+                                      {allWeekdays.map(day => (
+                                        <div key={day} className="flex items-center space-x-2">
+                                          <Checkbox
+                                            id={`day-select-${day}`}
+                                            checked={visibleWeekdays.includes(day)}
+                                            onCheckedChange={(checked) => {
+                                              const newDays = checked
+                                                ? [...visibleWeekdays, day]
+                                                : visibleWeekdays.filter(d => d !== day);
+                                              handleVisibleDaysChange(newDays);
+                                            }}
+                                          />
+                                          <Label htmlFor={`day-select-${day}`} className="font-normal cursor-pointer w-full">
+                                            {weekdayLabels[day].long}
+                                          </Label>
+                                        </div>
+                                      ))}
+                                    </div>
                               </div>
-                          )}
-                          <Separator />
-                          <div className="flex items-center justify-between">
-                            <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
-                            <Switch
-                                id="use-colors-switch"
-                                checked={useColors}
-                                onCheckedChange={setUseColors}
-                            />
+                              {selectedChildId && <Separator />}
+                              {selectedChildId && (
+                                  <div className="space-y-2">
+                                      <Label className="font-semibold">Turno Escolar</Label>
+                                      <Button onClick={() => setIsShiftDialogOpen(true)} variant="outline" size="sm" className="w-full justify-start" disabled={!canEdit}>
+                                          <Edit className="mr-2 h-4 w-4" />
+                                          Editar Turno do Herói
+                                      </Button>
+                                  </div>
+                              )}
+                              <Separator />
+                              <div className="flex items-center justify-between">
+                                <Label htmlFor="use-colors-switch" className="font-semibold pr-4">Usar Cores nas Matérias</Label>
+                                <Switch
+                                    id="use-colors-switch"
+                                    checked={useColors}
+                                    onCheckedChange={setUseColors}
+                                />
+                                </div>
                             </div>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-                <Button onClick={handleAddClick} disabled={!selectedChildId || !canEdit}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Matéria
-                </Button>
-            </div>
-        </div>
+                        </PopoverContent>
+                    </Popover>
+                    <Button onClick={handleAddClick} disabled={!selectedChildId || !canEdit}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Matéria
+                    </Button>
+                </div>
+            </CardHeader>
+        </Card>
+
 
       {outOfBoundsSchedule.length > 0 && (
         <Card className="border-amber-500 bg-amber-500/5">
@@ -631,7 +588,7 @@ function SchoolSchedulePageClient() {
         </Card>
       )}
 
-      {children.length === 0 ? (
+      {childrenInContext.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground p-4">
           <AlertCircle className="h-12 w-12 mx-auto mb-4 text-primary" />
           <p className="font-semibold">Nenhum Mini Heroi encontrado.</p>
