@@ -46,17 +46,23 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const setCurrentContext = useCallback((contextId: 'my-space' | string) => {
     _setCurrentContext(contextId);
     _setSelectedChildId(null); // Reset child when context changes
-    sessionStorage.setItem('currentContext', contextId);
-    sessionStorage.removeItem('selectedChildId'); // Clear child selection
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+        sessionStorage.setItem('currentContext', contextId);
+        sessionStorage.removeItem('selectedChildId'); // Clear child selection
+    }
     setIsContextSelected(true);
   }, []);
 
   const setSelectedChildId = useCallback((childId: string | null) => {
     _setSelectedChildId(childId);
     if (childId) {
-        sessionStorage.setItem('selectedChildId', childId);
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.setItem('selectedChildId', childId);
+        }
     } else {
-        sessionStorage.removeItem('selectedChildId');
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.removeItem('selectedChildId');
+        }
     }
   }, []);
 
@@ -108,7 +114,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
             const storedContext = sessionStorage.getItem('currentContext');
             if (!storedContext || !allContexts.some(c => c.id === storedContext)) {
-                 setCurrentContextState('');
+                 setCurrentContext('');
                  setIsContextSelected(false);
             }
             setIsLoading(false);
@@ -126,7 +132,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       });
       
     } else { // No user
-      setCurrentContextState('');
+      setCurrentContext('');
       setAvailableContextsState([]);
       setIsLoading(false);
       setIsContextSelected(false);
