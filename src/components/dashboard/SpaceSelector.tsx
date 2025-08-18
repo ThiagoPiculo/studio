@@ -109,7 +109,7 @@ export function SpaceSelector() {
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-2xl">
                         <Users className="h-6 w-6 text-primary" />
-                        Escolha o Espaço do Mini Heroi
+                        Escolha o Espaço de Início
                     </CardTitle>
                     <CardDescription>Acesse um espaço para ver a rotina e o progresso dos seus heróis.</CardDescription>
                 </CardHeader>
