@@ -63,7 +63,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances'].includes(pathname);
+  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente'].includes(pathname) &&
+                               !pathname.startsWith('/dashboard/missions/edit') &&
+                               !pathname.startsWith('/dashboard/rewards/edit-template') &&
+                               !pathname.startsWith('/dashboard/missions/new');
 
   const headerContent = {
     '/dashboard': {
@@ -202,8 +205,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               
               {isClient && showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                        <FamilyContextSwitcher />
+                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                         <FamilyContextSwitcher />
                         {showHeroSelector && (
                             <div className="w-full sm:w-auto">
                                 <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />

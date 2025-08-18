@@ -33,11 +33,11 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     try {
       const storedContext = sessionStorage.getItem('currentContext');
-      const storedChildId = sessionStorage.getItem('selectedChildId');
       if (storedContext) {
         _setCurrentContext(storedContext);
         setIsContextSelected(true);
       }
+       const storedChildId = sessionStorage.getItem('selectedChildId');
        if (storedChildId) {
         _setSelectedChildId(storedChildId);
       }
@@ -90,6 +90,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
+            // If no context is stored, default to my-space for existing users
             if (!sessionStorage.getItem('currentContext')) {
                 setCurrentContext('my-space');
             }
@@ -117,8 +118,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
             const storedContext = sessionStorage.getItem('currentContext');
             if (!storedContext || !allContexts.some(c => c.id === storedContext)) {
-                 setCurrentContext('');
-                 setIsContextSelected(false);
+                 setCurrentContext('my-space');
             }
             setIsLoading(false);
 
@@ -149,10 +149,18 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
   // New listener for children in the current context
   useEffect(() => {
-    if (!user || !currentContext) {
+    if (authLoading || !currentContext) {
       setChildrenInContext([]);
+      setIsLoadingChildren(false);
       return;
     }
+    
+    if (!user) {
+       setChildrenInContext([]);
+       setIsLoadingChildren(false);
+       return;
+    }
+
     setIsLoadingChildren(true);
     
     let q;
@@ -168,11 +176,12 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       setIsLoadingChildren(false);
     }, (error) => {
         console.error("Error fetching children for context:", error);
+        setChildrenInContext([]);
         setIsLoadingChildren(false);
     });
 
     return () => unsubscribe();
-  }, [user, currentContext]);
+  }, [user, authLoading, currentContext]);
 
   const setAvailableContexts = (contexts: EnrichedContext[]) => {
     setAvailableContextsState(contexts);
@@ -189,7 +198,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     setCurrentContext,
     availableContexts,
     setAvailableContexts,
-    isLoading: isLoading || isLoadingChildren, // Combine loading states
+    isLoading: isLoading || isLoadingChildren || authLoading, // Combine loading states
     currentRole,
     isContextSelected,
     selectedChildId,
