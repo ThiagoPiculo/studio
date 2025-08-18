@@ -74,7 +74,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: Languages,
     description: 'Missões para incentivar o aprendizado e a prática de novas línguas, abrindo as portas para novas culturas.',
     items: [
-      { title: 'Aula de Inglês', emoji: '🇺🇸', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
+      { title: 'Aula de Inglês', emoji: '🇬🇧', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Aula de Espanhol', emoji: '🇪🇸', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Aula de Francês', emoji: '🇫🇷', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Aula de Alemão', emoji: '🇩🇪', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
