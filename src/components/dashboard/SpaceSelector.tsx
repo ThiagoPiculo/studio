@@ -81,25 +81,26 @@ export function SpaceSelector() {
         fetchSpaceDetails();
     }, [user, authLoading, familyLoading, availableContexts, router]);
     
+    const isSoloUser = availableContexts.length === 1 && totalChildrenCount > 0;
+
+    useEffect(() => {
+        if (isSoloUser) {
+            router.replace('/dashboard/heroes');
+        }
+    }, [isSoloUser, router]);
+
     const handleAccessSpace = (contextId: string) => {
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
 
-    if (authLoading || familyLoading || isLoadingSpaces) {
+    if (authLoading || familyLoading || isLoadingSpaces || isSoloUser) {
         return <Loading />;
     }
     
     const isNewUser = totalChildrenCount === 0 && availableContexts.length <= 1;
     if (isNewUser) {
         return <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />;
-    }
-
-    const isSoloUser = availableContexts.length === 1 && totalChildrenCount > 0;
-    if (isSoloUser) {
-        // Automatically redirect solo users to their main dashboard
-        router.replace('/dashboard/heroes');
-        return <Loading />; // Show loading while redirecting
     }
     
     // Default case: User has multiple contexts (alliances or solo + alliance)
