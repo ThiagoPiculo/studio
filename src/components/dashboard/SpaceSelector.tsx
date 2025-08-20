@@ -81,29 +81,36 @@ export function SpaceSelector() {
         fetchSpaceDetails();
     }, [user, authLoading, familyLoading, availableContexts, router]);
     
-    const isSoloUser = availableContexts.length === 1 && totalChildrenCount > 0;
-
+    // This effect handles the smart redirection logic
     useEffect(() => {
-        if (isSoloUser) {
+        if (isLoadingSpaces || authLoading || familyLoading) {
+            return;
+        }
+    
+        const isNewUser = totalChildrenCount === 0 && availableContexts.length <= 1;
+        const isSoloUserWithChildren = totalChildrenCount > 0 && availableContexts.length === 1;
+        const hasAlliances = availableContexts.length > 1;
+
+        if (isNewUser) {
+            router.replace('/dashboard/assistente');
+        } else if (isSoloUserWithChildren && !hasAlliances) {
             router.replace('/dashboard/heroes');
         }
-    }, [isSoloUser, router]);
+        // If the user has alliances, we do nothing and let the component render the space selection.
+
+    }, [isLoadingSpaces, authLoading, familyLoading, totalChildrenCount, availableContexts.length, router]);
+
 
     const handleAccessSpace = (contextId: string) => {
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
 
-    if (authLoading || familyLoading || isLoadingSpaces || isSoloUser) {
+    if (authLoading || familyLoading || isLoadingSpaces) {
         return <Loading />;
     }
     
-    const isNewUser = totalChildrenCount === 0 && availableContexts.length <= 1;
-    if (isNewUser) {
-        return <GettingStartedGuide hasChildren={false} hasMissions={false} hasRewards={false} />;
-    }
-    
-    // Default case: User has multiple contexts (alliances or solo + alliance)
+    // This part will only be rendered for users with multiple contexts (alliances)
     return (
         <div className="space-y-6">
             <Card>
