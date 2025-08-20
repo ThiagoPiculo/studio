@@ -30,8 +30,8 @@ export function SpaceSelector() {
     const router = useRouter();
 
     const [spaces, setSpaces] = useState<SpaceDetails[]>([]);
-    const [isLoadingSpaces, setIsLoadingSpaces] = useState(true);
-    const [totalChildrenCount, setTotalChildrenCount] = useState(0);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+    const [shouldRenderSpaces, setShouldRenderSpaces] = useState(false);
 
     useEffect(() => {
         if (authLoading || familyLoading) return;
@@ -42,7 +42,6 @@ export function SpaceSelector() {
         }
 
         const fetchSpaceDetails = async () => {
-            setIsLoadingSpaces(true);
             try {
                 const spacePromises = availableContexts.map(async (context) => {
                     if (context.id === 'my-space') {
@@ -69,96 +68,94 @@ export function SpaceSelector() {
                     }
                 });
                 const resolvedSpaces = await Promise.all(spacePromises);
-                setSpaces(resolvedSpaces);
-                setTotalChildrenCount(resolvedSpaces.reduce((acc, space) => acc + space.children.length, 0));
+                
+                const totalChildren = resolvedSpaces.reduce((acc, space) => acc + space.children.length, 0);
+                const hasAlliances = availableContexts.length > 1;
+
+                if (totalChildren === 0 && !hasAlliances) {
+                    router.replace('/dashboard/assistente');
+                } else if (totalChildren > 0 && !hasAlliances) {
+                    router.replace('/dashboard/heroes');
+                } else {
+                    setSpaces(resolvedSpaces);
+                    setShouldRenderSpaces(true); // Only render if redirection is not happening
+                }
+
             } catch (error) {
                 console.error("Error fetching space details:", error);
+                 setShouldRenderSpaces(true);
             } finally {
-                setIsLoadingSpaces(false);
+                setIsLoadingData(false);
             }
         };
 
         fetchSpaceDetails();
     }, [user, authLoading, familyLoading, availableContexts, router]);
     
-    // This effect handles the smart redirection logic
-    useEffect(() => {
-        if (isLoadingSpaces || authLoading || familyLoading) {
-            return;
-        }
-    
-        const isNewUser = totalChildrenCount === 0 && availableContexts.length <= 1;
-        const isSoloUserWithChildren = totalChildrenCount > 0 && availableContexts.length === 1;
-        const hasAlliances = availableContexts.length > 1;
-
-        if (isNewUser) {
-            router.replace('/dashboard/assistente');
-        } else if (isSoloUserWithChildren && !hasAlliances) {
-            router.replace('/dashboard/heroes');
-        }
-        // If the user has alliances, we do nothing and let the component render the space selection.
-
-    }, [isLoadingSpaces, authLoading, familyLoading, totalChildrenCount, availableContexts.length, router]);
-
 
     const handleAccessSpace = (contextId: string) => {
         setCurrentContext(contextId);
         router.push('/dashboard/heroes');
     };
 
-    if (authLoading || familyLoading || isLoadingSpaces) {
+    if (isLoadingData) {
         return <Loading />;
     }
     
-    // This part will only be rendered for users with multiple contexts (alliances)
-    return (
-        <div className="space-y-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl">
-                        <Users className="h-6 w-6 text-primary" />
-                        Escolha o Espaço de Início
-                    </CardTitle>
-                    <CardDescription>Acesse um espaço para ver a rotina e o progresso dos seus heróis.</CardDescription>
-                </CardHeader>
-            </Card>
+    // Render space selection only if redirection logic has determined it's necessary
+    if (shouldRenderSpaces) {
+        return (
+            <div className="space-y-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2 text-2xl">
+                            <Users className="h-6 w-6 text-primary" />
+                            Escolha o Espaço de Início
+                        </CardTitle>
+                        <CardDescription>Acesse um espaço para ver a rotina e o progresso dos seus heróis.</CardDescription>
+                    </CardHeader>
+                </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {spaces.map(space => {
-                    const Icon = space.id === 'my-space' ? Home : LinkIcon;
-                    return (
-                        <Card key={space.id} className="flex flex-col shadow-sm hover:shadow-md transition-shadow">
-                            <CardHeader>
-                               <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-md bg-primary/10">
-                                            <Icon className="h-5 w-5 text-primary" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {spaces.map(space => {
+                        const Icon = space.id === 'my-space' ? Home : LinkIcon;
+                        return (
+                            <Card key={space.id} className="flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                                <CardHeader>
+                                <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-md bg-primary/10">
+                                                <Icon className="h-5 w-5 text-primary" />
+                                            </div>
+                                            <h3 className="font-semibold text-lg">{space.name}</h3>
                                         </div>
-                                        <h3 className="font-semibold text-lg">{space.name}</h3>
+                                        <Button variant="link" className="p-0 h-auto" onClick={() => handleAccessSpace(space.id)}>
+                                            Ver Espaço <ArrowRight className="ml-1 h-4 w-4" />
+                                        </Button>
                                     </div>
-                                    <Button variant="link" className="p-0 h-auto" onClick={() => handleAccessSpace(space.id)}>
-                                        Ver Espaço <ArrowRight className="ml-1 h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                             <CardContent className="flex-grow flex items-center min-h-[40px]">
-                                {space.children.length > 0 ? (
-                                    <div className="flex items-center -space-x-2">
-                                        {space.children.map(child => (
-                                            <Avatar key={child.id} className="h-9 w-9 border-2 border-background">
-                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                            </Avatar>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <p className="text-sm text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                                )}
-                            </CardContent>
-                        </Card>
-                    );
-                })}
+                                </CardHeader>
+                                <CardContent className="flex-grow flex items-center min-h-[40px]">
+                                    {space.children.length > 0 ? (
+                                        <div className="flex items-center -space-x-2">
+                                            {space.children.map(child => (
+                                                <Avatar key={child.id} className="h-9 w-9 border-2 border-background">
+                                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                                    <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                </Avatar>
+                                            ))}
+                                        </div>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">Nenhum herói neste espaço.</p>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
+                </div>
             </div>
-        </div>
-    );
+        );
+    }
+    
+    // While deciding or redirecting, show the loading component.
+    return <Loading />;
 }
