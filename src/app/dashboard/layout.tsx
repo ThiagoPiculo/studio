@@ -153,7 +153,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   }
 
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
-  const showHeroSelector = isClient && ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname);
+  
+  const showHeroSelector = isClient &&
+    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&
+    childrenInContext.length > 1;
 
 
   return (
