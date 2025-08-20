@@ -19,20 +19,23 @@ export interface PredefinedMissionGroup {
 
 export const predefinedMissionGroups: PredefinedMissionGroup[] = [
   {
-    userCategory: 'Rotina Base',
+    userCategory: 'Rotinas Essencial (diárias)',
     icon: ListChecks,
     description: 'Missões essenciais que formam a espinha dorsal de um dia produtivo e saudável para qualquer Mini Herói.',
     items: [
-      { title: 'Hora de acordar', emoji: '☀️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Tomar café da manhã', emoji: '🥣', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes após acordar', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Almoçar', emoji: '🍝', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes após almoço', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de acordar', emoji: '⏰', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Arrumar a cama', emoji: '🛏️', suggestedAppCategory: 'home', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar café da manhã', emoji: '🥛', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após acordar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Almoçar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após almoço)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Tomar banho', emoji: '🚿', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Sair para escola', emoji: '🏫', suggestedAppCategory: 'school', starsReward: 5, xpReward: 10 },
-      { title: 'Jantar', emoji: '🍲', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes após jantar', emoji: '🦷', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 5, xpReward: 10 },
+      { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Fazer a lição de casa', emoji: '✏️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
+      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
     ],
   },
   {
