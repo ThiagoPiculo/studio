@@ -157,8 +157,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = async () => {
     try {
       await signOut(auth);
-      // The onAuthStateChanged listener will handle setting user to null and the redirect.
-      // Explicitly push to ensure the user lands on the homepage.
+      // The onAuthStateChanged listener will handle setting user to null.
+      // Explicitly push to ensure the user lands on the homepage, preventing any flashes of content.
       router.push('/');
     } catch (error) {
       console.error("Error signing out:", error);
