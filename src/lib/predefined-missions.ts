@@ -34,7 +34,6 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Fazer a lição de casa', emoji: '✏️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
     ],
   },
@@ -92,7 +91,6 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     description: 'Tarefas que ajudam a criar e manter uma rotina de estudos sólida e a desenvolver a responsabilidade acadêmica.',
     items: [
       { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
       { title: 'Ler por 20 minutos', emoji: '📖', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Estudar para uma prova', emoji: '📝', suggestedAppCategory: 'school', starsReward: 20, xpReward: 30 },
       { title: 'Revisar o conteúdo do dia', emoji: '🧐', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
@@ -107,7 +105,6 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: Home,
     description: 'Tarefas focadas na responsabilidade com o lar e o ambiente compartilhado, incentivando a colaboração e a organização.',
     items: [
-      { title: 'Arrumar a cama', emoji: '🛏️', suggestedAppCategory: 'home', starsReward: 5, xpReward: 10 },
       { title: 'Guardar os brinquedos após o uso', emoji: '🧸', suggestedAppCategory: 'home', starsReward: 5, xpReward: 10 },
       { title: 'Levar o prato para a pia', emoji: '🍽️', suggestedAppCategory: 'home', starsReward: 5, xpReward: 10 },
       { title: 'Ajudar a pôr a mesa', emoji: '🍽️', suggestedAppCategory: 'home', starsReward: 10, xpReward: 15 },
