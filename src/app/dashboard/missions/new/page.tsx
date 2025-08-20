@@ -24,7 +24,7 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
-import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem } from '@/components/ui/command';
+import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 
 
@@ -59,7 +59,7 @@ function CreateMissionTemplatePageContent() {
   
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
-  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(group => group.items), []);
+  const allMissionIdeas = useMemo(() => predefinedMissionGroups, []);
 
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
@@ -213,34 +213,36 @@ function CreateMissionTemplatePageContent() {
                                         />
                                         <CommandList>
                                             <CommandEmpty>Nenhuma ideia encontrada. Continue digitando para criar uma nova!</CommandEmpty>
-                                            <CommandGroup>
-                                                {allMissionIdeas.map((idea) => {
-                                                    const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
-                                                    return (
-                                                        <CommandItem
-                                                            value={idea.title}
-                                                            key={idea.title}
-                                                            onSelect={() => {
-                                                                if (isDuplicate) {
-                                                                    setDuplicateTitle(idea.title);
-                                                                    setShowDuplicateDialog(true);
-                                                                    return;
-                                                                }
-                                                                form.setValue("title", idea.title);
-                                                                form.setValue("emoji", idea.emoji);
-                                                                form.setValue("category", idea.suggestedAppCategory);
-                                                                form.setValue("starsReward", idea.starsReward);
-                                                                form.setValue("xpReward", idea.xpReward);
-                                                                setIsPopoverOpen(false);
-                                                            }}
-                                                        >
-                                                            <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                            {idea.title}
-                                                            {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
-                                                        </CommandItem>
-                                                    )
-                                                })}
-                                            </CommandGroup>
+                                            {allMissionIdeas.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
+                                                        return (
+                                                            <CommandItem
+                                                                value={idea.title}
+                                                                key={idea.title}
+                                                                onSelect={() => {
+                                                                    if (isDuplicate) {
+                                                                        setDuplicateTitle(idea.title);
+                                                                        setShowDuplicateDialog(true);
+                                                                        return;
+                                                                    }
+                                                                    form.setValue("title", idea.title);
+                                                                    form.setValue("emoji", idea.emoji);
+                                                                    form.setValue("category", idea.suggestedAppCategory);
+                                                                    form.setValue("starsReward", idea.starsReward);
+                                                                    form.setValue("xpReward", idea.xpReward);
+                                                                    setIsPopoverOpen(false);
+                                                                }}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
                                         </CommandList>
                                     </Command>
                                 </PopoverContent>
@@ -363,7 +365,7 @@ function CreateMissionTemplatePageContent() {
                 <AlertDialogFooter>
                     <AlertDialogAction onClick={() => {
                         setShowDuplicateDialog(false);
-                        const idea = allMissionIdeas.find(i => i.title === duplicateTitle);
+                        const idea = allMissionIdeas.flatMap(g => g.items).find(i => i.title === duplicateTitle);
                         if(idea) {
                              form.setValue("title", idea.title);
                              form.setValue("emoji", idea.emoji);
@@ -408,4 +410,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-

@@ -2,7 +2,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, Heart, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, HeartPulse, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages, School, ListChecks } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
@@ -118,12 +118,14 @@ export interface FamilyInvitation {
 }
 
 export const missionCategories = [
-  { id: 'home', label: 'Casa', icon: Home, color: 'hsl(217 91% 60%)', colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
-  { id: 'school', label: 'Escola', icon: NotebookPen, color: 'hsl(142 71% 45%)', colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
-  { id: 'health', label: 'Saúde', icon: Heart, color: 'hsl(0 84% 60%)', colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
-  { id: 'sports', label: 'Esportes', icon: Bike, color: 'hsl(22 83% 53%)', colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30' },
-  { id: 'hobbies', label: 'Hobbies e Artes', icon: Palette, color: 'hsl(300 84% 60%)', colorClasses: 'bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30' },
-  { id: 'behavior', label: 'Comportamento', icon: Smile, color: 'hsl(48 96% 53%)', colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
+  { id: 'essential_routines', label: 'Rotina Essencial', icon: ListChecks, color: 'hsl(217 91% 60%)', colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
+  { id: 'home', label: 'Ajudar em Casa', icon: Home, color: 'hsl(217 91% 60%)', colorClasses: 'bg-blue-500/10 text-blue-700 border-blue-500/30' },
+  { id: 'school', label: 'Atividades da Escola', icon: School, color: 'hsl(142 71% 45%)', colorClasses: 'bg-green-500/10 text-green-700 border-green-500/30' },
+  { id: 'health', label: 'Saúde e Bem-Estar', icon: HeartPulse, color: 'hsl(0 84% 60%)', colorClasses: 'bg-red-500/10 text-red-700 border-red-500/30' },
+  { id: 'sports', label: 'Prática de Esportes', icon: Bike, color: 'hsl(22 83% 53%)', colorClasses: 'bg-orange-500/10 text-orange-700 border-orange-500/30' },
+  { id: 'hobbies', label: 'Prática de Artes', icon: Palette, color: 'hsl(300 84% 60%)', colorClasses: 'bg-fuchsia-500/10 text-fuchsia-700 border-fuchsia-500/30' },
+  { id: 'languages', label: 'Prática de Idiomas', icon: Languages, color: 'hsl(210 40% 96.1%)', colorClasses: 'bg-sky-500/10 text-sky-700 border-sky-500/30' },
+  { id: 'behavior', label: 'Comportamental', icon: Smile, color: 'hsl(48 96% 53%)', colorClasses: 'bg-yellow-500/10 text-yellow-700 border-yellow-500/30' },
   { id: 'social', label: 'Social', icon: Users, color: 'hsl(322 84% 60%)', colorClasses: 'bg-pink-500/10 text-pink-700 border-pink-500/30' },
   { id: 'financial', label: 'Financeiro', icon: Coins, color: 'hsl(262 88% 65%)', colorClasses: 'bg-indigo-500/10 text-indigo-700 border-indigo-500/30' },
   { id: 'environmental', label: 'Ambiental', icon: Leaf, color: 'hsl(160 84% 39%)', colorClasses: 'bg-teal-500/10 text-teal-700 border-teal-500/30' },
