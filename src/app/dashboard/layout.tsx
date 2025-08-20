@@ -27,10 +27,13 @@ import { CalendarDays, NotebookPen } from 'lucide-react';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
-    const { loading } = useAuth();
+    const { loading: authLoading } = useAuth();
+    const { isLoading: familyLoading } = useFamily();
     const isMobile = useIsMobile();
     
-    if (loading) {
+    // Show a centralized spinner while the initial auth and family context are loading.
+    // This prevents the "flash" of different skeleton screens.
+    if (authLoading || familyLoading) {
         return (
             <div className="flex flex-1 items-center justify-center">
                 <Loader2 className="h-12 w-12 animate-spin text-primary" />
