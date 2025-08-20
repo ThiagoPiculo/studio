@@ -1131,6 +1131,12 @@ function AgendaPageContent() {
                         </SelectContent>
                     </Select>
                   </div>
+                   {canEdit && (
+                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Criar Missão
+                    </Button>
+                  )}
                 </div>
             </div>
         </Card>
