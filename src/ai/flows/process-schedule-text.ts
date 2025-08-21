@@ -13,18 +13,13 @@ import { z } from 'genkit';
 import { Weekday } from '@/lib/types';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 
-const ActivitySchema = z.object({
-  name: z.string().describe("The name of the activity."),
-  emoji: z.string().describe("The emoji representing the activity."),
-});
-
 const ProcessScheduleTextInputSchema = z.object({
     childName: z.string().describe("The child's name."),
     childAge: z.number().describe("The child's age."),
     schoolShift: z.string().describe("The child's school shift (e.g., 'Manhã', 'Tarde', 'Integral', 'Não estuda ainda')."),
     schoolStartTime: z.string().optional().describe("The school start time in HH:mm format."),
     schoolEndTime: z.string().optional().describe("The school end time in HH:mm format."),
-    selectedActivities: z.array(ActivitySchema).optional().describe("A list of extra activities, treatments, and fixed appointments with their predefined names and emojis."),
+    selectedActivities: z.array(z.string()).optional().describe("A list of extra activities, treatments, and fixed appointments, each as a string containing its name, emoji, and user-defined schedule (e.g., 'Aula de Natação (🏊) - Agendado para Seg, Qua às 10:30')."),
     essentialRoutines: z.array(z.string()).optional().describe("A list of essential daily routines to be scheduled around fixed appointments."),
 });
 export type ProcessScheduleTextInput = z.infer<typeof ProcessScheduleTextInputSchema>;
@@ -64,9 +59,9 @@ const prompt = ai.definePrompt({
     {{#if schoolEndTime}}- Fim da Escola: {{schoolEndTime}}{{/if}}
 
     ATIVIDADES PARA AGENDAR:
-    - Atividades Extras Selecionadas:
+    - Atividades Extras com Horário Definido:
     {{#each selectedActivities}}
-    - {{{this.name}}} (Emoji: {{{this.emoji}}})
+    - {{{this}}}
     {{/each}}
     - Rotinas Essenciais para Encaixar:
     {{#each essentialRoutines}}
@@ -74,18 +69,17 @@ const prompt = ai.definePrompt({
     {{/each}}
 
     REGRAS DE AGENDAMENTO:
-    1.  **NÃO ALTERE NOMES OU EMOJIS**: Os nomes e emojis das atividades em 'selectedActivities' já foram definidos. Use-os exatamente como fornecidos.
-    2.  **PRIORIDADE AOS FIXOS**: Comece alocando todos os compromissos de 'selectedActivities' e os horários escolares. Dê a eles o tipo 'extra_activity'. Assuma que duram 1 hora se não houver indicação contrária.
-    3.  **AGENDA ESCOLAR**: Se o turno for 'Manhã', 'Tarde' ou 'Integral', crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos.
-    4.  **ROTINAS ESSENCIAIS**: Agende as 'essentialRoutines' nos horários livres. Dê a elas o tipo 'essential_routine'. Use estas regras de bom senso:
+    1.  **PRIORIDADE AOS HORÁRIOS DEFINIDOS**: As 'Atividades Extras' já têm seus dias e horários definidos pelo usuário (descrito na string). Transcreva-as para o JSON exatamente como foram agendadas. **NÃO ALTERE O AGENDAMENTO DESSAS ATIVIDADES**. Assuma que duram 1 hora se não houver indicação contrária. Use o tipo 'extra_activity' para elas.
+    2.  **AGENDA ESCOLAR**: Se o turno for 'Manhã', 'Tarde' ou 'Integral', crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos e os tipos 'school_entry' e 'school_exit'.
+    3.  **ROTINAS ESSENCIAIS**: Agende as 'essentialRoutines' nos horários livres que sobrarem. Dê a elas o tipo 'essential_routine'. Use estas regras de bom senso:
         - 'Sair para escola': ~20 minutos antes da 'Entrada na Escola'.
         - 'Escovar os dentes': ~30 minutos após as refeições principais (café, almoço, jantar). Agende três vezes ao dia.
         - 'Jantar': Por volta das 19:00 ou 20:00, se não houver outras atividades.
         - 'Fazer lição de casa': Em um horário livre, de preferência à tarde ou início da noite.
         - 'Tomar banho': Pela manhã antes da escola ou à noite antes de dormir.
         - Outras rotinas: Encaixe em horários lógicos ('Acordar' de manhã, 'Tomar café' após acordar, etc.).
-    5.  **EMOJIS PARA ROTINAS**: Para as 'essentialRoutines', você pode usar emojis genéricos ou consultar a lista abaixo se o nome da rotina for similar a uma missão pré-definida.
-    6.  **FORMATO DE SAÍDA**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**.
+    4.  **EMOJIS PARA ROTINAS**: Para as 'essentialRoutines', você pode usar emojis genéricos ou consultar a lista abaixo se o nome da rotina for similar a uma missão pré-definida.
+    5.  **FORMATO DE SAÍDA**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**.
 
     LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA DE EMOJIS:
     ${predefinedMissionsList}

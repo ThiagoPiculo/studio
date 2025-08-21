@@ -20,14 +20,15 @@ import { processScheduleText, type ProcessScheduleTextInput, type ProcessSchedul
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
-import type { MissionTemplate } from "@/lib/types";
+import type { MissionTemplate, Weekday } from "@/lib/types";
+import { weekdayLabels } from "@/lib/types";
 
 const TOTAL_STEPS = 5;
 
 // Schema for an individual activity
 const activitySchema = z.object({
   name: z.string(),
-  emoji: z.string(), // Added emoji to the schema
+  emoji: z.string(),
   days: z.array(z.string()),
   time: z.string(),
 });
@@ -122,11 +123,11 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      // The AI now expects a structured array, not a string.
-      const selectedActivitiesForAI = values.extraActivities?.map(act => ({
-          name: act.name,
-          emoji: act.emoji,
-      })) || [];
+      // Format the user-defined activities into descriptive strings
+      const selectedActivitiesForAI = values.extraActivities?.map(act => {
+          const dayLabels = act.days?.map(d => weekdayLabels[d as Weekday].short).join(', ');
+          return `${act.name} (${act.emoji}) - Agendado para ${dayLabels || 'N/A'} às ${act.time || 'N/A'}`;
+      }) || [];
 
       const input: ProcessScheduleTextInput = {
           childAge: age,
