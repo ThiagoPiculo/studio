@@ -93,11 +93,11 @@ export function OnboardingStep3() {
       name: "extraActivities"
   });
   
-  const allActivities = watch('extraActivities') as ActivityFormValues[];
+  const allActivities = watch('extraActivities') as (ActivityFormValues & { emoji?: string })[];
 
-  const handleActivityToggle = (activityName: string, isChecked: boolean) => {
+  const handleActivityToggle = (activityName: string, emoji: string, isChecked: boolean) => {
     if (isChecked) {
-        append({ name: activityName, days: [], time: '16:00' });
+        append({ name: activityName, days: [], time: '16:00', emoji: emoji });
     } else {
         const indexToRemove = fields.findIndex(field => (field as any).name === activityName);
         if (indexToRemove > -1) {
@@ -131,8 +131,8 @@ export function OnboardingStep3() {
                             {activitiesInGroup.length > 0 && (
                                 <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
                                     {activitiesInGroup.map(activity => (
-                                        <p key={activity.name} className="truncate">
-                                            - {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.time || 'N/A'}
+                                        <p key={activity.name} className="truncate flex items-center gap-2">
+                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.time || 'N/A'}
                                         </p>
                                     ))}
                                 </div>
@@ -151,7 +151,7 @@ export function OnboardingStep3() {
                                             <Checkbox
                                                 id={`${group.userCategory}-${item.title}`}
                                                 checked={isChecked}
-                                                onCheckedChange={(checked) => handleActivityToggle(item.title, !!checked)}
+                                                onCheckedChange={(checked) => handleActivityToggle(item.title, item.emoji, !!checked)}
                                             />
                                             <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
                                             <span className="text-xl">{item.emoji}</span>
