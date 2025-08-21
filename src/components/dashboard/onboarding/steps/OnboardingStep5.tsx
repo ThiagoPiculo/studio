@@ -30,13 +30,14 @@ export function OnboardingStep5({ schedule }: OnboardingStep5Props) {
       </div>
       
       <div className="max-h-[350px] p-4 border rounded-lg">
-        <ScrollArea className="h-full">
+        <ScrollArea className="h-full pr-2">
             <div className="space-y-4">
             {dailySchedules?.map((item: any, index: number) => (
-                <div key={index} className="flex items-center gap-4 text-sm">
-                    <Badge variant="secondary" className="w-20 justify-center">{item.startTime}</Badge>
-                    <div className="font-semibold flex-grow">{item.activity}</div>
-                    <div className="flex gap-1">
+                <div key={index} className="flex items-center gap-2 sm:gap-4 text-sm">
+                    <Badge variant="secondary" className="w-16 justify-center shrink-0">{item.startTime}</Badge>
+                    <span className="text-xl shrink-0">{item.emoji}</span>
+                    <div className="font-semibold flex-grow truncate">{item.activity}</div>
+                    <div className="flex gap-1 flex-shrink-0">
                         {item.days?.map((day: string) => (
                              <Badge key={day} variant="outline" className="w-8 h-8 flex items-center justify-center p-0">{weekdayLabels[day as keyof typeof weekdayLabels].short}</Badge>
                         ))}
