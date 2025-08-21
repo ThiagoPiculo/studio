@@ -72,13 +72,40 @@ const prompt = ai.definePrompt({
     - {{{this}}}
     {{/each}}
 
-    REGRAS IMPORTANTES DE AGENDAMENTO:
-    1.  **Escovar os dentes**: Deve ocorrer 30 minutos após o início de cada refeição principal (Café da Manhã, Almoço, Jantar).
-    2.  **Sair para escola**: Deve ser agendado 20 minutos antes do horário de 'Entrada na Escola'.
-    3.  **Jantar**: Deve ocorrer 20 minutos após o término da última atividade da tarde/noite (seja uma atividade extra ou a lição de casa). Se não houver atividades, pode ser por volta das 19:00.
-    4.  **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
-    5.  **EMOJIS**: Para cada atividade, use o emoji correspondente da lista de referência abaixo. É crucial que você use o emoji exato da lista.
-    6.  **SAÍDA**: Retorne a rotina em um formato JSON estruturado e ordenado cronologicamente, seguindo o 'ProcessScheduleOutputSchema'.
+    REGRAS DE AGENDAMENTO (TURNO DA MANHÃ):
+    Se o turno escolar for 'Manhã', siga esta ordem:
+    1.  **Hora de Acordar**: 1 hora antes do horário de 'Entrada na Escola'.
+    2.  **Tomar café da manhã**: 20 minutos após 'Hora de Acordar'.
+    3.  **Escovar os dentes (manhã)**: 20 minutos após o início do café da manhã.
+    4.  **Tomar banho antes da escola**: Após escovar os dentes e antes de sair.
+    5.  **Sair para escola**: 20 minutos antes do horário de 'Entrada na Escola'.
+    6.  **Almoçar**: Por volta das 13:00.
+    7.  **Escovar os dentes (após almoço)**: 30 minutos após o início do almoço.
+    8.  **Fazer a lição de casa**: Após o almoço e escovar os dentes.
+    9.  **Jantar**: 20 minutos após a última atividade da noite (seja aula extra ou lição de casa). Se não houver, por volta das 19:00.
+    10. **Escovar os dentes (após jantar)**: 30 minutos após o início do jantar.
+    11. **Organizar a mochila para amanhã**: Antes de dormir.
+    12. **Hora de dormir**: Por volta das 21:00.
+
+    REGRAS DE AGENDAMENTO (TURNO DA TARDE):
+    Se o turno escolar for 'Tarde', siga esta ordem:
+    1.  **Hora de Acordar**: Por volta das 08:30.
+    2.  **Tomar café da manhã**: 20 minutos após 'Hora de Acordar'.
+    3.  **Escovar os dentes (manhã)**: 20 minutos após o início do café da manhã.
+    4.  **Fazer a lição de casa**: No período da manhã.
+    5.  **Almoçar**: Antes de sair para a escola.
+    6.  **Escovar os dentes (após almoço)**: 30 minutos após o início do almoço.
+    7.  **Tomar banho antes da escola**: Após escovar os dentes e antes de sair.
+    8.  **Sair para escola**: 20 minutos antes do horário de 'Entrada na Escola'.
+    9.  **Jantar**: 20 minutos após a última atividade da noite. Se não houver, por volta das 19:35.
+    10. **Escovar os dentes (após jantar)**: 30 minutos após o início do jantar.
+    11. **Organizar a mochila para amanhã**: Antes de dormir.
+    12. **Hora de dormir**: Por volta das 22:00.
+
+    REGRAS GERAIS:
+    - **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
+    - **EMOJIS**: Para cada atividade, use o emoji correspondente da lista de referência abaixo. É crucial que você use o emoji exato da lista.
+    - **SAÍDA**: Retorne a rotina em um formato JSON estruturado e ordenado cronologicamente, seguindo o 'ProcessScheduleOutputSchema'.
 
     LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA (NOME E EMOJI):
     ${predefinedMissionsList}
