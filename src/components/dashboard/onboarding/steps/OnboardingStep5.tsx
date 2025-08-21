@@ -21,9 +21,9 @@ const getPeriodOfDay = (time: string): 'morning' | 'afternoon' | 'night' => {
 };
 
 const periodConfig = {
-    morning: { icon: Sun, label: 'Manhã', color: 'text-yellow-600' },
-    afternoon: { icon: CloudSun, label: 'Tarde', color: 'text-orange-600' },
-    night: { icon: Moon, label: 'Noite', color: 'text-indigo-600' },
+    morning: { icon: Sun, label: 'Manhã', color: 'text-yellow-600', bg: 'bg-yellow-500/5' },
+    afternoon: { icon: CloudSun, label: 'Tarde', color: 'text-orange-600', bg: 'bg-orange-500/5' },
+    night: { icon: Moon, label: 'Noite', color: 'text-indigo-600', bg: 'bg-indigo-500/5' },
 }
 
 export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
@@ -70,26 +70,31 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
         <p className="text-muted-foreground">Aqui está o plano mágico completo. Se estiver tudo certo, vamos dar vida a esta jornada!</p>
       </div>
       
-      <div className="max-h-[350px] p-4 border rounded-lg">
-        <ScrollArea className="h-full pr-2">
+      <div className="max-h-[350px] p-4 border rounded-lg bg-muted/20">
+        <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
                 {(['morning', 'afternoon', 'night'] as const).map((period) => {
                     const items = groupedSchedule[period];
                     if (!items || items.length === 0) return null;
-                    const { icon: Icon, label, color } = periodConfig[period];
+                    const { icon: Icon, label, color, bg } = periodConfig[period];
                     return (
-                        <div key={period} className="space-y-2">
+                        <div key={period} className={`space-y-3 p-3 rounded-lg ${bg}`}>
                             <h3 className={`font-semibold flex items-center gap-2 ${color}`}>
                                 <Icon className="h-5 w-5" />
                                 {label}
                             </h3>
-                            <div className="space-y-3 pl-8 border-l-2 border-dashed ml-2.5">
+                            <div className="space-y-3">
                                 {items.map((item, index) => (
-                                    <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-4 text-sm relative before:absolute before:w-3 before:h-3 before:rounded-full before:bg-primary before:-left-[15px] before:top-1/2 before:-translate-y-1/2 before:border-4 before:border-background">
-                                        <Badge variant="secondary" className="w-16 justify-center shrink-0">{item.startTime}</Badge>
-                                        <div className="font-semibold flex-grow truncate flex items-center gap-2">
-                                            <span className="text-xl">{item.emoji}</span>
-                                            <span>{item.activity}</span>
+                                    <div key={`${item.activity}-${index}`} className="flex items-start gap-2 sm:gap-4 text-sm">
+                                        <Badge variant="secondary" className="w-16 justify-center shrink-0 mt-1">{item.startTime}</Badge>
+                                        <div className="flex-grow">
+                                            <div className="font-semibold flex items-center gap-2">
+                                                <span className="text-xl">{item.emoji}</span>
+                                                <span>{item.activity}</span>
+                                            </div>
+                                            <div className="text-xs text-muted-foreground pl-8">
+                                                {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -98,7 +103,7 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
                     );
                 })}
                  <Separator className="my-4" />
-                 <div className="space-y-2 pt-2">
+                 <div className="space-y-2 pt-2 p-3">
                      <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
                      <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
                 </div>
