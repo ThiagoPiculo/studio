@@ -22,7 +22,22 @@ export function OnboardingStep1() {
   const [month, setMonth] = useState<Date>(new Date());
   
   const birthDateValue = watch('birthDate') ? parse(watch('birthDate'), 'yyyy-MM-dd', new Date()) : null;
+  const [dateInput, setDateInput] = useState<string>(
+    birthDateValue ? format(birthDateValue, "dd/MM/yyyy") : ""
+  );
 
+  const handleDateMask = (value: string) => {
+    let digits = value.replace(/\D/g, '');
+    if (digits.length > 8) {
+      digits = digits.slice(0, 8);
+    }
+    if (digits.length > 4) {
+      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    } else if (digits.length > 2) {
+      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    }
+    return digits;
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -64,6 +79,24 @@ export function OnboardingStep1() {
                   </FormControl>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
+                   <div className="p-2 border-b">
+                     <Input
+                        placeholder="Digite: dd/mm/aaaa"
+                        value={dateInput}
+                        onChange={(e) => {
+                            const maskedValue = handleDateMask(e.target.value);
+                            setDateInput(maskedValue);
+                            if (maskedValue.length === 10) {
+                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                if (isValid(parsedDate)) {
+                                    setValue("birthDate", format(parsedDate, 'yyyy-MM-dd'));
+                                    setMonth(parsedDate);
+                                    setIsCalendarOpen(false); // Close on valid manual entry
+                                }
+                            }
+                        }}
+                     />
+                   </div>
                   <Calendar
                     locale={ptBR}
                     mode="single"
@@ -73,6 +106,7 @@ export function OnboardingStep1() {
                     onSelect={(date) => {
                         if(date) {
                             setValue("birthDate", format(date, 'yyyy-MM-dd'));
+                            setDateInput(format(date, 'dd/MM/yyyy'));
                         }
                         setIsCalendarOpen(false);
                     }}
@@ -101,20 +135,38 @@ export function OnboardingStep1() {
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
                 <FormItem>
-                  <Label htmlFor="gender-boy" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                      <RadioGroupItem value="boy" id="gender-boy" className="sr-only peer" />
+                  <Label 
+                    htmlFor="gender-boy" 
+                    className={cn(
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        field.value === 'boy' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                    )}
+                  >
+                      <RadioGroupItem value="boy" id="gender-boy" className="sr-only" />
                       Masculino
                   </Label>
                 </FormItem>
                 <FormItem>
-                  <Label htmlFor="gender-girl" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                      <RadioGroupItem value="girl" id="gender-girl" className="sr-only peer" />
+                  <Label 
+                    htmlFor="gender-girl" 
+                    className={cn(
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        field.value === 'girl' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                    )}
+                  >
+                      <RadioGroupItem value="girl" id="gender-girl" className="sr-only" />
                       Feminino
                   </Label>
                 </FormItem>
                 <FormItem>
-                  <Label htmlFor="gender-other" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                      <RadioGroupItem value="not-informed" id="gender-other" className="sr-only peer" />
+                  <Label 
+                    htmlFor="gender-other" 
+                    className={cn(
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        field.value === 'not-informed' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                    )}
+                  >
+                      <RadioGroupItem value="not-informed" id="gender-other" className="sr-only" />
                       Prefiro não informar
                   </Label>
                 </FormItem>
