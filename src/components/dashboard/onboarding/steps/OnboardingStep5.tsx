@@ -108,4 +108,3 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
     </div>
   );
 }
-`
