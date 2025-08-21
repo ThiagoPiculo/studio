@@ -1,6 +1,7 @@
 
+
 import type { MissionCategory } from '@/lib/types';
-import { Home, School, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl } from 'lucide-react';
+import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
   title: string;
@@ -110,7 +111,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
   },
   {
     userCategory: 'Atividades da Escola',
-    icon: School,
+    icon: NotebookPen,
     description: 'Tarefas que ajudam a criar e manter uma rotina de estudos sólida e a desenvolver a responsabilidade acadêmica.',
     items: [
       { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
