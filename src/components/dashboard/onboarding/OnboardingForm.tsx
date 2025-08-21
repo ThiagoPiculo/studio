@@ -20,7 +20,7 @@ import { processScheduleText, type ProcessScheduleTextInput, type ProcessSchedul
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
-import type { MissionTemplate, Weekday } from "@/lib/types";
+import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
 import { weekdayLabels } from "@/lib/types";
 
 const TOTAL_STEPS = 5;
@@ -150,6 +150,23 @@ export function OnboardingForm() {
           setIsLoading(false);
       }
   };
+
+  const getCategoryFromActivity = (item: { type: string, activity: string }): MissionCategory => {
+    const title = item.activity.toLowerCase();
+    
+    if (item.type === 'extra_activity') {
+        if (title.includes('natação') || title.includes('futebol') || title.includes('judô')) return 'sports';
+        if (title.includes('dança') || title.includes('piano') || title.includes('violão') || title.includes('desenho')) return 'hobbies';
+        if (title.includes('inglês') || title.includes('espanhol')) return 'languages';
+        return 'hobbies';
+    }
+    
+    if (title.includes('escola') || title.includes('mochila') || title.includes('lição') || title.includes('estudar') || title.includes('dever')) return 'school';
+    if (title.includes('brinquedos') || title.includes('cama') || title.includes('prato') || title.includes('mesa') || title.includes('roupas')) return 'home';
+    if (title.includes('dentes') || title.includes('banho') || title.includes('acordar') || title.includes('dormir') || title.includes('café') || title.includes('almoçar') || title.includes('jantar')) return 'health';
+    
+    return 'essential_routines';
+  }
   
   const handleFinalSubmit = async () => {
     if (!user) {
@@ -182,7 +199,7 @@ export function OnboardingForm() {
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
                     emoji: item.emoji,
-                    category: item.type === 'essential_routine' ? 'health' : 'hobbies',
+                    category: getCategoryFromActivity(item),
                     starsReward: 10,
                     xpReward: 15,
                     isRecurring: item.days.length > 0,
