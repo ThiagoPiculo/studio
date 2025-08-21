@@ -16,13 +16,12 @@ import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2"
 import { OnboardingStep3, onboardingSchemaStep3 } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
-import { processScheduleText, type ProcessScheduleTextInput } from "@/ai/flows/process-schedule-text";
+import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 const TOTAL_STEPS = 5;
 
-// Combine all schemas
 const combinedSchema = onboardingSchemaStep1
   .merge(onboardingSchemaStep2)
   .merge(onboardingSchemaStep3);
@@ -33,8 +32,8 @@ const stepSchemas = [
   onboardingSchemaStep1,
   onboardingSchemaStep2,
   onboardingSchemaStep3,
-  z.object({}), // Step 4 has no fields
-  z.object({}), // Step 5 has no fields
+  z.object({}),
+  z.object({}),
 ];
 
 
@@ -46,7 +45,7 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<any | null>(null);
+  const [generatedSchedule, setGeneratedSchedule] = useState<ProcessScheduleOutput | null>(null);
 
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(combinedSchema),
@@ -67,10 +66,14 @@ export function OnboardingForm() {
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
 
   const goToNextStep = async () => {
-    const currentStepSchema = stepSchemas[step - 1];
-    const fieldsToValidate = currentStepSchema.keyof()._def.items as (keyof OnboardingFormValues)[];
-    
-    const isStepValid = await methods.trigger(fieldsToValidate);
+    let isStepValid = true;
+    if (step === 1) {
+        isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
+    } else if (step === 2) {
+        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
+    } else if (step === 3) {
+        isStepValid = await methods.trigger(['extraActivitiesText', 'essentialRoutines']);
+    }
     
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
@@ -91,7 +94,7 @@ export function OnboardingForm() {
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
       const values = methods.getValues();
-      const birthDate = new Date(values.birthDate);
+      const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
       const input: ProcessScheduleTextInput = {
@@ -134,17 +137,16 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
-        // Add schedule entries based on generated schedule
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
-                if(item.type === 'school_entry' || item.type === 'school_exit') continue; // Handled by shift times
+                if(item.type === 'school_entry' || item.type === 'school_exit') continue;
                 
                 if (item.days && item.days.length > 0) {
                      await addRecurringSchoolEntry({
                         subject: item.activity,
                         startTime: item.startTime,
                         endTime: item.endTime,
-                        color: '#a855f7', // Default color for AI generated
+                        color: '#a855f7',
                         childId: newChild.id,
                         ownerId: user.uid,
                         familyId: values.contextId === 'my-space' ? null : values.contextId,
