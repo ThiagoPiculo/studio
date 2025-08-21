@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
+import { Timestamp } from "firebase/firestore";
 
 const TOTAL_STEPS = 5;
 
@@ -186,8 +187,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 15,
                     xpReward: missionDetails?.xpReward || 20,
                     isRecurring: true,
-                    startDate: new Date(),
-                    dueDate: addDays(new Date(), 1),
+                    startDate: Timestamp.fromDate(new Date()),
+                    dueDate: Timestamp.fromDate(addDays(new Date(), 1)),
                     recurrenceRule: {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -196,10 +197,10 @@ export function OnboardingForm() {
                 };
                  allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
                     const [hour, minute] = activity.time.split(':').map(Number);
-                    const startDateWithTime = new Date(template.startDate as any);
+                    const startDateWithTime = (template.startDate as Timestamp).toDate();
                     startDateWithTime.setHours(hour, minute);
                     
-                    const finalTemplate = { ...template, startDate: startDateWithTime };
+                    const finalTemplate = { ...template, startDate: Timestamp.fromDate(startDateWithTime) };
 
                     await addMissionInstance(user, {
                         templateId: template.id,
@@ -227,8 +228,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 5,
                     xpReward: missionDetails?.xpReward || 10,
                     isRecurring: item.days.length > 0,
-                    startDate: startDate,
-                    dueDate: addDays(startDate, 1),
+                    startDate: Timestamp.fromDate(startDate),
+                    dueDate: Timestamp.fromDate(addDays(startDate, 1)),
                     recurrenceRule: item.days.length > 0 ? {
                         freq: 'WEEKLY',
                         interval: 1,
