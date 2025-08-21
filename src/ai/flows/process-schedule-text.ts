@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Processes a list of activities to create a structured weekly schedule.
