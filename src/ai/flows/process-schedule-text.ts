@@ -1,9 +1,9 @@
 
 'use server';
 /**
- * @fileOverview Processes natural language text to create a structured weekly schedule.
+ * @fileOverview Processes a list of activities to create a structured weekly schedule.
  *
- * - processScheduleText - A function that takes child's info and a text description of activities and returns a structured schedule.
+ * - processScheduleText - A function that takes child's info and a list of activities and returns a structured schedule.
  * - ProcessScheduleTextInput - The input type for the processScheduleText function.
  * - ProcessScheduleOutput - The return type for the processScheduleText function.
  */
@@ -11,6 +11,12 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { Weekday } from '@/lib/types';
+import { predefinedMissionGroups } from '@/lib/predefined-missions';
+
+const ActivitySchema = z.object({
+  name: z.string().describe("The name of the activity."),
+  emoji: z.string().describe("The emoji representing the activity."),
+});
 
 const ProcessScheduleTextInputSchema = z.object({
     childName: z.string().describe("The child's name."),
@@ -18,7 +24,7 @@ const ProcessScheduleTextInputSchema = z.object({
     schoolShift: z.string().describe("The child's school shift (e.g., 'Manhã', 'Tarde', 'Integral', 'Não estuda ainda')."),
     schoolStartTime: z.string().optional().describe("The school start time in HH:mm format."),
     schoolEndTime: z.string().optional().describe("The school end time in HH:mm format."),
-    extraActivities: z.string().optional().describe("A natural language description of extra activities, treatments, and recurring medications with their days and times."),
+    selectedActivities: z.array(ActivitySchema).optional().describe("A list of extra activities, treatments, and fixed appointments with their predefined names and emojis."),
     essentialRoutines: z.array(z.string()).optional().describe("A list of essential daily routines to be scheduled around fixed appointments."),
 });
 export type ProcessScheduleTextInput = z.infer<typeof ProcessScheduleTextInputSchema>;
@@ -38,41 +44,51 @@ const ProcessScheduleOutputSchema = z.object({
 });
 export type ProcessScheduleOutput = z.infer<typeof ProcessScheduleOutputSchema>;
 
+// Generate a string list of predefined missions to guide the AI
+const predefinedMissionsList = predefinedMissionGroups.flatMap(group => 
+  group.items.map(item => `- ${item.title} (Emoji: ${item.emoji})`)
+).join('\n');
+
 const prompt = ai.definePrompt({
   name: 'processSchedulePrompt',
   input: { schema: ProcessScheduleTextInputSchema },
   output: { schema: ProcessScheduleOutputSchema },
   prompt: `
-    Você é um assistente especialista em criar rotinas semanais otimizadas e lógicas para crianças. Seu objetivo é pegar todas as informações fornecidas e construir uma agenda coesa e sem conflitos em formato JSON.
+    Você é um especialista em logística e organização de rotinas para crianças. Sua tarefa é criar uma agenda semanal estruturada em JSON a partir de uma lista de atividades e rotinas essenciais, considerando o turno escolar e a idade da criança.
 
-    CONTEXTO:
-    - Nome da Criança: {{childName}}
-    - Idade da Criança: {{childAge}} anos.
+    CONTEXTO DA CRIANÇA:
+    - Nome: {{childName}}
+    - Idade: {{childAge}} anos.
     - Turno Escolar: {{schoolShift}}.
-    {{#if schoolStartTime}}- Horário de Início da Escola: {{schoolStartTime}}{{/if}}
-    {{#if schoolEndTime}}- Horário de Fim da Escola: {{schoolEndTime}}{{/if}}
-    - Atividades Extras, Tratamentos e Remédios Fixos: "{{extraActivities}}"
-    - Rotinas Essenciais para Agendar: {{#each essentialRoutines}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}.
+    {{#if schoolStartTime}}- Início da Escola: {{schoolStartTime}}{{/if}}
+    {{#if schoolEndTime}}- Fim da Escola: {{schoolEndTime}}{{/if}}
 
-    TAREFA:
-    Gere uma agenda semanal completa em formato JSON, seguindo as regras abaixo.
+    ATIVIDADES PARA AGENDAR:
+    - Atividades Extras Selecionadas:
+    {{#each selectedActivities}}
+    - {{{this.name}}} (Emoji: {{{this.emoji}}})
+    {{/each}}
+    - Rotinas Essenciais para Encaixar:
+    {{#each essentialRoutines}}
+    - {{{this}}}
+    {{/each}}
 
-    REGRAS:
-    1.  **Compromissos Fixos Primeiro**: Comece alocando todos os compromissos fixos: horários escolares e todos os itens de 'extraActivities'. Eles não são negociáveis.
-    2.  **Agenda Escolar**: Se o turno for 'Manhã', 'Tarde' ou 'Integral', crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos.
-    3.  **Processamento de Linguagem Natural**: Interprete o texto em 'extraActivities'. Extraia cada atividade, seu horário e os dias da semana. Assuma durações padrão se não especificadas (ex: 1 hora para aulas, 15 minutos para remédios).
-    4.  **Emoji**: Para cada atividade, adicione um emoji único e relevante.
-    5.  **Rotinas Essenciais**: Agende as 'essentialRoutines' nos horários livres, seguindo estas regras:
-        - 'Sair para escola': Deve ser 20 minutos antes da 'Entrada na Escola'.
-        - 'Escovar os dentes': Deve ocorrer aproximadamente 30 minutos após as refeições principais ('Tomar café da manhã', 'Almoçar', 'Jantar'). Agende três vezes ao dia.
-        - 'Jantar': Deve ser agendado pelo menos 20 minutos após a última atividade da noite. Encontre um horário lógico por volta das 19:00 ou 20:00 se não houver atividades noturnas.
-        - 'Fazer lição de casa': Agende em um horário livre, de preferência à tarde ou início da noite, não muito perto da hora de dormir.
-        - 'Tomar banho': Agende pela manhã antes da escola ou à noite antes do jantar ou de dormir.
-        - Outras rotinas: Encaixe em horários lógicos ('Acordar' de manhã cedo, 'Tomar café da manhã' após acordar, etc.).
-    6.  **Formato de Saída**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente por 'startTime' para cada dia. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**, descrevendo os principais blocos de tempo livre da criança.
+    REGRAS DE AGENDAMENTO:
+    1.  **NÃO ALTERE NOMES OU EMOJIS**: Os nomes e emojis das atividades em 'selectedActivities' já foram definidos. Use-os exatamente como fornecidos.
+    2.  **PRIORIDADE AOS FIXOS**: Comece alocando todos os compromissos de 'selectedActivities' e os horários escolares. Dê a eles o tipo 'extra_activity'. Assuma que duram 1 hora se não houver indicação contrária.
+    3.  **AGENDA ESCOLAR**: Se o turno for 'Manhã', 'Tarde' ou 'Integral', crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos.
+    4.  **ROTINAS ESSENCIAIS**: Agende as 'essentialRoutines' nos horários livres. Dê a elas o tipo 'essential_routine'. Use estas regras de bom senso:
+        - 'Sair para escola': ~20 minutos antes da 'Entrada na Escola'.
+        - 'Escovar os dentes': ~30 minutos após as refeições principais (café, almoço, jantar). Agende três vezes ao dia.
+        - 'Jantar': Por volta das 19:00 ou 20:00, se não houver outras atividades.
+        - 'Fazer lição de casa': Em um horário livre, de preferência à tarde ou início da noite.
+        - 'Tomar banho': Pela manhã antes da escola ou à noite antes de dormir.
+        - Outras rotinas: Encaixe em horários lógicos ('Acordar' de manhã, 'Tomar café' após acordar, etc.).
+    5.  **EMOJIS PARA ROTINAS**: Para as 'essentialRoutines', você pode usar emojis genéricos ou consultar a lista abaixo se o nome da rotina for similar a uma missão pré-definida.
+    6.  **FORMATO DE SAÍDA**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**.
 
-    EXEMPLO para um item no array de saída 'schedule':
-    { "activity": "Aula de Natação", "emoji": "🏊", "type": "extra_activity", "startTime": "16:00", "endTime": "17:00", "days": ["MO", "WE"] }
+    LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA DE EMOJIS:
+    ${predefinedMissionsList}
 
     Agora, gere a agenda para {{childName}}.
   `,

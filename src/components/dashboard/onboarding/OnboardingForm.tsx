@@ -27,6 +27,7 @@ const TOTAL_STEPS = 5;
 // Schema for an individual activity
 const activitySchema = z.object({
   name: z.string(),
+  emoji: z.string(), // Added emoji to the schema
   days: z.array(z.string()),
   time: z.string(),
 });
@@ -115,16 +116,17 @@ export function OnboardingForm() {
     }
   };
   
-  const formatActivitiesToString = (activities: ActivityFormValues[] | undefined): string => {
-      if (!activities || activities.length === 0) return "Nenhuma";
-      return activities.map(act => `${act.name} em ${act.days.join(', ')} às ${act.time}`).join('; ');
-  };
-
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
       const values = methods.getValues();
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
+
+      // The AI now expects a structured array, not a string.
+      const selectedActivitiesForAI = values.extraActivities?.map(act => ({
+          name: act.name,
+          emoji: act.emoji,
+      })) || [];
 
       const input: ProcessScheduleTextInput = {
           childAge: age,
@@ -132,7 +134,7 @@ export function OnboardingForm() {
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
-          extraActivities: formatActivitiesToString(values.extraActivities),
+          selectedActivities: selectedActivitiesForAI,
           essentialRoutines: values.essentialRoutines
       };
 
@@ -178,7 +180,7 @@ export function OnboardingForm() {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
-                    emoji: item.type === 'essential_routine' ? '✨' : '🎯',
+                    emoji: item.emoji,
                     category: item.type === 'essential_routine' ? 'health' : 'hobbies',
                     starsReward: 10,
                     xpReward: 15,
