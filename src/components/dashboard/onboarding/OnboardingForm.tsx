@@ -11,31 +11,43 @@ import { addChildProfile, addRecurringSchoolEntry } from "@/lib/firebase/firesto
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
-import { OnboardingStep1, onboardingSchemaStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
-import { OnboardingStep3, onboardingSchemaStep3 } from "./steps/OnboardingStep3";
+import { OnboardingStep1 } from "./steps/OnboardingStep1";
+import { OnboardingStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep3 } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { isValid, parse } from "date-fns";
 
 const TOTAL_STEPS = 5;
 
-// Combine all schemas
-const combinedSchema = onboardingSchemaStep1
-  .merge(onboardingSchemaStep2)
-  .merge(onboardingSchemaStep3);
+// Unified schema for the entire onboarding flow
+const onboardingSchema = z.object({
+  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
+  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+    message: "Data inválida."
+  }),
+  gender: z.enum(['boy', 'girl', 'not-informed']),
+  contextId: z.string(),
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+  extraActivitiesText: z.string().optional(),
+  essentialRoutines: z.array(z.string()).optional(),
+}).superRefine((data, ctx) => {
+    if (data.schoolShift !== 'not_applicable') {
+        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
+        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
+        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
+        }
+    }
+});
 
-export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 
-const stepSchemas = [
-  onboardingSchemaStep1,
-  onboardingSchemaStep2,
-  onboardingSchemaStep3,
-  z.object({}),
-  z.object({}),
-];
+export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 
 
 export function OnboardingForm() {
@@ -49,7 +61,7 @@ export function OnboardingForm() {
   const [generatedSchedule, setGeneratedSchedule] = useState<ProcessScheduleOutput | null>(null);
 
   const methods = useForm<OnboardingFormValues>({
-    resolver: zodResolver(combinedSchema),
+    resolver: zodResolver(onboardingSchema),
     mode: 'onChange',
     defaultValues: {
       name: "",

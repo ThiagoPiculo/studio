@@ -16,15 +16,6 @@ import * as z from "zod";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
 
-export const onboardingSchemaStep1 = z.object({
-  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
-  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
-    message: "Data inválida."
-  }),
-  gender: z.enum(['boy', 'girl', 'not-informed']),
-  contextId: z.string(),
-});
-
 export function OnboardingStep1() {
   const { control, setValue, watch } = useFormContext();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);

@@ -8,11 +8,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import * as z from "zod";
 
-export const onboardingSchemaStep3 = z.object({
-  extraActivitiesText: z.string().optional(),
-  essentialRoutines: z.array(z.string()).optional(),
-});
-
 const routines = [
   { id: 'acordar', label: 'Hora de Acordar' },
   { id: 'cafe', label: 'Tomar café da manhã' },

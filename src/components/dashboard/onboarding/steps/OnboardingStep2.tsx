@@ -10,20 +10,6 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 
-export const onboardingSchemaStep2 = z.object({
-  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
-  schoolShiftStart: z.string().optional(),
-  schoolShiftEnd: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if (data.schoolShift !== 'not_applicable') {
-        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
-        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
-        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
-            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
-        }
-    }
-});
-
 export function OnboardingStep2() {
   const { control, watch, setValue, getValues } = useFormContext();
   const childName = getValues('name');
