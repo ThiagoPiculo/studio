@@ -73,7 +73,7 @@ const prompt = ai.definePrompt({
     {{/each}}
 
     REGRAS DE AGENDAMENTO (SEGUNDA A SEXTA):
-    {{#if (eq schoolShift "Manhã")}}
+    {{#if Manhã}}
     Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Manhã':
     1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
@@ -88,7 +88,7 @@ const prompt = ai.definePrompt({
     11. Organizar a mochila para amanhã: Antes de dormir.
     12. Hora de dormir: Por volta das 21:00.
     {{/if}}
-    {{#if (eq schoolShift "Tarde")}}
+    {{#if Tarde}}
     Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Tarde':
     1.  Hora de Acordar: Por volta das 08:30.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
@@ -130,7 +130,12 @@ const processScheduleFlow = ai.defineFlow(
     outputSchema: ProcessScheduleOutputSchema,
   },
   async (input) => {
-    const { output } = await prompt(input);
+    const augmentedInput = {
+      ...input,
+      Manhã: input.schoolShift === 'Manhã',
+      Tarde: input.schoolShift === 'Tarde',
+    };
+    const { output } = await prompt(augmentedInput);
     return output!;
   }
 );
