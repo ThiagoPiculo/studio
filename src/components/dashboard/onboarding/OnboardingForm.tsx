@@ -197,7 +197,7 @@ export function OnboardingForm() {
                 };
                  allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
                     const [hour, minute] = activity.time.split(':').map(Number);
-                    const startDateWithTime = (template.startDate as Timestamp).toDate();
+                    const startDateWithTime = new Date(template.startDate as string);
                     startDateWithTime.setHours(hour, minute);
                     
                     const finalTemplate = { ...template, startDate: Timestamp.fromDate(startDateWithTime) };
@@ -287,7 +287,9 @@ export function OnboardingForm() {
               </Button>
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" />
+                  {isLoading && (step === 4) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} 
+                  {step !== 4 && <ArrowRight className="ml-2 h-4 w-4" />}
                 </Button>
               )}
               {step === TOTAL_STEPS && (
