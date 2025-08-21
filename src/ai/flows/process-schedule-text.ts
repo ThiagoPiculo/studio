@@ -54,7 +54,7 @@ const prompt = ai.definePrompt({
   input: { schema: ProcessScheduleTextInputSchema },
   output: { schema: ProcessScheduleOutputSchema },
   prompt: `
-    Aja como um especialista em rotina infantil. Crie uma rotina diária cronológica e ideal para uma criança de {{childAge}} anos.
+    Aja como um especialista em rotina infantil. Crie uma rotina cronológica e ideal para a semana inteira (Segunda a Domingo) para uma criança de {{childAge}} anos.
 
     COMPROMISSOS FIXOS:
     - Turno Escolar: {{schoolShift}}
@@ -72,35 +72,44 @@ const prompt = ai.definePrompt({
     - {{{this}}}
     {{/each}}
 
-    REGRAS DE AGENDAMENTO (TURNO DA MANHÃ):
-    Se o turno escolar for 'Manhã', siga esta ordem:
-    1.  **Hora de Acordar**: 1 hora antes do horário de 'Entrada na Escola'.
-    2.  **Tomar café da manhã**: 20 minutos após 'Hora de Acordar'.
-    3.  **Escovar os dentes (manhã)**: 20 minutos após o início do café da manhã.
-    4.  **Tomar banho antes da escola**: Após escovar os dentes e antes de sair.
-    5.  **Sair para escola**: 20 minutos antes do horário de 'Entrada na Escola'.
-    6.  **Almoçar**: Por volta das 13:00.
-    7.  **Escovar os dentes (após almoço)**: 30 minutos após o início do almoço.
-    8.  **Fazer a lição de casa**: Após o almoço e escovar os dentes.
-    9.  **Jantar**: 20 minutos após a última atividade da noite (seja aula extra ou lição de casa). Se não houver, por volta das 19:00.
-    10. **Escovar os dentes (após jantar)**: 30 minutos após o início do jantar.
-    11. **Organizar a mochila para amanhã**: Antes de dormir.
-    12. **Hora de dormir**: Por volta das 21:00.
+    REGRAS DE AGENDAMENTO (SEGUNDA A SEXTA):
+    {{#if (eq schoolShift "Manhã")}}
+    Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Manhã':
+    1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
+    2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
+    3.  Escovar os dentes (manhã): 30 minutos após o início do café da manhã.
+    4.  Tomar banho antes da escola: Após escovar os dentes e antes de sair.
+    5.  Sair para escola: 20 minutos antes do horário de 'Entrada na Escola'.
+    6.  Almoçar: Por volta das 13:00.
+    7.  Escovar os dentes (após almoço): 30 minutos após o início do almoço.
+    8.  Fazer a lição de casa: Após o almoço e escovar os dentes.
+    9.  Jantar: 20 minutos após a última atividade da noite (seja aula extra ou lição de casa). Se não houver, por volta das 19:00.
+    10. Escovar os dentes (após jantar): 30 minutos após o início do jantar.
+    11. Organizar a mochila para amanhã: Antes de dormir.
+    12. Hora de dormir: Por volta das 21:00.
+    {{/if}}
+    {{#if (eq schoolShift "Tarde")}}
+    Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Tarde':
+    1.  Hora de Acordar: Por volta das 08:30.
+    2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
+    3.  Escovar os dentes (manhã): 30 minutos após o início do café da manhã.
+    4.  Fazer a lição de casa: No período da manhã.
+    5.  Almoçar: Antes de sair para a escola.
+    6.  Escovar os dentes (após almoço): 30 minutos após o início do almoço.
+    7.  Tomar banho antes da escola: Após escovar os dentes e antes de sair.
+    8.  Sair para escola: 20 minutos antes do horário de 'Entrada na Escola'.
+    9.  Jantar: 20 minutos após a última atividade da noite. Se não houver, por volta das 19:35.
+    10. Escovar os dentes (após jantar): 30 minutos após o início do jantar.
+    11. Organizar a mochila para amanhã: Antes de dormir.
+    12. Hora de dormir: Por volta das 22:00.
+    {{/if}}
 
-    REGRAS DE AGENDAMENTO (TURNO DA TARDE):
-    Se o turno escolar for 'Tarde', siga esta ordem:
-    1.  **Hora de Acordar**: Por volta das 08:30.
-    2.  **Tomar café da manhã**: 20 minutos após 'Hora de Acordar'.
-    3.  **Escovar os dentes (manhã)**: 20 minutos após o início do café da manhã.
-    4.  **Fazer a lição de casa**: No período da manhã.
-    5.  **Almoçar**: Antes de sair para a escola.
-    6.  **Escovar os dentes (após almoço)**: 30 minutos após o início do almoço.
-    7.  **Tomar banho antes da escola**: Após escovar os dentes e antes de sair.
-    8.  **Sair para escola**: 20 minutos antes do horário de 'Entrada na Escola'.
-    9.  **Jantar**: 20 minutos após a última atividade da noite. Se não houver, por volta das 19:35.
-    10. **Escovar os dentes (após jantar)**: 30 minutos após o início do jantar.
-    11. **Organizar a mochila para amanhã**: Antes de dormir.
-    12. **Hora de dormir**: Por volta das 22:00.
+    REGRAS DE AGENDAMENTO (FIM DE SEMANA - SÁBADO E DOMINGO):
+    - **Rotina Matinal Flexível:** Mantenha a sequência de 'Acordar', 'Café' e 'Escovar Dentes', mas com horários mais relaxados (Ex: Acordar às 09:00).
+    - **Atividades Extras:** Lembre-se de encaixar qualquer atividade extra que ocorra no fim de semana.
+    - **Tempo Livre:** Priorize blocos de tempo livre para brincadeiras e atividades em família.
+    - **Rotina Noturna:** Mantenha a sequência de 'Jantar', 'Escovar Dentes' e 'Dormir', ajustando os horários conforme as atividades do dia, mas mantendo uma hora de dormir consistente (Ex: 22:00).
+    - **Mochila:** Lembre-se de incluir "Organizar a mochila para amanhã" na noite de Domingo.
 
     REGRAS GERAIS:
     - **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
@@ -110,7 +119,7 @@ const prompt = ai.definePrompt({
     LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA (NOME E EMOJI):
     ${predefinedMissionsList}
 
-    Agora, gere a agenda para {{childName}}.
+    Agora, gere a agenda completa da semana para {{childName}}.
   `,
 });
 
