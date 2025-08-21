@@ -102,8 +102,7 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
                         </div>
                     );
                 })}
-                 <Separator className="my-4" />
-                 <div className="space-y-2 pt-2 p-3">
+                 <div className="space-y-2 pt-4 p-3">
                      <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
                      <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
                 </div>
