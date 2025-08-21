@@ -3,17 +3,16 @@
 
 import { useFormContext, useFieldArray } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
-import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimePicker } from "../../school-schedule/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Trash2 } from "lucide-react";
-import { allWeekdays, weekdayLabels } from "@/lib/types";
+import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
+import { ActivityFormValues } from "../OnboardingForm";
 
 const routines = [
   { id: 'acordar', label: 'Hora de Acordar' },
@@ -26,10 +25,9 @@ const routines = [
   { id: 'dormir', label: 'Hora de dormir' },
 ];
 
-function ActivityScheduler({ categoryIndex, activityIndex, remove }: { categoryIndex: number, activityIndex: number, remove: (index: number) => void }) {
-    const { control, watch } = useFormContext();
+function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, remove: (index: number) => void }) {
+    const { control } = useFormContext();
     const fieldName = `extraActivities.${activityIndex}`;
-    const activity = watch(fieldName);
 
     return (
         <div className="p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative">
@@ -89,11 +87,13 @@ function ActivityScheduler({ categoryIndex, activityIndex, remove }: { categoryI
 }
 
 export function OnboardingStep3() {
-  const { control, getValues, setValue } = useFormContext();
+  const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
       control,
       name: "extraActivities"
   });
+  
+  const allActivities = watch('extraActivities') as ActivityFormValues[];
 
   const handleActivityToggle = (activityName: string, isChecked: boolean) => {
     if (isChecked) {
@@ -115,48 +115,65 @@ export function OnboardingStep3() {
       </div>
 
       <Accordion type="multiple" className="w-full space-y-2">
-        {predefinedMissionGroups.slice(1, 5).map((group, groupIndex) => (
-            <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg px-4">
-                <AccordionTrigger>
-                    <div className="flex items-center gap-3">
-                        <group.icon className="h-6 w-6 text-primary" />
-                        <span className="font-semibold">{group.userCategory}</span>
-                    </div>
-                </AccordionTrigger>
-                <AccordionContent className="pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {group.items.map(item => {
-                            const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
-                            const isChecked = currentFieldIndex > -1;
+        {predefinedMissionGroups.slice(1, 5).map((group) => {
+            const activitiesInGroup = allActivities?.filter(activity => 
+                group.items.some(item => item.title === activity.name)
+            ) || [];
 
-                            return (
-                                <div key={item.title} className="space-y-2">
-                                     <div className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50">
-                                         <Checkbox
-                                            id={`${group.userCategory}-${item.title}`}
-                                            checked={isChecked}
-                                            onCheckedChange={(checked) => handleActivityToggle(item.title, !!checked)}
-                                         />
-                                        <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
-                                          <span className="text-xl">{item.emoji}</span>
-                                          {item.title}
-                                        </Label>
-                                    </div>
-                                    {isChecked && <ActivityScheduler categoryIndex={groupIndex} activityIndex={currentFieldIndex} remove={remove} />}
+            return (
+                <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg px-4">
+                    <AccordionTrigger>
+                        <div className="flex flex-col text-left items-start gap-2 w-full">
+                            <div className="flex items-center gap-3">
+                                <group.icon className="h-6 w-6 text-primary" />
+                                <span className="font-semibold">{group.userCategory}</span>
+                            </div>
+                            {activitiesInGroup.length > 0 && (
+                                <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
+                                    {activitiesInGroup.map(activity => (
+                                        <p key={activity.name} className="truncate">
+                                            - {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.time || 'N/A'}
+                                        </p>
+                                    ))}
                                 </div>
-                            )
-                        })}
-                    </div>
-                </AccordionContent>
-            </AccordionItem>
-        ))}
+                            )}
+                        </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="pt-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {group.items.map(item => {
+                                const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
+                                const isChecked = currentFieldIndex > -1;
+
+                                return (
+                                    <div key={item.title} className="space-y-2">
+                                        <div className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50">
+                                            <Checkbox
+                                                id={`${group.userCategory}-${item.title}`}
+                                                checked={isChecked}
+                                                onCheckedChange={(checked) => handleActivityToggle(item.title, !!checked)}
+                                            />
+                                            <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
+                                            <span className="text-xl">{item.emoji}</span>
+                                            {item.title}
+                                            </Label>
+                                        </div>
+                                        {isChecked && <ActivityScheduler activityIndex={currentFieldIndex} remove={remove} />}
+                                    </div>
+                                )
+                            })}
+                        </div>
+                    </AccordionContent>
+                </AccordionItem>
+            );
+        })}
       </Accordion>
 
 
       <FormField
         control={control}
         name="essentialRoutines"
-        render={() => (
+        render={({ field }) => (
           <FormItem>
             <div className="mb-4">
                 <FormLabel className="text-lg font-semibold">Rotinas Essenciais</FormLabel>
