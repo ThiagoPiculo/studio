@@ -23,6 +23,13 @@ import { isValid, parse } from "date-fns";
 
 const TOTAL_STEPS = 5;
 
+// Schema for an individual activity
+const activitySchema = z.object({
+  name: z.string(),
+  days: z.array(z.string()),
+  time: z.string(),
+});
+
 // Unified schema for the entire onboarding flow
 const onboardingSchema = z.object({
   name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
@@ -34,7 +41,7 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
-  extraActivitiesText: z.string().optional(),
+  extraActivities: z.array(activitySchema).optional(), // Changed from extraActivitiesText
   essentialRoutines: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
@@ -48,6 +55,7 @@ const onboardingSchema = z.object({
 
 
 export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+export type ActivityFormValues = z.infer<typeof activitySchema>;
 
 
 export function OnboardingForm() {
@@ -71,7 +79,7 @@ export function OnboardingForm() {
       schoolShift: "not_applicable",
       schoolShiftStart: '',
       schoolShiftEnd: '',
-      extraActivitiesText: '',
+      extraActivities: [],
       essentialRoutines: [],
     },
   });
@@ -85,7 +93,7 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['extraActivitiesText', 'essentialRoutines']);
+        isStepValid = await methods.trigger(['extraActivities', 'essentialRoutines']);
     } else {
         isStepValid = true; // For steps without validation
     }
@@ -105,6 +113,11 @@ export function OnboardingForm() {
       setStep(prev => prev - 1);
     }
   };
+  
+  const formatActivitiesToString = (activities: ActivityFormValues[] | undefined): string => {
+      if (!activities || activities.length === 0) return "Nenhuma";
+      return activities.map(act => `${act.name} em ${act.days.join(', ')} às ${act.time}`).join('; ');
+  };
 
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
@@ -118,7 +131,7 @@ export function OnboardingForm() {
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
-          extraActivities: values.extraActivitiesText,
+          extraActivities: formatActivitiesToString(values.extraActivities),
           essentialRoutines: values.essentialRoutines
       };
 
