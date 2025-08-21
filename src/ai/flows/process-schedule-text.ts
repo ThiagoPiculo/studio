@@ -34,7 +34,7 @@ const ScheduleItemSchema = z.object({
 
 const ProcessScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A chronologically sorted list of all scheduled activities for the week."),
-  freeTime: z.string().describe("A brief, friendly summary of the child's main free time blocks during the week."),
+  freeTime: z.string().describe("A brief, friendly summary in Brazilian Portuguese of the child's main free time blocks during the week."),
 });
 export type ProcessScheduleOutput = z.infer<typeof ProcessScheduleOutputSchema>;
 
@@ -43,38 +43,38 @@ const prompt = ai.definePrompt({
   input: { schema: ProcessScheduleTextInputSchema },
   output: { schema: ProcessScheduleOutputSchema },
   prompt: `
-    You are an expert assistant specializing in creating optimized and logical weekly schedules for children. Your goal is to take all the provided information and build a coherent, conflict-free JSON schedule.
+    Você é um assistente especialista em criar rotinas semanais otimizadas e lógicas para crianças. Seu objetivo é pegar todas as informações fornecidas e construir uma agenda coesa e sem conflitos em formato JSON.
 
-    CONTEXT:
-    - Child's Name: {{childName}}
-    - Child's Age: {{childAge}} years old.
-    - School Shift: {{schoolShift}}.
-    {{#if schoolStartTime}}- School Start Time: {{schoolStartTime}}{{/if}}
-    {{#if schoolEndTime}}- School End Time: {{schoolEndTime}}{{/if}}
-    - Fixed Extra Activities, Treatments, and Medications: "{{extraActivities}}"
-    - Essential Daily Routines to Schedule: {{#each essentialRoutines}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}.
+    CONTEXTO:
+    - Nome da Criança: {{childName}}
+    - Idade da Criança: {{childAge}} anos.
+    - Turno Escolar: {{schoolShift}}.
+    {{#if schoolStartTime}}- Horário de Início da Escola: {{schoolStartTime}}{{/if}}
+    {{#if schoolEndTime}}- Horário de Fim da Escola: {{schoolEndTime}}{{/if}}
+    - Atividades Extras, Tratamentos e Remédios Fixos: "{{extraActivities}}"
+    - Rotinas Essenciais para Agendar: {{#each essentialRoutines}}'{{this}}'{{#unless @last}}, {{/unless}}{{/each}}.
 
-    TASK:
-    Generate a complete weekly schedule in JSON format based on the following rules.
+    TAREFA:
+    Gere uma agenda semanal completa em formato JSON, seguindo as regras abaixo.
 
-    RULES:
-    1.  **Fixed Appointments First**: Start by placing all fixed appointments on the schedule: school hours and all items listed in 'extraActivities'. These are non-negotiable.
-    2.  **School Schedule**: If the shift is 'Manhã', 'Tarde', or 'Integral', create 'Entrada na Escola' and 'Saída da Escola' schedule items for Monday to Friday using the provided times.
-    3.  **Natural Language Processing**: Interpret the 'extraActivities' text. Extract each activity, its time, and the days of the week it occurs. Assume standard durations if not specified (e.g., 1 hour for classes, 15 minutes for medication).
-    4.  **Emoji**: For each activity, add a single, relevant emoji.
-    5.  **Essential Routines**: Schedule the 'essentialRoutines' in the available time slots, following these specific rules:
-        - 'Sair para escola': Must be scheduled 20 minutes before 'Entrada na Escola'.
-        - 'Escovar os dentes': Must occur approximately 30 minutes after each main meal ('Tomar café da manhã', 'Almoçar', 'Jantar'). Schedule three instances per day if all meals are included.
-        - 'Jantar': Must be scheduled at least 20 minutes after the last activity of the evening. Find a logical time around 19:00 or 20:00 if no evening activities exist.
-        - 'Fazer lição de casa': Should be scheduled in a free slot, preferably in the afternoon or early evening, and not too close to bedtime.
-        - 'Tomar banho': Should be scheduled in the morning before school or in the evening before dinner or bed.
-        - Other routines: Place them in logical free slots (e.g., 'Acordar' in the early morning, 'Tomar café da manhã' after waking up, 'Organizar a mochila' in the evening).
-    6.  **Output Format**: Return the final schedule as a JSON object matching the 'ProcessScheduleOutput' schema. The 'schedule' array must be sorted chronologically by start time for each day. The 'freeTime' string should be a friendly, narrative summary of when the child has significant blocks of free time.
+    REGRAS:
+    1.  **Compromissos Fixos Primeiro**: Comece alocando todos os compromissos fixos: horários escolares e todos os itens de 'extraActivities'. Eles não são negociáveis.
+    2.  **Agenda Escolar**: Se o turno for 'Manhã', 'Tarde' ou 'Integral', crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos.
+    3.  **Processamento de Linguagem Natural**: Interprete o texto em 'extraActivities'. Extraia cada atividade, seu horário e os dias da semana. Assuma durações padrão se não especificadas (ex: 1 hora para aulas, 15 minutos para remédios).
+    4.  **Emoji**: Para cada atividade, adicione um emoji único e relevante.
+    5.  **Rotinas Essenciais**: Agende as 'essentialRoutines' nos horários livres, seguindo estas regras:
+        - 'Sair para escola': Deve ser 20 minutos antes da 'Entrada na Escola'.
+        - 'Escovar os dentes': Deve ocorrer aproximadamente 30 minutos após as refeições principais ('Tomar café da manhã', 'Almoçar', 'Jantar'). Agende três vezes ao dia.
+        - 'Jantar': Deve ser agendado pelo menos 20 minutos após a última atividade da noite. Encontre um horário lógico por volta das 19:00 ou 20:00 se não houver atividades noturnas.
+        - 'Fazer lição de casa': Agende em um horário livre, de preferência à tarde ou início da noite, não muito perto da hora de dormir.
+        - 'Tomar banho': Agende pela manhã antes da escola ou à noite antes do jantar ou de dormir.
+        - Outras rotinas: Encaixe em horários lógicos ('Acordar' de manhã cedo, 'Tomar café da manhã' após acordar, etc.).
+    6.  **Formato de Saída**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente por 'startTime' para cada dia. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**, descrevendo os principais blocos de tempo livre da criança.
 
-    EXAMPLE for an activity in the output schedule array:
+    EXEMPLO para um item no array de saída 'schedule':
     { "activity": "Aula de Natação", "emoji": "🏊", "type": "extra_activity", "startTime": "16:00", "endTime": "17:00", "days": ["MO", "WE"] }
 
-    Now, generate the schedule for {{childName}}.
+    Agora, gere a agenda para {{childName}}.
   `,
 });
 
