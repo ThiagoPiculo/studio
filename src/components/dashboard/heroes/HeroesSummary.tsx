@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -177,8 +176,8 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     const todaysMissions = missionInstances
                         .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today))
                         .sort((a, b) => {
-                            const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate);
-                            const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate);
+                            const dateA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || getDateObject(a.startDate);
+                            const dateB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || getDateObject(b.startDate);
                             
                             if (!dateA) return 1;
                             if (!dateB) return -1;
@@ -300,7 +299,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                             <>
                                                 {displayMissions.map(m => {
                                                     const isCompleted = isMissionCompletedForDate(m, today);
-                                                    const dateForTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate);
+                                                    const dateForTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate);
                                                     const timeString = dateForTime ? new Date(dateForTime).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit'}) : '';
 
                                                     return (

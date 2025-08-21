@@ -268,7 +268,7 @@ function AgendaPageContent() {
 
     // Process Mission Instances
     instancesToProcess.forEach(instance => {
-      const eventTimeSource = getDateObject(instance.startDate) || getDateObject(instance.dueDate);
+      const eventTimeSource = getDateObject(instance.isRecurring ? instance.startDate : instance.dueDate) || getDateObject(instance.startDate);
       if (!eventTimeSource) return;
 
       const period = getPeriodForDate(eventTimeSource);
@@ -551,7 +551,7 @@ function AgendaPageContent() {
                       {childEvents.map(event => {
                           const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                           const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
-                          const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
+                          const eventTime = getDateObject(event.data.isRecurring ? event.data.startDate : event.data.dueDate) || getDateObject(event.data.startDate);
                           const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                           
                           if (event.type === 'school') {
@@ -939,7 +939,7 @@ function AgendaPageContent() {
                         if (!child) return null;
                         const popoverId = `${event.data.id}-${dateKey}`;
                         const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
-                        const eventTime = getDateObject(event.data.startDate) || getDateObject(event.data.dueDate);
+                        const eventTime = getDateObject(event.data.isRecurring ? event.data.startDate : event.data.dueDate) || getDateObject(event.data.startDate);
                         const formattedTime = eventTime ? format(eventTime, 'HH:mm') : '';
                          const categoryDetails = categoryMap.get(event.data.category);
 
