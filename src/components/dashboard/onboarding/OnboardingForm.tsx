@@ -196,10 +196,10 @@ export function OnboardingForm() {
 
   return (
     <FormProvider {...methods}>
-      <div className="space-y-6">
+      <div className="flex flex-col space-y-6">
         <Progress value={progress} className="w-full" />
         
-        <div className="min-h-[450px]">
+        <div className="flex-grow min-h-[450px]">
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
@@ -207,7 +207,7 @@ export function OnboardingForm() {
             {step === 5 && <OnboardingStep5 schedule={generatedSchedule} />}
         </div>
 
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-4 border-t mt-auto">
           <div>
             {step > 1 && (
               <Button type="button" variant="ghost" onClick={goToPreviousStep} disabled={isLoading}>
