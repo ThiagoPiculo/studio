@@ -1498,17 +1498,18 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
 // --- Mission Templates (Catálogo de Missões) ---
 export const addMissionTemplate = async (actor: UserProfile, templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
   const newTemplateRef = doc(collection(db, 'missionTemplates'));
-  const now = serverTimestamp() as Timestamp;
-  const newTemplate: MissionTemplate = {
-    id: newTemplateRef.id,
+  const now = serverTimestamp();
+
+  // Convert dates from ISO strings to Timestamps before saving
+  const newTemplate: Omit<MissionTemplate, 'id'> = {
     ...templateData,
-    emoji: templateData.emoji || '',
-    isRecurring: !!templateData.isRecurring,
-    recurrenceRule: templateData.recurrenceRule || null,
+    startDate: templateData.startDate ? Timestamp.fromDate(new Date(templateData.startDate as string)) : null,
+    dueDate: templateData.dueDate ? Timestamp.fromDate(new Date(templateData.dueDate as string)) : null,
     status: 'active',
-    createdAt: now,
-    updatedAt: now,
+    createdAt: now as Timestamp,
+    updatedAt: now as Timestamp,
   };
+
   await setDoc(newTemplateRef, newTemplate);
 
   if (templateData.familyId) {
@@ -1520,7 +1521,8 @@ export const addMissionTemplate = async (actor: UserProfile, templateData: Omit<
     });
   }
 
-  return convertTimestampsInObject(newTemplate);
+  // Return the created template with ID, converting Timestamps to ISO strings for client use
+  return convertTimestampsInObject({ id: newTemplateRef.id, ...newTemplate });
 };
 
 export const getMissionTemplateById = async (templateId: string): Promise<MissionTemplate | null> => {
@@ -1667,10 +1669,10 @@ export const addMissionInstance = async (
   templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
-  const now = serverTimestamp() as Timestamp;
+  const now = serverTimestamp();
 
-  const newInstance: MissionInstance = {
-    id: newInstanceRef.id,
+  // Convert date strings back to Timestamps before saving
+  const newInstance: Omit<MissionInstance, 'id'> = {
     templateId: instanceData.templateId,
     childId: instanceData.childId,
     ownerId: instanceData.ownerId,
@@ -1682,10 +1684,10 @@ export const addMissionInstance = async (
     starsReward: templateSnapshot.starsReward,
     xpReward: templateSnapshot.xpReward,
     status: 'pending',
-    assignedAt: now,
-    updatedAt: now,
-    dueDate: templateSnapshot.dueDate ? Timestamp.fromDate(getDateObject(templateSnapshot.dueDate)!) : null,
-    startDate: templateSnapshot.startDate ? Timestamp.fromDate(getDateObject(templateSnapshot.startDate)!) : null,
+    assignedAt: now as Timestamp,
+    updatedAt: now as Timestamp,
+    dueDate: templateSnapshot.dueDate ? Timestamp.fromDate(new Date(templateSnapshot.dueDate as string)) : null,
+    startDate: templateSnapshot.startDate ? Timestamp.fromDate(new Date(templateSnapshot.startDate as string)) : null,
     isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
     completionCount: 0,
@@ -1705,7 +1707,7 @@ export const addMissionInstance = async (
     });
   }
 
-  return convertTimestampsInObject(newInstance);
+  return convertTimestampsInObject({ id: newInstanceRef.id, ...newInstance });
 };
 
 export const getActiveChildMissionInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<MissionInstance[]> => {

@@ -97,9 +97,9 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = true; // No validation needed for step 3, just selection
+        isStepValid = true;
     } else if (step === 4) {
-        isStepValid = true; // For AI generation trigger
+        isStepValid = true; 
     }
 
     if (isStepValid) {
@@ -178,7 +178,7 @@ export function OnboardingForm() {
             for (const activity of values.extraActivities) {
                  const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
                  
-                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+                 const templatePayload = {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: activity.name,
@@ -187,8 +187,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 15,
                     xpReward: missionDetails?.xpReward || 20,
                     isRecurring: true,
-                    startDate: Timestamp.fromDate(new Date()),
-                    dueDate: Timestamp.fromDate(addDays(new Date(), 1)),
+                    startDate: new Date().toISOString(), // Pass as ISO string
+                    dueDate: addDays(new Date(), 1).toISOString(), // Pass as ISO string
                     recurrenceRule: {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -200,7 +200,7 @@ export function OnboardingForm() {
                     const startDateWithTime = new Date(template.startDate as string);
                     startDateWithTime.setHours(hour, minute);
                     
-                    const finalTemplate = { ...template, startDate: Timestamp.fromDate(startDateWithTime) };
+                    const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
 
                     await addMissionInstance(user, {
                         templateId: template.id,
@@ -219,7 +219,7 @@ export function OnboardingForm() {
                  const startDate = new Date();
                  startDate.setHours(hour, minute, 0, 0);
 
-                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+                 const templatePayload = {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
@@ -228,8 +228,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 5,
                     xpReward: missionDetails?.xpReward || 10,
                     isRecurring: item.days.length > 0,
-                    startDate: Timestamp.fromDate(startDate),
-                    dueDate: Timestamp.fromDate(addDays(startDate, 1)),
+                    startDate: startDate.toISOString(), // Pass as ISO string
+                    dueDate: addDays(startDate, 1).toISOString(), // Pass as ISO string
                     recurrenceRule: item.days.length > 0 ? {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -269,7 +269,7 @@ export function OnboardingForm() {
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
-            {step === 4 && <OnboardingStep4 />}
+            {step === 4 && <OnboardingStep4 onGenerate={handleGenerateSchedule} />}
             {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
         </div>
 
