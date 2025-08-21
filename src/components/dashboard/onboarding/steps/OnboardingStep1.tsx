@@ -15,9 +15,12 @@ import { CalendarIcon } from "lucide-react";
 import * as z from "zod";
 import { useState } from "react";
 import { Label } from "@/components/ui/label";
+import { useFamily } from "@/contexts/FamilyContext";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function OnboardingStep1() {
   const { control, setValue, watch } = useFormContext();
+  const { availableContexts } = useFamily();
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [month, setMonth] = useState<Date>(new Date());
   
@@ -122,7 +125,7 @@ export function OnboardingStep1() {
         />
       </div>
 
-      <FormField
+       <FormField
         control={control}
         name="gender"
         render={({ field }) => (
@@ -176,6 +179,33 @@ export function OnboardingStep1() {
           </FormItem>
         )}
       />
+
+       {availableContexts.length > 1 && (
+        <FormField
+          control={control}
+          name="contextId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Onde este herói será gerenciado?</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um espaço..." />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {availableContexts.map(context => (
+                    <SelectItem key={context.id} value={context.id}>
+                      {context.id === 'my-space' ? "Apenas no meu espaço pessoal" : `Na Aliança: ${context.name}`}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+       )}
     </div>
   );
 }

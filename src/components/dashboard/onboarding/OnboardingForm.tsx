@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
-import { weekdayLabels } from "@/lib/types";
+import { weekdayLabels, predefinedMissionGroups } from "@/lib/predefined-missions";
 
 const TOTAL_STEPS = 5;
 
@@ -29,7 +29,7 @@ const TOTAL_STEPS = 5;
 const activitySchema = z.object({
   name: z.string(),
   emoji: z.string(),
-  days: z.array(z.string()),
+  days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
   time: z.string(),
 });
 
@@ -96,14 +96,14 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['extraActivities', 'essentialRoutines']);
+        isStepValid = await methods.trigger(['extraActivities']);
     } else {
         isStepValid = true; // For steps without validation
     }
     
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
-        if (step === 3) {
+        if (step === 4) { // Trigger AI on going from 4 to 5
             await handleGenerateSchedule();
         }
         setStep(prev => prev + 1);
@@ -123,49 +123,36 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      // Format the user-defined activities into descriptive strings
-      const selectedActivitiesForAI = values.extraActivities?.map(act => {
-          const dayLabels = act.days?.map(d => weekdayLabels[d as Weekday].short).join(', ');
-          return `${act.name} (${act.emoji}) - Agendado para ${dayLabels || 'N/A'} às ${act.time || 'N/A'}`;
-      }) || [];
-
-      const input: ProcessScheduleTextInput = {
-          childAge: age,
-          childName: values.name,
-          schoolShift: values.schoolShift,
-          schoolStartTime: values.schoolShiftStart,
-          schoolEndTime: values.schoolShiftEnd,
-          selectedActivities: selectedActivitiesForAI,
-          essentialRoutines: values.essentialRoutines
-      };
+      // For essential routines, AI will suggest the schedule. We only send the names.
+      const essentialRoutinesForAI = values.essentialRoutines || [];
 
       try {
-          const schedule = await processScheduleText(input);
+          const schedule = await processScheduleText({
+              childAge: age,
+              childName: values.name,
+              schoolShift: values.schoolShift,
+              schoolStartTime: values.schoolShiftStart,
+              schoolEndTime: values.schoolShiftEnd,
+              essentialRoutines: essentialRoutinesForAI
+          });
           setGeneratedSchedule(schedule);
       } catch (error) {
           console.error("Error generating schedule:", error);
           toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
-          setStep(3); // Go back to the previous step on error
+          setStep(4); // Go back to the previous step on error
       } finally {
           setIsLoading(false);
       }
   };
 
-  const getCategoryFromActivity = (item: { type: string, activity: string }): MissionCategory => {
+  const getCategoryFromActivity = (item: { type?: string, activity: string }): MissionCategory => {
     const title = item.activity.toLowerCase();
     
-    if (item.type === 'extra_activity') {
-        if (title.includes('natação') || title.includes('futebol') || title.includes('judô')) return 'sports';
-        if (title.includes('dança') || title.includes('piano') || title.includes('violão') || title.includes('desenho')) return 'hobbies';
-        if (title.includes('inglês') || title.includes('espanhol')) return 'languages';
-        return 'hobbies';
-    }
+    const allPredefinedMissions = predefinedMissionGroups.flatMap(g => g.items);
+    const predefinedMatch = allPredefinedMissions.find(m => m.title.toLowerCase() === title);
+    if(predefinedMatch) return predefinedMatch.suggestedAppCategory;
     
-    if (title.includes('escola') || title.includes('mochila') || title.includes('lição') || title.includes('estudar') || title.includes('dever')) return 'school';
-    if (title.includes('brinquedos') || title.includes('cama') || title.includes('prato') || title.includes('mesa') || title.includes('roupas')) return 'home';
-    if (title.includes('dentes') || title.includes('banho') || title.includes('acordar') || title.includes('dormir') || title.includes('café') || title.includes('almoçar') || title.includes('jantar')) return 'health';
-    
-    return 'essential_routines';
+    return 'essential_routines'; // Fallback
   }
   
   const handleFinalSubmit = async () => {
@@ -175,6 +162,7 @@ export function OnboardingForm() {
     }
     setIsLoading(true);
     const values = methods.getValues();
+    const allMissionPromises = [];
 
     try {
         const newChild = await addChildProfile(user.uid, {
@@ -186,22 +174,61 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
+        // 1. Process manually scheduled extra activities
+        if (values.extraActivities) {
+            for (const activity of values.extraActivities) {
+                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
+                 
+                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+                    ownerId: user.uid,
+                    familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    title: activity.name,
+                    emoji: activity.emoji,
+                    category: missionDetails?.suggestedAppCategory || 'hobbies',
+                    starsReward: missionDetails?.starsReward || 15,
+                    xpReward: missionDetails?.xpReward || 20,
+                    isRecurring: true,
+                    startDate: new Date(), // Start date is today, recurrence handles the days
+                    dueDate: addDays(new Date(), 1), // Placeholder
+                    recurrenceRule: {
+                        freq: 'WEEKLY',
+                        interval: 1,
+                        byDay: activity.days as Weekday[],
+                    },
+                };
+                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                    const [hour, minute] = activity.time.split(':').map(Number);
+                    const startDateWithTime = new Date(template.startDate as any);
+                    startDateWithTime.setHours(hour, minute);
+                    
+                    const finalTemplate = { ...template, startDate: startDateWithTime };
+
+                    await addMissionInstance(user, {
+                        templateId: template.id,
+                        childId: newChild.id,
+                        ownerId: user.uid,
+                        familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    }, finalTemplate);
+                 }));
+            }
+        }
+
+        // 2. Process AI scheduled essential routines
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
-                 if (item.type === 'school_entry' || item.type === 'school_exit') continue;
-
+                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
                  const [hour, minute] = item.startTime.split(':').map(Number);
                  const startDate = new Date();
                  startDate.setHours(hour, minute, 0, 0);
-                 
+
                  const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
                     emoji: item.emoji,
                     category: getCategoryFromActivity(item),
-                    starsReward: 10,
-                    xpReward: 15,
+                    starsReward: missionDetails?.starsReward || 5,
+                    xpReward: missionDetails?.xpReward || 10,
                     isRecurring: item.days.length > 0,
                     startDate: startDate,
                     dueDate: addDays(startDate, 1),
@@ -211,19 +238,18 @@ export function OnboardingForm() {
                         byDay: item.days as any[],
                     } : null,
                 };
-                
-                const createdTemplate = await addMissionTemplate(user, templatePayload);
-                
-                const instanceData = {
-                    templateId: createdTemplate.id,
-                    childId: newChild.id,
-                    ownerId: user.uid,
-                    familyId: values.contextId === 'my-space' ? null : values.contextId,
-                };
-                
-                await addMissionInstance(user, instanceData, createdTemplate);
+                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                    await addMissionInstance(user, {
+                        templateId: template.id,
+                        childId: newChild.id,
+                        ownerId: user.uid,
+                        familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    }, template);
+                 }));
             }
         }
+        
+        await Promise.all(allMissionPromises);
         
         toast({ title: "Jornada Iniciada!", description: `${values.name} e sua rotina foram cadastrados com sucesso!` });
         router.push('/dashboard/heroes');
@@ -245,8 +271,8 @@ export function OnboardingForm() {
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
-            {step === 4 && <OnboardingStep4 isLoading={isLoading} childName={methods.getValues('name')} />}
-            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} />}
+            {step === 4 && <OnboardingStep4 onGenerate={goToNextStep} />}
+            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
         </div>
 
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
@@ -261,12 +287,12 @@ export function OnboardingForm() {
               <Button type="button" variant="link" onClick={() => router.push('/dashboard/heroes')}>
                 Pular
               </Button>
-              {step < TOTAL_STEPS && (
+              {step < 4 && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  {step === 3 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" />
+                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
-              {step === TOTAL_STEPS && (
+              {step === 5 && (
                 <Button type="button" onClick={handleFinalSubmit} disabled={isLoading}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Confirmar e Iniciar a Aventura! 🚀

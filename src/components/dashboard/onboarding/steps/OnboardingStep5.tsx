@@ -5,6 +5,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { weekdayLabels } from "@/lib/types";
+import { Wand2, Loader2 } from "lucide-react";
+
 
 interface ScheduleItem {
     activity: string;
@@ -20,9 +22,26 @@ interface OnboardingStep5Props {
       schedule: ScheduleItem[];
       freeTime: string;
   } | null;
+  isLoading: boolean;
 }
 
-export function OnboardingStep5({ schedule }: OnboardingStep5Props) {
+export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
+  if (isLoading) {
+    return (
+        <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
+            <div className="relative">
+                <Loader2 className="h-24 w-24 text-primary animate-spin" />
+            </div>
+            <h2 className="mt-6 text-2xl font-bold font-headline">
+                Consultando o Oráculo da Organização...
+            </h2>
+            <p className="mt-2 text-muted-foreground max-w-md">
+                Aguarde um momento enquanto o Mago usa a IA do Google para forjar uma 'Rotina Essencial' perfeita.
+            </p>
+        </div>
+    );
+  }
+
   if (!schedule) {
     return (
       <div className="text-center">
@@ -35,8 +54,7 @@ export function OnboardingStep5({ schedule }: OnboardingStep5Props) {
   const { schedule: dailySchedules, freeTime } = schedule;
 
   const essentialRoutines = dailySchedules?.filter(item => item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit') || [];
-  const extraActivities = dailySchedules?.filter(item => item.type === 'extra_activity') || [];
-
+  
   const renderScheduleItems = (items: ScheduleItem[]) => (
     items.map((item, index) => (
         <div key={index} className="flex items-center gap-2 sm:gap-4 text-sm">
@@ -66,18 +84,9 @@ export function OnboardingStep5({ schedule }: OnboardingStep5Props) {
             <div className="space-y-4">
                 {essentialRoutines.length > 0 && (
                     <div className="space-y-2">
-                        <h3 className="font-semibold text-muted-foreground">Rotina Essencial</h3>
+                        <h3 className="font-semibold text-muted-foreground">Rotina Essencial (Sugestão da IA)</h3>
                         <div className="space-y-3">
                            {renderScheduleItems(essentialRoutines)}
-                        </div>
-                    </div>
-                )}
-                {extraActivities.length > 0 && essentialRoutines.length > 0 && <Separator className="my-4"/>}
-                {extraActivities.length > 0 && (
-                    <div className="space-y-2">
-                         <h3 className="font-semibold text-muted-foreground">Treinos Especiais</h3>
-                         <div className="space-y-3">
-                           {renderScheduleItems(extraActivities)}
                         </div>
                     </div>
                 )}

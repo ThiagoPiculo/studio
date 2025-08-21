@@ -2,28 +2,17 @@
 "use client";
 
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { TimePicker } from "../../school-schedule/TimePicker";
+import { TimePicker } from "../../missions/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Trash2 } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { ActivityFormValues } from "../OnboardingForm";
-
-const routines = [
-  { id: 'acordar', label: 'Hora de Acordar' },
-  { id: 'cafe', label: 'Tomar café da manhã' },
-  { id: 'almoco', label: 'Almoçar' },
-  { id: 'jantar', label: 'Jantar' },
-  { id: 'dever', label: 'Fazer lição de casa' },
-  { id: 'mochila', label: 'Organizar a mochila para amanhã' },
-  { id: 'banho', label: 'Tomar banho' },
-  { id: 'dormir', label: 'Hora de dormir' },
-];
 
 function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, remove: (index: number) => void }) {
     const { control } = useFormContext();
@@ -86,6 +75,13 @@ function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, r
     )
 }
 
+const extraActivityGroups = predefinedMissionGroups.filter(g => 
+    !['Rotinas Essencial (diárias)', 'Ajudar em Casa', 'Comportamental'].includes(g.userCategory)
+).sort((a,b) => {
+    const order = ['Terapias e Acompanhamentos de Saúde', 'Prática de Esportes', 'Prática de Artes', 'Prática de Idiomas'];
+    return order.indexOf(a.userCategory) - order.indexOf(b.userCategory);
+});
+
 export function OnboardingStep3() {
   const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
@@ -110,12 +106,12 @@ export function OnboardingStep3() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Os Treinos Especiais</h2>
-        <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Você pode adicionar quantos quiser antes de avançar.</p>
+        <h2 className="text-2xl font-bold font-headline">Atividades Extras com Horário Fixo</h2>
+        <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Marque as atividades e defina os horários fixos para cada uma delas.</p>
       </div>
 
       <Accordion type="multiple" className="w-full space-y-2">
-        {predefinedMissionGroups.slice(1, 5).map((group) => {
+        {extraActivityGroups.map((group) => {
             const activitiesInGroup = allActivities?.filter(activity => 
                 group.items.some(item => item.title === activity.name)
             ) || [];
@@ -168,58 +164,6 @@ export function OnboardingStep3() {
             );
         })}
       </Accordion>
-
-
-      <FormField
-        control={control}
-        name="essentialRoutines"
-        render={({ field }) => (
-          <FormItem>
-            <div className="mb-4">
-                <FormLabel className="text-lg font-semibold">Rotinas Essenciais</FormLabel>
-                <FormDescription>
-                    Quais destas rotinas diárias você quer que o Mago organize automaticamente?
-                </FormDescription>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {routines.map((item) => (
-                <FormField
-                    key={item.id}
-                    control={control}
-                    name="essentialRoutines"
-                    render={({ field }) => {
-                    return (
-                        <FormItem
-                        key={item.id}
-                        className="flex flex-row items-center space-x-3 space-y-0"
-                        >
-                        <FormControl>
-                            <Checkbox
-                            checked={field.value?.includes(item.label)}
-                            onCheckedChange={(checked) => {
-                                return checked
-                                ? field.onChange([...(field.value || []), item.label])
-                                : field.onChange(
-                                    field.value?.filter(
-                                        (value) => value !== item.label
-                                    )
-                                    )
-                            }}
-                            />
-                        </FormControl>
-                        <FormLabel className="font-normal">
-                            {item.label}
-                        </FormLabel>
-                        </FormItem>
-                    )
-                    }}
-                />
-                ))}
-            </div>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
     </div>
   );
 }
