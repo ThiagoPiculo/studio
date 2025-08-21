@@ -70,7 +70,7 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
         <p className="text-muted-foreground">Aqui está o plano mágico completo. Se estiver tudo certo, vamos dar vida a esta jornada!</p>
       </div>
       
-      <div className="max-h-[350px] p-4 border rounded-lg bg-muted/20">
+      <div className="max-h-[400px] p-4 border rounded-lg bg-muted/20">
         <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
                 {(['morning', 'afternoon', 'night'] as const).map((period) => {
@@ -102,7 +102,10 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
                         </div>
                     );
                 })}
-                 <div className="space-y-2 pt-4 p-3">
+
+                <Separator className="my-4" />
+
+                <div className="space-y-2 p-3">
                      <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
                      <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
                 </div>
