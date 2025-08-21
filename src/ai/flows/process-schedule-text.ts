@@ -12,7 +12,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { Weekday } from '@/lib/types';
 
-export const ProcessScheduleTextInputSchema = z.object({
+const ProcessScheduleTextInputSchema = z.object({
     childName: z.string().describe("The child's name."),
     childAge: z.number().describe("The child's age."),
     schoolShift: z.string().describe("The child's school shift (e.g., 'Manhã', 'Tarde', 'Integral', 'Não estuda ainda')."),
@@ -31,15 +31,11 @@ const ScheduleItemSchema = z.object({
     days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("An array of weekdays (MO, TU, etc.) for the activity."),
 });
 
-export const ProcessScheduleOutputSchema = z.object({
+const ProcessScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A chronologically sorted list of all scheduled activities for the week."),
   freeTime: z.string().describe("A brief, friendly summary of the child's main free time blocks during the week."),
 });
 export type ProcessScheduleOutput = z.infer<typeof ProcessScheduleOutputSchema>;
-
-export async function processScheduleText(input: ProcessScheduleTextInput): Promise<ProcessScheduleOutput> {
-  return processScheduleFlow(input);
-}
 
 const prompt = ai.definePrompt({
   name: 'processSchedulePrompt',
@@ -91,3 +87,8 @@ const processScheduleFlow = ai.defineFlow(
     return output!;
   }
 );
+
+
+export async function processScheduleText(input: ProcessScheduleTextInput): Promise<ProcessScheduleOutput> {
+  return processScheduleFlow(input);
+}
