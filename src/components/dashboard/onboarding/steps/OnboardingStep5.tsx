@@ -1,6 +1,7 @@
 
 "use client";
 
+import { useFormContext } from "react-hook-form";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
@@ -23,10 +24,10 @@ interface OnboardingStep5Props {
       freeTime: string;
   } | null;
   isLoading: boolean;
-  getValues: () => OnboardingFormValues;
 }
 
-export function OnboardingStep5({ schedule, isLoading, getValues }: OnboardingStep5Props) {
+export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
+  const { getValues } = useFormContext<OnboardingFormValues>();
   const manualActivities = getValues().extraActivities || [];
 
   if (isLoading) {
@@ -58,7 +59,7 @@ export function OnboardingStep5({ schedule, isLoading, getValues }: OnboardingSt
 
   const essentialRoutines = aiSchedule?.filter(item => item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit') || [];
   
-  const renderScheduleItems = (items: (ScheduleItem | { activity: string; emoji: string; startTime: string; days: string[] })[]) => (
+  const renderScheduleItems = (items: { activity: string; emoji: string; startTime: string; days: string[] }[]) => (
     items.map((item, index) => (
         <div key={index} className="flex items-center gap-2 sm:gap-4 text-sm">
             <Badge variant="secondary" className="w-16 justify-center shrink-0">{item.startTime}</Badge>
@@ -104,7 +105,7 @@ export function OnboardingStep5({ schedule, isLoading, getValues }: OnboardingSt
 
                 {formattedManualActivities.length > 0 && (
                     <div className="space-y-2">
-                        <h3 className="font-semibold text-muted-foreground">Atividades Extras (Agendadas por você)</h3>
+                        <h3 className="font-semibold text-muted-foreground">Atividades Extras Agendadas</h3>
                          <div className="space-y-3">
                            {renderScheduleItems(formattedManualActivities)}
                         </div>

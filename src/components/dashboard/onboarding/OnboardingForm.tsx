@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
-import { weekdayLabels, predefinedMissionGroups } from "@/lib/predefined-missions";
+import { predefinedMissionGroups } from "@/lib/predefined-missions";
 
 const TOTAL_STEPS = 5;
 
@@ -96,14 +96,14 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['extraActivities']);
-    } else {
-        isStepValid = true; // For steps without validation
+        isStepValid = true; // No validation needed for step 3, just selection
+    } else if (step === 4) {
+        isStepValid = true; // For AI generation trigger
     }
-    
+
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
-        if (step === 4) { // Trigger AI on going from 4 to 5
+        if (step === 4) {
             await handleGenerateSchedule();
         }
         setStep(prev => prev + 1);
@@ -123,7 +123,6 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      // For essential routines, AI will suggest the schedule. We only send the names.
       const essentialRoutinesForAI = values.essentialRoutines || [];
 
       try {
@@ -139,7 +138,7 @@ export function OnboardingForm() {
       } catch (error) {
           console.error("Error generating schedule:", error);
           toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
-          setStep(4); // Go back to the previous step on error
+          setStep(4);
       } finally {
           setIsLoading(false);
       }
@@ -152,7 +151,7 @@ export function OnboardingForm() {
     const predefinedMatch = allPredefinedMissions.find(m => m.title.toLowerCase() === title);
     if(predefinedMatch) return predefinedMatch.suggestedAppCategory;
     
-    return 'essential_routines'; // Fallback
+    return 'essential_routines';
   }
   
   const handleFinalSubmit = async () => {
@@ -174,7 +173,6 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
-        // 1. Process manually scheduled extra activities
         if (values.extraActivities) {
             for (const activity of values.extraActivities) {
                  const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
@@ -188,8 +186,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 15,
                     xpReward: missionDetails?.xpReward || 20,
                     isRecurring: true,
-                    startDate: new Date(), // Start date is today, recurrence handles the days
-                    dueDate: addDays(new Date(), 1), // Placeholder
+                    startDate: new Date(),
+                    dueDate: addDays(new Date(), 1),
                     recurrenceRule: {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -213,7 +211,6 @@ export function OnboardingForm() {
             }
         }
 
-        // 2. Process AI scheduled essential routines
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
                  const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
@@ -271,7 +268,7 @@ export function OnboardingForm() {
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
-            {step === 4 && <OnboardingStep4 onGenerate={goToNextStep} />}
+            {step === 4 && <OnboardingStep4 />}
             {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
         </div>
 
@@ -287,12 +284,12 @@ export function OnboardingForm() {
               <Button type="button" variant="link" onClick={() => router.push('/dashboard/heroes')}>
                 Pular
               </Button>
-              {step < 4 && (
+              {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
-              {step === 5 && (
+              {step === TOTAL_STEPS && (
                 <Button type="button" onClick={handleFinalSubmit} disabled={isLoading}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Confirmar e Iniciar a Aventura! 🚀
