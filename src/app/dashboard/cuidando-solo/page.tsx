@@ -4,19 +4,34 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getChildProfilesByOwner } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, deleteChildProfile } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, User, PlusCircle, ArrowRight, Sparkles } from 'lucide-react';
+import { Loader2, User, PlusCircle, ArrowRight, Sparkles, Settings, Trash2 } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useToast } from '@/hooks/use-toast';
 
 function CuidandoSoloPageContent() {
     const { user, loading: authLoading } = useAuth();
+    const { toast } = useToast();
     const [children, setChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    const [childToDelete, setChildToDelete] = useState<ChildProfile | null>(null);
 
     useEffect(() => {
         if (authLoading) return;
@@ -28,7 +43,6 @@ function CuidandoSoloPageContent() {
         const fetchSoloChildren = async () => {
             setIsLoading(true);
             try {
-                // Fetch only children in "Meu Espaço" (familyId is null)
                 const soloChildren = await getChildProfilesByOwner(user.uid, true);
                 setChildren(soloChildren.sort((a, b) => a.name.localeCompare(b.name)));
             } catch (error) {
@@ -40,6 +54,23 @@ function CuidandoSoloPageContent() {
 
         fetchSoloChildren();
     }, [user, authLoading]);
+    
+    const handleDeleteProfile = async () => {
+        if (!childToDelete || !user) return;
+        setIsDeleting(childToDelete.id);
+        try {
+            await deleteChildProfile(childToDelete.id, user);
+            toast({ title: "Perfil de Herói Removido", description: `O perfil de ${childToDelete.name} foi excluído com sucesso.` });
+            setChildren(prev => prev.filter(c => c.id !== childToDelete.id));
+        } catch (error) {
+            console.error("Error deleting child profile:", error);
+            toast({ title: "Erro ao Excluir", description: "Não foi possível excluir o perfil da criança.", variant: "destructive" });
+        } finally {
+            setIsDeleting(null);
+            setChildToDelete(null);
+        }
+    };
+
 
     if (isLoading || authLoading) {
         return (
@@ -62,6 +93,7 @@ function CuidandoSoloPageContent() {
 
     if (children.length > 0) {
         return (
+          <>
             <div className="space-y-6">
                  <Card>
                     <CardHeader>
@@ -90,17 +122,42 @@ function CuidandoSoloPageContent() {
                                             <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
                                         </div>
                                     </div>
-                                    <Link href={`/dashboard/heroes?childId=${child.id}`}>
-                                        <Button variant="ghost" size="sm">
-                                            Ver Resumo do Dia <ArrowRight className="ml-2 h-4 w-4" />
-                                        </Button>
-                                    </Link>
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                      <Link href={`/dashboard/mural?childId=${child.id}`}>
+                                          <Button variant="outline" size="sm">
+                                              Gerenciar <Settings className="ml-2 h-4 w-4" />
+                                          </Button>
+                                      </Link>
+                                      <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToDelete(child)}>
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     </CardContent>
                 </Card>
             </div>
+            {childToDelete && (
+                 <AlertDialog open={!!childToDelete} onOpenChange={() => setChildToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir {childToDelete.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil e todos os dados associados (missões, recompensas, progresso, etc.).
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={!!isDeleting}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={!!isDeleting}>
+                                {isDeleting === childToDelete.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Sim, Excluir Perfil
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+           </>
         );
     }
     
