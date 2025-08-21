@@ -7,7 +7,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { addChildProfile, addRecurringSchoolEntry, addMissionInstance } from "@/lib/firebase/firestore";
+import { addChildProfile, addMissionTemplate, addMissionInstance } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -166,55 +166,42 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
-        // Add schedule entries based on generated schedule
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
-                if(item.type === 'school_entry' || item.type === 'school_exit') continue;
+                 if (item.type === 'school_entry' || item.type === 'school_exit') continue;
 
-                const [hour, minute] = item.startTime.split(':').map(Number);
-                const startDate = new Date();
-                startDate.setHours(hour, minute, 0, 0);
-
-                const templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'> = {
+                 const [hour, minute] = item.startTime.split(':').map(Number);
+                 const startDate = new Date();
+                 startDate.setHours(hour, minute, 0, 0);
+                 
+                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+                    ownerId: user.uid,
+                    familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
+                    emoji: item.type === 'essential_routine' ? '✨' : '🎯',
                     category: item.type === 'essential_routine' ? 'health' : 'hobbies',
                     starsReward: 10,
                     xpReward: 15,
-                    isRecurring: item.days.length > 1,
+                    isRecurring: item.days.length > 0,
                     startDate: startDate,
                     dueDate: addDays(startDate, 1),
-                    recurrenceRule: {
-                      freq: 'WEEKLY',
-                      interval: 1,
-                      byDay: item.days as any[],
-                    },
+                    recurrenceRule: item.days.length > 0 ? {
+                        freq: 'WEEKLY',
+                        interval: 1,
+                        byDay: item.days as any[],
+                    } : null,
                 };
                 
-                // If the mission is for a single day, create a one-off instance
-                if (item.days.length === 1) {
-                     const instanceData = {
-                        templateId: `ai-generated-${Date.now()}`,
-                        childId: newChild.id,
-                        ownerId: user.uid,
-                        familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    };
-                    await addMissionInstance(user, instanceData, {
-                        ...templateSnapshot,
-                        isRecurring: false,
-                        recurrenceRule: null,
-                    });
-                } else if (item.days.length > 1) {
-                    // For multiple days, create a recurring school/schedule entry
-                     await addRecurringSchoolEntry({
-                        subject: item.activity,
-                        startTime: item.startTime,
-                        endTime: item.endTime,
-                        color: '#a855f7',
-                        childId: newChild.id,
-                        ownerId: user.uid,
-                        familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    }, item.days as any[], user);
-                }
+                const createdTemplate = await addMissionTemplate(user, templatePayload);
+                
+                const instanceData = {
+                    templateId: createdTemplate.id,
+                    childId: newChild.id,
+                    ownerId: user.uid,
+                    familyId: values.contextId === 'my-space' ? null : values.contextId,
+                };
+                
+                await addMissionInstance(user, instanceData, createdTemplate);
             }
         }
         
