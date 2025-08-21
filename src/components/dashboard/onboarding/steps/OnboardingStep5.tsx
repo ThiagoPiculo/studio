@@ -9,25 +9,15 @@ import { weekdayLabels } from "@/lib/types";
 import { Wand2, Loader2 } from "lucide-react";
 import type { OnboardingFormValues } from "../OnboardingForm";
 
-interface ScheduleItem {
-    activity: string;
-    emoji: string;
-    type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine';
-    startTime: string;
-    endTime: string;
-    days: string[];
-}
-
 interface OnboardingStep5Props {
-  schedule: {
-      schedule: ScheduleItem[];
-      freeTime: string;
-  } | null;
-  isLoading: boolean;
+  isLoading?: boolean;
 }
 
-export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
+export function OnboardingStep5({ isLoading }: OnboardingStep5Props) {
   const { getValues } = useFormContext<OnboardingFormValues>();
+  const allActivities = [...(getValues().extraActivities || []), ...(getValues().essentialRoutines || [])];
+
+  const essentialRoutines = getValues().essentialRoutines || [];
   const manualActivities = getValues().extraActivities || [];
 
   if (isLoading) {
@@ -46,26 +36,22 @@ export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
     );
   }
 
-  if (!schedule) {
+  if (allActivities.length === 0) {
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Resumo da Rotina</h2>
-        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode pular esta etapa e configurar manualmente.</p>
+        <p className="text-muted-foreground">Nenhuma rotina foi gerada ou adicionada. Você pode voltar para adicionar ou pular e configurar manualmente mais tarde.</p>
       </div>
     );
   }
-
-  const { schedule: aiSchedule, freeTime } = schedule;
-
-  const essentialRoutines = aiSchedule?.filter(item => item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit') || [];
   
-  const renderScheduleItems = (items: { activity: string; emoji: string; startTime: string; days: string[] }[]) => (
+  const renderScheduleItems = (items: { name: string; emoji: string; time: string; days: string[] }[]) => (
     items.map((item, index) => (
-        <div key={index} className="flex items-center gap-2 sm:gap-4 text-sm">
-            <Badge variant="secondary" className="w-16 justify-center shrink-0">{item.startTime}</Badge>
+        <div key={`${item.name}-${index}`} className="flex items-center gap-2 sm:gap-4 text-sm">
+            <Badge variant="secondary" className="w-16 justify-center shrink-0">{item.time}</Badge>
             <div className="font-semibold flex-grow truncate flex items-center gap-2">
                 <span className="text-xl">{item.emoji}</span>
-                <span>{item.activity}</span>
+                <span>{item.name}</span>
             </div>
             <div className="flex gap-1 flex-shrink-0 flex-wrap justify-end max-w-[150px] sm:max-w-none">
                 {item.days?.map((day: string) => (
@@ -75,13 +61,6 @@ export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
         </div>
     ))
   );
-
-  const formattedManualActivities = manualActivities.map(act => ({
-    activity: act.name,
-    emoji: act.emoji,
-    startTime: act.time,
-    days: act.days,
-  }));
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -95,27 +74,22 @@ export function OnboardingStep5({ schedule, isLoading }: OnboardingStep5Props) {
             <div className="space-y-4">
                 {essentialRoutines.length > 0 && (
                     <div className="space-y-2">
-                        <h3 className="font-semibold text-muted-foreground">Rotina Essencial (Sugestão da IA)</h3>
+                        <h3 className="font-semibold text-muted-foreground">Rotina Essencial (Sugerida pela IA)</h3>
                         <div className="space-y-3">
                            {renderScheduleItems(essentialRoutines)}
                         </div>
                     </div>
                 )}
-                 {(essentialRoutines.length > 0 && formattedManualActivities.length > 0) && <Separator className="my-4" />}
+                 {(essentialRoutines.length > 0 && manualActivities.length > 0) && <Separator className="my-4" />}
 
-                {formattedManualActivities.length > 0 && (
+                {manualActivities.length > 0 && (
                     <div className="space-y-2">
                         <h3 className="font-semibold text-muted-foreground">Atividades Extras Agendadas</h3>
                          <div className="space-y-3">
-                           {renderScheduleItems(formattedManualActivities)}
+                           {renderScheduleItems(manualActivities)}
                         </div>
                     </div>
                 )}
-            </div>
-            <Separator className="my-4" />
-            <div>
-                <h3 className="font-semibold mb-2">Horários Livres Sugeridos</h3>
-                <p className="text-sm text-muted-foreground">{freeTime}</p>
             </div>
         </ScrollArea>
       </div>

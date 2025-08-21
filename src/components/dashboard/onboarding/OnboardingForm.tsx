@@ -7,7 +7,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { addChildProfile, addMissionTemplate, addMissionInstance } from "@/lib/firebase/firestore";
+import { addMissionTemplate, addMissionInstance } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -16,13 +16,14 @@ import { OnboardingStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3 } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
-import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
+import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
+
 
 const TOTAL_STEPS = 5;
 
@@ -46,7 +47,7 @@ const onboardingSchema = z.object({
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
   extraActivities: z.array(activitySchema).optional(),
-  essentialRoutines: z.array(z.string()).optional(),
+  essentialRoutines: z.array(activitySchema).optional(), // Changed to activity schema
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
         if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
@@ -70,8 +71,7 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<ProcessScheduleOutput | null>(null);
-
+  
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onChange',
@@ -97,16 +97,13 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = true;
-    } else if (step === 4) {
         isStepValid = true; 
+    } else if (step === 4) {
+        isStepValid = await methods.trigger(['essentialRoutines']);
     }
 
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
-        if (step === 4) {
-            await handleGenerateSchedule();
-        }
         setStep(prev => prev + 1);
       }
     }
@@ -118,34 +115,7 @@ export function OnboardingForm() {
     }
   };
   
-  const handleGenerateSchedule = async () => {
-      setIsLoading(true);
-      const values = methods.getValues();
-      const birthDate = new Date(values.birthDate as string);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
-
-      const essentialRoutinesForAI = values.essentialRoutines || [];
-
-      try {
-          const schedule = await processScheduleText({
-              childAge: age,
-              childName: values.name,
-              schoolShift: values.schoolShift,
-              schoolStartTime: values.schoolShiftStart,
-              schoolEndTime: values.schoolShiftEnd,
-              essentialRoutines: essentialRoutinesForAI
-          });
-          setGeneratedSchedule(schedule);
-      } catch (error) {
-          console.error("Error generating schedule:", error);
-          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
-          setStep(4);
-      } finally {
-          setIsLoading(false);
-      }
-  };
-
-  const getCategoryFromActivity = (item: { type?: string, activity: string }): MissionCategory => {
+  const getCategoryFromActivity = (item: { activity: string }): MissionCategory => {
     const title = item.activity.toLowerCase();
     
     const allPredefinedMissions = predefinedMissionGroups.flatMap(g => g.items);
@@ -162,10 +132,12 @@ export function OnboardingForm() {
     }
     setIsLoading(true);
     const values = methods.getValues();
+    
+    const allActivities = [...(values.extraActivities || []), ...(values.essentialRoutines || [])];
     const allMissionPromises = [];
 
     try {
-        const newChild = await addChildProfile(user.uid, {
+        const newChild = await addMissionTemplate(user, {
             name: values.name,
             birthDate: values.birthDate as string,
             gender: values.gender,
@@ -174,77 +146,40 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
-        if (values.extraActivities) {
-            for (const activity of values.extraActivities) {
-                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
-                 
-                 const templatePayload = {
+        for (const activity of allActivities) {
+             const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
+             
+             const templatePayload = {
+                ownerId: user.uid,
+                familyId: values.contextId === 'my-space' ? null : values.contextId,
+                title: activity.name,
+                emoji: activity.emoji,
+                category: missionDetails?.suggestedAppCategory || 'hobbies',
+                starsReward: missionDetails?.starsReward || 15,
+                xpReward: missionDetails?.xpReward || 20,
+                isRecurring: true,
+                startDate: new Date().toISOString(),
+                dueDate: addDays(new Date(), 1).toISOString(),
+                recurrenceRule: {
+                    freq: 'WEEKLY',
+                    interval: 1,
+                    byDay: activity.days as Weekday[],
+                },
+            };
+             allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                const [hour, minute] = activity.time.split(':').map(Number);
+                const startDateWithTime = new Date(template.startDate as string);
+                startDateWithTime.setHours(hour, minute);
+                
+                const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
+
+                await addMissionInstance(user, {
+                    templateId: template.id,
+                    childId: newChild.id,
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    title: activity.name,
-                    emoji: activity.emoji,
-                    category: missionDetails?.suggestedAppCategory || 'hobbies',
-                    starsReward: missionDetails?.starsReward || 15,
-                    xpReward: missionDetails?.xpReward || 20,
-                    isRecurring: true,
-                    startDate: new Date().toISOString(),
-                    dueDate: addDays(new Date(), 1).toISOString(),
-                    recurrenceRule: {
-                        freq: 'WEEKLY',
-                        interval: 1,
-                        byDay: activity.days as Weekday[],
-                    },
-                };
-                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
-                    const [hour, minute] = activity.time.split(':').map(Number);
-                    const startDateWithTime = new Date(template.startDate as string);
-                    startDateWithTime.setHours(hour, minute);
-                    
-                    const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
-
-                    await addMissionInstance(user, {
-                        templateId: template.id,
-                        childId: newChild.id,
-                        ownerId: user.uid,
-                        familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    }, finalTemplate);
-                 }));
-            }
-        }
-
-        if (generatedSchedule && generatedSchedule.schedule) {
-            for (const item of generatedSchedule.schedule) {
-                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
-                 const [hour, minute] = item.startTime.split(':').map(Number);
-                 const startDate = new Date();
-                 startDate.setHours(hour, minute, 0, 0);
-
-                 const templatePayload = {
-                    ownerId: user.uid,
-                    familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    title: item.activity,
-                    emoji: item.emoji,
-                    category: getCategoryFromActivity(item),
-                    starsReward: missionDetails?.starsReward || 5,
-                    xpReward: missionDetails?.xpReward || 10,
-                    isRecurring: item.days.length > 0,
-                    startDate: startDate.toISOString(),
-                    dueDate: addDays(startDate, 1).toISOString(),
-                    recurrenceRule: item.days.length > 0 ? {
-                        freq: 'WEEKLY',
-                        interval: 1,
-                        byDay: item.days as any[],
-                    } : null,
-                };
-                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
-                    await addMissionInstance(user, {
-                        templateId: template.id,
-                        childId: newChild.id,
-                        ownerId: user.uid,
-                        familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    }, template);
-                 }));
-            }
+                }, finalTemplate);
+             }));
         }
         
         await Promise.all(allMissionPromises);
@@ -270,7 +205,7 @@ export function OnboardingForm() {
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
             {step === 4 && <OnboardingStep4 />}
-            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
+            {step === 5 && <OnboardingStep5 />}
         </div>
 
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
@@ -287,9 +222,7 @@ export function OnboardingForm() {
               </Button>
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  {isLoading && (step === 4) ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} 
-                  {step !== 4 && <ArrowRight className="ml-2 h-4 w-4" />}
+                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
               {step === TOTAL_STEPS && (
