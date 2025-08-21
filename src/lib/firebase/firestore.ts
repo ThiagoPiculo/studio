@@ -1,3 +1,4 @@
+
 'use server';
 
 import {
@@ -1683,8 +1684,8 @@ export const addMissionInstance = async (
     status: 'pending',
     assignedAt: now,
     updatedAt: now,
-    dueDate: templateSnapshot.dueDate || null,
-    startDate: templateSnapshot.startDate || null,
+    dueDate: getDateObject(templateSnapshot.dueDate),
+    startDate: getDateObject(templateSnapshot.startDate),
     isRecurring: !!templateSnapshot.isRecurring,
     recurrenceRule: templateSnapshot.recurrenceRule || null,
     completionCount: 0,
