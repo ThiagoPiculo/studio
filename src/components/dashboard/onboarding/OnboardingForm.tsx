@@ -7,7 +7,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { addMissionTemplate, addMissionInstance } from "@/lib/firebase/firestore";
+import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -30,7 +30,6 @@ const TOTAL_STEPS = 5;
 // Schema for an individual activity from step 3
 const extraActivitySchema = z.object({
   name: z.string(),
-  emoji: z.string(),
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
   time: z.string(),
 });
@@ -98,9 +97,9 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = true; // Step 3 has optional fields
+        isStepValid = true; // Step 3 has optional fields, validation happens inside
     } else if (step === 4) {
-        isStepValid = await methods.trigger(['essentialRoutines']);
+        isStepValid = true; // Step 4 is just selection
     }
 
     if (isStepValid) {
@@ -161,7 +160,7 @@ export function OnboardingForm() {
 
     try {
         // 1. Create Child Profile
-        const newChild = await addMissionTemplate(user, {
+        const newChild = await addChildProfile(user.uid, {
             name: values.name,
             birthDate: values.birthDate as string,
             gender: values.gender,
@@ -174,9 +173,6 @@ export function OnboardingForm() {
 
         // 2. Process generated schedule to create templates and instances
         for (const item of generatedSchedule.schedule) {
-            // We only care about routines that were part of the input, not school entry/exit
-            if (item.type !== 'essential_routine') continue;
-
              const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
              
              if (!missionDetails) continue; // Skip if no predefined data found
@@ -271,4 +267,3 @@ export function OnboardingForm() {
     </FormProvider>
   );
 }
-`

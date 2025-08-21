@@ -86,4 +86,3 @@ export function OnboardingStep4() {
     </div>
   );
 }
-`
