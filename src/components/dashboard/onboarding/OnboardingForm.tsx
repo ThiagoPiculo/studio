@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/button";
 
 const TOTAL_STEPS = 5;
 
+// Combine all schemas
 const combinedSchema = onboardingSchemaStep1
   .merge(onboardingSchemaStep2)
   .merge(onboardingSchemaStep3);
@@ -66,13 +67,15 @@ export function OnboardingForm() {
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
 
   const goToNextStep = async () => {
-    let isStepValid = true;
+    let isStepValid = false;
     if (step === 1) {
         isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
         isStepValid = await methods.trigger(['extraActivitiesText', 'essentialRoutines']);
+    } else {
+        isStepValid = true; // For steps without validation
     }
     
     if (isStepValid) {

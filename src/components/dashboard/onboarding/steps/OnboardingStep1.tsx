@@ -109,18 +109,24 @@ export function OnboardingStep1() {
                 value={field.value}
                 className="grid grid-cols-1 md:grid-cols-3 gap-4"
               >
-                <Label htmlFor="gender-boy" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                    <RadioGroupItem value="boy" id="gender-boy" className="sr-only peer" />
-                    Masculino
-                </Label>
-                <Label htmlFor="gender-girl" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                    <RadioGroupItem value="girl" id="gender-girl" className="sr-only peer" />
-                    Feminino
-                </Label>
-                <Label htmlFor="gender-other" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
-                    <RadioGroupItem value="not-informed" id="gender-other" className="sr-only peer" />
-                    Prefiro não informar
-                </Label>
+                <FormItem>
+                  <Label htmlFor="gender-boy" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
+                      <RadioGroupItem value="boy" id="gender-boy" className="sr-only peer" />
+                      Masculino
+                  </Label>
+                </FormItem>
+                <FormItem>
+                  <Label htmlFor="gender-girl" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
+                      <RadioGroupItem value="girl" id="gender-girl" className="sr-only peer" />
+                      Feminino
+                  </Label>
+                </FormItem>
+                <FormItem>
+                  <Label htmlFor="gender-other" className="flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary has-[:checked]:border-primary">
+                      <RadioGroupItem value="not-informed" id="gender-other" className="sr-only peer" />
+                      Prefiro não informar
+                  </Label>
+                </FormItem>
               </RadioGroup>
             </FormControl>
             <FormMessage />
