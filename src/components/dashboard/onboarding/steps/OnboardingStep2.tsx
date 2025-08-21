@@ -9,6 +9,22 @@ import { TimePicker } from "../../school-schedule/TimePicker";
 import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
+import { cn } from "@/lib/utils";
+
+export const onboardingSchemaStep2 = z.object({
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.schoolShift !== 'not_applicable') {
+        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
+        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
+        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
+        }
+    }
+});
+
 
 export function OnboardingStep2() {
   const { control, watch, setValue, getValues } = useFormContext();
@@ -18,23 +34,48 @@ export function OnboardingStep2() {
   const handleShiftChange = (value: string) => {
     const shift = value as SchoolShift;
     setValue('schoolShift', shift);
+    let start = '';
+    let end = '';
+
     switch (shift) {
       case 'morning':
-        setValue('schoolShiftStart', '07:00');
-        setValue('schoolShiftEnd', '12:00');
+        start = '07:00';
+        end = '11:30';
         break;
       case 'afternoon':
-        setValue('schoolShiftStart', '13:00');
-        setValue('schoolShiftEnd', '18:00');
+        start = '13:00';
+        end = '17:30';
         break;
       case 'full_time':
-        setValue('schoolShiftStart', '08:00');
-        setValue('schoolShiftEnd', '17:00');
+        start = '08:00';
+        end = '18:00';
         break;
       case 'not_applicable':
-        setValue('schoolShiftStart', '');
-        setValue('schoolShiftEnd', '');
+        start = '';
+        end = '';
         break;
+    }
+    setValue('schoolShiftStart', start);
+    setValue('schoolShiftEnd', end);
+  };
+  
+  const handleStartTimeChange = (newStartTime: string) => {
+    setValue('schoolShiftStart', newStartTime);
+
+    const shift = getValues('schoolShift');
+    if (shift !== 'morning' && shift !== 'afternoon') return;
+
+    const [hours, minutes] = newStartTime.split(':').map(Number);
+    if (!isNaN(hours) && !isNaN(minutes)) {
+        const startDate = new Date();
+        startDate.setHours(hours, minutes);
+        startDate.setHours(startDate.getHours() + 4);
+        startDate.setMinutes(startDate.getMinutes() + 30);
+        
+        const endHours = startDate.getHours().toString().padStart(2, '0');
+        const endMinutes = startDate.getMinutes().toString().padStart(2, '0');
+
+        setValue('schoolShiftEnd', `${endHours}:${endMinutes}`);
     }
   };
 
@@ -57,7 +98,13 @@ export function OnboardingStep2() {
                             <FormControl>
                                 <RadioGroupItem value={s.id} id={s.id} className="sr-only peer" />
                             </FormControl>
-                            <Label htmlFor={s.id} className="flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer peer-data-[state=checked]:border-primary">
+                            <Label 
+                                htmlFor={s.id} 
+                                className={cn(
+                                    "flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                                    field.value === s.id ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                                )}
+                            >
                                 {s.label}
                             </Label>
                         </FormItem>
@@ -77,7 +124,9 @@ export function OnboardingStep2() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Horário de Entrada</FormLabel>
-                <FormControl><TimePicker {...field} /></FormControl>
+                <FormControl>
+                    <TimePicker {...field} onChange={handleStartTimeChange} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
