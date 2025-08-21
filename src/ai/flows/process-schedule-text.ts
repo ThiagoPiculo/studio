@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Processes a list of activities to create a structured weekly schedule.
@@ -72,12 +73,11 @@ const prompt = ai.definePrompt({
     - {{{this}}}
     {{/each}}
 
-    REGRAS DE AGENDAMENTO (SEGUNDA A SEXTA):
-    {{#if Manhã}}
-    Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Manhã':
+    {{#if Manha}}
+    REGRAS DE AGENDAMENTO (TURNO MANHÃ - SEGUNDA A SEXTA):
     1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
-    3.  Escovar os dentes (manhã): 30 minutos após o início do café da manhã.
+    3.  Escovar os dentes (manhã): 20 minutos após o início do café da manhã.
     4.  Tomar banho antes da escola: Após escovar os dentes e antes de sair.
     5.  Sair para escola: 20 minutos antes do horário de 'Entrada na Escola'.
     6.  Almoçar: Por volta das 13:00.
@@ -88,11 +88,12 @@ const prompt = ai.definePrompt({
     11. Organizar a mochila para amanhã: Antes de dormir.
     12. Hora de dormir: Por volta das 21:00.
     {{/if}}
+
     {{#if Tarde}}
-    Para os dias de semana (Seg-Sex), siga esta ordem se o turno for 'Tarde':
+    REGRAS DE AGENDAMENTO (TURNO TARDE - SEGUNDA A SEXTA):
     1.  Hora de Acordar: Por volta das 08:30.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
-    3.  Escovar os dentes (manhã): 30 minutos após o início do café da manhã.
+    3.  Escovar os dentes (manhã): 20 minutos após o início do café da manhã.
     4.  Fazer a lição de casa: No período da manhã.
     5.  Almoçar: Antes de sair para a escola.
     6.  Escovar os dentes (após almoço): 30 minutos após o início do almoço.
@@ -102,6 +103,15 @@ const prompt = ai.definePrompt({
     10. Escovar os dentes (após jantar): 30 minutos após o início do jantar.
     11. Organizar a mochila para amanhã: Antes de dormir.
     12. Hora de dormir: Por volta das 22:00.
+    {{/if}}
+    
+    {{#if Integral}}
+    REGRAS DE AGENDAMENTO (TURNO INTEGRAL - SEGUNDA A SEXTA):
+    1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
+    2.  Escovar os dentes (manhã): 30 minutos após 'Hora de Acordar'.
+    3.  Sair para escola: 20 minutos antes do horário de 'Entrada na Escola'.
+    4.  Escovar os dentes (antes de dormir): 20 minutos antes da 'Hora de dormir'.
+    5.  Hora de dormir: Por volta das 21:00.
     {{/if}}
 
     REGRAS DE AGENDAMENTO (FIM DE SEMANA - SÁBADO E DOMINGO):
@@ -132,8 +142,9 @@ const processScheduleFlow = ai.defineFlow(
   async (input) => {
     const augmentedInput = {
       ...input,
-      Manhã: input.schoolShift === 'Manhã',
+      Manha: input.schoolShift === 'Manhã',
       Tarde: input.schoolShift === 'Tarde',
+      Integral: input.schoolShift === 'Integral',
     };
     const { output } = await prompt(augmentedInput);
     return output!;
