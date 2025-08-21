@@ -187,8 +187,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 15,
                     xpReward: missionDetails?.xpReward || 20,
                     isRecurring: true,
-                    startDate: new Date().toISOString(), // Pass as ISO string
-                    dueDate: addDays(new Date(), 1).toISOString(), // Pass as ISO string
+                    startDate: new Date().toISOString(),
+                    dueDate: addDays(new Date(), 1).toISOString(),
                     recurrenceRule: {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -228,8 +228,8 @@ export function OnboardingForm() {
                     starsReward: missionDetails?.starsReward || 5,
                     xpReward: missionDetails?.xpReward || 10,
                     isRecurring: item.days.length > 0,
-                    startDate: startDate.toISOString(), // Pass as ISO string
-                    dueDate: addDays(startDate, 1).toISOString(), // Pass as ISO string
+                    startDate: startDate.toISOString(),
+                    dueDate: addDays(startDate, 1).toISOString(),
                     recurrenceRule: item.days.length > 0 ? {
                         freq: 'WEEKLY',
                         interval: 1,
@@ -269,7 +269,7 @@ export function OnboardingForm() {
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
-            {step === 4 && <OnboardingStep4 onGenerate={handleGenerateSchedule} />}
+            {step === 4 && <OnboardingStep4 />}
             {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
         </div>
 
@@ -282,7 +282,7 @@ export function OnboardingForm() {
             )}
           </div>
           <div className="flex items-center gap-4">
-              <Button type="button" variant="link" onClick={() => router.push('/dashboard/heroes')}>
+              <Button type="button" variant="link" onClick={goToNextStep}>
                 Pular
               </Button>
               {step < TOTAL_STEPS && (
