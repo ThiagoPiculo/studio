@@ -75,12 +75,17 @@ function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, r
     )
 }
 
-const extraActivityGroups = predefinedMissionGroups.filter(g => 
-    !['Rotinas Essencial (diárias)', 'Ajudar em Casa', 'Comportamental'].includes(g.userCategory)
-).sort((a,b) => {
-    const order = ['Terapias e Acompanhamentos de Saúde', 'Prática de Esportes', 'Prática de Artes', 'Prática de Idiomas'];
-    return order.indexOf(a.userCategory) - order.indexOf(b.userCategory);
-});
+const categoriesForStep3 = [
+    'Terapias e Acompanhamentos de Saúde',
+    'Prática de Esportes',
+    'Prática de Artes',
+    'Prática de Idiomas',
+];
+
+const extraActivityGroups = predefinedMissionGroups
+    .filter(g => categoriesForStep3.includes(g.userCategory))
+    .sort((a, b) => categoriesForStep3.indexOf(a.userCategory) - categoriesForStep3.indexOf(b.userCategory));
+
 
 export function OnboardingStep3() {
   const { control, watch } = useFormContext();
