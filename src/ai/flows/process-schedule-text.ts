@@ -74,7 +74,7 @@ const prompt = ai.definePrompt({
     {{/each}}
 
     REGRAS IMPORTANTES DE AGENDAMENTO:
-    1.  **Escovar os dentes**: Deve ocorrer 30 minutos após cada refeição principal (Café da Manhã, Almoço, Jantar).
+    1.  **Escovar os dentes**: Deve ocorrer 30 minutos após o início de cada refeição principal (Café da Manhã, Almoço, Jantar).
     2.  **Sair para escola**: Deve ser agendado 20 minutos antes do horário de 'Entrada na Escola'.
     3.  **Jantar**: Deve ocorrer 20 minutos após o término da última atividade da tarde/noite (seja uma atividade extra ou a lição de casa). Se não houver atividades, pode ser por volta das 19:00.
     4.  **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
