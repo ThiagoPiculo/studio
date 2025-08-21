@@ -7,7 +7,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { addChildProfile, addRecurringSchoolEntry } from "@/lib/firebase/firestore";
+import { addChildProfile, addRecurringSchoolEntry, addMissionInstance } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
@@ -19,7 +19,8 @@ import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse } from "date-fns";
+import { isValid, parse, format, addDays } from "date-fns";
+import type { MissionTemplate } from "@/lib/types";
 
 const TOTAL_STEPS = 5;
 
@@ -41,7 +42,7 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
-  extraActivities: z.array(activitySchema).optional(), // Changed from extraActivitiesText
+  extraActivities: z.array(activitySchema).optional(),
   essentialRoutines: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
@@ -165,11 +166,45 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
+        // Add schedule entries based on generated schedule
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
                 if(item.type === 'school_entry' || item.type === 'school_exit') continue;
+
+                const [hour, minute] = item.startTime.split(':').map(Number);
+                const startDate = new Date();
+                startDate.setHours(hour, minute, 0, 0);
+
+                const templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'> = {
+                    title: item.activity,
+                    category: item.type === 'essential_routine' ? 'health' : 'hobbies',
+                    starsReward: 10,
+                    xpReward: 15,
+                    isRecurring: item.days.length > 1,
+                    startDate: startDate,
+                    dueDate: addDays(startDate, 1),
+                    recurrenceRule: {
+                      freq: 'WEEKLY',
+                      interval: 1,
+                      byDay: item.days as any[],
+                    },
+                };
                 
-                if (item.days && item.days.length > 0) {
+                // If the mission is for a single day, create a one-off instance
+                if (item.days.length === 1) {
+                     const instanceData = {
+                        templateId: `ai-generated-${Date.now()}`,
+                        childId: newChild.id,
+                        ownerId: user.uid,
+                        familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    };
+                    await addMissionInstance(user, instanceData, {
+                        ...templateSnapshot,
+                        isRecurring: false,
+                        recurrenceRule: null,
+                    });
+                } else if (item.days.length > 1) {
+                    // For multiple days, create a recurring school/schedule entry
                      await addRecurringSchoolEntry({
                         subject: item.activity,
                         startTime: item.startTime,
@@ -178,7 +213,7 @@ export function OnboardingForm() {
                         childId: newChild.id,
                         ownerId: user.uid,
                         familyId: values.contextId === 'my-space' ? null : values.contextId,
-                    }, item.days, user);
+                    }, item.days as any[], user);
                 }
             }
         }
