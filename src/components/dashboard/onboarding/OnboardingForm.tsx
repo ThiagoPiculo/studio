@@ -182,7 +182,7 @@ export function OnboardingForm() {
                 familyId: values.contextId === 'my-space' ? null : values.contextId,
                 title: item.activity,
                 emoji: item.emoji,
-                category: missionDetails.suggestedAppCategory,
+                category: item.category as MissionCategory, // Use category from AI
                 starsReward: missionDetails.starsReward,
                 xpReward: missionDetails.xpReward,
                 isRecurring: true,

@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Processes a list of activities to create a structured weekly schedule.
@@ -11,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
+import type { MissionCategory } from '@/lib/types';
 
 // This is a new schema to represent fixed activities with their schedules
 const FixedActivitySchema = z.object({
@@ -34,6 +34,7 @@ const ScheduleItemSchema = z.object({
     activity: z.string().describe("The name of the activity."),
     emoji: z.string().describe("A single emoji that represents the activity."),
     type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine']).describe("The type of activity."),
+    category: z.string().describe("The category of the activity, based on the reference list."),
     startTime: z.string().describe("The start time in HH:mm format."),
     endTime: z.string().describe("The end time in HH:mm format."),
     days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("An array of weekdays (MO, TU, etc.) for the activity."),
@@ -45,9 +46,9 @@ const ProcessScheduleOutputSchema = z.object({
 });
 export type ProcessScheduleOutput = z.infer<typeof ProcessScheduleOutputSchema>;
 
-// Generate a string list of predefined missions to guide the AI
+// Generate a string list of predefined missions to guide the AI, now including the category.
 const predefinedMissionsList = predefinedMissionGroups.flatMap(group => 
-  group.items.map(item => `- ${item.title} (Emoji: ${item.emoji})`)
+  group.items.map(item => `- ${item.title} (Emoji: ${item.emoji}, Categoria: ${item.suggestedAppCategory})`)
 ).join('\n');
 
 const prompt = ai.definePrompt({
@@ -115,7 +116,7 @@ const prompt = ai.definePrompt({
     {{/if}}
 
     REGRAS DE AGENDAMENTO (FIM DE SEMANA - SÁBADO E DOMINGO):
-    - **Rotina Matinal Flexível:** Mantenha a sequência de 'Acordar', 'Café' e 'Escovar Dentes', mas com horários mais relaxados (Ex: Acordar às 09:00).
+    - **Rotina Matinal Flexível:** Mantenha a sequência de 'Acordar', 'Café' e 'Escovar Dentes', mas com horários mais relaxados (Ex: Acordar 1 hora a mais que os dias de semana). As rotinas após acordar devem seguir a mesma lógica de tempo dos dias de semana.
     - **Atividades Extras:** Lembre-se de encaixar qualquer atividade extra que ocorra no fim de semana.
     - **Tempo Livre:** Priorize blocos de tempo livre para brincadeiras e atividades em família.
     - **Rotina Noturna:** Mantenha a sequência de 'Jantar', 'Escovar Dentes' e 'Dormir', ajustando os horários conforme as atividades do dia, mas mantendo uma hora de dormir consistente (Ex: 22:00).
@@ -124,9 +125,10 @@ const prompt = ai.definePrompt({
     REGRAS GERAIS:
     - **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
     - **EMOJIS**: Para cada atividade, use o emoji correspondente da lista de referência abaixo. É crucial que você use o emoji exato da lista.
+    - **CATEGORIAS**: Para cada atividade, use a categoria correspondente da lista de referência abaixo. É crucial que você use as categorias exatas da lista (ex: 'home', 'school', 'health').
     - **SAÍDA**: Retorne a rotina em um formato JSON estruturado e ordenado cronologicamente, seguindo o 'ProcessScheduleOutputSchema'.
 
-    LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA (NOME E EMOJI):
+    LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA (NOME, EMOJI E CATEGORIA):
     ${predefinedMissionsList}
 
     Agora, gere a agenda completa da semana para {{childName}}.
