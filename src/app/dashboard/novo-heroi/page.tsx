@@ -1,7 +1,7 @@
 
 "use client";
 
-import { OnboardingForm } from '@/components/dashboard/OnboardingForm';
+import { OnboardingForm } from '@/components/dashboard/onboarding/OnboardingForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, Loader2 } from 'lucide-react';
@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useState } from 'react';
 import { getChildProfilesByOwner } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
+import { Suspense } from 'react';
 
 // Custom Rocket Icon to match the screenshot
 const OnboardingIcon = () => (
@@ -20,63 +21,16 @@ const OnboardingIcon = () => (
 );
 
 
-export default function NovoHeroiPage() {
-  const { user } = useAuth();
-  const [childrenCount, setChildrenCount] = useState<number | null>(null);
-  const [isLoadingCount, setIsLoadingCount] = useState(true);
-
-  useEffect(() => {
-    const fetchChildrenCount = async () => {
-      if (user) {
-        setIsLoadingCount(true);
-        try {
-          // Fetch all children, not just unassigned
-          const profiles = await getChildProfilesByOwner(user.uid, false);
-          setChildrenCount(profiles.length);
-        } catch (error) {
-          console.error("Error fetching children count:", error);
-          setChildrenCount(0); // Assume 0 on error to be safe
-        } finally {
-          setIsLoadingCount(false);
-        }
-      } else {
-        setIsLoadingCount(false); // No user, so not loading
-      }
-    };
-    fetchChildrenCount();
-  }, [user]);
-
-  const getTitle = () => {
-    if (isLoadingCount) return "Carregando...";
-    return childrenCount === 0 ? "Vamos Adicionar Seu Primeiro Mini Heroi!" : "Vamos Adicionar Mais um Mini Heroi!";
-  };
-
-  const getDescription = () => {
-    if (isLoadingCount) return "Aguarde um momento...";
-    return childrenCount === 0 
-      ? "Toda grande aventura começa com um heroi (ou heroína!). Conte-nos um pouco sobre sua criança para começar." 
-      : "A equipe de Mini Herois está crescendo! Conte-nos um pouco sobre a nova criança.";
-  };
-
-
+function NovoHeroiPageContent() {
   return (
-    <div className="container mx-auto max-w-2xl py-8">
-      <Card className="shadow-clay rounded-2xl">
-        <CardHeader className="text-center p-6">
-          <div className="mb-4 flex justify-center group">
-             {isLoadingCount ? <Loader2 className="h-20 w-20 text-primary animate-spin" /> : <OnboardingIcon />}
-          </div>
-          <CardTitle className="font-headline text-3xl">
-            {getTitle()}
-          </CardTitle>
-          <CardDescription className="text-lg text-muted-foreground">
-            {getDescription()}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="p-6 md:p-8">
-          <OnboardingForm />
-        </CardContent>
-      </Card>
+    <div className="container mx-auto max-w-4xl py-8">
+       <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+         <OnboardingForm />
+      </Suspense>
     </div>
   );
+}
+
+export default function NovoHeroiPage() {
+    return <NovoHeroiPageContent />;
 }
