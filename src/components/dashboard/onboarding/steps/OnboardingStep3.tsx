@@ -48,7 +48,11 @@ function ActivityScheduler({ categoryIndex, activityIndex, remove }: { categoryI
                                 className="flex flex-wrap justify-start gap-1"
                             >
                                 {allWeekdays.map(day => (
-                                    <ToggleGroupItem key={day} value={day} className="h-7 w-7 p-0 text-xs">
+                                    <ToggleGroupItem 
+                                      key={day} 
+                                      value={day} 
+                                      className="h-7 w-7 p-0 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground"
+                                    >
                                         {weekdayLabels[day].short}
                                     </ToggleGroupItem>
                                 ))}
@@ -120,7 +124,7 @@ export function OnboardingStep3() {
                     </div>
                 </AccordionTrigger>
                 <AccordionContent className="pt-2">
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         {group.items.map(item => {
                             const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
                             const isChecked = currentFieldIndex > -1;
@@ -133,7 +137,10 @@ export function OnboardingStep3() {
                                             checked={isChecked}
                                             onCheckedChange={(checked) => handleActivityToggle(item.title, !!checked)}
                                          />
-                                        <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer">{item.title}</Label>
+                                        <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
+                                          <span className="text-xl">{item.emoji}</span>
+                                          {item.title}
+                                        </Label>
                                     </div>
                                     {isChecked && <ActivityScheduler categoryIndex={groupIndex} activityIndex={currentFieldIndex} remove={remove} />}
                                 </div>
