@@ -27,7 +27,7 @@ const ProcessScheduleTextInputSchema = z.object({
     schoolStartTime: z.string().optional().describe("The school start time in HH:mm format."),
     schoolEndTime: z.string().optional().describe("The school end time in HH:mm format."),
     extraActivities: z.array(FixedActivitySchema).optional().describe("A list of fixed extra-curricular activities with their schedules."),
-    essentialRoutines: z.array(z.string()).optional().describe("A list of essential daily routines to be scheduled around fixed appointments."),
+    // essentialRoutines field is removed as the logic is now embedded in the prompt.
 });
 export type ProcessScheduleTextInput = z.infer<typeof ProcessScheduleTextInputSchema>;
 
@@ -69,14 +69,9 @@ const prompt = ai.definePrompt({
     {{/each}}
     {{/if}}
 
-    ATIVIDADES ESSENCIAIS PARA AGENDAR:
-    Com base nos horários livres, posicione as seguintes atividades essenciais:
-    {{#each essentialRoutines}}
-    - {{{this}}}
-    {{/each}}
-
     {{#if Manha}}
     REGRAS DE AGENDAMENTO (TURNO MANHÃ - SEGUNDA A SEXTA):
+    Siga esta sequência para agendar as rotinas essenciais:
     1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
     3.  Escovar os dentes (manhã): 20 minutos após o início do café da manhã.
@@ -93,6 +88,7 @@ const prompt = ai.definePrompt({
 
     {{#if Tarde}}
     REGRAS DE AGENDAMENTO (TURNO TARDE - SEGUNDA A SEXTA):
+    Siga esta sequência para agendar as rotinas essenciais:
     1.  Hora de Acordar: Por volta das 08:30.
     2.  Tomar café da manhã: 20 minutos após 'Hora de Acordar'.
     3.  Escovar os dentes (manhã): 20 minutos após o início do café da manhã.
@@ -109,6 +105,7 @@ const prompt = ai.definePrompt({
     
     {{#if Integral}}
     REGRAS DE AGENDAMENTO (TURNO INTEGRAL - SEGUNDA A SEXTA):
+    Siga esta sequência para agendar as rotinas essenciais:
     1.  Hora de Acordar: 1 hora antes do horário de 'Entrada na Escola'.
     2.  Escovar os dentes (manhã): 30 minutos após 'Hora de Acordar'.
     3.  Sair para escola: 20 minutos antes do horário de 'Entrada na Escola'.
