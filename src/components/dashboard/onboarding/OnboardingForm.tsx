@@ -27,8 +27,8 @@ import { processScheduleText, type ProcessScheduleTextInput, type ProcessSchedul
 
 const TOTAL_STEPS = 5;
 
-// Schema for an individual activity
-const activitySchema = z.object({
+// Schema for an individual activity from step 3
+const extraActivitySchema = z.object({
   name: z.string(),
   emoji: z.string(),
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
@@ -46,8 +46,8 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
-  extraActivities: z.array(activitySchema).optional(),
-  essentialRoutines: z.array(activitySchema).optional(), // Changed to activity schema
+  extraActivities: z.array(extraActivitySchema).optional(),
+  essentialRoutines: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
         if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
@@ -60,7 +60,7 @@ const onboardingSchema = z.object({
 
 
 export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
-export type ActivityFormValues = z.infer<typeof activitySchema>;
+export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
 
 export function OnboardingForm() {
@@ -71,7 +71,8 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [generatedSchedule, setGeneratedSchedule] = useState<ProcessScheduleOutput | null>(null);
+
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
     mode: 'onChange',
@@ -97,13 +98,16 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = true; 
+        isStepValid = true; // Step 3 has optional fields
     } else if (step === 4) {
         isStepValid = await methods.trigger(['essentialRoutines']);
     }
 
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
+        if (step === 4) { // After selecting routines, generate schedule
+            await handleGenerateSchedule();
+        }
         setStep(prev => prev + 1);
       }
     }
@@ -114,29 +118,49 @@ export function OnboardingForm() {
       setStep(prev => prev - 1);
     }
   };
-  
-  const getCategoryFromActivity = (item: { activity: string }): MissionCategory => {
-    const title = item.activity.toLowerCase();
-    
-    const allPredefinedMissions = predefinedMissionGroups.flatMap(g => g.items);
-    const predefinedMatch = allPredefinedMissions.find(m => m.title.toLowerCase() === title);
-    if(predefinedMatch) return predefinedMatch.suggestedAppCategory;
-    
-    return 'essential_routines';
-  }
+
+  const handleGenerateSchedule = async () => {
+      setIsLoading(true);
+      const values = methods.getValues();
+      const birthDate = new Date(values.birthDate as string);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
+
+      const input: ProcessScheduleTextInput = {
+          childAge: age,
+          childName: values.name,
+          schoolShift: values.schoolShift,
+          schoolStartTime: values.schoolShiftStart,
+          schoolEndTime: values.schoolShiftEnd,
+          extraActivities: values.extraActivities,
+          essentialRoutines: values.essentialRoutines
+      };
+
+      try {
+          const schedule = await processScheduleText(input);
+          setGeneratedSchedule(schedule);
+      } catch (error) {
+          console.error("Error generating schedule:", error);
+          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
+          // Don't go back, let the user retry or proceed
+      } finally {
+          setIsLoading(false);
+      }
+  };
   
   const handleFinalSubmit = async () => {
     if (!user) {
         toast({ title: "Erro de Autenticação", variant: "destructive" });
         return;
     }
+    if (!generatedSchedule) {
+        toast({ title: "Rotina não gerada", description: "A rotina precisa ser gerada antes de finalizar.", variant: "destructive" });
+        return;
+    }
     setIsLoading(true);
     const values = methods.getValues();
-    
-    const allActivities = [...(values.extraActivities || []), ...(values.essentialRoutines || [])];
-    const allMissionPromises = [];
 
     try {
+        // 1. Create Child Profile
         const newChild = await addMissionTemplate(user, {
             name: values.name,
             birthDate: values.birthDate as string,
@@ -146,28 +170,38 @@ export function OnboardingForm() {
             schoolShiftEnd: values.schoolShiftEnd,
         }, values.contextId);
         
-        for (const activity of allActivities) {
-             const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === activity.name);
+        const allMissionPromises = [];
+
+        // 2. Process generated schedule to create templates and instances
+        for (const item of generatedSchedule.schedule) {
+            // We only care about routines that were part of the input, not school entry/exit
+            if (item.type !== 'essential_routine') continue;
+
+             const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
              
-             const templatePayload = {
+             if (!missionDetails) continue; // Skip if no predefined data found
+
+             const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                 ownerId: user.uid,
                 familyId: values.contextId === 'my-space' ? null : values.contextId,
-                title: activity.name,
-                emoji: activity.emoji,
-                category: missionDetails?.suggestedAppCategory || 'hobbies',
-                starsReward: missionDetails?.starsReward || 15,
-                xpReward: missionDetails?.xpReward || 20,
+                title: item.activity,
+                emoji: item.emoji,
+                category: missionDetails.suggestedAppCategory,
+                starsReward: missionDetails.starsReward,
+                xpReward: missionDetails.xpReward,
                 isRecurring: true,
                 startDate: new Date().toISOString(),
                 dueDate: addDays(new Date(), 1).toISOString(),
                 recurrenceRule: {
                     freq: 'WEEKLY',
                     interval: 1,
-                    byDay: activity.days as Weekday[],
+                    byDay: item.days as Weekday[],
                 },
             };
+            
+             // Create template, then instance
              allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
-                const [hour, minute] = activity.time.split(':').map(Number);
+                const [hour, minute] = item.startTime.split(':').map(Number);
                 const startDateWithTime = new Date(template.startDate as string);
                 startDateWithTime.setHours(hour, minute);
                 
@@ -200,12 +234,12 @@ export function OnboardingForm() {
       <div className="flex flex-col space-y-4 h-full">
         <Progress value={progress} className="w-full" />
         
-        <div className="flex-1 overflow-y-auto pr-2">
+        <div className="flex-1 overflow-y-auto pr-2 min-h-[400px] sm:min-h-[450px]">
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
             {step === 4 && <OnboardingStep4 />}
-            {step === 5 && <OnboardingStep5 />}
+            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
         </div>
 
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
@@ -217,16 +251,16 @@ export function OnboardingForm() {
             )}
           </div>
           <div className="flex items-center gap-4">
-              <Button type="button" variant="link" onClick={goToNextStep}>
+              <Button type="button" variant="link" onClick={() => router.push('/dashboard/heroes')}>
                 Pular
               </Button>
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  Próximo <ArrowRight className="ml-2 h-4 w-4" />
+                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               )}
               {step === TOTAL_STEPS && (
-                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading}>
+                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !generatedSchedule}>
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Confirmar e Iniciar a Aventura! 🚀
                 </Button>
@@ -237,3 +271,4 @@ export function OnboardingForm() {
     </FormProvider>
   );
 }
+`

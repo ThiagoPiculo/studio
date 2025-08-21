@@ -9,8 +9,15 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
+
+// This is a new schema to represent fixed activities with their schedules
+const FixedActivitySchema = z.object({
+  name: z.string(),
+  days: z.array(z.string()),
+  time: z.string(),
+});
 
 const ProcessScheduleTextInputSchema = z.object({
     childName: z.string().describe("The child's name."),
@@ -18,7 +25,7 @@ const ProcessScheduleTextInputSchema = z.object({
     schoolShift: z.string().describe("The child's school shift (e.g., 'Manhã', 'Tarde', 'Integral', 'Não estuda ainda')."),
     schoolStartTime: z.string().optional().describe("The school start time in HH:mm format."),
     schoolEndTime: z.string().optional().describe("The school end time in HH:mm format."),
-    // This is now just for essential routines, extra activities are handled manually.
+    extraActivities: z.array(FixedActivitySchema).optional().describe("A list of fixed extra-curricular activities with their schedules."),
     essentialRoutines: z.array(z.string()).optional().describe("A list of essential daily routines to be scheduled around fixed appointments."),
 });
 export type ProcessScheduleTextInput = z.infer<typeof ProcessScheduleTextInputSchema>;
@@ -48,31 +55,31 @@ const prompt = ai.definePrompt({
   input: { schema: ProcessScheduleTextInputSchema },
   output: { schema: ProcessScheduleOutputSchema },
   prompt: `
-    Você é um especialista em logística e organização de rotinas para crianças. Sua tarefa é criar uma agenda semanal estruturada em JSON a partir de uma lista de rotinas essenciais, considerando o turno escolar da criança. Você NÃO precisa se preocupar com atividades extras, apenas com as rotinas da lista 'essentialRoutines'.
+    Aja como um especialista em rotina infantil. Crie uma rotina diária cronológica e ideal para uma criança de {{childAge}} anos.
 
-    CONTEXTO DA CRIANÇA:
-    - Nome: {{childName}}
-    - Idade: {{childAge}} anos.
-    - Turno Escolar: {{schoolShift}}.
-    {{#if schoolStartTime}}- Horário Escolar: Das {{schoolStartTime}} às {{schoolEndTime}}{{/if}}
+    COMPROMISSOS FIXOS:
+    - Turno Escolar: {{schoolShift}}
+    {{#if schoolStartTime}}- Horário Escolar: Das {{schoolStartTime}} às {{schoolEndTime}} de Segunda a Sexta.{{/if}}
+    {{#if extraActivities}}
+    - Atividades Extras:
+    {{#each extraActivities}}
+      - {{this.name}} às {{this.time}} nas {{this.days}}.
+    {{/each}}
+    {{/if}}
 
-    ROTINAS ESSENCIAIS PARA AGENDAR:
+    ATIVIDADES ESSENCIAIS PARA AGENDAR:
+    Com base nos horários livres, posicione as seguintes atividades essenciais:
     {{#each essentialRoutines}}
     - {{{this}}}
     {{/each}}
 
-    REGRAS DE AGENDAMENTO:
-    1.  **AGENDA ESCOLAR**: Se a criança estuda, crie os itens 'Entrada na Escola' e 'Saída da Escola' de Segunda a Sexta, usando os horários fornecidos e os tipos 'school_entry' e 'school_exit'.
-    2.  **ROTINAS ESSENCIAIS**: Para cada rotina na lista 'essentialRoutines', você deve encontrar o melhor horário e dias da semana para encaixá-la, levando em conta o horário escolar.
-        - 'Escovar os dentes': Deve ocorrer três vezes ao dia (manhã, após almoço, noite), todos os dias.
-        - 'Fazer lição de casa': Idealmente no contraturno escolar, de Segunda a Sexta.
-        - 'Tomar banho': Geralmente à noite, antes de dormir.
-        - 'Organizar a mochila': À noite, preparando para o dia seguinte, de Domingo a Quinta.
-        - 'Arrumar a cama': Logo pela manhã, todos os dias.
-        - Outras rotinas: Encaixe em horários lógicos ('Acordar' de manhã, 'Tomar café' após acordar, 'Jantar' à noite, 'Dormir' no final do dia).
-    3.  **DURAÇÃO**: Assuma que a maioria das rotinas dura 30 minutos, a não ser que seja algo rápido como 'Tomar remédio' (5 min) ou mais longo como 'Jantar' (45 min).
-    4.  **EMOJIS**: Para cada rotina, use o emoji correspondente da lista de referência abaixo. É MUITO IMPORTANTE que você use o emoji exato da lista.
-    5.  **FORMATO DE SAÍDA**: O JSON final deve corresponder ao schema 'ProcessScheduleOutput'. O array 'schedule' deve ser ordenado cronologicamente por dia e hora. A string 'freeTime' deve ser um resumo amigável e em **português do Brasil**.
+    REGRAS IMPORTANTES DE AGENDAMENTO:
+    1.  **Escovar os dentes**: Deve ocorrer 30 minutos após cada refeição principal (Café da Manhã, Almoço, Jantar).
+    2.  **Sair para escola**: Deve ser agendado 20 minutos antes do horário de 'Entrada na Escola'.
+    3.  **Jantar**: Deve ocorrer 20 minutos após o término da última atividade da tarde/noite (seja uma atividade extra ou a lição de casa). Se não houver atividades, pode ser por volta das 19:00.
+    4.  **DURAÇÃO**: Assuma durações padrão: 30 min para refeições e banho, 45-60 min para lição de casa, 15 min para o resto.
+    5.  **EMOJIS**: Para cada atividade, use o emoji correspondente da lista de referência abaixo. É crucial que você use o emoji exato da lista.
+    6.  **SAÍDA**: Retorne a rotina em um formato JSON estruturado e ordenado cronologicamente, seguindo o 'ProcessScheduleOutputSchema'.
 
     LISTA DE MISSÕES PRÉ-DEFINIDAS PARA REFERÊNCIA (NOME E EMOJI):
     ${predefinedMissionsList}
