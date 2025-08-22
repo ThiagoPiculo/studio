@@ -132,7 +132,7 @@ const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessSche
       const wakeUpTime = subHours(schoolStart, 1);
       const breakfastTime = addMinutes(wakeUpTime, 20);
       const brushTeethMorningTime = addMinutes(breakfastTime, 20);
-      const bathTime = addMinutes(brushTeethMorningTime, 15);
+      const bathTime = addMinutes(wakeUpTime, 25);
       const leaveForSchoolTime = subMinutes(schoolStart, 20);
       const lunchTime = setHours(new Date(), 13);
       const brushTeethAfterLunch = addMinutes(lunchTime, 30);
@@ -166,28 +166,28 @@ const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessSche
         const breakfastTime = addMinutes(wakeUpTime, 20);
         const brushTeethMorningTime = addMinutes(breakfastTime, 20);
         const homeworkTime = addMinutes(brushTeethMorningTime, 15);
-        const lunchTime = subMinutes(schoolStart, 90);
-        const brushTeethAfterLunch = addMinutes(lunchTime, 30);
-        const bathTime = addMinutes(brushTeethAfterLunch, 15);
+        const lunchTime = subMinutes(schoolStart, 50);
+        const brushTeethAfterLunch = addMinutes(lunchTime, 20);
+        const bathTime = subHours(schoolStart, 1);
         const leaveForSchoolTime = subMinutes(schoolStart, 20);
         
         const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
           .map(s => parseTimeString(s.endTime))
           .reduce((latest, current) => current > latest ? current : latest, new Date(0));
           
-        const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : setHours(new Date(), 19, 15);
-        const dinnerTime = addMinutes(dinnerBaseTime, 20);
-        const brushTeethAfterDinner = addMinutes(dinnerTime, 30);
-        const packBagTime = setHours(new Date(), 21, 45);
-        const bedTime = setHours(new Date(), 22, 0);
+      const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : setHours(new Date(), 19, 15);
+      const dinnerTime = addMinutes(dinnerBaseTime, 20);
+      const brushTeethAfterDinner = addMinutes(dinnerTime, 30);
+      const packBagTime = setHours(new Date(), 21, 45);
+      const bedTime = setHours(new Date(), 22, 0);
 
         schedule.push(createEvent('Hora de acordar', wakeUpTime, 15, weekdays));
         schedule.push(createEvent('Tomar café da manhã', breakfastTime, 20, weekdays));
         schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 15, weekdays));
         schedule.push(createEvent('Fazer a lição de casa', homeworkTime, 60, weekdays));
+        schedule.push(createEvent('Tomar banho', bathTime, 20, weekdays));
         schedule.push(createEvent('Almoçar', lunchTime, 30, weekdays));
         schedule.push(createEvent('Escovar os dentes (após almoço)', brushTeethAfterLunch, 15, weekdays));
-        schedule.push(createEvent('Tomar banho', bathTime, 20, weekdays));
         schedule.push(createEvent('Sair para escola', leaveForSchoolTime, 20, weekdays));
         schedule.push(createEvent('Jantar', dinnerTime, 30, weekdays));
         schedule.push(createEvent('Escovar os dentes (após jantar)', brushTeethAfterDinner, 15, weekdays));
