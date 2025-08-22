@@ -7,10 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { weekdayLabels } from "@/lib/types";
 import { Wand2, Loader2, Sun, Moon, CloudSun } from "lucide-react";
 import type { ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
+import { useFormContext } from "react-hook-form";
+import { TimePicker } from "../../missions/TimePicker";
 
 interface OnboardingStep5Props {
   isLoading?: boolean;
   schedule: ProcessScheduleOutput | null;
+  onScheduleChange: (index: number, newTime: string) => void;
 }
 
 const getPeriodOfDay = (time: string): 'morning' | 'afternoon' | 'night' => {
@@ -26,8 +29,8 @@ const periodConfig = {
     night: { icon: Moon, label: 'Noite', color: 'text-indigo-600', bg: 'bg-indigo-500/5' },
 }
 
-export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
-
+export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
+  
   if (isLoading) {
     return (
         <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
@@ -67,7 +70,7 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">O Pergaminho da Rotina Diária</h2>
-        <p className="text-muted-foreground">Aqui está o plano mágico completo. Se estiver tudo certo, vamos dar vida a esta jornada!</p>
+        <p className="text-muted-foreground">Aqui está o plano mágico completo. Se precisar, ajuste os horários antes de dar vida a esta jornada!</p>
       </div>
       
       <div className="max-h-[400px] p-4 border rounded-lg bg-muted/20">
@@ -84,20 +87,28 @@ export function OnboardingStep5({ isLoading, schedule }: OnboardingStep5Props) {
                                 {label}
                             </h3>
                             <div className="space-y-3">
-                                {items.map((item, index) => (
-                                    <div key={`${item.activity}-${index}`} className="flex items-start gap-2 sm:gap-4 text-sm">
-                                        <Badge variant="secondary" className="w-16 justify-center shrink-0 mt-1">{item.startTime}</Badge>
-                                        <div className="flex-grow">
-                                            <div className="font-semibold flex items-center gap-2">
-                                                <span className="text-xl">{item.emoji}</span>
-                                                <span>{item.activity}</span>
+                                {items.map((item, index) => {
+                                    const globalIndex = schedule.schedule.findIndex(s => s === item);
+                                    return (
+                                        <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-4 text-sm">
+                                            <div className="w-24 shrink-0">
+                                                <TimePicker 
+                                                    value={item.startTime}
+                                                    onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
+                                                />
                                             </div>
-                                            <div className="text-xs text-muted-foreground pl-8">
-                                                {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
+                                            <div className="flex-grow flex items-center gap-2">
+                                                <span className="text-xl">{item.emoji}</span>
+                                                <div className="flex flex-col">
+                                                    <span className="font-semibold">{item.activity}</span>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    )
+                                })}
                             </div>
                         </div>
                     );

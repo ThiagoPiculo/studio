@@ -118,8 +118,19 @@ export function OnboardingForm() {
     }
   };
 
+  const handleScheduleChange = (index: number, newTime: string) => {
+    if (generatedSchedule) {
+      const newSchedule = { ...generatedSchedule };
+      newSchedule.schedule[index].startTime = newTime;
+      // Re-sort schedule based on new time
+      newSchedule.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
+      setGeneratedSchedule(newSchedule);
+    }
+  };
+
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
+      setGeneratedSchedule(null);
       const values = methods.getValues();
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
@@ -131,11 +142,12 @@ export function OnboardingForm() {
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
           extraActivities: values.extraActivities,
-          essentialRoutines: values.essentialRoutines
       };
 
       try {
           const schedule = await processScheduleText(input);
+          // Sort schedule by time initially
+          schedule.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
           setGeneratedSchedule(schedule);
       } catch (error) {
           console.error("Error generating schedule:", error);
@@ -235,7 +247,7 @@ export function OnboardingForm() {
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
             {step === 4 && <OnboardingStep4 />}
-            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} />}
+            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} />}
         </div>
 
         <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
