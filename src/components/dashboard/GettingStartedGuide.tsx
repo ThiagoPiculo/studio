@@ -91,11 +91,11 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
     <Card className="shadow-lg overflow-hidden">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">
-          {isForEmptyPersonalSpace ? 'Comece a Usar seu Espaço Pessoal' : 'Primeiros Passos'}
+          {isForEmptyPersonalSpace ? 'Selecione a Aliança☝️' : 'Primeiros Passos'}
         </CardTitle>
         <CardDescription>
           {isForEmptyPersonalSpace
-            ? "Seus Mini Heróis estão em suas Alianças. Para 'cuidar solo' de seus heróis, comece por aqui!"
+            ? <>Seus Mini Heróis <strong>estão em suas Alianças</strong>. Para cadastrar Mini herois com ajuda do Assistente Herói, comece por aqui 👇</>
             : "Siga estes passos para configurar sua central de missões e começar a aventura!"
           }
         </CardDescription>
