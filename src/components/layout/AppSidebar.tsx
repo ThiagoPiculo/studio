@@ -189,12 +189,6 @@ export function AppSidebar() {
                                         <CircleDot className="text-chart-2" />
                                     </NavLink>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <SidebarMenuButton onClick={() => handleAllianceAction('create')} tooltip="Criar ou Entrar em Aliança">
-                                        <PlusCircle className="text-primary" />
-                                        <span>Criar ou Entrar em Aliança</span>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
                                 {isInAnyAlliance && (
                                     <SidebarMenuItem>
                                         <NavLink href="/dashboard/alliances" tooltip="Gerenciar Alianças" label="Gerenciar Alianças">
@@ -202,6 +196,12 @@ export function AppSidebar() {
                                         </NavLink>
                                     </SidebarMenuItem>
                                 )}
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton onClick={() => handleAllianceAction('create')} tooltip="Criar ou Entrar em Aliança">
+                                        <PlusCircle className="text-primary" />
+                                        <span>Criar ou Entrar em Aliança</span>
+                                    </SidebarMenuButton>
+                                </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
