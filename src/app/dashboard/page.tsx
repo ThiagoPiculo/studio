@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect } from 'react';
@@ -10,7 +11,7 @@ export default function DashboardRedirectPage() {
     useEffect(() => {
         // Immediately redirect to the primary dashboard view.
         // All logic for what to display (Getting Started vs. Summary) is handled there.
-        router.replace('/dashboard/heroes');
+        router.replace('/dashboard/heroes?initial_load=true');
     }, [router]);
 
     // Render nothing to avoid flashing any content while redirecting.

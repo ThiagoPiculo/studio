@@ -1,3 +1,4 @@
+
 "use client";
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,13 +18,16 @@ import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
+import { useSearchParams } from 'next/navigation';
 
 
 export function FamilyContextSwitcher() {
   const { currentContext, setCurrentContext, availableContexts, isLoading: isFamilyLoading, isContextSelected } = useFamily();
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+  const isInitialLoad = searchParams.get('initial_load') === 'true';
 
   // Refs and state for dynamic avatar calculation
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -95,9 +99,12 @@ export function FamilyContextSwitcher() {
     return () => window.removeEventListener('resize', calculateVisibleAvatars);
   }, [calculateVisibleAvatars]);
 
+  // Combined loading state
+  const showSkeleton = isFamilyLoading || (isInitialLoad && isLoadingChildren);
+
   if (!user || availableContexts.length <= 1) return null;
   
-  if (isFamilyLoading) {
+  if (showSkeleton) {
     return (
       <Button variant="secondary" className="w-[240px] justify-start h-10 p-2" disabled>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -7,7 +7,7 @@ import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { convertTimestampsInObject } from '@/lib/utils';
 
 interface EnrichedContext {
@@ -20,7 +20,8 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
-  const [currentContext, _setCurrentContext] = React.useState<'my-space' | string>('');
+  const searchParams = useSearchParams();
+  const [currentContext, _setCurrentContext] = React.useState<'my-space' | string>('my-space');
   const [selectedChildId, _setSelectedChildId] = React.useState<string | null>(null);
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -83,11 +84,29 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       unsubscribeMemberships = onSnapshot(membershipsQuery, (snapshot) => {
         const memberships = snapshot.docs.map(doc => doc.data() as FamilyMembership);
         
-        if (memberships.length === 0) {
-            setAvailableContextsState(initialContexts);
-            // Sempre define 'my-space' como padrão ao carregar
-            setCurrentContext('my-space');
+        const processContexts = (familyContexts: EnrichedContext[]) => {
+            const allContexts = [...initialContexts, ...familyContexts];
+            setAvailableContextsState(allContexts);
+
+            const isInitialLoad = searchParams.get('initial_load') === 'true';
+            
+            if (isInitialLoad) {
+                _setCurrentContext('my-space');
+                 if (typeof window !== 'undefined') {
+                    sessionStorage.setItem('currentContext', 'my-space');
+                }
+            } else {
+                const storedContext = sessionStorage.getItem('currentContext');
+                const isValidStoredContext = allContexts.some(c => c.id === storedContext);
+                _setCurrentContext(storedContext && isValidStoredContext ? storedContext : 'my-space');
+            }
+            
             setIsLoading(false);
+            setIsContextSelected(true);
+        };
+
+        if (memberships.length === 0) {
+            processContexts([]);
             return;
         }
 
@@ -105,17 +124,11 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
                     role: familyRoles.get(doc.id)
                 };
             });
-            
-            const allContexts = [...initialContexts, ...familyContexts];
-            setAvailableContextsState(allContexts);
-            // Sempre define 'my-space' como padrão ao carregar
-            setCurrentContext('my-space');
-            setIsLoading(false);
+            processContexts(familyContexts);
 
         }, (error) => {
             console.error("Error fetching families:", error);
-            setAvailableContextsState(initialContexts);
-            setIsLoading(false);
+            processContexts([]);
         });
         
       }, (error) => {
@@ -125,7 +138,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       });
       
     } else { // No user
-      setCurrentContext('');
+      setCurrentContext('my-space');
       setAvailableContextsState([]);
       setIsLoading(false);
       setIsContextSelected(false);
@@ -135,7 +148,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading, setCurrentContext]);
+  }, [user, authLoading, searchParams]);
 
   // New listener for children in the current context
   useEffect(() => {
