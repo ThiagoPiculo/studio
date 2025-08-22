@@ -1,5 +1,6 @@
 
 
+
 "use client";
 
 import { useState, useEffect, Suspense, useMemo, useRef } from 'react';
@@ -43,10 +44,11 @@ import {
   resendFamilyInvitationNotification,
   transferFamilyOwnership,
   getChildProfilesByOwner,
+  moveChildToNewContext,
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack, Crown } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack, Crown, Move } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -69,6 +71,7 @@ import { ptBR } from 'date-fns/locale';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 function FamilyPageContent() {
   const { user } = useAuth();
@@ -107,7 +110,7 @@ function FamilyPageContent() {
   const [isManagingMember, setIsManagingMember] = useState(false);
   const [selectedRole, setSelectedRole] = useState<FamilyRole | ''>('');
 
-  const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
+  const [childToManage, setChildToManage] = useState<ChildProfile | null>(null);
   const [isRemovingChild, setIsRemovingChild] = useState(false);
   
   const [isAddChildDialogOpen, setIsAddChildDialogOpen] = useState(false);
@@ -121,6 +124,10 @@ function FamilyPageContent() {
   const [isUpdatingName, setIsUpdatingName] = useState(false);
   const [isRequestingOwnership, setIsRequestingOwnership] = useState(false);
   const [isTransferringOwnership, setIsTransferringOwnership] = useState(false);
+  
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
+  const [isMoving, setIsMoving] = useState(false);
   
   const createCardRef = useRef<HTMLDivElement>(null);
   const joinCardRef = useRef<HTMLDivElement>(null);
@@ -598,37 +605,67 @@ function FamilyPageContent() {
   };
 
   const handleRemoveChildFromFamily = async () => {
-    if (!childToRemove) return;
+    if (!childToManage) return;
     setIsRemovingChild(true);
     try {
-        await removeChildFromFamily(childToRemove.id);
-        setChildrenInContext(prev => prev.filter(c => c.id !== childToRemove.id));
-        toast({ title: "Heroi em Missão Solo", description: `${childToRemove.name} agora está no espaço pessoal e não faz mais parte da aliança.` });
+        await removeChildFromFamily(childToManage.id);
+        setChildrenInContext(prev => prev.filter(c => c.id !== childToManage.id));
+        toast({ title: "Herói em Missão Solo", description: `${childToManage.name} agora está no espaço pessoal e não faz mais parte da aliança.` });
     } catch (error: any) {
         console.error("Error removing child from family:", error);
         toast({ title: "Erro ao Remover", description: error.message, variant: "destructive" });
     } finally {
         setIsRemovingChild(false);
-        setChildToRemove(null);
+        setChildToManage(null);
     }
   };
 
   const handleDeleteChildPermanently = async () => {
-    if (!childToRemove) return;
+    if (!childToManage) return;
     setIsRemovingChild(true);
     try {
-        await deleteChildProfile(childToRemove.id);
-        setChildrenInContext(prev => prev.filter(c => c.id !== childToRemove.id));
-        toast({ title: "Perfil de Heroi Arquivado", description: `O perfil de ${childToRemove.name} e todos os seus dados foram excluídos permanentemente.` });
+        await deleteChildProfile(childToManage.id);
+        setChildrenInContext(prev => prev.filter(c => c.id !== childToManage.id));
+        toast({ title: "Perfil de Herói Arquivado", description: `O perfil de ${childToManage.name} e todos os seus dados foram excluídos permanentemente.` });
     } catch (error: any) {
         console.error("Error deleting child profile:", error);
         toast({ title: "Erro ao Excluir", description: error.message, variant: "destructive" });
     } finally {
         setIsRemovingChild(false);
-        setChildToRemove(null);
+        setChildToManage(null);
     }
   };
+  
+  const handleOpenMoveDialog = (child: ChildProfile) => {
+    setChildToManage(child);
+    setSelectedMoveContext(''); // Reset selection
+    setIsMoveDialogOpen(true);
+  };
 
+  const handleMoveHeroi = async () => {
+    if (!user || !childToManage || !selectedMoveContext) {
+      toast({ title: 'Erro', description: 'Dados insuficientes para mover o heroi.', variant: 'destructive' });
+      return;
+    }
+    setIsMoving(true);
+    try {
+      await moveChildToNewContext(childToManage.id, selectedMoveContext === 'my-space' ? null : selectedMoveContext, user);
+
+      toast({
+        title: 'Herói Movido com Sucesso!',
+        description: `${childToManage.name} agora pertence a um novo espaço.`,
+      });
+      // Re-fetch family data to update the child list for this context
+      fetchFamilyData(currentContext); 
+    } catch (error: any) {
+      console.error("Error moving child profile:", error);
+      toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
+    } finally {
+      setIsMoving(false);
+      setIsMoveDialogOpen(false);
+      setChildToManage(null);
+    }
+  };
 
   const getInitials = (name?: string | null) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : "P";
 
@@ -840,8 +877,11 @@ function FamilyPageContent() {
                                           Gerenciar <Settings className="ml-2 h-4 w-4" />
                                       </Button>
                                   </Link>
+                                  <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleOpenMoveDialog(child)} disabled={!isOwner}>
+                                      <Move className="h-4 w-4" />
+                                  </Button>
                                   {(isOwner || isCoOwner) && (
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToRemove(child)}>
+                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToManage(child)}>
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
                                   )}
@@ -1085,13 +1125,33 @@ function FamilyPageContent() {
           </Dialog>
         )}
 
-        {childToRemove && (
-          <Dialog open={!!childToRemove} onOpenChange={() => setChildToRemove(null)}>
+        {childToManage && (
+          <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+             <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Mover {childToManage.name} para o seu espaço pessoal?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ao mover, todas as missões, recompensas e progresso do Mini Herói serão movidos da aliança para o seu espaço "Cuidar Solo".
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => { setSelectedMoveContext('my-space'); handleMoveHeroi(); }} disabled={isMoving}>
+                      {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Confirmar Movimentação
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+          </Dialog>
+        )}
+
+        {childToManage && (
+          <Dialog open={!!childToManage && !isMoveDialogOpen} onOpenChange={() => setChildToManage(null)}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Remover {childToRemove.name} da Aliança?</DialogTitle>
+                <DialogTitle>Remover {childToManage.name} da Aliança?</DialogTitle>
                 <DialogDescription>
-                  Escolha como você deseja remover {childToRemove.name}.
+                  Escolha como você deseja remover {childToManage.name}.
                 </DialogDescription>
               </DialogHeader>
               <div className="py-4 space-y-4">
@@ -1123,7 +1183,7 @@ function FamilyPageContent() {
                   </div>
               </div>
               <DialogFooter>
-                  <Button variant="ghost" onClick={() => setChildToRemove(null)} disabled={isRemovingChild}>Cancelar</Button>
+                  <Button variant="ghost" onClick={() => setChildToManage(null)} disabled={isRemovingChild}>Cancelar</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -1473,3 +1533,4 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
+
