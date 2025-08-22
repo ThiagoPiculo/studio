@@ -1,15 +1,16 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
-import { getChildProfilesByOwner, deleteChildProfile } from '@/lib/firebase/firestore';
+import { useFamily } from '@/contexts/FamilyContext';
+import { getChildProfilesByOwner, deleteChildProfile, moveChildToNewContext } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2, User, PlusCircle, ArrowRight, Sparkles, Settings, Trash2 } from 'lucide-react';
+import { Loader2, User, PlusCircle, ArrowRight, Sparkles, Settings, Trash2, Move } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -21,17 +22,30 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 
 function CuidandoSoloPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { toast } = useToast();
+    const { availableContexts, setCurrentContext } = useFamily();
     const [children, setChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+    
     const [childToDelete, setChildToDelete] = useState<ChildProfile | null>(null);
+    const [isDeleting, setIsDeleting] = useState<string | null>(null);
+
+    const [childToMove, setChildToMove] = useState<ChildProfile | null>(null);
+    const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
+    const [isMoving, setIsMoving] = useState(false);
 
     useEffect(() => {
         if (authLoading) return;
@@ -70,6 +84,41 @@ function CuidandoSoloPageContent() {
             setChildToDelete(null);
         }
     };
+
+    const handleOpenMoveDialog = (child: ChildProfile) => {
+        setChildToMove(child);
+        setSelectedMoveContext('');
+        setIsMoveDialogOpen(true);
+    };
+    
+    const handleMoveHeroi = async () => {
+        if (!user || !childToMove || !selectedMoveContext) {
+          toast({ title: 'Erro', description: 'Dados insuficientes para mover o heroi.', variant: 'destructive' });
+          return;
+        }
+        setIsMoving(true);
+        try {
+          await moveChildToNewContext(childToMove.id, selectedMoveContext, user);
+    
+          toast({
+            title: 'Herói Movido com Sucesso!',
+            description: `${childToMove.name} agora pertence a uma nova aliança.`,
+          });
+          // Refresh the list of solo children
+          setChildren(prev => prev.filter(c => c.id !== childToMove.id));
+        } catch (error: any) {
+          console.error("Error moving child profile:", error);
+          toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
+        } finally {
+          setIsMoving(false);
+          setIsMoveDialogOpen(false);
+          setChildToMove(null);
+        }
+      };
+      
+    const moveTargetContexts = useMemo(() => {
+        return availableContexts.filter(c => c.id !== 'my-space');
+    }, [availableContexts]);
 
 
     if (isLoading || authLoading) {
@@ -128,6 +177,11 @@ function CuidandoSoloPageContent() {
                                               Gerenciar <Settings className="ml-2 h-4 w-4" />
                                           </Button>
                                       </Link>
+                                      {moveTargetContexts.length > 0 && (
+                                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleOpenMoveDialog(child)}>
+                                            <Move className="h-4 w-4" />
+                                        </Button>
+                                      )}
                                       <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToDelete(child)}>
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
@@ -154,6 +208,39 @@ function CuidandoSoloPageContent() {
                                 Sim, Excluir Perfil
                             </AlertDialogAction>
                         </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+            {childToMove && (
+                 <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+                    <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Mover {childToMove.name} para outro espaço</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        Ao mover, todas as missões, recompensas, progresso e agenda escolar do Mini Heroi serão movidos juntos. Selecione o novo espaço que irá gerenciar este perfil.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Select onValueChange={setSelectedMoveContext} value={selectedMoveContext}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione um destino..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {moveTargetContexts.map(context => (
+                            <SelectItem key={context.id} value={context.id}>
+                                {`Aliança: ${context.name}`}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleMoveHeroi} disabled={isMoving || !selectedMoveContext}>
+                        {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Confirmar Movimentação
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
             )}
