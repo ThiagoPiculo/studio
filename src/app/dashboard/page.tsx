@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import Loading from './loading';
+import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 
 export default function DashboardRedirectPage() {
     const { user, loading: authLoading } = useAuth();
@@ -13,33 +14,42 @@ export default function DashboardRedirectPage() {
     const router = useRouter();
 
     useEffect(() => {
-        // Wait until both auth and family contexts are loaded
         if (authLoading || familyLoading) {
             return;
         }
 
-        // If no user, the AuthProvider will handle the redirect.
         if (!user) {
             return;
         }
 
-        const isNewUser = availableContexts.length <= 1 && (!availableContexts.find(c => c.id !== 'my-space'));
-        const hasChildrenInMySpace = availableContexts.some(c => c.id === 'my-space'); // Simplified check
+        // We need a quick check for children to decide the route.
+        // This is a minimal fetch, only checking for existence.
+        const checkForChildren = async () => {
+            try {
+                // We check across all contexts to see if the user has ANY children.
+                const childPromises = availableContexts.map(context =>
+                    getChildProfilesForAttribution(user.uid, context.id)
+                );
+                const childrenResults = await Promise.all(childPromises);
+                const hasAnyChildren = childrenResults.some(result => result.length > 0);
 
-        // This condition is a guess, might need refinement based on how children are loaded.
-        // The goal is to check if the user has *absolutely nothing* set up.
-        // A better check might be needed here, maybe a separate firestore field 'hasCompletedOnboarding'
-        if (isNewUser) {
-             // A more robust check might be needed here, maybe a separate firestore field 'hasCompletedOnboarding'
-             // For now, if only 'my-space' exists, we assume a new user.
-             router.replace('/dashboard/assistente');
-        } else {
-            // For any existing user, go to the most useful page.
-            router.replace('/dashboard/heroes');
-        }
+                if (!hasAnyChildren) {
+                    // A true new user is sent to the onboarding assistant
+                    router.replace('/dashboard/assistente');
+                } else {
+                    // An existing user is sent to their main summary page
+                    router.replace('/dashboard/heroes');
+                }
+            } catch (error) {
+                console.error("Error checking for children, defaulting to heroes page:", error);
+                router.replace('/dashboard/heroes');
+            }
+        };
+
+        checkForChildren();
 
     }, [user, authLoading, familyLoading, availableContexts, router]);
 
-    // Render a loading state while the redirection logic runs
+    // Render a loading state while the logic runs
     return <Loading />;
 }
