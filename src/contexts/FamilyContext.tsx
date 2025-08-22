@@ -29,14 +29,9 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
-  // Load from session storage on initial mount
+  // Load from session storage on initial mount, but only for selectedChildId
   useEffect(() => {
     try {
-      const storedContext = sessionStorage.getItem('currentContext');
-      if (storedContext) {
-        _setCurrentContext(storedContext);
-        setIsContextSelected(true);
-      }
        const storedChildId = sessionStorage.getItem('selectedChildId');
        if (storedChildId) {
         _setSelectedChildId(storedChildId);
@@ -90,10 +85,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         
         if (memberships.length === 0) {
             setAvailableContextsState(initialContexts);
-            // If no context is stored, default to my-space for existing users
-            if (!sessionStorage.getItem('currentContext')) {
-                setCurrentContext('my-space');
-            }
+            // Sempre define 'my-space' como padrão ao carregar
+            setCurrentContext('my-space');
             setIsLoading(false);
             return;
         }
@@ -115,11 +108,8 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
-
-            const storedContext = sessionStorage.getItem('currentContext');
-            if (!storedContext || !allContexts.some(c => c.id === storedContext)) {
-                 setCurrentContext('my-space');
-            }
+            // Sempre define 'my-space' como padrão ao carregar
+            setCurrentContext('my-space');
             setIsLoading(false);
 
         }, (error) => {
