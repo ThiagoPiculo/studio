@@ -90,8 +90,8 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
                                 {items.map((item, index) => {
                                     const globalIndex = schedule.schedule.findIndex(s => s === item);
                                     return (
-                                        <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-4 text-sm">
-                                            <div className="w-24 shrink-0">
+                                        <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
+                                            <div className="w-[110px] shrink-0">
                                                 <TimePicker 
                                                     value={item.startTime}
                                                     onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
