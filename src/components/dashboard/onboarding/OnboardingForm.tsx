@@ -18,12 +18,10 @@ import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse, format, addDays } from "date-fns";
-import type { MissionTemplate, Weekday, MissionCategory } from "@/lib/types";
+import { isValid, parse, format, addDays, addMinutes, subHours, subMinutes, setHours, setMinutes } from "date-fns";
+import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
-
 
 const TOTAL_STEPS = 5;
 
@@ -61,6 +59,181 @@ const onboardingSchema = z.object({
 export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
+interface ScheduleItem {
+    activity: string;
+    emoji: string;
+    type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine';
+    category: string;
+    startTime: string;
+    endTime: string;
+    days: Weekday[];
+}
+
+interface ProcessScheduleOutput {
+  schedule: ScheduleItem[];
+  freeTime: string;
+}
+
+// ====================================================================
+// NEW LOGIC-BASED SCHEDULE GENERATOR
+// ====================================================================
+
+const missionsMap = new Map(predefinedMissionGroups.flatMap(g => g.items).map(item => [item.title, item]));
+
+const createEvent = (
+  title: string, 
+  startTime: Date, 
+  durationMinutes: number, 
+  days: Weekday[], 
+  type: ScheduleItem['type'] = 'essential_routine'
+): ScheduleItem => {
+  const missionDetails = missionsMap.get(title);
+  return {
+    activity: title,
+    emoji: missionDetails?.emoji || '📋',
+    category: missionDetails?.suggestedAppCategory || 'home',
+    startTime: format(startTime, 'HH:mm'),
+    endTime: format(addMinutes(startTime, durationMinutes), 'HH:mm'),
+    days,
+    type,
+  };
+};
+
+const parseTimeString = (timeStr: string): Date => {
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  const date = new Date();
+  date.setHours(hours, minutes, 0, 0);
+  return date;
+}
+
+const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessScheduleOutput => {
+  const schedule: ScheduleItem[] = [];
+  const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+  const weekend: Weekday[] = ['SA', 'SU'];
+
+  // Add extra activities first
+  if (input.extraActivities) {
+    input.extraActivities.forEach(activity => {
+      const startTime = parseTimeString(activity.time);
+      schedule.push(createEvent(activity.name, startTime, 60, activity.days as Weekday[], 'extra_activity'));
+    });
+  }
+
+  // --- Weekday Schedule ---
+  if (input.schoolShift !== 'not_applicable' && input.schoolShiftStart && input.schoolShiftEnd) {
+    const schoolStart = parseTimeString(input.schoolShiftStart);
+    const schoolEnd = parseTimeString(input.schoolShiftEnd);
+    
+    // Add school events
+    schedule.push(createEvent('Entrada na Escola', schoolStart, 0, weekdays, 'school_entry'));
+    schedule.push(createEvent('Saída da Escola', schoolEnd, 0, weekdays, 'school_exit'));
+
+    if (input.schoolShift === 'morning') {
+      const wakeUpTime = subHours(schoolStart, 1);
+      const breakfastTime = addMinutes(wakeUpTime, 20);
+      const brushTeethMorningTime = addMinutes(breakfastTime, 20);
+      const bathTime = addMinutes(brushTeethMorningTime, 15);
+      const leaveForSchoolTime = subMinutes(schoolStart, 20);
+      const lunchTime = setHours(new Date(), 13);
+      const brushTeethAfterLunch = addMinutes(lunchTime, 30);
+      const homeworkTime = addMinutes(brushTeethAfterLunch, 15);
+      
+      const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
+        .map(s => parseTimeString(s.endTime))
+        .reduce((latest, current) => current > latest ? current : latest, new Date(0));
+        
+      const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : setHours(new Date(), 19, 0);
+      const dinnerTime = addMinutes(dinnerBaseTime, 20);
+      const brushTeethAfterDinner = addMinutes(dinnerTime, 30);
+      const packBagTime = setHours(new Date(), 20, 45);
+      const bedTime = setHours(new Date(), 21, 0);
+      
+      schedule.push(createEvent('Hora de acordar', wakeUpTime, 15, weekdays));
+      schedule.push(createEvent('Tomar café da manhã', breakfastTime, 20, weekdays));
+      schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 15, weekdays));
+      schedule.push(createEvent('Tomar banho', bathTime, 20, weekdays));
+      schedule.push(createEvent('Sair para escola', leaveForSchoolTime, 20, weekdays));
+      schedule.push(createEvent('Almoçar', lunchTime, 30, weekdays));
+      schedule.push(createEvent('Escovar os dentes (após almoço)', brushTeethAfterLunch, 15, weekdays));
+      schedule.push(createEvent('Fazer a lição de casa', homeworkTime, 60, weekdays));
+      schedule.push(createEvent('Jantar', dinnerTime, 30, weekdays));
+      schedule.push(createEvent('Escovar os dentes (após jantar)', brushTeethAfterDinner, 15, weekdays));
+      schedule.push(createEvent('Organizar a mochila para amanhã', packBagTime, 15, weekdays));
+      schedule.push(createEvent('Hora de dormir', bedTime, 15, weekdays));
+
+    } else if (input.schoolShift === 'afternoon') {
+        const wakeUpTime = setHours(new Date(), 8, 30);
+        const breakfastTime = addMinutes(wakeUpTime, 20);
+        const brushTeethMorningTime = addMinutes(breakfastTime, 20);
+        const homeworkTime = addMinutes(brushTeethMorningTime, 15);
+        const lunchTime = subMinutes(schoolStart, 90);
+        const brushTeethAfterLunch = addMinutes(lunchTime, 30);
+        const bathTime = addMinutes(brushTeethAfterLunch, 15);
+        const leaveForSchoolTime = subMinutes(schoolStart, 20);
+        
+        const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
+          .map(s => parseTimeString(s.endTime))
+          .reduce((latest, current) => current > latest ? current : latest, new Date(0));
+          
+        const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : setHours(new Date(), 19, 15);
+        const dinnerTime = addMinutes(dinnerBaseTime, 20);
+        const brushTeethAfterDinner = addMinutes(dinnerTime, 30);
+        const packBagTime = setHours(new Date(), 21, 45);
+        const bedTime = setHours(new Date(), 22, 0);
+
+        schedule.push(createEvent('Hora de acordar', wakeUpTime, 15, weekdays));
+        schedule.push(createEvent('Tomar café da manhã', breakfastTime, 20, weekdays));
+        schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 15, weekdays));
+        schedule.push(createEvent('Fazer a lição de casa', homeworkTime, 60, weekdays));
+        schedule.push(createEvent('Almoçar', lunchTime, 30, weekdays));
+        schedule.push(createEvent('Escovar os dentes (após almoço)', brushTeethAfterLunch, 15, weekdays));
+        schedule.push(createEvent('Tomar banho', bathTime, 20, weekdays));
+        schedule.push(createEvent('Sair para escola', leaveForSchoolTime, 20, weekdays));
+        schedule.push(createEvent('Jantar', dinnerTime, 30, weekdays));
+        schedule.push(createEvent('Escovar os dentes (após jantar)', brushTeethAfterDinner, 15, weekdays));
+        schedule.push(createEvent('Organizar a mochila para amanhã', packBagTime, 15, weekdays));
+        schedule.push(createEvent('Hora de dormir', bedTime, 15, weekdays));
+    
+    } else if (input.schoolShift === 'full_time') {
+        const wakeUpTime = subHours(schoolStart, 1);
+        const brushTeethMorningTime = addMinutes(wakeUpTime, 30);
+        const leaveForSchoolTime = subMinutes(schoolStart, 20);
+        const bedTime = setHours(new Date(), 21, 0);
+        const brushTeethBedtime = subMinutes(bedTime, 20);
+        
+        schedule.push(createEvent('Hora de acordar', wakeUpTime, 15, weekdays));
+        schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 15, weekdays));
+        schedule.push(createEvent('Sair para escola', leaveForSchoolTime, 20, weekdays));
+        schedule.push(createEvent('Escovar os dentes (antes de dormir)', brushTeethBedtime, 15, weekdays));
+        schedule.push(createEvent('Hora de dormir', bedTime, 15, weekdays));
+    }
+  }
+
+  // --- Weekend Schedule ---
+  const weekdayWakeUp = schedule.find(s => s.activity === 'Hora de acordar');
+  const weekendWakeUpTime = weekdayWakeUp ? addHours(parseTimeString(weekdayWakeUp.startTime), 1) : setHours(new Date(), 9, 0);
+  const weekendBreakfastTime = addMinutes(weekendWakeUpTime, 20);
+  const weekendBrushTeethMorningTime = addMinutes(weekendBreakfastTime, 20);
+  const weekendDinnerTime = setHours(new Date(), 20, 0);
+  const weekendBrushTeethDinnerTime = addMinutes(weekendDinnerTime, 30);
+  const weekendBedtime = setHours(new Date(), 22, 0);
+  const sundayPackBag = setHours(new Date(), 21, 0);
+
+  schedule.push(createEvent('Hora de acordar', weekendWakeUpTime, 15, weekend));
+  schedule.push(createEvent('Tomar café da manhã', weekendBreakfastTime, 20, weekend));
+  schedule.push(createEvent('Escovar os dentes (após acordar)', weekendBrushTeethMorningTime, 15, weekend));
+  schedule.push(createEvent('Jantar', weekendDinnerTime, 30, weekend));
+  schedule.push(createEvent('Escovar os dentes (após jantar)', weekendBrushTeethDinnerTime, 15, weekend));
+  schedule.push(createEvent('Hora de dormir', weekendBedtime, 15, weekend));
+  schedule.push(createEvent('Organizar a mochila para amanhã', sundayPackBag, 15, ['SU']));
+
+  const freeTimeSummary = "A rotina foi montada! Os principais blocos de tempo livre para brincadeiras e descanso parecem ser no período da tarde durante a semana e na maior parte do fim de semana.";
+
+  // Sort final schedule
+  schedule.sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+  return { schedule, freeTime: freeTimeSummary };
+};
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -97,15 +270,15 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 3) {
-        isStepValid = true; // Step 3 has optional fields, validation happens inside
+        isStepValid = await methods.trigger(['extraActivities']);
     } else if (step === 4) {
-        isStepValid = true; // Step 4 is just selection
+        isStepValid = true; 
     }
 
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
-        if (step === 4) { // After selecting routines, generate schedule
-            await handleGenerateSchedule();
+        if (step === 4) { 
+            handleGenerateSchedule();
         }
         setStep(prev => prev + 1);
       }
@@ -128,31 +301,17 @@ export function OnboardingForm() {
     }
   };
 
-  const handleGenerateSchedule = async () => {
+  const handleGenerateSchedule = () => {
       setIsLoading(true);
       setGeneratedSchedule(null);
       const values = methods.getValues();
-      const birthDate = new Date(values.birthDate as string);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
-
-      const input: ProcessScheduleTextInput = {
-          childAge: age,
-          childName: values.name,
-          schoolShift: values.schoolShift,
-          schoolStartTime: values.schoolShiftStart,
-          schoolEndTime: values.schoolShiftEnd,
-          extraActivities: values.extraActivities,
-      };
-
+      
       try {
-          const schedule = await processScheduleText(input);
-          // Sort schedule by time initially
-          schedule.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
+          const schedule = generateDeterministicSchedule(values);
           setGeneratedSchedule(schedule);
       } catch (error) {
           console.error("Error generating schedule:", error);
-          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
-          // Don't go back, let the user retry or proceed
+          toast({ title: "Erro na Lógica!", description: "Ocorreu um erro ao montar a rotina. Verifique os dados e tente novamente.", variant: "destructive" });
       } finally {
           setIsLoading(false);
       }
@@ -171,7 +330,6 @@ export function OnboardingForm() {
     const values = methods.getValues();
 
     try {
-        // 1. Create Child Profile
         const newChild = await addChildProfile(user.uid, {
             name: values.name,
             birthDate: values.birthDate as string,
@@ -183,18 +341,17 @@ export function OnboardingForm() {
         
         const allMissionPromises = [];
 
-        // 2. Process generated schedule to create templates and instances
         for (const item of generatedSchedule.schedule) {
              const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
              
-             if (!missionDetails) continue; // Skip if no predefined data found
+             if (!missionDetails) continue;
 
              const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                 ownerId: user.uid,
                 familyId: values.contextId === 'my-space' ? null : values.contextId,
                 title: item.activity,
                 emoji: item.emoji,
-                category: item.category as MissionCategory, // Use category from AI
+                category: item.category as MissionCategory,
                 starsReward: missionDetails.starsReward,
                 xpReward: missionDetails.xpReward,
                 isRecurring: true,
@@ -207,7 +364,6 @@ export function OnboardingForm() {
                 },
             };
             
-             // Create template, then instance
              allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
                 const [hour, minute] = item.startTime.split(':').map(Number);
                 const startDateWithTime = new Date(template.startDate as string);
