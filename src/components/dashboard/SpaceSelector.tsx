@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/app/dashboard/loading';
 import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
 import { CircleDot, Link as LinkIcon, ArrowRight, Loader2, Rocket } from 'lucide-react';
