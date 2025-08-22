@@ -614,18 +614,17 @@ export const moveChildToNewContext = async (childId: string, newFamilyId: string
 export const createFamily = async (ownerId: string, familyName: string): Promise<Family> => {
   const inviteCode = Math.floor(100000 + Math.random() * 900000).toString();
   const newFamilyRef = doc(collection(db, 'families'));
-  const newFamily: Family = {
-    id: newFamilyRef.id,
+  const newFamily: Omit<Family, 'id'> = {
     name: familyName,
     ownerId,
     inviteCode,
     createdAt: serverTimestamp() as Timestamp,
   };
-  await setDoc(newFamilyRef, newFamily);
+  await setDoc(newFamilyRef, { ...newFamily, id: newFamilyRef.id });
 
-  const newMembershipRef = doc(db, 'familyMemberships', `${ownerId}_${newFamily.id}`);
+  const newMembershipRef = doc(db, 'familyMemberships', `${ownerId}_${newFamilyRef.id}`);
   const ownerMembership: Omit<FamilyMembership, 'id'> = {
-    familyId: newFamily.id,
+    familyId: newFamilyRef.id,
     userId: ownerId,
     role: 'Owner',
     joinedAt: serverTimestamp() as Timestamp,
@@ -636,11 +635,11 @@ export const createFamily = async (ownerId: string, familyName: string): Promise
   const childrenSnapshot = await getDocs(childrenToUpdateQuery);
   const batch = writeBatch(db);
   childrenSnapshot.forEach(childDoc => {
-    batch.update(doc(db, 'children', childDoc.id), { familyId: newFamily.id, updatedAt: serverTimestamp() });
+    batch.update(doc(db, 'children', childDoc.id), { familyId: newFamilyRef.id, updatedAt: serverTimestamp() });
   });
   await batch.commit();
 
-  return newFamily;
+  return convertTimestampsInObject({ id: newFamilyRef.id, ...newFamily }) as Family;
 };
 
 export const createFamilyInvitation = async (familyId: string, inviterId: string, inviterName: string, inviteeEmail: string): Promise<void> => {
@@ -2460,3 +2459,5 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
     });
   }
 };
+
+    
