@@ -72,27 +72,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                !pathname.startsWith('/dashboard/missions/new');
 
   const headerContent = {
-    '/dashboard': {
-      title: 'Espaços e Alianças',
-      icon: Radar,
-      help: {
-        title: 'Comece escolhendo um espaço',
-        content: (
-          <>
-            <p className="text-sm text-muted-foreground">
-              Esta tela é sua central de comando, oferecendo uma visão geral de todos os seus espaços de trabalho que você tem acesso e crianças para cuidar.
-            </p>
-            <ul className="text-sm text-muted-foreground space-y-2">
-                <li><strong>Meu Espaço:</strong> Seu ambiente privado para cuidar dos heróis que só você acompanha, sem qualquer colaboração. Ideal para missões e recompensas pessoais. Se não quiser cuidar solo, não precisa usar este espaço.</li>
-                <li><strong>Alianças:</strong> Espaços compartilhados onde você colabora com outros responsáveis (como co-pais, babás, cuidadoras, avós ou terapeutas). As missões, recompensas e heróis aqui são visíveis a todos os membros da aliança.</li>
-            </ul>
-            <p className="text-sm text-muted-foreground">
-              Clique em um card para mergulhar no universo daquele espaço e começar a gerenciar o progresso dos heróis.
-            </p>
-          </>
-        )
-      }
-    },
     '/dashboard/heroes': {
       title: 'Resumo do Dia',
       icon: Calendar1Icon,
