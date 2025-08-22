@@ -16,7 +16,7 @@ interface Breadcrumb {
 }
 
 const pathTranslations: { [key: string]: string } = {
-  dashboard: 'Espaços',
+  dashboard: 'Início',
   heroes: 'Resumo do Dia',
   mural: 'Perfil Completo',
   agenda: 'Rotina de Missões',
@@ -55,7 +55,7 @@ export function Breadcrumbs() {
       const relevantSegments = pathSegments[0] === 'dashboard' ? pathSegments.slice(1) : pathSegments;
 
       if (pathname === '/dashboard') {
-          setBreadcrumbs([{ label: 'Espaços', href: '/dashboard' }]);
+          setBreadcrumbs([{ label: 'Início', href: '/dashboard' }]);
           return;
       }
 
@@ -85,7 +85,7 @@ export function Breadcrumbs() {
       });
       
       const resolvedCrumbs = (await Promise.all(crumbPromises)).filter(Boolean) as Breadcrumb[];
-      setBreadcrumbs(resolvedCrumbs);
+      setBreadcrumbs([{ label: 'Início', href: '/dashboard' }, ...resolvedCrumbs]);
     };
 
     if (pathname.startsWith('/dashboard')) {
