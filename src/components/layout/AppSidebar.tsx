@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 import { useToast } from '@/hooks/use-toast';
 
@@ -181,7 +181,7 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-4" className="border-none">
                             <CustomAccordionTrigger>
-                                <span className="whitespace-nowrap">Cuidando Solo ou Alianças</span>
+                                <span className="whitespace-nowrap">Cuidar Solo ou Alianças</span>
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
