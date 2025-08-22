@@ -88,18 +88,10 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             const allContexts = [...initialContexts, ...familyContexts];
             setAvailableContextsState(allContexts);
 
-            const isInitialLoad = searchParams.get('initial_load') === 'true';
+            const storedContext = sessionStorage.getItem('currentContext');
+            const isValidStoredContext = allContexts.some(c => c.id === storedContext);
             
-            if (isInitialLoad) {
-                _setCurrentContext('my-space');
-                 if (typeof window !== 'undefined') {
-                    sessionStorage.setItem('currentContext', 'my-space');
-                }
-            } else {
-                const storedContext = sessionStorage.getItem('currentContext');
-                const isValidStoredContext = allContexts.some(c => c.id === storedContext);
-                _setCurrentContext(storedContext && isValidStoredContext ? storedContext : 'my-space');
-            }
+            _setCurrentContext(storedContext && isValidStoredContext ? storedContext : 'my-space');
             
             setIsLoading(false);
             setIsContextSelected(true);
