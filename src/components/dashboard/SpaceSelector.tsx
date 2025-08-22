@@ -3,12 +3,12 @@
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import Loading from '@/app/dashboard/loading';
-import { getChildProfilesByOwner, getFamilyMemberships } from '@/lib/firebase/firestore';
+import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { User, Link as LinkIcon, ArrowRight, Loader2 } from 'lucide-react';
+import { User, Link as LinkIcon, ArrowRight, Loader2, Rocket } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import type { ChildProfile } from '@/lib/types';
@@ -87,12 +87,13 @@ export default function SpaceSelector() {
 
         const fetchChildrenForAllContexts = async () => {
             if (availableContexts.length > 0) {
-                const childPromises = availableContexts.map(context => {
+                const childPromises = availableContexts.map(async (context) => {
                     if (context.id === 'my-space') {
-                        return getChildProfilesByOwner(user.uid, true).then(children => ({ contextId: context.id, children }));
+                        const children = await getChildProfilesByOwner(user.uid, true);
+                        return { contextId: context.id, children };
                     } else {
-                        // This should be getChildProfilesByFamily(context.id)
-                        return getChildProfilesByOwner(user.uid).then(allChildren => ({ contextId: context.id, children: allChildren.filter(c => c.familyId === context.id) }));
+                        const children = await getChildProfilesByFamily(context.id);
+                        return { contextId: context.id, children };
                     }
                 });
 
@@ -148,7 +149,7 @@ export default function SpaceSelector() {
                 <CardHeader>
                     <div className="flex items-center gap-3">
                          <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <img src="/logo.svg" alt="Mini Herois Logo" className="h-8 w-8" />
+                            <Rocket className="h-8 w-8 text-primary" />
                         </div>
                         <div>
                             <CardTitle className="text-2xl">Bem-vindo(a), {user?.name || 'Mestre dos Herois'}!</CardTitle>
