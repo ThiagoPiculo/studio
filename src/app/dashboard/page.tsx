@@ -1,41 +1,75 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Suspense } from 'react';
 import Loading from "./loading";
 import SpaceSelector from "@/components/dashboard/SpaceSelector";
+import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
+import type { ChildProfile } from '@/lib/types';
 
 
 export default function DashboardPage() {
     const { user, loading: authLoading } = useAuth();
-    const { isLoading: familyLoading } = useFamily();
+    const { availableContexts, isLoading: familyLoading } = useFamily();
     const router = useRouter();
-    const [isClient, setIsClient] = useState(false);
 
-    useEffect(() => {
-        setIsClient(true);
-    }, []);
+    const [decision, setDecision] = useState<'loading' | 'assistente' | 'heroes' | 'selector'>('loading');
 
-    // This effect handles redirection based on loading states
-    useEffect(() => {
-        if (!isClient) return;
+    const checkUserStatus = useCallback(async () => {
+        if (!user || availableContexts.length === 0) return;
 
-        if (!authLoading && !user) {
-            router.replace('/auth/login');
+        try {
+            const childPromises = availableContexts.map(context =>
+                context.id === 'my-space'
+                    ? getChildProfilesByOwner(user.uid, true)
+                    : getChildProfilesByFamily(context.id)
+            );
+
+            const allChildrenNested = await Promise.all(childPromises);
+            const allChildren = allChildrenNested.flat();
+
+            if (allChildren.length === 0 && availableContexts.length <= 1) {
+                setDecision('assistente');
+            } else if (allChildren.length > 0 && availableContexts.length <= 1) {
+                setDecision('heroes');
+            } else {
+                setDecision('selector');
+            }
+        } catch (error) {
+            console.error("Error deciding user path:", error);
+            setDecision('selector'); // Fallback to selector on error
         }
-    }, [isClient, authLoading, user, router]);
+    }, [user, availableContexts]);
 
-    // This effect handles showing the space selector or redirecting once everything is loaded
+
     useEffect(() => {
-        if (authLoading || familyLoading) return;
+        if (authLoading || familyLoading) {
+            setDecision('loading');
+            return;
+        }
 
-    }, [authLoading, familyLoading, router]);
+        if (!user) {
+            router.replace('/auth/login');
+            return;
+        }
+        
+        checkUserStatus();
 
-    if (authLoading || familyLoading || !isClient) {
+    }, [authLoading, familyLoading, user, router, checkUserStatus]);
+
+    useEffect(() => {
+        if (decision === 'assistente') {
+            router.replace('/dashboard/assistente');
+        } else if (decision === 'heroes') {
+            router.replace('/dashboard/heroes');
+        }
+    }, [decision, router]);
+
+    if (decision === 'loading' || decision === 'assistente' || decision === 'heroes') {
         return <Loading />;
     }
 

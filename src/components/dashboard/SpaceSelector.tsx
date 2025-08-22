@@ -26,7 +26,7 @@ interface SpaceCardProps {
 
 const SpaceCard = ({ id, name, icon: Icon, childrenData, onClick, isCurrent }: SpaceCardProps) => (
     <Card 
-        className={`shadow-lg hover:shadow-xl transition-all border-2 ${isCurrent ? 'border-primary' : 'border-transparent'}`}
+        className={`shadow-lg hover:shadow-xl transition-all border-2 ${isCurrent ? 'border-primary' : 'border-transparent'} cursor-pointer`}
         onClick={() => onClick(id)}
     >
         <CardHeader>
@@ -77,58 +77,32 @@ export default function SpaceSelector() {
     const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
     const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
-    // Initial check effect
     useEffect(() => {
-        if (authLoading || familyLoading) return;
-
-        if (!user) {
-            router.replace('/auth/login');
+        if (!user || availableContexts.length === 0) {
+            setIsLoadingChildren(false);
             return;
         }
 
         const fetchChildrenForAllContexts = async () => {
-            if (availableContexts.length > 0) {
-                const childPromises = availableContexts.map(async (context) => {
-                    if (context.id === 'my-space') {
-                        const children = await getChildProfilesByOwner(user.uid, true);
-                        return { contextId: context.id, children };
-                    } else {
-                        const children = await getChildProfilesByFamily(context.id);
-                        return { contextId: context.id, children };
-                    }
-                });
+            setIsLoadingChildren(true);
+            const childPromises = availableContexts.map(async (context) => {
+                const children = context.id === 'my-space'
+                    ? await getChildProfilesByOwner(user.uid, true)
+                    : await getChildProfilesByFamily(context.id);
+                return { contextId: context.id, children };
+            });
 
-                const results = await Promise.all(childPromises);
-                const childrenMap: Record<string, ChildProfile[]> = {};
-                results.forEach(res => {
-                    childrenMap[res.contextId] = res.children;
-                });
-                setChildrenByContext(childrenMap);
-            }
+            const results = await Promise.all(childPromises);
+            const childrenMap: Record<string, ChildProfile[]> = {};
+            results.forEach(res => {
+                childrenMap[res.contextId] = res.children;
+            });
+            setChildrenByContext(childrenMap);
             setIsLoadingChildren(false);
         };
         
         fetchChildrenForAllContexts();
-
-    }, [user, authLoading, familyLoading, router, availableContexts]);
-    
-    // Logic for redirection
-    useEffect(() => {
-        if (isLoadingChildren || authLoading || familyLoading) return;
-
-        const allChildren = Object.values(childrenByContext).flat();
-        
-        // This is a new user with no children and no alliances
-        if (allChildren.length === 0 && availableContexts.length <= 1) {
-            router.replace('/dashboard/assistente');
-        } 
-        // This is an existing user with children but only in their personal space
-        else if (allChildren.length > 0 && availableContexts.length <= 1) {
-            router.replace('/dashboard/heroes');
-        }
-        // If there are alliances or a choice to be made, we stay on this page.
-        
-    }, [isLoadingChildren, authLoading, familyLoading, childrenByContext, availableContexts, router]);
+    }, [user, availableContexts]);
 
 
     const handleSelectContext = (contextId: string) => {
@@ -139,8 +113,7 @@ export default function SpaceSelector() {
     const mySpaceContext = availableContexts.find(c => c.id === 'my-space');
     const allianceContexts = availableContexts.filter(c => c.id !== 'my-space');
     
-    // We only render the full UI if there are choices to be made. Otherwise, the effect will redirect.
-    if (isLoadingChildren || authLoading || familyLoading || (Object.values(childrenByContext).flat().length === 0 && availableContexts.length <= 1) || (Object.values(childrenByContext).flat().length > 0 && availableContexts.length <= 1) ) {
+    if (isLoadingChildren || authLoading || familyLoading) {
         return <Loading />;
     }
 
