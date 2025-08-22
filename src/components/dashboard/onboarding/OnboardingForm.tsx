@@ -18,7 +18,7 @@ import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse, format, addDays, addMinutes, subHours, subMinutes, setHours, setMinutes } from "date-fns";
+import { isValid, parse, format, addDays, addMinutes, subHours, subMinutes, setHours, setMinutes, addHours } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
