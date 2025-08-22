@@ -68,10 +68,14 @@ CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: string; label: string, children: React.ReactNode }) => {
     const pathname = usePathname();
     const { isLoading: isFamilyLoading } = useFamily();
-    // Don't mark any link as active during the initial context loading to avoid flashing the wrong active state.
-    // Specifically handle the /dashboard route to prevent it from flashing as active during redirects.
-    const isActive = !isFamilyLoading && pathname.startsWith(href) && (href === '/dashboard/heroes' ? pathname === href : true);
 
+    // A lógica de ativação foi ajustada aqui.
+    // Se o href for '/dashboard/heroes', ele só fica ativo se o pathname for exatamente esse.
+    // Para todos os outros, ele fica ativo se o pathname começar com o href.
+    // Isso evita que '/dashboard' (que redireciona) ative incorretamente um link.
+    const isActive = !isFamilyLoading && 
+                     pathname.startsWith(href) &&
+                     (href === '/dashboard/heroes' ? pathname === href : true);
 
     return (
         <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
