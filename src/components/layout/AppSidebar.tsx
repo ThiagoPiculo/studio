@@ -69,7 +69,9 @@ const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: st
     const pathname = usePathname();
     const { isLoading: isFamilyLoading } = useFamily();
     // Don't mark any link as active during the initial context loading to avoid flashing the wrong active state.
-    const isActive = !isFamilyLoading && (href === '/dashboard' ? pathname === href : pathname.startsWith(href));
+    // Specifically handle the /dashboard route to prevent it from flashing as active during redirects.
+    const isActive = !isFamilyLoading && pathname.startsWith(href) && (href === '/dashboard/heroes' ? pathname === href : true);
+
 
     return (
         <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
@@ -196,11 +198,6 @@ export function AppSidebar() {
                                         </NavLink>
                                     </SidebarMenuItem>
                                 )}
-                                <SidebarMenuItem>
-                                     <NavLink href="/dashboard" tooltip="Ver Todos os Espaços" label="Espaços e Alianças">
-                                        <Radar className="text-chart-3" />
-                                     </NavLink>
-                                </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
                     </Accordion>
