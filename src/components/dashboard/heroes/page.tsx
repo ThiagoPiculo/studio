@@ -1,29 +1,70 @@
-
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import Loading from "./loading";
 import { HeroesSummary } from "@/components/dashboard/heroes/HeroesSummary";
 import { useAuth } from "@/contexts/AuthContext";
 import { GettingStartedGuide } from "@/components/dashboard/GettingStartedGuide";
+import type { ChildProfile, MissionInstance } from "@/lib/types";
+import { getChildProfilesForAttribution, getMissionInstancesForContext } from "@/lib/firebase/firestore";
+import { useFamily } from "@/contexts/FamilyContext";
 
-export default function HeroesPage() {
+function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
-    const [shouldRender, setShouldRender] = useState(false);
+    const { currentContext, isLoading: isFamilyLoading } = useFamily();
+    const [children, setChildren] = useState<ChildProfile[] | null>(null);
+    const [missions, setMissions] = useState<MissionInstance[] | null>(null);
+
+    const fetchData = useCallback(async () => {
+        if (!user) {
+            setChildren([]);
+            setMissions([]);
+            return;
+        }
+        try {
+            const [childData, missionData] = await Promise.all([
+                getChildProfilesForAttribution(user.uid, currentContext),
+                getMissionInstancesForContext(user.uid, currentContext)
+            ]);
+            setChildren(childData);
+            setMissions(missionData);
+        } catch (error) {
+            console.error("Error fetching heroes data:", error);
+            setChildren([]);
+            setMissions([]);
+        }
+    }, [user, currentContext]);
+
 
     useEffect(() => {
-        if (!authLoading) {
-            setShouldRender(true);
+        if (!authLoading && !isFamilyLoading) {
+            fetchData();
         }
-    }, [authLoading]);
+    }, [authLoading, isFamilyLoading, fetchData, currentContext]);
 
-    if (!shouldRender) {
+
+    if (authLoading || isFamilyLoading || children === null || missions === null) {
         return <Loading />;
     }
     
+    if (children.length === 0) {
+        return (
+            <GettingStartedGuide 
+                hasChildren={false}
+                hasMissions={false}
+                hasRewards={false}
+            />
+        );
+    }
+    
+    return <HeroesSummary children={children} missionInstances={missions} />;
+}
+
+
+export default function HeroesPage() {
     return (
         <Suspense fallback={<Loading />}>
-            <HeroesSummary />
+            <HeroesPageContent />
         </Suspense>
     )
 }

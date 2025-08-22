@@ -1,4 +1,3 @@
-
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -104,7 +103,7 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">O Pergaminho da Rotina Diária</h2>
-        <p className="text-muted-foreground">Aqui está o plano mágico completo. Se precisar, ajuste os horários antes de dar vida a esta jornada!</p>
+        <p className="text-muted-foreground">Aqui está o plano mágico completo, separado entre a rotina essencial e as atividades extras para maior clareza. Se precisar, ajuste os horários antes de dar vida a esta jornada!</p>
       </div>
       
       <div className="max-h-[400px]">
