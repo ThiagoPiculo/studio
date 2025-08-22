@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFamily } from '@/contexts/FamilyContext';
@@ -8,7 +9,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
-import { User, Link as LinkIcon, ArrowRight, Loader2, Rocket } from 'lucide-react';
+import { CircleDot, Link as LinkIcon, ArrowRight, Loader2, Rocket } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { getInitials } from '@/lib/utils';
 import type { ChildProfile } from '@/lib/types';
@@ -164,7 +165,7 @@ export default function SpaceSelector() {
                      <SpaceCard
                         id={mySpaceContext.id}
                         name={mySpaceContext.name}
-                        icon={User}
+                        icon={CircleDot}
                         childrenData={{ profiles: childrenByContext['my-space'], isLoading: isLoadingChildren }}
                         onClick={handleSelectContext}
                         isCurrent={currentContext === 'my-space'}

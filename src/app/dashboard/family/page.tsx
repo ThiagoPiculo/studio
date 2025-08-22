@@ -48,7 +48,7 @@ import {
 } from '@/lib/firebase/firestore';
 import type { Family, UserProfile, FamilyInvitation, ChildProfile, FamilyRole, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack, Crown, Move } from 'lucide-react';
+import { Loader2, Users, UserPlus, Copy, LogOut, Trash2, Home, Link as LinkIcon, MailCheck, X, RefreshCw, MoreVertical, UserX, Sparkles, ArrowRight, PlusCircle, Edit3, Save, Shield, ChevronsUpDown, Check, HelpCircle, Send, Settings, Info, Hourglass, SendToBack, Crown, Move, CircleDot } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -877,10 +877,12 @@ function FamilyPageContent() {
                                           Gerenciar <Settings className="ml-2 h-4 w-4" />
                                       </Button>
                                   </Link>
-                                  <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleOpenMoveDialog(child)} disabled={!isOwner}>
-                                      <Move className="h-4 w-4" />
-                                  </Button>
-                                  {(isOwner || isCoOwner) && (
+                                  {(isOwner || (isCoOwner && child.ownerId !== familyDetails.ownerId)) && (
+                                    <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleOpenMoveDialog(child)} disabled={!isOwner}>
+                                        <Move className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                  {(isOwner || (isCoOwner && child.ownerId !== familyDetails.ownerId)) && (
                                     <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToManage(child)}>
                                       <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -1127,21 +1129,36 @@ function FamilyPageContent() {
 
         {childToManage && (
           <Dialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
-             <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Mover {childToManage.name} para o seu espaço pessoal?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Ao mover, todas as missões, recompensas e progresso do Mini Herói serão movidos da aliança para o seu espaço "Cuidar Solo".
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => { setSelectedMoveContext('my-space'); handleMoveHeroi(); }} disabled={isMoving}>
-                      {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Confirmar Movimentação
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
+            <DialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Mover {childToManage.name} para outro espaço?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Ao mover, todas as missões, recompensas e progresso do Mini Herói serão movidos juntos. Selecione o novo espaço que irá gerenciar este perfil.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="py-4">
+                <Select onValueChange={setSelectedMoveContext} value={selectedMoveContext}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um destino..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="my-space">
+                      <div className="flex items-center gap-2">
+                          <CircleDot className="h-4 w-4" />
+                          <span>Meu Espaço (Cuidar Solo)</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isMoving}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={handleMoveHeroi} disabled={isMoving || !selectedMoveContext}>
+                  {isMoving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Confirmar Movimentação
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </DialogContent>
           </Dialog>
         )}
 
@@ -1533,4 +1550,3 @@ export default function FamilyPage() {
         </Suspense>
     )
 }
-

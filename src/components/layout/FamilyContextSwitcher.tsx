@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from '@/components/ui/button';
-import { Home, ChevronsUpDown, Loader2, Link as LinkIcon, Check } from 'lucide-react';
+import { CircleDot, ChevronsUpDown, Loader2, Link as LinkIcon, Check } from 'lucide-react';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
@@ -119,7 +119,7 @@ export function FamilyContextSwitcher() {
     return `Aliança: ${context.name}`;
   }
 
-  const Icon = currentContext === 'my-space' ? Home : LinkIcon;
+  const Icon = currentContext === 'my-space' ? CircleDot : LinkIcon;
   const showCounter = currentChildren.length > visibleAvatars;
 
   return (
@@ -167,7 +167,7 @@ export function FamilyContextSwitcher() {
                     <div className="flex flex-col gap-1.5 w-full">
                        <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                {context.id === 'my-space' ? <Home className="h-4 w-4" /> : <LinkIcon className="h-4 w-4 text-chart-4" />}
+                                {context.id === 'my-space' ? <CircleDot className="h-4 w-4 text-chart-2" /> : <LinkIcon className="h-4 w-4 text-chart-4" />}
                                 <span className="font-medium truncate">{getDisplayName(context)}</span>
                             </div>
                             {isSelected && <Check className="h-4 w-4 text-primary" />}
