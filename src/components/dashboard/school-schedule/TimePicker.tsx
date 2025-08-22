@@ -41,7 +41,7 @@ export function TimePicker({ value, onChange, className, minHour, maxHour }: Tim
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Select value={hour} onValueChange={handleHourChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full justify-center px-2">
           <SelectValue placeholder="Hora" />
         </SelectTrigger>
         <SelectContent>
@@ -52,7 +52,7 @@ export function TimePicker({ value, onChange, className, minHour, maxHour }: Tim
       </Select>
       <span className="font-semibold">:</span>
       <Select value={minute} onValueChange={handleMinuteChange}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className="w-full justify-center px-2">
           <SelectValue placeholder="Min." />
         </SelectTrigger>
         <SelectContent>
