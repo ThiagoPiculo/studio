@@ -5,10 +5,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { weekdayLabels } from "@/lib/types";
-import { Wand2, Loader2, Sun, Moon, CloudSun } from "lucide-react";
-import type { ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
+import { Wand2, Loader2, Sun, Moon, CloudSun, ListChecks, Star } from "lucide-react";
+import type { ProcessScheduleOutput, ScheduleItem } from "../OnboardingForm";
 import { useFormContext } from "react-hook-form";
-import { TimePicker } from "../../school-schedule/TimePicker";
+import { TimePicker } from "../../missions/TimePicker";
+import React from 'react';
 
 interface OnboardingStep5Props {
   isLoading?: boolean;
@@ -16,20 +17,61 @@ interface OnboardingStep5Props {
   onScheduleChange: (index: number, newTime: string) => void;
 }
 
-const getPeriodOfDay = (time: string): 'morning' | 'afternoon' | 'night' => {
-    const hour = parseInt(time.split(':')[0], 10);
-    if (hour < 12) return 'morning';
-    if (hour < 18) return 'afternoon';
-    return 'night';
-};
 
-const periodConfig = {
-    morning: { icon: Sun, label: 'Manhã', color: 'text-yellow-600', bg: 'bg-yellow-500/5' },
-    afternoon: { icon: CloudSun, label: 'Tarde', color: 'text-orange-600', bg: 'bg-orange-500/5' },
-    night: { icon: Moon, label: 'Noite', color: 'text-indigo-600', bg: 'bg-indigo-500/5' },
+const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
+  if (items.length === 0) return null;
+
+  return (
+    <div className="space-y-3 rounded-lg border bg-card p-4">
+      <h3 className="font-semibold flex items-center gap-2 text-primary">
+        <Icon className="h-5 w-5" />
+        {title}
+      </h3>
+      <div className="space-y-3">
+        {items.map((item, index) => {
+          const globalIndex = schedule.findIndex(s => s === item);
+          return (
+            <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
+                <div className="w-[110px] shrink-0">
+                    <TimePicker 
+                        value={item.startTime}
+                        onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
+                    />
+                </div>
+                <div className="flex-grow flex items-center gap-2">
+                    <span className="text-xl">{item.emoji}</span>
+                    <div className="flex flex-col">
+                        <span className="font-semibold">{item.activity}</span>
+                        <div className="text-xs text-muted-foreground">
+                            {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 }
 
 export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
+
+  const { essentialRoutines, extraActivities } = React.useMemo(() => {
+    if (!schedule || !schedule.schedule) {
+        return { essentialRoutines: [], extraActivities: [] };
+    }
+    const essentials = schedule.schedule.filter(
+        item => item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit'
+    );
+    const extras = schedule.schedule.filter(item => item.type === 'extra_activity');
+    
+    essentials.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    extras.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    return { essentialRoutines: essentials, extraActivities: extras };
+  }, [schedule]);
+
   
   if (isLoading) {
     return (
@@ -57,14 +99,6 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
     );
   }
   
-  const groupedSchedule = schedule.schedule.reduce((acc, item) => {
-    const period = getPeriodOfDay(item.startTime);
-    if (!acc[period]) {
-        acc[period] = [];
-    }
-    acc[period].push(item);
-    return acc;
-  }, {} as Record<'morning' | 'afternoon' | 'night', typeof schedule.schedule>);
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -73,46 +107,23 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
         <p className="text-muted-foreground">Aqui está o plano mágico completo. Se precisar, ajuste os horários antes de dar vida a esta jornada!</p>
       </div>
       
-      <div className="max-h-[400px] p-4 border rounded-lg bg-muted/20">
+      <div className="max-h-[400px]">
         <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
-                {(['morning', 'afternoon', 'night'] as const).map((period) => {
-                    const items = groupedSchedule[period];
-                    if (!items || items.length === 0) return null;
-                    const { icon: Icon, label, color, bg } = periodConfig[period];
-                    return (
-                        <div key={period} className={`space-y-3 p-3 rounded-lg ${bg}`}>
-                            <h3 className={`font-semibold flex items-center gap-2 ${color}`}>
-                                <Icon className="h-5 w-5" />
-                                {label}
-                            </h3>
-                            <div className="space-y-3">
-                                {items.map((item, index) => {
-                                    const globalIndex = schedule.schedule.findIndex(s => s === item);
-                                    return (
-                                        <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
-                                            <div className="w-[110px] shrink-0">
-                                                <TimePicker 
-                                                    value={item.startTime}
-                                                    onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
-                                                />
-                                            </div>
-                                            <div className="flex-grow flex items-center gap-2">
-                                                <span className="text-xl">{item.emoji}</span>
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold">{item.activity}</span>
-                                                    <div className="text-xs text-muted-foreground">
-                                                        {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-                            </div>
-                        </div>
-                    );
-                })}
+                <ScheduleSection 
+                  title="Missões da Rotina Essencial"
+                  icon={ListChecks}
+                  items={essentialRoutines}
+                  schedule={schedule.schedule}
+                  onScheduleChange={onScheduleChange}
+                />
+                 <ScheduleSection 
+                  title="Atividades Extras"
+                  icon={Star}
+                  items={extraActivities}
+                  schedule={schedule.schedule}
+                  onScheduleChange={onScheduleChange}
+                />
 
                 <Separator className="my-4" />
 
