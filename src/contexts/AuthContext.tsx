@@ -40,7 +40,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [profileUnsubscribe, setProfileUnsubscribe] = useState<(() => void) | null>(null);
 
   useEffect(() => {
-    setLoading(true);
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
       if (profileUnsubscribe) {
         profileUnsubscribe();
@@ -48,19 +47,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
+        setLoading(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        
-        // Immediately set a temporary user to stop loading, then listen for profile updates
-        const tempUser: UserProfile = {
-            uid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
-            avatarUrl: firebaseUser.photoURL,
-            createdAt: firebaseUser.metadata.creationTime ? (new Date(firebaseUser.metadata.creationTime).toISOString() as any) : (new Date().toISOString() as any),
-        };
-        setUser(tempUser);
-        setLoading(false); // <-- Moved here
-
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { 
             if (docSnap.exists()) {
@@ -77,15 +65,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else {
               // This case might happen if a user was created but firestore doc failed.
               // The `loginWithGoogle` function handles creation, this is a fallback.
-              setUser(tempUser);
+              setUser({
+                uid: firebaseUser.uid,
+                email: firebaseUser.email,
+                name: firebaseUser.displayName,
+                avatarUrl: firebaseUser.photoURL,
+                createdAt: firebaseUser.metadata.creationTime ? (new Date(firebaseUser.metadata.creationTime).toISOString() as any) : (new Date().toISOString() as any),
+              });
               setIsChildAuthenticated(false);
               setChildProfile(null);
             }
+            setLoading(false);
           },
           (error) => {
             console.error("Error listening to user profile:", error);
             setUser(null);
-            // Already set loading to false, no need to set it again here
+            setLoading(false);
           }
         );
         setProfileUnsubscribe(() => newProfileUnsubscribe);
@@ -132,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           avatarUrl: googleUser.photoURL,
           createdAt: serverTimestamp(),
           settings: {
-            initialPage: 'heroes',
+            initialPage: 'dashboard',
             rewardMode: 'automatic',
           },
         };

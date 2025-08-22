@@ -1,19 +1,47 @@
 
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { useFamily } from '@/contexts/FamilyContext';
+import { Suspense } from 'react';
+import Loading from "./loading";
+import SpaceSelector from "@/components/dashboard/SpaceSelector";
 
-// This component is designed to be a fast, non-visual redirector.
-export default function DashboardRedirectPage() {
+
+export default function DashboardPage() {
+    const { user, loading: authLoading } = useAuth();
+    const { isLoading: familyLoading } = useFamily();
     const router = useRouter();
+    const [isClient, setIsClient] = useState(false);
 
     useEffect(() => {
-        // Immediately redirect to the primary dashboard view.
-        // All logic for what to display (Getting Started vs. Summary) is handled there.
-        router.replace('/dashboard/heroes');
-    }, [router]);
+        setIsClient(true);
+    }, []);
 
-    // Render nothing to avoid flashing any content while redirecting.
-    return null;
+    // This effect handles redirection based on loading states
+    useEffect(() => {
+        if (!isClient) return;
+
+        if (!authLoading && !user) {
+            router.replace('/auth/login');
+        }
+    }, [isClient, authLoading, user, router]);
+
+    // This effect handles showing the space selector or redirecting once everything is loaded
+    useEffect(() => {
+        if (authLoading || familyLoading) return;
+
+    }, [authLoading, familyLoading, router]);
+
+    if (authLoading || familyLoading || !isClient) {
+        return <Loading />;
+    }
+
+    return (
+        <Suspense fallback={<Loading />}>
+            <SpaceSelector />
+        </Suspense>
+    );
 }

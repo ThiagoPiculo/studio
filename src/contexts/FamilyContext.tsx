@@ -7,7 +7,7 @@ import type { FamilyContextType, Family, FamilyMembership, FamilyRole } from '@/
 import { useAuth } from './AuthContext';
 import { db } from '@/lib/firebase/config';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { convertTimestampsInObject } from '@/lib/utils';
 
 interface EnrichedContext {
@@ -20,7 +20,6 @@ const FamilyContext = React.createContext<FamilyContextType | undefined>(undefin
 
 export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const { user, loading: authLoading } = useAuth();
-  const searchParams = useSearchParams();
   const [currentContext, _setCurrentContext] = React.useState<'my-space' | string>('my-space');
   const [selectedChildId, _setSelectedChildId] = React.useState<string | null>(null);
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
@@ -30,11 +29,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
 
-  // Load from session storage on initial mount, but only for selectedChildId
+  // Load from session storage on initial mount
   useEffect(() => {
     try {
-       const storedChildId = sessionStorage.getItem('selectedChildId');
-       if (storedChildId) {
+      const storedContext = sessionStorage.getItem('currentContext');
+      const storedChildId = sessionStorage.getItem('selectedChildId');
+      if (storedContext) {
+        _setCurrentContext(storedContext);
+      }
+      if (storedChildId) {
         _setSelectedChildId(storedChildId);
       }
     } catch (e) {
@@ -140,7 +143,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeMemberships();
         unsubscribeFamilies();
       };
-  }, [user, authLoading, searchParams]);
+  }, [user, authLoading]);
 
   // New listener for children in the current context
   useEffect(() => {

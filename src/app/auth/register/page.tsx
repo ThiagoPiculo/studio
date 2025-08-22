@@ -49,7 +49,7 @@ function RegisterPageContent() {
         toast({ title: "Boas-vindas!", description: "Sua Central de Mini Herois foi criada com sucesso." });
       }
 
-      router.push("/dashboard/heroes");
+      router.push("/dashboard");
     } catch (error: any) {
        // The error for popup closed by user is handled in the auth function itself
       if (error.code !== 'auth/popup-closed-by-user') {

@@ -8,7 +8,6 @@ import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { useRouter } from 'next/navigation';
 
 function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -17,7 +16,6 @@ function HeroesPageContent() {
     const [missions, setMissions] = useState<MissionInstance[] | null>(null);
     const [rewards, setRewards] = useState<RewardTemplate[] | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
-    const router = useRouter();
 
     const fetchData = useCallback(async () => {
         if (!user) {
@@ -35,12 +33,6 @@ function HeroesPageContent() {
                 getMissionInstancesForContext(user.uid, currentContext),
                 getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
             ]);
-            
-            if (childData.length === 0 && (!familyIdToQuery || familyIdToQuery === null)) {
-                router.push('/dashboard/novo-heroi');
-                return;
-            }
-
             setChildren(childData);
             setMissions(missionData);
             setRewards(rewardData);
@@ -52,7 +44,7 @@ function HeroesPageContent() {
         } finally {
             setIsLoadingData(false);
         }
-    }, [user, currentContext, router]);
+    }, [user, currentContext]);
 
 
     useEffect(() => {
@@ -66,8 +58,16 @@ function HeroesPageContent() {
         return <Loading />;
     }
     
-    // The redirect logic now lives inside fetchData, so this component will only render
-    // if there are children to display, or it will show the loader until redirection happens.
+    if (children.length === 0) {
+        return (
+            <GettingStartedGuide 
+                hasChildren={false}
+                hasMissions={false}
+                hasRewards={false}
+            />
+        );
+    }
+    
     return <HeroesSummary children={children} missionInstances={missions} />;
 }
 
