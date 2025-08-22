@@ -69,13 +69,13 @@ const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: st
     const pathname = usePathname();
     const { isLoading: isFamilyLoading } = useFamily();
 
-    // A lógica de ativação foi ajustada aqui.
-    // Se o href for '/dashboard/heroes', ele só fica ativo se o pathname for exatamente esse.
-    // Para todos os outros, ele fica ativo se o pathname começar com o href.
-    // Isso evita que '/dashboard' (que redireciona) ative incorretamente um link.
-    const isActive = !isFamilyLoading && 
-                     pathname.startsWith(href) &&
-                     (href === '/dashboard/heroes' ? pathname === href : true);
+    // The logic for `isActive` is now more specific for the 'Resumo do Dia' link.
+    // It is considered active if the path is exactly `/dashboard` OR `/dashboard/heroes`.
+    // Other links are active if the path starts with their href.
+    const isActive = !isFamilyLoading && (
+        (href === '/dashboard/heroes' && (pathname === '/dashboard' || pathname === '/dashboard/heroes')) ||
+        (href !== '/dashboard/heroes' && pathname.startsWith(href))
+    );
 
     return (
         <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
