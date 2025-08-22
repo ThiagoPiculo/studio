@@ -28,7 +28,7 @@ export default function DashboardRedirectPage() {
 
         // This condition is a guess, might need refinement based on how children are loaded.
         // The goal is to check if the user has *absolutely nothing* set up.
-        // A better check might involve fetching children count if availableContexts is basic.
+        // A better check might be needed here, maybe a separate firestore field 'hasCompletedOnboarding'
         if (isNewUser) {
              // A more robust check might be needed here, maybe a separate firestore field 'hasCompletedOnboarding'
              // For now, if only 'my-space' exists, we assume a new user.
