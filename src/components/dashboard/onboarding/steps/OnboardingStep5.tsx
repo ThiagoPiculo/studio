@@ -8,7 +8,7 @@ import { weekdayLabels } from "@/lib/types";
 import { Wand2, Loader2, Sun, Moon, CloudSun } from "lucide-react";
 import type { ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { useFormContext } from "react-hook-form";
-import { TimePicker } from "../../missions/TimePicker";
+import { TimePicker } from "../../school-schedule/TimePicker";
 
 interface OnboardingStep5Props {
   isLoading?: boolean;
