@@ -89,9 +89,36 @@ const prompt = ai.definePrompt({
       - 21:30: Organizar a mochila
       - 21:40: Escovar os dentes
       - 22:00: Hora de dormir
-    Adapte esta lógica para outros turnos e informações fornecidas.
+    
+    Exemplo de Raciocínio (para uma criança que estuda de manhã, das 07:00 às 11:30):
+    - Manhã:
+      - 06:00: Hora de Acordar
+      - 06:20: Tomar café da manhã
+      - 06:35: Escovar os dentes
+      - 06:40: Sair para a escola
+    - Tarde:
+      - 13:00: Almoçar
+      - 13:30: Escovar os dentes
+      - 14:30: Fazer lição de casa
+      - 15:30: Organizar a mochila
+      - 16:00 - 18:00: Blocos de "Hora livre para brincar"
+    - Noite:
+      - 19:00: Jantar
+      - 19:30: Beber água
+      - 20:40: Escovar os dentes
+      - 21:00: Hora de dormir
 
-    Gere a rotina completa e estruturada no formato de saída JSON.
+    Exemplo de Raciocínio (para uma criança que estuda em período integral, das 07:00 às 17:30):
+    - Manhã:
+      - 06:00: Hora de Acordar
+      - 06:30: Escovar os dentes
+      - 06:40: Sair para a escola
+    - Tarde/Noite:
+      - 19:00: Jantar (sugestão)
+      - 20:40: Escovar os dentes
+      - 21:00: Hora de dormir
+
+    Adapte esta lógica para outros turnos e informações fornecidas.
   `,
 });
 
