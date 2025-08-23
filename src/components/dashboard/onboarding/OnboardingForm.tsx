@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -61,7 +62,7 @@ export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 export interface ScheduleItem {
     activity: string;
     emoji: string;
-    type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine';
+    type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine' | 'free_time';
     category: string;
     startTime: string;
     endTime: string;
@@ -109,6 +110,7 @@ const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessSche
   const schedule: ScheduleItem[] = [];
   const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
   const weekend: Weekday[] = ['SA', 'SU'];
+  const allWeekdays: Weekday[] = [...weekdays, ...weekend];
 
   // Add extra activities first
   if (input.extraActivities) {
@@ -163,35 +165,50 @@ const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessSche
         const wakeUpTime = setHours(new Date(), 8, 30);
         const breakfastTime = addMinutes(wakeUpTime, 20);
         const brushTeethMorningTime = addMinutes(breakfastTime, 20);
-        const homeworkTime = addMinutes(brushTeethMorningTime, 15);
-        const lunchTime = subMinutes(schoolStart, 50);
-        const brushTeethAfterLunch = addMinutes(lunchTime, 20);
-        const bathTime = subHours(schoolStart, 1);
-        const leaveForSchoolTime = subMinutes(schoolStart, 20);
-        
-        const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
-          .map(s => parseTimeString(s.endTime))
-          .reduce((latest, current) => current > latest ? current : latest, new Date(0));
-          
-      const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : setHours(new Date(), 19, 15);
-      const dinnerTime = addMinutes(dinnerBaseTime, 20);
-      const brushTeethAfterDinner = addMinutes(dinnerTime, 30);
-      const packBagTime = setHours(new Date(), 21, 45);
-      const bedTime = setHours(new Date(), 22, 0);
+        const homeworkTime = setHours(new Date(), 9, 30);
+        const waterTimeMorning = setHours(new Date(), 9, 50);
+        const freePlayTime = setHours(new Date(), 10, 0);
+        const bathTime = subMinutes(schoolStart, 70); // 11:50
+        const lunchTime = subMinutes(schoolStart, 50); // 12:10
+        const brushTeethAfterLunch = subMinutes(schoolStart, 30); // 12:30
+        const leaveForSchoolTime = subMinutes(schoolStart, 20); // 12:40
 
-        if (input.essentialRoutines?.includes('Hora de acordar')) schedule.push(createEvent('Hora de acordar', wakeUpTime, 15, weekdays));
+        const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
+            .map(s => parseTimeString(s.endTime))
+            .reduce((latest, current) => current > latest ? current : latest, new Date(0));
+            
+        const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : schoolEnd;
+        const dinnerTime = addMinutes(dinnerBaseTime, 20); // Ex: 17:30 + 20min = 17:50 if no extras
+        const waterTimeNight = addMinutes(dinnerTime, 30);
+        const bedTime = setHours(new Date(), 22, 0);
+        const packBagTime = subMinutes(bedTime, 30);
+        const brushTeethNightTime = subMinutes(bedTime, 20);
+        
+        if (input.essentialRoutines?.includes('Hora de acordar')) schedule.push(createEvent('Hora de acordar', wakeUpTime, 20, weekdays));
         if (input.essentialRoutines?.includes('Tomar café da manhã')) schedule.push(createEvent('Tomar café da manhã', breakfastTime, 20, weekdays));
-        if (input.essentialRoutines?.includes('Escovar os dentes (após acordar)')) schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 15, weekdays));
-        if (input.essentialRoutines?.includes('Fazer a lição de casa')) schedule.push(createEvent('Fazer a lição de casa', homeworkTime, 60, weekdays));
+        if (input.essentialRoutines?.includes('Escovar os dentes (após acordar)')) schedule.push(createEvent('Escovar os dentes (após acordar)', brushTeethMorningTime, 10, weekdays));
+        if (input.essentialRoutines?.includes('Fazer a lição de casa')) schedule.push(createEvent('Fazer a lição de casa', homeworkTime, 20, weekdays));
+        if (input.essentialRoutines?.includes('Beber água')) schedule.push(createEvent('Beber água', waterTimeMorning, 10, allWeekdays));
+        if (input.essentialRoutines?.includes('Hora livre para brincar')) {
+             const hasConflict = schedule.some(item => 
+                item.type === 'extra_activity' && 
+                parseTimeString(item.startTime) < addMinutes(freePlayTime, 110) && 
+                parseTimeString(item.endTime) > freePlayTime
+            );
+            if (!hasConflict) {
+                 schedule.push(createEvent('Hora livre para brincar', freePlayTime, 110, weekdays, 'free_time'));
+            }
+        }
         if (input.essentialRoutines?.includes('Tomar banho')) schedule.push(createEvent('Tomar banho', bathTime, 20, weekdays));
-        if (input.essentialRoutines?.includes('Almoçar')) schedule.push(createEvent('Almoçar', lunchTime, 30, weekdays));
-        if (input.essentialRoutines?.includes('Escovar os dentes (após almoço)')) schedule.push(createEvent('Escovar os dentes (após almoço)', brushTeethAfterLunch, 15, weekdays));
+        if (input.essentialRoutines?.includes('Almoçar')) schedule.push(createEvent('Almoçar', lunchTime, 20, weekdays));
+        if (input.essentialRoutines?.includes('Escovar os dentes (após almoço)')) schedule.push(createEvent('Escovar os dentes (após almoço)', brushTeethAfterLunch, 10, weekdays));
         if (input.essentialRoutines?.includes('Sair para escola')) schedule.push(createEvent('Sair para escola', leaveForSchoolTime, 20, weekdays));
-        if (input.essentialRoutines?.includes('Jantar')) schedule.push(createEvent('Jantar', dinnerTime, 30, weekdays));
-        if (input.essentialRoutines?.includes('Escovar os dentes (após jantar)')) schedule.push(createEvent('Escovar os dentes (após jantar)', brushTeethAfterDinner, 15, weekdays));
-        if (input.essentialRoutines?.includes('Organizar a mochila para amanhã')) schedule.push(createEvent('Organizar a mochila para amanhã', packBagTime, 15, weekdays));
-        if (input.essentialRoutines?.includes('Hora de dormir')) schedule.push(createEvent('Hora de dormir', bedTime, 15, weekdays));
-    
+        if (input.essentialRoutines?.includes('Jantar')) schedule.push(createEvent('Jantar', dinnerTime, 20, allWeekdays));
+        if (input.essentialRoutines?.includes('Beber água')) schedule.push(createEvent('Beber água', waterTimeNight, 10, allWeekdays));
+        if (input.essentialRoutines?.includes('Organizar a mochila para amanhã')) schedule.push(createEvent('Organizar a mochila para amanhã', packBagTime, 10, allWeekdays));
+        if (input.essentialRoutines?.includes('Escovar os dentes (após jantar)')) schedule.push(createEvent('Escovar os dentes (após jantar)', brushTeethNightTime, 10, allWeekdays));
+        if (input.essentialRoutines?.includes('Hora de dormir')) schedule.push(createEvent('Hora de dormir', bedTime, 15, allWeekdays));
+
     } else if (input.schoolShift === 'full_time') {
         const wakeUpTime = subHours(schoolStart, 1);
         const brushTeethMorningTime = addMinutes(wakeUpTime, 30);
