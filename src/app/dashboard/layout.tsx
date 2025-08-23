@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente'].includes(pathname) &&
+  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help'].includes(pathname) &&
                                !pathname.startsWith('/dashboard/missions/edit') &&
                                !pathname.startsWith('/dashboard/rewards/edit-template') &&
                                !pathname.startsWith('/dashboard/missions/new');

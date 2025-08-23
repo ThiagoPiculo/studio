@@ -21,7 +21,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2, Settings, Radar, Contact, CircleDot } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -141,6 +141,11 @@ export function AppSidebar() {
                                  <SidebarMenuItem>
                                      <NavLink href="/dashboard/assistente" tooltip="Assistente de Criação" label="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
+                                    </NavLink>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                     <NavLink href="/dashboard/help" tooltip="Central de Ajuda" label="Central de Ajuda">
+                                        <HelpCircle className="text-chart-3" />
                                     </NavLink>
                                 </SidebarMenuItem>
                             </AccordionContent>
