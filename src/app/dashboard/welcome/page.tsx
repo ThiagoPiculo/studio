@@ -33,26 +33,26 @@ function WelcomePageContent() {
       title: "Transformando o Dever em Aventura",
       icon: Star,
       content: (
-        <div className="space-y-4">
+        <div className="space-y-4 text-left">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-primary/10 rounded-full"><Target className="h-6 w-6 text-primary" /></div>
             <div>
               <h4 className="font-semibold">Você Lança as Missões</h4>
-              <p>As tarefas do dia a dia se transformam em missões heroicas que você define. Não se preocupe, o Assistente Heroi te ajuda e é muito rápido e fácil.</p>
+              <p className="text-sm">As tarefas do dia a dia se transformam em missões heroicas que você define. Não se preocupe, o Assistente Heroi te ajuda e é muito rápido e fácil.</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-yellow-400/10 rounded-full"><Star className="h-6 w-6 text-yellow-500" /></div>
             <div>
               <h4 className="font-semibold">Eles Conquistam Estrelas Mágicas</h4>
-              <p>Seu filho completa as missões e acumula estrelas pelo esforço e pela coragem de enfrentar e concluir cada desafio.</p>
+              <p className="text-sm">Seu filho completa as missões e acumula estrelas pelo esforço e pela coragem de enfrentar e concluir cada desafio.</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="p-3 bg-green-500/10 rounded-full"><Gift className="h-6 w-6 text-green-600" /></div>
             <div>
               <h4 className="font-semibold">Juntos, Vocês Celebram as Recompensas</h4>
-              <p>Com as estrelas, ele resgata prêmios que vocês definiram juntos, transformando esforço em memórias felizes e conquistas reais.</p>
+              <p className="text-sm">Com as estrelas, ele resgata prêmios que vocês definiram juntos, transformando esforço em memórias felizes e conquistas reais.</p>
             </div>
           </div>
         </div>
@@ -63,10 +63,10 @@ function WelcomePageContent() {
       title: "Cuidar Solo ou Cuidar em Aliança?",
       icon: Users,
       content: (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
             <div className="p-4 border rounded-lg bg-background">
                 <h4 className="font-semibold flex items-center gap-2 mb-2"><Home className="h-5 w-5 text-chart-2" /> Cuidar Solo</h4>
-                <p className="text-sm">Sabemos que na jornada de cuidar solo há muitos pratinhos para equilibrar. O Mini Heróis foi pensado para ser seu parceiro, ajudando a criar e organizar a rotina e a diminuir a carga mental.</p>
+                <p className="text-sm">Sabemos que na jornada de cuidar solo há muitos pratinhos para equilibrar. O Mini Heróis foi pensado para ser seu parceiro, ajudando a criar e organizar a rotina, a diminuir a carga mental.</p>
             </div>
             <div className="p-4 border rounded-lg bg-background">
                 <h4 className="font-semibold flex items-center gap-2 mb-2"><Users className="h-5 w-5 text-chart-4" /> Cuidar em Aliança</h4>
@@ -96,12 +96,12 @@ function WelcomePageContent() {
           {slides.map((slide, index) => (
             <CarouselItem key={index}>
               <Card className="shadow-2xl rounded-2xl">
-                <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-6 min-h-[450px]">
-                    <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center shadow-md mb-2">
-                        <slide.icon className="h-10 w-10 text-primary" />
+                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center space-y-4">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shadow-md mb-2">
+                        <slide.icon className="h-8 w-8 text-primary" />
                     </div>
-                  <h2 className="text-2xl font-bold font-headline">{slide.title}</h2>
-                  <div className="text-muted-foreground space-y-4">{slide.content}</div>
+                  <h2 className="text-xl md:text-2xl font-bold font-headline">{slide.title}</h2>
+                  <div className="text-sm text-muted-foreground space-y-3">{slide.content}</div>
                   
                   {index < slides.length - 1 ? (
                     <CarouselNext className="relative static translate-y-0 mt-4">
