@@ -96,7 +96,7 @@ function WelcomePageContent() {
           {slides.map((slide, index) => (
             <CarouselItem key={index}>
               <Card className="shadow-2xl rounded-2xl">
-                <CardContent className="flex flex-col items-center justify-center p-4 sm:p-6 text-center space-y-4">
+                <CardContent className="flex flex-col items-center justify-center p-6 text-center space-y-4">
                     <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center shadow-md mb-2">
                         <slide.icon className="h-8 w-8 text-primary" />
                     </div>
