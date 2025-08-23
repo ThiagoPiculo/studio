@@ -63,12 +63,18 @@ const prompt = ai.definePrompt({
     - Rotinas Essenciais a Incluir: {{#each essentialRoutines}}- {{{this}}}{{/each}}
 
     Instruções:
-    1.  **Horários Fixos:** Primeiro, aloque os horários da escola e as atividades extras nos dias e horários corretos.
-    2.  **Rotinas Essenciais:** Em seguida, distribua as rotinas essenciais nos horários mais lógicos do dia. Use o exemplo de raciocínio abaixo como guia principal.
-    3.  **Duração:** Atribua durações razoáveis para cada tarefa considerando a relação de tempo dos exemplos de cada turno no exemplo de raciocínio abaixo como guia principal.
-    4.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'. Se uma atividade extra já ocupa o horário do "Tempo Livre", a atividade extra tem prioridade.
-    5.  **Resumo do Tempo Livre:** No campo 'freeTime', escreva uma frase curta e amigável resumindo os principais períodos livres da criança.
-    6.  **Emoji e Categoria:** Para cada atividade, use um emoji e uma categoria consistentes com os exemplos de missões existentes (ex: 'Fazer lição de casa' deve ser da categoria 'school' com o emoji '✍️').
+    1.  **Horários Fixos (Segunda a Domingo):** Primeiro, aloque os horários da escola e as atividades extras nos dias e horários corretos. Estes são os blocos inegociáveis.
+    2.  **Rotinas Essenciais (Dias de Semana):** Em seguida, distribua as rotinas essenciais de segunda a sexta, usando os exemplos de raciocínio como guia principal.
+    3.  **REGRAS DE AGENDAMENTO (FIM DE SEMANA - SÁBADO E DOMINGO):**
+        - **Rotina Matinal Flexível:** Mantenha a sequência de 'Acordar', 'Café' e 'Escovar Dentes', mas com horários mais relaxados (Ex: Acordar às 09:00).
+        - **Atividades Extras:** Lembre-se de encaixar qualquer atividade extra que ocorra no fim de semana.
+        - **Tempo Livre:** Priorize blocos de tempo livre para brincadeiras e atividades em família.
+        - **Rotina Noturna:** Mantenha a sequência de 'Jantar', 'Escovar Dentes' e 'Dormir', ajustando os horários conforme as atividades do dia, mas mantendo uma hora de dormir consistente (Ex: 22:00).
+        - **Mochila:** Lembre-se de incluir "Organizar a mochila para amanhã" na noite de Domingo.
+    4.  **Duração:** Atribua durações razoáveis para cada tarefa considerando a relação de tempo dos exemplos de cada turno no exemplo de raciocínio abaixo como guia principal.
+    5.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'. Se uma atividade extra já ocupa o horário do "Tempo Livre", a atividade extra tem prioridade.
+    6.  **Resumo do Tempo Livre:** No campo 'freeTime', escreva uma frase curta e amigável resumindo os principais períodos livres da criança.
+    7.  **Emoji e Categoria (CRUCIAL):** Para cada atividade, use **exatamente** o emoji e a categoria correspondente encontrados nos exemplos de missões. A consistência é fundamental.
 
     Exemplo de Raciocínio (para uma criança que estuda à tarde, das 13:00 às 17:30):
     - Manhã:
