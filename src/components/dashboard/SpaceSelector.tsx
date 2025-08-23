@@ -121,13 +121,14 @@ export default function SpaceSelector() {
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <div className="flex items-center gap-3">
-                         <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                            <Rocket className="h-8 w-8 text-primary" />
-                        </div>
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-14 w-14 text-2xl">
+                          <AvatarImage src={user?.avatarUrl || ''} alt={user?.name || 'User'} />
+                          <AvatarFallback>{getInitials(user?.name)}</AvatarFallback>
+                        </Avatar>
                         <div>
-                            <CardTitle className="text-2xl">Bem-vindo(a), {user?.name || 'Mestre dos Herois'}!</CardTitle>
-                            <CardDescription>Selecione um espaço para continuar sua jornada.</CardDescription>
+                            <CardTitle className="text-2xl">Olá, {user?.name}!</CardTitle>
+                            <CardDescription>Selecione um espaço com Mini Herói para continuar acompanhando sua jornada.</CardDescription>
                         </div>
                     </div>
                 </CardHeader>
