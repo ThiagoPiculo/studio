@@ -5,10 +5,10 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { weekdayLabels } from "@/lib/types";
-import { Wand2, Loader2, Sun, Moon, CloudSun, ListChecks, Star } from "lucide-react";
+import { Wand2, Loader2, Sun, Moon, CloudSun, ListChecks, Star, CalendarDays } from "lucide-react";
 import type { ProcessScheduleOutput, ScheduleItem } from "../OnboardingForm";
 import { useFormContext } from "react-hook-form";
-import { TimePicker } from "../../school-schedule/TimePicker";
+import { TimePicker } from "../../missions/TimePicker";
 import React from 'react';
 
 interface OnboardingStep5Props {
@@ -32,7 +32,7 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
           const globalIndex = schedule.findIndex(s => s === item);
           return (
             <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
-                <div className="grid grid-cols-2 gap-1.5 shrink-0">
+                <div className="grid grid-cols-1 gap-1.5 shrink-0">
                     <TimePicker 
                         value={item.startTime}
                         onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
@@ -57,19 +57,30 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
 
 export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
 
-  const { essentialRoutines, extraActivities } = React.useMemo(() => {
+  const { weekdayRoutines, weekendRoutines, extraActivities } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
-        return { essentialRoutines: [], extraActivities: [] };
+        return { weekdayRoutines: [], weekendRoutines: [], extraActivities: [] };
     }
-    const essentials = schedule.schedule.filter(
-        item => item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit'
+    const weekdays = new Set(['MO', 'TU', 'WE', 'TH', 'FR']);
+    const weekends = new Set(['SA', 'SU']);
+
+    const weekdayItems = schedule.schedule.filter(item => 
+        (item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit') && 
+        item.days.some(day => weekdays.has(day))
     );
+
+    const weekendItems = schedule.schedule.filter(item => 
+        (item.type === 'essential_routine') &&
+        item.days.some(day => weekends.has(day))
+    );
+    
     const extras = schedule.schedule.filter(item => item.type === 'extra_activity');
     
-    essentials.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    weekdayItems.sort((a, b) => a.startTime.localeCompare(b.startTime));
+    weekendItems.sort((a, b) => a.startTime.localeCompare(b.startTime));
     extras.sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-    return { essentialRoutines: essentials, extraActivities: extras };
+    return { weekdayRoutines: weekdayItems, weekendRoutines: weekendItems, extraActivities: extras };
   }, [schedule]);
 
   
@@ -111,9 +122,16 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
         <ScrollArea className="h-full pr-4">
             <div className="space-y-4">
                 <ScheduleSection 
-                  title="Missões da Rotina Essencial"
-                  icon={ListChecks}
-                  items={essentialRoutines}
+                  title="Missões da Rotina Essencial (Seg a Sex)"
+                  icon={CalendarDays}
+                  items={weekdayRoutines}
+                  schedule={schedule.schedule}
+                  onScheduleChange={onScheduleChange}
+                />
+                 <ScheduleSection 
+                  title="Missões da Rotina Essencial (Fim de Semana)"
+                  icon={CalendarDays}
+                  items={weekendRoutines}
                   schedule={schedule.schedule}
                   onScheduleChange={onScheduleChange}
                 />
