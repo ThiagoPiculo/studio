@@ -128,7 +128,9 @@ export default function SpaceSelector() {
                         </Avatar>
                         <div>
                             <CardTitle className="text-2xl">Olá, {user?.name}!</CardTitle>
-                            <CardDescription>Selecione um espaço com Mini Herói para continuar acompanhando sua jornada.</CardDescription>
+                            <CardDescription>
+                                ☝️ ou 👇, selecione um <em className="font-semibold text-foreground not-italic">espaço com Mini Herói</em> para continuar acompanhando sua jornada.
+                            </CardDescription>
                         </div>
                     </div>
                 </CardHeader>
@@ -138,7 +140,7 @@ export default function SpaceSelector() {
                 {mySpaceContext && (
                      <SpaceCard
                         id={mySpaceContext.id}
-                        name={mySpaceContext.name}
+                        name="Cuidar Solo"
                         icon={CircleDot}
                         childrenData={{ profiles: childrenByContext['my-space'], isLoading: isLoadingChildren }}
                         onClick={handleSelectContext}
