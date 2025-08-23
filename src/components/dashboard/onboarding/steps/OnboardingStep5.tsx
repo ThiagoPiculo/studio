@@ -1,3 +1,4 @@
+
 "use client";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -7,7 +8,7 @@ import { weekdayLabels } from "@/lib/types";
 import { Wand2, Loader2, Sun, Moon, CloudSun, ListChecks, Star } from "lucide-react";
 import type { ProcessScheduleOutput, ScheduleItem } from "../OnboardingForm";
 import { useFormContext } from "react-hook-form";
-import { TimePicker } from "../../missions/TimePicker";
+import { TimePicker } from "../../school-schedule/TimePicker";
 import React from 'react';
 
 interface OnboardingStep5Props {
@@ -31,7 +32,7 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
           const globalIndex = schedule.findIndex(s => s === item);
           return (
             <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
-                <div className="w-[110px] shrink-0">
+                <div className="grid grid-cols-2 gap-1.5 shrink-0">
                     <TimePicker 
                         value={item.startTime}
                         onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
