@@ -163,22 +163,22 @@ const generateDeterministicSchedule = (input: OnboardingFormValues): ProcessSche
 
     } else if (input.schoolShift === 'afternoon') {
         const wakeUpTime = setHours(new Date(), 8, 30);
-        const breakfastTime = addMinutes(wakeUpTime, 20);
-        const brushTeethMorningTime = addMinutes(breakfastTime, 20);
+        const breakfastTime = setHours(new Date(), 8, 50);
+        const brushTeethMorningTime = setHours(new Date(), 9, 10);
         const homeworkTime = setHours(new Date(), 9, 30);
         const waterTimeMorning = setHours(new Date(), 9, 50);
         const freePlayTime = setHours(new Date(), 10, 0);
-        const bathTime = subMinutes(schoolStart, 70); // 11:50
-        const lunchTime = subMinutes(schoolStart, 50); // 12:10
-        const brushTeethAfterLunch = subMinutes(schoolStart, 30); // 12:30
-        const leaveForSchoolTime = subMinutes(schoolStart, 20); // 12:40
+        const bathTime = setHours(new Date(), 11, 50);
+        const lunchTime = setHours(new Date(), 12, 10);
+        const brushTeethAfterLunch = setHours(new Date(), 12, 30);
+        const leaveForSchoolTime = setHours(new Date(), 12, 40);
 
         const lastEveningActivityEnd = schedule.filter(s => s.type === 'extra_activity')
             .map(s => parseTimeString(s.endTime))
             .reduce((latest, current) => current > latest ? current : latest, new Date(0));
             
         const dinnerBaseTime = lastEveningActivityEnd.getTime() > 0 ? lastEveningActivityEnd : schoolEnd;
-        const dinnerTime = addMinutes(dinnerBaseTime, 20); // Ex: 17:30 + 20min = 17:50 if no extras
+        const dinnerTime = addMinutes(dinnerBaseTime, 20);
         const waterTimeNight = addMinutes(dinnerTime, 30);
         const bedTime = setHours(new Date(), 22, 0);
         const packBagTime = subMinutes(bedTime, 30);
