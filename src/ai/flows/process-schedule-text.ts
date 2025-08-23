@@ -65,7 +65,7 @@ const prompt = ai.definePrompt({
     Instruções:
     1.  **Horários Fixos:** Primeiro, aloque os horários da escola e as atividades extras nos dias e horários corretos.
     2.  **Rotinas Essenciais:** Em seguida, distribua as rotinas essenciais nos horários mais lógicos do dia. Use o exemplo de raciocínio abaixo como guia principal.
-    3.  **Duração:** Atribua durações razoáveis para cada tarefa (ex: Café da manhã - 20min, Banho - 20min, Lição de casa - 45-60min).
+    3.  **Duração:** Atribua durações razoáveis para cada tarefa considerando a relação de tempo dos exemplos de cada turno no exemplo de raciocínio abaixo como guia principal.
     4.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'. Se uma atividade extra já ocupa o horário do "Tempo Livre", a atividade extra tem prioridade.
     5.  **Resumo do Tempo Livre:** No campo 'freeTime', escreva uma frase curta e amigável resumindo os principais períodos livres da criança.
     6.  **Emoji e Categoria:** Para cada atividade, use um emoji e uma categoria consistentes com os exemplos de missões existentes (ex: 'Fazer lição de casa' deve ser da categoria 'school' com o emoji '✍️').
