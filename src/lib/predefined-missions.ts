@@ -1,7 +1,7 @@
 
 
 import type { MissionCategory } from '@/lib/types';
-import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen } from 'lucide-react';
+import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen, Puzzle } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
   title: string;
@@ -36,6 +36,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
+      { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5, xpReward: 10 },
     ],
   },
   {
