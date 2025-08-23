@@ -17,7 +17,7 @@ export default function DashboardPage() {
     const { availableContexts, isLoading: familyLoading } = useFamily();
     const router = useRouter();
 
-    const [decision, setDecision] = useState<'loading' | 'assistente' | 'heroes' | 'selector'>('loading');
+    const [decision, setDecision] = useState<'loading' | 'welcome' | 'heroes' | 'selector'>('loading');
 
     const checkUserStatus = useCallback(async () => {
         if (!user || availableContexts.length === 0) return;
@@ -33,7 +33,7 @@ export default function DashboardPage() {
             const allChildren = allChildrenNested.flat();
 
             if (allChildren.length === 0 && availableContexts.length <= 1) {
-                setDecision('assistente');
+                setDecision('welcome');
             } else if (allChildren.length > 0 && availableContexts.length <= 1) {
                 setDecision('heroes');
             } else {
@@ -62,14 +62,14 @@ export default function DashboardPage() {
     }, [authLoading, familyLoading, user, router, checkUserStatus]);
 
     useEffect(() => {
-        if (decision === 'assistente') {
-            router.replace('/dashboard/assistente');
+        if (decision === 'welcome') {
+            router.replace('/dashboard/welcome');
         } else if (decision === 'heroes') {
             router.replace('/dashboard/heroes');
         }
     }, [decision, router]);
 
-    if (decision === 'loading' || decision === 'assistente' || decision === 'heroes') {
+    if (decision === 'loading' || decision === 'welcome' || decision === 'heroes') {
         return <Loading />;
     }
 
