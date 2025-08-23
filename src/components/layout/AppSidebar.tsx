@@ -143,11 +143,6 @@ export function AppSidebar() {
                                         <Sparkles className="text-chart-4" />
                                     </NavLink>
                                 </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                     <NavLink href="/dashboard/help" tooltip="Central de Ajuda" label="Central de Ajuda">
-                                        <HelpCircle className="text-chart-3" />
-                                    </NavLink>
-                                </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
 
@@ -212,6 +207,13 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <NavLink href="/dashboard/help" tooltip="Central de Ajuda" label="Central de Ajuda">
+                            <HelpCircle className="text-chart-3" />
+                        </NavLink>
+                    </SidebarMenuItem>
+                </SidebarMenu>
                 <UserNav />
             </SidebarFooter>
         </Sidebar>
