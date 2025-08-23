@@ -51,7 +51,7 @@ const prompt = ai.definePrompt({
   prompt: `
     Você é um especialista em desenvolvimento infantil e um organizador de rotinas mestre.
     Sua tarefa é criar uma rotina semanal equilibrada e saudável para uma criança, com base nas informações fornecidas.
-    Seja lógico e coerente ao alocar as rotinas essenciais em torno dos horários fixos da escola e das atividades extras.
+    A rotina deve ser estruturada com clareza, apresentando dias da semana, horários, atividades e tempo livre, sempre levando em conta o bem-estar físico, mental e social da criança.
     Priorize o bem-estar, garantindo que haja tempo para descanso, alimentação e lazer.
 
     Informações da Criança:
@@ -62,69 +62,27 @@ const prompt = ai.definePrompt({
     - Atividades Extras: {{{extraActivities}}}
     - Rotinas Essenciais a Incluir: {{#each essentialRoutines}}- {{{this}}}{{/each}}
 
-    Instruções:
-    1.  **Horários Fixos (Segunda a Domingo):** Primeiro, aloque os horários da escola e as atividades extras nos dias e horários corretos. Estes são os blocos inegociáveis.
-    2.  **Rotinas Essenciais (Dias de Semana):** Em seguida, distribua as rotinas essenciais de segunda a sexta, usando os exemplos de raciocínio como guia principal.
-    3.  **REGRAS DE AGENDAMENTO (FIM DE SEMANA - SÁBADO E DOMINGO):**
-        - **Rotina Matinal Flexível:** Mantenha a sequência de 'Acordar', 'Café' e 'Escovar Dentes', mas com horários mais relaxados (Ex: Acordar às 09:00).
-        - **Atividades Extras:** Lembre-se de encaixar qualquer atividade extra que ocorra no fim de semana.
-        - **Tempo Livre:** Priorize blocos de tempo livre para brincadeiras e atividades em família.
-        - **Rotina Noturna:** Mantenha a sequência de 'Jantar', 'Escovar Dentes' e 'Dormir', ajustando os horários conforme as atividades do dia, mas mantendo uma hora de dormir consistente (Ex: 22:00).
-        - **Mochila:** Lembre-se de incluir "Organizar a mochila para amanhã" na noite de Domingo.
-    4.  **Duração:** Atribua durações razoáveis para cada tarefa considerando a relação de tempo dos exemplos de cada turno no exemplo de raciocínio abaixo como guia principal.
-    5.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'. Se uma atividade extra já ocupa o horário do "Tempo Livre", a atividade extra tem prioridade.
-    6.  **Resumo do Tempo Livre:** No campo 'freeTime', escreva uma frase curta e amigável resumindo os principais períodos livres da criança.
-    7.  **Emoji e Categoria (CRUCIAL):** Para cada atividade, use **exatamente** o emoji e a categoria correspondente encontrados nos exemplos de missões. A consistência é fundamental.
+    REGRAS DE OURO (LÓGICA DE AGENDAMENTO):
+    Prioridade Máxima: Primeiro, aloque na agenda os Compromissos Fixos (Escola e Atividades Extras). Eles não podem ser movidos.
 
-    Exemplo de Raciocínio (para uma criança que estuda à tarde, das 13:00 às 17:30):
-    - Manhã:
-      - 08:30: Hora de Acordar
-      - 08:50: Tomar café da manhã
-      - 09:10: Escovar os dentes
-      - 09:30: Fazer a lição de casa
-      - 09:50: Beber água
-      - 10:00 - 11:50: Blocos de "Hora livre para brincar" (se não houver outra atividade)
-      - 11:50: Tomar banho
-      - 12:10: Almoçar
-      - 12:30: Escovar os dentes
-      - 12:40: Sair para escola
-    - Tarde:
-      - 13:00 - 17:30: Escola
-    - Noite:
-      - Jantar é agendado ~20-30 minutos após a última atividade extra da noite.
-      - 21:30: Organizar a mochila
-      - 21:40: Escovar os dentes
-      - 22:00: Hora de dormir
-    
-    Exemplo de Raciocínio (para uma criança que estuda de manhã, das 07:00 às 11:30):
-    - Manhã:
-      - 06:00: Hora de Acordar
-      - 06:20: Tomar café da manhã
-      - 06:35: Escovar os dentes
-      - 06:40: Sair para a escola
-    - Tarde:
-      - 13:00: Almoçar
-      - 13:30: Escovar os dentes
-      - 14:30: Fazer lição de casa
-      - 15:30: Organizar a mochila
-      - 16:00 - 18:00: Blocos de "Hora livre para brincar"
-    - Noite:
-      - 19:00: Jantar
-      - 19:30: Beber água
-      - 20:40: Escovar os dentes
-      - 21:00: Hora de dormir
+    Rotinas Essenciais: Em seguida, distribua as Rotinas Essenciais nos horários livres dos dias de semana (Segunda a Sexta), seguindo estas regras de tempo e sequência:
+    - "Sair para escola": Sempre 20 minutos antes do horário de entrada na escola.
+    - "Escovar os dentes": Sempre 20-30 minutos após "Tomar café da manhã", "Almoçar" e "Jantar".
+    - "Jantar": Cerca de 20-30 minutos após a última atividade extra da noite. Se não houver atividade, use um horário padrão (ex: 19:30).
+    - "Organizar a mochila": Deve ser uma das últimas tarefas da noite, antes de dormir.
+    - Use o bom senso para alocar as demais rotinas, como "Fazer a lição de casa" em um período de maior concentração (ex: início da manhã para quem estuda à tarde).
 
-    Exemplo de Raciocínio (para uma criança que estuda em período integral, das 07:00 às 17:30):
-    - Manhã:
-      - 06:00: Hora de Acordar
-      - 06:30: Escovar os dentes
-      - 06:40: Sair para a escola
-    - Tarde/Noite:
-      - 19:00: Jantar (sugestão)
-      - 20:40: Escovar os dentes
-      - 21:00: Hora de dormir
+    Fim de Semana (Sábado e Domingo):
+    - Manhã: Mantenha a sequência "Acordar", "Café da Manhã", "Escovar os Dentes", mas com horários mais flexíveis (ex: começar às 09:00).
+    - Noite: Mantenha a sequência "Jantar", "Escovar os Dentes", "Dormir" de forma consistente.
+    - Mochila: Apenas no Domingo à noite, inclua a missão "Organizar a mochila para amanhã".
+    - Priorize Tempo Livre: A maior parte do fim de semana deve ser preenchida com blocos de "Tempo Livre".
 
-    Adapte esta lógica para outros turnos e informações fornecidas.
+    Tempo Livre: Após alocar todos os compromissos e rotinas, identifique os blocos de tempo restantes e marque-os como "Tempo Livre".
+
+    Resumo Amigável: Crie uma frase curta e divertida resumindo os principais períodos livres da criança.
+
+    Emojis e Categorias: Para cada atividade, use o emoji e a categoria exatos da lista de ideias de missões de referência. Isso é crucial para a consistência do aplicativo.
   `,
 });
 
