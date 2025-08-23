@@ -64,17 +64,33 @@ const prompt = ai.definePrompt({
 
     Instruções:
     1.  **Horários Fixos:** Primeiro, aloque os horários da escola e as atividades extras nos dias e horários corretos.
-    2.  **Rotinas Essenciais:** Em seguida, distribua as rotinas essenciais nos horários mais lógicos do dia. Por exemplo:
-        - "Hora de Acordar", "Tomar café da manhã" e "Escovar os dentes" devem ocorrer pela manhã, antes da escola.
-        - "Almoçar" deve ocorrer por volta do meio-dia ou antes da escola da tarde.
-        - "Fazer a lição de casa" deve ocorrer após o retorno da escola, mas antes do jantar.
-        - "Jantar", "Tomar banho" e "Hora de dormir" devem ocorrer à noite.
-        - Adapte os horários com base no turno escolar. Uma criança que estuda à tarde terá a lição de casa e o tempo livre pela manhã.
+    2.  **Rotinas Essenciais:** Em seguida, distribua as rotinas essenciais nos horários mais lógicos do dia. Use o exemplo de raciocínio abaixo como guia principal.
     3.  **Duração:** Atribua durações razoáveis para cada tarefa (ex: Café da manhã - 20min, Banho - 20min, Lição de casa - 45-60min).
-    4.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'.
+    4.  **Tempo Livre:** Identifique blocos de tempo onde a criança não tem atividades programadas e marque-os como 'free_time' com o emoji '🧩'. Se uma atividade extra já ocupa o horário do "Tempo Livre", a atividade extra tem prioridade.
     5.  **Resumo do Tempo Livre:** No campo 'freeTime', escreva uma frase curta e amigável resumindo os principais períodos livres da criança.
-    6.  **Emoji e Categoria:** Use um emoji apropriado e uma categoria lógica para cada atividade.
-    
+    6.  **Emoji e Categoria:** Para cada atividade, use um emoji e uma categoria consistentes com os exemplos de missões existentes (ex: 'Fazer lição de casa' deve ser da categoria 'school' com o emoji '✍️').
+
+    Exemplo de Raciocínio (para uma criança que estuda à tarde, das 13:00 às 17:30):
+    - Manhã:
+      - 08:30: Hora de Acordar
+      - 08:50: Tomar café da manhã
+      - 09:10: Escovar os dentes
+      - 09:30: Fazer a lição de casa
+      - 09:50: Beber água
+      - 10:00 - 11:50: Blocos de "Hora livre para brincar" (se não houver outra atividade)
+      - 11:50: Tomar banho
+      - 12:10: Almoçar
+      - 12:30: Escovar os dentes
+      - 12:40: Sair para escola
+    - Tarde:
+      - 13:00 - 17:30: Escola
+    - Noite:
+      - Jantar é agendado ~20-30 minutos após a última atividade extra da noite.
+      - 21:30: Organizar a mochila
+      - 21:40: Escovar os dentes
+      - 22:00: Hora de dormir
+    Adapte esta lógica para outros turnos e informações fornecidas.
+
     Gere a rotina completa e estruturada no formato de saída JSON.
   `,
 });
