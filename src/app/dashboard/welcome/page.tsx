@@ -63,14 +63,14 @@ function WelcomePageContent() {
       title: "Cuidar Solo ou Cuidar em Aliança?",
       icon: Users,
       content: (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-left">
-            <div className="p-4 border rounded-lg bg-background">
+         <div className="flex flex-col md:flex-row gap-4 text-left">
+            <div className="p-4 border rounded-lg bg-background flex-1">
                 <h4 className="font-semibold flex items-center gap-2 mb-2"><Home className="h-5 w-5 text-chart-2" /> Cuidar Solo</h4>
                 <p className="text-sm">Sabemos que na jornada de cuidar solo há muitos pratinhos para equilibrar. O Mini Heróis foi pensado para ser seu parceiro, ajudando a criar e organizar a rotina, a diminuir a carga mental.</p>
             </div>
-            <div className="p-4 border rounded-lg bg-background">
+            <div className="p-4 border rounded-lg bg-background flex-1">
                 <h4 className="font-semibold flex items-center gap-2 mb-2"><Users className="h-5 w-5 text-chart-4" /> Cuidar em Aliança</h4>
-                <p className="text-sm">A qualquer momento, você pode convidar outros guardiões (cônjuge, avós, terapeutas) para formar uma Aliança de Heróis e trabalhar em equipe, garantindo consistência e apoio.</p>
+                <p className="text-sm">A qualquer momento, você pode convidar outros guardiões para formar uma Aliança de Heróis e trabalhar em equipe, garantindo consistência e apoio.</p>
             </div>
          </div>
       ),
