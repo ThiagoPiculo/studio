@@ -95,7 +95,7 @@ export function OnboardingForm() {
   const currentTitle = useMemo(() => {
     const childName = methods.getValues("name");
     switch (step) {
-      case 1: return "Boas-vindas da Aura!";
+      case 1: return `Olá, ${user?.name || 'Responsável'}!`;
       case 2: return "Cadastrando um Novo Herói";
       case 3: return `Qual Hora da Escola (Turno) de ${childName}?`;
       case 4: return "Adicionando Poderes Extras";
@@ -103,7 +103,7 @@ export function OnboardingForm() {
       case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
-  }, [step, methods]);
+  }, [step, methods, user]);
 
   const goToNextStep = async () => {
     let isStepValid = false;
@@ -325,7 +325,10 @@ export function OnboardingForm() {
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
-                      <>{step === 5 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" /></>
+                      <>
+                        {step === 1 ? "Começar agora" : step === 5 ? "Gerar Rotina Mágica" : "Próximo"}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </>
                   )}
                 </Button>
               )}

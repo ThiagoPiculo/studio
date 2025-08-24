@@ -3,6 +3,7 @@
 
 import { Rocket } from 'lucide-react';
 import React from 'react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const steps = [
     "Criar o Perfil do seu Mini Herói.",
@@ -13,10 +14,11 @@ const steps = [
 ];
 
 export function OnboardingStep0() {
+  const { user } = useAuth();
+
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in-50 duration-500 h-full">
       <div className="flex items-center gap-4">
-          <Rocket className="h-10 w-10 text-primary" />
           <h2 className="text-2xl font-bold font-headline">Boas-vindas da Aura!</h2>
       </div>
 
@@ -24,15 +26,16 @@ export function OnboardingStep0() {
         Sou a <strong>Aura</strong>, sua assistente pessoal no Mini Herois. Estou aqui para transformar a rotina do seu filho em uma aventura mágica, de forma rápida e guiada.
       </p>
       
-      <div className="text-left bg-muted/50 p-4 rounded-lg border w-full max-w-md">
+      <div className="text-left bg-muted/50 p-4 rounded-lg border w-full max-w-lg">
           <h3 className="font-semibold mb-2">São 5 passos simples:</h3>
-          <ul className="space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
+          <ul className="space-y-1.5 text-sm text-muted-foreground list-disc list-inside">
             {steps.map((step, index) => (
-              <li key={index}><strong>PASSO {index + 1}:</strong> {step.replace(`PASSO ${index + 1}: `, '')}</li>
+              <li key={index}><strong>PASSO {index + 1}:</strong> {step}</li>
             ))}
           </ul>
-          <p className="text-xs italic mt-3 text-center">Relaxe e curta o fluxo. Vou te ajudar em tudo! É rápido e prático.</p>
       </div>
+
+       <p className="text-sm italic mt-3 text-center text-muted-foreground font-semibold">Relaxe e curta o fluxo. Vou te ajudar em tudo! É rápido e prático.</p>
 
     </div>
   );
