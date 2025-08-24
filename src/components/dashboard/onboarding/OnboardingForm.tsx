@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
 import { OnboardingStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3 } from "./steps/OnboardingStep3";
@@ -28,7 +29,7 @@ import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
-const TOTAL_STEPS = 5;
+const TOTAL_STEPS = 6;
 
 // Schema for an individual activity from step 3
 const extraActivitySchema = z.object({
@@ -94,11 +95,12 @@ export function OnboardingForm() {
   const currentTitle = useMemo(() => {
     const childName = methods.getValues("name");
     switch (step) {
-      case 1: return "Cadastrando um Novo Herói";
-      case 2: return `Qual Hora da Escola (Turno) de ${childName}?`;
-      case 3: return "Adicionando Poderes Extras";
-      case 4: return "Definindo a Rotina Essencial";
-      case 5: return "Revisando o Mapa da Jornada";
+      case 1: return "Boas-vindas da Aura!";
+      case 2: return "Cadastrando um Novo Herói";
+      case 3: return `Qual Hora da Escola (Turno) de ${childName}?`;
+      case 4: return "Adicionando Poderes Extras";
+      case 5: return "Definindo a Rotina Essencial";
+      case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
@@ -106,18 +108,20 @@ export function OnboardingForm() {
   const goToNextStep = async () => {
     let isStepValid = false;
     if (step === 1) {
-        isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
+        isStepValid = true; // No validation for welcome step
     } else if (step === 2) {
-        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
+        isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['extraActivities']);
+        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
     } else if (step === 4) {
+        isStepValid = await methods.trigger(['extraActivities']);
+    } else if (step === 5) {
         isStepValid = true; 
     }
 
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
-        if (step === 4) { 
+        if (step === 5) { 
             handleGenerateSchedule();
         }
         setStep(prev => prev + 1);
@@ -280,11 +284,12 @@ export function OnboardingForm() {
             </div>
         </CardHeader>
         <CardContent className="min-h-[400px] p-6">
-            {step === 1 && <OnboardingStep1 />}
-            {step === 2 && <OnboardingStep2 />}
-            {step === 3 && <OnboardingStep3 />}
-            {step === 4 && <OnboardingStep4 />}
-            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onRecalculate={handleGenerateSchedule} onScheduleChange={handleScheduleChange} />}
+            {step === 1 && <OnboardingStep0 />}
+            {step === 2 && <OnboardingStep1 />}
+            {step === 3 && <OnboardingStep2 />}
+            {step === 4 && <OnboardingStep3 />}
+            {step === 5 && <OnboardingStep4 />}
+            {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onRecalculate={handleGenerateSchedule} onScheduleChange={handleScheduleChange} />}
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
           <div>
@@ -320,7 +325,7 @@ export function OnboardingForm() {
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
-                      <>{step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" /></>
+                      <>{step === 5 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" /></>
                   )}
                 </Button>
               )}
