@@ -92,9 +92,10 @@ export function OnboardingForm() {
 
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
   const currentTitle = useMemo(() => {
+    const childName = methods.getValues("name");
     switch (step) {
       case 1: return "Cadastrando um Novo Herói";
-      case 2: return "Qual a principal missão de "+ methods.getValues("name")+ "?";
+      case 2: return `Qual Hora da Escola (Turno) de ${childName}?`;
       case 3: return "Adicionando Poderes Extras";
       case 4: return "Definindo a Rotina Essencial";
       case 5: return "Revisando o Mapa da Jornada";
@@ -248,7 +249,7 @@ export function OnboardingForm() {
   return (
     <FormProvider {...methods}>
       <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
-        <CardHeader className="p-4 space-y-4">
+        <CardHeader className="p-6 space-y-4">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <Wand2 className="h-8 w-8 text-primary" />
@@ -306,12 +307,12 @@ export function OnboardingForm() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => {}}>
+                            Continuar no Assistente
+                        </AlertDialogAction>
                         <AlertDialogCancel onClick={() => router.push('/dashboard/heroes')}>
                             Sair Mesmo Assim
                         </AlertDialogCancel>
-                        <AlertDialogAction>
-                            Continuar no Assistente
-                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -80,7 +81,7 @@ export function OnboardingStep2() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Até os maiores heróis precisam ir para a base de treinamento (a escola 😉). Me diga o horário escolar de **{childName}** para compor a Rotina de missões (agenda).</p>
+        <p className="text-muted-foreground">Até os maiores heróis precisam ir para a base de treinamento (a escola 😉). Me diga turno, ajuste hora de entrada e saída, e eu organizo o resto ✨</p>
       </div>
 
       <FormField
