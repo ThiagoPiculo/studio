@@ -8,9 +8,9 @@ O coração do aplicativo é um ciclo simples e poderoso de 3 passos:
 
 1.  🎯 **Tarefas = Missões:** As tarefas do dia a dia, como "arrumar a cama", "fazer a lição de casa" ou "escovar os dentes", são transformadas em Missões. Você as cria no Quadro de Missões e depois as agenda na Rotina de Missões de cada criança. Não se preocupe, nosso Assistente vai fazer tudo por você de forma rápida e prática.
 
-2.  ⭐ **Eles Conquistam Estrelas:** Ao completar uma missão, seu Mini Heroi ganha Estrelas (⭐) e Pontos de Experiência (XP). As estrelas são a moeda do aplicativo, uma valorização imediata pelo esforço de completar cada missão. O XP faz o herói subir de nível, marcando seu progresso a longo prazo.
+2.  ⭐ **Missão completa = Estrelas:** Ao completar uma missão, seu Mini Heroi ganha Estrelas (⭐) e Pontos de Experiência (XP). As estrelas são a moeda do aplicativo, uma valorização imediata pelo esforço de completar cada missão. O XP faz o herói subir de nível, marcando seu progresso a longo prazo.
 
-3.  🎁 **Juntos, Vocês Celebram as Recompensas:** Com as estrelas que acumularam, os heróis podem resgatar Recompensas do Quadro de Recompensas (vocês podem adicionar novas  a hora que desejarem). Essas recompensas podem ser qualquer coisa: desde "30 minutos extras de videogame" até uma "tarde de cinema em família".
+3.  🎁 **Juntos, Vocês Celebram as Recompensas:** Com as estrelas que acumularam, os heróis podem resgatar Recompensas do Quadro de Recompensas (vocês podem adicionar novas a hora que desejarem). Essas recompensas podem ser qualquer coisa: desde "30 minutos extras de videogame" até uma "tarde de cinema em família".
 
 Este ciclo ensina de forma lúdica sobre causa e efeito, esforço, poupança e, o mais importante, transforma a rotina em uma jornada de conquistas compartilhadas.
 
