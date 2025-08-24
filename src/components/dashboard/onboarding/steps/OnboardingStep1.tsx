@@ -45,7 +45,7 @@ export function OnboardingStep1() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Sou o Hero, seu 'Mago da Organização'. Toda lenda tem um nome. Vamos criar o perfil do Mini Herói que está prestes a iniciar sua jornada?</p>
+        <p className="text-muted-foreground">Sou o <strong>Hero</strong>, seu 'Mago da Organização'.  Vamos criar o perfil do Mini Herói que está prestes a iniciar sua jornada? Vamos?!</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
