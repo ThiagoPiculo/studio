@@ -197,7 +197,7 @@ export function OnboardingStep1() {
                 <SelectContent>
                   {availableContexts.map(context => (
                     <SelectItem key={context.id} value={context.id}>
-                      {context.id === 'my-space' ? "Apenas no meu espaço pessoal" : `Na Aliança: ${context.name}`}
+                      {context.id === 'my-space' ? "Cuidar Solo (sem colaboração)" : `Na Aliança: ${context.name}`}
                     </SelectItem>
                   ))}
                 </SelectContent>
