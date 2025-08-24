@@ -25,6 +25,7 @@ import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
 import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 
 const TOTAL_STEPS = 5;
@@ -293,9 +294,26 @@ export function OnboardingForm() {
             )}
           </div>
           <div className="flex items-center gap-4">
-              <Button type="button" variant="link" onClick={() => router.push('/dashboard/heroes')}>
-                Pular
-              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button type="button" variant="link">Pular</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Sair do Assistente?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Você sairá do cadastro guiado. Nenhuma informação será salva agora, mas não se preocupe! Você pode voltar e criar um herói com o assistente a qualquer momento pelo menu <strong>'Novo Mini Herói'</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Continuar no Assistente</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => router.push('/dashboard/heroes')}>
+                            Sair Mesmo Assim
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
               {step < TOTAL_STEPS && (
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
