@@ -24,6 +24,7 @@ import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/l
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
+import { cn } from "@/lib/utils";
 
 
 const TOTAL_STEPS = 5;
@@ -246,10 +247,32 @@ export function OnboardingForm() {
   return (
     <FormProvider {...methods}>
       <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
-        <CardHeader className="text-center p-6">
-          <Wand2 className="mx-auto h-10 w-10 text-primary mb-2" />
-          <CardTitle className="text-3xl font-headline">{currentTitle}</CardTitle>
-          <Progress value={progress} className="w-full mt-4 h-2" />
+         <CardHeader className="p-4 space-y-4">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                    <Wand2 className="h-8 w-8 text-primary" />
+                    <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
+                        <div
+                            key={i}
+                            className={cn(
+                                "h-2 w-6 rounded-full transition-all",
+                                i + 1 < step ? "bg-primary" :
+                                i + 1 === step ? "bg-primary w-10" :
+                                "bg-muted"
+                            )}
+                        />
+                    ))}
+                </div>
+            </div>
+            <div className="flex items-center gap-3 text-sm">
+                <Progress value={progress} className="flex-1 h-2" />
+                <span className="text-muted-foreground font-semibold whitespace-nowrap">
+                   Etapa {step} de {TOTAL_STEPS}
+                </span>
+            </div>
         </CardHeader>
         <CardContent className="min-h-[400px] p-6">
             {step === 1 && <OnboardingStep1 />}
