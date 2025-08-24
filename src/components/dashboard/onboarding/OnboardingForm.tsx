@@ -306,9 +306,11 @@ export function OnboardingForm() {
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogCancel>Continuar no Assistente</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => router.push('/dashboard/heroes')}>
+                        <AlertDialogCancel onClick={() => router.push('/dashboard/heroes')}>
                             Sair Mesmo Assim
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            Continuar no Assistente
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
