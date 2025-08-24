@@ -38,7 +38,8 @@ export function OnboardingStep4() {
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
       const allRoutineNames = essentialRoutines.map(r => r.label);
-      append(allRoutineNames.map(name => name as never));
+      remove(); // Clear existing
+      append(allRoutineNames.map(name => name as never)); // Append all
     } else {
       remove(); // remove all
     }
@@ -49,7 +50,6 @@ export function OnboardingStep4() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Rotinas Essenciais do Herói</h2>
         <p className="text-muted-foreground">Estas são as tarefas diárias que formam a base de um grande herói. Selecione as que fazem sentido para a rotina que vamos criar.</p>
       </div>
 

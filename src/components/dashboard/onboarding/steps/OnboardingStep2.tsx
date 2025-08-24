@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { TimePicker } from "../../school-schedule/TimePicker";
+import { TimePicker } from "../../missions/TimePicker";
 import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
@@ -67,7 +67,6 @@ export function OnboardingStep2() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">A Missão Principal de {childName}</h2>
         <p className="text-muted-foreground">Todo herói tem uma base de treinamento! Para que eu possa criar o melhor 'Mapa do Tempo', vamos marcar o horário em que {childName} está na escola.</p>
       </div>
 
@@ -86,7 +85,7 @@ export function OnboardingStep2() {
                             <Label 
                                 htmlFor={s.id} 
                                 className={cn(
-                                    "flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                                    "flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
                                     field.value === s.id ? "border-primary bg-primary/10" : "hover:bg-muted/50"
                                 )}
                             >

@@ -9,8 +9,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, ArrowRight, ArrowLeft } from "lucide-react";
+import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2 } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
 import { OnboardingStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3 } from "./steps/OnboardingStep3";
@@ -18,7 +19,7 @@ import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse, format, addDays, addMinutes, subHours, subMinutes, setHours, setMinutes, addHours } from "date-fns";
+import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
@@ -88,6 +89,16 @@ export function OnboardingForm() {
   });
 
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
+  const currentTitle = useMemo(() => {
+    switch (step) {
+      case 1: return "Cadastrando um Novo Herói";
+      case 2: return "Qual a principal missão de "+ methods.getValues("name")+ "?";
+      case 3: return "Adicionando Poderes Extras";
+      case 4: return "Definindo a Rotina Essencial";
+      case 5: return "Revisando o Mapa da Jornada";
+      default: return "Assistente de Criação";
+    }
+  }, [step, methods]);
 
   const goToNextStep = async () => {
     let isStepValid = false;
@@ -234,18 +245,20 @@ export function OnboardingForm() {
 
   return (
     <FormProvider {...methods}>
-      <div className="flex flex-col space-y-4 h-full">
-        <Progress value={progress} className="w-full" />
-        
-        <div className="flex-1 overflow-y-auto pr-2 min-h-[400px] sm:min-h-[450px]">
+      <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
+        <CardHeader className="text-center p-6">
+          <Wand2 className="mx-auto h-10 w-10 text-primary mb-2" />
+          <CardTitle className="text-3xl font-headline">{currentTitle}</CardTitle>
+          <Progress value={progress} className="w-full mt-4 h-2" />
+        </CardHeader>
+        <CardContent className="min-h-[400px] p-6">
             {step === 1 && <OnboardingStep1 />}
             {step === 2 && <OnboardingStep2 />}
             {step === 3 && <OnboardingStep3 />}
             {step === 4 && <OnboardingStep4 />}
-            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} />}
-        </div>
-
-        <div className="flex-shrink-0 flex justify-between items-center pt-4 border-t">
+            {step === 5 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onRecalculate={handleGenerateSchedule} onScheduleChange={handleScheduleChange} />}
+        </CardContent>
+        <CardFooter className="flex justify-between items-center p-6 border-t">
           <div>
             {step > 1 && (
               <Button type="button" variant="ghost" onClick={goToPreviousStep} disabled={isLoading}>
@@ -258,19 +271,21 @@ export function OnboardingForm() {
                 Pular
               </Button>
               {step < TOTAL_STEPS && (
-                <Button type="button" onClick={goToNextStep} disabled={isLoading}>
-                  {step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" />
+                <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
+                      <>{step === 4 ? "Gerar Rotina Mágica" : "Próximo"} <ArrowRight className="ml-2 h-4 w-4" /></>
+                  )}
                 </Button>
               )}
               {step === TOTAL_STEPS && (
-                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !generatedSchedule}>
+                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !generatedSchedule} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                  Confirmar e Iniciar a Aventura! 🚀
+                  Confirmar e Iniciar! 🚀
                 </Button>
               )}
           </div>
-        </div>
-      </div>
+        </CardFooter>
+      </Card>
     </FormProvider>
   );
 }

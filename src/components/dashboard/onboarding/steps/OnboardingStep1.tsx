@@ -45,7 +45,6 @@ export function OnboardingStep1() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Saudações, grande líder!</h2>
         <p className="text-muted-foreground">Sou o Hero, seu 'Mago da Organização'. Toda lenda tem um nome. Vamos criar o perfil do Mini Herói que está prestes a iniciar sua jornada?</p>
       </div>
 
@@ -130,7 +129,7 @@ export function OnboardingStep1() {
         name="gender"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>Sexo</FormLabel>
+            <FormLabel>Gênero</FormLabel>
             <FormControl>
               <RadioGroup
                 onValueChange={field.onChange}
@@ -146,7 +145,7 @@ export function OnboardingStep1() {
                     )}
                   >
                       <RadioGroupItem value="boy" id="gender-boy" className="sr-only" />
-                      Masculino
+                      Menino
                   </Label>
                 </FormItem>
                 <FormItem>
@@ -158,7 +157,7 @@ export function OnboardingStep1() {
                     )}
                   >
                       <RadioGroupItem value="girl" id="gender-girl" className="sr-only" />
-                      Feminino
+                      Menina
                   </Label>
                 </FormItem>
                 <FormItem>
@@ -170,7 +169,7 @@ export function OnboardingStep1() {
                     )}
                   >
                       <RadioGroupItem value="not-informed" id="gender-other" className="sr-only" />
-                      Prefiro não informar
+                      Não informar
                   </Label>
                 </FormItem>
               </RadioGroup>

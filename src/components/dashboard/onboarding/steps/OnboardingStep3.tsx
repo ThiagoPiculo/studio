@@ -111,7 +111,6 @@ export function OnboardingStep3() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Atividades Extras com Horário Fixo</h2>
         <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Marque as atividades e defina os horários fixos para cada uma delas.</p>
       </div>
 

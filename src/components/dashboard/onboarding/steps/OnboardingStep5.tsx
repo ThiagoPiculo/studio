@@ -1,22 +1,31 @@
 
 "use client";
 
+import React from 'react';
+import type { ProcessScheduleOutput } from '@/ai/flows/process-schedule-text';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Badge } from "@/components/ui/badge";
-import { weekdayLabels } from "@/lib/types";
-import { Wand2, Loader2, Sun, Moon, CloudSun, ListChecks, Star, CalendarDays } from "lucide-react";
-import type { ProcessScheduleOutput, ScheduleItem } from "../OnboardingForm";
-import { useFormContext } from "react-hook-form";
+import { weekdayLabels, Weekday } from "@/lib/types";
+import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays } from "lucide-react";
 import { TimePicker } from "../../missions/TimePicker";
-import React from 'react';
+import { Button } from '@/components/ui/button';
+
+interface ScheduleItem {
+  activity: string;
+  emoji: string;
+  type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine' | 'free_time';
+  category: string;
+  startTime: string;
+  endTime: string;
+  days: Weekday[];
+}
 
 interface OnboardingStep5Props {
   isLoading?: boolean;
   schedule: ProcessScheduleOutput | null;
   onScheduleChange: (index: number, newTime: string) => void;
+  onRecalculate: () => void;
 }
-
 
 const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
   if (items.length === 0) return null;
@@ -55,8 +64,7 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
   )
 }
 
-export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
-
+export function OnboardingStep5({ isLoading, schedule, onScheduleChange, onRecalculate }: OnboardingStep5Props) {
   const { weekdayRoutines, weekendRoutines, extraActivities } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
         return { weekdayRoutines: [], weekendRoutines: [], extraActivities: [] };
@@ -83,7 +91,6 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
     return { weekdayRoutines: weekdayItems, weekendRoutines: weekendItems, extraActivities: extras };
   }, [schedule]);
 
-  
   if (isLoading) {
     return (
         <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
@@ -104,18 +111,19 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
   if (!schedule || schedule.schedule.length === 0) {
     return (
       <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Resumo da Rotina</h2>
+        <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
         <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manualmente mais tarde.</p>
       </div>
     );
   }
-  
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
-      <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">O Pergaminho da Rotina Diária</h2>
-        <p className="text-muted-foreground">Aqui está o plano mágico completo, separado entre a rotina essencial e as atividades extras para maior clareza. Se precisar, ajuste os horários antes de dar vida a esta jornada!</p>
+      <div className="flex items-center justify-between">
+        <p className="text-muted-foreground text-center flex-grow">Ajuste os horários se necessário e o Mago recalculará a rotina para manter a coerência.</p>
+        <Button variant="outline" size="sm" onClick={onRecalculate} disabled={isLoading}>
+            <Wand2 className="mr-2 h-4 w-4" /> Recalcular horários
+        </Button>
       </div>
       
       <div className="max-h-[400px]">
