@@ -247,11 +247,14 @@ export function OnboardingForm() {
   return (
     <FormProvider {...methods}>
       <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
-         <CardHeader className="p-4 space-y-4">
+        <CardHeader className="p-4 space-y-4">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-3">
                     <Wand2 className="h-8 w-8 text-primary" />
-                    <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
+                    <div className="flex flex-col">
+                        <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
+                        <CardDescription>Cadastro guiado e divertido</CardDescription>
+                    </div>
                 </div>
                 <div className="flex items-center gap-1.5">
                     {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
