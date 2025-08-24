@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -10,6 +9,20 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
+
+export const onboardingSchemaStep2 = z.object({
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.schoolShift !== 'not_applicable') {
+        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
+        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
+        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
+        }
+    }
+});
 
 export function OnboardingStep2() {
   const { control, watch, setValue, getValues } = useFormContext();
@@ -67,7 +80,7 @@ export function OnboardingStep2() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Todo herói tem uma base de treinamento! Para que eu possa criar o melhor 'Mapa do Tempo', vamos marcar o horário em que {childName} está na escola.</p>
+        <p className="text-muted-foreground">Até os maiores heróis precisam ir para a base de treinamento (a escola 😉). Me diga o horário escolar de **{childName}** para compor a Rotina de missões (agenda).</p>
       </div>
 
       <FormField
