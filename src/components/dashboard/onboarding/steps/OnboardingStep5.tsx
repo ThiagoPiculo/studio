@@ -2,12 +2,11 @@
 "use client";
 
 import React from 'react';
-import type { ProcessScheduleOutput } from '@/ai/flows/process-schedule-text';
+import type { ProcessScheduleOutput } from '@/lib/schedule-generator';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { weekdayLabels, Weekday } from "@/lib/types";
 import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
-import { TimePicker } from "../../missions/TimePicker";
 import { Button } from '@/components/ui/button';
 
 interface ScheduleItem {
@@ -23,18 +22,18 @@ interface ScheduleItem {
 interface OnboardingStep5Props {
   isLoading?: boolean;
   schedule: ProcessScheduleOutput | null;
-  onScheduleChange: (index: number, newTime: string) => void;
   childName: string;
 }
 
 const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
+    if (!time || !time.includes(':')) return 'morning'; // Fallback
     const hour = parseInt(time.split(':')[0], 10);
     if (hour < 12) return 'morning';
     if (hour < 18) return 'afternoon';
     return 'night';
 }
 
-const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
+const ScheduleSection = ({ title, icon: Icon, items }: { title: string, icon: React.ElementType, items: ScheduleItem[] }) => {
   if (items.length === 0) return null;
 
   return (
@@ -45,16 +44,12 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
       </h3>
       <div className="space-y-3">
         {items.map((item, index) => {
-          const globalIndex = schedule.findIndex(s => s === item);
           const IconComponent = item.type === 'school_entry' ? NotebookPen : Star;
           
           return (
             <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
-                <div className="grid grid-cols-1 gap-1.5 shrink-0">
-                    <TimePicker 
-                        value={item.startTime}
-                        onChange={(newTime) => onScheduleChange(globalIndex, newTime)}
-                    />
+                <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md shrink-0">
+                    {item.startTime}
                 </div>
                 <div className="flex-grow flex items-center gap-2">
                     <span className="text-xl">{item.emoji}</span>
@@ -73,12 +68,14 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
   )
 }
 
-export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childName }: OnboardingStep5Props) {
+export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingStep5Props) {
   const { morning, afternoon, night, freeTime } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
         return { morning: [], afternoon: [], night: [], freeTime: '' };
     }
+    
     const allItems = [...schedule.schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
+    
     return {
         morning: allItems.filter(item => getPeriod(item.startTime) === 'morning'),
         afternoon: allItems.filter(item => getPeriod(item.startTime) === 'afternoon'),
@@ -107,39 +104,33 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
-        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manually mais tarde.</p>
+        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manualmente mais tarde.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-center flex-grow">Ajuste os horários se necessário para refinar a rotina.</p>
+      <div className="text-center">
+        <p className="text-muted-foreground">Esta é a rotina que o assistente criou. Se tudo estiver certo, podemos confirmar e iniciar a jornada!</p>
       </div>
       
-      <ScrollArea className="max-h-[400px] h-full pr-4">
+      <ScrollArea className="h-[400px] pr-4">
         <div className="space-y-4">
             <ScheduleSection 
               title="Período da Manhã"
               icon={Sun}
               items={morning}
-              schedule={schedule.schedule}
-              onScheduleChange={onScheduleChange}
             />
             <ScheduleSection 
               title="Período da Tarde"
               icon={CloudSun}
               items={afternoon}
-              schedule={schedule.schedule}
-              onScheduleChange={onScheduleChange}
             />
             <ScheduleSection 
               title="Período da Noite"
               icon={Moon}
               items={night}
-              schedule={schedule.schedule}
-              onScheduleChange={onScheduleChange}
             />
 
             <Separator className="my-4" />
