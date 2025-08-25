@@ -24,7 +24,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { processScheduleText, type ProcessScheduleTextInput, type ProcessScheduleOutput } from "@/ai/flows/process-schedule-text";
+import { processSchedule, type ProcessScheduleInput, type ProcessScheduleOutput } from "@/lib/schedule-generator";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -142,39 +142,25 @@ export function OnboardingForm() {
     }
   };
 
-  const handleScheduleChange = (index: number, newTime: string) => {
-    if (generatedSchedule) {
-      const newSchedule = { ...generatedSchedule };
-      newSchedule.schedule[index].startTime = newTime;
-      // Re-sort schedule based on new time
-      newSchedule.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
-      setGeneratedSchedule(newSchedule);
-    }
-  };
-
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
       setGeneratedSchedule(null);
       const values = methods.getValues();
-      const birthDate = new Date(values.birthDate);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: ProcessScheduleTextInput = {
-          childAge: age,
-          childName: values.name,
+      const input: ProcessScheduleInput = {
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
-          extraActivities: (values.extraActivities || []).map(act => `${act.name} nos dias ${act.days.join(', ')} às ${act.time}`).join('; '),
-          essentialRoutines: values.essentialRoutines
+          extraActivities: values.extraActivities || [],
+          essentialRoutines: values.essentialRoutines || [],
       };
 
       try {
-          const schedule = await processScheduleText(input);
+          const schedule = await processSchedule(input);
           setGeneratedSchedule(schedule);
       } catch (error) {
           console.error("Error generating schedule:", error);
-          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
+          toast({ title: "Erro Mágico!", description: "Ocorreu um erro ao criar a rotina. Por favor, tente novamente.", variant: "destructive" });
           setStep(4); // Go back to the previous step on error
       } finally {
           setIsLoading(false);
@@ -299,7 +285,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} childName={methods.getValues("name")} />}
+                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} childName={methods.getValues("name")} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
