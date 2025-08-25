@@ -89,7 +89,7 @@ export function OnboardingStep2() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Até os maiores heróis precisam ir para a base de treinamento (a escola 😉). Me diga turno, ajuste hora de entrada e saída, e eu organizo o resto ✨</p>
+        <p className="text-muted-foreground">Marque o turno, se precisar, ajuste hora de entrada e saída, que organizarei o resto 😉💖</p>
       </div>
 
       <FormField
