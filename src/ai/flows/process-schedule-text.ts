@@ -232,5 +232,3 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
         freeTime: "A rotina foi gerada com períodos de tempo livre entre as atividades fixas."
     };
 }
-
-```
