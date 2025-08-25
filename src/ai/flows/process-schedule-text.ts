@@ -8,8 +8,10 @@
  * - ProcessScheduleOutput - O tipo de retorno para a função processScheduleText.
  */
 
-import { ai } from '@/ai/genkit';
 import { z } from 'zod';
+import { predefinedMissionGroups } from '@/lib/predefined-missions';
+import type { Weekday } from '@/lib/types';
+
 
 const WeekdayEnum = z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU']);
 
@@ -40,129 +42,195 @@ const ProcessScheduleOutputSchema = z.object({
 });
 export type ProcessScheduleOutput = z.infer<typeof ProcessScheduleOutputSchema>;
 
-export async function processScheduleText(input: ProcessScheduleTextInput): Promise<ProcessScheduleOutput> {
-  return processScheduleFlow(input);
-}
+type ScheduleItem = z.infer<typeof ScheduleItemSchema>;
+type DailySchedule = { [key in Weekday]: { time: number; duration: number; task: ScheduleItem }[] };
 
-const prompt = ai.definePrompt({
-  name: 'processSchedulePrompt',
-  input: { schema: ProcessScheduleTextInputSchema },
-  output: { schema: ProcessScheduleOutputSchema },
-  prompt: `
-Você é um especialista em desenvolvimento infantil e um organizador de rotinas mestre. Sua tarefa é criar uma rotina semanal estruturada e saudável para uma criança, seguindo um algoritmo preciso de regras e dependências.
 
-**Dados da Criança:**
-- Nome: {{{childName}}}
-- Idade: {{{childAge}}}
-- Turno Escolar: {{{schoolShift}}}
-- Horário Escolar: {{{schoolStartTime}}} - {{{schoolEndTime}}}
-- Atividades Extras (Compromissos Fixos): {{{extraActivities}}}
-- Rotinas Essenciais a Incluir: {{#each essentialRoutines}}- {{{this}}}{{/each}}
+// --- Helper Functions ---
+const timeToMinutes = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+};
 
-**ALGORITMO DE AGENDAMENTO (SIGA ESTRITAMENTE):**
+const minutesToTime = (minutes: number): string => {
+    const hours = Math.floor(minutes / 60) % 24;
+    const mins = minutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`;
+};
 
-**Passo 1: Aloque os Compromissos Fixos Iniciais**
-- Prioridade Máxima: Aloque a **Escola** (se aplicável) e as **Atividades Extras** exatamente nos dias e horários fornecidos. Estes são inamovíveis.
-
-**Passo 2: Construa a Rotina Diária baseada no Turno Escolar**
-- Identifique o turno escolar da criança e siga APENAS o bloco de regras correspondente abaixo.
-
----
-**BLOCO DE REGRAS PARA TURNO DA MANHÃ:**
-
-- **Hora de acordar:** 1 hora antes do início da aula.
-- **Arrumar a cama:** 10 minutos após acordar.
-- **Tomar café da manhã:** 25 minutos após acordar.
-- **Escovar os dentes (manhã):** 10 minutos após o café.
-- **Sair para escola:** 20 minutos antes do início da aula.
-- **Almoçar:** Sugestão padrão às 13:00.
-- **Escovar os dentes (após almoço):** 30 minutos após o almoço.
-- **Fazer a lição de casa:** Padrão às 14:30. **Condição:** Se houver uma atividade extra neste horário, NÃO agende a lição aqui.
-- **Organizar a mochila:** Padrão às 15:30. **Condição:** Se houver uma atividade extra neste horário, NÃO agende a mochila aqui.
-- **Tomar banho:** Padrão às 18:30. **Condição:** Se houver atividade extra que conflite, adie o banho para DEPOIS do jantar.
-- **Jantar:** Padrão às 19:00. **Condição:** Se houver uma atividade extra que termine após as 18:30, agende o jantar para 20 minutos APÓS o término desta atividade.
-- **Escovar os dentes (noite):** 20 minutos ANTES da "Hora de dormir".
-- **Hora de dormir:** Sugestão padrão às 21:00.
-
----
-**BLOCO DE REGRAS PARA TURNO DA TARDE:**
-
-- **Hora de acordar:** Padrão às 08:00.
-- **Arrumar a cama:** 10 minutos após acordar.
-- **Tomar café da manhã:** 25 minutos após acordar.
-- **Escovar os dentes (manhã):** 10 minutos após o café.
-- **Fazer a lição de casa:** Padrão às 09:00. **Condição:** Se houver atividade extra neste horário, NÃO agende a lição aqui.
-- **Organizar a mochila:** Padrão às 09:50. **Condição:** Se houver atividade extra neste horário, NÃO agende a mochila aqui.
-- **Tomar banho:** 60 minutos antes do início da aula.
-- **Almoçar:** 40 minutos antes do início da aula.
-- **Escovar os dentes (após almoço):** 15 minutos após o almoço.
-- **Sair para escola:** 20 minutos antes do início da aula.
-- **Jantar:** Padrão às 19:00. **Condição:** Se houver atividade extra que termine após as 18:30, agende o jantar para 20 minutos APÓS o término desta atividade.
-- **Escovar os dentes (noite):** 15 minutos após o jantar.
-- **Hora de dormir:** Sugestão padrão às 22:00.
-
----
-**BLOCO DE REGRAS PARA TURNO INTEGRAL:**
-
-- **Hora de acordar:** 1 hora antes do início da aula.
-- **Arrumar a cama:** 10 minutos após acordar.
-- **Tomar café da manhã:** 25 minutos após acordar.
-- **Escovar os dentes (manhã):** 10 minutos após o café.
-- **Sair para escola:** 20 minutos antes do início da aula.
-- **Jantar:** Padrão às 19:00. **Condição:** Se houver atividade extra que termine após as 18:30, agende o jantar para 20 minutos APÓS o término desta atividade.
-- **Escovar os dentes (noite):** 15 minutos após o jantar.
-- **Tomar banho:** Padrão às 20:40.
-- **Hora de dormir:** Sugestão padrão às 21:00.
-
----
-**BLOCO DE REGRAS PARA QUEM NÃO ESTUDA AINDA:**
-
-- **Hora de acordar:** 08:00.
-- **Arrumar a cama:** 08:10.
-- **Tomar café da manhã:** 08:25.
-- **Escovar os dentes (manhã):** 08:35.
-- **Tomar banho (meio-dia):** 12:00.
-- **Almoçar:** 12:20.
-- **Escovar os dentes (após almoço):** 12:35.
-- **Tomar banho (noite):** 17:30. **Condição:** Se houver atividade extra que conflite, adie o banho para DEPOIS do jantar.
-- **Jantar:** 18:00.
-- **Escovar os dentes (noite):** 20 minutos ANTES de dormir.
-- **Hora de dormir:** 21:00.
-
----
-**Passo 3: Aloque o Tempo Livre**
-- **Regra Final:** Após agendar todos os compromissos fixos (escola, extras) e rotinas essenciais, verifique os blocos de horário restantes. Se um bloco estiver vazio, preencha-o com a atividade "Hora livre para brincar".
-
-**REGRAS GERAIS ADICIONAIS:**
-- **Emojis e Categorias:** Para cada atividade, use o emoji e a categoria exatos da lista de missões pré-definidas de referência. Isso é crucial para a consistência do aplicativo.
-- **Resumo do Tempo Livre:** Ao final, crie uma frase curta e amigável resumindo os principais períodos livres da criança, indicando dias e horários de forma estruturada.
-- **Fim de Semana:** Mantenha as rotinas essenciais da manhã e noite com horários mais flexíveis e preencha a maior parte do dia com "Tempo Livre", a menos que haja uma atividade extra agendada. A missão "Organizar a mochila" só ocorre no domingo à noite.
-
-Agora, gere a agenda completa para {{{childName}}}.
-  `,
+const missionData: { [key: string]: Partial<ScheduleItem> } = {};
+predefinedMissionGroups.flatMap(g => g.items).forEach(item => {
+    missionData[item.title] = {
+        emoji: item.emoji,
+        category: item.suggestedAppCategory,
+    };
 });
 
-const processScheduleFlow = ai.defineFlow(
-  {
-    name: 'processScheduleFlow',
-    inputSchema: ProcessScheduleTextInputSchema,
-    outputSchema: ProcessScheduleOutputSchema,
-  },
-  async (input) => {
-    const { output } = await prompt(input);
-    if (!output) {
-      throw new Error("A IA não conseguiu gerar uma rotina. Tente refinar as informações.");
+const addTask = (schedule: DailySchedule, task: Partial<ScheduleItem> & { activity: string, startTime: string, endTime: string, days: Weekday[], type: ScheduleItem['type'] }) => {
+    const startMinutes = timeToMinutes(task.startTime);
+    const endMinutes = timeToMinutes(task.endTime);
+    const duration = endMinutes - startMinutes;
+
+    const fullTask: ScheduleItem = {
+        activity: task.activity,
+        emoji: task.emoji || missionData[task.activity]?.emoji || '✔️',
+        type: task.type,
+        category: task.category || missionData[task.activity]?.category || 'essential',
+        startTime: task.startTime,
+        endTime: task.endTime,
+        days: task.days,
+    };
+
+    task.days.forEach(day => {
+        schedule[day].push({ time: startMinutes, duration: duration, task: fullTask });
+    });
+};
+
+const isOccupied = (schedule: DailySchedule, day: Weekday, start: number, end: number): boolean => {
+    return schedule[day].some(slot => Math.max(start, slot.time) < Math.min(end, slot.time + slot.duration));
+};
+
+
+// --- Core Logic ---
+export async function processScheduleText(input: ProcessScheduleTextInput): Promise<ProcessScheduleOutput> {
+    
+    const schedule: DailySchedule = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
+
+    const schoolStart = input.schoolStartTime ? timeToMinutes(input.schoolStartTime) : null;
+    const schoolEnd = input.schoolEndTime ? timeToMinutes(input.schoolEndTime) : null;
+
+    const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+    const weekends: Weekday[] = ['SA', 'SU'];
+
+    // Passo 1: Alocar Escola e Atividades Extras
+    if (schoolStart !== null && schoolEnd !== null && input.schoolShift !== 'not_applicable') {
+        addTask(schedule, {
+            activity: 'Escola',
+            startTime: minutesToTime(schoolStart),
+            endTime: minutesToTime(schoolEnd),
+            days: weekdays,
+            type: 'school_entry',
+            category: 'school',
+            emoji: '🏫'
+        });
+    }
+
+    // A lógica para `extraActivities` é complexa para parsear texto livre.
+    // Esta implementação focará nas rotinas fixas e deixa o parsing de texto livre para futuras iterações.
+
+    // Passo 2: Construir a rotina com base no turno
+    let pendingTasks: { name: string; duration: number, days: Weekday[], defaultTime?: number }[] = [];
+
+    switch (input.schoolShift) {
+        case 'Manhã': {
+            if (schoolStart === null) break;
+            const wakeUpTime = schoolStart - 60;
+            addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Arrumar a cama', startTime: minutesToTime(wakeUpTime + 10), endTime: minutesToTime(wakeUpTime + 20), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Tomar café da manhã', startTime: minutesToTime(wakeUpTime + 25), endTime: minutesToTime(wakeUpTime + 45), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Escovar os dentes (após acordar)', startTime: minutesToTime(wakeUpTime + 50), endTime: minutesToTime(wakeUpTime + 60), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart - 5), days: weekdays, type: 'school_entry' });
+            
+            pendingTasks.push({ name: 'Fazer a lição de casa', duration: 60, days: weekdays, defaultTime: timeToMinutes('14:30')});
+            pendingTasks.push({ name: 'Organizar a mochila para amanhã', duration: 15, days: weekdays, defaultTime: timeToMinutes('15:30')});
+            pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('18:30')});
+            pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            break;
+        }
+        case 'Tarde': {
+             if (schoolStart === null) break;
+            addTask(schedule, { activity: 'Hora de acordar', startTime: '08:00', endTime: '08:05', days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Tomar banho', startTime: minutesToTime(schoolStart - 60), endTime: minutesToTime(schoolStart - 40), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Almoçar', startTime: minutesToTime(schoolStart - 40), endTime: minutesToTime(schoolStart - 15), days: weekdays, type: 'essential_routine' });
+            
+            pendingTasks.push({ name: 'Fazer a lição de casa', duration: 60, days: weekdays, defaultTime: timeToMinutes('09:00')});
+            pendingTasks.push({ name: 'Organizar a mochila para amanhã', duration: 15, days: weekdays, defaultTime: timeToMinutes('10:00')});
+            pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            break;
+        }
+        case 'Integral': {
+            if (schoolStart === null) break;
+            const wakeUpTime = schoolStart - 60;
+            addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart - 5), days: weekdays, type: 'school_entry' });
+            
+            pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('20:40')});
+            break;
+        }
+        case 'not_applicable': {
+            addTask(schedule, { activity: 'Hora de acordar', startTime: '08:00', endTime: '08:05', days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Almoçar', startTime: '12:20', endTime: '12:50', days: weekdays, type: 'essential_routine' });
+            
+            pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('17:30')});
+            pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('18:00')});
+            break;
+        }
     }
     
-    // Sanitize emoji field to prevent validation errors
-    const emojiRegex = /(\p{Extended_Pictographic}|\p{Emoji_Component})+/gu;
-    output.schedule.forEach(item => {
-        const matches = item.emoji.match(emojiRegex);
-        item.emoji = matches ? matches.join('') : '✔️'; // Fallback to a default emoji
+    // Regras Comuns e de Fim de Semana
+    const allDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+    addTask(schedule, { activity: 'Hora de dormir', startTime: '21:00', endTime: '21:05', days: allDays, type: 'essential_routine' });
+    addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '20:00', endTime: '20:15', days: ['SU'], type: 'essential_routine' });
+
+
+    // Processar tarefas pendentes
+    pendingTasks.forEach(task => {
+        task.days.forEach(day => {
+            if (task.defaultTime && !isOccupied(schedule, day, task.defaultTime, task.defaultTime + task.duration)) {
+                addTask(schedule, { activity: task.name, startTime: minutesToTime(task.defaultTime), endTime: minutesToTime(task.defaultTime + task.duration), days: [day], type: 'essential_routine' });
+            } else {
+                // Lógica de reagendamento: encontrar próximo slot livre (simplificado)
+                let foundSlot = false;
+                for (let time = timeToMinutes('12:00'); time < timeToMinutes('20:00'); time += 30) {
+                    if (!isOccupied(schedule, day, time, time + task.duration)) {
+                        addTask(schedule, { activity: task.name, startTime: minutesToTime(time), endTime: minutesToTime(time + task.duration), days: [day], type: 'essential_routine' });
+                        foundSlot = true;
+                        break;
+                    }
+                }
+            }
+        });
     });
 
-    // Garante que o resultado esteja ordenado por hora de início
-    output.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    return output;
-  }
-);
+    // Passo 3: Adicionar Tempo Livre
+    allDays.forEach(day => {
+        let lastEndTime = timeToMinutes('07:00');
+        schedule[day].sort((a, b) => a.time - b.time);
+        
+        schedule[day].forEach(slot => {
+            if (slot.time > lastEndTime) {
+                addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time' });
+            }
+            lastEndTime = Math.max(lastEndTime, slot.time + slot.duration);
+        });
+
+        // Adicionar tempo livre até a hora de dormir
+        const sleepTime = timeToMinutes('21:00');
+        if (lastEndTime < sleepTime) {
+             addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(sleepTime), days: [day], type: 'free_time' });
+        }
+    });
+
+    // Agrupar tarefas por dias
+    const finalScheduleMap: { [key: string]: ScheduleItem } = {};
+    Object.values(schedule).flat().forEach(slot => {
+        const key = `${slot.task.activity}-${slot.task.startTime}-${slot.task.endTime}`;
+        if (finalScheduleMap[key]) {
+            finalScheduleMap[key].days.push(slot.task.days[0]);
+            // Remove duplicates
+            finalScheduleMap[key].days = [...new Set(finalScheduleMap[key].days)];
+        } else {
+            finalScheduleMap[key] = { ...slot.task };
+        }
+    });
+
+    const finalSchedule = Object.values(finalScheduleMap).sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+    return {
+        schedule: finalSchedule,
+        freeTime: "A rotina foi gerada com períodos de tempo livre entre as atividades fixas."
+    };
+}
+
+```
