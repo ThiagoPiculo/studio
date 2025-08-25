@@ -141,6 +141,7 @@ Você é um especialista em desenvolvimento infantil e um organizador de rotinas
 Agora, gere a agenda completa para {{{childName}}}.
   `,
 });
+
 const processScheduleFlow = ai.defineFlow(
   {
     name: 'processScheduleFlow',
@@ -165,4 +166,3 @@ const processScheduleFlow = ai.defineFlow(
     return output;
   }
 );
-
