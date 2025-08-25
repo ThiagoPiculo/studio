@@ -11,11 +11,10 @@ interface TimePickerProps {
   className?: string;
   minHour?: number;
   maxHour?: number;
+  minuteStep?: number;
 }
 
-const minuteOptions = Array.from({ length: 12 }, (_, i) => (i * 5).toString().padStart(2, '0'));
-
-export function TimePicker({ value, onChange, className, minHour, maxHour }: TimePickerProps) {
+export function TimePicker({ value, onChange, className, minHour, maxHour, minuteStep = 5 }: TimePickerProps) {
   const { hour, minute } = React.useMemo(() => {
     if (value && /^\d{2}:\d{2}$/.test(value)) {
       const [h, m] = value.split(':');
@@ -37,6 +36,10 @@ export function TimePicker({ value, onChange, className, minHour, maxHour }: Tim
     const end = maxHour ?? 23;
     return Array.from({ length: end - start + 1 }, (_, i) => (start + i).toString().padStart(2, '0'));
   }, [minHour, maxHour]);
+
+  const minuteOptions = React.useMemo(() => {
+    return Array.from({ length: 60 / minuteStep }, (_, i) => (i * minuteStep).toString().padStart(2, '0'));
+  }, [minuteStep]);
 
   return (
     <div className={cn("flex items-center gap-2", className)}>
