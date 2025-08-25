@@ -111,7 +111,7 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
-        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manualmente mais tarde.</p>
+        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manually mais tarde.</p>
       </div>
     );
   }
