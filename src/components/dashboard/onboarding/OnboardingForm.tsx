@@ -274,7 +274,7 @@ export function OnboardingForm() {
                                 key={i}
                                 className={cn(
                                     "h-2 w-6 rounded-full transition-all",
-                                    i < step - 1 ? "bg-green-500" :
+                                    i < step - 2 ? "bg-green-500" :
                                     i + 1 === step - 1 ? "bg-primary w-10" :
                                     "bg-muted"
                                 )}
