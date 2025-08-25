@@ -45,7 +45,6 @@ export function OnboardingStep1() {
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center space-y-1">
-        <p className="text-muted-foreground">Sou a <strong>Aura</strong>, sua 'Maga da Organização'.</p>
         <p className="text-muted-foreground">Vamos criar o perfil do Mini Herói que está prestes a iniciar sua jornada?</p>
         <p className="text-muted-foreground">Vamos?!</p>
       </div>
