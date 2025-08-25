@@ -18,6 +18,15 @@ import { Label } from "@/components/ui/label";
 import { useFamily } from "@/contexts/FamilyContext";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+export const onboardingSchemaStep1 = z.object({
+  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
+  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+    message: "Data inválida."
+  }),
+  gender: z.enum(['boy', 'girl', 'not-informed']),
+  contextId: z.string(),
+});
+
 export function OnboardingStep1() {
   const { control, setValue, watch } = useFormContext();
   const { availableContexts } = useFamily();
@@ -134,7 +143,7 @@ export function OnboardingStep1() {
               <RadioGroup
                 onValueChange={field.onChange}
                 value={field.value}
-                className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                className="grid grid-cols-3 gap-4"
               >
                 <FormItem>
                   <Label 
