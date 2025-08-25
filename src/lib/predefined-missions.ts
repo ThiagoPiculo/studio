@@ -35,6 +35,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
       { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'essential_routines', starsReward: 15, xpReward: 25 },
       { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
       { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5, xpReward: 10 },
     ],
@@ -115,7 +116,6 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: NotebookPen,
     description: 'Tarefas que ajudam a criar e manter uma rotina de estudos sólida e a desenvolver a responsabilidade acadêmica.',
     items: [
-      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Ler por 20 minutos', emoji: '📖', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Estudar para uma prova', emoji: '📝', suggestedAppCategory: 'school', starsReward: 20, xpReward: 30 },
       { title: 'Revisar o conteúdo do dia', emoji: '🧐', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
