@@ -7,7 +7,7 @@
 import { z } from 'zod';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { Weekday } from '@/lib/types';
-import { allWeekdays } from '@/lib/types';
+import { allWeekdays, weekdays } from '@/lib/types';
 
 const extraActivitySchema = z.object({
   name: z.string(),
@@ -15,7 +15,7 @@ const extraActivitySchema = z.object({
   time: z.string(),
 });
 
-const ProcessScheduleInputSchema = z.object({
+export const ProcessScheduleInputSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolStartTime: z.string().optional(),
   schoolEndTime: z.string().optional(),
@@ -30,8 +30,8 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.string().describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/).describe("A hora de término no formato HH:mm."),
-  days: z.array(z.nativeEnum(Weekday)).describe("Uma lista dos dias da semana em que a atividade ocorre."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de término no formato HH:mm."),
+  days: z.array(z.enum(weekdays)).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
 export type ScheduleItem = z.infer<typeof ScheduleItemSchema>;
 
@@ -224,7 +224,7 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
             if (slot.time > lastEndTime) {
                 const duration = slot.time - lastEndTime;
                 if (duration >= 30) { // Add free time only if it's 30 mins or more
-                   addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time', category: 'leisure', emoji: '🪁' }, true);
+                   addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time', category: 'hobbies', emoji: '🪁' }, true);
                 }
             }
             lastEndTime = Math.max(lastEndTime, slot.time + slot.duration);
@@ -234,7 +234,7 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
         if (lastEndTime < sleepTime) {
              const duration = sleepTime - lastEndTime;
              if (duration >= 30) {
-                 addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(sleepTime), days: [day], type: 'free_time', category: 'leisure', emoji: '🪁' }, true);
+                 addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(sleepTime), days: [day], type: 'free_time', category: 'hobbies', emoji: '🪁' }, true);
              }
         }
     });
