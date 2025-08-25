@@ -18,9 +18,6 @@ export function OnboardingStep0() {
 
   return (
     <div className="flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
-      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-2">
-          <Rocket className="h-9 w-9 text-primary" />
-      </div>
       <h2 className="text-2xl font-bold font-headline">Olá, {user?.name || 'Responsável'}!</h2>
 
       <p className="text-muted-foreground max-w-lg">
