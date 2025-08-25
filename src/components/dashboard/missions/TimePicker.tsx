@@ -14,7 +14,7 @@ interface TimePickerProps {
   minuteStep?: number;
 }
 
-export function TimePicker({ value, onChange, className, minHour = 0, maxHour = 23, minuteStep = 1 }: TimePickerProps) {
+export function TimePicker({ value, onChange, className, minHour, maxHour, minuteStep = 5 }: TimePickerProps) {
   const { hour, minute } = React.useMemo(() => {
     if (value && /^\d{2}:\d{2}$/.test(value)) {
       const [h, m] = value.split(':');
@@ -32,7 +32,9 @@ export function TimePicker({ value, onChange, className, minHour = 0, maxHour = 
   };
 
   const hourOptions = React.useMemo(() => {
-    return Array.from({ length: maxHour - minHour + 1 }, (_, i) => (minHour + i).toString().padStart(2, '0'));
+    const start = minHour ?? 0;
+    const end = maxHour ?? 23;
+    return Array.from({ length: end - start + 1 }, (_, i) => (start + i).toString().padStart(2, '0'));
   }, [minHour, maxHour]);
 
   const minuteOptions = React.useMemo(() => {
