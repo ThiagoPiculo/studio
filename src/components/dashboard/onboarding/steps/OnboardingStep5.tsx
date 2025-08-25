@@ -6,7 +6,7 @@ import type { ProcessScheduleOutput } from '@/ai/flows/process-schedule-text';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { weekdayLabels, Weekday } from "@/lib/types";
-import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays } from "lucide-react";
+import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical } from "lucide-react";
 import { TimePicker } from "../../missions/TimePicker";
 import { Button } from '@/components/ui/button';
 
@@ -24,6 +24,7 @@ interface OnboardingStep5Props {
   isLoading?: boolean;
   schedule: ProcessScheduleOutput | null;
   onScheduleChange: (index: number, newTime: string) => void;
+  childName: string;
 }
 
 const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
@@ -63,7 +64,7 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
   )
 }
 
-export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
+export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childName }: OnboardingStep5Props) {
   const { weekdayRoutines, weekendRoutines, extraActivities } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
         return { weekdayRoutines: [], weekendRoutines: [], extraActivities: [] };
@@ -94,14 +95,13 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: Onboa
     return (
         <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
             <div className="relative">
-                <Loader2 className="h-24 w-24 text-primary animate-spin" />
-                <Wand2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 h-10 w-10 text-primary/80" />
+                <FlaskConical className="h-24 w-24 text-primary animate-bounce" />
             </div>
             <h2 className="mt-6 text-2xl font-bold font-headline">
-                Consultando o Oráculo da Organização...
+                Preparando a Poção da Rotina para {childName}!
             </h2>
             <p className="mt-2 text-muted-foreground max-w-md">
-                Aguarde um momento enquanto o Mago usa a IA do Google para forjar uma 'Rotina Essencial' perfeita.
+                Estou misturando uma pitada de organização com a diversão das atividades favoritas de {childName}. Um momento, a magia está acontecendo!
             </p>
         </div>
     );
