@@ -6,8 +6,9 @@
 
 import { z } from 'zod';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
-import type { Weekday } from '@/lib/types';
-import { allWeekdays, weekdays, weekdayLabels } from '@/lib/types';
+import { allWeekdays, weekdays, weekdayLabels, type Weekday } from '@/lib/types';
+import type { ScheduleItem as ScheduleItemType } from '@/lib/types';
+
 
 const extraActivitySchema = z.object({
   name: z.string(),
@@ -167,24 +168,24 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
     switch (input.schoolShift) {
         case 'morning': {
             const wakeUpTime = schoolStart - 60;
+            // Manhã (dias de semana)
             if (essentialRoutines.has('Hora de acordar')) addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Arrumar a cama')) addTask(schedule, { activity: 'Arrumar a cama', startTime: minutesToTime(wakeUpTime + 10), endTime: minutesToTime(wakeUpTime + 20), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Tomar café da manhã')) addTask(schedule, { activity: 'Tomar café da manhã', startTime: minutesToTime(wakeUpTime + 25), endTime: minutesToTime(wakeUpTime + 45), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Escovar os dentes (após acordar)')) addTask(schedule, { activity: 'Escovar os dentes (após acordar)', startTime: minutesToTime(wakeUpTime + 55), endTime: minutesToTime(wakeUpTime + 60), days: weekdays, type: 'essential_routine' });
-            // "Sair para escola" is implicitly handled by the school start time itself.
-            
-            if(essentialRoutines.has('Almoçar')) addTask(schedule, { activity: 'Almoçar', startTime: '13:00', endTime: '13:30', days: weekdays, type: 'essential_routine' });
-            if(essentialRoutines.has('Escovar os dentes (após almoço)')) addTask(schedule, { activity: 'Escovar os dentes (após almoço)', startTime: '13:30', endTime: '13:40', days: weekdays, type: 'essential_routine' });
-            
+            if (essentialRoutines.has('Sair para escola')) addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart), days: weekdays, type: 'essential_routine'});
+
+            // Tarde (dias de semana)
+            if(essentialRoutines.has('Almoçar')) addTask(schedule, { activity: 'Almoçar', startTime: '13:00', endTime: '13:30', days: weekdays, type: 'essential_routine' }, false);
+            if(essentialRoutines.has('Escovar os dentes (após almoço)')) addTask(schedule, { activity: 'Escovar os dentes (após almoço)', startTime: '13:30', endTime: '13:40', days: weekdays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Fazer a lição de casa')) addTask(schedule, { activity: 'Fazer a lição de casa', startTime: '14:30', endTime: '15:30', days: weekdays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Organizar a mochila para amanhã')) addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '15:30', endTime: '15:45', days: weekdays, type: 'essential_routine' }, false);
-            
-            addTask(schedule, { activity: 'Hora livre para brincar', startTime: '16:00', endTime: '17:00', days: weekdays, type: 'free_time' }, false);
-            addTask(schedule, { activity: 'Hora livre para brincar', startTime: '17:00', endTime: '18:00', days: weekdays, type: 'free_time' }, false);
-            addTask(schedule, { activity: 'Hora livre para brincar', startTime: '18:00', endTime: '18:30', days: weekdays, type: 'free_time' }, false);
-            
+
+            // Noite (todos os dias)
             if(essentialRoutines.has('Tomar banho')) addTask(schedule, { activity: 'Tomar banho', startTime: '18:30', endTime: '18:50', days: allDays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Jantar')) addTask(schedule, { activity: 'Jantar', startTime: '19:00', endTime: '19:30', days: allDays, type: 'essential_routine' }, false);
+            if(essentialRoutines.has('Escovar os dentes (após jantar)')) addTask(schedule, { activity: 'Escovar os dentes (após jantar)', startTime: '20:40', endTime: '20:45', days: allDays, type: 'essential_routine' }, false);
+            if(essentialRoutines.has('Hora de dormir')) addTask(schedule, { activity: 'Hora de dormir', startTime: '21:00', endTime: '21:05', days: allDays, type: 'essential_routine' }, false);
             break;
         }
         case 'afternoon': {
