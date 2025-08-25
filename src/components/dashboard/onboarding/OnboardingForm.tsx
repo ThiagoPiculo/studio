@@ -30,6 +30,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 
 
 const TOTAL_STEPS = 6;
+const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
+
 
 // Schema for an individual activity from step 3
 const extraActivitySchema = z.object({
@@ -261,24 +263,26 @@ export function OnboardingForm() {
                     <CardDescription>Cadastro guiado e divertido</CardDescription>
                 </div>
             </div>
-             <div className="flex items-center justify-center gap-3 text-sm">
-                <span className="text-muted-foreground font-semibold whitespace-nowrap">
-                   Etapa {step} de {TOTAL_STEPS}
-                </span>
-                <div className="flex items-center gap-1.5">
-                    {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
-                        <div
-                            key={i}
-                            className={cn(
-                                "h-2 w-6 rounded-full transition-all",
-                                i + 1 < step ? "bg-primary" :
-                                i + 1 === step ? "bg-primary w-10" :
-                                "bg-muted"
-                            )}
-                        />
-                    ))}
+             {step > 1 && (
+                <div className="flex items-center justify-center gap-3 text-sm">
+                    <span className="text-muted-foreground font-semibold whitespace-nowrap">
+                       Etapa {step - 1} de {DISPLAY_TOTAL_STEPS}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                        {Array.from({ length: DISPLAY_TOTAL_STEPS }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={cn(
+                                    "h-2 w-6 rounded-full transition-all",
+                                    i < step - 1 ? "bg-green-500" :
+                                    i + 1 === step - 1 ? "bg-primary w-10" :
+                                    "bg-muted"
+                                )}
+                            />
+                        ))}
+                    </div>
                 </div>
-            </div>
+            )}
         </CardHeader>
         <CardContent className="min-h-[400px] p-6">
             {step === 1 && <OnboardingStep0 />}
