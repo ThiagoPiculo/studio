@@ -254,14 +254,17 @@ export function OnboardingForm() {
     <FormProvider {...methods}>
       <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
         <CardHeader className="p-6 space-y-4">
-            <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                    <Wand2 className="h-8 w-8 text-primary" />
-                    <div className="flex flex-col">
-                        <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
-                        <CardDescription>Cadastro guiado e divertido</CardDescription>
-                    </div>
+            <div className="flex items-center gap-3">
+                <Wand2 className="h-8 w-8 text-primary" />
+                <div className="flex flex-col">
+                    <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
+                    <CardDescription>Cadastro guiado e divertido</CardDescription>
                 </div>
+            </div>
+             <div className="flex items-center justify-center gap-3 text-sm">
+                <span className="text-muted-foreground font-semibold whitespace-nowrap">
+                   Etapa {step} de {TOTAL_STEPS}
+                </span>
                 <div className="flex items-center gap-1.5">
                     {Array.from({ length: TOTAL_STEPS }).map((_, i) => (
                         <div
@@ -275,12 +278,6 @@ export function OnboardingForm() {
                         />
                     ))}
                 </div>
-            </div>
-            <div className="flex items-center gap-3 text-sm">
-                <Progress value={progress} className="flex-1 h-2" />
-                <span className="text-muted-foreground font-semibold whitespace-nowrap">
-                   Etapa {step} de {TOTAL_STEPS}
-                </span>
             </div>
         </CardHeader>
         <CardContent className="min-h-[400px] p-6">
