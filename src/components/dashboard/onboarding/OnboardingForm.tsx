@@ -263,7 +263,7 @@ export function OnboardingForm() {
   return (
     <FormProvider {...methods}>
       <Card className="w-full max-w-5xl mx-auto shadow-2xl animate-in fade-in duration-500">
-        <CardHeader className="p-6 space-y-4">
+        <CardHeader className="p-6 space-y-4 pb-0">
             <div className="flex items-center gap-3">
                 <Wand2 className="h-8 w-8 text-primary" />
                 <div className="flex flex-col">
@@ -272,7 +272,7 @@ export function OnboardingForm() {
                 </div>
             </div>
              {step > 1 && (
-                <div className="flex items-center justify-center gap-3 text-sm">
+                <div className="flex items-center justify-center gap-3 text-sm pt-2">
                     <span className="text-muted-foreground font-semibold whitespace-nowrap">
                        Etapa {step - 1} de {DISPLAY_TOTAL_STEPS}
                     </span>
@@ -292,13 +292,15 @@ export function OnboardingForm() {
                 </div>
             )}
         </CardHeader>
-        <CardContent className="p-6">
-            {step === 1 && <OnboardingStep0 />}
-            {step === 2 && <OnboardingStep1 />}
-            {step === 3 && <OnboardingStep2 />}
-            {step === 4 && <OnboardingStep3 />}
-            {step === 5 && <OnboardingStep4 />}
-            {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} childName={methods.getValues("name")} />}
+        <CardContent className="px-6 pb-6 pt-6">
+            <div className="min-h-[450px]">
+                {step === 1 && <OnboardingStep0 />}
+                {step === 2 && <OnboardingStep1 />}
+                {step === 3 && <OnboardingStep2 />}
+                {step === 4 && <OnboardingStep3 />}
+                {step === 5 && <OnboardingStep4 />}
+                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} childName={methods.getValues("name")} />}
+            </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
           <div>
