@@ -129,7 +129,7 @@ export function OnboardingForm() {
     if (isStepValid) {
       if (step < TOTAL_STEPS) {
         if (step === 5) { 
-            handleGenerateSchedule();
+            await handleGenerateSchedule();
         }
         setStep(prev => prev + 1);
       }
@@ -292,7 +292,7 @@ export function OnboardingForm() {
                 </div>
             )}
         </CardHeader>
-        <CardContent className="min-h-[400px] p-6">
+        <CardContent className="p-6">
             {step === 1 && <OnboardingStep0 />}
             {step === 2 && <OnboardingStep1 />}
             {step === 3 && <OnboardingStep2 />}

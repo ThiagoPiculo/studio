@@ -122,40 +122,38 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
         <p className="text-muted-foreground text-center flex-grow">Ajuste os horários se necessário para refinar a rotina.</p>
       </div>
       
-      <div className="max-h-[400px]">
-        <ScrollArea className="h-full pr-4">
-            <div className="space-y-4">
-                <ScheduleSection 
-                  title="Missões da Rotina Essencial (Seg a Sex)"
-                  icon={CalendarDays}
-                  items={weekdayRoutines}
-                  schedule={schedule.schedule}
-                  onScheduleChange={onScheduleChange}
-                />
-                 <ScheduleSection 
-                  title="Missões da Rotina Essencial (Fim de Semana)"
-                  icon={CalendarDays}
-                  items={weekendRoutines}
-                  schedule={schedule.schedule}
-                  onScheduleChange={onScheduleChange}
-                />
-                 <ScheduleSection 
-                  title="Atividades Extras"
-                  icon={Star}
-                  items={extraActivities}
-                  schedule={schedule.schedule}
-                  onScheduleChange={onScheduleChange}
-                />
+      <ScrollArea className="max-h-[400px] h-full pr-4">
+        <div className="space-y-4">
+            <ScheduleSection 
+              title="Missões da Rotina Essencial (Seg a Sex)"
+              icon={CalendarDays}
+              items={weekdayRoutines}
+              schedule={schedule.schedule}
+              onScheduleChange={onScheduleChange}
+            />
+              <ScheduleSection 
+              title="Missões da Rotina Essencial (Fim de Semana)"
+              icon={CalendarDays}
+              items={weekendRoutines}
+              schedule={schedule.schedule}
+              onScheduleChange={onScheduleChange}
+            />
+              <ScheduleSection 
+              title="Atividades Extras"
+              icon={Star}
+              items={extraActivities}
+              schedule={schedule.schedule}
+              onScheduleChange={onScheduleChange}
+            />
 
-                <Separator className="my-4" />
+            <Separator className="my-4" />
 
-                <div className="space-y-2 p-3">
-                     <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
-                     <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
-                </div>
+            <div className="space-y-2 p-3">
+                  <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
+                  <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
             </div>
-        </ScrollArea>
-      </div>
+        </div>
+      </ScrollArea>
     </div>
   );
 }
