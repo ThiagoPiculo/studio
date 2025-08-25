@@ -149,6 +149,14 @@ const processScheduleFlow = ai.defineFlow(
     if (!output) {
       throw new Error("A IA não conseguiu gerar uma rotina. Tente refinar as informações.");
     }
+    
+    // Sanitize emoji field to prevent validation errors
+    const emojiRegex = /(\p{Extended_Pictographic}|\p{Emoji_Component})+/gu;
+    output.schedule.forEach(item => {
+        const matches = item.emoji.match(emojiRegex);
+        item.emoji = matches ? matches.join('') : '✔️'; // Fallback to a default emoji
+    });
+
     // Garante que o resultado esteja ordenado por hora de início
     output.schedule.sort((a, b) => a.startTime.localeCompare(b.startTime));
     return output;
