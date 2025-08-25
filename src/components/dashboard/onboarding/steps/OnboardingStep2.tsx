@@ -10,6 +10,7 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
+import { Sun, CloudSun, Moon } from "lucide-react";
 
 export const onboardingSchemaStep2 = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
@@ -24,6 +25,13 @@ export const onboardingSchemaStep2 = z.object({
         }
     }
 });
+
+const shiftDetails = {
+    morning: { icon: Sun, color: 'text-yellow-500', activeClass: 'data-[state=checked]:bg-yellow-500/10 data-[state=checked]:border-yellow-500/30 data-[state=checked]:text-yellow-700' },
+    afternoon: { icon: CloudSun, color: 'text-orange-500', activeClass: 'data-[state=checked]:bg-orange-500/10 data-[state=checked]:border-orange-500/30 data-[state=checked]:text-orange-700' },
+    full_time: { icon: Sun, color: 'text-indigo-500', activeClass: 'data-[state=checked]:bg-indigo-500/10 data-[state=checked]:border-indigo-500/30 data-[state=checked]:text-indigo-700' },
+    not_applicable: { icon: Moon, color: 'text-gray-500', activeClass: 'data-[state=checked]:bg-gray-500/10 data-[state=checked]:border-gray-500/30 data-[state=checked]:text-gray-700'}
+}
 
 export function OnboardingStep2() {
   const { control, watch, setValue, getValues } = useFormContext();
@@ -91,22 +99,27 @@ export function OnboardingStep2() {
           <FormItem>
             <FormControl>
                 <RadioGroup onValueChange={handleShiftChange} value={field.value} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    {schoolShifts.map(s => (
-                        <FormItem key={s.id}>
-                            <FormControl>
-                                <RadioGroupItem value={s.id} id={s.id} className="sr-only peer" />
-                            </FormControl>
-                            <Label 
-                                htmlFor={s.id} 
-                                className={cn(
-                                    "flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
-                                    field.value === s.id ? "border-primary bg-primary/10" : "hover:bg-muted/50"
-                                )}
-                            >
-                                {s.label}
-                            </Label>
-                        </FormItem>
-                    ))}
+                    {schoolShifts.map(s => {
+                        const details = shiftDetails[s.id as keyof typeof shiftDetails] || shiftDetails.not_applicable;
+                        const Icon = details.icon;
+                        return (
+                           <FormItem key={s.id}>
+                                <FormControl>
+                                    <RadioGroupItem value={s.id} id={s.id} className="sr-only peer" />
+                                </FormControl>
+                                <Label 
+                                    htmlFor={s.id} 
+                                    className={cn(
+                                        "flex flex-col items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
+                                        "peer-data-[state=checked]:border-primary peer-data-[state=checked]:bg-primary/10"
+                                    )}
+                                >
+                                    <Icon className={cn("h-8 w-8 mb-2", details.color)} />
+                                    {s.label}
+                                </Label>
+                            </FormItem>
+                        )
+                    })}
                 </RadioGroup>
             </FormControl>
             <FormMessage />
