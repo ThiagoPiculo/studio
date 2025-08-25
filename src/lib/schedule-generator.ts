@@ -1,5 +1,4 @@
 
-'use server';
 /**
  * @fileOverview Um motor de regras determinístico para gerar rotinas semanais para crianças.
  */
@@ -7,7 +6,7 @@
 import { z } from 'zod';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { Weekday } from '@/lib/types';
-import { allWeekdays, weekdays } from '@/lib/types';
+import { allWeekdays, weekdays, weekdayLabels } from '@/lib/types';
 
 const extraActivitySchema = z.object({
   name: z.string(),
@@ -213,7 +212,9 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
     if(essentialRoutines.has('Hora de dormir')) addTask(schedule, { activity: 'Hora de dormir', startTime: '21:00', endTime: '21:05', days: allDays, type: 'essential_routine' });
     
     // Regra de fim de semana
-    addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '20:00', endTime: '20:15', days: ['SU'], type: 'essential_routine' });
+    if(essentialRoutines.has('Organizar a mochila para amanhã')) {
+        addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '20:00', endTime: '20:15', days: ['SU'], type: 'essential_routine' });
+    }
 
     // Passo 3: Adicionar Tempo Livre
     allDays.forEach(day => {
