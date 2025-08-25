@@ -24,7 +24,6 @@ interface OnboardingStep5Props {
   isLoading?: boolean;
   schedule: ProcessScheduleOutput | null;
   onScheduleChange: (index: number, newTime: string) => void;
-  onRecalculate: () => void;
 }
 
 const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
@@ -64,7 +63,7 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
   )
 }
 
-export function OnboardingStep5({ isLoading, schedule, onScheduleChange, onRecalculate }: OnboardingStep5Props) {
+export function OnboardingStep5({ isLoading, schedule, onScheduleChange }: OnboardingStep5Props) {
   const { weekdayRoutines, weekendRoutines, extraActivities } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
         return { weekdayRoutines: [], weekendRoutines: [], extraActivities: [] };
@@ -120,10 +119,7 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, onRecal
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-center flex-grow">Ajuste os horários se necessário e o Mago recalculará a rotina para manter a coerência.</p>
-        <Button variant="outline" size="sm" onClick={onRecalculate} disabled={isLoading}>
-            <Wand2 className="mr-2 h-4 w-4" /> Recalcular horários
-        </Button>
+        <p className="text-muted-foreground text-center flex-grow">Ajuste os horários se necessário para refinar a rotina.</p>
       </div>
       
       <div className="max-h-[400px]">

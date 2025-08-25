@@ -298,7 +298,7 @@ export function OnboardingForm() {
             {step === 3 && <OnboardingStep2 />}
             {step === 4 && <OnboardingStep3 />}
             {step === 5 && <OnboardingStep4 />}
-            {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onRecalculate={handleGenerateSchedule} onScheduleChange={handleScheduleChange} />}
+            {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} onScheduleChange={handleScheduleChange} />}
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
           <div>
