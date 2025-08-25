@@ -97,7 +97,6 @@ const addTask = (
         if (!isFixed) {
              const slot = findFreeSlot(schedule[day], duration, startMinutes, timeToMinutes('20:00'));
              if (slot === null) {
-                 // Failsafe: if no slot is found, try to find ANY slot in the day
                  const anySlot = findFreeSlot(schedule[day], duration, timeToMinutes('07:00'), timeToMinutes('21:00'));
                  if(anySlot === null) {
                      console.warn(`Could not schedule "${task.activity}" on ${day}. No free slot found.`);
@@ -110,7 +109,7 @@ const addTask = (
         }
         
         if (isOccupied(schedule[day], actualStart, actualStart + duration)) {
-             if (!isFixed) { // Only log warning if it's not a fixed, user-defined task
+             if (!isFixed) { 
                 console.warn(`Skipping overlapping task: "${task.activity}" on ${day} at ${minutesToTime(actualStart)}`);
              }
              return;
@@ -123,7 +122,7 @@ const addTask = (
             category: task.category || missionData[task.activity]?.category || 'essential',
             startTime: minutesToTime(actualStart),
             endTime: minutesToTime(actualStart + duration),
-            days: [day], // We add one day at a time
+            days: [day],
         };
 
         schedule[day].push({ time: actualStart, duration: duration, task: fullTask });
@@ -136,7 +135,6 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
     const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
     const allDays: Weekday[] = [...weekdays, 'SA', 'SU'];
 
-    // Passo 1: Alocar Escola e Atividades Extras (fixas)
     if (input.schoolShift !== 'not_applicable' && input.schoolStartTime && input.schoolEndTime) {
         addTask(schedule, {
             activity: 'Escola',
@@ -150,38 +148,33 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
     }
     
     (input.extraActivities || []).forEach(act => {
-        const duration = 60; // Assuming 1 hour for extra activities
         const startMinutes = timeToMinutes(act.time);
         addTask(schedule, {
             activity: act.name,
             startTime: act.time,
-            endTime: minutesToTime(startMinutes + duration),
+            endTime: minutesToTime(startMinutes + 60),
             days: act.days as Weekday[],
             type: 'extra_activity',
         }, true);
     });
     
-    // Passo 2: Construir a rotina com base no turno
     const schoolStart = input.schoolStartTime ? timeToMinutes(input.schoolStartTime) : 0;
     const essentialRoutines = new Set(input.essentialRoutines || []);
 
     switch (input.schoolShift) {
         case 'morning': {
             const wakeUpTime = schoolStart - 60;
-            // Manhã (dias de semana)
             if (essentialRoutines.has('Hora de acordar')) addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Arrumar a cama')) addTask(schedule, { activity: 'Arrumar a cama', startTime: minutesToTime(wakeUpTime + 10), endTime: minutesToTime(wakeUpTime + 20), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Tomar café da manhã')) addTask(schedule, { activity: 'Tomar café da manhã', startTime: minutesToTime(wakeUpTime + 25), endTime: minutesToTime(wakeUpTime + 45), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Escovar os dentes (após acordar)')) addTask(schedule, { activity: 'Escovar os dentes (após acordar)', startTime: minutesToTime(wakeUpTime + 55), endTime: minutesToTime(wakeUpTime + 60), days: weekdays, type: 'essential_routine' });
             if (essentialRoutines.has('Sair para escola')) addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart), days: weekdays, type: 'essential_routine'});
 
-            // Tarde (dias de semana)
             if(essentialRoutines.has('Almoçar')) addTask(schedule, { activity: 'Almoçar', startTime: '13:00', endTime: '13:30', days: weekdays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Escovar os dentes (após almoço)')) addTask(schedule, { activity: 'Escovar os dentes (após almoço)', startTime: '13:30', endTime: '13:40', days: weekdays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Fazer a lição de casa')) addTask(schedule, { activity: 'Fazer a lição de casa', startTime: '14:30', endTime: '15:30', days: weekdays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Organizar a mochila para amanhã')) addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '15:30', endTime: '15:45', days: weekdays, type: 'essential_routine' }, false);
 
-            // Noite (todos os dias)
             if(essentialRoutines.has('Tomar banho')) addTask(schedule, { activity: 'Tomar banho', startTime: '18:30', endTime: '18:50', days: allDays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Jantar')) addTask(schedule, { activity: 'Jantar', startTime: '19:00', endTime: '19:30', days: allDays, type: 'essential_routine' }, false);
             if(essentialRoutines.has('Escovar os dentes (após jantar)')) addTask(schedule, { activity: 'Escovar os dentes (após jantar)', startTime: '20:40', endTime: '20:45', days: allDays, type: 'essential_routine' }, false);
@@ -195,7 +188,7 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
             if(essentialRoutines.has('Almoçar')) addTask(schedule, { activity: 'Almoçar', startTime: minutesToTime(schoolStart - 40), endTime: minutesToTime(schoolStart - 10), days: weekdays, type: 'essential_routine' });
             if(essentialRoutines.has('Escovar os dentes (após almoço)')) addTask(schedule, { activity: 'Escovar os dentes (após almoço)', startTime: minutesToTime(schoolStart - 10), endTime: minutesToTime(schoolStart - 5), days: weekdays, type: 'essential_routine' });
             if(essentialRoutines.has('Jantar')) addTask(schedule, { activity: 'Jantar', startTime: '19:00', endTime: '19:30', days: allDays, type: 'essential_routine' });
-            if(essentialRoutines.has('Tomar banho')) addTask(schedule, { activity: 'Tomar banho', startTime: '20:40', endTime: '21:00', days: allDays, type: 'essential_routine' });
+            if(essentialRoutines.has('Tomar banho')) addTask(schedule, { activity: 'Tomar banho', startTime: '21:40', endTime: '22:00', days: allDays, type: 'essential_routine' });
             break;
         }
         case 'full_time': {
@@ -221,12 +214,10 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
     if(essentialRoutines.has('Escovar os dentes (após jantar)')) addTask(schedule, { activity: 'Escovar os dentes (após jantar)', startTime: '20:40', endTime: '20:45', days: allDays, type: 'essential_routine' }, false);
     if(essentialRoutines.has('Hora de dormir')) addTask(schedule, { activity: 'Hora de dormir', startTime: '21:00', endTime: '21:05', days: allDays, type: 'essential_routine' }, false);
     
-    // Regra de fim de semana
     if(essentialRoutines.has('Organizar a mochila para amanhã')) {
         addTask(schedule, { activity: 'Organizar a mochila para amanhã', startTime: '20:00', endTime: '20:15', days: ['SU'], type: 'essential_routine' }, false);
     }
 
-    // Passo 3: Adicionar Tempo Livre
     allDays.forEach(day => {
         schedule[day].sort((a, b) => a.time - b.time);
         let lastEndTime = timeToMinutes('07:00');
@@ -234,7 +225,7 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
         schedule[day].forEach(slot => {
             if (slot.time > lastEndTime) {
                 const duration = slot.time - lastEndTime;
-                if (duration >= 30) { // Add free time only if it's 30 mins or more
+                if (duration >= 30) { 
                    addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time', category: 'hobbies', emoji: '🪁' }, true);
                 }
             }
@@ -250,13 +241,11 @@ export async function processSchedule(input: ProcessScheduleInput): Promise<Proc
         }
     });
 
-    // Agrupar tarefas por dias
     const finalScheduleMap: { [key: string]: ScheduleItem } = {};
     Object.values(schedule).flat().forEach(slot => {
         const key = `${slot.task.activity}-${slot.task.startTime}-${slot.task.endTime}`;
         if (finalScheduleMap[key]) {
             finalScheduleMap[key].days.push(slot.task.days[0]);
-            // Remove duplicates and sort
             finalScheduleMap[key].days = [...new Set(finalScheduleMap[key].days)].sort((a, b) => allWeekdays.indexOf(a) - allWeekdays.indexOf(b));
         } else {
             finalScheduleMap[key] = { ...slot.task };
