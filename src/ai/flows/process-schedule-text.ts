@@ -48,6 +48,7 @@ type DailySchedule = { [key in Weekday]: { time: number; duration: number; task:
 
 // --- Helper Functions ---
 const timeToMinutes = (time: string): number => {
+    if (!/^\d{2}:\d{2}$/.test(time)) return 0;
     const [hours, minutes] = time.split(':').map(Number);
     return hours * 60 + minutes;
 };
@@ -69,6 +70,8 @@ predefinedMissionGroups.flatMap(g => g.items).forEach(item => {
 const addTask = (schedule: DailySchedule, task: Partial<ScheduleItem> & { activity: string, startTime: string, endTime: string, days: Weekday[], type: ScheduleItem['type'] }) => {
     const startMinutes = timeToMinutes(task.startTime);
     const endMinutes = timeToMinutes(task.endTime);
+    if (startMinutes >= endMinutes) return; // Prevent invalid tasks
+    
     const duration = endMinutes - startMinutes;
 
     const fullTask: ScheduleItem = {
@@ -100,9 +103,8 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
     const schoolEnd = input.schoolEndTime ? timeToMinutes(input.schoolEndTime) : null;
 
     const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-    const weekends: Weekday[] = ['SA', 'SU'];
 
-    // Passo 1: Alocar Escola e Atividades Extras
+    // Passo 1: Alocar Escola
     if (schoolStart !== null && schoolEnd !== null && input.schoolShift !== 'not_applicable') {
         addTask(schedule, {
             activity: 'Escola',
@@ -116,7 +118,7 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
     }
 
     // A lógica para `extraActivities` é complexa para parsear texto livre.
-    // Esta implementação focará nas rotinas fixas e deixa o parsing de texto livre para futuras iterações.
+    // O foco será nas rotinas fixas e pré-definidas.
 
     // Passo 2: Construir a rotina com base no turno
     let pendingTasks: { name: string; duration: number, days: Weekday[], defaultTime?: number }[] = [];
@@ -128,33 +130,38 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
             addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
             addTask(schedule, { activity: 'Arrumar a cama', startTime: minutesToTime(wakeUpTime + 10), endTime: minutesToTime(wakeUpTime + 20), days: weekdays, type: 'essential_routine' });
             addTask(schedule, { activity: 'Tomar café da manhã', startTime: minutesToTime(wakeUpTime + 25), endTime: minutesToTime(wakeUpTime + 45), days: weekdays, type: 'essential_routine' });
-            addTask(schedule, { activity: 'Escovar os dentes (após acordar)', startTime: minutesToTime(wakeUpTime + 50), endTime: minutesToTime(wakeUpTime + 60), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Escovar os dentes (após acordar)', startTime: minutesToTime(wakeUpTime + 50), endTime: minutesToTime(wakeUpTime + 55), days: weekdays, type: 'essential_routine' });
             addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart - 5), days: weekdays, type: 'school_entry' });
             
+            pendingTasks.push({ name: 'Almoçar', duration: 30, days: weekdays, defaultTime: timeToMinutes('13:00')});
+            pendingTasks.push({ name: 'Escovar os dentes (após almoço)', duration: 10, days: weekdays, defaultTime: timeToMinutes('13:30')});
             pendingTasks.push({ name: 'Fazer a lição de casa', duration: 60, days: weekdays, defaultTime: timeToMinutes('14:30')});
             pendingTasks.push({ name: 'Organizar a mochila para amanhã', duration: 15, days: weekdays, defaultTime: timeToMinutes('15:30')});
             pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('18:30')});
             pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            pendingTasks.push({ name: 'Escovar os dentes (após jantar)', duration: 10, days: weekdays, defaultTime: timeToMinutes('20:40')});
             break;
         }
         case 'Tarde': {
              if (schoolStart === null) break;
             addTask(schedule, { activity: 'Hora de acordar', startTime: '08:00', endTime: '08:05', days: weekdays, type: 'essential_routine' });
             addTask(schedule, { activity: 'Tomar banho', startTime: minutesToTime(schoolStart - 60), endTime: minutesToTime(schoolStart - 40), days: weekdays, type: 'essential_routine' });
-            addTask(schedule, { activity: 'Almoçar', startTime: minutesToTime(schoolStart - 40), endTime: minutesToTime(schoolStart - 15), days: weekdays, type: 'essential_routine' });
+            addTask(schedule, { activity: 'Almoçar', startTime: minutesToTime(schoolStart - 40), endTime: minutesToTime(schoolStart - 10), days: weekdays, type: 'essential_routine' });
             
             pendingTasks.push({ name: 'Fazer a lição de casa', duration: 60, days: weekdays, defaultTime: timeToMinutes('09:00')});
             pendingTasks.push({ name: 'Organizar a mochila para amanhã', duration: 15, days: weekdays, defaultTime: timeToMinutes('10:00')});
             pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            pendingTasks.push({ name: 'Escovar os dentes (após jantar)', duration: 10, days: weekdays, defaultTime: timeToMinutes('19:30')});
             break;
         }
         case 'Integral': {
-            if (schoolStart === null) break;
+            if (schoolStart === null || schoolEnd === null) break;
             const wakeUpTime = schoolStart - 60;
             addTask(schedule, { activity: 'Hora de acordar', startTime: minutesToTime(wakeUpTime), endTime: minutesToTime(wakeUpTime + 5), days: weekdays, type: 'essential_routine' });
             addTask(schedule, { activity: 'Sair para escola', startTime: minutesToTime(schoolStart - 20), endTime: minutesToTime(schoolStart - 5), days: weekdays, type: 'school_entry' });
             
             pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('19:00')});
+            pendingTasks.push({ name: 'Escovar os dentes (após jantar)', duration: 10, days: weekdays, defaultTime: timeToMinutes('19:30')});
             pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('20:40')});
             break;
         }
@@ -164,6 +171,7 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
             
             pendingTasks.push({ name: 'Tomar banho', duration: 20, days: weekdays, defaultTime: timeToMinutes('17:30')});
             pendingTasks.push({ name: 'Jantar', duration: 30, days: weekdays, defaultTime: timeToMinutes('18:00')});
+            pendingTasks.push({ name: 'Escovar os dentes (após jantar)', duration: 10, days: weekdays, defaultTime: timeToMinutes('20:40')});
             break;
         }
     }
@@ -200,15 +208,14 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
         
         schedule[day].forEach(slot => {
             if (slot.time > lastEndTime) {
-                addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time' });
+                addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(slot.time), days: [day], type: 'free_time', category: 'leisure', emoji: '🪁' });
             }
             lastEndTime = Math.max(lastEndTime, slot.time + slot.duration);
         });
 
-        // Adicionar tempo livre até a hora de dormir
         const sleepTime = timeToMinutes('21:00');
         if (lastEndTime < sleepTime) {
-             addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(sleepTime), days: [day], type: 'free_time' });
+             addTask(schedule, { activity: 'Hora livre para brincar', startTime: minutesToTime(lastEndTime), endTime: minutesToTime(sleepTime), days: [day], type: 'free_time', category: 'leisure', emoji: '🪁' });
         }
     });
 
@@ -218,8 +225,7 @@ export async function processScheduleText(input: ProcessScheduleTextInput): Prom
         const key = `${slot.task.activity}-${slot.task.startTime}-${slot.task.endTime}`;
         if (finalScheduleMap[key]) {
             finalScheduleMap[key].days.push(slot.task.days[0]);
-            // Remove duplicates
-            finalScheduleMap[key].days = [...new Set(finalScheduleMap[key].days)];
+            finalScheduleMap[key].days = [...new Set(finalScheduleMap[key].days)].sort();
         } else {
             finalScheduleMap[key] = { ...slot.task };
         }
