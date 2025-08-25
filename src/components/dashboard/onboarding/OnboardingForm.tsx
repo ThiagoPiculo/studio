@@ -88,7 +88,7 @@ export function OnboardingForm() {
     defaultValues: {
       name: "",
       birthDate: undefined,
-      gender: "not-informed",
+      gender: undefined,
       contextId: currentContext,
       schoolShift: "afternoon",
       schoolShiftStart: '13:00',

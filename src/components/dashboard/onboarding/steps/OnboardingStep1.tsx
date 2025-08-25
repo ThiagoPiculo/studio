@@ -149,7 +149,7 @@ export function OnboardingStep1() {
                   <Label 
                     htmlFor="gender-boy" 
                     className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
                         field.value === 'boy' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
@@ -161,7 +161,7 @@ export function OnboardingStep1() {
                   <Label 
                     htmlFor="gender-girl" 
                     className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
                         field.value === 'girl' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
@@ -173,7 +173,7 @@ export function OnboardingStep1() {
                   <Label 
                     htmlFor="gender-other" 
                     className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors",
+                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
                         field.value === 'not-informed' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
                     )}
                   >
