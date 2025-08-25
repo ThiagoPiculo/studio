@@ -67,6 +67,11 @@ const onboardingSchema = z.object({
 export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
+// Extract essential routine names for default values
+const essentialRoutinesDefault = predefinedMissionGroups
+    .find(g => g.userCategory === 'Rotinas Essencial (diárias)')?.items.map(item => item.title) || [];
+
+
 export function OnboardingForm() {
   const router = useRouter();
   const { user } = useAuth();
@@ -89,7 +94,7 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       extraActivities: [],
-      essentialRoutines: [],
+      essentialRoutines: essentialRoutinesDefault,
     },
   });
 
@@ -203,14 +208,17 @@ export function OnboardingForm() {
         for (const item of generatedSchedule.schedule) {
              const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
              
-             if (!missionDetails) continue;
+             if (!missionDetails) {
+                 console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
+                 continue; // Pula esta iteração se a missão não for encontrada
+             }
 
              const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                 ownerId: user.uid,
                 familyId: values.contextId === 'my-space' ? null : values.contextId,
                 title: item.activity,
-                emoji: item.emoji,
-                category: item.category as MissionCategory,
+                emoji: missionDetails.emoji, // Garante o emoji correto
+                category: missionDetails.suggestedAppCategory, // Garante a categoria correta
                 starsReward: missionDetails.starsReward,
                 xpReward: missionDetails.xpReward,
                 isRecurring: true,
@@ -274,8 +282,8 @@ export function OnboardingForm() {
                                 key={i}
                                 className={cn(
                                     "h-2 w-6 rounded-full transition-all",
-                                    i < step - 2 ? "bg-green-500" :
-                                    i + 1 === step - 1 ? "bg-primary w-10" :
+                                    i + 2 === step ? "bg-primary w-10" :
+                                    i + 1 < step - 1 ? "bg-green-500" :
                                     "bg-muted"
                                 )}
                             />
