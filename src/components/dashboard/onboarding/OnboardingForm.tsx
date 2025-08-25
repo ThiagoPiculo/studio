@@ -95,7 +95,7 @@ export function OnboardingForm() {
   const currentTitle = useMemo(() => {
     const childName = methods.getValues("name");
     switch (step) {
-      case 1: return `Olá, ${user?.name || 'Responsável'}!`;
+      case 1: return "Assistente de Criação";
       case 2: return "Cadastrando um Novo Herói";
       case 3: return `Qual Hora da Escola (Turno) de ${childName}?`;
       case 4: return "Adicionando Poderes Extras";
@@ -103,7 +103,7 @@ export function OnboardingForm() {
       case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
-  }, [step, methods, user]);
+  }, [step, methods]);
 
   const goToNextStep = async () => {
     let isStepValid = false;

@@ -17,10 +17,11 @@ export function OnboardingStep0() {
   const { user } = useAuth();
 
   return (
-    <div className="flex flex-col items-center justify-center text-center space-y-6 animate-in fade-in-50 duration-500 h-full">
-      <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold font-headline">Boas-vindas da Aura!</h2>
+    <div className="flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in-50 duration-500 h-full">
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-2">
+          <Rocket className="h-9 w-9 text-primary" />
       </div>
+      <h2 className="text-2xl font-bold font-headline">Olá, {user?.name || 'Responsável'}!</h2>
 
       <p className="text-muted-foreground max-w-lg">
         Sou a <strong>Aura</strong>, sua assistente pessoal no Mini Herois. Estou aqui para transformar a rotina do seu filho em uma aventura mágica, de forma rápida e guiada.
@@ -35,8 +36,7 @@ export function OnboardingStep0() {
           </ul>
       </div>
 
-       <p className="text-sm italic mt-3 text-center text-muted-foreground font-semibold">Relaxe e curta o fluxo. Vou te ajudar em tudo! É rápido e prático.</p>
-
+       <p className="text-sm italic pt-2 text-center text-muted-foreground font-semibold">Relaxe e curta o fluxo. Vou te ajudar em tudo! É rápido e prático.</p>
     </div>
   );
 }
