@@ -262,7 +262,7 @@ export function OnboardingForm() {
 
   return (
     <FormProvider {...methods}>
-      <Card className="w-full max-w-3xl mx-auto shadow-2xl animate-in fade-in duration-500">
+      <Card className="w-full max-w-5xl mx-auto shadow-2xl animate-in fade-in duration-500">
         <CardHeader className="p-6 space-y-4">
             <div className="flex items-center gap-3">
                 <Wand2 className="h-8 w-8 text-primary" />
