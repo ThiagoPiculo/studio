@@ -6,7 +6,7 @@ import type { ProcessScheduleOutput } from '@/ai/flows/process-schedule-text';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { weekdayLabels, Weekday } from "@/lib/types";
-import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit } from "lucide-react";
+import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
 import { TimePicker } from "../../missions/TimePicker";
 import { Button } from '@/components/ui/button';
 
@@ -27,6 +27,13 @@ interface OnboardingStep5Props {
   childName: string;
 }
 
+const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
+    const hour = parseInt(time.split(':')[0], 10);
+    if (hour < 12) return 'morning';
+    if (hour < 18) return 'afternoon';
+    return 'night';
+}
+
 const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange }: { title: string, icon: React.ElementType, items: ScheduleItem[], schedule: ScheduleItem[], onScheduleChange: (index: number, newTime: string) => void }) => {
   if (items.length === 0) return null;
 
@@ -39,6 +46,8 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
       <div className="space-y-3">
         {items.map((item, index) => {
           const globalIndex = schedule.findIndex(s => s === item);
+          const IconComponent = item.type === 'school_entry' ? NotebookPen : Star;
+          
           return (
             <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
                 <div className="grid grid-cols-1 gap-1.5 shrink-0">
@@ -65,30 +74,17 @@ const ScheduleSection = ({ title, icon: Icon, items, schedule, onScheduleChange 
 }
 
 export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childName }: OnboardingStep5Props) {
-  const { weekdayRoutines, weekendRoutines, extraActivities } = React.useMemo(() => {
+  const { morning, afternoon, night, freeTime } = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
-        return { weekdayRoutines: [], weekendRoutines: [], extraActivities: [] };
+        return { morning: [], afternoon: [], night: [], freeTime: '' };
     }
-    const weekdays = new Set(['MO', 'TU', 'WE', 'TH', 'FR']);
-    const weekends = new Set(['SA', 'SU']);
-
-    const weekdayItems = schedule.schedule.filter(item => 
-        (item.type === 'essential_routine' || item.type === 'school_entry' || item.type === 'school_exit') && 
-        item.days.some(day => weekdays.has(day))
-    );
-
-    const weekendItems = schedule.schedule.filter(item => 
-        (item.type === 'essential_routine') &&
-        item.days.some(day => weekends.has(day))
-    );
-    
-    const extras = schedule.schedule.filter(item => item.type === 'extra_activity');
-    
-    weekdayItems.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    weekendItems.sort((a, b) => a.startTime.localeCompare(b.startTime));
-    extras.sort((a, b) => a.startTime.localeCompare(b.startTime));
-
-    return { weekdayRoutines: weekdayItems, weekendRoutines: weekendItems, extraActivities: extras };
+    const allItems = [...schedule.schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
+    return {
+        morning: allItems.filter(item => getPeriod(item.startTime) === 'morning'),
+        afternoon: allItems.filter(item => getPeriod(item.startTime) === 'afternoon'),
+        night: allItems.filter(item => getPeriod(item.startTime) === 'night'),
+        freeTime: schedule.freeTime
+    };
   }, [schedule]);
 
   if (isLoading) {
@@ -125,23 +121,23 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
       <ScrollArea className="max-h-[400px] h-full pr-4">
         <div className="space-y-4">
             <ScheduleSection 
-              title="Missões da Rotina Essencial (Seg a Sex)"
-              icon={CalendarDays}
-              items={weekdayRoutines}
+              title="Período da Manhã"
+              icon={Sun}
+              items={morning}
               schedule={schedule.schedule}
               onScheduleChange={onScheduleChange}
             />
-              <ScheduleSection 
-              title="Missões da Rotina Essencial (Fim de Semana)"
-              icon={CalendarDays}
-              items={weekendRoutines}
+            <ScheduleSection 
+              title="Período da Tarde"
+              icon={CloudSun}
+              items={afternoon}
               schedule={schedule.schedule}
               onScheduleChange={onScheduleChange}
             />
-              <ScheduleSection 
-              title="Atividades Extras"
-              icon={Star}
-              items={extraActivities}
+            <ScheduleSection 
+              title="Período da Noite"
+              icon={Moon}
+              items={night}
               schedule={schedule.schedule}
               onScheduleChange={onScheduleChange}
             />
@@ -150,7 +146,7 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
 
             <div className="space-y-2 p-3">
                   <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
-                  <p className="text-sm text-muted-foreground italic pl-2">{schedule.freeTime}</p>
+                  <p className="text-sm text-muted-foreground italic pl-2">{freeTime}</p>
             </div>
         </div>
       </ScrollArea>
