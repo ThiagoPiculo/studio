@@ -46,7 +46,6 @@ export function OnboardingStep1() {
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center space-y-1">
         <p className="text-muted-foreground">Vamos criar o perfil do Mini Herói que está prestes a iniciar sua jornada?</p>
-        <p className="text-muted-foreground">Vamos?!</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
