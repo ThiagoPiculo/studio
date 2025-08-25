@@ -337,8 +337,8 @@ export function OnboardingForm() {
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                       <>
-                        {step === 1 ? "Começar agora" : step === 5 ? "Gerar Rotina Mágica" : "Próximo"}
-                        <ArrowRight className="ml-2 h-4 w-4" />
+                        {step === 1 ? "Começar agora" : step === 5 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
+                        {step !== 5 && <ArrowRight className="ml-2 h-4 w-4" />}
                       </>
                   )}
                 </Button>

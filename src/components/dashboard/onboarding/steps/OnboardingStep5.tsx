@@ -6,7 +6,7 @@ import type { ProcessScheduleOutput } from '@/ai/flows/process-schedule-text';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { weekdayLabels, Weekday } from "@/lib/types";
-import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical } from "lucide-react";
+import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit } from "lucide-react";
 import { TimePicker } from "../../missions/TimePicker";
 import { Button } from '@/components/ui/button';
 
@@ -95,13 +95,13 @@ export function OnboardingStep5({ isLoading, schedule, onScheduleChange, childNa
     return (
         <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
             <div className="relative">
-                <FlaskConical className="h-24 w-24 text-primary animate-bounce" />
+                <BrainCircuit className="h-24 w-24 text-primary animate-pulse" />
             </div>
             <h2 className="mt-6 text-2xl font-bold font-headline">
-                Preparando a Poção da Rotina para {childName}!
+                Consultando o Oráculo da Organização...
             </h2>
             <p className="mt-2 text-muted-foreground max-w-md">
-                Estou misturando uma pitada de organização com a diversão das atividades favoritas de {childName}. Um momento, a magia está acontecendo!
+                Estou analisando os horários e atividades de {childName} para criar a rotina perfeita. Um momento, a mágica está acontecendo!
             </p>
         </div>
     );
