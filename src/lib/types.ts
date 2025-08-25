@@ -51,7 +51,7 @@ export const schoolShifts = [
   { id: 'morning', label: 'Manhã' },
   { id: 'afternoon', label: 'Tarde' },
   { id: 'full_time', label: 'Integral' },
-  { id: 'not_applicable', label: 'Não se aplica' },
+  { id: 'not_applicable', label: 'Não estuda ainda' },
 ] as const;
 
 export type SchoolShift = typeof schoolShifts[number]['id'];
