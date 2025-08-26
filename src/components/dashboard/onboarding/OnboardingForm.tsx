@@ -195,46 +195,48 @@ export function OnboardingForm() {
         
         const allMissionPromises = [];
 
-        for (const item of generatedSchedule.schedule) {
-             const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
-             
-             if (!missionDetails) {
-                 console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
-                 continue;
-             }
+        if (generatedSchedule && generatedSchedule.schedule) {
+            for (const item of generatedSchedule.schedule) {
+                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
+                 
+                 if (!missionDetails) {
+                     console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
+                     continue;
+                 }
 
-             const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-                ownerId: user.uid,
-                familyId: values.contextId === 'my-space' ? null : values.contextId,
-                title: item.activity,
-                emoji: item.emoji,
-                category: missionDetails.suggestedAppCategory,
-                starsReward: missionDetails.starsReward,
-                xpReward: missionDetails.xpReward,
-                isRecurring: true,
-                startDate: new Date().toISOString(),
-                dueDate: addDays(new Date(), 1).toISOString(),
-                recurrenceRule: {
-                    freq: 'WEEKLY',
-                    interval: 1,
-                    byDay: item.days,
-                },
-            };
-            
-             allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
-                const [hour, minute] = item.startTime.split(':').map(Number);
-                const startDateWithTime = new Date(template.startDate as string);
-                startDateWithTime.setHours(hour, minute);
-                
-                const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
-
-                await addMissionInstance(user, {
-                    templateId: template.id,
-                    childId: newChild.id,
+                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
-                }, finalTemplate);
-             }));
+                    title: item.activity,
+                    emoji: item.emoji,
+                    category: missionDetails.suggestedAppCategory,
+                    starsReward: missionDetails.starsReward,
+                    xpReward: missionDetails.xpReward,
+                    isRecurring: true,
+                    startDate: new Date().toISOString(),
+                    dueDate: addDays(new Date(), 1).toISOString(),
+                    recurrenceRule: {
+                        freq: 'WEEKLY',
+                        interval: 1,
+                        byDay: item.days,
+                    },
+                };
+                
+                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                    const [hour, minute] = item.startTime.split(':').map(Number);
+                    const startDateWithTime = new Date(template.startDate as string);
+                    startDateWithTime.setHours(hour, minute);
+                    
+                    const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
+
+                    await addMissionInstance(user, {
+                        templateId: template.id,
+                        childId: newChild.id,
+                        ownerId: user.uid,
+                        familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    }, finalTemplate);
+                 }));
+            }
         }
         
         await Promise.all(allMissionPromises);
@@ -289,7 +291,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 schedule={generatedSchedule as ScheduleItem[]} isLoading={isLoading} childName={methods.getValues("name")} />}
+                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} childName={methods.getValues("name")} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

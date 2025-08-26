@@ -54,17 +54,17 @@ const ScheduleSection = ({ title, icon: Icon, items }: { title: string, icon: Re
 
 interface OnboardingStep5Props {
   isLoading?: boolean;
-  schedule: ScheduleItem[] | null;
+  schedule: GenerateScheduleOutput | null;
   childName: string;
 }
 
 export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingStep5Props) {
   const { morning, afternoon, night } = React.useMemo(() => {
-    if (!schedule) {
+    if (!schedule || !schedule.schedule) {
         return { morning: [], afternoon: [], night: [] };
     }
     
-    const allItems = [...schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
+    const allItems = [...schedule.schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
     
     return {
         morning: allItems.filter(item => getPeriod(item.startTime) === 'morning'),
@@ -89,7 +89,7 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
     );
   }
 
-  if (!schedule || schedule.length === 0) {
+  if (!schedule || !schedule.schedule || schedule.schedule.length === 0) {
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
