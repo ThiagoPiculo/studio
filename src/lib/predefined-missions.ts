@@ -1,5 +1,4 @@
 
-
 import type { MissionCategory } from '@/lib/types';
 import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen, Puzzle } from 'lucide-react';
 
@@ -24,20 +23,20 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: ListChecks,
     description: 'Missões essenciais que formam a espinha dorsal de um dia produtivo e saudável para qualquer Mini Herói.',
     items: [
-      { title: 'Hora de acordar', emoji: '⏰', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Arrumar a cama', emoji: '🛏️', suggestedAppCategory: 'home', starsReward: 5, xpReward: 10 },
-      { title: 'Tomar café da manhã', emoji: '🥛', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes (após acordar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Almoçar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes (após almoço)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Tomar banho', emoji: '🚿', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 5, xpReward: 10 },
-      { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
-      { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'health', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de acordar', emoji: '⏰', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Arrumar a cama', emoji: '🛏️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar café da manhã', emoji: '🥛', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após acordar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Almoçar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após almoço)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar banho', emoji: '🚿', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'essential_routines', starsReward: 15, xpReward: 25 },
-      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
-      { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5, xpReward: 10 },
+      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 10, xpReward: 15 },
+      { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
     ],
   },
   {
@@ -102,13 +101,13 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: Languages,
     description: 'Missões para incentivar o aprendizado e a prática de novas línguas, abrindo as portas para novas culturas.',
     items: [
-      { title: 'Aula de Inglês', emoji: '🇬🇧', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Aula de Espanhol', emoji: '🇪🇸', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Aula de Francês', emoji: '🇫🇷', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Aula de Alemão', emoji: '🇩🇪', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Aula de Italiano', emoji: '🇮🇹', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
-      { title: 'Praticar com app de idiomas', emoji: '📱', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
-      { title: 'Assistir a um desenho no novo idioma', emoji: '📺', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
+      { title: 'Aula de Inglês', emoji: '🇬🇧', suggestedAppCategory: 'languages', starsReward: 15, xpReward: 25 },
+      { title: 'Aula de Espanhol', emoji: '🇪🇸', suggestedAppCategory: 'languages', starsReward: 15, xpReward: 25 },
+      { title: 'Aula de Francês', emoji: '🇫🇷', suggestedAppCategory: 'languages', starsReward: 15, xpReward: 25 },
+      { title: 'Aula de Alemão', emoji: '🇩🇪', suggestedAppCategory: 'languages', starsReward: 15, xpReward: 25 },
+      { title: 'Aula de Italiano', emoji: '🇮🇹', suggestedAppCategory: 'languages', starsReward: 15, xpReward: 25 },
+      { title: 'Praticar com app de idiomas', emoji: '📱', suggestedAppCategory: 'languages', starsReward: 10, xpReward: 15 },
+      { title: 'Assistir a um desenho no novo idioma', emoji: '📺', suggestedAppCategory: 'languages', starsReward: 10, xpReward: 15 },
     ],
   },
   {
