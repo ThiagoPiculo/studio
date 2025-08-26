@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -56,10 +57,10 @@ const generateSchedulePrompt = ai.definePrompt({
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
     prompt: `
-      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.0)
+      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.1)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
-      Você é uma IA especializada em psicologia infantil, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Sua única tarefa é usar as **Informações da Criança** fornecidas e aplicar as **REGRAS DE OURO** para gerar a agenda no formato especificado.
+      Você é a Aura, uma IA especializada em psicologia infantil especialista em gamificação, com vasta experiência na criação de rotinas diárias, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as informações fornecidas sobre a escola, atividades extras e rotinas essenciais para criar uma agenda diária. Atividades extras são compromissos fixos e inamovíveis. Use as **Informações da Criança** fornecidas e aplique as **REGRAS DE OURO** para gerar a agenda no formato especificado.
 
       ---
 
@@ -88,74 +89,74 @@ const generateSchedulePrompt = ai.definePrompt({
 
       **4. [REGRAS E LÓGICA POR CENÁRIO PARA ROTINAS ESSENCIAIS]**
 
-      Use o bloco correspondente ao **Turno Escolar** para saber como distribuir as rotinas essenciais.
+      Use o bloco correspondente ao **Turno Escolar** para saber como distribuir as rotinas essenciais. **Use os emojis EXATOS fornecidos na lista para cada atividade.**
 
       ---
       **BLOCO A: SE TIPO DE TURNO = "morning"**
-      1.  "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
-      2.  "Arrumar a cama": 10 min após acordar.
-      3.  "Tomar café da manhã": 25 min após acordar.
-      4.  "Escovar os dentes (após acordar)": 10 min após tomar café.
-      5.  "Sair para escola": 20min antes da HORA DE INÍCIO DA ESCOLA.
-      6.  "Almoçar": 30 min após a HORA DE FIM DA ESCOLA.
-      7.  "Escovar os dentes (após almoço)": 30 min após almoçar.
-      8.  "Fazer a lição de casa": 14:30.
-      9.  "Organizar a mochila para amanhã": 15:30.
-      10. "Tomar banho": 18:30.
-      11. "Jantar": 19:00.
-      12. "Hora de dormir": 21:00.
-      13. "Escovar os dentes (após jantar)": 20 min antes de dormir.
+      1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
+      2.  🛏️ "Arrumar a cama": 10 min após acordar.
+      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      4.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
+      5.  🎒 "Sair para escola": 20min antes da HORA DE INÍCIO DA ESCOLA.
+      6.  🍽️ "Almoçar": 30 min após a HORA DE FIM DA ESCOLA.
+      7.  🪥 "Escovar os dentes (após almoço)": 30 min após almoçar.
+      8.  ✍️ "Fazer a lição de casa": 14:30.
+      9.  🎒 "Organizar a mochila para amanhã": 15:30.
+      10. 🚿 "Tomar banho": 18:30.
+      11. 🍽️ "Jantar": 19:00.
+      12. 🌙 "Hora de dormir": 21:00.
+      13. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
 
       ---
       **BLOCO B: SE TIPO DE TURNO = "afternoon"**
-      1.  "Hora de acordar": 5 horas antes do início da aula.
-      2.  "Arrumar a cama": 10 min após acordar.
-      3.  "Tomar café da manhã": 25 min após acordar.
-      4.  "Escovar os dentes (após acordar)": 10 min após café.
-      5.  "Fazer a lição de casa": 09:00.
-      6.  "Organizar a mochila para amanhã": 09:50.
-      7.  "Tomar banho": 60 min antes da HORA DE INÍCIO DA ESCOLA.
-      8.  "Almoçar": 40 min antes da HORA DE INÍCIO DA ESCOLA.
-      9.  "Escovar os dentes (após almoço)": 15 min após almoçar.
-      10. "Sair para escola": 20 min antes da HORA DE INÍCIO DA ESCOLA.
-      11. "Jantar": 19:00.
-      12. "Escovar os dentes (após jantar)": 15 min após jantar.
-      13. "Tomar banho": 21:40.
-      14. "Hora de dormir": 22:00.
+      1.  ⏰ "Hora de acordar": 5 horas antes do início da aula.
+      2.  🛏️ "Arrumar a cama": 10 min após acordar.
+      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      4.  🪥 "Escovar os dentes (após acordar)": 10 min após café.
+      5.  ✍️ "Fazer a lição de casa": 09:00.
+      6.  🎒 "Organizar a mochila para amanhã": 09:50.
+      7.  🚿 "Tomar banho": 60 min antes da HORA DE INÍCIO DA ESCOLA.
+      8.  🍽️ "Almoçar": 40 min antes da HORA DE INÍCIO DA ESCOLA.
+      9.  🪥 "Escovar os dentes (após almoço)": 15 min após almoçar.
+      10. 🎒 "Sair para escola": 20 min antes da HORA DE INÍCIO DA ESCOLA.
+      11. 🍽️ "Jantar": 19:00.
+      12. 🪥 "Escovar os dentes (após jantar)": 15 min após jantar.
+      13. 🚿 "Tomar banho": 21:40.
+      14. 🌙 "Hora de dormir": 22:00.
 
       ---
       **BLOCO C: SE TIPO DE TURNO = "full_time"**
-      1.  "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
-      2.  "Arrumar a cama": 10 min após acordar.
-      3.  "Tomar café da manhã": 25 min após acordar.
-      4.  "Escovar os dentes (após acordar)": 10 min após tomar café.
-      5.  "Sair para escola": 20 min antes da HORA DE INÍCIO DA ESCOLA.
-      6.  "Jantar": 19:00.
-      7.  "Escovar os dentes (após jantar)": 15 min após jantar.
-      8.  "Tomar banho": 20:40.
-      9.  "Hora de dormir": 21:00.
+      1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
+      2.  🛏️ "Arrumar a cama": 10 min após acordar.
+      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      4.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
+      5.  🎒 "Sair para escola": 20 min antes da HORA DE INÍCIO DA ESCOLA.
+      6.  🍽️ "Jantar": 19:00.
+      7.  🪥 "Escovar os dentes (após jantar)": 15 min após jantar.
+      8.  🚿 "Tomar banho": 20:40.
+      9.  🌙 "Hora de dormir": 21:00.
 
       ---
       **BLOCO D: SE TIPO DE TURNO = "not_applicable"**
-      1.  "Almoçar": 12:20 (horário base).
-      2.  "Hora de acordar": 4 horas antes do almoço.
-      3.  "Arrumar a cama": 10 min após acordar.
-      4.  "Tomar café da manhã": 25 min após acordar.
-      5.  "Escovar os dentes (após acordar)": 10 min após tomar café.
-      6.  "Tomar banho": 12:00.
-      7.  "Almoçar": 12:20.
-      8.  "Escovar os dentes (após almoço)": 15 min após almoçar.
-      9.  "Tomar banho": 17:30.
-      10. "Jantar": 18:00.
-      11. "Hora de dormir": 21:00.
-      12. "Escovar os dentes (após jantar)": 20 min antes de dormir.
+      1.  🍽️ "Almoçar": 12:20 (horário base).
+      2.  ⏰ "Hora de acordar": 4 horas antes do almoço.
+      3.  🛏️ "Arrumar a cama": 10 min após acordar.
+      4.  🥛 "Tomar café da manhã": 25 min após acordar.
+      5.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
+      6.  🚿 "Tomar banho": 12:00.
+      7.  🍽️ "Almoçar": 12:20.
+      8.  🪥 "Escovar os dentes (após almoço)": 15 min após almoçar.
+      9.  🚿 "Tomar banho": 17:30.
+      10. 🍽️ "Jantar": 18:00.
+      11. 🌙 "Hora de dormir": 21:00.
+      12. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
 
       ---
       **BLOCO E: Fim de Semana (Sábado e Domingo)**
-      *   **Manhã:** Mantenha as missões "Hora de acordar", "Tomar café da manhã" e "Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
-      *   **Noite:** Mantenha as missões "Jantar", "Escovar os dentes (após jantar)" e "Hora de dormir" com horários flexíveis.
-      *   **Domingo à Noite:** Adicione a missão "Organizar a mochila para amanhã".
-      *   **Restante do Dia:** Todos os outros horários devem ser preenchidos com "Hora livre para brincar", a menos que uma Atividade Extra esteja agendada.
+      *   **Manhã:** Mantenha as missões "⏰ Hora de acordar", "🥛 Tomar café da manhã" e "🪥 Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
+      *   **Noite:** Mantenha as missões "🍽️ Jantar", "🪥 Escovar os dentes (após jantar)" e "🌙 Hora de dormir" com horários flexíveis.
+      *   **Domingo à Noite:** Adicione a missão "🎒 Organizar a mochila para amanhã".
+      *   **Restante do Dia:** Todos os outros horários devem ser preenchidos com "🧩 Hora livre para brincar", a menos que uma Atividade Extra esteja agendada.
 
       ---
 
