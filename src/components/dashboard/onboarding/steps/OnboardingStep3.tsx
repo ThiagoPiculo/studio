@@ -2,7 +2,7 @@
 "use client";
 
 import { useFormContext, useFieldArray } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -10,16 +10,43 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimePicker } from "../../missions/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { Trash2 } from "lucide-react";
+import { AlertCircle, Trash2 } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { ActivityFormValues } from "../OnboardingForm";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { parseTime } from "@/lib/calendar-utils";
+import React from 'react';
 
 function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, remove: (index: number) => void }) {
-    const { control } = useFormContext();
+    const { control, watch } = useFormContext();
     const fieldName = `extraActivities.${activityIndex}`;
+    
+    const schoolShift = watch('schoolShift');
+    const schoolShiftStart = watch('schoolShiftStart');
+    const schoolShiftEnd = watch('schoolShiftEnd');
+    const activityTime = watch(`${fieldName}.time`);
+
+    const hasConflict = React.useMemo(() => {
+        if (schoolShift === 'not_applicable' || !activityTime) return false;
+        
+        const activityMinutes = parseTime(activityTime);
+        const startMinutes = parseTime(schoolShiftStart);
+        const endMinutes = parseTime(schoolShiftEnd);
+        
+        return activityMinutes >= startMinutes && activityMinutes < endMinutes;
+    }, [schoolShift, schoolShiftStart, schoolShiftEnd, activityTime]);
 
     return (
         <div className="p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative">
+            <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="absolute top-1 right-1 h-6 w-6 text-destructive"
+                onClick={() => remove(activityIndex)}
+            >
+                <Trash2 className="h-4 w-4" />
+            </Button>
             <FormField
                 control={control}
                 name={`${fieldName}.days`}
@@ -58,19 +85,20 @@ function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, r
                         <FormControl>
                            <TimePicker {...field} />
                         </FormControl>
+                         {hasConflict && (
+                            <FormDescription asChild>
+                               <Alert variant="destructive" className="mt-2 text-xs p-2">
+                                  <AlertCircle className="h-4 w-4" />
+                                  <AlertDescription>
+                                    Atenção: Este horário está dentro do período escolar.
+                                  </AlertDescription>
+                                </Alert>
+                            </FormDescription>
+                        )}
                         <FormMessage />
                     </FormItem>
                 )}
             />
-            <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute top-1 right-1 h-6 w-6 text-destructive"
-                onClick={() => remove(activityIndex)}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
         </div>
     )
 }

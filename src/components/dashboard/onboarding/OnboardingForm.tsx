@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2 } from "lucide-react";
+import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
@@ -27,6 +27,7 @@ import { Timestamp } from "firebase/firestore";
 import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { parseTime } from "@/lib/calendar-utils";
 
 
 const TOTAL_STEPS = 6;
@@ -85,6 +86,10 @@ export function OnboardingForm() {
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
+  
+  const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
+  const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
+
 
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -116,28 +121,52 @@ export function OnboardingForm() {
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
+  
+  const proceedToNextStep = (force = false) => {
+      if (step < TOTAL_STEPS) {
+          if (step === 5) {
+              handleGenerateSchedule();
+          }
+          setStep(prev => prev + 1);
+      }
+  };
 
   const goToNextStep = async () => {
     let isStepValid = false;
+    let fieldsToValidate: (keyof OnboardingFormValues)[] = [];
+
     if (step === 1) {
-        isStepValid = true; // No validation for welcome step
+        isStepValid = true; 
     } else if (step === 2) {
-        isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
+        fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId'];
+        isStepValid = await methods.trigger(fieldsToValidate);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime']);
+        fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime'];
+        isStepValid = await methods.trigger(fieldsToValidate);
     } else if (step === 4) {
         isStepValid = await methods.trigger(['extraActivities']);
+        if (isStepValid) {
+          const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
+          const conflicts = (extraActivities || []).filter(activity => {
+            if (schoolShift === 'not_applicable' || !activity.time) return false;
+            const activityMinutes = parseTime(activity.time);
+            const startMinutes = parseTime(schoolShiftStart!);
+            const endMinutes = parseTime(schoolShiftEnd!);
+            return activityMinutes >= startMinutes && activityMinutes < endMinutes;
+          }).map(a => a.name);
+
+          if (conflicts.length > 0) {
+            setConflictingActivities(conflicts);
+            setIsConflictDialogOpen(true);
+            return; // Don't proceed automatically
+          }
+        }
     } else if (step === 5) {
         isStepValid = true; 
     }
 
     if (isStepValid) {
-      if (step < TOTAL_STEPS) {
-        if (step === 5) { 
-            await handleGenerateSchedule();
-        }
-        setStep(prev => prev + 1);
-      }
+        proceedToNextStep();
     }
   };
 
@@ -350,6 +379,35 @@ export function OnboardingForm() {
           </div>
         </CardFooter>
       </Card>
+      
+      <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive h-6 w-6"/>
+                Conflito de Horários Detectado!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              As seguintes atividades estão dentro do período escolar:
+              <ul className="list-disc pl-5 mt-2 font-semibold text-foreground">
+                {conflictingActivities.map(name => <li key={name}>{name}</li>)}
+              </ul>
+              <br/>
+              Deseja continuar mesmo assim? A IA tentará organizar a rotina, mas o ideal é evitar sobreposições.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsConflictDialogOpen(false)}>Voltar e Ajustar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+                setIsConflictDialogOpen(false);
+                proceedToNextStep();
+            }}>
+                Continuar Mesmo Assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </FormProvider>
   );
 }

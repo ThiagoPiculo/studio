@@ -47,7 +47,7 @@ const ScheduleItemSchema = z.object({
 
 const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
-  freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança."),
+  freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
 export type GenerateScheduleOutput = z.infer<typeof GenerateScheduleOutputSchema>;
 
@@ -58,10 +58,10 @@ const generateSchedulePrompt = ai.definePrompt({
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
     prompt: `
-      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.2)
+      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.3)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
-      Você é a Aura, uma IA especializada em psicologia infantil especialista em gamificação, com vasta experiência na criação de rotinas diárias, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as informações fornecidas sobre a escola, atividades extras e rotinas essenciais para criar uma agenda diária. Atividades extras são compromissos fixos e inamovíveis. Use as **Informações da Criança** fornecidas e aplique as **REGRAS DE OURO** para gerar a agenda no formato especificado.
+      Você é a Aura, uma IA especialista em psicologia infantil e gamificação, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as **Informações da Criança** fornecidas e aplicar as **REGRAS DE OURO** para gerar a agenda no formato especificado. Use o emoji exato fornecido para cada atividade.
 
       ---
 
@@ -77,15 +77,20 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
 
-      **3. REGRAS DE OURO (LÓGICA DE AGENDAMENTO)**
+      **3. REGRAS DE OURO (LÓGICA DE AGENDAMENTO HIERÁRQUICO)**
 
-      1.  **Prioridade Máxima (Compromissos Fixos):** Primeiro, aloque na agenda os Compromissos Fixos (Escola e Atividades Extras). Eles não podem ser movidos e devem estar nos dias e horários exatos definidos pelo usuário.
+      1.  **NÍVEL 1 - O INEGOCIÁVEL (Escola):** Primeiro, aloque o horário escolar (Entrada e Saída) na agenda. Este bloco é a âncora da rotina e não pode ser alterado ou sobreposto por nenhuma outra atividade.
 
-      2.  **Rotinas Essenciais (Dias de Semana):** Em seguida, distribua as **Rotinas Essenciais a Incluir** nos horários livres dos dias de semana (Segunda a Sexta), seguindo a lógica de horários do bloco correspondente ao **Turno Escolar** da criança.
+      2.  **NÍVEL 2 - OS COMPROMISSOS (Atividades Extras):** Em seguida, tente alocar as Atividades Extras.
+          *   **CONFLITO COM ESCOLA:** Se o horário de uma Atividade Extra cair dentro do horário escolar (Nível 1), **IGNORE A ATIVIDADE EXTRA** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Exemplo: "Atenção: A Natação não foi agendada pois o horário das 15:00 conflita com o período escolar."
+          *   **NÃO** agende atividades extras que conflitem com o horário escolar.
 
-      3.  **Rotina de Fim de Semana:** Para Sábado e Domingo, aplique as regras do **BLOCO E**.
+      3.  **NÍVEL 3 - AS ROTINAS ESSENCIAIS (Dias de Semana):** Agora, distribua as **Rotinas Essenciais a Incluir** nos horários livres, seguindo a lógica do bloco de turno correspondente (A, B, C ou D).
+          *   **CONFLITO COM ATIVIDADE EXTRA:** Se o horário de uma rotina essencial já estiver ocupado por uma Atividade Extra (Nível 2), a rotina essencial **deve ser ignorada** para aquele dia específico para não causar sobreposição. Não tente reagendá-la.
 
-      4.  **Preenchimento Final:** Após alocar todos os itens acima, verifique os horários restantes. Se um bloco de tempo estiver vazio, preencha-o com a missão "Hora livre para brincar" com o emoji "🧩" e categoria "hobbies".
+      4.  **ROTINA DE FIM DE SEMANA:** Para Sábado e Domingo, aplique as regras do **BLOCO E**, sempre respeitando as Atividades Extras (Nível 2).
+
+      5.  **PREENCHIMENTO FINAL:** Após alocar todos os itens acima, preencha todos os horários vazios com a missão "🧩 Hora livre para brincar".
 
       ---
 
