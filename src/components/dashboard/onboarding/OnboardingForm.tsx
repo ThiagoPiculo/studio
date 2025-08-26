@@ -21,10 +21,10 @@ import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
-import type { MissionTemplate, Weekday, MissionCategory, SchoolShift } from "@/lib/types";
+import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { processSchedule, type ProcessScheduleInput, type ProcessScheduleOutput } from "@/lib/schedule-generator";
+import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
@@ -80,7 +80,7 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<ProcessScheduleOutput | null>(null);
+  const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
 
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(onboardingSchema),
@@ -146,8 +146,12 @@ export function OnboardingForm() {
       setIsLoading(true);
       setGeneratedSchedule(null);
       const values = methods.getValues();
+      const birthDate = new Date(values.birthDate);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: ProcessScheduleInput = {
+      const input: GenerateScheduleInput = {
+          childName: values.name,
+          childAge: age,
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
@@ -156,7 +160,7 @@ export function OnboardingForm() {
       };
 
       try {
-          const schedule = await processSchedule(input);
+          const schedule = await generateSchedule(input);
           setGeneratedSchedule(schedule);
       } catch (error) {
           console.error("Error generating schedule:", error);
@@ -196,15 +200,15 @@ export function OnboardingForm() {
              
              if (!missionDetails) {
                  console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
-                 continue; // Pula esta iteração se a missão não for encontrada
+                 continue;
              }
 
              const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                 ownerId: user.uid,
                 familyId: values.contextId === 'my-space' ? null : values.contextId,
                 title: item.activity,
-                emoji: missionDetails.emoji, // Garante o emoji correto
-                category: missionDetails.suggestedAppCategory, // Garante a categoria correta
+                emoji: item.emoji,
+                category: missionDetails.suggestedAppCategory,
                 starsReward: missionDetails.starsReward,
                 xpReward: missionDetails.xpReward,
                 isRecurring: true,
@@ -213,7 +217,7 @@ export function OnboardingForm() {
                 recurrenceRule: {
                     freq: 'WEEKLY',
                     interval: 1,
-                    byDay: item.days as Weekday[],
+                    byDay: item.days,
                 },
             };
             
@@ -285,7 +289,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} childName={methods.getValues("name")} />}
+                {step === 6 && <OnboardingStep5 schedule={generatedSchedule as ScheduleItem[]} isLoading={isLoading} childName={methods.getValues("name")} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

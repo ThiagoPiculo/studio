@@ -2,28 +2,12 @@
 "use client";
 
 import React from 'react';
-import type { ProcessScheduleOutput } from '@/lib/schedule-generator';
+import type { GenerateScheduleOutput } from '@/ai/flows/generate-schedule';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { weekdayLabels, Weekday } from "@/lib/types";
+import { weekdayLabels, Weekday, ScheduleItem } from "@/lib/types";
 import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
 import { Button } from '@/components/ui/button';
-
-interface ScheduleItem {
-  activity: string;
-  emoji: string;
-  type: 'school_entry' | 'school_exit' | 'extra_activity' | 'essential_routine' | 'free_time';
-  category: string;
-  startTime: string;
-  endTime: string;
-  days: Weekday[];
-}
-
-interface OnboardingStep5Props {
-  isLoading?: boolean;
-  schedule: ProcessScheduleOutput | null;
-  childName: string;
-}
 
 const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
     if (!time || !time.includes(':')) return 'morning'; // Fallback
@@ -68,19 +52,24 @@ const ScheduleSection = ({ title, icon: Icon, items }: { title: string, icon: Re
   )
 }
 
+interface OnboardingStep5Props {
+  isLoading?: boolean;
+  schedule: ScheduleItem[] | null;
+  childName: string;
+}
+
 export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingStep5Props) {
-  const { morning, afternoon, night, freeTime } = React.useMemo(() => {
-    if (!schedule || !schedule.schedule) {
-        return { morning: [], afternoon: [], night: [], freeTime: '' };
+  const { morning, afternoon, night } = React.useMemo(() => {
+    if (!schedule) {
+        return { morning: [], afternoon: [], night: [] };
     }
     
-    const allItems = [...schedule.schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
+    const allItems = [...schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
     
     return {
         morning: allItems.filter(item => getPeriod(item.startTime) === 'morning'),
         afternoon: allItems.filter(item => getPeriod(item.startTime) === 'afternoon'),
         night: allItems.filter(item => getPeriod(item.startTime) === 'night'),
-        freeTime: schedule.freeTime
     };
   }, [schedule]);
 
@@ -100,7 +89,7 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
     );
   }
 
-  if (!schedule || schedule.schedule.length === 0) {
+  if (!schedule || schedule.length === 0) {
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
@@ -132,13 +121,6 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
               icon={Moon}
               items={night}
             />
-
-            <Separator className="my-4" />
-
-            <div className="space-y-2 p-3">
-                  <h3 className="font-semibold text-muted-foreground">Momentos Livres Identificados</h3>
-                  <p className="text-sm text-muted-foreground italic pl-2">{freeTime}</p>
-            </div>
         </div>
       </ScrollArea>
     </div>
