@@ -27,6 +27,7 @@ const GenerateScheduleInputSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']).describe("Turno escolar da criança."),
   schoolStartTime: z.string().optional().describe("Horário de início da escola (HH:mm)."),
   schoolEndTime: z.string().optional().describe("Horário de término da escola (HH:mm)."),
+  lunchTime: z.string().optional().describe("Horário do almoço (HH:mm), usado como âncora se a criança não estuda."),
   extraActivities: z.array(ExtraActivitySchema).optional().describe("Lista de atividades extras com dias e horários fixos."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de rotinas essenciais a serem incluídas na agenda."),
 });
@@ -40,7 +41,7 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.string().describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de término no formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(allWeekdays)).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
 
@@ -57,7 +58,7 @@ const generateSchedulePrompt = ai.definePrompt({
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
     prompt: `
-      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.1)
+      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.2)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
       Você é a Aura, uma IA especializada em psicologia infantil especialista em gamificação, com vasta experiência na criação de rotinas diárias, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as informações fornecidas sobre a escola, atividades extras e rotinas essenciais para criar uma agenda diária. Atividades extras são compromissos fixos e inamovíveis. Use as **Informações da Criança** fornecidas e aplique as **REGRAS DE OURO** para gerar a agenda no formato especificado.
@@ -70,6 +71,7 @@ const generateSchedulePrompt = ai.definePrompt({
       *   **Idade:** {{{childAge}}}
       *   **Turno Escolar:** {{{schoolShift}}}
       *   **Horário Escolar:** {{{schoolStartTime}}} - {{{schoolEndTime}}}
+      *   **Horário do Almoço (se aplicável):** {{{lunchTime}}}
       *   **Atividades Extras:** {{#if extraActivities}}{{#each extraActivities}}- {{{this.name}}} acontece toda {{{this.days}}} às {{{this.time}}}.{{/each}}{{else}}Nenhuma.{{/if}}
       *   **Rotinas Essenciais a Incluir:** {{#if essentialRoutines}}{{#each essentialRoutines}}- {{{this}}}{{/each}}{{else}}Nenhuma.{{/if}}
 
@@ -93,6 +95,7 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
       **BLOCO A: SE TIPO DE TURNO = "morning"**
+      Use os emojis exatos fornecidos abaixo.
       1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
       3.  ☕ "Tomar café da manhã": 25 min após acordar.
@@ -109,6 +112,7 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
       **BLOCO B: SE TIPO DE TURNO = "afternoon"**
+      Use os emojis exatos fornecidos abaixo.
       1.  ⏰ "Hora de acordar": 5 horas antes do início da aula.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
       3.  ☕ "Tomar café da manhã": 25 min após acordar.
@@ -126,6 +130,7 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
       **BLOCO C: SE TIPO DE TURNO = "full_time"**
+      Use os emojis exatos fornecidos abaixo.
       1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
       3.  ☕ "Tomar café da manhã": 25 min após acordar.
@@ -138,21 +143,22 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
       **BLOCO D: SE TIPO DE TURNO = "not_applicable"**
-      1.  🍽️ "Almoçar": 12:20 (horário base).
+      Use os emojis exatos fornecidos abaixo. A âncora para esta rotina é o horário do almoço.
+      1.  🍽️ "Almoçar": Use o horário {{{lunchTime}}} como referência.
       2.  ⏰ "Hora de acordar": 4 horas antes do almoço.
       3.  🛏️ "Arrumar a cama": 10 min após acordar.
       4.  ☕ "Tomar café da manhã": 25 min após acordar.
       5.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
-      6.  🚿 "Tomar banho": 12:00.
-      7.  🍽️ "Almoçar": 12:20.
-      8.  🪥 "Escovar os dentes (após almoço)": 15 min após almoçar.
-      9.  🚿 "Tomar banho": 17:30.
-      10. 🍽️ "Jantar": 18:00.
-      11. 😴 "Hora de dormir": 21:00.
-      12. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
+      6.  🚿 "Tomar banho (antes do almoço)": 20 min antes do almoço.
+      7.  🪥 "Escovar os dentes (após almoço)": 15 min após o almoço.
+      8.  🚿 "Tomar banho (à noite)": 18:30.
+      9.  🍽️ "Jantar": 19:00.
+      10. 😴 "Hora de dormir": 21:00.
+      11. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
 
       ---
       **BLOCO E: Fim de Semana (Sábado e Domingo)**
+      Use os emojis exatos fornecidos abaixo.
       *   **Manhã:** Mantenha as missões "⏰ Hora de acordar", "☕ Tomar café da manhã" e "🪥 Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
       *   **Noite:** Mantenha as missões "🍽️ Jantar", "🪥 Escovar os dentes (após jantar)" e "😴 Hora de dormir" com horários flexíveis.
       *   **Domingo à Noite:** Adicione a missão "🎒 Organizar a mochila para amanhã".

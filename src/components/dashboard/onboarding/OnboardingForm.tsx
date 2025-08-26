@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3 } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
@@ -51,6 +51,7 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
+  lunchTime: z.string().optional(),
   extraActivities: z.array(extraActivitySchema).optional(),
   essentialRoutines: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
@@ -60,6 +61,9 @@ const onboardingSchema = z.object({
         if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
             ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
         }
+    }
+     if (data.schoolShift === 'not_applicable') {
+        if (!data.lunchTime) ctx.addIssue({ code: "custom", path: ["lunchTime"], message: "Horário do almoço é obrigatório." });
     }
 });
 
@@ -93,6 +97,7 @@ export function OnboardingForm() {
       schoolShift: "afternoon",
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
+      lunchTime: '12:00',
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
     },
@@ -119,7 +124,7 @@ export function OnboardingForm() {
     } else if (step === 2) {
         isStepValid = await methods.trigger(['name', 'birthDate', 'gender', 'contextId']);
     } else if (step === 3) {
-        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd']);
+        isStepValid = await methods.trigger(['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime']);
     } else if (step === 4) {
         isStepValid = await methods.trigger(['extraActivities']);
     } else if (step === 5) {
@@ -155,6 +160,7 @@ export function OnboardingForm() {
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
+          lunchTime: values.lunchTime,
           extraActivities: values.extraActivities || [],
           essentialRoutines: values.essentialRoutines || [],
       };

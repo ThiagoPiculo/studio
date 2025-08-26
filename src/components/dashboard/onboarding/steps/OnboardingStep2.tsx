@@ -2,7 +2,7 @@
 "use client";
 
 import { useFormContext } from "react-hook-form";
-import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { TimePicker } from "../../missions/TimePicker";
@@ -16,6 +16,7 @@ export const onboardingSchemaStep2 = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
+  lunchTime: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
         if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
@@ -23,6 +24,9 @@ export const onboardingSchemaStep2 = z.object({
         if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
             ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
         }
+    }
+    if (data.schoolShift === 'not_applicable') {
+        if (!data.lunchTime) ctx.addIssue({ code: "custom", path: ["lunchTime"], message: "Horário do almoço é obrigatório." });
     }
 });
 
@@ -43,6 +47,7 @@ export function OnboardingStep2() {
     setValue('schoolShift', shift);
     let start = '';
     let end = '';
+    let lunch = '12:00';
 
     switch (shift) {
       case 'morning':
@@ -60,10 +65,12 @@ export function OnboardingStep2() {
       case 'not_applicable':
         start = '';
         end = '';
+        lunch = '12:00';
         break;
     }
     setValue('schoolShiftStart', start);
     setValue('schoolShiftEnd', end);
+    setValue('lunchTime', lunch);
   };
   
   const handleStartTimeChange = (newStartTime: string) => {
@@ -149,6 +156,26 @@ export function OnboardingStep2() {
               <FormItem>
                 <FormLabel>Horário de Saída</FormLabel>
                 <FormControl><TimePicker {...field} /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+      {schoolShift === 'not_applicable' && (
+        <div className="p-4 border rounded-lg animate-in fade-in duration-300">
+           <FormField
+            control={control}
+            name="lunchTime"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Qual o horário do almoço?</FormLabel>
+                <FormControl>
+                    <TimePicker {...field} />
+                </FormControl>
+                 <FormDescription>
+                    Horário recomendado. Este será o ponto central para organizar a rotina.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
