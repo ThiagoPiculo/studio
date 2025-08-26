@@ -25,7 +25,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     items: [
       { title: 'Hora de acordar', emoji: '⏰', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Arrumar a cama', emoji: '🛏️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
-      { title: 'Tomar café da manhã', emoji: '🥛', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Tomar café da manhã', emoji: '☕', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após acordar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Almoçar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após almoço)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
@@ -33,10 +33,10 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
-      { title: 'Hora de dormir', emoji: '🌙', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
-      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'essential_routines', starsReward: 15, xpReward: 25 },
-      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 10, xpReward: 15 },
-      { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
+      { title: 'Organizar a mochila para amanhã', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
+      { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5, xpReward: 10 },
     ],
   },
   {

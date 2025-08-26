@@ -95,7 +95,7 @@ const generateSchedulePrompt = ai.definePrompt({
       **BLOCO A: SE TIPO DE TURNO = "morning"**
       1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
-      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      3.  ☕ "Tomar café da manhã": 25 min após acordar.
       4.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
       5.  🎒 "Sair para escola": 20min antes da HORA DE INÍCIO DA ESCOLA.
       6.  🍽️ "Almoçar": 30 min após a HORA DE FIM DA ESCOLA.
@@ -104,14 +104,14 @@ const generateSchedulePrompt = ai.definePrompt({
       9.  🎒 "Organizar a mochila para amanhã": 15:30.
       10. 🚿 "Tomar banho": 18:30.
       11. 🍽️ "Jantar": 19:00.
-      12. 🌙 "Hora de dormir": 21:00.
+      12. 😴 "Hora de dormir": 21:00.
       13. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
 
       ---
       **BLOCO B: SE TIPO DE TURNO = "afternoon"**
       1.  ⏰ "Hora de acordar": 5 horas antes do início da aula.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
-      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      3.  ☕ "Tomar café da manhã": 25 min após acordar.
       4.  🪥 "Escovar os dentes (após acordar)": 10 min após café.
       5.  ✍️ "Fazer a lição de casa": 09:00.
       6.  🎒 "Organizar a mochila para amanhã": 09:50.
@@ -122,39 +122,39 @@ const generateSchedulePrompt = ai.definePrompt({
       11. 🍽️ "Jantar": 19:00.
       12. 🪥 "Escovar os dentes (após jantar)": 15 min após jantar.
       13. 🚿 "Tomar banho": 21:40.
-      14. 🌙 "Hora de dormir": 22:00.
+      14. 😴 "Hora de dormir": 22:00.
 
       ---
       **BLOCO C: SE TIPO DE TURNO = "full_time"**
       1.  ⏰ "Hora de acordar": 1h antes da HORA DE INÍCIO DA ESCOLA.
       2.  🛏️ "Arrumar a cama": 10 min após acordar.
-      3.  🥛 "Tomar café da manhã": 25 min após acordar.
+      3.  ☕ "Tomar café da manhã": 25 min após acordar.
       4.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
       5.  🎒 "Sair para escola": 20 min antes da HORA DE INÍCIO DA ESCOLA.
       6.  🍽️ "Jantar": 19:00.
       7.  🪥 "Escovar os dentes (após jantar)": 15 min após jantar.
       8.  🚿 "Tomar banho": 20:40.
-      9.  🌙 "Hora de dormir": 21:00.
+      9.  😴 "Hora de dormir": 21:00.
 
       ---
       **BLOCO D: SE TIPO DE TURNO = "not_applicable"**
       1.  🍽️ "Almoçar": 12:20 (horário base).
       2.  ⏰ "Hora de acordar": 4 horas antes do almoço.
       3.  🛏️ "Arrumar a cama": 10 min após acordar.
-      4.  🥛 "Tomar café da manhã": 25 min após acordar.
+      4.  ☕ "Tomar café da manhã": 25 min após acordar.
       5.  🪥 "Escovar os dentes (após acordar)": 10 min após tomar café.
       6.  🚿 "Tomar banho": 12:00.
       7.  🍽️ "Almoçar": 12:20.
       8.  🪥 "Escovar os dentes (após almoço)": 15 min após almoçar.
       9.  🚿 "Tomar banho": 17:30.
       10. 🍽️ "Jantar": 18:00.
-      11. 🌙 "Hora de dormir": 21:00.
+      11. 😴 "Hora de dormir": 21:00.
       12. 🪥 "Escovar os dentes (após jantar)": 20 min antes de dormir.
 
       ---
       **BLOCO E: Fim de Semana (Sábado e Domingo)**
-      *   **Manhã:** Mantenha as missões "⏰ Hora de acordar", "🥛 Tomar café da manhã" e "🪥 Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
-      *   **Noite:** Mantenha as missões "🍽️ Jantar", "🪥 Escovar os dentes (após jantar)" e "🌙 Hora de dormir" com horários flexíveis.
+      *   **Manhã:** Mantenha as missões "⏰ Hora de acordar", "☕ Tomar café da manhã" e "🪥 Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
+      *   **Noite:** Mantenha as missões "🍽️ Jantar", "🪥 Escovar os dentes (após jantar)" e "😴 Hora de dormir" com horários flexíveis.
       *   **Domingo à Noite:** Adicione a missão "🎒 Organizar a mochila para amanhã".
       *   **Restante do Dia:** Todos os outros horários devem ser preenchidos com "🧩 Hora livre para brincar", a menos que uma Atividade Extra esteja agendada.
 
