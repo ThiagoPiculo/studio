@@ -88,7 +88,9 @@ const generateSchedulePrompt = ai.definePrompt({
       1.  **NÍVEL 1 - O INEGOCIÁVEL (Escola):** Primeiro, aloque o horário escolar (Entrada e Saída) na agenda, de Segunda a Sexta. Este bloco é a âncora da rotina e não pode ser alterado. Nome da atividade deve ser 'Escola' com emoji '🏫'.
       2.  **NÍVEL 2 - OS COMPROMISSOS (Atividades Extras):** Em seguida, tente alocar as Atividades Extras. Se o horário de uma Atividade Extra cair dentro do horário escolar, **IGNORE A ATIVIDADE EXTRA** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Exemplo: "Atenção: A Natação não foi agendada pois o horário das 15:00 conflita com o período escolar."
       3.  **NÍvel 3 - AS ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais dos blocos A, B, C, D ou E nos horários livres. Se o horário de uma rotina essencial já estiver ocupado por uma Atividade Extra, a IA deve tentar reagendar a rotina para o próximo bloco de 30 minutos livre. Se não houver espaço, a rotina pode ser omitida.
-      4.  **PREENCHIMENTO FINAL:** Após alocar todos os itens acima, preencha todos os horários vazios com a atividade "🧩 Hora livre para brincar".
+      4. **REGRAS GERAIS ADICIONAIS:**
+- **Emojis, títulos e Categorias:** Para cada missão (atividade a ser agendada), use o emoji, título e categoria exatos da lista de missões pré-definidas de referência do aplicativ. Isso é crucial para a consistência do aplicativo.
+      **PREENCHIMENTO FINAL:** Após alocar todos os itens acima, preencha todos os horários vazios com a atividade "🧩 Hora livre para brincar".
 
       ---
 

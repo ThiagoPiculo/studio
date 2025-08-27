@@ -4,7 +4,8 @@
 import React from 'react';
 import type { GenerateScheduleOutput } from '@/ai/flows/generate-schedule';
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Badge } from '@/components/ui/badge';
 import { weekdayLabels, Weekday, ScheduleItem } from "@/lib/types";
 import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
 import { Button } from '@/components/ui/button';
@@ -17,37 +18,32 @@ const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
     return 'night';
 }
 
-const ScheduleSection = ({ title, icon: Icon, items }: { title: string, icon: React.ElementType, items: ScheduleItem[] }) => {
-  if (items.length === 0) return null;
+const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] }) => {
+  const sortedItems = [...items].sort((a,b) => a.startTime.localeCompare(b.startTime));
+
+  if(items.length === 0) {
+    return <div className="text-center text-muted-foreground p-8">Nenhuma atividade neste dia.</div>
+  }
 
   return (
-    <div className="space-y-3 rounded-lg border bg-card p-4">
-      <h3 className="font-semibold flex items-center gap-2 text-primary">
-        <Icon className="h-5 w-5" />
-        {title}
-      </h3>
-      <div className="space-y-3">
-        {items.map((item, index) => {
-          const IconComponent = item.type === 'school_entry' ? NotebookPen : Star;
-          
-          return (
-            <div key={`${item.activity}-${index}`} className="flex items-center gap-2 sm:gap-3 text-sm">
-                <div className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md shrink-0">
-                    {item.startTime}
-                </div>
-                <div className="flex-grow flex items-center gap-2">
-                    <span className="text-xl">{item.emoji}</span>
-                    <div className="flex flex-col">
-                        <span className="font-semibold">{item.activity}</span>
-                        <div className="text-xs text-muted-foreground">
-                            {item.days.map(d => weekdayLabels[d as keyof typeof weekdayLabels].short).join(', ')}
-                        </div>
-                    </div>
+    <div className="space-y-3">
+      {sortedItems.map((item, index) => (
+         <div 
+            key={`${item.activity}-${index}`} 
+            className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${item.type === 'extra_activity' ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'}`}
+          >
+            <div className="text-xs text-muted-foreground font-mono bg-background px-2 py-1 rounded-md shrink-0 w-14 text-center">
+                {item.startTime}
+            </div>
+            <div className="flex-grow flex items-center gap-2">
+                <span className="text-xl">{item.emoji}</span>
+                <div className="flex flex-col">
+                    <span className="font-semibold">{item.activity}</span>
+                    {item.type === 'extra_activity' && <Badge variant="secondary" className="w-fit text-xs mt-1">Atividade Extra</Badge>}
                 </div>
             </div>
-          )
-        })}
-      </div>
+        </div>
+      ))}
     </div>
   )
 }
@@ -59,19 +55,24 @@ interface OnboardingStep5Props {
 }
 
 export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingStep5Props) {
-  const { morning, afternoon, night } = React.useMemo(() => {
+  
+  const scheduleByDay = React.useMemo(() => {
     if (!schedule || !schedule.schedule) {
-        return { morning: [], afternoon: [], night: [] };
+        return {} as Record<Weekday, ScheduleItem[]>;
     }
-    
-    const allItems = [...schedule.schedule].sort((a,b) => a.startTime.localeCompare(b.startTime));
-    
-    return {
-        morning: allItems.filter(item => getPeriod(item.startTime) === 'morning'),
-        afternoon: allItems.filter(item => getPeriod(item.startTime) === 'afternoon'),
-        night: allItems.filter(item => getPeriod(item.startTime) === 'night'),
-    };
+    const grouped = schedule.schedule.reduce((acc, item) => {
+        item.days.forEach(day => {
+            if (!acc[day]) {
+                acc[day] = [];
+            }
+            acc[day].push(item);
+        });
+        return acc;
+    }, {} as Record<Weekday, ScheduleItem[]>);
+
+    return grouped;
   }, [schedule]);
+
 
   if (isLoading) {
     return (
@@ -99,30 +100,33 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-500">
+    <div className="space-y-4 animate-in fade-in-50 duration-500">
       <div className="text-center">
         <p className="text-muted-foreground">Esta é a rotina que o assistente criou. Se tudo estiver certo, podemos confirmar e iniciar a jornada!</p>
+        <p className="text-xs text-muted-foreground mt-2">{schedule.freeTimeSummary}</p>
       </div>
       
-      <ScrollArea className="h-[400px] pr-4">
-        <div className="space-y-4">
-            <ScheduleSection 
-              title="Período da Manhã"
-              icon={Sun}
-              items={morning}
-            />
-            <ScheduleSection 
-              title="Período da Tarde"
-              icon={CloudSun}
-              items={afternoon}
-            />
-            <ScheduleSection 
-              title="Período da Noite"
-              icon={Moon}
-              items={night}
-            />
-        </div>
-      </ScrollArea>
+       <Tabs defaultValue="MO" className="w-full">
+            <TabsList className="grid w-full grid-cols-7 h-auto">
+                {(Object.keys(weekdayLabels) as Weekday[]).map(day => {
+                    const count = scheduleByDay[day]?.length || 0;
+                    return (
+                        <TabsTrigger key={day} value={day} className="flex-col gap-1 h-auto py-2">
+                           <span className="hidden sm:inline">{weekdayLabels[day].long}</span>
+                           <span className="sm:hidden">{weekdayLabels[day].short}</span>
+                           {count > 0 && <Badge variant={count > 5 ? "destructive" : "secondary"}>{count}</Badge>}
+                        </TabsTrigger>
+                    )
+                })}
+            </TabsList>
+             <ScrollArea className="h-[350px] mt-4 pr-3">
+                {(Object.keys(weekdayLabels) as Weekday[]).map(day => (
+                    <TabsContent key={day} value={day}>
+                        <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
+                    </TabsContent>
+                ))}
+             </ScrollArea>
+        </Tabs>
     </div>
   );
 }
