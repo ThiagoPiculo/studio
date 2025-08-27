@@ -127,20 +127,18 @@ const FormControl = React.forwardRef<
 FormControl.displayName = "FormControl"
 
 const FormDescription = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, children, ...props }, ref) => {
+  HTMLParagraphElement,
+  React.HTMLAttributes<HTMLParagraphElement> & { asChild?: boolean }
+>(({ className, asChild = false, ...props }, ref) => {
   const { formDescriptionId } = useFormField()
-
+  const Comp = asChild ? Slot : "p";
   return (
-    <div
+    <Comp
       ref={ref}
       id={formDescriptionId}
       className={cn("text-sm text-muted-foreground", className)}
       {...props}
-    >
-        {children}
-    </div>
+    />
   )
 })
 FormDescription.displayName = "FormDescription"
