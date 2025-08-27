@@ -5,6 +5,9 @@ import { AuthProvider } from '@/contexts/AuthContext';
 import { FamilyProvider } from '@/contexts/FamilyContext';
 import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
+import { config } from 'dotenv';
+
+config();
 
 export const metadata: Metadata = {
   title: 'Mini Herois Construtor de Hábitos',
