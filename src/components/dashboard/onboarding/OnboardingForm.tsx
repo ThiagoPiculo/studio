@@ -25,7 +25,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { scheduleGenerator, type ScheduleGeneratorInput, type GenerateScheduleOutput } from "@/lib/schedule-generator";
+import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -213,24 +213,36 @@ export function OnboardingForm() {
     }
   };
 
-  const handleGenerateSchedule = () => {
+  const handleGenerateSchedule = async () => {
       setIsLoading(true);
-      setGeneratedSchedule(null);
       const values = methods.getValues();
+      const birthDate = new Date(values.birthDate as string);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      // Mock processing time to show the loading step
-      setTimeout(() => {
-        try {
-          const schedule = scheduleGenerator(values);
+      const input: GenerateScheduleInput = {
+          childName: values.name,
+          childAge: age,
+          schoolShift: values.schoolShift,
+          schoolStartTime: values.schoolShiftStart,
+          schoolEndTime: values.schoolShiftEnd,
+          wakeUpTime: values.wakeUpTime!,
+          lunchTime: values.lunchTime!,
+          dinnerTime: values.dinnerTime!,
+          sleepTime: values.sleepTime!,
+          extraActivities: values.extraActivities,
+          essentialRoutines: values.essentialRoutines
+      };
+
+      try {
+          const schedule = await generateSchedule(input);
           setGeneratedSchedule(schedule);
-        } catch (error) {
+      } catch (error) {
           console.error("Error generating schedule:", error);
-          toast({ title: "Erro na Lógica!", description: "Ocorreu um erro ao criar a rotina. Por favor, verifique os horários.", variant: "destructive" });
-          setStep(3); // Go back to the times step on error
-        } finally {
+          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
+          setStep(3); // Go back to the previous step on error
+      } finally {
           setIsLoading(false);
-        }
-      }, 1500); // Simulate processing time for UX
+      }
   };
   
   const handleFinalSubmit = async () => {
@@ -352,7 +364,7 @@ export function OnboardingForm() {
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
-                {step === 5 && <OnboardingStep4 />}
+                {step === 5 && <OnboardingStep6 isLoading={isLoading} childName={methods.getValues('name')} />}
                 {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>

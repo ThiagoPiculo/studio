@@ -1,221 +1,452 @@
+"use client";
 
-import type {
-  ScheduleItem,
-  Weekday,
-  MissionCategory,
-  OnboardingFormValues,
-} from './types';
-import { predefinedMissionGroups } from './predefined-missions';
-import { parseTime, getDayToWeekday } from './calendar-utils';
-import { startOfDay, getDay } from 'date-fns';
-
-export type ScheduleGeneratorInput = OnboardingFormValues;
-
-export interface GenerateScheduleOutput {
-  schedule: ScheduleItem[];
-  freeTimeSummary: string;
-}
-
-const allWeekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-const weekends: Weekday[] = ['SA', 'SU'];
-
-const missionDetailsMap = new Map(
-  predefinedMissionGroups
-    .flatMap(g => g.items)
-    .map(item => [item.title, item])
-);
-
-export function scheduleGenerator(
-  input: ScheduleGeneratorInput
-): GenerateScheduleOutput {
-  const schedule: ScheduleItem[] = [];
-  let conflicts: string[] = [];
-
-  const timeGrid: Record<Weekday, { start: number; end: number }[]> = {
-    MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [],
-  };
-
-  const addBusyTime = (days: Weekday[], startTime: string, endTime: string, activity: string) => {
-    const startMinutes = parseTime(startTime);
-    const endMinutes = parseTime(endTime);
-    for (const day of days) {
-      // Check for conflicts before adding
-      const hasConflict = timeGrid[day].some(
-        slot => startMinutes < slot.end && endMinutes > slot.start
-      );
-      if (hasConflict) {
-        conflicts.push(`${activity} às ${startTime} na ${day}`);
-        continue; // Skip adding this conflicting event
-      }
-      timeGrid[day].push({ start: startMinutes, end: endMinutes });
-    }
-  };
-
-  // NÍVEL 1: Escola
-  if (input.schoolShift !== 'not_applicable' && input.schoolShiftStart && input.schoolShiftEnd) {
-    const schoolMission = missionDetailsMap.get('Escola') || { emoji: '🏫', suggestedAppCategory: 'school' };
-    const schoolItem: ScheduleItem = {
-      activity: 'Escola',
-      emoji: schoolMission.emoji,
-      type: 'school_entry',
-      category: schoolMission.suggestedAppCategory,
-      startTime: input.schoolShiftStart,
-      endTime: input.schoolShiftEnd,
-      days: weekdays,
-    };
-    schedule.push(schoolItem);
-    addBusyTime(weekdays, input.schoolShiftStart, input.schoolShiftEnd, 'Escola');
-  }
-
-  // NÍVEL 2: Atividades Extras
-  if (input.extraActivities) {
-    for (const activity of input.extraActivities) {
-      const duration = 60; // Assume 1 hour for all extra activities
-      const startMinutes = parseTime(activity.time);
-      const endMinutes = startMinutes + duration;
-      const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
-      const missionDetail = missionDetailsMap.get(activity.name) || { emoji: '✨', suggestedAppCategory: 'hobbies' };
-
-      const activityItem: ScheduleItem = {
-        activity: activity.name,
-        emoji: missionDetail.emoji,
-        type: 'extra_activity',
-        category: missionDetail.suggestedAppCategory,
-        startTime: activity.time,
-        endTime,
-        days: activity.days as Weekday[],
-      };
-      schedule.push(activityItem);
-      addBusyTime(activity.days as Weekday[], activity.time, endTime, activity.name);
-    }
-  }
-
-  // NÍVEL 3: Rotinas Essenciais
-  const routinesToSchedule = new Set(input.essentialRoutines);
-
-  const scheduleRoutine = (name: string, days: Weekday[], time: string, duration: number) => {
-    if (!routinesToSchedule.has(name)) return;
-    const missionDetail = missionDetailsMap.get(name) || { emoji: '⭐', suggestedAppCategory: 'essential_routines' };
-    const startMinutes = parseTime(time);
-    const endMinutes = startMinutes + duration;
-    const endTime = `${String(Math.floor(endMinutes / 60)).padStart(2, '0')}:${String(endMinutes % 60).padStart(2, '0')}`;
-
-    const routineItem: ScheduleItem = {
-        activity: name,
-        emoji: missionDetail.emoji,
-        type: 'essential_routine',
-        category: missionDetail.suggestedAppCategory,
-        startTime: time,
-        endTime: endTime,
-        days: days,
-    };
-    schedule.push(routineItem);
-    addBusyTime(days, time, endTime, name);
-  };
-  
-  const getRelativeTime = (baseTime: string, offsetMinutes: number) => {
-    const baseMinutes = parseTime(baseTime);
-    const newMinutes = baseMinutes + offsetMinutes;
-    return `${String(Math.floor(newMinutes / 60)).padStart(2, '0')}:${String(newMinutes % 60).padStart(2, '0')}`;
-  }
-  
-  if (input.wakeUpTime) scheduleRoutine('Hora de acordar', allWeekdays, input.wakeUpTime, 10);
-  if (input.sleepTime) scheduleRoutine('Hora de dormir', allWeekdays, input.sleepTime, 10);
-
-  // Rotinas de dias de semana
-  if (input.schoolShift === 'morning' && input.schoolShiftStart && input.wakeUpTime && input.schoolShiftEnd && input.lunchTime) {
-      scheduleRoutine('Arrumar a cama', weekdays, getRelativeTime(input.wakeUpTime, 10), 15);
-      scheduleRoutine('Tomar café da manhã', weekdays, getRelativeTime(input.wakeUpTime, 25), 10);
-      scheduleRoutine('Escovar os dentes (após acordar)', weekdays, getRelativeTime(input.wakeUpTime, 35), 5);
-      scheduleRoutine('Sair para escola', weekdays, getRelativeTime(input.schoolShiftStart, -20), 20);
-      if (!input.mealsAtSchool?.lunch && input.lunchTime) {
-          scheduleRoutine('Almoçar', weekdays, input.lunchTime, 30);
-          scheduleRoutine('Escovar os dentes (após almoço)', weekdays, getRelativeTime(input.lunchTime, 30), 30);
-      }
-      scheduleRoutine('Fazer a lição de casa', weekdays, '14:30', 60);
-      scheduleRoutine('Organizar a mochila para amanhã', weekdays, '15:30', 30);
-  } else if (input.schoolShift === 'afternoon' && input.wakeUpTime && input.lunchTime && input.schoolShiftEnd && input.dinnerTime) {
-      scheduleRoutine('Arrumar a cama', weekdays, getRelativeTime(input.wakeUpTime, 10), 15);
-      scheduleRoutine('Tomar café da manhã', weekdays, getRelativeTime(input.wakeUpTime, 25), 10);
-      scheduleRoutine('Escovar os dentes (após acordar)', weekdays, getRelativeTime(input.wakeUpTime, 35), 5);
-      scheduleRoutine('Fazer a lição de casa', weekdays, '09:00', 50);
-      scheduleRoutine('Organizar a mochila para amanhã', weekdays, '09:50', 10);
-      scheduleRoutine('Tomar banho', weekdays, getRelativeTime(input.schoolShiftStart!, -60), 30);
-      if (!input.mealsAtSchool?.lunch && input.lunchTime) {
-        scheduleRoutine('Almoçar', weekdays, input.lunchTime, 30);
-        scheduleRoutine('Escovar os dentes (após almoço)', weekdays, getRelativeTime(input.lunchTime, 15), 15);
-      }
-  } else if (input.schoolShift === 'full_time' && input.wakeUpTime) {
-       scheduleRoutine('Arrumar a cama', weekdays, getRelativeTime(input.wakeUpTime, 10), 15);
-       scheduleRoutine('Tomar café da manhã', weekdays, getRelativeTime(input.wakeUpTime, 25), 10);
-  }
-  
-  if (input.schoolShift !== 'not_applicable' && input.dinnerTime) {
-      if(!input.mealsAtSchool?.dinner) {
-        scheduleRoutine('Jantar', weekdays, input.dinnerTime, 30);
-        scheduleRoutine('Escovar os dentes (após jantar)', weekdays, getRelativeTime(input.dinnerTime, 15), 15);
-      }
-      scheduleRoutine('Tomar banho', weekdays, getRelativeTime(input.sleepTime!, -30), 30);
-  } else if (input.schoolShift === 'not_applicable' && input.wakeUpTime && input.lunchTime && input.dinnerTime) {
-      scheduleRoutine('Arrumar a cama', weekdays, getRelativeTime(input.wakeUpTime, 10), 15);
-      scheduleRoutine('Tomar café da manhã', weekdays, getRelativeTime(input.wakeUpTime, 25), 10);
-      scheduleRoutine('Escovar os dentes (após acordar)', weekdays, getRelativeTime(input.wakeUpTime, 35), 5);
-      scheduleRoutine('Almoçar', weekdays, input.lunchTime, 30);
-      scheduleRoutine('Escovar os dentes (após almoço)', weekdays, getRelativeTime(input.lunchTime, 15), 15);
-      scheduleRoutine('Jantar', weekdays, input.dinnerTime, 30);
-      scheduleRoutine('Escovar os dentes (após jantar)', weekdays, getRelativeTime(input.dinnerTime, 15), 15);
-      scheduleRoutine('Tomar banho', weekdays, getRelativeTime(input.sleepTime!, -30), 30);
-  }
-  
-  // Rotinas de fim de semana
-  scheduleRoutine('Fazer a lição de casa', ['SA'], '09:40', 80);
-  scheduleRoutine('Organizar a mochila para amanhã', ['SU'], '19:30', 30);
+import { useState, useMemo } from "react";
+import { useForm, FormProvider, FieldError, FieldErrors } from "react-hook-form";
+import * as z from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useAuth } from "@/contexts/AuthContext";
+import { useFamily } from "@/contexts/FamilyContext";
+import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { OnboardingStep0 } from "./steps/OnboardingStep0";
+import { OnboardingStep1 } from "./steps/OnboardingStep1";
+import { OnboardingStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
+import { OnboardingStep4 } from "./steps/OnboardingStep4";
+import { OnboardingStep5 } from "./steps/OnboardingStep5";
+import { OnboardingStep6 } from "./steps/OnboardingStep6";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { isValid, parse, format, addDays } from "date-fns";
+import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
+import { predefinedMissionGroups } from "@/lib/predefined-missions";
+import { Timestamp } from "firebase/firestore";
+import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
+import { cn } from "@/lib/utils";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { parseTime } from "@/lib/calendar-utils";
 
 
-  // NÍVEL 4: Preenchimento de tempo livre
-  const freeTimeMission = missionDetailsMap.get('Hora livre para brincar') || { emoji: '🧩', suggestedAppCategory: 'free_time' };
-  allWeekdays.forEach(day => {
-    const sortedBusySlots = timeGrid[day].sort((a, b) => a.start - b.start);
-    let lastEndTime = 0;
-    sortedBusySlots.forEach(slot => {
-        if (slot.start > lastEndTime) {
-            const startTime = `${String(Math.floor(lastEndTime / 60)).padStart(2, '0')}:${String(lastEndTime % 60).padStart(2, '0')}`;
-            const endTime = `${String(Math.floor(slot.start / 60)).padStart(2, '0')}:${String(slot.start % 60).padStart(2, '0')}`;
-            schedule.push({
-                activity: 'Hora livre para brincar',
-                emoji: freeTimeMission.emoji,
-                type: 'free_time',
-                category: freeTimeMission.suggestedAppCategory,
-                startTime,
-                endTime,
-                days: [day],
-            });
+const TOTAL_STEPS = 6;
+const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
+
+
+// Schema for an individual activity from step 3
+const extraActivitySchema = z.object({
+  name: z.string(),
+  days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
+  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+});
+
+// Unified schema for the entire onboarding flow
+const onboardingSchema = z.object({
+  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
+  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+    message: "Data inválida."
+  }),
+  gender: z.enum(['boy', 'girl', 'not-informed']),
+  contextId: z.string(),
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+  wakeUpTime: z.string().optional(),
+  lunchTime: z.string().optional(),
+  dinnerTime: z.string().optional(),
+  sleepTime: z.string().optional(),
+  mealsAtSchool: z.object({
+    lunch: z.boolean().default(false),
+    dinner: z.boolean().default(false),
+  }).optional(),
+  extraActivities: z.array(extraActivitySchema).optional(),
+  essentialRoutines: z.array(z.string()).optional(),
+}).superRefine((data, ctx) => {
+    if (data.schoolShift !== 'not_applicable') {
+        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
+        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
+        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
         }
-        lastEndTime = Math.max(lastEndTime, slot.end);
-    });
-
-    const endOfDayMinutes = 24 * 60;
-    if (lastEndTime < endOfDayMinutes) {
-         const startTime = `${String(Math.floor(lastEndTime / 60)).padStart(2, '0')}:${String(lastEndTime % 60).padStart(2, '0')}`;
-         const endTime = '23:59';
-         schedule.push({
-            activity: 'Hora livre para brincar',
-            emoji: freeTimeMission.emoji,
-            type: 'free_time',
-            category: freeTimeMission.suggestedAppCategory,
-            startTime,
-            endTime,
-            days: [day],
-        });
     }
+     if (data.schoolShift === 'not_applicable') {
+        if (!data.lunchTime) ctx.addIssue({ code: "custom", path: ["lunchTime"], message: "Horário do almoço é obrigatório." });
+    }
+});
+
+
+export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
+
+// Extract essential routine names for default values
+const essentialRoutinesDefault = predefinedMissionGroups
+    .find(g => g.userCategory === 'Rotinas Essencial (diárias)')?.items.map(item => item.title) || [];
+
+
+export function OnboardingForm() {
+  const router = useRouter();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const { currentContext } = useFamily();
+
+  const [step, setStep] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
+  
+  const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
+  const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
+  const [errorToHighlight, setErrorToHighlight] = useState<ExtraActivityError | null>(null);
+
+
+  const methods = useForm<OnboardingFormValues>({
+    resolver: zodResolver(onboardingSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: "",
+      birthDate: undefined,
+      gender: undefined,
+      contextId: currentContext,
+      schoolShift: "afternoon",
+      schoolShiftStart: '13:00',
+      schoolShiftEnd: '17:30',
+      wakeUpTime: '08:00',
+      lunchTime: '12:20',
+      dinnerTime: '18:00',
+      sleepTime: '21:30',
+      mealsAtSchool: { lunch: false, dinner: false },
+      extraActivities: [],
+      essentialRoutines: essentialRoutinesDefault,
+    },
   });
 
+  const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
+  const currentTitle = useMemo(() => {
+    const childName = methods.getValues("name");
+    switch (step) {
+      case 1: return "Assistente de Criação";
+      case 2: return "Cadastrando um Novo Herói";
+      case 3: return `Qual Hora da Escola (Turno) de ${childName || 'seu Herói'}?`;
+      case 4: return "Adicionando Poderes Extras";
+      case 5: return "Definindo a Rotina Essencial";
+      case 6: return "Revisando o Mapa da Jornada";
+      default: return "Assistente de Criação";
+    }
+  }, [step, methods]);
+  
+  const proceedToNextStep = () => {
+      if (step < TOTAL_STEPS) {
+          if (step === 5) {
+              handleGenerateSchedule();
+          }
+          setErrorToHighlight(null); // Clear highlights when moving
+          setStep(prev => prev + 1);
+      }
+  };
 
-  let freeTimeSummary = `A rotina de ${input.childName} foi criada com sucesso, com os horários de tempo livre preenchidos.`;
-  if (conflicts.length > 0) {
-    freeTimeSummary += ` Atenção: ${conflicts.join(', ')} não foram agendadas por conflito de horário.`;
-  }
+  const goToNextStep = async () => {
+    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
 
-  return { schedule, freeTimeSummary };
+    switch (step) {
+        case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
+        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime']; break;
+        case 4: fieldsToValidate = ['extraActivities']; break;
+    }
+    
+    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
+    
+    if (isStepValid) {
+        if (step === 4) {
+          const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
+          const conflicts = (extraActivities || []).filter(activity => {
+            if (schoolShift === 'not_applicable' || !activity.time) return false;
+            const activityMinutes = parseTime(activity.time);
+            const startMinutes = parseTime(schoolShiftStart!);
+            const endMinutes = parseTime(schoolShiftEnd!);
+            return activityMinutes >= startMinutes && activityMinutes < endMinutes;
+          }).map(a => a.name);
+
+          if (conflicts.length > 0) {
+            setConflictingActivities(conflicts);
+            setIsConflictDialogOpen(true);
+            return;
+          }
+        }
+        proceedToNextStep();
+    } else {
+        const errors = methods.formState.errors;
+        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
+        
+        if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
+            const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
+            const errorIndex = errorArray.findIndex(e => e && (e.days || e.time));
+
+            if (errorIndex !== -1) {
+                const errorField = errors.extraActivities?.[errorIndex];
+                const fieldName = errorField?.days ? 'dias da semana' : 'horário';
+                const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
+
+                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'time' });
+                
+                toast({
+                    title: `Pendência em '${activityName}'`,
+                    description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
+        toast({
+            title: "Ops! Faltam alguns detalhes.",
+            description: "Por favor, corrija os campos marcados antes de continuar.",
+            variant: "destructive"
+        });
+    }
+  };
+
+  const goToPreviousStep = () => {
+    if (step > 1) {
+      setErrorToHighlight(null);
+      setStep(prev => prev - 1);
+    }
+  };
+
+  const handleGenerateSchedule = async () => {
+      setIsLoading(true);
+      const values = methods.getValues();
+      const birthDate = new Date(values.birthDate as string);
+      const age = new Date().getFullYear() - birthDate.getFullYear();
+
+      const input: GenerateScheduleInput = {
+          childName: values.name,
+          childAge: age,
+          schoolShift: values.schoolShift,
+          schoolStartTime: values.schoolShiftStart,
+          schoolEndTime: values.schoolShiftEnd,
+          wakeUpTime: values.wakeUpTime!,
+          lunchTime: values.lunchTime!,
+          dinnerTime: values.dinnerTime!,
+          sleepTime: values.sleepTime!,
+          extraActivities: values.extraActivities,
+          essentialRoutines: values.essentialRoutines
+      };
+
+      try {
+          const schedule = await generateSchedule(input);
+          setGeneratedSchedule(schedule);
+      } catch (error) {
+          console.error("Error generating schedule:", error);
+          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
+          setStep(3); // Go back to the previous step on error
+      } finally {
+          setIsLoading(false);
+      }
+  };
+  
+  const handleFinalSubmit = async () => {
+    if (!user) {
+        toast({ title: "Erro de Autenticação", variant: "destructive" });
+        return;
+    }
+    if (!generatedSchedule) {
+        toast({ title: "Rotina não gerada", description: "A rotina precisa ser gerada antes de finalizar.", variant: "destructive" });
+        return;
+    }
+    setIsLoading(true);
+    const values = methods.getValues();
+
+    try {
+        const newChild = await addChildProfile(user.uid, {
+            name: values.name,
+            birthDate: values.birthDate as string,
+            gender: values.gender,
+            schoolShift: values.schoolShift,
+            schoolShiftStart: values.schoolShiftStart,
+            schoolShiftEnd: values.schoolShiftEnd,
+        }, values.contextId);
+        
+        const allMissionPromises = [];
+
+        if (generatedSchedule && generatedSchedule.schedule) {
+            for (const item of generatedSchedule.schedule) {
+                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
+                 
+                 if (!missionDetails) {
+                     console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
+                     continue;
+                 }
+
+                 const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+                    ownerId: user.uid,
+                    familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    title: item.activity,
+                    emoji: item.emoji,
+                    category: missionDetails.suggestedAppCategory,
+                    starsReward: missionDetails.starsReward,
+                    xpReward: missionDetails.xpReward,
+                    isRecurring: true,
+                    startDate: new Date().toISOString(),
+                    dueDate: addDays(new Date(), 1).toISOString(),
+                    recurrenceRule: {
+                        freq: 'WEEKLY',
+                        interval: 1,
+                        byDay: item.days,
+                    },
+                };
+                
+                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                    const [hour, minute] = item.startTime.split(':').map(Number);
+                    const startDateWithTime = new Date(template.startDate as string);
+                    startDateWithTime.setHours(hour, minute);
+                    
+                    const finalTemplate = { ...template, startDate: startDateWithTime.toISOString() };
+
+                    await addMissionInstance(user, {
+                        templateId: template.id,
+                        childId: newChild.id,
+                        ownerId: user.uid,
+                        familyId: values.contextId === 'my-space' ? null : values.contextId,
+                    }, finalTemplate);
+                 }));
+            }
+        }
+        
+        await Promise.all(allMissionPromises);
+        
+        toast({ title: "Jornada Iniciada!", description: `${values.name} e sua rotina foram cadastrados com sucesso!` });
+        router.push('/dashboard/heroes');
+
+    } catch (error) {
+        console.error("Final submission error:", error);
+        toast({ title: "Erro Final", description: "Não foi possível salvar o herói e sua rotina.", variant: "destructive" });
+    } finally {
+        setIsLoading(false);
+    }
+  };
+
+  return (
+    <FormProvider {...methods}>
+      <Card className="w-full max-w-5xl mx-auto shadow-2xl animate-in fade-in duration-500">
+        <CardHeader className="p-6 space-y-4 pb-0">
+            <div className="flex items-center gap-3">
+                <Wand2 className="h-8 w-8 text-primary" />
+                <div className="flex flex-col">
+                    <CardTitle className="text-xl md:text-2xl font-headline">{currentTitle}</CardTitle>
+                    <CardDescription>Cadastro guiado e divertido</CardDescription>
+                </div>
+            </div>
+             {step > 1 && (
+                <div className="flex items-center justify-center gap-3 text-sm pt-2">
+                    <span className="text-muted-foreground font-semibold whitespace-nowrap">
+                       Etapa {step - 1} de {DISPLAY_TOTAL_STEPS}
+                    </span>
+                    <div className="flex items-center gap-1.5">
+                        {Array.from({ length: DISPLAY_TOTAL_STEPS }).map((_, i) => (
+                            <div
+                                key={i}
+                                className={cn(
+                                    "h-2 w-6 rounded-full transition-all",
+                                    i + 2 === step ? "bg-primary w-10" :
+                                    i + 1 < step - 1 ? "bg-green-500" :
+                                    "bg-muted"
+                                )}
+                            />
+                        ))}
+                    </div>
+                </div>
+            )}
+        </CardHeader>
+        <CardContent className="px-6 pb-6 pt-6">
+            <div className="min-h-[450px]">
+                {step === 1 && <OnboardingStep0 />}
+                {step === 2 && <OnboardingStep1 />}
+                {step === 3 && <OnboardingStep2 />}
+                {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
+                {step === 5 && <OnboardingStep4 />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+            </div>
+        </CardContent>
+        <CardFooter className="flex justify-between items-center p-6 border-t">
+          <div>
+            {step > 1 && (
+              <Button type="button" variant="ghost" onClick={goToPreviousStep} disabled={isLoading}>
+                <ArrowLeft className="mr-2 h-4 w-4" /> Voltar
+              </Button>
+            )}
+          </div>
+          <div className="flex items-center gap-4">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                    <Button type="button" variant="link">Pular</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Sair do Assistente?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Você sairá do cadastro guiado. Nenhuma informação será salva agora, mas não se preocupe! Você pode voltar e criar um herói com o assistente a qualquer momento pelo menu <strong>'Novo Mini Herói'</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={() => {}}>
+                            Continuar no Assistente
+                        </AlertDialogAction>
+                        <AlertDialogCancel onClick={() => router.push('/dashboard/heroes')}>
+                            Sair Mesmo Assim
+                        </AlertDialogCancel>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+
+              {step < TOTAL_STEPS && (
+                <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
+                      <>
+                        {step === 1 ? "Começar agora" : step === 5 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
+                        {step !== 5 && <ArrowRight className="ml-2 h-4 w-4" />}
+                      </>
+                  )}
+                </Button>
+              )}
+              {step === TOTAL_STEPS && (
+                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !generatedSchedule} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                  {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                  Confirmar e Iniciar! 🚀
+                </Button>
+              )}
+          </div>
+        </CardFooter>
+      </Card>
+      
+      <AlertDialog open={isConflictDialogOpen} onOpenChange={setIsConflictDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="text-destructive h-6 w-6"/>
+                Conflito de Horários Detectado!
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              As seguintes atividades estão dentro do período escolar:
+              <ul className="list-disc pl-5 mt-2 font-semibold text-foreground">
+                {conflictingActivities.map(name => <li key={name}>{name}</li>)}
+              </ul>
+              <br/>
+              Deseja continuar mesmo assim? O ideal é ajustar os horários para evitar sobreposições.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setIsConflictDialogOpen(false)}>Voltar e Ajustar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+                setIsConflictDialogOpen(false);
+                proceedToNextStep();
+            }}>
+                Continuar Mesmo Assim
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+    </FormProvider>
+  );
 }
+`
