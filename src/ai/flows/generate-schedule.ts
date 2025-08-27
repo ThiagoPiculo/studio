@@ -61,7 +61,7 @@ const generateSchedulePrompt = ai.definePrompt({
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
     prompt: `
-      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.3)
+      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.4)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
       Você é a Aura, uma IA especialista em psicologia infantil e gamificação, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as **Informações da Criança** fornecidas e aplicar as **REGRAS DE OURO** para gerar a agenda no formato especificado. Use o emoji exato fornecido para cada atividade. O horário de término (endTime) de uma atividade deve ser sempre posterior ao horário de início (startTime).
@@ -89,7 +89,7 @@ const generateSchedulePrompt = ai.definePrompt({
           *   **NÃO** agende atividades extras que conflitem com o horário escolar.
 
       3.  **NÍVEL 3 - AS ROTINAS ESSENCIAIS (Dias de Semana):** Agora, distribua as **Rotinas Essenciais a Incluir** nos horários livres, seguindo a lógica do bloco de turno correspondente (A, B, C ou D).
-          *   **CONFLITO COM ATIVIDADE EXTRA:** Se o horário de uma rotina essencial já estiver ocupado por uma Atividade Extra (Nível 2), a rotina essencial **deve ser ignorada** para aquele dia específico para não causar sobreposição. Não tente reagendá-la.
+          *   **CONFLITO COM ATIVIDADE EXTRA:** Se o horário de uma rotina essencial já estiver ocupado por uma Atividade Extra (Nível 2), a IA deve tentar reagendar a rotina para o próximo bloco de 30 minutos livre. Se não houver espaço, a rotina pode ser omitida para aquele dia específico e uma menção adicionada ao \`freeTimeSummary\`.
 
       4.  **ROTINA DE FIM DE SEMANA:** Para Sábado e Domingo, aplique as regras do **BLOCO E**, sempre respeitando as Atividades Extras (Nível 2).
 
@@ -166,11 +166,18 @@ const generateSchedulePrompt = ai.definePrompt({
 
       ---
       **BLOCO E: Fim de Semana (Sábado e Domingo)**
-      Use os emojis exatos fornecidos abaixo.
-      *   **Manhã:** Mantenha as missões "⏰ Hora de acordar", "☕ Tomar café da manhã" e "🪥 Escovar os dentes (após acordar)" com horários mais flexíveis (ex: acordar às 9:00).
-      *   **Noite:** Mantenha as missões "🍽️ Jantar", "🪥 Escovar os dentes (após jantar)" e "😴 Hora de dormir" com horários flexíveis.
-      *   **Domingo à Noite:** Adicione a missão "🎒 Organizar a mochila para amanhã".
-      *   **Restante do Dia:** Todos os outros horários devem ser preenchidos com "🧩 Hora livre para brincar", a menos que uma Atividade Extra esteja agendada.
+      Use os emojis e horários EXATOS fornecidos abaixo, a menos que haja um conflito com uma Atividade Extra.
+      *   ⏰ Hora de acordar: 09:00
+      *   🛏️ Arrumar a cama: 09:10
+      *   ☕ Tomar café da manhã: 09:25
+      *   🪥 Escovar os dentes (após acordar): 09:35
+      *   ✍️ Fazer a lição de casa (Apenas Sábado): 09:40
+      *   🍽️ Almoçar: 12:00
+      *   🪥 Escovar os dentes (após almoço): 12:15
+      *   🍽️ Jantar: 19:00
+      *   🪥 Escovar os dentes (após jantar): 20:40
+      *   😴 Hora de dormir: 21:00
+      *   🎒 Organizar a mochila para amanhã (Apenas Domingo): 19:30
 
       ---
 
