@@ -10,7 +10,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { allWeekdays } from '@/lib/types';
 
 
@@ -41,8 +41,11 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.string().describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/).describe("A hora de término no formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(allWeekdays)).describe("Uma lista dos dias da semana em que a atividade ocorre."),
+}).refine(data => data.endTime > data.startTime, {
+  message: "O horário de término deve ser posterior ao horário de início.",
+  path: ["endTime"],
 });
 
 const GenerateScheduleOutputSchema = z.object({
@@ -61,7 +64,7 @@ const generateSchedulePrompt = ai.definePrompt({
       # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.3)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
-      Você é a Aura, uma IA especialista em psicologia infantil e gamificação, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as **Informações da Criança** fornecidas e aplicar as **REGRAS DE OURO** para gerar a agenda no formato especificado. Use o emoji exato fornecido para cada atividade.
+      Você é a Aura, uma IA especialista em psicologia infantil e gamificação, funcionando como um sistema automatizado para criar rotinas para a semana inteira (segunda a domingo). Seu objetivo é gerar uma rotina semanal para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Você deve usar as **Informações da Criança** fornecidas e aplicar as **REGRAS DE OURO** para gerar a agenda no formato especificado. Use o emoji exato fornecido para cada atividade. O horário de término (endTime) de uma atividade deve ser sempre posterior ao horário de início (startTime).
 
       ---
 
