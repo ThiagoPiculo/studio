@@ -144,7 +144,8 @@ export function OnboardingForm() {
         fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime'];
         isStepValid = await methods.trigger(fieldsToValidate);
     } else if (step === 4) {
-        isStepValid = await methods.trigger(['extraActivities']);
+        fieldsToValidate = ['extraActivities'];
+        isStepValid = await methods.trigger(fieldsToValidate);
         if (isStepValid) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
@@ -167,6 +168,12 @@ export function OnboardingForm() {
 
     if (isStepValid) {
         proceedToNextStep();
+    } else {
+        toast({
+            title: "Ops! Faltam alguns detalhes.",
+            description: "Por favor, corrija os campos marcados antes de continuar.",
+            variant: "destructive"
+        })
     }
   };
 
