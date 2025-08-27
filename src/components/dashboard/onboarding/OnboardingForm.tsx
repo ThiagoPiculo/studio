@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { useForm, FormProvider } from "react-hook-form";
+import { useForm, FormProvider, FieldError, FieldErrors } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/contexts/AuthContext";
@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
@@ -38,7 +38,7 @@ const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 const extraActivitySchema = z.object({
   name: z.string(),
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
-  time: z.string(),
+  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
 });
 
 // Unified schema for the entire onboarding flow
@@ -115,7 +115,7 @@ export function OnboardingForm() {
     switch (step) {
       case 1: return "Assistente de Criação";
       case 2: return "Cadastrando um Novo Herói";
-      case 3: return `Qual Hora da Escola (Turno) de ${childName}?`;
+      case 3: return `Qual Hora da Escola (Turno) de ${childName || 'seu Herói'}?`;
       case 4: return "Adicionando Poderes Extras";
       case 5: return "Definindo a Rotina Essencial";
       case 6: return "Revisando o Mapa da Jornada";
@@ -164,21 +164,20 @@ export function OnboardingForm() {
         proceedToNextStep();
     } else {
         const errors = methods.formState.errors;
-        const firstErrorPath = Object.keys(errors)[0];
+        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
         
-        if (firstErrorPath && firstErrorPath.startsWith('extraActivities')) {
-            const match = firstErrorPath.match(/extraActivities\.(\d+)\.(\w+)/);
-            if (match) {
-                const [, index, field] = match;
-                const activityIndex = parseInt(index, 10);
-                const activityName = methods.getValues(`extraActivities.${activityIndex}.name`);
-                
-                setErrorToHighlight({ index: activityIndex, field: field as 'days' | 'time' });
+        if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
+            const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
+            const errorIndex = errorArray.findIndex(e => e && (e.days || e.time));
 
-                const fieldNameMap = { days: 'dias da semana', time: 'horário' };
-                const fieldName = fieldNameMap[field as 'days' | 'time'] || 'campo';
+            if (errorIndex !== -1) {
+                const errorField = errors.extraActivities?.[errorIndex];
+                const fieldName = errorField?.days ? 'dias da semana' : 'horário';
+                const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
+
+                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'time' });
                 
-                 toast({
+                toast({
                     title: `Pendência em '${activityName}'`,
                     description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
                     variant: "destructive"

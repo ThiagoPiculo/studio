@@ -16,8 +16,10 @@ import { ActivityFormValues } from "../OnboardingForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { parseTime } from "@/lib/calendar-utils";
 import React from 'react';
+import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
-function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, remove: (index: number) => void }) {
+function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex: number, remove: (index: number) => void, hasError: boolean }) {
     const { control, watch } = useFormContext();
     const fieldName = `extraActivities.${activityIndex}`;
     
@@ -37,7 +39,7 @@ function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, r
     }, [schoolShift, schoolShiftStart, schoolShiftEnd, activityTime]);
 
     return (
-        <div className="p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative">
+        <div className={cn("p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative", hasError && "border-destructive ring-2 ring-destructive/50")}>
             <Button
                 type="button"
                 variant="ghost"
@@ -192,6 +194,7 @@ export function OnboardingStep3({ errorToHighlight }: OnboardingStep3Props) {
                             {group.items.map(item => {
                                 const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
                                 const isChecked = currentFieldIndex > -1;
+                                const hasError = errorToHighlight?.index === currentFieldIndex;
 
                                 return (
                                     <div key={item.title} className="space-y-2">
@@ -206,7 +209,7 @@ export function OnboardingStep3({ errorToHighlight }: OnboardingStep3Props) {
                                             {item.title}
                                             </Label>
                                         </div>
-                                        {isChecked && <ActivityScheduler activityIndex={currentFieldIndex} remove={remove} />}
+                                        {isChecked && <ActivityScheduler activityIndex={currentFieldIndex} remove={remove} hasError={hasError} />}
                                     </div>
                                 )
                             })}
