@@ -2,12 +2,12 @@
 "use client";
 
 import React from 'react';
-import type { GenerateScheduleOutput } from '@/ai/flows/generate-schedule';
+import type { GenerateScheduleOutput } from '@/lib/schedule-generator';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
 import { weekdayLabels, allWeekdays, type Weekday, type ScheduleItem } from "@/lib/types";
-import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
+import { Loader2, Wand2, BrainCircuit } from "lucide-react";
 import { Button } from '@/components/ui/button';
 
 const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
@@ -49,18 +49,17 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
 }
 
 interface OnboardingStep5Props {
-  isLoading?: boolean;
-  schedule: GenerateScheduleOutput | null;
-  childName: string;
+  isLoading: boolean;
+  generatedSchedule: GenerateScheduleOutput | null;
 }
 
-export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingStep5Props) {
+export function OnboardingStep5({ isLoading, generatedSchedule }: OnboardingStep5Props) {
   
   const scheduleByDay = React.useMemo(() => {
-    if (!schedule || !schedule.schedule) {
+    if (!generatedSchedule || !generatedSchedule.schedule) {
         return {} as Record<Weekday, ScheduleItem[]>;
     }
-    const grouped = schedule.schedule.reduce((acc, item) => {
+    const grouped = generatedSchedule.schedule.reduce((acc, item) => {
         item.days.forEach(day => {
             if (!acc[day]) {
                 acc[day] = [];
@@ -71,7 +70,7 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
     }, {} as Record<Weekday, ScheduleItem[]>);
 
     return grouped;
-  }, [schedule]);
+  }, [generatedSchedule]);
 
 
   if (isLoading) {
@@ -81,16 +80,16 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
                 <BrainCircuit className="h-24 w-24 text-primary animate-pulse" />
             </div>
             <h2 className="mt-6 text-2xl font-bold font-headline">
-                Consultando o Oráculo da Organização...
+                Montando o Quebra-Cabeça da Rotina...
             </h2>
             <p className="mt-2 text-muted-foreground max-w-md">
-                Estou analisando os horários e atividades de {childName} para criar a rotina perfeita. Um momento, a mágica está acontecendo!
+                Aguarde um instante, estamos encaixando todas as peças para criar a jornada perfeita.
             </p>
         </div>
     );
   }
 
-  if (!schedule || !schedule.schedule || schedule.schedule.length === 0) {
+  if (!generatedSchedule || !generatedSchedule.schedule || generatedSchedule.schedule.length === 0) {
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
@@ -103,7 +102,7 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
     <div className="space-y-4 animate-in fade-in-50 duration-500">
       <div className="text-center">
         <p className="text-muted-foreground">Esta é a rotina que o assistente criou. Se tudo estiver certo, podemos confirmar e iniciar a jornada!</p>
-        <p className="text-xs text-muted-foreground mt-2">{schedule.freeTimeSummary}</p>
+        {generatedSchedule.freeTimeSummary && <p className="text-xs text-muted-foreground mt-2">{generatedSchedule.freeTimeSummary}</p>}
       </div>
       
        <Tabs defaultValue="MO" className="w-full">

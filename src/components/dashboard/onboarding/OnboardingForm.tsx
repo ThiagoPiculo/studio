@@ -14,17 +14,18 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
+import { OnboardingStep6 } from "./steps/OnboardingStep6";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
+import { scheduleGenerator, type ScheduleGeneratorInput, type GenerateScheduleOutput } from "@/lib/schedule-generator";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -212,38 +213,24 @@ export function OnboardingForm() {
     }
   };
 
-  const handleGenerateSchedule = async () => {
+  const handleGenerateSchedule = () => {
       setIsLoading(true);
       setGeneratedSchedule(null);
       const values = methods.getValues();
-      const birthDate = new Date(values.birthDate);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: GenerateScheduleInput = {
-          childName: values.name,
-          childAge: age,
-          schoolShift: values.schoolShift,
-          schoolStartTime: values.schoolShiftStart,
-          schoolEndTime: values.schoolShiftEnd,
-          wakeUpTime: values.wakeUpTime,
-          lunchTime: values.lunchTime,
-          dinnerTime: values.dinnerTime,
-          sleepTime: values.sleepTime,
-          mealsAtSchool: values.mealsAtSchool,
-          extraActivities: values.extraActivities || [],
-          essentialRoutines: values.essentialRoutines || [],
-      };
-
-      try {
-          const schedule = await generateSchedule(input);
+      // Mock processing time to show the loading step
+      setTimeout(() => {
+        try {
+          const schedule = scheduleGenerator(values);
           setGeneratedSchedule(schedule);
-      } catch (error) {
+        } catch (error) {
           console.error("Error generating schedule:", error);
-          toast({ title: "Erro Mágico!", description: "Ocorreu um erro ao criar a rotina. Por favor, tente novamente.", variant: "destructive" });
-          setStep(4); // Go back to the previous step on error
-      } finally {
+          toast({ title: "Erro na Lógica!", description: "Ocorreu um erro ao criar a rotina. Por favor, verifique os horários.", variant: "destructive" });
+          setStep(3); // Go back to the times step on error
+        } finally {
           setIsLoading(false);
-      }
+        }
+      }, 1500); // Simulate processing time for UX
   };
   
   const handleFinalSubmit = async () => {
@@ -366,7 +353,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} childName={methods.getValues("name")} />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
@@ -433,7 +420,7 @@ export function OnboardingForm() {
                 {conflictingActivities.map(name => <li key={name}>{name}</li>)}
               </ul>
               <br/>
-              Deseja continuar mesmo assim? A IA tentará organizar a rotina, mas o ideal é evitar sobreposições.
+              Deseja continuar mesmo assim? O ideal é ajustar os horários para evitar sobreposições.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
