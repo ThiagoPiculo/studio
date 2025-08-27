@@ -86,13 +86,11 @@ function ActivityScheduler({ activityIndex, remove }: { activityIndex: number, r
                            <TimePicker {...field} />
                         </FormControl>
                          {hasConflict && (
-                            <FormDescription asChild>
-                               <Alert variant="destructive" className="mt-2 text-xs p-2">
-                                  <AlertCircle className="h-4 w-4" />
-                                  <AlertDescription>
-                                    Atenção: Este horário está dentro do período escolar.
-                                  </AlertDescription>
-                                </Alert>
+                            <FormDescription>
+                               <span className="text-destructive text-xs flex items-center gap-1 mt-1">
+                                  <AlertCircle className="h-3 w-3" />
+                                  Conflita com o horário escolar.
+                               </span>
                             </FormDescription>
                         )}
                         <FormMessage />
@@ -114,13 +112,35 @@ const extraActivityGroups = predefinedMissionGroups
     .filter(g => categoriesForStep3.includes(g.userCategory))
     .sort((a, b) => categoriesForStep3.indexOf(a.userCategory) - categoriesForStep3.indexOf(b.userCategory));
 
+export interface ExtraActivityError {
+    index: number;
+    field: 'days' | 'time';
+}
 
-export function OnboardingStep3() {
+interface OnboardingStep3Props {
+    errorToHighlight: ExtraActivityError | null;
+}
+
+export function OnboardingStep3({ errorToHighlight }: OnboardingStep3Props) {
   const { control, watch } = useFormContext();
   const { fields, append, remove } = useFieldArray({
       control,
       name: "extraActivities"
   });
+
+  const [openAccordions, setOpenAccordions] = React.useState<string[]>([]);
+  
+  React.useEffect(() => {
+    if (errorToHighlight) {
+      const activityWithError = (fields[errorToHighlight.index] as any);
+      if (activityWithError) {
+        const groupWithError = extraActivityGroups.find(g => g.items.some(item => item.title === activityWithError.name));
+        if (groupWithError && !openAccordions.includes(groupWithError.userCategory)) {
+          setOpenAccordions(prev => [...prev, groupWithError.userCategory]);
+        }
+      }
+    }
+  }, [errorToHighlight, fields, openAccordions]);
   
   const allActivities = watch('extraActivities') as (ActivityFormValues & { emoji?: string })[];
 
@@ -142,7 +162,7 @@ export function OnboardingStep3() {
         <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Marque as atividades e defina os horários fixos para cada uma delas.</p>
       </div>
 
-      <Accordion type="multiple" className="w-full space-y-2">
+      <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-2">
         {extraActivityGroups.map((group) => {
             const activitiesInGroup = allActivities?.filter(activity => 
                 group.items.some(item => item.title === activity.name)

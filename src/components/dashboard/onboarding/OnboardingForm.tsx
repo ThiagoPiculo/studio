@@ -15,7 +15,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
 import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
-import { OnboardingStep3 } from "./steps/OnboardingStep3";
+import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { useRouter } from "next/navigation";
@@ -89,6 +89,7 @@ export function OnboardingForm() {
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
+  const [errorToHighlight, setErrorToHighlight] = useState<ExtraActivityError | null>(null);
 
 
   const methods = useForm<OnboardingFormValues>({
@@ -122,31 +123,29 @@ export function OnboardingForm() {
     }
   }, [step, methods]);
   
-  const proceedToNextStep = (force = false) => {
+  const proceedToNextStep = () => {
       if (step < TOTAL_STEPS) {
           if (step === 5) {
               handleGenerateSchedule();
           }
+          setErrorToHighlight(null); // Clear highlights when moving
           setStep(prev => prev + 1);
       }
   };
 
   const goToNextStep = async () => {
-    let isStepValid = false;
-    let fieldsToValidate: (keyof OnboardingFormValues)[] = [];
+    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
 
-    if (step === 1) {
-        isStepValid = true; 
-    } else if (step === 2) {
-        fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId'];
-        isStepValid = await methods.trigger(fieldsToValidate);
-    } else if (step === 3) {
-        fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime'];
-        isStepValid = await methods.trigger(fieldsToValidate);
-    } else if (step === 4) {
-        fieldsToValidate = ['extraActivities'];
-        isStepValid = await methods.trigger(fieldsToValidate);
-        if (isStepValid) {
+    switch (step) {
+        case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
+        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime']; break;
+        case 4: fieldsToValidate = ['extraActivities']; break;
+    }
+    
+    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
+    
+    if (isStepValid) {
+        if (step === 4) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
             if (schoolShift === 'not_applicable' || !activity.time) return false;
@@ -159,26 +158,46 @@ export function OnboardingForm() {
           if (conflicts.length > 0) {
             setConflictingActivities(conflicts);
             setIsConflictDialogOpen(true);
-            return; // Don't proceed automatically
+            return;
           }
         }
-    } else if (step === 5) {
-        isStepValid = true; 
-    }
-
-    if (isStepValid) {
         proceedToNextStep();
     } else {
+        const errors = methods.formState.errors;
+        const firstErrorPath = Object.keys(errors)[0];
+        
+        if (firstErrorPath && firstErrorPath.startsWith('extraActivities')) {
+            const match = firstErrorPath.match(/extraActivities\.(\d+)\.(\w+)/);
+            if (match) {
+                const [, index, field] = match;
+                const activityIndex = parseInt(index, 10);
+                const activityName = methods.getValues(`extraActivities.${activityIndex}.name`);
+                
+                setErrorToHighlight({ index: activityIndex, field: field as 'days' | 'time' });
+
+                const fieldNameMap = { days: 'dias da semana', time: 'horário' };
+                const fieldName = fieldNameMap[field as 'days' | 'time'] || 'campo';
+                
+                 toast({
+                    title: `Pendência em '${activityName}'`,
+                    description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
         toast({
             title: "Ops! Faltam alguns detalhes.",
             description: "Por favor, corrija os campos marcados antes de continuar.",
             variant: "destructive"
-        })
+        });
     }
   };
 
   const goToPreviousStep = () => {
     if (step > 1) {
+      setErrorToHighlight(null);
       setStep(prev => prev - 1);
     }
   };
@@ -331,7 +350,7 @@ export function OnboardingForm() {
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep3 />}
+                {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
                 {step === 5 && <OnboardingStep4 />}
                 {step === 6 && <OnboardingStep5 schedule={generatedSchedule} isLoading={isLoading} childName={methods.getValues("name")} />}
             </div>
