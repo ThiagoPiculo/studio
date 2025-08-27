@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { OnboardingStep0 } from "./steps/OnboardingStep0";
 import { OnboardingStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
 import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
 import { OnboardingStep4 } from "./steps/OnboardingStep4";
 import { OnboardingStep5 } from "./steps/OnboardingStep5";
@@ -52,7 +52,14 @@ const onboardingSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
+  wakeUpTime: z.string().optional(),
   lunchTime: z.string().optional(),
+  dinnerTime: z.string().optional(),
+  sleepTime: z.string().optional(),
+  mealsAtSchool: z.object({
+    lunch: z.boolean().default(false),
+    dinner: z.boolean().default(false),
+  }).optional(),
   extraActivities: z.array(extraActivitySchema).optional(),
   essentialRoutines: z.array(z.string()).optional(),
 }).superRefine((data, ctx) => {
@@ -103,7 +110,11 @@ export function OnboardingForm() {
       schoolShift: "afternoon",
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
-      lunchTime: '12:00',
+      wakeUpTime: '08:00',
+      lunchTime: '12:20',
+      dinnerTime: '18:00',
+      sleepTime: '21:30',
+      mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
     },
@@ -138,7 +149,7 @@ export function OnboardingForm() {
 
     switch (step) {
         case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
-        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'lunchTime']; break;
+        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime']; break;
         case 4: fieldsToValidate = ['extraActivities']; break;
     }
     
@@ -214,7 +225,11 @@ export function OnboardingForm() {
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
+          wakeUpTime: values.wakeUpTime,
           lunchTime: values.lunchTime,
+          dinnerTime: values.dinnerTime,
+          sleepTime: values.sleepTime,
+          mealsAtSchool: values.mealsAtSchool,
           extraActivities: values.extraActivities || [],
           essentialRoutines: values.essentialRoutines || [],
       };

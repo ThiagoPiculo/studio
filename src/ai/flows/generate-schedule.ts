@@ -27,7 +27,14 @@ const GenerateScheduleInputSchema = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']).describe("Turno escolar da criança."),
   schoolStartTime: z.string().optional().describe("Horário de início da escola (HH:mm)."),
   schoolEndTime: z.string().optional().describe("Horário de término da escola (HH:mm)."),
+  wakeUpTime: z.string().optional().describe("Horário de acordar (HH:mm)."),
   lunchTime: z.string().optional().describe("Horário do almoço (HH:mm), usado como âncora se a criança não estuda."),
+  dinnerTime: z.string().optional().describe("Horário do jantar (HH:mm)."),
+  sleepTime: z.string().optional().describe("Horário de dormir (HH:mm)."),
+  mealsAtSchool: z.object({
+    lunch: z.boolean().default(false),
+    dinner: z.boolean().default(false),
+  }).optional().describe("Indica se as refeições são feitas na escola."),
   extraActivities: z.array(ExtraActivitySchema).optional().describe("Lista de atividades extras com dias e horários fixos."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de rotinas essenciais a serem incluídas na agenda."),
 });
@@ -64,10 +71,10 @@ const generateSchedulePrompt = ai.definePrompt({
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
     prompt: `
-      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v9.5)
+      # BRIEFING MESTRE: GERADOR DE ROTINA INFANTIL UNIVERSAL (v12.1)
 
       **1. PERSONA E DIRETRIZ IMPERATIVA**
-      Você é a Aura, uma IA especialista em psicologia infantil. Sua missão é criar uma rotina semanal completa (Segunda a Domingo) para uma criança chamada {{{childName}}}, de {{{childAge}}} anos. Use as **Informações da Criança** e as **REGRAS DE OURO** abaixo para gerar a agenda. Para cada atividade, você DEVE fornecer TODOS os campos requisitados: \`activity\`, \`emoji\`, \`type\`, \`category\`, \`startTime\`, \`endTime\`, e \`days\`. O \`endTime\` deve ser sempre posterior ao \`startTime\`.
+      Você é a Aura, uma IA especialista em psicologia infantil. Sua missão é criar uma rotina semanal completa (Segunda a Domingo) para {{{childName}}}, de {{{childAge}}} anos, seguindo as REGRAS DE OURO e os blocos de horário de forma HIERÁRQUICA E LITERAL. Para cada atividade, você DEVE fornecer TODOS os campos requisitados: \`activity\`, \`emoji\`, \`type\`, \`category\`, \`startTime\`, \`endTime\`, e \`days\`.
 
       ---
 
@@ -77,7 +84,11 @@ const generateSchedulePrompt = ai.definePrompt({
       *   **Idade:** {{{childAge}}}
       *   **Turno Escolar:** {{{schoolShift}}}
       *   **Horário Escolar:** {{{schoolStartTime}}} - {{{schoolEndTime}}}
-      *   **Horário do Almoço (se aplicável):** {{{lunchTime}}}
+      *   **Horários de Âncora Definidos pelo Responsável:**
+          *   Acordar: {{{wakeUpTime}}}
+          *   Almoço: {{#if mealsAtSchool.lunch}}Na escola{{else}}{{{lunchTime}}}{{/if}}
+          *   Jantar: {{#if mealsAtSchool.dinner}}Na escola{{else}}{{{dinnerTime}}}{{/if}}
+          *   Dormir: {{{sleepTime}}}
       *   **Atividades Extras:** {{#if extraActivities}}{{#each extraActivities}}- {{{this.name}}} acontece toda {{{this.days}}} às {{{this.time}}}.{{/each}}{{else}}Nenhuma.{{/if}}
       *   **Rotinas Essenciais a Incluir:** {{#if essentialRoutines}}{{#each essentialRoutines}}- {{{this}}}{{/each}}{{else}}Nenhuma.{{/if}}
 
@@ -85,99 +96,19 @@ const generateSchedulePrompt = ai.definePrompt({
 
       **3. REGRAS DE OURO (LÓGICA DE AGENDAMENTO HIERÁRQUICO)**
 
-      1.  **NÍVEL 1 - O INEGOCIÁVEL (Escola):** Primeiro, aloque o horário escolar (Entrada e Saída) na agenda, de Segunda a Sexta. Este bloco é a âncora da rotina e não pode ser alterado. Nome da atividade deve ser 'Escola' com emoji '🏫'.
-      2.  **NÍVEL 2 - OS COMPROMISSOS (Atividades Extras):** Em seguida, tente alocar as Atividades Extras. Se o horário de uma Atividade Extra cair dentro do horário escolar, **IGNORE A ATIVIDADE EXTRA** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Exemplo: "Atenção: A Natação não foi agendada pois o horário das 15:00 conflita com o período escolar."
-      3.  **NÍvel 3 - AS ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais dos blocos A, B, C, D ou E nos horários livres. Se o horário de uma rotina essencial já estiver ocupado por uma Atividade Extra, a IA deve tentar reagendar a rotina para o próximo bloco de 30 minutos livre. Se não houver espaço, a rotina pode ser omitida.
+      1.  **NÍVEL 1 - O INEGOCIÁVEL (Escola):** Primeiro, aloque o horário escolar (use a atividade 'Escola' e o emoji '🏫') na agenda de Segunda a Sexta, usando os horários de início e fim fornecidos. Este bloco é a âncora da rotina e não pode ser alterado.
+      2.  **NÍVEL 2 - OS COMPROMISSOS (Atividades Extras):** Em seguida, aloque as Atividades Extras nos dias e horários fornecidos. Se o horário de uma Atividade Extra cair dentro do horário escolar, **IGNORE A ATIVIDADE EXTRA** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`.
+      3.  **NÍVEL 3 - AS ROTINAS ESSENCIAIS:** Para cada dia da semana (Segunda a Domingo), distribua a lista de **'Rotinas Essenciais a Incluir'** nos horários vagos. Use os horários âncora (Acordar, Almoçar, Jantar, Dormir) como referência para saber se uma tarefa é da manhã, tarde ou noite. Ex: "Escovar os dentes" deve acontecer após as refeições. "Arrumar a cama" deve ser logo após "Hora de acordar".
       
       **REGRAS GERAIS ADICIONAIS:**
-      - **Emojis, títulos e Categorias:** Para cada missão (atividade a ser agendada), use o emoji, título e categoria exatos da lista de missões pré-definidas de referência do aplicatico. Isso é crucial para a consistência do aplicativo.
+      - **Emojis, títulos e Categorias:** Para cada missão (atividade a ser agendada), use o emoji, título e categoria EXATOS da lista de missões pré-definidas de referência do aplicativo. O campo 'emoji' DEVE conter apenas um único caractere de emoji, sem texto ou espaços. NÃO INVENTE ou ALTERE estes valores sob nenhuma circunstância.
+      - **NÃO agende missões antes do horário de acordar ({{{wakeUpTime}}}) ou após o horário de dormir ({{{sleepTime}}}).**
 
       **PREENCHIMENTO FINAL:** Após alocar todos os itens acima, preencha todos os horários vazios com a atividade "🧩 Hora livre para brincar".
 
       ---
-
-      **4. [REGRAS E LÓGICA POR CENÁRIO PARA ROTINAS ESSENCIAIS]**
-
-      Use o bloco correspondente ao **Turno Escolar** para saber como distribuir as rotinas essenciais. **Use os emojis EXATOS fornecidos na lista para cada atividade.**
-
-      ---
-      **BLOCO A: SE TIPO DE TURNO = "morning"**
-      1.  ⏰ Hora de acordar: 1h antes da escola.
-      2.  🛏️ Arrumar a cama: 10 min após acordar.
-      3.  ☕ Tomar café da manhã: 25 min após acordar.
-      4.  🪥 Escovar os dentes (após acordar): 10 min após tomar café.
-      5.  🎒 Sair para escola: 20min antes da escola.
-      6.  🍽️ Almoçar: 30 min após a escola.
-      7.  🪥 Escovar os dentes (após almoço): 30 min após almoçar.
-      8.  ✍️ Fazer a lição de casa: 14:30.
-      9.  🎒 Organizar a mochila para amanhã: 15:30.
-      10. 🚿 Tomar banho: 18:30.
-      11. 🍽️ Jantar: 19:00.
-      12. 😴 Hora de dormir: 21:00.
-      13. 🪥 Escovar os dentes (após jantar): 20 min antes de dormir.
-
-      ---
-      **BLOCO B: SE TIPO DE TURNO = "afternoon"**
-      1.  ⏰ Hora de acordar: 5 horas antes da aula.
-      2.  🛏️ Arrumar a cama: 10 min após acordar.
-      3.  ☕ Tomar café da manhã: 25 min após acordar.
-      4.  🪥 Escovar os dentes (após acordar): 10 min após café.
-      5.  ✍️ Fazer a lição de casa: 09:00.
-      6.  🎒 Organizar a mochila para amanhã: 09:50.
-      7.  🚿 Tomar banho: 60 min antes da escola.
-      8.  🍽️ Almoçar: 40 min antes da escola.
-      9.  🪥 Escovar os dentes (após almoço): 15 min após almoçar.
-      10. 🎒 Sair para escola: 20 min antes da escola.
-      11. 🍽️ Jantar: 19:00.
-      12. 🪥 Escovar os dentes (após jantar): 15 min após jantar.
-      13. 🚿 Tomar banho: 21:40.
-      14. 😴 Hora de dormir: 22:00.
-
-      ---
-      **BLOCO C: SE TIPO DE TURNO = "full_time"**
-      1.  ⏰ Hora de acordar: 1h antes da escola.
-      2.  🛏️ Arrumar a cama: 10 min após acordar.
-      3.  ☕ Tomar café da manhã: 25 min após acordar.
-      4.  🪥 Escovar os dentes (após acordar): 10 min após tomar café.
-      5.  🎒 Sair para escola: 20 min antes da escola.
-      6.  🍽️ Jantar: 19:00.
-      7.  🪥 Escovar os dentes (após jantar): 15 min após jantar.
-      8.  🚿 Tomar banho: 20:40.
-      9.  😴 Hora de dormir: 21:00.
-
-      ---
-      **BLOCO D: SE TIPO DE TURNO = "not_applicable"**
-      Use o horário do almoço ({{{lunchTime}}}) como âncora.
-      1.  ⏰ Hora de acordar: 4 horas antes do almoço.
-      2.  🛏️ Arrumar a cama: 10 min após acordar.
-      3.  ☕ Tomar café da manhã: 25 min após acordar.
-      4.  🪥 Escovar os dentes (após acordar): 10 min após tomar café.
-      5.  🚿 Tomar banho (antes do almoço): 20 min antes do almoço.
-      6.  🍽️ Almoçar: {{{lunchTime}}}.
-      7.  🪥 Escovar os dentes (após almoço): 15 min após o almoço.
-      8.  🚿 Tomar banho (à noite): 18:30.
-      9.  🍽️ Jantar: 19:00.
-      10. 😴 Hora de dormir: 21:00.
-      11. 🪥 Escovar os dentes (após jantar): 20 min antes de dormir.
-
-      ---
-      **BLOCO E: Fim de Semana (Sábado e Domingo)**
-      Use os horários EXATOS fornecidos abaixo, a menos que haja um conflito com uma Atividade Extra.
-      *   ⏰ Hora de acordar: 09:00
-      *   🛏️ Arrumar a cama: 09:10
-      *   ☕ Tomar café da manhã: 09:25
-      *   🪥 Escovar os dentes (após acordar): 09:35
-      *   ✍️ Fazer a lição de casa (Apenas Sábado): 09:40
-      *   🍽️ Almoçar: 12:00
-      *   🪥 Escovar os dentes (após almoço): 12:15
-      *   🍽️ Jantar: 19:00
-      *   🪥 Escovar os dentes (após jantar): 20:40
-      *   😴 Hora de dormir: 21:00
-      *   🎒 Organizar a mochila para amanhã (Apenas Domingo): 19:30
-
-      ---
-
-      **5. DIRETIVA FINAL DE FORMATO**
+      
+      **4. DIRETIVA FINAL DE FORMATO**
       Sua resposta DEVE ser um objeto JSON válido que corresponda ao esquema de saída definido. Não inclua nenhum texto, explicação ou formatação fora da estrutura JSON.
 
       Agora, gere a agenda completa.
