@@ -129,12 +129,32 @@ const generateSchedulePrompt = ai.definePrompt({
 
 // Função principal que é exportada e chamada pela aplicação.
 export async function generateSchedule(input: GenerateScheduleInput): Promise<GenerateScheduleOutput> {
-  const { output } = await generateSchedulePrompt(input);
-  
-  if (!output) {
-      throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+
+  while (attempt < MAX_RETRIES) {
+    try {
+      const { output } = await generateSchedulePrompt(input);
+      if (!output) {
+        throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
+      }
+      // Garante que a saída esteja em conformidade com o esquema antes de retornar.
+      return GenerateScheduleOutputSchema.parse(output);
+    } catch (error: any) {
+      attempt++;
+      const isOverloaded = error.message && (error.message.includes('503') || error.message.toLowerCase().includes('overloaded'));
+      
+      if (isOverloaded && attempt < MAX_RETRIES) {
+        console.warn(`Attempt ${attempt} failed due to model overload. Retrying in ${attempt}s...`);
+        // Espera exponencialmente antes de tentar novamente (1s, 2s)
+        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+      } else {
+        console.error("Failed to generate schedule after multiple retries:", error);
+        throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado. Por favor, tente novamente mais tarde.");
+      }
+    }
   }
-  
-  // Garante que a saída esteja em conformidade com o esquema antes de retornar.
-  return GenerateScheduleOutputSchema.parse(output);
+
+  // Este ponto só é alcançado se todas as tentativas falharem
+  throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
 }
