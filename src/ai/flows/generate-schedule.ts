@@ -138,4 +138,3 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
   // Garante que a saída esteja em conformidade com o esquema antes de retornar.
   return GenerateScheduleOutputSchema.parse(output);
 }
-`
