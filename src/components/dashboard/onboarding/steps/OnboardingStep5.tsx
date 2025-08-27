@@ -107,17 +107,17 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
       </div>
       
        <Tabs defaultValue="MO" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 h-auto">
-                {(Object.keys(weekdayLabels) as Weekday[]).map(day => {
-                    const count = scheduleByDay[day]?.length || 0;
-                    return (
-                        <TabsTrigger key={day} value={day} className="flex-col gap-1 h-auto py-2">
-                           <span className="hidden sm:inline">{weekdayLabels[day].long}</span>
-                           <span className="sm:hidden">{weekdayLabels[day].short}</span>
-                           {count > 0 && <Badge variant={count > 5 ? "destructive" : "secondary"}>{count}</Badge>}
-                        </TabsTrigger>
-                    )
-                })}
+            <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-muted/50 rounded-lg">
+                {(Object.keys(weekdayLabels) as Weekday[]).map(day => (
+                    <TabsTrigger 
+                        key={day} 
+                        value={day} 
+                        className="flex-col gap-1 h-auto py-2 px-1 text-xs sm:text-sm data-[state=active]:shadow-lg"
+                    >
+                       <span className="font-semibold">{weekdayLabels[day].short}</span>
+                       <span className="hidden sm:inline text-muted-foreground">{weekdayLabels[day].long.split('-')[0]}</span>
+                    </TabsTrigger>
+                ))}
             </TabsList>
              <ScrollArea className="h-[350px] mt-4 pr-3">
                 {(Object.keys(weekdayLabels) as Weekday[]).map(day => (
