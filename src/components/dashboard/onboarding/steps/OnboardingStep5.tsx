@@ -6,7 +6,7 @@ import type { GenerateScheduleOutput } from '@/ai/flows/generate-schedule';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
-import { weekdayLabels, Weekday, ScheduleItem } from "@/lib/types";
+import { weekdayLabels, allWeekdays, type Weekday, type ScheduleItem } from "@/lib/types";
 import { Loader2, Wand2, Sun, Moon, CloudSun, Star, CalendarDays, FlaskConical, BrainCircuit, NotebookPen } from "lucide-react";
 import { Button } from '@/components/ui/button';
 
@@ -108,19 +108,18 @@ export function OnboardingStep5({ isLoading, schedule, childName }: OnboardingSt
       
        <Tabs defaultValue="MO" className="w-full">
             <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-muted/50 rounded-lg">
-                {(Object.keys(weekdayLabels) as Weekday[]).map(day => (
+                {allWeekdays.map(day => (
                     <TabsTrigger 
                         key={day} 
                         value={day} 
                         className="flex-col gap-1 h-auto py-2 px-1 text-xs sm:text-sm data-[state=active]:shadow-lg"
                     >
                        <span className="font-semibold">{weekdayLabels[day].short}</span>
-                       <span className="hidden sm:inline text-muted-foreground">{weekdayLabels[day].long.split('-')[0]}</span>
                     </TabsTrigger>
                 ))}
             </TabsList>
              <ScrollArea className="h-[350px] mt-4 pr-3">
-                {(Object.keys(weekdayLabels) as Weekday[]).map(day => (
+                {allWeekdays.map(day => (
                     <TabsContent key={day} value={day}>
                         <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
                     </TabsContent>
