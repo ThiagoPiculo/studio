@@ -22,12 +22,12 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.custom<typeof missionCategories[number]['id']>((val) => missionCategories.map(rc => rc.id).includes(val as any)).describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
 
 // Define o esquema de entrada para a IA, detalhando as informações necessárias.
-const GenerateScheduleInputSchema = z.object({
+export const GenerateScheduleInputSchema = z.object({
   childName: z.string().describe("O nome da criança."),
   childAge: z.number().describe("A idade da criança em anos."),
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']).describe("O turno escolar da criança."),
@@ -47,7 +47,7 @@ const GenerateScheduleInputSchema = z.object({
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
 // Define o esquema de saída que a IA deve gerar.
-const GenerateScheduleOutputSchema = z.object({
+export const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
   freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
