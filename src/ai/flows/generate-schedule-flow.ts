@@ -10,7 +10,6 @@
  * - GenerateScheduleInput - O tipo de entrada para a função.
  * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
-'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
