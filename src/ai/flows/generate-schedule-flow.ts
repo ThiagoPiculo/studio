@@ -1,5 +1,3 @@
-
-'use server';
 /**
  * @fileOverview Um fluxo de IA para gerar uma rotina semanal para uma criança.
  *
@@ -7,7 +5,7 @@
  * fornecidas sobre a criança, como idade, turno escolar e atividades. A IA é instruída a seguir
  * uma lógica hierárquica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
  *
- * - generateSchedule - A função principal que gera a agenda.
+ * - generateScheduleFlow - O fluxo de IA que gera a agenda.
  * - GenerateScheduleInput - O tipo de entrada para a função.
  * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
@@ -29,7 +27,7 @@ const ScheduleItemSchema = z.object({
 });
 
 // Define o esquema de entrada para a IA, detalhando as informações necessárias.
-const GenerateScheduleInputSchema = z.object({
+export const GenerateScheduleInputSchema = z.object({
   childName: z.string().describe("O nome da criança."),
   childAge: z.number().describe("A idade da criança em anos."),
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']).describe("O turno escolar da criança."),
@@ -50,7 +48,7 @@ const GenerateScheduleInputSchema = z.object({
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
 // Define o esquema de saída que a IA deve gerar.
-const GenerateScheduleOutputSchema = z.object({
+export const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
   freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
@@ -87,40 +85,46 @@ const generateSchedulePrompt = ai.definePrompt({
 });
 
 
-// Função principal que é exportada e chamada pela aplicação.
-export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missionReference'>): Promise<GenerateScheduleOutput> {
-  const MAX_RETRIES = 3;
-  let lastError: any | null = null;
-
-  // Constrói a lista de referência de missões dinamicamente
-  const missionReference = predefinedMissionGroups
-    .flatMap(group => group.items)
-    .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
-    .join('\n');
-
-  const fullInput = { ...input, missionReference };
-
-  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
-    try {
-      const { output } = await generateSchedulePrompt(fullInput);
-      if (!output) {
-        throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
-      }
-      // Valida a saída. Se falhar, vai para o catch e tenta novamente.
-      const parsedOutput = GenerateScheduleOutputSchema.parse(output);
-      return parsedOutput; // Sucesso, retorna o resultado
-    } catch (error) {
-      lastError = error;
-      console.error(`Tentativa ${attempt + 1} de ${MAX_RETRIES} falhou:`, error);
-      // Espera um pouco antes de tentar novamente, com um pequeno aumento a cada tentativa.
-      if (attempt < MAX_RETRIES - 1) {
-        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-      }
+export const generateScheduleFlow = ai.defineFlow(
+    {
+        name: 'generateScheduleFlow',
+        inputSchema: z.custom<Omit<GenerateScheduleInput, 'missionReference'>>(),
+        outputSchema: GenerateScheduleOutputSchema,
+    },
+    async (input) => {
+        const MAX_RETRIES = 3;
+        let lastError: any | null = null;
+    
+        // Constrói a lista de referência de missões dinamicamente
+        const missionReference = predefinedMissionGroups
+        .flatMap(group => group.items)
+        .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
+        .join('\n');
+    
+        const fullInput = { ...input, missionReference };
+    
+        for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+            try {
+                const { output } = await generateSchedulePrompt(fullInput);
+                if (!output) {
+                    throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
+                }
+                // Valida a saída. Se falhar, vai para o catch e tenta novamente.
+                const parsedOutput = GenerateScheduleOutputSchema.parse(output);
+                return parsedOutput; // Sucesso, retorna o resultado
+            } catch (error) {
+                lastError = error;
+                console.error(`Tentativa ${attempt + 1} de ${MAX_RETRIES} falhou:`, error);
+                // Espera um pouco antes de tentar novamente, com um pequeno aumento a cada tentativa.
+                if (attempt < MAX_RETRIES - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                }
+            }
+        }
+    
+        // Se todas as tentativas falharem, lança um erro claro.
+        console.error("Falha final ao gerar agenda:", lastError);
+        throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
     }
-  }
-
-  // Se todas as tentativas falharem, lança um erro claro.
-  throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
-}
-
+);
     
