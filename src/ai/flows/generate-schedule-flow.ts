@@ -9,6 +9,8 @@
  * - GenerateScheduleInput - O tipo de entrada para a função.
  * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
+'use server';
+
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import type { Weekday, SchoolShift } from '@/lib/types';
@@ -43,6 +45,7 @@ export const GenerateScheduleInputSchema = z.object({
     time: z.string(),
   })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
+  missionReference: z.string().describe("A lista formatada de missões pré-definidas para a IA usar como referência."),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
@@ -91,17 +94,11 @@ export const generateScheduleFlow = ai.defineFlow(
     },
     async (input) => {
         const MAX_RETRIES = 3;
-        let lastError: any | null = null;
-    
-        // Constrói a lista de referência de missões dinamicamente
-        const missionReference = predefinedMissionGroups
-        .flatMap(group => group.items)
-        .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
-        .join('\n');
+        let lastError: any = null;
     
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
-                const { output } = await generateSchedulePrompt({ ...input, missionReference });
+                const { output } = await generateSchedulePrompt(input);
                 if (!output) {
                     throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
                 }
@@ -123,4 +120,5 @@ export const generateScheduleFlow = ai.defineFlow(
         throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
     }
 );
+
     
