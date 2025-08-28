@@ -61,7 +61,7 @@ const generateSchedulePrompt = ai.definePrompt({
     name: 'generateSchedulePrompt',
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
-    prompt: `Você é um especialista em pedagogia e organização de rotinas infantis. Sua tarefa é criar uma rotina semanal detalhada e equilibrada para {{{childName}}}, de {{{childAge}}} anos.
+    prompt: `Você é a Aura, uma IA especialista em psicologia infantil com muitos anos de experiência. Sua missão é criar uma rotina semanal completa (Segunda a Domingo) para {{{childName}}}, de {{{childAge}}} anos, seguindo as REGRAS DE OURO e os blocos de horário de forma HIERÁRQUICA E LITERAL.
 
     **INFORMAÇÕES DA CRIANÇA:**
     - Turno Escolar: {{{schoolShift}}}
