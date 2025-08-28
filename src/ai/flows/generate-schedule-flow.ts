@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Um fluxo de IA para gerar uma rotina semanal para uma criança.
  *
@@ -9,23 +10,23 @@
  * - GenerateScheduleInput - O tipo de entrada para a função.
  * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
+'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import type { Weekday, SchoolShift } from '@/lib/types';
-import { missionCategories } from '@/lib/types';
-import { predefinedMissionGroups } from '@/lib/predefined-missions'; // Importa a lista de missões
 
 // Define o esquema para cada item da agenda, garantindo uma estrutura consistente.
+// Simplificado para facilitar a geração pela IA. A validação e mapeamento final ocorrem no código.
 const ScheduleItemSchema = z.object({
   activity: z.string().describe("O nome da atividade (ex: 'Hora de Acordar', 'Natação', 'Tempo Livre')."),
-  emoji: z.string().regex(/^(\p{Extended_Pictographic}|\p{Emoji_Component})+$/u, { message: "Deve ser um emoji válido." }).describe("Um emoji que represente a atividade."),
+  emoji: z.string().describe("Um emoji que represente a atividade."),
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
-  category: z.custom<typeof missionCategories[number]['id']>((val) => missionCategories.map(rc => rc.id).includes(val as any)).describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
+  category: z.string().describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de início no formato HH:mm."),
   endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
+
 
 // Define o esquema de entrada para a IA, detalhando as informações necessárias.
 export const GenerateScheduleInputSchema = z.object({
@@ -69,7 +70,7 @@ const generateSchedulePrompt = ai.definePrompt({
     **REGRAS DE OURO (LÓGICA DE AGENDAMENTO HIERÁRQUICO):**
 
     1.  **NÍVEL 1 - ESCOLA (Inadiável):** Primeiro, aloque o bloco "Escola" na agenda, de Segunda a Sexta, no horário informado. Este é o bloco mais importante.
-    2.  **NÍVEL 2 - COMPROMISSOS (Atividades Extras):** Em seguida, aloque CADA atividade extra. **Se o horário de uma atividade extra conflitar com o horário escolar, IGNORE esta atividade** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Assuma que cada atividade dura 60 minutos.
+    2.  **NÍVEL 2 - COMPROMISSOS (Atividades Extras):** Em seguida, aloque CADA atividade extra. **Se o horário de uma atividade extra conflitar com o horário escolar, IGNORE esta atividade**. Assuma que cada atividade dura 60 minutos.
     3.  **NÍVEL 3 - ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais de forma lógica ao redor dos horários fixos. Por exemplo, "Arrumar a cama" perto da hora de acordar. Se o horário já estiver ocupado por uma atividade extra, tente encaixar a rotina no próximo horário livre.
     4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios de 60min com a atividade "Hora livre para brincar".
 
@@ -87,25 +88,28 @@ export const generateScheduleFlow = ai.defineFlow(
     },
     async (input) => {
         const MAX_RETRIES = 3;
+        let lastError: any = null;
+
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
                 const { output } = await generateSchedulePrompt(input);
                 if (!output) {
-                    throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
+                    throw new Error("A IA não retornou uma resposta.");
                 }
+                // A validação acontece aqui. Se falhar, o catch será acionado.
                 const parsedOutput = GenerateScheduleOutputSchema.parse(output);
-                return parsedOutput; 
+                return parsedOutput;
             } catch (error) {
+                lastError = error;
                 console.error(`Tentativa ${attempt + 1} de ${MAX_RETRIES} falhou:`, error);
-                if (attempt >= MAX_RETRIES - 1) {
-                    // Lança o erro final na última tentativa
-                     throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
+                if (attempt < MAX_RETRIES - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1))); // Backoff exponencial simples
                 }
-                // Espera um pouco antes de tentar novamente.
-                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
-        // Este ponto não deve ser alcançado, mas é um fallback.
-        throw new Error("Falha inesperada no fluxo de geração de agenda.");
+
+        // Se todas as tentativas falharem, lança um erro claro.
+        console.error("Falha final ao gerar agenda:", lastError);
+        throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
     }
 );
