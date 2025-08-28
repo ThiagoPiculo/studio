@@ -9,7 +9,6 @@
  * - GenerateScheduleInput - O tipo de entrada para a função.
  * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
-'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
@@ -120,5 +119,3 @@ export const generateScheduleFlow = ai.defineFlow(
         throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
     }
 );
-
-    
