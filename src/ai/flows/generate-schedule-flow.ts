@@ -44,14 +44,12 @@ export const GenerateScheduleInputSchema = z.object({
     time: z.string(),
   })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
-  missionReference: z.string().describe("A lista formatada de missões pré-definidas para a IA usar como referência."),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
 // Define o esquema de saída que a IA deve gerar.
 export const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
-  freeTimeSummary: z.string().optional().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
 export type GenerateScheduleOutput = z.infer<typeof GenerateScheduleOutputSchema>;
 
@@ -75,10 +73,6 @@ const generateSchedulePrompt = ai.definePrompt({
     3.  **NÍVEL 3 - ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais de forma lógica ao redor dos horários fixos. Por exemplo, "Arrumar a cama" perto da hora de acordar. Se o horário já estiver ocupado por uma atividade extra, tente encaixar a rotina no próximo horário livre.
     4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios de 60min com a atividade "Hora livre para brincar".
 
-    **LISTA DE REFERÊNCIA DE MISSÕES (MUITO IMPORTANTE):**
-    Para cada atividade, você DEVE usar o emoji e a categoria EXATOS da lista abaixo. O campo 'emoji' DEVE conter apenas o caractere do emoji. NÃO INVENTE ou ALTERE estes valores.
-    {{{missionReference}}}
-
     **FORMATO DE SAÍDA:** Sua resposta DEVE ser um objeto JSON válido que corresponda ao esquema de saída definido.
 
     Agora, gere a agenda completa.`
@@ -93,29 +87,25 @@ export const generateScheduleFlow = ai.defineFlow(
     },
     async (input) => {
         const MAX_RETRIES = 3;
-        let lastError: any = null;
-    
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
                 const { output } = await generateSchedulePrompt(input);
                 if (!output) {
                     throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
                 }
-                // Valida a saída. Se falhar, vai para o catch e tenta novamente.
                 const parsedOutput = GenerateScheduleOutputSchema.parse(output);
-                return parsedOutput; // Sucesso, retorna o resultado
+                return parsedOutput; 
             } catch (error) {
-                lastError = error;
                 console.error(`Tentativa ${attempt + 1} de ${MAX_RETRIES} falhou:`, error);
-                // Espera um pouco antes de tentar novamente, com um pequeno aumento a cada tentativa.
-                if (attempt < MAX_RETRIES - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                if (attempt >= MAX_RETRIES - 1) {
+                    // Lança o erro final na última tentativa
+                     throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
                 }
+                // Espera um pouco antes de tentar novamente.
+                await new Promise(resolve => setTimeout(resolve, 1000));
             }
         }
-    
-        // Se todas as tentativas falharem, lança um erro claro.
-        console.error("Falha final ao gerar agenda:", lastError);
-        throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
+        // Este ponto não deve ser alcançado, mas é um fallback.
+        throw new Error("Falha inesperada no fluxo de geração de agenda.");
     }
 );
