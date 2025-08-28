@@ -72,7 +72,7 @@ const generateSchedulePrompt = ai.definePrompt({
 
     **REGRAS DE OURO (LÓGICA DE AGENDAMENTO HIERÁRQUICO):**
 
-    1.  **NÍVEL 1 - ESCOLA (Inadiável):** Primeiro, aloque o bloco "Escola" (emoji 🏫, categoria 'school') na agenda, de Segunda a Sexta, no horário informado. Este é o bloco mais importante.
+    1.  **NÍVEL 1 - ESCOLA (Inadiável):** Primeiro, aloque o bloco "Escola" na agenda, de Segunda a Sexta, no horário informado. Este é o bloco mais importante.
     2.  **NÍVEL 2 - COMPROMISSOS (Atividades Extras):** Em seguida, aloque CADA atividade extra. **Se o horário de uma atividade extra conflitar com o horário escolar, IGNORE esta atividade** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Assuma que cada atividade dura 60 minutos.
     3.  **NÍVEL 3 - ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais de forma lógica ao redor dos horários fixos. Por exemplo, "Arrumar a cama" perto da hora de acordar. Se o horário já estiver ocupado por uma atividade extra, tente encaixar a rotina no próximo horário livre.
     4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios com a atividade "Hora livre para brincar".
@@ -124,4 +124,3 @@ export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missi
   // mas está aqui como um fallback para garantir que a função sempre retorne ou lance um erro.
   throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
 }
-
