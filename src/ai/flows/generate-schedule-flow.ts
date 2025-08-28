@@ -3,7 +3,7 @@
  *
  * Este fluxo usa o modelo Gemini para criar uma agenda estruturada com base nas informações
  * fornecidas sobre a criança, como idade, turno escolar e atividades. A IA é instruída a seguir
- * uma lógica hierárququica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
+ * uma lógica hierárquica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
  *
  * - generateScheduleFlow - O fluxo de IA que gera a agenda.
  * - GenerateScheduleInput - O tipo de entrada para a função.
@@ -22,7 +22,7 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.custom<typeof missionCategories[number]['id']>((val) => missionCategories.map(rc => rc.id).includes(val as any)).describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
 
@@ -43,7 +43,6 @@ export const GenerateScheduleInputSchema = z.object({
     time: z.string(),
   })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
-  missionReference: z.string().describe("A lista de referência de missões que a IA deve usar.").optional(),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
@@ -53,7 +52,6 @@ export const GenerateScheduleOutputSchema = z.object({
   freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
 export type GenerateScheduleOutput = z.infer<typeof GenerateScheduleOutputSchema>;
-
 
 const generateSchedulePrompt = ai.definePrompt({
     name: 'generateSchedulePrompt',
@@ -88,7 +86,7 @@ const generateSchedulePrompt = ai.definePrompt({
 export const generateScheduleFlow = ai.defineFlow(
     {
         name: 'generateScheduleFlow',
-        inputSchema: GenerateScheduleInputSchema.omit({ missionReference: true }),
+        inputSchema: GenerateScheduleInputSchema,
         outputSchema: GenerateScheduleOutputSchema,
     },
     async (input) => {
@@ -101,11 +99,9 @@ export const generateScheduleFlow = ai.defineFlow(
         .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
         .join('\n');
     
-        const fullInput: GenerateScheduleInput = { ...input, missionReference };
-    
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
-                const { output } = await generateSchedulePrompt(fullInput);
+                const { output } = await generateSchedulePrompt({ ...input, missionReference });
                 if (!output) {
                     throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
                 }
