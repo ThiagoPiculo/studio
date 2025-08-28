@@ -220,7 +220,7 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: Omit<GenerateScheduleInput, 'missionReference'> = {
+      const input: GenerateScheduleInput = {
           childName: values.name,
           childAge: age,
           schoolShift: values.schoolShift,
