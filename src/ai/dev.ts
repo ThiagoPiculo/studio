@@ -3,3 +3,4 @@ config();
 
 // Flows are imported here to be registered with Genkit
 import './flows/generate-schedule';
+import './flows/generate-image-flow';
