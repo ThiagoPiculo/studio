@@ -133,6 +133,7 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
   let attempt = 0;
 
   while (attempt < MAX_RETRIES) {
+    attempt++;
     try {
       const { output } = await generateSchedulePrompt(input);
       if (!output) {
@@ -141,24 +142,16 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
       // Garante que a saída esteja em conformidade com o esquema antes de retornar.
       return GenerateScheduleOutputSchema.parse(output);
     } catch (error: any) {
-      attempt++;
-      const isOverloaded = error.message && (error.message.includes('503') || error.message.toLowerCase().includes('overloaded'));
-      
-      if (isOverloaded && attempt < MAX_RETRIES) {
-        console.warn(`Attempt ${attempt} failed due to model overload. Retrying in ${attempt}s...`);
-        // Espera exponencialmente antes de tentar novamente (1s, 2s)
-        await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-      } else {
-        console.error(`Failed to generate schedule on attempt ${attempt}:`, error);
-        if (attempt >= MAX_RETRIES) {
-            throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
-        }
-        // If it's not an overload error but we still have retries, wait a bit and try again.
-        await new Promise(resolve => setTimeout(resolve, 500));
+      console.error(`Attempt ${attempt} failed:`, error.message);
+      if (attempt >= MAX_RETRIES) {
+          throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
       }
+      // Wait for a short period before retrying
+      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
 
-  // Este ponto só é alcançado se todas as tentativas falharem
+  // This point should not be reachable due to the error thrown inside the loop,
+  // but it's here as a fallback.
   throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
 }
