@@ -1,24 +1,44 @@
+
 'use server';
 
 import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from '@/ai/flows/generate-schedule-flow';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
-import type { ScheduleItem } from '@/lib/types';
+import type { ScheduleItem, Weekday } from '@/lib/types';
+import { parseTime } from '@/lib/calendar-utils';
 
 
-// Função para encontrar a missão pré-definida mais próxima
-const findClosestPredefinedMission = (activityTitle: string): { title: string, emoji: string, suggestedAppCategory: string } | null => {
-    const allMissions = predefinedMissionGroups.flatMap(group => group.items);
-    const normalizedTitle = activityTitle.trim().toLowerCase();
+// Helper para verificar se um horário está ocupado
+const isTimeSlotOccupied = (
+    day: Weekday,
+    startTime: string,
+    endTime: string,
+    occupiedSlots: Record<Weekday, { start: number; end: number }[]>
+): boolean => {
+    const newStart = parseTime(startTime);
+    const newEnd = parseTime(endTime);
+    const daySlots = occupiedSlots[day];
 
-    // Busca exata primeiro
-    const exactMatch = allMissions.find(mission => mission.title.toLowerCase() === normalizedTitle);
-    if (exactMatch) return exactMatch;
+    for (const slot of daySlots) {
+        // Check for any overlap
+        if (newStart < slot.end && newEnd > slot.start) {
+            return true;
+        }
+    }
+    return false;
+};
 
-    // Busca por inclusão (se a atividade da IA contém o nome da missão)
-    const containsMatch = allMissions.find(mission => normalizedTitle.includes(mission.title.toLowerCase()));
-    if (containsMatch) return containsMatch;
-
-    return null;
+// Helper para adicionar um horário à lista de ocupados
+const occupyTimeSlot = (
+    days: Weekday[],
+    startTime: string,
+    endTime: string,
+    occupiedSlots: Record<Weekday, { start: number; end: number }[]>
+) => {
+    const newStart = parseTime(startTime);
+    const newEnd = parseTime(endTime);
+    days.forEach(day => {
+        occupiedSlots[day].push({ start: newStart, end: newEnd });
+    });
 };
 
 
@@ -26,28 +46,93 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
     
     const aiOutput = await generateScheduleFlow(input);
 
-    // Pós-processamento para mapear e corrigir os dados da IA
-    const processedSchedule: ScheduleItem[] = aiOutput.schedule.map(itemFromAI => {
-        const predefined = findClosestPredefinedMission(itemFromAI.activity);
+    const finalSchedule: ScheduleItem[] = [];
+    const allMissions = predefinedMissionGroups.flatMap(group => group.items);
+    const occupiedSlots: Record<Weekday, { start: number; end: number }[]> = {
+        MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: []
+    };
 
-        if (predefined) {
-            // Se encontrou uma missão correspondente, usa os dados do nosso catálogo
-            return {
-                ...itemFromAI,
-                activity: predefined.title, // Usa o nome exato do nosso catálogo
+    // NÍVEL 1: Escola (inadiável)
+    if (input.schoolShift !== 'not_applicable' && input.schoolStartTime && input.schoolEndTime) {
+        const schoolDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+        const schoolItem: ScheduleItem = {
+            activity: 'Escola',
+            emoji: '🏫',
+            type: 'school_entry', 
+            category: 'school',
+            startTime: input.schoolStartTime,
+            endTime: input.schoolEndTime,
+            days: schoolDays,
+        };
+        finalSchedule.push(schoolItem);
+        occupyTimeSlot(schoolDays, schoolItem.startTime, schoolItem.endTime, occupiedSlots);
+    }
+
+    // NÍVEL 2: Atividades Extras (com horário fixo)
+    input.extraActivities?.forEach(activity => {
+        const activityDays = activity.days as Weekday[];
+        const predefined = allMissions.find(m => m.title.toLowerCase() === activity.name.toLowerCase());
+        
+        // Atividade dura 60 minutos por padrão
+        const [hour, minute] = activity.time.split(':').map(Number);
+        const endHour = (hour + 1).toString().padStart(2, '0');
+        const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
+        
+        if (!isTimeSlotOccupied(activityDays[0], activity.time, endTime, occupiedSlots)) {
+             finalSchedule.push({
+                activity: predefined?.title || activity.name,
+                emoji: predefined?.emoji || '🤸',
+                type: 'extra_activity',
+                category: predefined?.suggestedAppCategory || 'hobbies',
+                startTime: activity.time,
+                endTime: endTime,
+                days: activityDays,
+            });
+            occupyTimeSlot(activityDays, activity.time, endTime, occupiedSlots);
+        }
+    });
+
+    // NÍVEL 3: Rotinas Essenciais e Sugeridas pela IA
+    // Pega as sugestões da IA, mas prioriza as essenciais
+    const allSuggestedActivities = [
+        ...(input.essentialRoutines?.map(name => ({ activity: name })) || []),
+        ...aiOutput.schedule
+    ];
+
+    const processedActivities = new Set<string>();
+
+    allSuggestedActivities.forEach(itemFromAI => {
+        if (processedActivities.has(itemFromAI.activity.toLowerCase())) return;
+
+        const predefined = allMissions.find(m => m.title.toLowerCase() === itemFromAI.activity.toLowerCase());
+        if (!predefined) return;
+
+        const days = itemFromAI.days || ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+        const validDays: Weekday[] = [];
+        
+        days.forEach(day => {
+            if (!isTimeSlotOccupied(day, itemFromAI.startTime, itemFromAI.endTime, occupiedSlots)) {
+                validDays.push(day);
+            }
+        });
+
+        if (validDays.length > 0) {
+            const newItem: ScheduleItem = {
+                activity: predefined.title,
                 emoji: predefined.emoji,
-                category: predefined.suggestedAppCategory as any,
+                type: 'essential_routine',
+                category: predefined.suggestedAppCategory,
+                startTime: itemFromAI.startTime,
+                endTime: itemFromAI.endTime,
+                days: validDays,
             };
-        } else {
-            // Se não encontrou, mantém o que a IA sugeriu, mas com um emoji padrão
-            return {
-                ...itemFromAI,
-                emoji: '✨', // Emoji padrão para atividades não catalogadas
-            };
+            finalSchedule.push(newItem);
+            occupyTimeSlot(validDays, newItem.startTime, newItem.endTime, occupiedSlots);
+            processedActivities.add(itemFromAI.activity.toLowerCase());
         }
     });
 
     return {
-        schedule: processedSchedule
+        schedule: finalSchedule
     };
 }
