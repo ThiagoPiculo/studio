@@ -3,7 +3,7 @@
  *
  * Este fluxo usa o modelo Gemini para criar uma agenda estruturada com base nas informações
  * fornecidas sobre a criança, como idade, turno escolar e atividades. A IA é instruída a seguir
- * uma lógica hierárquica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
+ * uma lógica hierárququica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
  *
  * - generateScheduleFlow - O fluxo de IA que gera a agenda.
  * - GenerateScheduleInput - O tipo de entrada para a função.
@@ -43,7 +43,7 @@ export const GenerateScheduleInputSchema = z.object({
     time: z.string(),
   })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
-  missionReference: z.string().describe("A lista de referência de missões que a IA deve usar."),
+  missionReference: z.string().describe("A lista de referência de missões que a IA deve usar.").optional(),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
@@ -88,7 +88,7 @@ const generateSchedulePrompt = ai.definePrompt({
 export const generateScheduleFlow = ai.defineFlow(
     {
         name: 'generateScheduleFlow',
-        inputSchema: z.custom<Omit<GenerateScheduleInput, 'missionReference'>>(),
+        inputSchema: GenerateScheduleInputSchema.omit({ missionReference: true }),
         outputSchema: GenerateScheduleOutputSchema,
     },
     async (input) => {
@@ -101,7 +101,7 @@ export const generateScheduleFlow = ai.defineFlow(
         .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
         .join('\n');
     
-        const fullInput = { ...input, missionReference };
+        const fullInput: GenerateScheduleInput = { ...input, missionReference };
     
         for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
             try {
