@@ -133,25 +133,26 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
   let attempt = 0;
 
   while (attempt < MAX_RETRIES) {
-    attempt++;
     try {
       const { output } = await generateSchedulePrompt(input);
       if (!output) {
         throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
       }
       // Garante que a saída esteja em conformidade com o esquema antes de retornar.
+      // Se a validação falhar, o catch abaixo irá capturar e tentar novamente.
       return GenerateScheduleOutputSchema.parse(output);
     } catch (error: any) {
-      console.error(`Attempt ${attempt} failed:`, error.message);
+      attempt++;
+      console.error(`Tentativa ${attempt} falhou:`, error.message);
       if (attempt >= MAX_RETRIES) {
           throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
       }
-      // Wait for a short period before retrying
+      // Espera um pouco antes de tentar novamente, com um pequeno aumento a cada tentativa.
       await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
     }
   }
 
-  // This point should not be reachable due to the error thrown inside the loop,
-  // but it's here as a fallback.
+  // Este ponto não deve ser alcançado devido ao erro lançado dentro do loop,
+  // mas está aqui como um fallback para garantir que a função sempre retorne ou lance um erro.
   throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
 }
