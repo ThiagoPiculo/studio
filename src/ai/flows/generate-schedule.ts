@@ -22,7 +22,7 @@ const ScheduleItemSchema = z.object({
   type: z.enum(['school_entry', 'school_exit', 'extra_activity', 'essential_routine', 'free_time']).describe("O tipo de atividade."),
   category: z.custom<typeof missionCategories[number]['id']>((val) => missionCategories.map(rc => rc.id).includes(val as any)).describe("A categoria da atividade (ex: 'school', 'health', 'hobbies')."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de início no formato HH:mm."),
-  endTime: z.string().regex(/^([01]\d|2[0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, { message: "Formato de hora inválido. Use HH:mm." }).describe("A hora de término no formato HH:mm."),
   days: z.array(z.enum(['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'])).describe("Uma lista dos dias da semana em que a atividade ocorre."),
 });
 
@@ -149,8 +149,12 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
         // Espera exponencialmente antes de tentar novamente (1s, 2s)
         await new Promise(resolve => setTimeout(resolve, attempt * 1000));
       } else {
-        console.error("Failed to generate schedule after multiple retries:", error);
-        throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado. Por favor, tente novamente mais tarde.");
+        console.error(`Failed to generate schedule on attempt ${attempt}:`, error);
+        if (attempt >= MAX_RETRIES) {
+            throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
+        }
+        // If it's not an overload error but we still have retries, wait a bit and try again.
+        await new Promise(resolve => setTimeout(resolve, 500));
       }
     }
   }
