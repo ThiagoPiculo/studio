@@ -25,7 +25,8 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
+import { generateSchedule } from "@/ai/actions/generate-schedule";
+import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/flows/generate-schedule-flow";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -219,7 +220,7 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: GenerateScheduleInput = {
+      const input: Omit<GenerateScheduleInput, 'missionReference'> = {
           childName: values.name,
           childAge: age,
           schoolShift: values.schoolShift,
@@ -364,7 +365,7 @@ export function OnboardingForm() {
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
-                {step === 5 && <OnboardingStep6 isLoading={isLoading} childName={methods.getValues('name')} />}
+                {step === 5 && <OnboardingStep4 />}
                 {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
