@@ -27,7 +27,7 @@ const ScheduleItemSchema = z.object({
 });
 
 // Define o esquema de entrada para a IA, detalhando as informações necessárias.
-export const GenerateScheduleInputSchema = z.object({
+const GenerateScheduleInputSchema = z.object({
   childName: z.string().describe("O nome da criança."),
   childAge: z.number().describe("A idade da criança em anos."),
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']).describe("O turno escolar da criança."),
@@ -47,7 +47,7 @@ export const GenerateScheduleInputSchema = z.object({
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
 // Define o esquema de saída que a IA deve gerar.
-export const GenerateScheduleOutputSchema = z.object({
+const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
   freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
