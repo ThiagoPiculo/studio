@@ -51,7 +51,7 @@ export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 // Define o esquema de saída que a IA deve gerar.
 export const GenerateScheduleOutputSchema = z.object({
   schedule: z.array(ScheduleItemSchema).describe("A rotina semanal estruturada e completa, de Segunda a Domingo."),
-  freeTimeSummary: z.string().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
+  freeTimeSummary: z.string().optional().describe("Um breve resumo sobre os principais blocos de tempo livre identificados para a criança e qualquer nota sobre conflitos de agendamento."),
 });
 export type GenerateScheduleOutput = z.infer<typeof GenerateScheduleOutputSchema>;
 

@@ -18,5 +18,3 @@ export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missi
 
     return await generateScheduleFlow(fullInput);
 }
-
-    
