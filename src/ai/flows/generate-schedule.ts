@@ -4,7 +4,8 @@
  * @fileOverview Um fluxo de IA para gerar uma rotina semanal para uma criança.
  *
  * Este fluxo usa o modelo Gemini para criar uma agenda estruturada com base nas informações
- * fornecidas sobre a criança, como idade, turno escolar e atividades.
+ * fornecidas sobre a criança, como idade, turno escolar e atividades. A IA é instruída a seguir
+ * uma lógica hierárquica e a usar uma lista de missões pré-definidas como sua base de conhecimento.
  *
  * - generateSchedule - A função principal que gera a agenda.
  * - GenerateScheduleInput - O tipo de entrada para a função.
@@ -14,6 +15,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'zod';
 import type { Weekday, SchoolShift } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
+import { predefinedMissionGroups } from '@/lib/predefined-missions'; // Importa a lista de missões
 
 // Define o esquema para cada item da agenda, garantindo uma estrutura consistente.
 const ScheduleItemSchema = z.object({
@@ -43,6 +45,7 @@ const GenerateScheduleInputSchema = z.object({
     time: z.string(),
   })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
+  missionReference: z.string().describe("A lista de referência de missões que a IA deve usar."),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
 
@@ -58,83 +61,48 @@ const generateSchedulePrompt = ai.definePrompt({
     name: 'generateSchedulePrompt',
     input: { schema: GenerateScheduleInputSchema },
     output: { schema: GenerateScheduleOutputSchema },
-    prompt: `Você é um especialista em pedagogia e organização de rotinas infantis. Sua tarefa é criar uma rotina semanal detalhada e equilibrada para uma criança chamada {{{childName}}}, de {{{childAge}}} anos, com base nas informações fornecidas.
+    prompt: `Você é um especialista em pedagogia e organização de rotinas infantis. Sua tarefa é criar uma rotina semanal detalhada e equilibrada para {{{childName}}}, de {{{childAge}}} anos.
 
-    **HORÁRIOS DE ÂNCORA FIXOS:**
-    - Hora de Acordar: {{{wakeUpTime}}}
-    - Hora do Almoço: {{{lunchTime}}}
-    - Hora do Jantar: {{{dinnerTime}}}
-    - Hora de Dormir: {{{sleepTime}}}
-
-    **INFORMAÇÕES ESCOLARES:**
+    **INFORMAÇÕES DA CRIANÇA:**
     - Turno Escolar: {{{schoolShift}}}
-    {{#if schoolStartTime}}- Horário da Escola: de {{{schoolStartTime}}} até {{{schoolEndTime}}}{{/if}}
+    {{#if schoolStartTime}}- Horário Escolar: de {{{schoolStartTime}}} até {{{schoolEndTime}}}{{/if}}
+    - Horários Fixos: Acorda às {{{wakeUpTime}}}, Almoça às {{{lunchTime}}}, Janta às {{{dinnerTime}}}, Dorme às {{{sleepTime}}}.
+    - Atividades Extras: {{#each extraActivities}} {{{this.name}}} ({{this.days}} às {{this.time}}); {{else}}Nenhuma;{{/each}}
+    - Rotinas Essenciais: {{#each essentialRoutines}} {{{this}}}; {{else}}Nenhuma;{{/each}}
 
-    **ATIVIDADES EXTRAS COM HORÁRIO FIXO:**
-    {{#each extraActivities}}
-    - {{{this.name}}} às {{{this.time}}} em {{{this.days}}}
-    {{else}}
-    - Nenhuma atividade extra cadastrada.
-    {{/each}}
+    **REGRAS DE OURO (LÓGICA DE AGENDAMENTO HIERÁRQUICO):**
 
-    **ROTINAS ESSENCIAIS A SEREM INCLUÍDAS:**
-    {{#each essentialRoutines}}
-    - {{{this}}}
-    {{else}}
-    - Nenhuma rotina essencial selecionada.
-    {{/each}}
+    1.  **NÍVEL 1 - ESCOLA (Inadiável):** Primeiro, aloque o bloco "Escola" (emoji 🏫, categoria 'school') na agenda, de Segunda a Sexta, no horário informado. Este é o bloco mais importante.
+    2.  **NÍVEL 2 - COMPROMISSOS (Atividades Extras):** Em seguida, aloque CADA atividade extra. **Se o horário de uma atividade extra conflitar com o horário escolar, IGNORE esta atividade** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Assuma que cada atividade dura 60 minutos.
+    3.  **NÍVEL 3 - ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais de forma lógica ao redor dos horários fixos. Por exemplo, "Arrumar a cama" perto da hora de acordar. Se o horário já estiver ocupado por uma atividade extra, tente encaixar a rotina no próximo horário livre.
+    4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios com a atividade "Hora livre para brincar".
 
-    **INSTRUÇÕES DETALHADAS:**
+    **LISTA DE REFERÊNCIA DE MISSÕES (MUITO IMPORTANTE):**
+    Para cada atividade, você DEVE usar o emoji e a categoria EXATOS da lista abaixo. O campo 'emoji' DEVE conter apenas o caractere do emoji. NÃO INVENTE ou ALTERE estes valores.
+    {{{missionReference}}}
 
-    1.  **ESTRUTURA DA AGENDA:** Sua resposta DEVE ser um objeto JSON válido que corresponda ao esquema de saída fornecido. A chave principal é "schedule", que é um array de objetos.
-    2.  **PREENCHIMENTO HIERÁRQUICO:** Preencha a agenda na seguinte ordem de prioridade:
-        a.  **Escola:** Se o turno não for 'not_applicable', adicione um bloco "Escola" nos dias de semana (MO, TU, WE, TH, FR) no horário fornecido. Use o emoji "🏫" e a categoria "school".
-        b.  **Atividades Extras:** Adicione CADA atividade extra da lista nos dias e horários especificados. Assuma que cada atividade dura 60 minutos.
-        c.  **Rotinas Essenciais:** Pegue CADA item da lista "ROTINAS ESSENCIAIS" e distribua-os LOGICAMENTE ao redor dos horários de âncora. Por exemplo:
-            - "Arrumar a cama" e "Tomar café" devem ser perto de "Hora de Acordar".
-            - "Tomar banho" e "Organizar a mochila" devem ser perto de "Hora de Dormir".
-            - "Fazer a lição de casa" deve ser em um bloco de tempo livre, preferencialmente à tarde.
-            - **IMPORTANTE:** Para cada rotina, use o emoji e a categoria corretos da lista de referência abaixo.
-        d.  **Tempo Livre:** Preencha TODOS os espaços restantes na agenda com a atividade "Hora livre para brincar", usando o emoji "🧩" e a categoria "hobbies".
-    3.  **REGRAS DE EMOJI E CATEGORIA (MUITO IMPORTANTE):**
-        - O campo "emoji" DEVE conter APENAS o caractere do emoji, sem nenhum texto ou espaço adicional.
-        - Use a lista de referência abaixo para encontrar o emoji e a categoria corretos para cada atividade.
+    **FORMATO DE SAÍDA:** Sua resposta DEVE ser um objeto JSON válido que corresponda ao esquema de saída definido.
 
-    **LISTA DE REFERÊNCIA DE EMOJIS E CATEGORIAS:**
-    - Hora de acordar: ⏰ (essential_routines)
-    - Arrumar a cama: 🛏️ (essential_routines)
-    - Tomar café da manhã: ☕ (essential_routines)
-    - Escovar os dentes: 🦷 (health)
-    - Almoçar: 🍽️ (essential_routines)
-    - Jantar: 🍽️ (essential_routines)
-    - Tomar banho: 🛁 (essential_routines)
-    - Hora de dormir: 🛌 (essential_routines)
-    - Fazer a lição de casa: ✍️ (school)
-    - Organizar a mochila para amanhã: 🎒 (school)
-    - Aula de Natação: 🏊 (hobbies)
-    - Aula de Futebol: ⚽ (hobbies)
-    - Aula de Judô: 🥋 (hobbies)
-    - Aula de Dança: 💃 (hobbies)
-    - Aula de Inglês: 🇬🇧 (languages)
-    - Psicologia Infantil: 🧠 (health)
-    - Terapia Ocupacional (TO): 👐 (health)
-    - Fonoaudiologia: 🗣️ (health)
-    - Psicomotricidade: 🤸 (health)
-    - Aula de Bateria: 🥁 (hobbies)
-    - Aula de Violão: 🎸 (hobbies)
-
-    4.  **Resumo do Tempo Livre:** No campo "freeTimeSummary", escreva uma frase curta resumindo os principais blocos de tempo livre de {{{childName}}}.`
+    Agora, gere a agenda completa.`
 });
 
 
 // Função principal que é exportada e chamada pela aplicação.
-export async function generateSchedule(input: GenerateScheduleInput): Promise<GenerateScheduleOutput> {
+export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missionReference'>): Promise<GenerateScheduleOutput> {
   const MAX_RETRIES = 3;
   let attempt = 0;
 
+  // Constrói a lista de referência de missões dinamicamente
+  const missionReference = predefinedMissionGroups
+    .flatMap(group => group.items)
+    .map(item => `- ${item.title}: emoji ${item.emoji}, categoria ${item.suggestedAppCategory}`)
+    .join('\n');
+
+  const fullInput = { ...input, missionReference };
+
   while (attempt < MAX_RETRIES) {
     try {
-      const { output } = await generateSchedulePrompt(input);
+      const { output } = await generateSchedulePrompt(fullInput);
       if (!output) {
         throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
       }
@@ -156,3 +124,4 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
   // mas está aqui como um fallback para garantir que a função sempre retorne ou lance um erro.
   throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
 }
+
