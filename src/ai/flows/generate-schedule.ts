@@ -75,7 +75,7 @@ const generateSchedulePrompt = ai.definePrompt({
     1.  **NÍVEL 1 - ESCOLA (Inadiável):** Primeiro, aloque o bloco "Escola" na agenda, de Segunda a Sexta, no horário informado. Este é o bloco mais importante.
     2.  **NÍVEL 2 - COMPROMISSOS (Atividades Extras):** Em seguida, aloque CADA atividade extra. **Se o horário de uma atividade extra conflitar com o horário escolar, IGNORE esta atividade** e adicione uma nota sobre o conflito no campo \`freeTimeSummary\`. Assuma que cada atividade dura 60 minutos.
     3.  **NÍVEL 3 - ROTINAS ESSENCIAIS:** Distribua as rotinas essenciais de forma lógica ao redor dos horários fixos. Por exemplo, "Arrumar a cama" perto da hora de acordar. Se o horário já estiver ocupado por uma atividade extra, tente encaixar a rotina no próximo horário livre.
-    4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios com a atividade "Hora livre para brincar".
+    4.  **NÍVEL 4 - TEMPO LIVRE:** Após alocar todos os itens acima, preencha TODOS os horários vazios de 60min com a atividade "Hora livre para brincar".
 
     **LISTA DE REFERÊNCIA DE MISSÕES (MUITO IMPORTANTE):**
     Para cada atividade, você DEVE usar o emoji e a categoria EXATOS da lista abaixo. O campo 'emoji' DEVE conter apenas o caractere do emoji. NÃO INVENTE ou ALTERE estes valores.
@@ -90,7 +90,7 @@ const generateSchedulePrompt = ai.definePrompt({
 // Função principal que é exportada e chamada pela aplicação.
 export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missionReference'>): Promise<GenerateScheduleOutput> {
   const MAX_RETRIES = 3;
-  let attempt = 0;
+  let lastError: any | null = null;
 
   // Constrói a lista de referência de missões dinamicamente
   const missionReference = predefinedMissionGroups
@@ -100,27 +100,27 @@ export async function generateSchedule(input: Omit<GenerateScheduleInput, 'missi
 
   const fullInput = { ...input, missionReference };
 
-  while (attempt < MAX_RETRIES) {
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
     try {
       const { output } = await generateSchedulePrompt(fullInput);
       if (!output) {
         throw new Error("A IA não conseguiu gerar uma agenda com os dados fornecidos.");
       }
-      // Garante que a saída esteja em conformidade com o esquema antes de retornar.
-      // Se a validação falhar, o catch abaixo irá capturar e tentar novamente.
-      return GenerateScheduleOutputSchema.parse(output);
-    } catch (error: any) {
-      attempt++;
-      console.error(`Tentativa ${attempt} falhou:`, error.message);
-      if (attempt >= MAX_RETRIES) {
-          throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
-      }
+      // Valida a saída. Se falhar, vai para o catch e tenta novamente.
+      const parsedOutput = GenerateScheduleOutputSchema.parse(output);
+      return parsedOutput; // Sucesso, retorna o resultado
+    } catch (error) {
+      lastError = error;
+      console.error(`Tentativa ${attempt + 1} de ${MAX_RETRIES} falhou:`, error);
       // Espera um pouco antes de tentar novamente, com um pequeno aumento a cada tentativa.
-      await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      if (attempt < MAX_RETRIES - 1) {
+        await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+      }
     }
   }
 
-  // Este ponto não deve ser alcançado devido ao erro lançado dentro do loop,
-  // mas está aqui como um fallback para garantir que a função sempre retorne ou lance um erro.
-  throw new Error("Falha ao gerar agenda após múltiplas tentativas.");
+  // Se todas as tentativas falharem, lança um erro claro.
+  throw new Error("Não foi possível gerar a agenda no momento. O serviço pode estar sobrecarregado ou a resposta foi inválida. Por favor, tente novamente mais tarde.");
 }
+
+    
