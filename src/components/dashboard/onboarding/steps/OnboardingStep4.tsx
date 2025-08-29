@@ -53,7 +53,7 @@ export function OnboardingStep4() {
     const time = anchorTimes[item.id as keyof typeof anchorTimes];
 
     return (
-        <div key={item.id} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors">
+        <div className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors">
             <Checkbox
                 id={item.id}
                 checked={isChecked}
@@ -92,7 +92,11 @@ export function OnboardingStep4() {
                 <AccordionTrigger className="hover:no-underline">{category}</AccordionTrigger>
                 <AccordionContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                        {items.map((item) => renderRoutineItem({ id: item.title, label: item.title, emoji: item.emoji }))}
+                        {items.map((item) => (
+                           <div key={item.title}>
+                             {renderRoutineItem({ id: item.title, label: item.title, emoji: item.emoji })}
+                           </div>
+                        ))}
                     </div>
                 </AccordionContent>
             </AccordionItem>
