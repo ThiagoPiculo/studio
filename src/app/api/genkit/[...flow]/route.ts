@@ -4,7 +4,6 @@
  */
 
 import { genkitNext } from '@genkit-ai/next';
-import '@/ai/flows/generate-schedule-flow';
 import '@/ai/flows/generate-image-flow';
 
 
