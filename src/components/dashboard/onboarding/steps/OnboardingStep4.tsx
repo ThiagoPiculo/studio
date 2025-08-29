@@ -8,6 +8,8 @@ import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { OnboardingFormValues } from "../OnboardingForm";
 import { useFieldArray } from "react-hook-form";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
 
 const essentialRoutinesGroup = predefinedMissionGroups.find(g => g.userCategory === 'Rotinas Essencial (diárias)');
 const essentialRoutines = essentialRoutinesGroup ? essentialRoutinesGroup.items.map(item => ({ id: item.title, label: item.title, emoji: item.emoji })) : [];
@@ -26,6 +28,14 @@ export function OnboardingStep4() {
   });
 
   const selectedRoutines = watch('essentialRoutines') || [];
+  
+  // Get anchor times from the form state
+  const anchorTimes = {
+    'Hora de acordar': watch('wakeUpTime'),
+    'Almoçar': watch('lunchTime'),
+    'Jantar': watch('dinnerTime'),
+    'Hora de dormir': watch('sleepTime'),
+  };
 
   const handleRoutineToggle = (routineName: string, isChecked: boolean) => {
     const index = selectedRoutines.indexOf(routineName);
@@ -37,6 +47,33 @@ export function OnboardingStep4() {
   };
 
   const allRoutines = [...essentialRoutines, ...categories.Casa, ...categories.Saúde, ...categories.Comportamental];
+
+  const renderRoutineItem = (item: {id: string, label: string, emoji: string}) => {
+    const isChecked = selectedRoutines.includes(item.id);
+    const time = anchorTimes[item.id as keyof typeof anchorTimes];
+
+    return (
+        <div key={item.id} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors">
+            <Checkbox
+                id={item.id}
+                checked={isChecked}
+                onCheckedChange={(checked) => handleRoutineToggle(item.id, !!checked)}
+            />
+            <Label htmlFor={item.id} className="flex-1 cursor-pointer flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl">{item.emoji}</span>
+                    {item.id}
+                </div>
+                {time && (
+                    <Badge variant="secondary" className="flex items-center gap-1.5 font-mono text-sm">
+                        <Clock className="h-3 w-3" />
+                        {time}
+                    </Badge>
+                )}
+            </Label>
+        </div>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -55,23 +92,7 @@ export function OnboardingStep4() {
                 <AccordionTrigger className="hover:no-underline">{category}</AccordionTrigger>
                 <AccordionContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
-                        {items.map((item) => {
-                            const isChecked = selectedRoutines.includes(item.label || item.title);
-                            const id = item.label || item.title;
-                            return (
-                                <div key={id} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50">
-                                    <Checkbox
-                                        id={id}
-                                        checked={isChecked}
-                                        onCheckedChange={(checked) => handleRoutineToggle(id, !!checked)}
-                                    />
-                                    <Label htmlFor={id} className="flex-1 cursor-pointer flex items-center gap-2">
-                                        <span className="text-xl">{item.emoji}</span>
-                                        {id}
-                                    </Label>
-                                </div>
-                            )
-                        })}
+                        {items.map((item) => renderRoutineItem({ id: item.title, label: item.title, emoji: item.emoji }))}
                     </div>
                 </AccordionContent>
             </AccordionItem>
