@@ -18,7 +18,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule-flow";
+import { generateSchedule } from "@/lib/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -79,7 +79,7 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
+  const [generatedSchedule, setGeneratedSchedule] = useState<{schedule: ScheduleItem[]} | null>(null);
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
@@ -132,15 +132,21 @@ export function OnboardingForm() {
   };
 
   const goToNextStep = async () => {
-    // For Step 1, there's nothing to validate, so we just proceed.
     if (step === 1) {
-        proceedToNextStep();
-        return;
+      proceedToNextStep();
+      return;
     }
 
-    const currentStepSchema = schemas[step - 2];
-    const isStepValid = await methods.trigger(Object.keys(currentStepSchema.shape) as any);
+    const currentStepIndex = step - 2;
+    if (currentStepIndex < 0 || currentStepIndex >= schemas.length) {
+      proceedToNextStep(); // For steps without schemas (like the last one)
+      return;
+    }
     
+    const currentStepSchema = schemas[currentStepIndex];
+    const fields = Object.keys(currentStepSchema.shape);
+    const isStepValid = await methods.trigger(fields as any);
+
     if (isStepValid) {
         if (step === 4) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
@@ -200,27 +206,12 @@ export function OnboardingForm() {
 
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
-      setStep(prev => prev + 1);
+      setStep(prev => prev + 1); // Move to loading view
       const values = methods.getValues();
-      const birthDate = new Date(values.birthDate as string);
-      const age = new Date().getFullYear() - birthDate.getFullYear();
-
-      const input: GenerateScheduleInput = {
-          childName: values.name,
-          childAge: age,
-          schoolShift: values.schoolShift,
-          schoolStartTime: values.schoolShiftStart,
-          schoolEndTime: values.schoolShiftEnd,
-          wakeUpTime: values.wakeUpTime!,
-          lunchTime: values.lunchTime!,
-          dinnerTime: values.dinnerTime!,
-          sleepTime: values.sleepTime!,
-          extraActivities: (values.extraActivities || []).map(a => `${a.name} (${a.days.join(', ')}) às ${a.time}`).join('; '),
-          essentialRoutines: values.essentialRoutines
-      };
 
       try {
-          const schedule = await generateScheduleFlow(input);
+          // Use the local function
+          const schedule = await generateSchedule(values);
           setGeneratedSchedule(schedule);
       } catch (error: any) {
           console.error("Error generating schedule:", error);
@@ -229,7 +220,7 @@ export function OnboardingForm() {
               description: error.message || "Não foi possível gerar a rotina. Tente novamente.",
               variant: "destructive" 
           });
-          setStep(5);
+          setStep(5); // Go back to the form step on error
       } finally {
           setIsLoading(false);
       }
@@ -355,7 +346,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
-                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
