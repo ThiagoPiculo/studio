@@ -10,7 +10,7 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed } from "lucide-react";
+import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, AlertCircle } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
 import { addMinutes, format, subMinutes } from "date-fns";
 import { Separator } from "@/components/ui/separator";
@@ -124,6 +124,20 @@ export function OnboardingStep2() {
     setValue('lunchTime', lunch);
     setValue('mealsAtSchool', mealsAtSchool);
   };
+  
+  const AnchorField = ({ name, emoji, description, fieldName }: { name: string; emoji: string; description: string; fieldName: any }) => (
+    <FormField control={control} name={fieldName} render={({ field }) => (
+      <FormItem>
+        <FormLabel className="flex items-center gap-2 font-semibold">
+          <span className="text-2xl">{emoji}</span>
+          {name}
+        </FormLabel>
+        <FormDescription className="text-xs -mt-1 ml-9">{description}</FormDescription>
+        <FormControl><TimePicker {...field} /></FormControl>
+        <FormMessage className="ml-9" />
+      </FormItem>
+    )} />
+  );
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -199,19 +213,11 @@ export function OnboardingStep2() {
 
       <div className="space-y-4">
         <h3 className="font-semibold text-lg text-center">Horários de Âncora da Rotina</h3>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 border rounded-lg bg-muted/30">
-            <FormField control={control} name="wakeUpTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Sunrise className="h-4 w-4"/> Acordar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-             <FormField control={control} name="lunchTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Almoço</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-             <FormField control={control} name="dinnerTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Jantar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-             <FormField control={control} name="sleepTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Bed className="h-4 w-4"/> Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8 p-4 border rounded-lg bg-muted/30">
+            <AnchorField name="Acordar" emoji="⏰" description="A base para o início do dia." fieldName="wakeUpTime" />
+            <AnchorField name="Almoço" emoji="🍽️" description="O principal combustível do herói." fieldName="lunchTime" />
+            <AnchorField name="Jantar" emoji="🍽️" description="A recarga de energia da noite." fieldName="dinnerTime" />
+            <AnchorField name="Dormir" emoji="😴" description="O descanso para recarregar." fieldName="sleepTime" />
         </div>
       </div>
     </div>
