@@ -81,9 +81,9 @@ export function OnboardingStep2() {
                 break;
             case 'afternoon':
                 setValue('wakeUpTime', formatTime(addMinutes(startDate, -300))); // 5 hours
-                setValue('lunchTime', formatTime(addMinutes(startDate, -40)));
+                setValue('lunchTime', formatTime(addMinutes(startDate, -45)));
                 setValue('dinnerTime', formatTime(addMinutes(endDate, 30)));
-                setValue('sleepTime', formatTime(addMinutes(endDate, 240))); // 4 hours
+                setValue('sleepTime', formatTime(addMinutes(endDate, 270))); // 4.5 hours
                 break;
             case 'full_time':
                 setValue('wakeUpTime', formatTime(addMinutes(startDate, -60)));
