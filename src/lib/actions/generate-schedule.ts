@@ -30,7 +30,6 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
   const occupiedSlots: { start: number; end: number; activity: string }[] = [];
   const allDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
   const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-  const MINIMUM_FREE_SLOT_DURATION = 20; // O limite mínimo que discutimos
 
   // Helper para adicionar um item à agenda e marcar o slot como ocupado
   const addAndOccupy = (item: Omit<ScheduleItem, 'type' | 'category' | 'emoji'>, type: ScheduleItem['type'], category: MissionCategory, emoji: string) => {
@@ -108,7 +107,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         const freeTimeEnd = slot.start;
         const duration = freeTimeEnd - freeTimeStart;
 
-        if (duration >= MINIMUM_FREE_SLOT_DURATION) {
+        if (duration > 0) {
             const details = findMissionDetails('Hora livre para brincar');
             if (details) {
                 addAndOccupy({
@@ -123,7 +122,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     });
 
     // Checar o último slot do dia
-    if (dayEnd - lastEnd >= MINIMUM_FREE_SLOT_DURATION) {
+    if (dayEnd > lastEnd) {
          const details = findMissionDetails('Hora livre para brincar');
          if (details) {
             addAndOccupy({
@@ -137,7 +136,6 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
 
   } else if (input.schoolShift) {
-      // Retornar um erro controlado para turnos não implementados
       throw new Error(`O modo de geração de rotina para o turno "${input.schoolShift}" ainda está em desenvolvimento. Por favor, tente o turno da tarde.`);
   }
 
