@@ -29,7 +29,6 @@ export function OnboardingStep4() {
 
   const selectedRoutines = watch('essentialRoutines') || [];
   
-  // Get anchor times from the form state
   const anchorTimes = {
     'Hora de acordar': watch('wakeUpTime'),
     'Almoçar': watch('lunchTime'),
@@ -45,8 +44,6 @@ export function OnboardingStep4() {
         if (index > -1) remove(index);
     }
   };
-
-  const allRoutines = [...essentialRoutines, ...categories.Casa, ...categories.Saúde, ...categories.Comportamental];
 
   const renderRoutineItem = (item: {id: string, label: string, emoji: string}) => {
     const isChecked = selectedRoutines.includes(item.id);
@@ -93,9 +90,7 @@ export function OnboardingStep4() {
                 <AccordionContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
                         {items.map((item) => (
-                           <div key={item.title}>
-                             {renderRoutineItem({ id: item.title, label: item.title, emoji: item.emoji })}
-                           </div>
+                           renderRoutineItem({ id: item.title, label: item.title, emoji: item.emoji })
                         ))}
                     </div>
                 </AccordionContent>
