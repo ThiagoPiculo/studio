@@ -18,7 +18,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
+import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule-flow";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -44,7 +44,7 @@ const schemas = [
 ];
 
 // Combine all schemas for the final form
-const combinedSchema = schemas.reduce((acc, schema) => acc.merge(schema), z.object({}));
+const combinedSchema = schemas.reduce((acc, schema) => acc.extend(schema.shape), z.object({}));
 
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
@@ -132,11 +132,15 @@ export function OnboardingForm() {
   };
 
   const goToNextStep = async () => {
+    // For Step 1, there's nothing to validate, so we just proceed.
     if (step === 1) {
-      proceedToNextStep();
-      return;
+        proceedToNextStep();
+        return;
     }
-    const isStepValid = await methods.trigger();
+
+    const currentStepSchema = schemas[step - 2];
+    const isStepValid = await methods.trigger(Object.keys(currentStepSchema.shape) as any);
+    
     if (isStepValid) {
         if (step === 4) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
@@ -156,11 +160,34 @@ export function OnboardingForm() {
         }
         proceedToNextStep();
     } else {
-      toast({
-        title: "Ops! Faltam alguns detalhes.",
-        description: "Por favor, corrija os campos marcados antes de continuar.",
-        variant: "destructive"
-      });
+        const errors = methods.formState.errors;
+        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
+        
+        if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
+            const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
+            const errorIndex = errorArray.findIndex(e => e && (e.days || e.time));
+
+            if (errorIndex !== -1) {
+                const errorField = errors.extraActivities?.[errorIndex];
+                const fieldName = errorField?.days ? 'dias da semana' : 'horário';
+                const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
+
+                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'time' });
+                
+                toast({
+                    title: `Pendência em '${activityName}'`,
+                    description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
+                    variant: "destructive"
+                });
+                return;
+            }
+        }
+
+        toast({
+            title: "Ops! Faltam alguns detalhes.",
+            description: "Por favor, corrija os campos marcados antes de continuar.",
+            variant: "destructive"
+        });
     }
   };
 
@@ -178,8 +205,22 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
+      const input: GenerateScheduleInput = {
+          childName: values.name,
+          childAge: age,
+          schoolShift: values.schoolShift,
+          schoolStartTime: values.schoolShiftStart,
+          schoolEndTime: values.schoolShiftEnd,
+          wakeUpTime: values.wakeUpTime!,
+          lunchTime: values.lunchTime!,
+          dinnerTime: values.dinnerTime!,
+          sleepTime: values.sleepTime!,
+          extraActivities: (values.extraActivities || []).map(a => `${a.name} (${a.days.join(', ')}) às ${a.time}`).join('; '),
+          essentialRoutines: values.essentialRoutines
+      };
+
       try {
-          const schedule = await generateSchedule(values as GenerateScheduleInput);
+          const schedule = await generateScheduleFlow(input);
           setGeneratedSchedule(schedule);
       } catch (error: any) {
           console.error("Error generating schedule:", error);
@@ -314,7 +355,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
-                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

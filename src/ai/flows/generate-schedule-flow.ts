@@ -1,3 +1,6 @@
+
+'use server';
+
 /**
  * @fileOverview Um fluxo de IA para gerar uma rotina semanal para uma criança.
  *
