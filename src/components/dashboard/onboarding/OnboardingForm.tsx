@@ -106,9 +106,9 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       wakeUpTime: '08:00',
-      lunchTime: '12:15',
+      lunchTime: '12:20',
       dinnerTime: '18:00',
-      sleepTime: '22:00',
+      sleepTime: '21:30',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -147,9 +147,7 @@ export function OnboardingForm() {
         return;
     }
     
-    const currentStepSchema = stepSchemas[step - 1];
-    const fields = Object.keys(currentStepSchema.shape);
-    const isStepValid = await methods.trigger(fields as any);
+    const isStepValid = await methods.trigger();
 
     if (isStepValid) {
         if (step === 4) {
