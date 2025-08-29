@@ -16,13 +16,13 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
-import { predefinedMissionGroups } from "@/lib/predefined-missions";
+import { predefinedMissionGroups, weekdayLabels } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { generateSchedule } from "@/ai/actions/generate-schedule";
 import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { parseTime, weekdayLabels } from "@/lib/calendar-utils";
+import { parseTime } from "@/lib/calendar-utils";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -238,17 +238,13 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const extraActivitiesText = (values.extraActivities || [])
-        .map(activity => `${activity.name} (${activity.days.map(d => weekdayLabels[d as Weekday]?.short || d).join(', ')}) às ${activity.time}`)
-        .join('; ');
-
       const input: GenerateScheduleInput = {
           childName: values.name,
           childAge: age,
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
-          extraActivities: extraActivitiesText,
+          extraActivities: values.extraActivities,
           essentialRoutines: values.essentialRoutines
       };
 

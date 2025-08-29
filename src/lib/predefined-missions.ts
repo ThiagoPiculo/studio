@@ -1,5 +1,5 @@
 
-import type { MissionCategory } from '@/lib/types';
+import type { MissionCategory, Weekday } from '@/lib/types';
 import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen, Puzzle } from 'lucide-react';
 
 export interface PredefinedMissionIdea {
@@ -235,3 +235,13 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     ],
   },
 ];
+
+export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
+  SU: { long: 'Domingo', short: 'Dom' },
+  MO: { long: 'Segunda-feira', short: 'Seg' },
+  TU: { long: 'Terça-feira', short: 'Ter' },
+  WE: { long: 'Quarta-feira', short: 'Qua' },
+  TH: { long: 'Quinta-feira', short: 'Qui' },
+  FR: { long: 'Sexta-feira', short: 'Sex' },
+  SA: { long: 'Sábado', short: 'Sáb' },
+};
