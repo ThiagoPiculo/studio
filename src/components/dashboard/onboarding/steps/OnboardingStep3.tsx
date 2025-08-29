@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { TimePicker } from "../../missions/TimePicker";
 import * as z from "zod";
-import { Bed, Sunrise, Utensils } from "lucide-react";
+import { Bed, Sunrise, Utensils, AlarmClock } from "lucide-react";
 import React from 'react';
 
 export const onboardingSchemaStep3 = z.object({
@@ -17,10 +17,10 @@ export const onboardingSchemaStep3 = z.object({
 
 
 const anchorTimeFields = [
-    { name: 'wakeUpTime', label: 'Hora de Acordar', icon: Sunrise, microCopy: 'A base para um dia energizado. (5h antes da escola)' },
-    { name: 'lunchTime', label: 'Hora do Almoço', icon: Utensils, microCopy: 'Pausa para recarregar as energias. (45min antes da escola)' },
-    { name: 'dinnerTime', label: 'Hora do Jantar', icon: Utensils, microCopy: 'Momento de união em família. (30min após a escola)' },
-    { name: 'sleepTime', label: 'Hora de Dormir', icon: Bed, microCopy: 'Essencial para o crescimento. (4h30 após a escola)' },
+    { name: 'wakeUpTime', label: 'Hora de Acordar', icon: Sunrise, microCopy: 'Sugestão: 5h antes da escola.' },
+    { name: 'lunchTime', label: 'Hora do Almoço', icon: Utensils, microCopy: 'Sugestão: 45min antes da escola.' },
+    { name: 'dinnerTime', label: 'Hora do Jantar', icon: Utensils, microCopy: 'Sugestão: 30min após a escola.' },
+    { name: 'sleepTime', label: 'Hora de Dormir', icon: Bed, microCopy: 'Sugestão: 4h30 após a escola.' },
 ] as const;
 
 export function OnboardingStep3() {

@@ -45,6 +45,17 @@ const combinedSchema = onboardingSchemaStep1
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
+// Array of schemas for each step for validation purposes
+const stepSchemas = [
+  z.object({}), // Step 1 (Welcome) has no validation
+  onboardingSchemaStep1,
+  onboardingSchemaStep2,
+  onboardingSchemaStep3,
+  onboardingSchemaStep4,
+  onboardingSchemaStep5,
+];
+
+
 // Extract essential routine names for default values
 const essentialRoutinesDefault = predefinedMissionGroups
     .find(g => g.userCategory === 'Rotinas Essencial (diárias)')?.items.map(item => item.title) || [];
@@ -95,9 +106,9 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       wakeUpTime: '08:00',
-      lunchTime: '12:20',
+      lunchTime: '12:15',
       dinnerTime: '18:00',
-      sleepTime: '21:30',
+      sleepTime: '22:00',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -113,8 +124,7 @@ export function OnboardingForm() {
       case 3: return `Qual o Turno Escolar de ${childName || 'seu Herói'}?`;
       case 4: return "Tudo Tem Sua Hora";
       case 5: return "Adicionando Poderes Extras";
-      case 6: return "Definindo a Rotina Essencial";
-      case 7: return "Revisando o Mapa da Jornada";
+      case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
@@ -123,14 +133,23 @@ export function OnboardingForm() {
       if (step < TOTAL_STEPS) {
           if (step === 5) {
               handleGenerateSchedule();
+          } else {
+             setStep(prev => prev + 1);
           }
           setErrorToHighlight(null); // Clear highlights when moving
-          setStep(prev => prev + 1);
       }
   };
 
   const goToNextStep = async () => {
-    const isStepValid = await methods.trigger();
+    // No validation for the first step
+    if (step === 1) {
+        proceedToNextStep();
+        return;
+    }
+    
+    const currentStepSchema = stepSchemas[step - 1];
+    const fields = Object.keys(currentStepSchema.shape);
+    const isStepValid = await methods.trigger(fields as any);
 
     if (isStepValid) {
         if (step === 4) {
@@ -191,6 +210,7 @@ export function OnboardingForm() {
 
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
+      setStep(prev => prev + 1); // Move to loading screen immediately
       const values = methods.getValues();
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
@@ -205,7 +225,7 @@ export function OnboardingForm() {
               description: error.message || "Não foi possível gerar a rotina. Tente novamente.",
               variant: "destructive" 
           });
-          setStep(3); // Go back to the previous step on error
+          setStep(5); // Go back to the previous step on error
       } finally {
           setIsLoading(false);
       }
