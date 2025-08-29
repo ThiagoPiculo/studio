@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo } from "react";
@@ -19,7 +20,6 @@ import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleIt
 import { predefinedMissionGroups, weekdayLabels } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { generateSchedule } from "@/ai/actions/generate-schedule";
-import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -112,7 +112,7 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
+  const [generatedSchedule, setGeneratedSchedule] = useState<{ schedule: ScheduleItem[] } | null>(null);
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
@@ -238,22 +238,17 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
-      const input: GenerateScheduleInput = {
-          childName: values.name,
-          childAge: age,
-          schoolShift: values.schoolShift,
-          schoolStartTime: values.schoolShiftStart,
-          schoolEndTime: values.schoolShiftEnd,
-          extraActivities: values.extraActivities,
-          essentialRoutines: values.essentialRoutines
-      };
-
       try {
-          const schedule = await generateSchedule(input);
+          // A função `generateSchedule` agora é uma função de servidor com regras, não mais IA.
+          const schedule = await generateSchedule(values);
           setGeneratedSchedule(schedule);
-      } catch (error) {
+      } catch (error: any) {
           console.error("Error generating schedule:", error);
-          toast({ title: "Erro Mágico!", description: "O Mago da Organização teve um probleminha para criar a rotina. Tente novamente.", variant: "destructive" });
+          toast({ 
+              title: "Erro ao Gerar Rotina", 
+              description: error.message || "Não foi possível gerar a rotina. Tente novamente.",
+              variant: "destructive" 
+          });
           setStep(3); // Go back to the previous step on error
       } finally {
           setIsLoading(false);

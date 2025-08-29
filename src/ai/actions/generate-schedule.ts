@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
@@ -161,8 +162,8 @@ export async function generateSchedule(input: any): Promise<{ schedule: Schedule
             }
         });
     } else {
-        // Placeholder for other shifts to be implemented
-        console.warn(`generateSchedule called for unimplemented shift: ${input.schoolShift}`);
+        // Lançar um erro para o frontend tratar e exibir uma mensagem amigável
+        throw new Error(`O modo de geração de rotina para o turno "${input.schoolShift}" ainda está em desenvolvimento. Por favor, tente o turno da tarde.`);
     }
 
     return {
