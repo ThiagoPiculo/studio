@@ -9,7 +9,7 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Info, Utensils } from "lucide-react";
+import { Sun, CloudSun, Moon, Info, Utensils, AlertTriangle } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -136,6 +136,14 @@ export function OnboardingStep2() {
             )}
           </>
       </div>
+
+       <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Ponto de Atenção</AlertTitle>
+          <AlertDescription>
+            Os horários informados aqui são a base para o Assistente criar a rotina. Alterações futuras no turno não atualizarão automaticamente as missões já criadas. Você pode ajustar manualmente na tela de "Rotina de Missões".
+          </AlertDescription>
+        </Alert>
     </div>
   );
 }

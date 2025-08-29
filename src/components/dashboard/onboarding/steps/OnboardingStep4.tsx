@@ -11,7 +11,7 @@ import { TimePicker } from "../../missions/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { AlertCircle, Trash2 } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
-import { ActivityFormValues } from "../OnboardingForm";
+import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { parseTime } from "@/lib/calendar-utils";
 import React from 'react';
@@ -135,7 +135,7 @@ interface OnboardingStep4Props {
 }
 
 export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
-  const { control, watch } = useFormContext();
+  const { control, watch } = useFormContext<OnboardingFormValues>();
   const { fields, append, remove } = useFieldArray({
       control,
       name: "extraActivities"
@@ -159,7 +159,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
   const handleActivityToggle = (activityName: string, emoji: string, isChecked: boolean) => {
     if (isChecked) {
-        append({ name: activityName, days: [], time: '16:00', emoji: emoji });
+        append({ name: activityName, days: [], time: '16:00', emoji: emoji } as any);
     } else {
         const indexToRemove = fields.findIndex(field => (field as any).name === activityName);
         if (indexToRemove > -1) {

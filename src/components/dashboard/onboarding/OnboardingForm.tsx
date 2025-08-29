@@ -34,17 +34,12 @@ import { OnboardingStep6 } from "./steps/OnboardingStep6";
 const TOTAL_STEPS = 6;
 const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
-// Schemas for each step
-const schemas = [
-  onboardingSchemaStep1,
-  onboardingSchemaStep2,
-  onboardingSchemaStep3,
-  onboardingSchemaStep4,
-  onboardingSchemaStep5,
-];
-
-// Combine all schemas for the final form
-const combinedSchema = schemas.reduce((acc, schema) => acc.extend(schema.shape), z.object({}));
+// Unified schema for the entire onboarding flow
+const combinedSchema = onboardingSchemaStep1
+  .merge(onboardingSchemaStep2)
+  .merge(onboardingSchemaStep3)
+  .merge(onboardingSchemaStep4)
+  .merge(onboardingSchemaStep5);
 
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
@@ -130,25 +125,35 @@ export function OnboardingForm() {
       setErrorToHighlight(null);
     }
   };
-
+  
   const goToNextStep = async () => {
-    if (step === 1) {
-      proceedToNextStep();
-      return;
-    }
+    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
 
-    const currentStepIndex = step - 2;
-    if (currentStepIndex < 0 || currentStepIndex >= schemas.length) {
-      proceedToNextStep(); // For steps without schemas (like the last one)
-      return;
+    switch (step) {
+      case 1:
+        // No validation for the welcome step
+        break;
+      case 2:
+        fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId'];
+        break;
+      case 3:
+        fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'];
+        break;
+      case 4:
+         fieldsToValidate = ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'];
+         break;
+      case 5:
+        fieldsToValidate = ['extraActivities'];
+        break;
+      default:
+        // No validation needed for later steps without form inputs
+        break;
     }
     
-    const currentStepSchema = schemas[currentStepIndex];
-    const fields = Object.keys(currentStepSchema.shape);
-    const isStepValid = await methods.trigger(fields as any);
+    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
 
     if (isStepValid) {
-        if (step === 4) {
+        if (step === 5) { // Check for conflicts before moving from extra activities
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
             if (schoolShift === 'not_applicable' || !activity.time) return false;
@@ -197,6 +202,7 @@ export function OnboardingForm() {
     }
   };
 
+
   const goToPreviousStep = () => {
     if (step > 1) {
       setErrorToHighlight(null);
@@ -210,7 +216,6 @@ export function OnboardingForm() {
       const values = methods.getValues();
 
       try {
-          // Use the local function
           const schedule = await generateSchedule(values);
           setGeneratedSchedule(schedule);
       } catch (error: any) {
@@ -346,7 +351,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
-                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
