@@ -12,13 +12,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { OnboardingStep0 } from "./steps/OnboardingStep0";
-import { OnboardingStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2 } from "./steps/OnboardingStep2";
-import { OnboardingStep3, type ExtraActivityError } from "./steps/OnboardingStep3";
-import { OnboardingStep4 } from "./steps/OnboardingStep4";
-import { OnboardingStep5 } from "./steps/OnboardingStep5";
-import { OnboardingStep6 } from "./steps/OnboardingStep6";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
@@ -30,7 +23,16 @@ import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/flows/g
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
+import dynamic from 'next/dynamic';
+import { Skeleton } from "@/components/ui/skeleton";
 
+const OnboardingStep0 = dynamic(() => import('./steps/OnboardingStep0').then(mod => mod.OnboardingStep0), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep1 = dynamic(() => import('./steps/OnboardingStep1').then(mod => mod.OnboardingStep1), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep2 = dynamic(() => import('./steps/OnboardingStep2').then(mod => mod.OnboardingStep2), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep3 = dynamic(() => import('./steps/OnboardingStep3').then(mod => ({ default: mod.OnboardingStep3 })), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep4 = dynamic(() => import('./steps/OnboardingStep4').then(mod => mod.OnboardingStep4), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep5 = dynamic(() => import('./steps/OnboardingStep5').then(mod => mod.OnboardingStep5), { loading: () => <OnboardingFormSkeleton /> });
+const OnboardingStep6 = dynamic(() => import('./steps/OnboardingStep6').then(mod => mod.OnboardingStep6), { loading: () => <OnboardingFormSkeleton /> });
 
 const TOTAL_STEPS = 6;
 const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
@@ -86,6 +88,22 @@ const essentialRoutinesDefault = predefinedMissionGroups
     .find(g => g.userCategory === 'Rotinas Essencial (diárias)')?.items.map(item => item.title) || [];
 
 
+function OnboardingFormSkeleton() {
+    return (
+        <div className="space-y-6 animate-pulse">
+            <div className="text-center space-y-2">
+                <Skeleton className="h-5 w-3/4 mx-auto" />
+            </div>
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-24 w-full" />
+            </div>
+        </div>
+    );
+}
+
+
 export function OnboardingForm() {
   const router = useRouter();
   const { user } = useAuth();
@@ -98,7 +116,7 @@ export function OnboardingForm() {
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
-  const [errorToHighlight, setErrorToHighlight] = useState<ExtraActivityError | null>(null);
+  const [errorToHighlight, setErrorToHighlight] = useState<any | null>(null);
 
 
   const methods = useForm<OnboardingFormValues>({
