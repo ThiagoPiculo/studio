@@ -10,10 +10,9 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, Tablet, Youtube } from "lucide-react";
+import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
 import { addMinutes, format, subMinutes } from "date-fns";
-import { parseTime as parseTimeToMinutes } from "@/lib/calendar-utils";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -26,8 +25,6 @@ export const onboardingSchemaStep2 = z.object({
   lunchTime: z.string().optional(),
   dinnerTime: z.string().optional(),
   sleepTime: z.string().optional(),
-  screenTimeBefore: z.string().optional(),
-  screenTimeAfter: z.string().optional(),
   mealsAtSchool: z.object({
     lunch: z.boolean().default(false),
     dinner: z.boolean().default(false),
@@ -67,17 +64,13 @@ export function OnboardingStep2() {
     const end = getValues('schoolShiftEnd');
     const lunch = getValues('lunchTime');
 
-    // Reset screen times before recalculating
-    setValue('screenTimeBefore', '');
-    setValue('screenTimeAfter', '');
-
     if (shift !== 'not_applicable' && start && end) {
         const startDate = new Date(`1970-01-01T${start}:00`);
         const endDate = new Date(`1970-01-01T${end}:00`);
         
         switch (shift) {
             case 'morning':
-                setValue('wakeUpTime', formatTime(addMinutes(startDate, -60)));
+                setValue('wakeUpTime', formatTime(subMinutes(startDate, 60)));
                 setValue('lunchTime', formatTime(addMinutes(endDate, 30)));
                 setValue('dinnerTime', formatTime(addMinutes(endDate, 360)));
                 setValue('sleepTime', formatTime(addMinutes(endDate, 540)));
@@ -95,15 +88,11 @@ export function OnboardingStep2() {
                 setValue('sleepTime', '21:00');
                 break;
         }
-        setValue('screenTimeBefore', formatTime(subMinutes(startDate, 60)));
-        setValue('screenTimeAfter', formatTime(addMinutes(endDate, 60)));
     } else if (shift === 'not_applicable' && lunch) {
         const lunchDate = new Date(`1970-01-01T${lunch}:00`);
         setValue('wakeUpTime', formatTime(subMinutes(lunchDate, 240)));
         setValue('dinnerTime', formatTime(addMinutes(lunchDate, 360)));
         setValue('sleepTime', formatTime(addMinutes(lunchDate, 600)));
-        setValue('screenTimeBefore', formatTime(subMinutes(lunchDate, 60)));
-        setValue('screenTimeAfter', formatTime(addMinutes(lunchDate, 60)));
     }
   }, [getValues, setValue]);
 
@@ -222,20 +211,6 @@ export function OnboardingStep2() {
             )} />
              <FormField control={control} name="sleepTime" render={({ field }) => (
               <FormItem><FormLabel className="flex items-center gap-2"><Bed className="h-4 w-4"/> Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-        </div>
-      </div>
-      
-       <Separator />
-
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg text-center">Horários de Tela (Opcional)</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg bg-muted/30">
-            <FormField control={control} name="screenTimeBefore" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Tablet className="h-4 w-4"/> Tela (Manhã/Antes)</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
-            )} />
-             <FormField control={control} name="screenTimeAfter" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Youtube className="h-4 w-4"/> Tela (Tarde/Depois)</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
         </div>
       </div>
