@@ -95,9 +95,9 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       wakeUpTime: '08:00',
-      lunchTime: '12:20',
+      lunchTime: '12:15',
       dinnerTime: '18:00',
-      sleepTime: '21:30',
+      sleepTime: '22:00',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -110,10 +110,11 @@ export function OnboardingForm() {
     switch (step) {
       case 1: return "Assistente de Criação";
       case 2: return "Cadastrando um Novo Herói";
-      case 3: return "Tudo Tem Sua Hora";
-      case 4: return "Adicionando Poderes Extras";
-      case 5: return "Definindo a Rotina Essencial";
-      case 6: return "Revisando o Mapa da Jornada";
+      case 3: return `Qual o Turno Escolar de ${childName || 'seu Herói'}?`;
+      case 4: return "Tudo Tem Sua Hora";
+      case 5: return "Adicionando Poderes Extras";
+      case 6: return "Definindo a Rotina Essencial";
+      case 7: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
@@ -212,7 +213,6 @@ export function OnboardingForm() {
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
       try {
-          // A função `generateSchedule` agora é uma função de servidor com regras, não mais IA.
           const schedule = await generateSchedule(values);
           setGeneratedSchedule(schedule);
       } catch (error: any) {
@@ -345,10 +345,11 @@ export function OnboardingForm() {
             <div className="min-h-[450px]">
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
-                {step === 3 && <OnboardingStep3 />}
-                {step === 4 && <OnboardingStep4 errorToHighlight={errorToHighlight as any} />}
-                {step === 5 && <OnboardingStep5 />}
-                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 3 && <OnboardingStep2 />}
+                {step === 4 && <OnboardingStep3 />}
+                {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight as any} />}
+                {step === 6 && <OnboardingStep5 />}
+                {step === 7 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
@@ -386,8 +387,8 @@ export function OnboardingForm() {
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                       <>
-                        {step === 1 ? "Começar agora" : step === 5 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
-                        {step !== 5 && <ArrowRight className="ml-2 h-4 w-4" />}
+                        {step === 1 ? "Começar agora" : step === 6 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
+                        {step !== 6 && <ArrowRight className="ml-2 h-4 w-4" />}
                       </>
                   )}
                 </Button>

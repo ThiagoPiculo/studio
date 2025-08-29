@@ -5,17 +5,15 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { TimePicker } from "../../missions/TimePicker";
 import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, AlertCircle } from "lucide-react";
+import { Sun, CloudSun, Moon, Info, Utensils } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
-import { addMinutes, format, subMinutes } from "date-fns";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { TimePicker } from "../../missions/TimePicker";
 
 export const onboardingSchemaStep2 = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
@@ -36,12 +34,11 @@ export const onboardingSchemaStep2 = z.object({
 });
 
 const shiftDetails = {
-    morning: { icon: Sun, color: 'text-yellow-500', activeClass: 'data-[state=checked]:bg-yellow-500/10 data-[state=checked]:border-yellow-500/30 data-[state=checked]:text-yellow-700' },
-    afternoon: { icon: CloudSun, color: 'text-orange-500', activeClass: 'data-[state=checked]:bg-orange-500/10 data-[state=checked]:border-orange-500/30 data-[state=checked]:text-orange-700' },
-    full_time: { icon: Sun, color: 'text-indigo-500', activeClass: 'data-[state=checked]:bg-indigo-500/10 data-[state=checked]:border-indigo-500/30 data-[state=checked]:text-indigo-700' },
-    not_applicable: { icon: Moon, color: 'text-gray-500', activeClass: 'data-[state=checked]:bg-gray-500/10 data-[state=checked]:border-gray-500/30 data-[state=checked]:text-gray-700'}
+    morning: { icon: Sun, color: 'text-yellow-500' },
+    afternoon: { icon: CloudSun, color: 'text-orange-500' },
+    full_time: { icon: Sun, color: 'text-indigo-500' },
+    not_applicable: { icon: Moon, color: 'text-gray-500' }
 }
-
 
 export function OnboardingStep2() {
   const { control, watch, setValue } = useFormContext();
