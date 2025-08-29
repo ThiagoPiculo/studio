@@ -28,8 +28,8 @@ const findMissionDetails = (title: string) => {
 export async function generateSchedule(input: OnboardingFormValues): Promise<{ schedule: ScheduleItem[] }> {
   const finalSchedule: ScheduleItem[] = [];
   const occupiedSlots: { start: number; end: number; activity: string }[] = [];
-  const allDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
   const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
+  const MIN_FREE_TIME_SLOT = 30; // Define o tempo mínimo em minutos para um slot de tempo livre
 
   // Helper para adicionar um item à agenda e marcar o slot como ocupado
   const addAndOccupy = (item: Omit<ScheduleItem, 'type' | 'category' | 'emoji'>, type: ScheduleItem['type'], category: MissionCategory, emoji: string) => {
@@ -86,7 +86,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
     routineRules.forEach(rule => {
       const details = findMissionDetails(rule.title);
-      if (details) {
+      if (details && (input.essentialRoutines || []).includes(rule.title)) {
         addAndOccupy({
           activity: rule.title,
           startTime: rule.startTime,
@@ -96,7 +96,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
       }
     });
     
-    // 4. PREENCHER ESPAÇOS VAZIOS (NOVA LÓGICA)
+    // 4. PREENCHER ESPAÇOS VAZIOS
     const sortedSlots = occupiedSlots.sort((a, b) => a.start - b.start);
     const dayStart = parseTime('08:00'); 
     const dayEnd = parseTime('22:00');
@@ -107,7 +107,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         const freeTimeEnd = slot.start;
         const duration = freeTimeEnd - freeTimeStart;
 
-        if (duration > 0) {
+        if (duration >= MIN_FREE_TIME_SLOT) { // Apenas preenche se for maior ou igual ao mínimo
             const details = findMissionDetails('Hora livre para brincar');
             if (details) {
                 addAndOccupy({
@@ -121,16 +121,18 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         lastEnd = Math.max(lastEnd, slot.end);
     });
 
-    // Checar o último slot do dia
     if (dayEnd > lastEnd) {
-         const details = findMissionDetails('Hora livre para brincar');
-         if (details) {
-            addAndOccupy({
-                activity: 'Hora livre para brincar',
-                startTime: formatTime(lastEnd),
-                endTime: formatTime(dayEnd),
-                days: weekdays,
-            }, 'essential_routine', details.suggestedAppCategory, details.emoji);
+         const duration = dayEnd - lastEnd;
+         if (duration >= MIN_FREE_TIME_SLOT) {
+            const details = findMissionDetails('Hora livre para brincar');
+            if (details) {
+                addAndOccupy({
+                    activity: 'Hora livre para brincar',
+                    startTime: formatTime(lastEnd),
+                    endTime: formatTime(dayEnd),
+                    days: weekdays,
+                }, 'essential_routine', details.suggestedAppCategory, details.emoji);
+            }
          }
     }
 
