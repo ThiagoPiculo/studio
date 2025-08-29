@@ -4,7 +4,7 @@
 import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from '@/ai/flows/generate-schedule-flow';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { ScheduleItem, Weekday } from '@/lib/types';
-import { parseTime } from '@/lib/calendar-utils';
+import { parseTime, weekdayLabels } from '@/lib/calendar-utils';
 
 
 // Helper para verificar se um horário está ocupado
@@ -97,7 +97,10 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
 
     // NÍVEL 3: Sugestões da IA para Rotinas Essenciais
     const extraActivitiesText = (input.extraActivities || [])
-        .map(activity => `${activity.name} (${activity.days.join(', ')}) às ${activity.time}`)
+        .map(activity => {
+            const daysInPortuguese = activity.days.map(day => weekdayLabels[day as Weekday].short).join(', ');
+            return `${activity.name} (${daysInPortuguese}) às ${activity.time}`;
+        })
         .join('; ');
         
     const aiInput: GenerateScheduleInput = {
