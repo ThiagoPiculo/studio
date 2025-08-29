@@ -49,15 +49,6 @@ const occupyTimeSlot = (
 
 export async function generateSchedule(input: GenerateScheduleInput): Promise<GenerateScheduleOutput> {
     
-    // Convert a lista de atividades extras em uma string simples
-    const extraActivitiesText = (input.extraActivities || [])
-        .map(activity => `${activity.name} (${activity.days.join(', ')}) às ${activity.time}`)
-        .join('; ');
-
-    const aiInput = { ...input, extraActivities: extraActivitiesText };
-    
-    const aiOutput = await generateScheduleFlow(aiInput);
-
     const finalSchedule: ScheduleItem[] = [];
     const allMissions = predefinedMissionGroups.flatMap(group => group.items);
     const occupiedSlots: Record<Weekday, { start: number; end: number }[]> = {
@@ -104,10 +95,20 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
         }
     });
 
-    // NÍVEL 3: Rotinas Essenciais e Sugeridas pela IA
+    // NÍVEL 3: Sugestões da IA para Rotinas Essenciais
+    // Convert a lista de atividades extras em uma string simples para o prompt
+    const extraActivitiesText = (input.extraActivities || [])
+        .map(activity => `${activity.name} (${activity.days.join(', ')}) às ${activity.time}`)
+        .join('; ');
+        
+    const aiInput = { ...input, extraActivities: extraActivitiesText };
+
+    const aiOutput = await generateScheduleFlow(aiInput);
+
     const processedActivities = new Set<string>();
 
     aiOutput.schedule.forEach(itemFromAI => {
+        // Validação básica para a resposta da IA
         if (!itemFromAI.startTime || !itemFromAI.endTime || processedActivities.has(itemFromAI.activity.toLowerCase())) {
             return;
         }

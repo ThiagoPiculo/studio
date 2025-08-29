@@ -85,6 +85,7 @@ export const generateScheduleFlow = ai.defineFlow(
                 if (!output) {
                     throw new Error("A IA não retornou uma resposta.");
                 }
+                // Tenta validar a resposta da IA. Se falhar, o catch tratará.
                 const parsedOutput = GenerateScheduleOutputSchema.parse(output);
                 return parsedOutput;
 

@@ -19,7 +19,7 @@ import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleIt
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { generateSchedule } from "@/ai/actions/generate-schedule";
-import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/flows/generate-schedule-flow";
+import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -384,7 +384,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

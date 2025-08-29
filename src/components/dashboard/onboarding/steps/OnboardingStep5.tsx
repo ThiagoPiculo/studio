@@ -2,7 +2,7 @@
 "use client";
 
 import React from 'react';
-import type { GenerateScheduleOutput } from '@/lib/schedule-generator';
+import type { GenerateScheduleOutput } from '@/ai/actions/generate-schedule';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
@@ -30,7 +30,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
       {sortedItems.map((item, index) => (
          <div 
             key={`${item.activity}-${index}`} 
-            className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${item.type === 'extra_activity' ? 'bg-primary/10 border border-primary/20' : 'bg-muted/50'}`}
+            className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${item.type === 'extra_activity' ? 'bg-primary/10 border border-primary/20' : item.type === 'school_entry' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-muted/50'}`}
           >
             <div className="text-xs text-muted-foreground font-mono bg-background px-2 py-1 rounded-md shrink-0 w-14 text-center">
                 {item.startTime}
@@ -40,6 +40,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
                 <div className="flex flex-col">
                     <span className="font-semibold">{item.activity}</span>
                     {item.type === 'extra_activity' && <Badge variant="secondary" className="w-fit text-xs mt-1">Atividade Extra</Badge>}
+                    {item.type === 'school_entry' && <Badge variant="secondary" className="w-fit text-xs mt-1 bg-indigo-200 text-indigo-800">Escola</Badge>}
                 </div>
             </div>
         </div>
@@ -102,7 +103,6 @@ export function OnboardingStep5({ isLoading, generatedSchedule }: OnboardingStep
     <div className="space-y-4 animate-in fade-in-50 duration-500">
       <div className="text-center">
         <p className="text-muted-foreground">Esta é a rotina que o assistente criou. Se tudo estiver certo, podemos confirmar e iniciar a jornada!</p>
-        {generatedSchedule.freeTimeSummary && <p className="text-xs text-muted-foreground mt-2">{generatedSchedule.freeTimeSummary}</p>}
       </div>
       
        <Tabs defaultValue="MO" className="w-full">
