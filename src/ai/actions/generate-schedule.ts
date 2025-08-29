@@ -1,12 +1,19 @@
 
 'use server';
 
-import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from '@/ai/flows/generate-schedule-flow';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { ScheduleItem, Weekday } from '@/lib/types';
 import { weekdayLabels } from '@/lib/types';
-import { parseTime } from '@/lib/calendar-utils';
+import { addMinutes, format, subMinutes } from 'date-fns';
 
+
+// Helper to convert HH:mm string to a Date object for easier manipulation
+const timeToDate = (time: string): Date => {
+    const [hours, minutes] = time.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+};
 
 // Helper para verificar se um horário está ocupado
 const isTimeSlotOccupied = (
@@ -16,21 +23,26 @@ const isTimeSlotOccupied = (
     occupiedSlots: Record<Weekday, { start: number; end: number }[]>
 ): boolean => {
     if (!startTime || !endTime) {
-        // Se não houver hora de início ou fim, consideramos que não está ocupado para evitar erros.
-        return false; 
+        return false;
     }
     const newStart = parseTime(startTime);
     const newEnd = parseTime(endTime);
     const daySlots = occupiedSlots[day];
 
     for (const slot of daySlots) {
-        // Check for any overlap
         if (newStart < slot.end && newEnd > slot.start) {
             return true;
         }
     }
     return false;
 };
+
+// Helper para converter "HH:mm" para minutos desde o início do dia
+const parseTime = (time: string): number => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+};
+
 
 // Helper para adicionar um horário à lista de ocupados
 const occupyTimeSlot = (
@@ -47,110 +59,111 @@ const occupyTimeSlot = (
     });
 };
 
+const findMissionDetails = (title: string) => {
+    return predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === title);
+};
 
-export async function generateSchedule(input: GenerateScheduleInput): Promise<GenerateScheduleOutput> {
+
+export async function generateSchedule(input: any): Promise<{ schedule: ScheduleItem[] }> {
     
     const finalSchedule: ScheduleItem[] = [];
-    const allMissions = predefinedMissionGroups.flatMap(group => group.items);
     const occupiedSlots: Record<Weekday, { start: number; end: number }[]> = {
         MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: []
     };
+    const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
 
-    // NÍVEL 1: Escola (inadiável)
-    if (input.schoolShift !== 'not_applicable' && input.schoolStartTime && input.schoolEndTime) {
-        const schoolDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-        const schoolItem: ScheduleItem = {
-            activity: 'Escola',
-            emoji: '🏫',
-            type: 'school_entry', 
-            category: 'school',
-            startTime: input.schoolStartTime,
-            endTime: input.schoolEndTime,
-            days: schoolDays,
-        };
-        finalSchedule.push(schoolItem);
-        occupyTimeSlot(schoolDays, schoolItem.startTime, schoolItem.endTime, occupiedSlots);
-    }
+    // Lógica para Turno da Tarde
+    if (input.schoolShift === 'afternoon' && input.schoolShiftStart && input.schoolShiftEnd) {
+        const schoolStartTime = timeToDate(input.schoolShiftStart);
+        const schoolEndTime = timeToDate(input.schoolShiftEnd);
 
-    // NÍVEL 2: Atividades Extras (com horário fixo)
-    const extraActivitiesText = (input.extraActivities || [])
-        .map(activity => {
-            const activityDays = activity.days as Weekday[];
-            const predefined = allMissions.find(m => m.title.toLowerCase() === activity.name.toLowerCase());
-            
-            // Atividade dura 60 minutos por padrão
-            const [hour, minute] = activity.time.split(':').map(Number);
-            const endHour = (hour + 1).toString().padStart(2, '0');
-            const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
-            
-            if (!isTimeSlotOccupied(activityDays[0], activity.time, endTime, occupiedSlots)) {
+        // 1. ANCHORS: Calculate anchor times based on school schedule
+        const wakeUpTime = format(subMinutes(schoolStartTime, 5 * 60), 'HH:mm');
+        const lunchTime = format(subMinutes(schoolStartTime, 45), 'HH:mm');
+        const dinnerTime = format(addMinutes(schoolEndTime, 30), 'HH:mm');
+        const sleepTime = format(addMinutes(schoolEndTime, 4 * 60), 'HH:mm');
+
+        // 2. FIXED SLOTS: School and Extra Activities
+        finalSchedule.push({
+            activity: 'Escola', emoji: '🏫', type: 'school_entry', category: 'school',
+            startTime: input.schoolShiftStart, endTime: input.schoolShiftEnd, days: weekdays,
+        });
+        occupyTimeSlot(weekdays, input.schoolShiftStart, input.schoolShiftEnd, occupiedSlots);
+
+        (input.extraActivities || []).forEach((activity: any) => {
+             const activityDays = activity.days as Weekday[];
+             const endTime = format(addMinutes(timeToDate(activity.time), 60), 'HH:mm');
+             const details = findMissionDetails(activity.name);
+             if (details) {
                  finalSchedule.push({
-                    activity: predefined?.title || activity.name,
-                    emoji: predefined?.emoji || '🤸',
-                    type: 'extra_activity',
-                    category: predefined?.suggestedAppCategory || 'hobbies',
-                    startTime: activity.time,
-                    endTime: endTime,
-                    days: activityDays,
-                });
-                occupyTimeSlot(activityDays, activity.time, endTime, occupiedSlots);
-            }
-            const daysInPortuguese = activity.days.map(day => weekdayLabels[day as Weekday].short).join(', ');
-            return `${activity.name} (${daysInPortuguese}) às ${activity.time}`;
-        })
-        .join('; ');
-        
-    const aiInput: GenerateScheduleInput = {
-        childName: input.childName,
-        childAge: input.childAge,
-        schoolShift: input.schoolShift,
-        schoolStartTime: input.schoolStartTime,
-        schoolEndTime: input.schoolEndTime,
-        wakeUpTime: input.wakeUpTime!,
-        lunchTime: input.lunchTime!,
-        dinnerTime: input.dinnerTime!,
-        sleepTime: input.sleepTime!,
-        extraActivities: extraActivitiesText,
-        essentialRoutines: input.essentialRoutines,
-    };
-
-    const aiOutput = await generateScheduleFlow(aiInput);
-
-    const processedActivities = new Set<string>();
-
-    aiOutput.schedule.forEach(itemFromAI => {
-        // Validação básica para a resposta da IA
-        if (!itemFromAI.startTime || !itemFromAI.endTime || processedActivities.has(itemFromAI.activity.toLowerCase())) {
-            return;
-        }
-
-        const predefined = allMissions.find(m => m.title.toLowerCase() === itemFromAI.activity.toLowerCase());
-        if (!predefined) return;
-
-        const days = itemFromAI.days || ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
-        const validDays: Weekday[] = [];
-        
-        days.forEach(day => {
-            if (!isTimeSlotOccupied(day, itemFromAI.startTime, itemFromAI.endTime, occupiedSlots)) {
-                validDays.push(day);
-            }
+                    activity: details.title, emoji: details.emoji, type: 'extra_activity', category: details.suggestedAppCategory,
+                    startTime: activity.time, endTime, days: activityDays,
+                 });
+                 occupyTimeSlot(activityDays, activity.time, endTime, occupiedSlots);
+             }
         });
 
-        if (validDays.length > 0) {
-            const newItem: ScheduleItem = {
-                activity: predefined.title,
-                emoji: predefined.emoji,
-                type: 'essential_routine',
-                category: predefined.suggestedAppCategory,
-                startTime: itemFromAI.startTime,
-                endTime: itemFromAI.endTime,
-                days: validDays,
-            };
-            finalSchedule.push(newItem);
-            occupyTimeSlot(validDays, newItem.startTime, newItem.endTime, occupiedSlots);
-            processedActivities.add(itemFromAI.activity.toLowerCase());
-        }
-    });
+        // 3. ROUTINE SLOTS: Build the schedule based on your rules
+        const scheduleRules = [
+            { activity: 'Hora de acordar', startTime: wakeUpTime, duration: 10 },
+            { activity: 'Arrumar a cama', startTime: format(addMinutes(timeToDate(wakeUpTime), 10), 'HH:mm'), duration: 5 },
+            { activity: 'Tomar café da manhã', startTime: format(addMinutes(timeToDate(wakeUpTime), 15), 'HH:mm'), duration: 15 },
+            { activity: 'Escovar os dentes (após acordar)', startTime: format(addMinutes(timeToDate(wakeUpTime), 30), 'HH:mm'), duration: 5 },
+            { activity: 'Fazer a lição de casa', startTime: format(addMinutes(timeToDate(wakeUpTime), 60), 'HH:mm'), duration: 55 },
+            { activity: 'Organizar a mochila para amanhã', startTime: format(addMinutes(timeToDate(wakeUpTime), 115), 'HH:mm'), duration: 5 },
+            { activity: 'Almoçar', startTime: lunchTime, duration: 20 },
+            { activity: 'Escovar os dentes (após almoço)', startTime: format(addMinutes(timeToDate(lunchTime), 20), 'HH:mm'), duration: 5 },
+            { activity: 'Sair para escola', startTime: format(subMinutes(schoolStartTime, 20), 'HH:mm'), duration: 20 },
+            { activity: 'Tomar banho', startTime: format(subMinutes(timeToDate(lunchTime), 45), 'HH:mm'), duration: 15, condition: () => !isTimeSlotOccupied(weekdays[0], format(subMinutes(timeToDate(lunchTime), 45), 'HH:mm'), format(subMinutes(timeToDate(lunchTime), 30), 'HH:mm'), occupiedSlots) },
+            { activity: 'Jantar', startTime: dinnerTime, duration: 15 },
+            { activity: 'Escovar os dentes (após jantar)', startTime: format(addMinutes(timeToDate(dinnerTime), 15), 'HH:mm'), duration: 5 },
+            { activity: 'Hora de dormir', startTime: sleepTime, duration: 20 },
+        ];
+
+        scheduleRules.forEach(rule => {
+             // Skip if another rule has already defined this as a fixed anchor
+             if(finalSchedule.some(item => item.activity === rule.activity)) return;
+
+             if (rule.condition && !rule.condition()) {
+                // Handle conflicts here if needed, for now we just skip
+                return;
+             }
+
+             const details = findMissionDetails(rule.activity);
+             if (details) {
+                 const endTime = format(addMinutes(timeToDate(rule.startTime), rule.duration), 'HH:mm');
+                 finalSchedule.push({
+                     activity: details.title, emoji: details.emoji, type: 'essential_routine', category: details.suggestedAppCategory,
+                     startTime: rule.startTime, endTime, days: weekdays,
+                 });
+                 occupyTimeSlot(weekdays, rule.startTime, endTime, occupiedSlots);
+             }
+        });
+        
+         // 4. FREE TIME: Fill the gaps
+        const freeTimeSlots = [
+            { startTime: '10:00', endTime: '11:00'},
+            { startTime: '18:00', endTime: '19:00'},
+            { startTime: '19:30', endTime: '20:00'},
+            { startTime: '20:00', endTime: '21:00'},
+            { startTime: '21:00', endTime: '21:40'},
+        ];
+
+        freeTimeSlots.forEach(slot => {
+            if (!isTimeSlotOccupied(weekdays[0], slot.startTime, slot.endTime, occupiedSlots)) {
+                 const details = findMissionDetails('Hora livre para brincar');
+                 if(details) {
+                    finalSchedule.push({
+                        activity: 'Hora livre para brincar', emoji: '🧩', type: 'essential_routine', category: 'hobbies',
+                        startTime: slot.startTime, endTime: slot.endTime, days: weekdays,
+                    });
+                 }
+            }
+        });
+    } else {
+        // Placeholder for other shifts to be implemented
+        console.warn(`generateSchedule called for unimplemented shift: ${input.schoolShift}`);
+    }
 
     return {
         schedule: finalSchedule
