@@ -14,6 +14,10 @@ const isTimeSlotOccupied = (
     endTime: string,
     occupiedSlots: Record<Weekday, { start: number; end: number }[]>
 ): boolean => {
+    if (!startTime || !endTime) {
+        // Se não houver hora de início ou fim, consideramos que não está ocupado para evitar erros.
+        return false; 
+    }
     const newStart = parseTime(startTime);
     const newEnd = parseTime(endTime);
     const daySlots = occupiedSlots[day];
@@ -34,6 +38,7 @@ const occupyTimeSlot = (
     endTime: string,
     occupiedSlots: Record<Weekday, { start: number; end: number }[]>
 ) => {
+    if (!startTime || !endTime) return;
     const newStart = parseTime(startTime);
     const newEnd = parseTime(endTime);
     days.forEach(day => {
@@ -93,16 +98,12 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
     });
 
     // NÍVEL 3: Rotinas Essenciais e Sugeridas pela IA
-    // Pega as sugestões da IA, mas prioriza as essenciais
-    const allSuggestedActivities = [
-        ...(input.essentialRoutines?.map(name => ({ activity: name })) || []),
-        ...aiOutput.schedule
-    ];
-
     const processedActivities = new Set<string>();
 
-    allSuggestedActivities.forEach(itemFromAI => {
-        if (processedActivities.has(itemFromAI.activity.toLowerCase())) return;
+    aiOutput.schedule.forEach(itemFromAI => {
+        if (!itemFromAI.startTime || !itemFromAI.endTime || processedActivities.has(itemFromAI.activity.toLowerCase())) {
+            return;
+        }
 
         const predefined = allMissions.find(m => m.title.toLowerCase() === itemFromAI.activity.toLowerCase());
         if (!predefined) return;
