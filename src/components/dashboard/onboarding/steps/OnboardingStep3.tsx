@@ -5,7 +5,6 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { TimePicker } from "../../missions/TimePicker";
 import * as z from "zod";
-import { Bed, Sunrise, Utensils, AlarmClock } from "lucide-react";
 import React from 'react';
 
 export const onboardingSchemaStep3 = z.object({
@@ -17,10 +16,10 @@ export const onboardingSchemaStep3 = z.object({
 
 
 const anchorTimeFields = [
-    { name: 'wakeUpTime', label: 'Hora de Acordar', icon: Sunrise, microCopy: 'Sugestão: 5h antes da escola.' },
-    { name: 'lunchTime', label: 'Hora do Almoço', icon: Utensils, microCopy: 'Sugestão: 45min antes da escola.' },
-    { name: 'dinnerTime', label: 'Hora do Jantar', icon: Utensils, microCopy: 'Sugestão: 30min após a escola.' },
-    { name: 'sleepTime', label: 'Hora de Dormir', icon: Bed, microCopy: 'Sugestão: 4h30 após a escola.' },
+    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão: 5h antes da escola.' },
+    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão: 45min antes da escola.' },
+    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão: 30min após a escola.' },
+    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão: 4h30 após a escola.' },
 ] as const;
 
 export function OnboardingStep3() {
@@ -40,8 +39,8 @@ export function OnboardingStep3() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
-                    <item.icon className="h-5 w-5 text-primary" /> 
-                    {item.label}
+                    <span className="text-2xl">{item.emoji}</span>
+                    <span className="font-semibold">{item.label}</span>
                 </FormLabel>
                 <FormControl>
                   <TimePicker {...field} />

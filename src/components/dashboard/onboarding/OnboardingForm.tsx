@@ -18,7 +18,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateSchedule } from "@/lib/actions/generate-schedule";
+import { generateSchedule, type GenerateScheduleInput, type GenerateScheduleOutput } from "@/ai/flows/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
@@ -34,20 +34,8 @@ import { OnboardingStep6 } from "./steps/OnboardingStep6";
 const TOTAL_STEPS = 6;
 const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
-
-// Combine all schemas
-const combinedSchema = onboardingSchemaStep1
-  .extend(onboardingSchemaStep2.shape)
-  .extend(onboardingSchemaStep3.shape)
-  .extend(onboardingSchemaStep4.shape)
-  .extend(onboardingSchemaStep5.shape);
-
-export type OnboardingFormValues = z.infer<typeof combinedSchema>;
-export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
-
-// Array of schemas for each step for validation purposes
-const stepSchemas = [
-  z.object({}), // Step 1 (Welcome) has no validation
+// Schemas for each step
+const schemas = [
   onboardingSchemaStep1,
   onboardingSchemaStep2,
   onboardingSchemaStep3,
@@ -55,11 +43,15 @@ const stepSchemas = [
   onboardingSchemaStep5,
 ];
 
+// Combine all schemas for the final form
+const combinedSchema = schemas.reduce((acc, schema) => acc.merge(schema), z.object({}));
+
+export type OnboardingFormValues = z.infer<typeof combinedSchema>;
+export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
 // Extract essential routine names for default values
 const essentialRoutinesDefault = predefinedMissionGroups
     .find(g => g.userCategory === 'Rotinas Essencial (diárias)')?.items.map(item => item.title) || [];
-
 
 function OnboardingFormSkeleton() {
     return (
@@ -87,12 +79,11 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<{ schedule: ScheduleItem[] } | null>(null);
+  const [generatedSchedule, setGeneratedSchedule] = useState<GenerateScheduleOutput | null>(null);
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
   const [errorToHighlight, setErrorToHighlight] = useState<any | null>(null);
-
 
   const methods = useForm<OnboardingFormValues>({
     resolver: zodResolver(combinedSchema),
@@ -106,9 +97,9 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       wakeUpTime: '08:00',
-      lunchTime: '12:20',
+      lunchTime: '12:15',
       dinnerTime: '18:00',
-      sleepTime: '21:30',
+      sleepTime: '22:00',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -128,27 +119,24 @@ export function OnboardingForm() {
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
-  
+
   const proceedToNextStep = () => {
-      if (step < TOTAL_STEPS) {
-          if (step === 5) {
-              handleGenerateSchedule();
-          } else {
-             setStep(prev => prev + 1);
-          }
-          setErrorToHighlight(null); // Clear highlights when moving
+    if (step < TOTAL_STEPS) {
+      if (step === 5) {
+        handleGenerateSchedule();
+      } else {
+        setStep(prev => prev + 1);
       }
+      setErrorToHighlight(null);
+    }
   };
 
   const goToNextStep = async () => {
-    // No validation for the first step
     if (step === 1) {
-        proceedToNextStep();
-        return;
+      proceedToNextStep();
+      return;
     }
-    
     const isStepValid = await methods.trigger();
-
     if (isStepValid) {
         if (step === 4) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
@@ -168,34 +156,11 @@ export function OnboardingForm() {
         }
         proceedToNextStep();
     } else {
-        const errors = methods.formState.errors;
-        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
-        
-        if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
-            const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
-            const errorIndex = errorArray.findIndex(e => e && (e.days || e.time));
-
-            if (errorIndex !== -1) {
-                const errorField = errors.extraActivities?.[errorIndex];
-                const fieldName = errorField?.days ? 'dias da semana' : 'horário';
-                const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
-
-                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'time' });
-                
-                toast({
-                    title: `Pendência em '${activityName}'`,
-                    description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
-                    variant: "destructive"
-                });
-                return;
-            }
-        }
-
-        toast({
-            title: "Ops! Faltam alguns detalhes.",
-            description: "Por favor, corrija os campos marcados antes de continuar.",
-            variant: "destructive"
-        });
+      toast({
+        title: "Ops! Faltam alguns detalhes.",
+        description: "Por favor, corrija os campos marcados antes de continuar.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -208,13 +173,13 @@ export function OnboardingForm() {
 
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
-      setStep(prev => prev + 1); // Move to loading screen immediately
+      setStep(prev => prev + 1);
       const values = methods.getValues();
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
       try {
-          const schedule = await generateSchedule(values);
+          const schedule = await generateSchedule(values as GenerateScheduleInput);
           setGeneratedSchedule(schedule);
       } catch (error: any) {
           console.error("Error generating schedule:", error);
@@ -223,7 +188,7 @@ export function OnboardingForm() {
               description: error.message || "Não foi possível gerar a rotina. Tente novamente.",
               variant: "destructive" 
           });
-          setStep(5); // Go back to the previous step on error
+          setStep(5);
       } finally {
           setIsLoading(false);
       }
