@@ -49,7 +49,14 @@ const occupyTimeSlot = (
 
 export async function generateSchedule(input: GenerateScheduleInput): Promise<GenerateScheduleOutput> {
     
-    const aiOutput = await generateScheduleFlow(input);
+    // Convert a lista de atividades extras em uma string simples
+    const extraActivitiesText = (input.extraActivities || [])
+        .map(activity => `${activity.name} (${activity.days.join(', ')}) às ${activity.time}`)
+        .join('; ');
+
+    const aiInput = { ...input, extraActivities: extraActivitiesText };
+    
+    const aiOutput = await generateScheduleFlow(aiInput);
 
     const finalSchedule: ScheduleItem[] = [];
     const allMissions = predefinedMissionGroups.flatMap(group => group.items);

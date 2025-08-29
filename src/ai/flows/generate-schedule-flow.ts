@@ -5,14 +5,10 @@
  * Este fluxo usa o modelo Gemini para criar uma agenda estruturada com base nas informações
  * fornecidas sobre a criança, como idade, turno escolar e atividades.
  *
- * - generateScheduleFlow - O fluxo de IA que gera a agenda.
- * - GenerateScheduleInput - O tipo de entrada para a função.
- * - GenerateScheduleOutput - O tipo de retorno para a função.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { predefinedMissionGroups } from '@/lib/predefined-missions';
 
 // Define o esquema para cada item da agenda, garantindo uma estrutura consistente.
 // Simplificado para facilitar a geração pela IA. A validação e mapeamento final ocorrem no código.
@@ -35,11 +31,7 @@ export const GenerateScheduleInputSchema = z.object({
   lunchTime: z.string().describe("A hora do almoço (HH:mm)."),
   dinnerTime: z.string().describe("A hora do jantar (HH:mm)."),
   sleepTime: z.string().describe("A hora de dormir (HH:mm)."),
-  extraActivities: z.array(z.object({
-    name: z.string(),
-    days: z.array(z.string()),
-    time: z.string(),
-  })).optional().describe("Lista de atividades extracurriculares com seus dias e horários."),
+  extraActivities: z.string().optional().describe("Uma string de texto descrevendo as atividades extracurriculares já agendadas, seus dias e horários. Ex: 'Natação (Seg, Qua) às 16:00; Inglês (Ter, Qui) às 10:00'."),
   essentialRoutines: z.array(z.string()).optional().describe("Lista de tarefas diárias essenciais a serem incluídas na rotina."),
 });
 export type GenerateScheduleInput = z.infer<typeof GenerateScheduleInputSchema>;
