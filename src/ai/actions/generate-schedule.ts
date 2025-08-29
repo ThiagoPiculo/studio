@@ -4,7 +4,8 @@
 import { generateScheduleFlow, type GenerateScheduleInput, type GenerateScheduleOutput } from '@/ai/flows/generate-schedule-flow';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { ScheduleItem, Weekday } from '@/lib/types';
-import { parseTime, weekdayLabels } from '@/lib/calendar-utils';
+import { weekdayLabels } from '@/lib/types';
+import { parseTime } from '@/lib/calendar-utils';
 
 
 // Helper para verificar se um horário está ocupado
@@ -72,32 +73,28 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
     }
 
     // NÍVEL 2: Atividades Extras (com horário fixo)
-    input.extraActivities?.forEach(activity => {
-        const activityDays = activity.days as Weekday[];
-        const predefined = allMissions.find(m => m.title.toLowerCase() === activity.name.toLowerCase());
-        
-        // Atividade dura 60 minutos por padrão
-        const [hour, minute] = activity.time.split(':').map(Number);
-        const endHour = (hour + 1).toString().padStart(2, '0');
-        const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
-        
-        if (!isTimeSlotOccupied(activityDays[0], activity.time, endTime, occupiedSlots)) {
-             finalSchedule.push({
-                activity: predefined?.title || activity.name,
-                emoji: predefined?.emoji || '🤸',
-                type: 'extra_activity',
-                category: predefined?.suggestedAppCategory || 'hobbies',
-                startTime: activity.time,
-                endTime: endTime,
-                days: activityDays,
-            });
-            occupyTimeSlot(activityDays, activity.time, endTime, occupiedSlots);
-        }
-    });
-
-    // NÍVEL 3: Sugestões da IA para Rotinas Essenciais
     const extraActivitiesText = (input.extraActivities || [])
         .map(activity => {
+            const activityDays = activity.days as Weekday[];
+            const predefined = allMissions.find(m => m.title.toLowerCase() === activity.name.toLowerCase());
+            
+            // Atividade dura 60 minutos por padrão
+            const [hour, minute] = activity.time.split(':').map(Number);
+            const endHour = (hour + 1).toString().padStart(2, '0');
+            const endTime = `${endHour}:${minute.toString().padStart(2, '0')}`;
+            
+            if (!isTimeSlotOccupied(activityDays[0], activity.time, endTime, occupiedSlots)) {
+                 finalSchedule.push({
+                    activity: predefined?.title || activity.name,
+                    emoji: predefined?.emoji || '🤸',
+                    type: 'extra_activity',
+                    category: predefined?.suggestedAppCategory || 'hobbies',
+                    startTime: activity.time,
+                    endTime: endTime,
+                    days: activityDays,
+                });
+                occupyTimeSlot(activityDays, activity.time, endTime, occupiedSlots);
+            }
             const daysInPortuguese = activity.days.map(day => weekdayLabels[day as Weekday].short).join(', ');
             return `${activity.name} (${daysInPortuguese}) às ${activity.time}`;
         })
@@ -109,10 +106,10 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
         schoolShift: input.schoolShift,
         schoolStartTime: input.schoolStartTime,
         schoolEndTime: input.schoolEndTime,
-        wakeUpTime: input.wakeUpTime,
-        lunchTime: input.lunchTime,
-        dinnerTime: input.dinnerTime,
-        sleepTime: input.sleepTime,
+        wakeUpTime: input.wakeUpTime!,
+        lunchTime: input.lunchTime!,
+        dinnerTime: input.dinnerTime!,
+        sleepTime: input.sleepTime!,
         extraActivities: extraActivitiesText,
         essentialRoutines: input.essentialRoutines,
     };
