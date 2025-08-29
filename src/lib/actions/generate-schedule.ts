@@ -29,7 +29,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
   const finalSchedule: ScheduleItem[] = [];
   const occupiedSlots: { start: number; end: number; activity: string }[] = [];
   const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-  const MIN_FREE_TIME_SLOT = 30; // Define o tempo mínimo em minutos para um slot de tempo livre
+  const MIN_FREE_TIME_SLOT = 30;
 
   // Helper para adicionar um item à agenda e marcar o slot como ocupado
   const addAndOccupy = (item: Omit<ScheduleItem, 'type' | 'category' | 'emoji'>, type: ScheduleItem['type'], category: MissionCategory, emoji: string) => {
@@ -47,10 +47,10 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     const schoolEndMinutes = parseTime(input.schoolShiftEnd);
 
     // 1. ANCHORS
-    const wakeUpTime = formatTime(schoolStartMinutes - 5 * 60);
-    const lunchTime = formatTime(schoolStartMinutes - 45);
-    const dinnerTime = formatTime(schoolEndMinutes + 30);
-    const sleepTime = formatTime(schoolEndMinutes + 4 * 60);
+    const wakeUpTime = formatTime(subMinutes(new Date(`1970-01-01T${input.schoolShiftStart}`), 300).getTime() / 60000);
+    const lunchTime = formatTime(subMinutes(new Date(`1970-01-01T${input.schoolShiftStart}`), 45).getTime() / 60000);
+    const dinnerTime = formatTime(addMinutes(new Date(`1970-01-01T${input.schoolShiftEnd}`), 30).getTime() / 60000);
+    const sleepTime = formatTime(addMinutes(new Date(`1970-01-01T${input.schoolShiftEnd}`), 270).getTime() / 60000);
 
     // 2. FIXED SLOTS (Escola e Atividades Extras)
     addAndOccupy({ activity: 'Escola', startTime: input.schoolShiftStart, endTime: input.schoolShiftEnd, days: weekdays }, 'school_entry', 'school', '🏫');
@@ -61,11 +61,22 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         addAndOccupy({
           activity: activity.name,
           startTime: activity.time,
-          endTime: formatTime(parseTime(activity.time) + 60), // Assumindo 1h de duração
+          endTime: formatTime(parseTime(activity.time) + 60),
           days: activity.days as Weekday[],
         }, 'extra_activity', details.suggestedAppCategory, details.emoji);
       }
     });
+
+    // Adiciona horários de tela se definidos
+    if (input.screenTimeBefore) {
+        const details = findMissionDetails('Hora livre para brincar'); // Using a generic one
+        if (details) addAndOccupy({ activity: 'Tempo de Tela', startTime: input.screenTimeBefore, endTime: formatTime(parseTime(input.screenTimeBefore) + 60), days: weekdays }, 'essential_routine', 'hobbies', '📱');
+    }
+    if (input.screenTimeAfter) {
+        const details = findMissionDetails('Hora livre para brincar');
+        if (details) addAndOccupy({ activity: 'Tempo de Tela', startTime: input.screenTimeAfter, endTime: formatTime(parseTime(input.screenTimeAfter) + 60), days: weekdays }, 'essential_routine', 'hobbies', '📱');
+    }
+
 
     // 3. ROUTINE SLOTS
     const routineRules = [
@@ -75,10 +86,10 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
       { title: 'Escovar os dentes (após acordar)', startTime: formatTime(parseTime(wakeUpTime) + 30), duration: 5 },
       { title: 'Fazer a lição de casa', startTime: '09:00', duration: 55 },
       { title: 'Organizar a mochila para amanhã', startTime: '09:55', duration: 5 },
+      { title: 'Tomar banho', startTime: '12:00', duration: 15 },
       { title: 'Almoçar', startTime: lunchTime, duration: 20 },
       { title: 'Escovar os dentes (após almoço)', startTime: formatTime(parseTime(lunchTime) + 20), duration: 5 },
       { title: 'Sair para escola', startTime: formatTime(schoolStartMinutes - 20), duration: 20 },
-      { title: 'Tomar banho', startTime: '12:00', duration: 15 },
       { title: 'Jantar', startTime: dinnerTime, duration: 15 },
       { title: 'Escovar os dentes (após jantar)', startTime: formatTime(parseTime(dinnerTime) + 15), duration: 5 },
       { title: 'Hora de dormir', startTime: sleepTime, duration: 20 },
@@ -107,7 +118,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         const freeTimeEnd = slot.start;
         const duration = freeTimeEnd - freeTimeStart;
 
-        if (duration >= MIN_FREE_TIME_SLOT) { // Apenas preenche se for maior ou igual ao mínimo
+        if (duration >= MIN_FREE_TIME_SLOT) { 
             const details = findMissionDetails('Hora livre para brincar');
             if (details) {
                 addAndOccupy({

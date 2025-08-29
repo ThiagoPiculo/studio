@@ -10,9 +10,9 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, NotebookText } from "lucide-react";
+import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, Tablet, Youtube } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
-import { addMinutes, format } from "date-fns";
+import { addMinutes, format, subMinutes } from "date-fns";
 import { parseTime as parseTimeToMinutes } from "@/lib/calendar-utils";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -26,6 +26,8 @@ export const onboardingSchemaStep2 = z.object({
   lunchTime: z.string().optional(),
   dinnerTime: z.string().optional(),
   sleepTime: z.string().optional(),
+  screenTimeBefore: z.string().optional(),
+  screenTimeAfter: z.string().optional(),
   mealsAtSchool: z.object({
     lunch: z.boolean().default(false),
     dinner: z.boolean().default(false),
@@ -58,15 +60,16 @@ export function OnboardingStep2() {
   const { control, watch, setValue, getValues } = useFormContext();
   const childName = getValues('name');
   const schoolShift = watch('schoolShift');
-  const schoolShiftStart = watch('schoolShiftStart');
-  const schoolShiftEnd = watch('schoolShiftEnd');
-  const lunchTimeAnchor = watch('lunchTime');
-
+  
   const calculateAndSetAnchorTimes = useCallback(() => {
     const shift = getValues('schoolShift') as SchoolShift;
     const start = getValues('schoolShiftStart');
     const end = getValues('schoolShiftEnd');
     const lunch = getValues('lunchTime');
+
+    // Reset screen times before recalculating
+    setValue('screenTimeBefore', '');
+    setValue('screenTimeAfter', '');
 
     if (shift !== 'not_applicable' && start && end) {
         const startDate = new Date(`1970-01-01T${start}:00`);
@@ -76,34 +79,37 @@ export function OnboardingStep2() {
             case 'morning':
                 setValue('wakeUpTime', formatTime(addMinutes(startDate, -60)));
                 setValue('lunchTime', formatTime(addMinutes(endDate, 30)));
-                setValue('dinnerTime', formatTime(addMinutes(endDate, 360))); // 6 hours
-                setValue('sleepTime', formatTime(addMinutes(endDate, 540))); // 9 hours
+                setValue('dinnerTime', formatTime(addMinutes(endDate, 360)));
+                setValue('sleepTime', formatTime(addMinutes(endDate, 540)));
                 break;
             case 'afternoon':
-                setValue('wakeUpTime', formatTime(addMinutes(startDate, -300))); // 5 hours
-                setValue('lunchTime', formatTime(addMinutes(startDate, -45)));
+                setValue('wakeUpTime', formatTime(subMinutes(startDate, 300)));
+                setValue('lunchTime', formatTime(subMinutes(startDate, 45)));
                 setValue('dinnerTime', formatTime(addMinutes(endDate, 30)));
-                setValue('sleepTime', formatTime(addMinutes(endDate, 270))); // 4.5 hours
+                setValue('sleepTime', formatTime(addMinutes(endDate, 270)));
                 break;
             case 'full_time':
-                setValue('wakeUpTime', formatTime(addMinutes(startDate, -60)));
-                setValue('lunchTime', '12:00'); // Default as it is likely at school
-                setValue('dinnerTime', '18:30'); // Default as it is likely at school
+                setValue('wakeUpTime', formatTime(subMinutes(startDate, 60)));
+                setValue('lunchTime', '12:00');
+                setValue('dinnerTime', '18:30');
                 setValue('sleepTime', '21:00');
                 break;
         }
+        setValue('screenTimeBefore', formatTime(subMinutes(startDate, 60)));
+        setValue('screenTimeAfter', formatTime(addMinutes(endDate, 60)));
     } else if (shift === 'not_applicable' && lunch) {
         const lunchDate = new Date(`1970-01-01T${lunch}:00`);
-        setValue('wakeUpTime', formatTime(addMinutes(lunchDate, -240))); // 4 hours before
-        setValue('dinnerTime', formatTime(addMinutes(lunchDate, 360))); // 6 hours after
-        setValue('sleepTime', formatTime(addMinutes(lunchDate, 600))); // 10 hours after
+        setValue('wakeUpTime', formatTime(subMinutes(lunchDate, 240)));
+        setValue('dinnerTime', formatTime(addMinutes(lunchDate, 360)));
+        setValue('sleepTime', formatTime(addMinutes(lunchDate, 600)));
+        setValue('screenTimeBefore', formatTime(subMinutes(lunchDate, 60)));
+        setValue('screenTimeAfter', formatTime(addMinutes(lunchDate, 60)));
     }
   }, [getValues, setValue]);
 
   useEffect(() => {
     calculateAndSetAnchorTimes();
-  }, [schoolShift, schoolShiftStart, schoolShiftEnd, lunchTimeAnchor, calculateAndSetAnchorTimes]);
-
+  }, [schoolShift, calculateAndSetAnchorTimes]);
 
   const handleShiftChange = (value: string) => {
     const shift = value as SchoolShift;
@@ -203,24 +209,36 @@ export function OnboardingStep2() {
        <Separator />
 
       <div className="space-y-4">
-        <h3 className="font-semibold text-lg text-center">Definir Horários de Âncora</h3>
+        <h3 className="font-semibold text-lg text-center">Horários de Âncora da Rotina</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 border rounded-lg bg-muted/30">
             <FormField control={control} name="wakeUpTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Sunrise className="h-4 w-4"/> Hora de Acordar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Sunrise className="h-4 w-4"/> Acordar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="lunchTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Hora do Almoço</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Almoço</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="dinnerTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Hora do Jantar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Jantar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="sleepTime" render={({ field }) => (
-              <FormItem><FormLabel className="flex items-center gap-2"><Bed className="h-4 w-4"/> Hora de Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Bed className="h-4 w-4"/> Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+        </div>
+      </div>
+      
+       <Separator />
+
+      <div className="space-y-4">
+        <h3 className="font-semibold text-lg text-center">Horários de Tela (Opcional)</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg bg-muted/30">
+            <FormField control={control} name="screenTimeBefore" render={({ field }) => (
+              <FormItem><FormLabel className="flex items-center gap-2"><Tablet className="h-4 w-4"/> Tela (Manhã/Antes)</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+            )} />
+             <FormField control={control} name="screenTimeAfter" render={({ field }) => (
+              <FormItem><FormLabel className="flex items-center gap-2"><Youtube className="h-4 w-4"/> Tela (Tarde/Depois)</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
         </div>
       </div>
     </div>
   );
 }
-
-    
