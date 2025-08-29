@@ -37,10 +37,10 @@ const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
 // Combine all schemas
 const combinedSchema = onboardingSchemaStep1
-  .merge(onboardingSchemaStep2)
-  .merge(onboardingSchemaStep3)
-  .merge(onboardingSchemaStep4)
-  .merge(onboardingSchemaStep5);
+  .extend(onboardingSchemaStep2.shape)
+  .extend(onboardingSchemaStep3.shape)
+  .extend(onboardingSchemaStep4.shape)
+  .extend(onboardingSchemaStep5.shape);
 
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
@@ -95,9 +95,9 @@ export function OnboardingForm() {
       schoolShiftStart: '13:00',
       schoolShiftEnd: '17:30',
       wakeUpTime: '08:00',
-      lunchTime: '12:15',
+      lunchTime: '12:20',
       dinnerTime: '18:00',
-      sleepTime: '22:00',
+      sleepTime: '21:30',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -118,15 +118,6 @@ export function OnboardingForm() {
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
-
-  const stepSchemas = [
-    z.object({}), // Step 1 is intro
-    onboardingSchemaStep1,
-    onboardingSchemaStep2,
-    onboardingSchemaStep3,
-    onboardingSchemaStep4,
-    onboardingSchemaStep5,
-  ];
   
   const proceedToNextStep = () => {
       if (step < TOTAL_STEPS) {
@@ -338,9 +329,9 @@ export function OnboardingForm() {
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
-                {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 4 && <OnboardingStep3 />}
+                {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
