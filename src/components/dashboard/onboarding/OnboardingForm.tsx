@@ -19,7 +19,7 @@ import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups, weekdayLabels } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
-import { generateSchedule } from "@/ai/actions/generate-schedule";
+import { generateSchedule } from "@/lib/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { parseTime } from "@/lib/calendar-utils";
