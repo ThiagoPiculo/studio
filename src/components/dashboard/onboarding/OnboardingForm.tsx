@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo } from "react";
@@ -25,62 +24,25 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { parseTime } from "@/lib/calendar-utils";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
-
-const OnboardingStep0 = dynamic(() => import('./steps/OnboardingStep0').then(mod => mod.OnboardingStep0), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep1 = dynamic(() => import('./steps/OnboardingStep1').then(mod => mod.OnboardingStep1), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep2 = dynamic(() => import('./steps/OnboardingStep2').then(mod => mod.OnboardingStep2), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep3 = dynamic(() => import('./steps/OnboardingStep3').then(mod => ({ default: mod.OnboardingStep3 })), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep4 = dynamic(() => import('./steps/OnboardingStep4').then(mod => mod.OnboardingStep4), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep5 = dynamic(() => import('./steps/OnboardingStep5').then(mod => mod.OnboardingStep5), { loading: () => <OnboardingFormSkeleton /> });
-const OnboardingStep6 = dynamic(() => import('./steps/OnboardingStep6').then(mod => mod.OnboardingStep6), { loading: () => <OnboardingFormSkeleton /> });
+import { OnboardingStep1, onboardingSchemaStep1 } from "./steps/OnboardingStep1";
+import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep3, onboardingSchemaStep3 } from "./steps/OnboardingStep3";
+import { OnboardingStep4, onboardingSchemaStep4, extraActivitySchema } from "./steps/OnboardingStep4";
+import { OnboardingStep5, onboardingSchemaStep5 } from "./steps/OnboardingStep5";
+import { OnboardingStep6 } from "./steps/OnboardingStep6";
 
 const TOTAL_STEPS = 6;
 const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
 
-// Schema for an individual activity from step 3
-const extraActivitySchema = z.object({
-  name: z.string(),
-  days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
-});
+// Combine all schemas
+const combinedSchema = onboardingSchemaStep1
+  .merge(onboardingSchemaStep2)
+  .merge(onboardingSchemaStep3)
+  .merge(onboardingSchemaStep4)
+  .merge(onboardingSchemaStep5);
 
-// Unified schema for the entire onboarding flow
-const onboardingSchema = z.object({
-  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
-  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
-    message: "Data inválida."
-  }),
-  gender: z.enum(['boy', 'girl', 'not-informed']),
-  contextId: z.string(),
-  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
-  schoolShiftStart: z.string().optional(),
-  schoolShiftEnd: z.string().optional(),
-  wakeUpTime: z.string().optional(),
-  lunchTime: z.string().optional(),
-  dinnerTime: z.string().optional(),
-  sleepTime: z.string().optional(),
-  mealsAtSchool: z.object({
-    lunch: z.boolean().default(false),
-    dinner: z.boolean().default(false),
-  }).optional(),
-  extraActivities: z.array(extraActivitySchema).optional(),
-  essentialRoutines: z.array(z.string()).optional(),
-}).superRefine((data, ctx) => {
-    if (data.schoolShift !== 'not_applicable') {
-        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
-        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
-        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
-            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
-        }
-    }
-     if (data.schoolShift === 'not_applicable') {
-        if (!data.lunchTime) ctx.addIssue({ code: "custom", path: ["lunchTime"], message: "Horário do almoço é obrigatório." });
-    }
-});
-
-
-export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
+export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
 // Extract essential routine names for default values
@@ -103,6 +65,8 @@ function OnboardingFormSkeleton() {
     );
 }
 
+const OnboardingStep0 = dynamic(() => import('./steps/OnboardingStep0').then(mod => mod.OnboardingStep0), { loading: () => <OnboardingFormSkeleton /> });
+
 
 export function OnboardingForm() {
   const router = useRouter();
@@ -120,7 +84,7 @@ export function OnboardingForm() {
 
 
   const methods = useForm<OnboardingFormValues>({
-    resolver: zodResolver(onboardingSchema),
+    resolver: zodResolver(combinedSchema),
     mode: 'onChange',
     defaultValues: {
       name: "",
@@ -146,13 +110,22 @@ export function OnboardingForm() {
     switch (step) {
       case 1: return "Assistente de Criação";
       case 2: return "Cadastrando um Novo Herói";
-      case 3: return `Qual Hora da Escola (Turno) de ${childName || 'seu Herói'}?`;
+      case 3: return "Tudo Tem Sua Hora";
       case 4: return "Adicionando Poderes Extras";
       case 5: return "Definindo a Rotina Essencial";
       case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
     }
   }, [step, methods]);
+
+  const stepSchemas = [
+    z.object({}), // Step 1 is intro
+    onboardingSchemaStep1,
+    onboardingSchemaStep2,
+    onboardingSchemaStep3,
+    onboardingSchemaStep4,
+    onboardingSchemaStep5,
+  ];
   
   const proceedToNextStep = () => {
       if (step < TOTAL_STEPS) {
@@ -165,13 +138,13 @@ export function OnboardingForm() {
   };
 
   const goToNextStep = async () => {
-    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
-
-    switch (step) {
-        case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
-        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime']; break;
-        case 4: fieldsToValidate = ['extraActivities']; break;
+    const currentStepSchema = stepSchemas[step];
+    if (!currentStepSchema) {
+        proceedToNextStep();
+        return;
     }
+
+    const fieldsToValidate = currentStepSchema.keyof()._def.items as (keyof OnboardingFormValues)[];
     
     const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
     
@@ -372,10 +345,10 @@ export function OnboardingForm() {
             <div className="min-h-[450px]">
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
-                {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
-                {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 3 && <OnboardingStep3 />}
+                {step === 4 && <OnboardingStep4 errorToHighlight={errorToHighlight as any} />}
+                {step === 5 && <OnboardingStep5 />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

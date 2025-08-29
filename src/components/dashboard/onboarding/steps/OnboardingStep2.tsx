@@ -21,10 +21,6 @@ export const onboardingSchemaStep2 = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
   schoolShiftStart: z.string().optional(),
   schoolShiftEnd: z.string().optional(),
-  wakeUpTime: z.string().optional(),
-  lunchTime: z.string().optional(),
-  dinnerTime: z.string().optional(),
-  sleepTime: z.string().optional(),
   mealsAtSchool: z.object({
     lunch: z.boolean().default(false),
     dinner: z.boolean().default(false),
@@ -37,9 +33,6 @@ export const onboardingSchemaStep2 = z.object({
             ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
         }
     }
-     if (data.schoolShift === 'not_applicable' && !data.lunchTime) {
-        ctx.addIssue({ code: "custom", path: ["lunchTime"], message: "Horário do almoço é obrigatório." });
-    }
 });
 
 const shiftDetails = {
@@ -49,56 +42,10 @@ const shiftDetails = {
     not_applicable: { icon: Moon, color: 'text-gray-500', activeClass: 'data-[state=checked]:bg-gray-500/10 data-[state=checked]:border-gray-500/30 data-[state=checked]:text-gray-700'}
 }
 
-function formatTime(date: Date): string {
-    return format(date, 'HH:mm');
-}
 
 export function OnboardingStep2() {
-  const { control, watch, setValue, getValues } = useFormContext();
-  const childName = getValues('name');
+  const { control, watch, setValue } = useFormContext();
   const schoolShift = watch('schoolShift');
-  
-  const calculateAndSetAnchorTimes = useCallback(() => {
-    const shift = getValues('schoolShift') as SchoolShift;
-    const start = getValues('schoolShiftStart');
-    const end = getValues('schoolShiftEnd');
-    const lunch = getValues('lunchTime');
-
-    if (shift !== 'not_applicable' && start && end) {
-        const startDate = new Date(`1970-01-01T${start}:00`);
-        const endDate = new Date(`1970-01-01T${end}:00`);
-        
-        switch (shift) {
-            case 'morning':
-                setValue('wakeUpTime', formatTime(subMinutes(startDate, 60)));
-                setValue('lunchTime', formatTime(addMinutes(endDate, 30)));
-                setValue('dinnerTime', formatTime(addMinutes(endDate, 360)));
-                setValue('sleepTime', formatTime(addMinutes(endDate, 540)));
-                break;
-            case 'afternoon':
-                setValue('wakeUpTime', formatTime(subMinutes(startDate, 300)));
-                setValue('lunchTime', formatTime(subMinutes(startDate, 45)));
-                setValue('dinnerTime', formatTime(addMinutes(endDate, 30)));
-                setValue('sleepTime', formatTime(addMinutes(endDate, 270)));
-                break;
-            case 'full_time':
-                setValue('wakeUpTime', formatTime(subMinutes(startDate, 60)));
-                setValue('lunchTime', '12:00');
-                setValue('dinnerTime', '18:30');
-                setValue('sleepTime', '21:00');
-                break;
-        }
-    } else if (shift === 'not_applicable' && lunch) {
-        const lunchDate = new Date(`1970-01-01T${lunch}:00`);
-        setValue('wakeUpTime', formatTime(subMinutes(lunchDate, 240)));
-        setValue('dinnerTime', formatTime(addMinutes(lunchDate, 360)));
-        setValue('sleepTime', formatTime(addMinutes(lunchDate, 600)));
-    }
-  }, [getValues, setValue]);
-
-  useEffect(() => {
-    calculateAndSetAnchorTimes();
-  }, [schoolShift, calculateAndSetAnchorTimes]);
 
   const handleShiftChange = (value: string) => {
     const shift = value as SchoolShift;
@@ -106,43 +53,27 @@ export function OnboardingStep2() {
     
     let start = '';
     let end = '';
-    let lunch = '12:00';
     let mealsAtSchool = { lunch: false, dinner: false };
 
     switch (shift) {
       case 'morning':
-        start = '07:30'; end = '12:00'; break;
+        start = '07:30'; end = '12:00'; mealsAtSchool = { lunch: false, dinner: false }; break;
       case 'afternoon':
-        start = '13:00'; end = '17:30'; break;
+        start = '13:00'; end = '17:30'; mealsAtSchool = { lunch: false, dinner: false }; break;
       case 'full_time':
-        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: true }; break;
+        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: false }; break;
       case 'not_applicable':
-        lunch = '12:00'; break;
+        mealsAtSchool = { lunch: false, dinner: false }; break;
     }
     setValue('schoolShiftStart', start);
     setValue('schoolShiftEnd', end);
-    setValue('lunchTime', lunch);
     setValue('mealsAtSchool', mealsAtSchool);
   };
   
-  const AnchorField = ({ name, emoji, description, fieldName }: { name: string; emoji: string; description: string; fieldName: any }) => (
-    <FormField control={control} name={fieldName} render={({ field }) => (
-      <FormItem>
-        <FormLabel className="flex items-center gap-2 font-semibold">
-          <span className="text-2xl">{emoji}</span>
-          {name}
-        </FormLabel>
-        <FormDescription className="text-xs -mt-1 ml-9">{description}</FormDescription>
-        <FormControl><TimePicker {...field} /></FormControl>
-        <FormMessage className="ml-9" />
-      </FormItem>
-    )} />
-  );
-
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Marque o turno, se precisar, ajuste hora de entrada e saída. Os horários âncora da rotina serão sugeridos abaixo, mas você pode ajustá-los!</p>
+        <p className="text-muted-foreground">Esta informação é a peça central para montar uma rotina que funciona.</p>
       </div>
 
       <FormField
@@ -207,18 +138,6 @@ export function OnboardingStep2() {
               </div>
             )}
           </>
-      </div>
-
-       <Separator />
-
-      <div className="space-y-4">
-        <h3 className="font-semibold text-lg text-center">Horários de Âncora da Rotina</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-8 p-4 border rounded-lg bg-muted/30">
-            <AnchorField name="Acordar" emoji="⏰" description="A base para o início do dia." fieldName="wakeUpTime" />
-            <AnchorField name="Almoço" emoji="🍽️" description="O principal combustível do herói." fieldName="lunchTime" />
-            <AnchorField name="Jantar" emoji="🍽️" description="A recarga de energia da noite." fieldName="dinnerTime" />
-            <AnchorField name="Dormir" emoji="😴" description="O descanso para recarregar." fieldName="sleepTime" />
-        </div>
       </div>
     </div>
   );

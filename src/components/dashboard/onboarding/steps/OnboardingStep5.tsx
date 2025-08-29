@@ -1,130 +1,104 @@
 
 "use client";
 
-import React from 'react';
-import type { GenerateScheduleOutput } from '@/ai/actions/generate-schedule';
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from '@/components/ui/badge';
-import { weekdayLabels, allWeekdays, type Weekday, type ScheduleItem } from "@/lib/types";
-import { Loader2, Wand2, BrainCircuit } from "lucide-react";
-import { Button } from '@/components/ui/button';
+import { useFormContext } from "react-hook-form";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { predefinedMissionGroups } from "@/lib/predefined-missions";
+import { OnboardingFormValues } from "../OnboardingForm";
+import { useFieldArray } from "react-hook-form";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import { Clock } from "lucide-react";
+import * as z from "zod";
 
-const getPeriod = (time: string): 'morning' | 'afternoon' | 'night' => {
-    if (!time || !time.includes(':')) return 'morning'; // Fallback
-    const hour = parseInt(time.split(':')[0], 10);
-    if (hour < 12) return 'morning';
-    if (hour < 18) return 'afternoon';
-    return 'night';
-}
+export const onboardingSchemaStep5 = z.object({
+  essentialRoutines: z.array(z.string()).optional(),
+});
 
-const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] }) => {
-  const sortedItems = [...items].sort((a,b) => a.startTime.localeCompare(b.startTime));
 
-  if(items.length === 0) {
-    return <div className="text-center text-muted-foreground p-8">Nenhuma atividade neste dia.</div>
-  }
+const essentialRoutinesGroup = predefinedMissionGroups.find(g => g.userCategory === 'Rotinas Essencial (diárias)');
+const essentialRoutines = essentialRoutinesGroup ? essentialRoutinesGroup.items.map(item => ({ id: item.title, label: item.title, emoji: item.emoji })) : [];
 
-  return (
-    <div className="space-y-3">
-      {sortedItems.map((item, index) => (
-         <div 
-            key={`${item.activity}-${index}`} 
-            className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${item.type === 'extra_activity' ? 'bg-primary/10 border border-primary/20' : item.type === 'school_entry' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-muted/50'}`}
-          >
-            <div className="text-xs text-muted-foreground font-mono bg-background px-2 py-1 rounded-md shrink-0 w-14 text-center">
-                {item.startTime}
-            </div>
-            <div className="flex-grow flex items-center gap-2">
-                <span className="text-xl">{item.emoji}</span>
-                <div className="flex flex-col">
-                    <span className="font-semibold">{item.activity}</span>
-                    {item.type === 'extra_activity' && <Badge variant="secondary" className="w-fit text-xs mt-1">Atividade Extra</Badge>}
-                    {item.type === 'school_entry' && <Badge variant="secondary" className="w-fit text-xs mt-1 bg-indigo-200 text-indigo-800">Escola</Badge>}
-                </div>
-            </div>
-        </div>
-      ))}
-    </div>
-  )
-}
+const categories = {
+  'Casa': predefinedMissionGroups.find(g => g.userCategory === 'Ajudar em Casa')?.items || [],
+  'Saúde': predefinedMissionGroups.find(g => g.userCategory === 'Saúde e Bem-Estar')?.items || [],
+  'Comportamental': predefinedMissionGroups.find(g => g.userCategory === 'Comportamental')?.items || [],
+};
 
-interface OnboardingStep5Props {
-  isLoading: boolean;
-  generatedSchedule: GenerateScheduleOutput | null;
-}
+export function OnboardingStep5() {
+  const { control, watch } = useFormContext<OnboardingFormValues>();
+  const { fields, append, remove } = useFieldArray({
+      control,
+      name: "essentialRoutines" as any
+  });
 
-export function OnboardingStep5({ isLoading, generatedSchedule }: OnboardingStep5Props) {
+  const selectedRoutines = watch('essentialRoutines') || [];
   
-  const scheduleByDay = React.useMemo(() => {
-    if (!generatedSchedule || !generatedSchedule.schedule) {
-        return {} as Record<Weekday, ScheduleItem[]>;
+  const anchorTimes = {
+    'Hora de acordar': watch('wakeUpTime'),
+    'Almoçar': watch('lunchTime'),
+    'Jantar': watch('dinnerTime'),
+    'Hora de dormir': watch('sleepTime'),
+  };
+
+  const handleRoutineToggle = (routineName: string, isChecked: boolean) => {
+    const index = selectedRoutines.indexOf(routineName);
+    if (isChecked) {
+        if (index === -1) append(routineName as never);
+    } else {
+        if (index > -1) remove(index);
     }
-    const grouped = generatedSchedule.schedule.reduce((acc, item) => {
-        item.days.forEach(day => {
-            if (!acc[day]) {
-                acc[day] = [];
-            }
-            acc[day].push(item);
-        });
-        return acc;
-    }, {} as Record<Weekday, ScheduleItem[]>);
-
-    return grouped;
-  }, [generatedSchedule]);
-
-
-  if (isLoading) {
-    return (
-        <div className="flex flex-col items-center justify-center text-center h-full animate-in fade-in-50 duration-500">
-            <div className="relative">
-                <BrainCircuit className="h-24 w-24 text-primary animate-pulse" />
-            </div>
-            <h2 className="mt-6 text-2xl font-bold font-headline">
-                Montando o Quebra-Cabeça da Rotina...
-            </h2>
-            <p className="mt-2 text-muted-foreground max-w-md">
-                Aguarde um instante, estamos encaixando todas as peças para criar a jornada perfeita.
-            </p>
-        </div>
-    );
-  }
-
-  if (!generatedSchedule || !generatedSchedule.schedule || generatedSchedule.schedule.length === 0) {
-    return (
-      <div className="text-center">
-        <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
-        <p className="text-muted-foreground">Nenhuma rotina foi gerada. Você pode voltar para adicionar mais atividades ou pular e configurar manualmente mais tarde.</p>
-      </div>
-    );
-  }
+  };
 
   return (
-    <div className="space-y-4 animate-in fade-in-50 duration-500">
+    <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">
-        <p className="text-muted-foreground">Esta é a rotina que o assistente criou. Se tudo estiver certo, podemos confirmar e iniciar a jornada!</p>
+        <p className="text-muted-foreground">Estas são as tarefas que formam a base de um grande herói. Selecione as que fazem sentido para a rotina que vamos criar.</p>
       </div>
-      
-       <Tabs defaultValue="MO" className="w-full">
-            <TabsList className="grid w-full grid-cols-7 h-auto p-1 bg-muted/50 rounded-lg">
-                {allWeekdays.map(day => (
-                    <TabsTrigger 
-                        key={day} 
-                        value={day} 
-                        className="flex-col gap-1 h-auto py-2 px-1 text-xs sm:text-sm data-[state=active]:shadow-lg"
-                    >
-                       <span className="font-semibold">{weekdayLabels[day].short}</span>
-                    </TabsTrigger>
-                ))}
-            </TabsList>
-             <ScrollArea className="h-[350px] mt-4 pr-3">
-                {allWeekdays.map(day => (
-                    <TabsContent key={day} value={day}>
-                        <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
-                    </TabsContent>
-                ))}
-             </ScrollArea>
-        </Tabs>
+
+       <Accordion type="multiple" defaultValue={['Rotinas Essenciais']} className="w-full space-y-2">
+        {Object.entries({
+            'Rotinas Essenciais': essentialRoutines,
+            'Ajudar em Casa': categories.Casa,
+            'Saúde e Bem-Estar': categories.Saúde,
+            'Comportamental': categories.Comportamental,
+        }).map(([category, items]) => (
+            <AccordionItem value={category} key={category} className="border rounded-lg px-4">
+                <AccordionTrigger className="hover:no-underline">{category}</AccordionTrigger>
+                <AccordionContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-2">
+                        {items.map((item) => {
+                          const isChecked = selectedRoutines.includes(item.id);
+                          const time = anchorTimes[item.id as keyof typeof anchorTimes];
+                          return (
+                            <div key={item.id} className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors">
+                                <Checkbox
+                                    id={item.id}
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => handleRoutineToggle(item.id, !!checked)}
+                                />
+                                <Label htmlFor={item.id} className="flex-1 cursor-pointer flex items-center justify-between gap-2">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-xl">{item.emoji}</span>
+                                        {item.id}
+                                    </div>
+                                    {time && (
+                                        <Badge variant="secondary" className="flex items-center gap-1.5 font-mono text-sm">
+                                            <Clock className="h-3 w-3" />
+                                            {time}
+                                        </Badge>
+                                    )}
+                                </Label>
+                            </div>
+                          );
+                        })}
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        ))}
+       </Accordion>
+
     </div>
   );
 }
