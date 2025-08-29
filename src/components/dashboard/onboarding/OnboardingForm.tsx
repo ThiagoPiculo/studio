@@ -16,7 +16,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
-import { predefinedMissionGroups, weekdayLabels } from "@/lib/predefined-missions";
+import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
 import { generateSchedule } from "@/lib/actions/generate-schedule";
 import { cn } from "@/lib/utils";
@@ -139,16 +139,8 @@ export function OnboardingForm() {
   };
 
   const goToNextStep = async () => {
-    const currentStepSchema = stepSchemas[step];
-    if (!currentStepSchema) {
-        proceedToNextStep();
-        return;
-    }
+    const isStepValid = await methods.trigger();
 
-    const fieldsToValidate = currentStepSchema.keyof()._def.items as (keyof OnboardingFormValues)[];
-    
-    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
-    
     if (isStepValid) {
         if (step === 4) {
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
@@ -346,10 +338,9 @@ export function OnboardingForm() {
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep3 />}
-                {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight as any} />}
-                {step === 6 && <OnboardingStep5 />}
-                {step === 7 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
+                {step === 5 && <OnboardingStep4 />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
@@ -387,8 +378,8 @@ export function OnboardingForm() {
                 <Button type="button" onClick={goToNextStep} disabled={isLoading} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (
                       <>
-                        {step === 1 ? "Começar agora" : step === 6 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
-                        {step !== 6 && <ArrowRight className="ml-2 h-4 w-4" />}
+                        {step === 1 ? "Começar agora" : step === 5 ? <><Wand2 className="mr-2 h-4 w-4" /> Gerar Rotina de Missões</> : "Próximo"}
+                        {step !== 5 && <ArrowRight className="ml-2 h-4 w-4" />}
                       </>
                   )}
                 </Button>
