@@ -22,7 +22,7 @@ import { generateSchedule } from "@/ai/actions/generate-schedule";
 import type { GenerateScheduleInput, GenerateScheduleOutput } from "@/ai/actions/generate-schedule";
 import { cn } from "@/lib/utils";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { parseTime } from "@/lib/calendar-utils";
+import { parseTime, weekdayLabels } from "@/lib/calendar-utils";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -238,17 +238,17 @@ export function OnboardingForm() {
       const birthDate = new Date(values.birthDate as string);
       const age = new Date().getFullYear() - birthDate.getFullYear();
 
+      const extraActivitiesText = (values.extraActivities || [])
+        .map(activity => `${activity.name} (${activity.days.map(d => weekdayLabels[d as Weekday]?.short || d).join(', ')}) às ${activity.time}`)
+        .join('; ');
+
       const input: GenerateScheduleInput = {
           childName: values.name,
           childAge: age,
           schoolShift: values.schoolShift,
           schoolStartTime: values.schoolShiftStart,
           schoolEndTime: values.schoolShiftEnd,
-          wakeUpTime: values.wakeUpTime!,
-          lunchTime: values.lunchTime!,
-          dinnerTime: values.dinnerTime!,
-          sleepTime: values.sleepTime!,
-          extraActivities: values.extraActivities,
+          extraActivities: extraActivitiesText,
           essentialRoutines: values.essentialRoutines
       };
 
@@ -384,7 +384,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 errorToHighlight={errorToHighlight} />}
                 {step === 5 && <OnboardingStep4 />}
-                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
