@@ -96,12 +96,23 @@ export async function generateSchedule(input: GenerateScheduleInput): Promise<Ge
     });
 
     // NÍVEL 3: Sugestões da IA para Rotinas Essenciais
-    // Convert a lista de atividades extras em uma string simples para o prompt
     const extraActivitiesText = (input.extraActivities || [])
         .map(activity => `${activity.name} (${activity.days.join(', ')}) às ${activity.time}`)
         .join('; ');
         
-    const aiInput = { ...input, extraActivities: extraActivitiesText };
+    const aiInput: GenerateScheduleInput = {
+        childName: input.childName,
+        childAge: input.childAge,
+        schoolShift: input.schoolShift,
+        schoolStartTime: input.schoolStartTime,
+        schoolEndTime: input.schoolEndTime,
+        wakeUpTime: input.wakeUpTime,
+        lunchTime: input.lunchTime,
+        dinnerTime: input.dinnerTime,
+        sleepTime: input.sleepTime,
+        extraActivities: extraActivitiesText,
+        essentialRoutines: input.essentialRoutines,
+    };
 
     const aiOutput = await generateScheduleFlow(aiInput);
 
