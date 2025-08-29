@@ -1,4 +1,3 @@
-
 /**
  * @fileOverview Um fluxo de IA para gerar uma rotina semanal para uma criança.
  *
@@ -52,6 +51,10 @@ const generateSchedulePrompt = ai.definePrompt({
     - Nome: {{{childName}}}, Idade: {{{childAge}}} anos.
     - Acorda: {{{wakeUpTime}}}, Almoça: {{{lunchTime}}}, Janta: {{{dinnerTime}}}, Dorme: {{{sleepTime}}}.
     
+    **COMPROMISSOS JÁ AGENDADOS (NÃO SOBREPOR):**
+    - Turno Escolar: {{{schoolShift}}} das {{{schoolStartTime}}} às {{{schoolEndTime}}}.
+    - Atividades Extras: {{{extraActivities}}}
+    
     **ROTINAS PARA AGENDAR:**
     {{#each essentialRoutines}}
     - {{{this}}}
@@ -60,8 +63,9 @@ const generateSchedulePrompt = ai.definePrompt({
     **INSTRUÇÕES:**
     1.  Para cada rotina da lista "ROTINAS PARA AGENDAR", sugira um horário de início e fim lógicos. Por exemplo, "Arrumar a cama" deve ser perto da hora de acordar.
     2.  Use o bom senso para a duração. "Escovar os dentes" dura 5 minutos. "Tomar banho" dura 15 minutos.
-    3.  Para a maioria das rotinas, sugira todos os dias da semana (de MO a SU).
-    4.  Retorne APENAS a lista de rotinas com os horários sugeridos. Não inclua a escola nem as atividades extras na sua resposta.
+    3.  **MUITO IMPORTANTE**: Não sugira horários que conflitem com os "COMPROMISSOS JÁ AGENDADOS".
+    4.  Para a maioria das rotinas, sugira todos os dias da semana (de MO a SU).
+    5.  Retorne APENAS a lista de rotinas com os horários sugeridos. Não inclua a escola nem as atividades extras na sua resposta.
 
     **FORMATO DE SAÍDA:** Sua resposta DEVE ser um objeto JSON válido que corresponda ao esquema de saída definido.
 
