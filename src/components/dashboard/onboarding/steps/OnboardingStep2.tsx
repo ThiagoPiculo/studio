@@ -10,7 +10,7 @@ import type { SchoolShift } from "@/lib/types";
 import { schoolShifts } from "@/lib/types";
 import * as z from "zod";
 import { cn } from "@/lib/utils";
-import { Sun, CloudSun, Moon, Utensils, Info } from "lucide-react";
+import { Sun, CloudSun, Moon, Utensils, Info, Sunrise, Bed, NotebookText } from "lucide-react";
 import React, { useEffect, useCallback } from 'react';
 import { addMinutes, format } from "date-fns";
 import { parseTime as parseTimeToMinutes } from "@/lib/calendar-utils";
@@ -128,7 +128,6 @@ export function OnboardingStep2() {
     setValue('schoolShiftEnd', end);
     setValue('lunchTime', lunch);
     setValue('mealsAtSchool', mealsAtSchool);
-    // The useEffect will recalculate anchors
   };
 
   return (
@@ -207,19 +206,21 @@ export function OnboardingStep2() {
         <h3 className="font-semibold text-lg text-center">Definir Horários de Âncora</h3>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-4 border rounded-lg bg-muted/30">
             <FormField control={control} name="wakeUpTime" render={({ field }) => (
-              <FormItem><FormLabel>Hora de Acordar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Sunrise className="h-4 w-4"/> Hora de Acordar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="lunchTime" render={({ field }) => (
-              <FormItem><FormLabel>Hora do Almoço</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Hora do Almoço</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="dinnerTime" render={({ field }) => (
-              <FormItem><FormLabel>Hora do Jantar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Utensils className="h-4 w-4"/> Hora do Jantar</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
              <FormField control={control} name="sleepTime" render={({ field }) => (
-              <FormItem><FormLabel>Hora de Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel className="flex items-center gap-2"><Bed className="h-4 w-4"/> Hora de Dormir</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
         </div>
       </div>
     </div>
   );
 }
+
+    
