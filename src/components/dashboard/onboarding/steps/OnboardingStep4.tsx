@@ -230,7 +230,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                 <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
                                     {activitiesInGroup.map(activity => (
                                         <p key={activity.name} className="truncate flex items-center gap-2">
-                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.startTime || 'N/A'}
+                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} das {activity.startTime || 'N/A'} às {activity.endTime || 'N/A'}
                                         </p>
                                     ))}
                                 </div>
