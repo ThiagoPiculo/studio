@@ -59,36 +59,50 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
   // 2. ENCAIXAR ROTINAS ESSENCIAIS
   const routineRules = [
-    { title: 'Hora de acordar', time: input.wakeUpTime, duration: 10, days: weekdays, anchor: 'wakeUpTime' },
-    { title: 'Arrumar a cama', time: input.wakeUpTime, offset: 10, duration: 5, days: weekdays, anchor: 'wakeUpTime' },
-    { title: 'Tomar café da manhã', time: input.wakeUpTime, offset: 15, duration: 20, days: weekdays, anchor: 'wakeUpTime' },
-    { title: 'Escovar os dentes', time: input.wakeUpTime, offset: 35, duration: 5, days: weekdays, anchor: 'wakeUpTime', instanceId: 'after_wakeup' },
+    // --- Rotinas baseadas no horário de ACORDAR ---
+    { title: 'Hora de acordar', anchor: 'wakeUpTime', offset: 0, duration: 10 },
+    { title: 'Arrumar a cama', anchor: 'wakeUpTime', offset: 10, duration: 5 },
+    { title: 'Tomar café da manhã', anchor: 'wakeUpTime', offset: 15, duration: 20 },
+    { title: 'Escovar os dentes', anchor: 'wakeUpTime', offset: 35, duration: 5, instanceId: 'after_wakeup' },
     
-    { title: 'Almoçar', time: input.lunchTime, duration: 25, days: weekdays, anchor: 'lunchTime' },
-    { title: 'Escovar os dentes', time: input.lunchTime, offset: 25, duration: 5, days: weekdays, anchor: 'lunchTime', instanceId: 'after_lunch' },
+    // --- Rotinas baseadas no horário do ALMOÇO ---
+    { title: 'Almoçar', anchor: 'lunchTime', offset: 0, duration: 25 },
+    { title: 'Escovar os dentes', anchor: 'lunchTime', offset: 25, duration: 5, instanceId: 'after_lunch' },
     
-    { title: 'Jantar', time: input.dinnerTime, duration: 25, days: weekdays, anchor: 'dinnerTime' },
-    { title: 'Escovar os dentes', time: input.dinnerTime, offset: 25, duration: 5, days: weekdays, anchor: 'dinnerTime', instanceId: 'after_dinner' },
+    // --- Rotinas baseadas no horário do JANTAR ---
+    { title: 'Jantar', anchor: 'dinnerTime', offset: 0, duration: 25 },
+    { title: 'Escovar os dentes', anchor: 'dinnerTime', offset: 25, duration: 5, instanceId: 'after_dinner' },
     
-    { title: 'Tomar banho', time: input.sleepTime, offset: -45, duration: 15, days: weekdays, anchor: 'sleepTime' },
-    { title: 'Organizar a mochila para amanhã', time: input.sleepTime, offset: -25, duration: 5, days: weekdays, anchor: 'sleepTime' },
-    { title: 'Hora de dormir', time: input.sleepTime, offset: -20, duration: 20, days: weekdays, anchor: 'sleepTime' },
+    // --- Rotinas baseadas no horário de DORMIR ---
+    { title: 'Tomar banho', anchor: 'sleepTime', offset: -45, duration: 15 },
+    { title: 'Organizar a mochila para amanhã', anchor: 'sleepTime', offset: -25, duration: 5 },
+    { title: 'Hora de dormir', anchor: 'sleepTime', offset: -20, duration: 20 },
     
-    { title: 'Fazer a lição de casa', time: input.schoolShift === 'afternoon' ? '09:00' : '18:30', duration: 55, days: weekdays, anchor: 'fixed' }
+    // --- Rotina com horário mais fixo, mas que pode ser ajustado ---
+    { title: 'Fazer a lição de casa', anchor: 'fixed', fixedTime: input.schoolShift === 'afternoon' ? '09:00' : '18:30', duration: 55 }
   ];
 
-  routineRules.forEach(rule => {
-      if (!input.essentialRoutines?.includes(rule.title) || !rule.time) return;
 
+  routineRules.forEach(rule => {
+      if (!input.essentialRoutines?.includes(rule.title)) return;
+      
       const details = findMissionDetails(rule.title);
       if (!details) return;
 
-      const baseStartTime = parseTime(rule.time) + (rule.offset || 0);
-      
-      const daysToSchedule = (rule.days || []).filter(day => {
-          const startTime = baseStartTime;
-          const endTime = startTime + rule.duration;
+      let baseTimeInMinutes: number;
 
+      if (rule.anchor === 'fixed' && rule.fixedTime) {
+          baseTimeInMinutes = parseTime(rule.fixedTime);
+      } else {
+          const anchorTimeValue = input[rule.anchor as keyof OnboardingFormValues];
+          if (typeof anchorTimeValue !== 'string' || !anchorTimeValue) return;
+          baseTimeInMinutes = parseTime(anchorTimeValue);
+      }
+
+      const startTime = baseTimeInMinutes + (rule.offset || 0);
+      const endTime = startTime + rule.duration;
+      
+      const daysToSchedule = weekdays.filter(day => {
           const isOccupied = occupiedSlots.some(slot =>
               slot.day === day && Math.max(startTime, slot.start) < Math.min(endTime, slot.end)
           );
@@ -98,8 +112,8 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
       if (daysToSchedule.length > 0) {
           addAndOccupy({
               activity: rule.title,
-              startTime: formatTime(baseStartTime),
-              endTime: formatTime(baseStartTime + rule.duration),
+              startTime: formatTime(startTime),
+              endTime: formatTime(endTime),
               days: daysToSchedule,
           }, 'essential_routine', details.suggestedAppCategory, details.emoji);
       }
