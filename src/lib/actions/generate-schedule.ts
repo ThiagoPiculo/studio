@@ -4,7 +4,6 @@
 import type { OnboardingFormValues } from '@/components/dashboard/onboarding/OnboardingForm';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { ScheduleItem, Weekday, MissionCategory } from '@/lib/types';
-import { addMinutes, format } from 'date-fns';
 
 // Helper para converter "HH:mm" para minutos desde o início do dia
 const parseTime = (time: string | undefined): number => {
@@ -86,37 +85,36 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         sleep: parseTime(input.sleepTime),
     };
     
-    // 3. Estrutura da rotina com base nas regras de negócio
     const routineRules = [
-      { id: 'Hora de acordar', duration: 10, rule: (anchors: any) => anchors.wakeUp, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Arrumar a cama', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 10, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Tomar café da manhã', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 15, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Fazer a lição de casa', duration: 60, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] },
-      { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => parseTime(input.wakeUpTime) + 60 + 55, days: ['SU', 'MO', 'TU', 'WE', 'TH'] },
-      { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => parseTime(input.wakeUpTime) + 60 + 55 + 5, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Tomar banho', duration: 15, rule: (anchors: any) => anchors.schoolStart - 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] },
-      { id: 'Almoçar', duration: 20, rule: (anchors: any) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.lunch + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Sair para escola', duration: 5, rule: (anchors: any) => anchors.schoolStart - 25, days: ['MO', 'TU', 'WE', 'TH', 'FR'] },
-      { id: 'Início da Escola', duration: anchors.schoolEnd - anchors.schoolStart, rule: (anchors: any) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'], type: 'school_entry' },
-      { id: 'Saída da Escola', duration: 0, rule: (anchors: any) => anchors.schoolEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'], type: 'school_exit' },
-      { id: 'Jantar', duration: 15, rule: (anchors: any) => anchors.dinner, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any) => anchors.dinner + 15, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 20, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 20 + 60, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 20 + 120, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Tomar banho', duration: 20, rule: (anchors: any) => anchors.sleep - 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
-      { id: 'Hora de dormir', duration: 0, rule: (anchors: any) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] },
+        { id: 'Hora de acordar', duration: 10, rule: (anchors: any) => anchors.wakeUp, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Arrumar a cama', duration: 5, rule: (anchors: any) => anchors.wakeUp + 10, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Tomar café da manhã', duration: 5, rule: (anchors: any) => anchors.wakeUp + 15, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any) => anchors.wakeUp + 15 + 5, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any) => anchors.wakeUp + 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+        { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any) => anchors.wakeUp + 60 + 55, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.wakeUp + 60 + 55 + 5, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.wakeUp + 60 + 55 + 5 + 60, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Tomar banho', duration: 15, rule: (anchors: any) => anchors.schoolStart - 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+        { id: 'Almoçar', duration: 20, rule: (anchors: any) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any) => anchors.lunch + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Sair para escola', duration: 5, rule: (anchors: any) => anchors.schoolStart - 25, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+        { id: 'Início da Escola', duration: anchors.schoolEnd - anchors.schoolStart, rule: (anchors: any) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_entry' },
+        { id: 'Saída da Escola', duration: 0, rule: (anchors: any) => anchors.schoolEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_exit' },
+        { id: 'Jantar', duration: 15, rule: (anchors: any) => anchors.dinner, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any) => anchors.dinner + 15, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 20, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 80, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any) => anchors.dinner + 140, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Tomar banho', duration: 20, rule: (anchors: any) => anchors.sleep - 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora de dormir', duration: 0, rule: (anchors: any) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     ];
     
-    let lastEndTime = 0;
-
     for (const rule of routineRules) {
       if (!input.essentialRoutines?.includes(rule.id) && rule.type !== 'school_entry' && rule.type !== 'school_exit') continue;
       
-      let startTime = rule.rule(anchors, lastEndTime);
+      let startTime = rule.rule(anchors, 0); // prevEnd is not needed in this simplified logic for now
       
+      // Basic conflict resolution: check against existing slots
       let conflict = true;
       while(conflict) {
           conflict = false;
@@ -126,20 +124,21 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                   if (slot.day === day && Math.max(startTime, slot.start) < Math.min(endTime, slot.end)) {
                       conflict = true;
                       if (rule.isFlexible) {
-                          startTime = slot.end + 1; // Re-schedule flexible task
+                          startTime = slot.end; // Re-schedule flexible task to start right after the conflicting one ends
                       } else {
-                          // For non-flexible, it will be added anyway, creating an overlap to be handled by UI
+                          // For non-flexible tasks, we'll allow overlaps for now, which can be highlighted in the UI.
+                          // A more advanced solver would be needed for perfect placement.
                       }
                       break;
                   }
               }
-              if (conflict) break;
+              if (conflict && rule.isFlexible) break; // Re-check the new time for the flexible task
           }
+           if (!rule.isFlexible) break; // If not flexible, add it once and move on
       }
       
       const type = rule.type || 'essential_routine';
       addAndOccupy(rule.id, startTime, rule.duration, occupiedSlots, finalSchedule, rule.days, type);
-      lastEndTime = startTime + rule.duration;
     }
     
     const uniqueSchedule = Array.from(new Map(finalSchedule.map(item => [item.activity + item.startTime, item])).values());
