@@ -221,24 +221,34 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
   const handleAddCustomActivity = (category: string) => {
     const activityData = customActivityInputs[category];
-    if (!activityData || !activityData.name?.trim() || !activityData.days || activityData.days.length === 0 || !activityData.startTime || !activityData.endTime) {
-        toast({
-            title: "Faltam Informações",
-            description: "Por favor, preencha nome, dias e horários para a nova atividade.",
-            variant: "destructive"
-        });
+    const { name, days, startTime, endTime } = activityData || {};
+
+    // Validation
+    if (!name?.trim()) {
+        toast({ title: "Atividade sem nome", description: "Por favor, digite um nome para a nova atividade.", variant: "destructive" });
+        return;
+    }
+     if (!days || days.length === 0) {
+        toast({ title: "Faltam os dias", description: `Selecione os dias da semana para "${name}".`, variant: "destructive" });
+        return;
+    }
+    if (!startTime || !endTime) {
+        toast({ title: "Faltam os horários", description: `Defina o horário de início e fim para "${name}".`, variant: "destructive" });
+        return;
+    }
+    if (startTime >= endTime) {
+        toast({ title: "Horário Inválido", description: `O horário de término para "${name}" deve ser depois do início.`, variant: "destructive" });
         return;
     }
     
     append({
-        name: activityData.name.trim(),
-        emoji: '✨', // Default emoji
-        days: activityData.days,
-        startTime: activityData.startTime,
-        endTime: activityData.endTime,
+        name: name.trim(),
+        emoji: '✨',
+        days: days,
+        startTime: startTime,
+        endTime: endTime,
     } as any);
 
-    // Reset the form for that category
     setCustomActivityInputs(prev => ({
         ...prev,
         [category]: { name: '', days: [], startTime: '18:00', endTime: '19:00' }
@@ -255,7 +265,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
         {extraActivityGroups.map((group) => {
             const activitiesInGroup = allActivities?.filter(activity => 
                 group.items.some(item => item.title === activity.name) ||
-                !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name)
+                (allActivities.some(a => a.name === activity.name) && !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name))
             ) || [];
 
             return (
