@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -925,11 +924,11 @@ function AgendaPageContent() {
               });
               
               return (
-                <button
+                <div
                     key={dateKey}
                     onClick={() => handleDayClick(day)}
                     className={cn(
-                        "h-28 sm:h-32 md:h-40 border-r border-b p-1 sm:p-2 flex flex-col items-start text-left relative group",
+                        "h-28 sm:h-32 md:h-40 border-r border-b p-1 sm:p-2 flex flex-col items-start text-left relative group cursor-pointer",
                         !isSameMonth(day, currentDate) && "bg-muted/50 text-muted-foreground hover:bg-muted/70",
                         isToday(day) && "bg-accent/10 hover:bg-accent/20"
                     )}>
@@ -940,7 +939,7 @@ function AgendaPageContent() {
                   <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <ExternalLink className="h-4 w-4 text-muted-foreground" />
                   </div>
-                  <ScrollArea className="flex-1 mt-1">
+                  <ScrollArea className="flex-1 mt-1 w-full">
                     <ul className="space-y-1">
                       {sortedEvents.map(event => {
                         const child = childrenMap.get(event.data.childId);
@@ -1060,7 +1059,7 @@ function AgendaPageContent() {
                       })}
                     </ul>
                   </ScrollArea>
-                </button>
+                </div>
               )
             })}
           </div>
@@ -1228,3 +1227,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
