@@ -14,7 +14,7 @@ import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { parseTime } from "@/lib/calendar-utils";
-import React, { useEffect } from 'react';
+import React, { useEffect, useCallback } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import * as z from "zod";
@@ -46,19 +46,16 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
     const schoolShiftEnd = watch('schoolShiftEnd');
     const activityStartTime = watch(`${fieldName}.startTime`);
     const activityEndTime = watch(`${fieldName}.endTime`);
-
-    // Effect to auto-update endTime based on startTime
-    useEffect(() => {
-        if (activityStartTime) {
-            const startMinutes = parseTime(activityStartTime);
-            const newEndDate = addMinutes(new Date().setHours(0,0,0,0), startMinutes + 60);
-            const newEndTime = format(newEndDate, 'HH:mm');
-            // Only set the default if endTime is not already set or is before startTime
-            if (!activityEndTime || parseTime(activityEndTime) <= startMinutes) {
-                setValue(`${fieldName}.endTime`, newEndTime);
-            }
-        }
-    }, [activityStartTime, activityEndTime, fieldName, setValue]);
+    
+    const handleStartTimeChange = useCallback((newStartTime: string) => {
+        setValue(`${fieldName}.startTime`, newStartTime, { shouldValidate: true });
+        
+        // Automatically update endTime to be 60 minutes after startTime
+        const startMinutes = parseTime(newStartTime);
+        const newEndDate = addMinutes(new Date().setHours(0, 0, 0, 0), startMinutes + 60);
+        const newEndTime = format(newEndDate, 'HH:mm');
+        setValue(`${fieldName}.endTime`, newEndTime, { shouldValidate: true });
+    }, [fieldName, setValue]);
 
 
     const hasConflict = React.useMemo(() => {
@@ -122,7 +119,7 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
                         <FormItem>
                             <FormLabel className="text-xs">Início</FormLabel>
                             <FormControl>
-                               <TimePicker {...field} />
+                               <TimePicker {...field} onChange={handleStartTimeChange} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
