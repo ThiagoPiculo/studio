@@ -707,7 +707,7 @@ function AgendaPageContent() {
                         return (
                             <div key={dateKey} className="w-[75vw] flex-shrink-0 space-y-2">
                                 <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                    {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
+                                    {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
                                     {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
                                 </h2>
                                {selectedChildId && child ? (
@@ -765,7 +765,7 @@ function AgendaPageContent() {
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
               <h2 className={cn("text-lg font-headline capitalize flex items-center gap-2 whitespace-nowrap", isToday(day) && "text-primary")}>
-                {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
+                {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
               {selectedChildId ? (
