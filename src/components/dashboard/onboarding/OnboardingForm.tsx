@@ -136,10 +136,15 @@ export function OnboardingForm() {
         case 5: fieldsToValidate = ['extraActivities']; break;
     }
     
-    if (step === 1) { // No validation on first step (intro)
-        proceedToNextStep();
+    // Step 1 is the intro, so no validation needed
+    if (step === 1) {
+        setStep(prev => prev + 1);
         return;
     }
+    
+    // Step 6 is the final review, handled by another button
+    if (step === 6) return;
+
 
     const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
     
@@ -147,8 +152,8 @@ export function OnboardingForm() {
         if (step === 4) { // Check for conflicts before moving from extra activities
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
-            if (schoolShift === 'not_applicable' || !activity.time) return false;
-            const activityMinutes = parseTime(activity.time);
+            if (schoolShift === 'not_applicable' || !activity.startTime) return false;
+            const activityMinutes = parseTime(activity.startTime);
             const startMinutes = parseTime(schoolShiftStart!);
             const endMinutes = parseTime(schoolShiftEnd!);
             return activityMinutes >= startMinutes && activityMinutes < endMinutes;
@@ -167,14 +172,14 @@ export function OnboardingForm() {
         
         if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
             const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
-            const errorIndex = errorArray.findIndex(e => e && (e.days || e.time));
+            const errorIndex = errorArray.findIndex(e => e && (e.days || e.startTime || e.endTime));
 
             if (errorIndex !== -1) {
                 const errorField = errors.extraActivities?.[errorIndex];
                 const fieldName = errorField?.days ? 'dias da semana' : 'horário';
                 const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
 
-                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'time' });
+                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'startTime' });
                 
                 toast({
                     title: `Pendência em '${activityName}'`,
@@ -338,8 +343,8 @@ export function OnboardingForm() {
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep4 />}
-                {step === 5 && <OnboardingStep5 errorToHighlight={errorToHighlight} />}
+                {step === 4 && <OnboardingStep3 />}
+                {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
                 {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>

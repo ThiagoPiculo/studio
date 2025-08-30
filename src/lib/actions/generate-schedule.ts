@@ -27,120 +27,79 @@ const findMissionDetails = (title: string) => {
 
 export async function generateSchedule(input: OnboardingFormValues): Promise<{ schedule: ScheduleItem[] }> {
   const finalSchedule: ScheduleItem[] = [];
-  const occupiedSlots: { start: number; end: number; activity: string }[] = [];
+  const occupiedSlots: { day: Weekday, start: number, end: number, activity: string }[] = [];
   const weekdays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-  const MIN_FREE_TIME_SLOT = 30;
-
-  // Helper para adicionar um item à agenda e marcar o slot como ocupado
+  
+  // Adiciona um item à agenda final e marca os slots como ocupados
   const addAndOccupy = (item: Omit<ScheduleItem, 'type' | 'category' | 'emoji'>, type: ScheduleItem['type'], category: MissionCategory, emoji: string) => {
       finalSchedule.push({ ...item, type, category, emoji });
       if (item.startTime && item.endTime && item.days) {
           item.days.forEach(day => {
-              occupiedSlots.push({ start: parseTime(item.startTime!), end: parseTime(item.endTime!), activity: item.activity });
+              occupiedSlots.push({ day, start: parseTime(item.startTime!), end: parseTime(item.endTime!), activity: item.activity });
           });
       }
   };
 
-  // --- LÓGICA PARA TURNO DA TARDE ---
-  if (input.schoolShift === 'afternoon' && input.schoolShiftStart && input.schoolShiftEnd) {
-    const schoolStartMinutes = parseTime(input.schoolShiftStart);
-    const schoolEndMinutes = parseTime(input.schoolShiftEnd);
-
-    // 1. ANCHORS
-    const wakeUpTime = input.wakeUpTime!;
-    const lunchTime = input.lunchTime!;
-    const dinnerTime = input.dinnerTime!;
-    const sleepTime = input.sleepTime!;
-
-
-    // 2. FIXED SLOTS (Escola e Atividades Extras)
+  // 1. BLOQUEAR HORÁRIOS FIXOS (ESCOLA E ATIVIDADES EXTRAS)
+  if (input.schoolShift !== 'not_applicable' && input.schoolShiftStart && input.schoolShiftEnd) {
     addAndOccupy({ activity: 'Escola', startTime: input.schoolShiftStart, endTime: input.schoolShiftEnd, days: weekdays }, 'school_entry', 'school', '🏫');
-    
-    (input.extraActivities || []).forEach(activity => {
+  }
+
+  (input.extraActivities || []).forEach(activity => {
       const details = findMissionDetails(activity.name);
       if (details) {
         addAndOccupy({
           activity: activity.name,
-          startTime: activity.time,
-          endTime: formatTime(parseTime(activity.time) + 60),
+          startTime: activity.startTime,
+          endTime: activity.endTime,
           days: activity.days as Weekday[],
         }, 'extra_activity', details.suggestedAppCategory, details.emoji);
       }
     });
 
-    // 3. ROUTINE SLOTS
-    const routineRules = [
-      { title: 'Hora de acordar', startTime: wakeUpTime, duration: 10 },
-      { title: 'Arrumar a cama', startTime: formatTime(parseTime(wakeUpTime) + 10), duration: 5 },
-      { title: 'Tomar café da manhã', startTime: formatTime(parseTime(wakeUpTime) + 15), duration: 15 },
-      { title: 'Escovar os dentes (após acordar)', startTime: formatTime(parseTime(wakeUpTime) + 30), duration: 5 },
-      { title: 'Fazer a lição de casa', startTime: '09:00', duration: 55 },
-      { title: 'Organizar a mochila para amanhã', startTime: '09:55', duration: 5 },
-      { title: 'Tomar banho', startTime: '12:00', duration: 15 },
-      { title: 'Almoçar', startTime: lunchTime, duration: 20 },
-      { title: 'Escovar os dentes (após almoço)', startTime: formatTime(parseTime(lunchTime) + 20), duration: 5 },
-      { title: 'Sair para escola', startTime: formatTime(schoolStartMinutes - 20), duration: 20 },
-      { title: 'Jantar', startTime: dinnerTime, duration: 15 },
-      { title: 'Escovar os dentes (após jantar)', startTime: formatTime(parseTime(dinnerTime) + 15), duration: 5 },
-      { title: 'Hora de dormir', startTime: sleepTime, duration: 20 },
-    ];
+  // 2. ENCAIXAR ROTINAS ESSENCIAIS
+  const routineRules = [
+    { title: 'Hora de acordar', time: input.wakeUpTime, duration: 10, days: weekdays },
+    { title: 'Arrumar a cama', time: input.wakeUpTime, offset: 10, duration: 5, days: weekdays },
+    { title: 'Tomar café da manhã', time: input.wakeUpTime, offset: 15, duration: 20, days: weekdays },
+    { title: 'Escovar os dentes', time: input.wakeUpTime, offset: 35, duration: 5, days: weekdays },
+    { title: 'Almoçar', time: input.lunchTime, duration: 25, days: weekdays },
+    { title: 'Escovar os dentes', time: input.lunchTime, offset: 25, duration: 5, days: weekdays },
+    { title: 'Tomar banho', time: input.sleepTime, offset: -45, duration: 15, days: weekdays },
+    { title: 'Jantar', time: input.dinnerTime, duration: 25, days: weekdays },
+    { title: 'Escovar os dentes', time: input.dinnerTime, offset: 25, duration: 5, days: weekdays },
+    { title: 'Organizar a mochila para amanhã', time: input.sleepTime, offset: -25, duration: 5, days: weekdays },
+    { title: 'Hora de dormir', time: input.sleepTime, offset: -20, duration: 20, days: weekdays },
+    { title: 'Fazer a lição de casa', time: input.schoolShift === 'afternoon' ? '09:00' : '18:30', duration: 55, days: weekdays }
+  ];
 
-    routineRules.forEach(rule => {
+  routineRules.forEach(rule => {
+      if (!input.essentialRoutines?.includes(rule.title) || !rule.time) return;
+
       const details = findMissionDetails(rule.title);
-      if (details && (input.essentialRoutines || []).includes(rule.title)) {
-        addAndOccupy({
-          activity: rule.title,
-          startTime: rule.startTime,
-          endTime: formatTime(parseTime(rule.startTime) + rule.duration),
-          days: weekdays,
-        }, 'essential_routine', details.suggestedAppCategory, details.emoji);
+      if (!details) return;
+
+      const baseStartTime = parseTime(rule.time) + (rule.offset || 0);
+      
+      const daysToSchedule = (rule.days || []).filter(day => {
+          const startTime = baseStartTime;
+          const endTime = startTime + rule.duration;
+
+          const isOccupied = occupiedSlots.some(slot =>
+              slot.day === day && Math.max(startTime, slot.start) < Math.min(endTime, slot.end)
+          );
+          return !isOccupied;
+      });
+
+      if (daysToSchedule.length > 0) {
+          addAndOccupy({
+              activity: rule.title,
+              startTime: formatTime(baseStartTime),
+              endTime: formatTime(baseStartTime + rule.duration),
+              days: daysToSchedule,
+          }, 'essential_routine', details.suggestedAppCategory, details.emoji);
       }
-    });
-    
-    // 4. PREENCHER ESPAÇOS VAZIOS
-    const sortedSlots = occupiedSlots.sort((a, b) => a.start - b.start);
-    const dayStart = parseTime('08:00'); 
-    const dayEnd = parseTime('22:00');
-    let lastEnd = dayStart;
-
-    sortedSlots.forEach(slot => {
-        const freeTimeStart = lastEnd;
-        const freeTimeEnd = slot.start;
-        const duration = freeTimeEnd - freeTimeStart;
-
-        if (duration >= MIN_FREE_TIME_SLOT) { 
-            const details = findMissionDetails('Hora livre para brincar');
-            if (details) {
-                addAndOccupy({
-                    activity: 'Hora livre para brincar',
-                    startTime: formatTime(freeTimeStart),
-                    endTime: formatTime(freeTimeEnd),
-                    days: weekdays,
-                }, 'essential_routine', details.suggestedAppCategory, details.emoji);
-            }
-        }
-        lastEnd = Math.max(lastEnd, slot.end);
-    });
-
-    if (dayEnd > lastEnd) {
-         const duration = dayEnd - lastEnd;
-         if (duration >= MIN_FREE_TIME_SLOT) {
-            const details = findMissionDetails('Hora livre para brincar');
-            if (details) {
-                addAndOccupy({
-                    activity: 'Hora livre para brincar',
-                    startTime: formatTime(lastEnd),
-                    endTime: formatTime(dayEnd),
-                    days: weekdays,
-                }, 'essential_routine', details.suggestedAppCategory, details.emoji);
-            }
-         }
-    }
-
-
-  } else if (input.schoolShift) {
-      throw new Error(`O modo de geração de rotina para o turno "${input.schoolShift}" ainda está em desenvolvimento. Por favor, tente o turno da tarde.`);
-  }
+  });
 
   return {
     schedule: finalSchedule,

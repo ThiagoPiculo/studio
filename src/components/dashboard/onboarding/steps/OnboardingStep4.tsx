@@ -14,17 +14,22 @@ import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { parseTime } from "@/lib/calendar-utils";
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import * as z from "zod";
 import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+import { addMinutes, format } from "date-fns";
 
 
 export const extraActivitySchema = z.object({
   name: z.string(),
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
-  time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de início inválido."),
+  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de término inválido."),
+}).refine(data => data.startTime < data.endTime, {
+    message: "O término deve ser depois do início.",
+    path: ["endTime"],
 });
 
 export const onboardingSchemaStep4 = z.object({
@@ -33,23 +38,41 @@ export const onboardingSchemaStep4 = z.object({
 
 
 function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex: number, remove: (index: number) => void, hasError: boolean }) {
-    const { control, watch } = useFormContext();
+    const { control, watch, setValue } = useFormContext();
     const fieldName = `extraActivities.${activityIndex}`;
     
     const schoolShift = watch('schoolShift');
     const schoolShiftStart = watch('schoolShiftStart');
     const schoolShiftEnd = watch('schoolShiftEnd');
-    const activityTime = watch(`${fieldName}.time`);
+    const activityStartTime = watch(`${fieldName}.startTime`);
+    const activityEndTime = watch(`${fieldName}.endTime`);
+
+    // Effect to auto-update endTime based on startTime
+    useEffect(() => {
+        if (activityStartTime) {
+            const startMinutes = parseTime(activityStartTime);
+            const newEndDate = addMinutes(new Date().setHours(0,0,0,0), startMinutes + 60);
+            const newEndTime = format(newEndDate, 'HH:mm');
+            // Only set the default if endTime is not already set or is before startTime
+            if (!activityEndTime || parseTime(activityEndTime) <= startMinutes) {
+                setValue(`${fieldName}.endTime`, newEndTime);
+            }
+        }
+    }, [activityStartTime, activityEndTime, fieldName, setValue]);
+
 
     const hasConflict = React.useMemo(() => {
-        if (schoolShift === 'not_applicable' || !activityTime) return false;
+        if (schoolShift === 'not_applicable' || !activityStartTime || !activityEndTime) return false;
         
-        const activityMinutes = parseTime(activityTime);
-        const startMinutes = parseTime(schoolShiftStart);
-        const endMinutes = parseTime(schoolShiftEnd);
+        const activityStartMinutes = parseTime(activityStartTime);
+        const activityEndMinutes = parseTime(activityEndTime);
+        const schoolStartMinutes = parseTime(schoolShiftStart);
+        const schoolEndMinutes = parseTime(schoolShiftEnd);
         
-        return activityMinutes >= startMinutes && activityMinutes < endMinutes;
-    }, [schoolShift, schoolShiftStart, schoolShiftEnd, activityTime]);
+        // Check for any overlap
+        return Math.max(activityStartMinutes, schoolStartMinutes) < Math.min(activityEndMinutes, schoolEndMinutes);
+
+    }, [schoolShift, schoolShiftStart, schoolShiftEnd, activityStartTime, activityEndTime]);
 
     return (
         <div className={cn("p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative", hasError && "border-destructive ring-2 ring-destructive/50")}>
@@ -91,27 +114,42 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
                     </FormItem>
                 )}
             />
-             <FormField
-                control={control}
-                name={`${fieldName}.time`}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel className="text-xs">Horário</FormLabel>
-                        <FormControl>
-                           <TimePicker {...field} />
-                        </FormControl>
-                         {hasConflict && (
-                            <FormDescription>
-                               <span className="text-destructive text-xs flex items-center gap-1 mt-1">
-                                  <AlertCircle className="h-3 w-3" />
-                                  Conflita com o horário escolar.
-                               </span>
-                            </FormDescription>
-                        )}
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
+            <div className="grid grid-cols-2 gap-2">
+                 <FormField
+                    control={control}
+                    name={`${fieldName}.startTime`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-xs">Início</FormLabel>
+                            <FormControl>
+                               <TimePicker {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                 <FormField
+                    control={control}
+                    name={`${fieldName}.endTime`}
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-xs">Fim</FormLabel>
+                            <FormControl>
+                               <TimePicker {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+            </div>
+             {hasConflict && (
+                <FormDescription>
+                   <span className="text-destructive text-xs flex items-center gap-1 mt-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Conflita com o horário escolar.
+                   </span>
+                </FormDescription>
+            )}
         </div>
     )
 }
@@ -161,7 +199,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
   const handleActivityToggle = (activityName: string, emoji: string, isChecked: boolean) => {
     if (isChecked) {
-        append({ name: activityName, days: [], time: '16:00', emoji: emoji } as any);
+        append({ name: activityName, days: [], startTime: '18:00', endTime: '19:00', emoji: emoji } as any);
     } else {
         const indexToRemove = fields.findIndex(field => (field as any).name === activityName);
         if (indexToRemove > -1) {
@@ -195,7 +233,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                 <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
                                     {activitiesInGroup.map(activity => (
                                         <p key={activity.name} className="truncate flex items-center gap-2">
-                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.time || 'N/A'}
+                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} às {activity.startTime || 'N/A'}
                                         </p>
                                     ))}
                                 </div>
