@@ -55,6 +55,13 @@ const getPeriodForDate = (date: Date): Exclude<TimePeriod, 'all'> => {
   return 'night';
 };
 
+const capitalize = (s: string) => {
+    if (typeof s !== 'string' || s.length === 0) {
+        return s;
+    }
+    return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 function AgendaPageContent() {
   const { user } = useAuth();
   const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
@@ -494,19 +501,19 @@ function AgendaPageContent() {
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     const monthFormat = isMobile ? 'MMM' : 'MMMM';
-    if (range === 'day') return format(date, `EEEE, dd 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR });
-    if (range === 'month') return format(date, `${monthFormat} yyyy`, { locale: ptBR });
+    if (range === 'day') return capitalize(format(date, `EEEE, dd 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR }));
+    if (range === 'month') return capitalize(format(date, `${monthFormat} yyyy`, { locale: ptBR }));
     
     const start = interval.start;
     const end = interval.end;
 
-    const startMonth = format(start, monthFormat, { locale: ptBR });
-    const endMonth = format(end, monthFormat, { locale: ptBR });
+    const startMonth = capitalize(format(start, monthFormat, { locale: ptBR }));
+    const endMonth = capitalize(format(end, monthFormat, { locale: ptBR }));
 
     if (startMonth === endMonth) {
-        return `${format(start, 'd')} - ${format(end, `d 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR })}`;
+        return `${format(start, 'd')} - ${format(end, `d 'de' ${endMonth} 'de' yyyy`, { locale: ptBR })}`;
     } else {
-        return `${format(start, `d 'de' ${monthFormat}`, { locale: ptBR })} - ${format(end, `d 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR })}`;
+        return `${format(start, `d 'de' ${startMonth}`, { locale: ptBR })} - ${format(end, `d 'de' ${endMonth} 'de' yyyy`, { locale: ptBR })}`;
     }
   };
 
@@ -711,7 +718,7 @@ function AgendaPageContent() {
                     return (
                         <div key={dateKey} className="w-full space-y-2">
                             <h2 className={cn("text-lg font-headline flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
+                                {capitalize(format(day, "EEEE, dd/MM/yy", { locale: ptBR }))}
                                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
                             </h2>
                            {selectedChildId && child ? (
@@ -766,8 +773,8 @@ function AgendaPageContent() {
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
-              <h2 className={cn("text-lg font-headline flex items-center gap-2 whitespace-nowrap", isToday(day) && "text-primary")}>
-                {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
+              <h2 className={cn("font-headline flex items-center gap-2 whitespace-nowrap", isToday(day) && "text-primary")}>
+                {capitalize(format(day, "ccc, dd/MM/yy", { locale: ptBR }))}
                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
               </h2>
               {selectedChildId ? (
@@ -1082,68 +1089,68 @@ function AgendaPageContent() {
     <>
       <div className="space-y-6">
         <Card>
-            <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
-                <div className="flex items-center gap-2 flex-grow">
-                    <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-                    <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
-                </div>
-                <h2 className="text-sm sm:text-base font-medium text-center flex-grow">
+          <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
+            <div className="flex items-center gap-2 flex-grow">
+              <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
+              <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
+                  <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
+                  <ChevronRight className="h-4 w-4" />
+              </Button>
+               <h2 className="text-sm sm:text-base font-medium text-center flex-grow">
                     {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                 </h2>
-
-                <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
-                  <div className="flex-grow sm:flex-grow-0">
-                    <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
-                        <SelectTrigger className="w-full sm:w-[140px] h-9">
-                            <SelectValue placeholder="Selecione a visão" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="day">1 Dia</SelectItem>
-                            <SelectItem value="3days">3 Dias</SelectItem>
-                            <SelectItem value="workweek">Semana Útil</SelectItem>
-                            <SelectItem value="week">Semana</SelectItem>
-                            <SelectItem value="month">Mês</SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex-grow sm:flex-grow-0">
-                    <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
-                        <SelectTrigger className="w-full sm:w-[130px] h-9">
-                            <SelectValue placeholder="Selecione o período" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">
-                                <span className="flex items-center gap-2">
-                                    <Sun className="h-4 w-4 text-yellow-500" />
-                                    <CloudSun className="h-4 w-4 text-orange-500" />
-                                    <Moon className="h-4 w-4 text-indigo-500" />
-                                </span>
-                            </SelectItem>
-                            <SelectItem value="morning">
-                                <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
-                            </SelectItem>
-                            <SelectItem value="afternoon">
-                                <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
-                            </SelectItem>
-                            <SelectItem value="night">
-                                <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
-                            </SelectItem>
-                        </SelectContent>
-                    </Select>
-                  </div>
-                   {canEdit && (
-                    <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Criar Missão
-                    </Button>
-                  )}
-                </div>
             </div>
+            
+            <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
+              <div className="flex-grow sm:flex-grow-0">
+                <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
+                    <SelectTrigger className="w-full sm:w-[140px] h-9">
+                        <SelectValue placeholder="Selecione a visão" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="day">1 Dia</SelectItem>
+                        <SelectItem value="3days">3 Dias</SelectItem>
+                        <SelectItem value="workweek">Semana Útil</SelectItem>
+                        <SelectItem value="week">Semana</SelectItem>
+                        <SelectItem value="month">Mês</SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+              <div className="flex-grow sm:flex-grow-0">
+                <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
+                    <SelectTrigger className="w-full sm:w-[130px] h-9">
+                        <SelectValue placeholder="Selecione o período" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">
+                            <span className="flex items-center gap-2">
+                                <Sun className="h-4 w-4 text-yellow-500" />
+                                <CloudSun className="h-4 w-4 text-orange-500" />
+                                <Moon className="h-4 w-4 text-indigo-500" />
+                            </span>
+                        </SelectItem>
+                        <SelectItem value="morning">
+                            <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
+                        </SelectItem>
+                        <SelectItem value="afternoon">
+                            <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
+                        </SelectItem>
+                        <SelectItem value="night">
+                            <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
+              </div>
+               {canEdit && (
+                <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Criar Missão
+                </Button>
+              )}
+            </div>
+          </div>
         </Card>
         
         {renderContent()}
