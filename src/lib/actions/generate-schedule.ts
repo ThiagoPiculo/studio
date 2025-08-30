@@ -22,7 +22,16 @@ const formatTime = (minutes: number): string => {
 }
 
 const findMissionDetails = (title: string) => {
-  return predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === title);
+  // First, check predefined missions
+  const predefined = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === title);
+  if (predefined) return predefined;
+
+  // If not found, it's a custom activity, so return a default structure
+  return {
+    title: title,
+    emoji: '✨', // Default emoji for custom activities
+    suggestedAppCategory: 'hobbies' as MissionCategory, // Default category
+  };
 };
 
 export async function generateSchedule(input: OnboardingFormValues): Promise<{ schedule: ScheduleItem[] }> {
@@ -40,19 +49,21 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
   };
 
   // 1. BLOQUEAR HORÁRIOS FIXOS (ESCOLA E ATIVIDADES EXTRAS)
-  if (input.schoolShift === 'afternoon' && input.schoolShiftStart && input.schoolShiftEnd) {
+  // Esta etapa é crucial. Todas as atividades com horários definidos pelo usuário são tratadas primeiro.
+  if (input.schoolShift !== 'not_applicable' && input.schoolShiftStart && input.schoolShiftEnd) {
     addAndOccupy({ activity: 'Escola', startTime: input.schoolShiftStart, endTime: input.schoolShiftEnd, days: weekdays }, 'school_entry', 'school', '🏫');
   }
 
+  // Processa TODAS as atividades extras (pré-definidas e personalizadas) da mesma forma.
   (input.extraActivities || []).forEach(activity => {
       const details = findMissionDetails(activity.name);
-      if (details) {
+      if (details) { // `findMissionDetails` sempre retornará um objeto para atividades personalizadas
         addAndOccupy({
           activity: activity.name,
           startTime: activity.startTime,
           endTime: activity.endTime,
           days: activity.days as Weekday[],
-        }, 'extra_activity', details.suggestedAppCategory, details.emoji);
+        }, 'extra_activity', details.suggestedAppCategory, details.emoji || '✨');
       }
     });
 
