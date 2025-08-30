@@ -23,7 +23,7 @@ export const onboardingSchemaStep2 = z.object({
   mealsAtSchool: z.object({
     lunch: z.boolean().default(false),
     dinner: z.boolean().default(false),
-  }).optional(),
+  }),
 }).superRefine((data, ctx) => {
     if (data.schoolShift !== 'not_applicable') {
         if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
@@ -52,11 +52,6 @@ export function OnboardingStep2() {
     let start = '';
     let end = '';
     let mealsAtSchool = { lunch: false, dinner: false };
-
-    let wakeUp = '';
-    let lunch = '';
-    let dinner = '';
-    let sleep = '';
 
     const today = new Date();
 
