@@ -14,6 +14,7 @@ import React, { useEffect, useCallback } from 'react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { TimePicker } from "../../missions/TimePicker";
+import { addMinutes, format, parse } from "date-fns";
 
 export const onboardingSchemaStep2 = z.object({
   schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
@@ -44,7 +45,7 @@ export function OnboardingStep2() {
   const { control, watch, setValue } = useFormContext();
   const schoolShift = watch('schoolShift');
 
-  const handleShiftChange = (value: string) => {
+  const handleShiftChange = useCallback((value: string) => {
     const shift = value as SchoolShift;
     setValue('schoolShift', shift);
     
@@ -52,21 +53,51 @@ export function OnboardingStep2() {
     let end = '';
     let mealsAtSchool = { lunch: false, dinner: false };
 
+    let wakeUp = '';
+    let lunch = '';
+    let dinner = '';
+    let sleep = '';
+
+    const today = new Date();
+
     switch (shift) {
       case 'morning':
-        start = '07:30'; end = '12:00'; mealsAtSchool = { lunch: false, dinner: false }; break;
+        start = '07:30'; end = '12:00'; mealsAtSchool = { lunch: false, dinner: false };
+        break;
       case 'afternoon':
-        start = '13:00'; end = '17:30'; mealsAtSchool = { lunch: false, dinner: false }; break;
+        start = '13:00'; end = '17:30'; mealsAtSchool = { lunch: false, dinner: false };
+        break;
       case 'full_time':
-        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: false }; break;
+        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: false };
+        break;
       case 'not_applicable':
         mealsAtSchool = { lunch: false, dinner: false }; break;
     }
     setValue('schoolShiftStart', start);
     setValue('schoolShiftEnd', end);
     setValue('mealsAtSchool', mealsAtSchool);
-  };
+    
+    if (start && end) {
+        const startDate = parse(start, 'HH:mm', today);
+        const endDate = parse(end, 'HH:mm', today);
+
+        // Wake up: 5 hours before school
+        setValue('wakeUpTime', format(subMinutes(startDate, 5 * 60), 'HH:mm'));
+        // Lunch: 45 mins before school
+        setValue('lunchTime', format(subMinutes(startDate, 45), 'HH:mm'));
+        // Dinner: 30 mins after school
+        setValue('dinnerTime', format(addMinutes(endDate, 30), 'HH:mm'));
+        // Sleep: 4h 30m after school
+        setValue('sleepTime', format(addMinutes(endDate, 4 * 60 + 30), 'HH:mm'));
+    }
+
+  }, [setValue]);
   
+  // Set default anchor times when component mounts with an initial shift value
+  useEffect(() => {
+    handleShiftChange(schoolShift);
+  }, []);
+
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
       <div className="text-center">

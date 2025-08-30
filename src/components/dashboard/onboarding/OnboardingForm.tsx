@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse, format, addDays } from "date-fns";
+import { isValid, parse, format, addDays, subHours, subMinutes, addMinutes } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
@@ -100,7 +100,7 @@ export function OnboardingForm() {
       essentialRoutines: essentialRoutinesDefault,
     },
   });
-
+  
   const progress = useMemo(() => (step / TOTAL_STEPS) * 100, [step]);
   const currentTitle = useMemo(() => {
     const childName = methods.getValues("name");
@@ -127,33 +127,27 @@ export function OnboardingForm() {
   };
   
   const goToNextStep = async () => {
-    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
-
-    switch (step) {
-      case 1:
-        // No validation for the welcome step
-        break;
-      case 2:
-        fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId'];
-        break;
-      case 3:
-        fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'];
-        break;
-      case 4:
-         fieldsToValidate = ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'];
-         break;
-      case 5:
-        fieldsToValidate = ['extraActivities'];
-        break;
-      default:
-        // No validation needed for later steps without form inputs
-        break;
-    }
+    const schemas = [
+        null, // Step 1 has no schema
+        onboardingSchemaStep1,
+        onboardingSchemaStep2,
+        onboardingSchemaStep3,
+        onboardingSchemaStep4,
+        onboardingSchemaStep5,
+    ];
     
-    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
+    const currentStepIndex = step - 1;
+    if (currentStepIndex <= 0 || currentStepIndex >= schemas.length) {
+        proceedToNextStep();
+        return;
+    }
 
+    const currentStepSchema = schemas[currentStepIndex];
+    const fields = Object.keys(currentStepSchema.shape) as (keyof OnboardingFormValues)[];
+    const isStepValid = await methods.trigger(fields as any);
+    
     if (isStepValid) {
-        if (step === 5) { // Check for conflicts before moving from extra activities
+        if (step === 4) { // Check for conflicts before moving from extra activities
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
             if (schoolShift === 'not_applicable' || !activity.time) return false;
@@ -202,7 +196,6 @@ export function OnboardingForm() {
     }
   };
 
-
   const goToPreviousStep = () => {
     if (step > 1) {
       setErrorToHighlight(null);
@@ -212,12 +205,12 @@ export function OnboardingForm() {
 
   const handleGenerateSchedule = async () => {
       setIsLoading(true);
-      setStep(prev => prev + 1); // Move to loading view
       const values = methods.getValues();
 
       try {
           const schedule = await generateSchedule(values);
           setGeneratedSchedule(schedule);
+          setStep(prev => prev + 1);
       } catch (error: any) {
           console.error("Error generating schedule:", error);
           toast({ 
@@ -225,7 +218,6 @@ export function OnboardingForm() {
               description: error.message || "Não foi possível gerar a rotina. Tente novamente.",
               variant: "destructive" 
           });
-          setStep(5); // Go back to the form step on error
       } finally {
           setIsLoading(false);
       }
