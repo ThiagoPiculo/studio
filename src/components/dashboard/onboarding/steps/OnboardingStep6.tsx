@@ -81,10 +81,10 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
                 <BrainCircuit className="h-24 w-24 text-primary animate-pulse" />
             </div>
             <h2 className="mt-6 text-2xl font-bold font-headline">
-                Montando o Quebra-Cabeça da Rotina...
+                Forjando a Jornada do Herói...
             </h2>
             <p className="mt-2 text-muted-foreground max-w-md">
-                Aguarde um instante, estamos encaixando todas as peças para criar a jornada perfeita.
+                Estamos criando um mapa de missões e aventuras diárias. A jornada do seu Mini Herói está prestes a começar!
             </p>
         </div>
     );
