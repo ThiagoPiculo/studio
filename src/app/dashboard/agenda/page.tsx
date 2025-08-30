@@ -501,19 +501,22 @@ function AgendaPageContent() {
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
     const monthFormat = isMobile ? 'MMM' : 'MMMM';
-    if (range === 'day') return capitalize(format(date, `EEEE, dd 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR }));
-    if (range === 'month') return capitalize(format(date, `${monthFormat} yyyy`, { locale: ptBR }));
+    if (range === 'day') return capitalize(format(date, `EEEE, dd 'de' MMMM 'de' yyyy`, { locale: ptBR }));
+    if (range === 'month') return capitalize(format(date, `MMMM 'de' yyyy`, { locale: ptBR }));
     
     const start = interval.start;
     const end = interval.end;
 
-    const startMonth = capitalize(format(start, monthFormat, { locale: ptBR }));
-    const endMonth = capitalize(format(end, monthFormat, { locale: ptBR }));
+    const startMonth = format(start, monthFormat, { locale: ptBR });
+    const endMonth = format(end, monthFormat, { locale: ptBR });
+    
+    const formattedStartDate = format(start, 'd', { locale: ptBR });
+    const formattedEndDate = format(end, 'd', { locale: ptBR });
 
     if (startMonth === endMonth) {
-        return `${format(start, 'd')} - ${format(end, `d 'de' ${endMonth} 'de' yyyy`, { locale: ptBR })}`;
+        return `${formattedStartDate} - ${formattedEndDate} de ${capitalize(endMonth)} de ${format(end, 'yyyy', { locale: ptBR })}`;
     } else {
-        return `${format(start, `d 'de' ${startMonth}`, { locale: ptBR })} - ${format(end, `d 'de' ${endMonth} 'de' yyyy`, { locale: ptBR })}`;
+        return `${formattedStartDate} de ${capitalize(startMonth)} - ${formattedEndDate} de ${capitalize(endMonth)} de ${format(end, 'yyyy', { locale: ptBR })}`;
     }
   };
 
@@ -587,11 +590,13 @@ function AgendaPageContent() {
                                 }
                               }}>
                                 <PopoverTrigger asChild>
-                                    <button 
+                                    <div 
                                         data-mission-id={popoverId}
-                                        disabled={isProcessingAction === event.data.id || isFamilyLoading} 
-                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
+                                        role="button"
+                                        aria-disabled={isProcessingAction === event.data.id || isFamilyLoading}
+                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 flex items-center gap-1.5", 
                                           "hover:bg-accent/50",
+                                           (isProcessingAction === event.data.id || isFamilyLoading) ? "opacity-50 cursor-wait" : "cursor-pointer",
                                           isCompleted && "text-muted-foreground/70",
                                           highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
                                         )}
@@ -606,7 +611,7 @@ function AgendaPageContent() {
                                       <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                       {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                       <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                    </button>
+                                    </div>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 p-0">
                                     <div className="p-4 space-y-3">
@@ -984,9 +989,11 @@ function AgendaPageContent() {
                                   <PopoverTrigger asChild>
                                       <div
                                           data-mission-id={popoverId}
+                                          role="button"
+                                          aria-disabled={isProcessingAction === event.data.id || isFamilyLoading}
                                           className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 flex items-center",
                                             canEdit && "cursor-pointer hover:bg-accent/50",
-                                            isProcessingAction === event.data.id && "opacity-50 cursor-wait",
+                                            (isProcessingAction === event.data.id || isFamilyLoading) && "opacity-50 cursor-wait",
                                             isCompleted && "text-muted-foreground/70",
                                             highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary-offset"
                                           )}
@@ -1232,3 +1239,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
