@@ -18,6 +18,8 @@ import React from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import * as z from "zod";
+import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
+
 
 export const extraActivitySchema = z.object({
   name: z.string(),

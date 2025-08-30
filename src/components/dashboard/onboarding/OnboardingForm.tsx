@@ -36,10 +36,10 @@ const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
 // Unified schema for the entire onboarding flow
 const combinedSchema = onboardingSchemaStep1
-  .merge(onboardingSchemaStep2)
-  .merge(onboardingSchemaStep3)
-  .merge(onboardingSchemaStep4)
-  .merge(onboardingSchemaStep5);
+  .extend(onboardingSchemaStep2.shape)
+  .extend(onboardingSchemaStep3.shape)
+  .extend(onboardingSchemaStep4.shape)
+  .extend(onboardingSchemaStep5.shape);
 
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
@@ -108,7 +108,7 @@ export function OnboardingForm() {
       case 1: return "Assistente de Criação";
       case 2: return "Cadastrando um Novo Herói";
       case 3: return `Qual o Turno Escolar de ${childName || 'seu Herói'}?`;
-      case 4: return "Tudo Tem Sua Hora";
+      case 4: return "Definindo os Horários Essenciais";
       case 5: return "Adicionando Poderes Extras";
       case 6: return "Revisando o Mapa da Jornada";
       default: return "Assistente de Criação";
@@ -127,24 +127,21 @@ export function OnboardingForm() {
   };
   
   const goToNextStep = async () => {
-    const schemas = [
-        null, // Step 1 has no schema
-        onboardingSchemaStep1,
-        onboardingSchemaStep2,
-        onboardingSchemaStep3,
-        onboardingSchemaStep4,
-        onboardingSchemaStep5,
-    ];
+    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
+
+    switch (step) {
+        case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
+        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'mealsAtSchool']; break;
+        case 4: fieldsToValidate = ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime']; break;
+        case 5: fieldsToValidate = ['extraActivities']; break;
+    }
     
-    const currentStepIndex = step - 1;
-    if (currentStepIndex <= 0 || currentStepIndex >= schemas.length) {
+    if (step === 1) { // No validation on first step (intro)
         proceedToNextStep();
         return;
     }
 
-    const currentStepSchema = schemas[currentStepIndex];
-    const fields = Object.keys(currentStepSchema.shape) as (keyof OnboardingFormValues)[];
-    const isStepValid = await methods.trigger(fields as any);
+    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
     
     if (isStepValid) {
         if (step === 4) { // Check for conflicts before moving from extra activities
@@ -341,9 +338,9 @@ export function OnboardingForm() {
                 {step === 1 && <OnboardingStep0 />}
                 {step === 2 && <OnboardingStep1 />}
                 {step === 3 && <OnboardingStep2 />}
-                {step === 4 && <OnboardingStep3 />}
-                {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
-                {step === 6 && <OnboardingStep5 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 4 && <OnboardingStep4 />}
+                {step === 5 && <OnboardingStep5 errorToHighlight={errorToHighlight} />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">

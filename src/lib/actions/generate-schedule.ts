@@ -47,10 +47,11 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     const schoolEndMinutes = parseTime(input.schoolShiftEnd);
 
     // 1. ANCHORS
-    const wakeUpTime = formatTime(subMinutes(new Date(`1970-01-01T${input.schoolShiftStart}`), 300).getTime() / 60000);
-    const lunchTime = formatTime(subMinutes(new Date(`1970-01-01T${input.schoolShiftStart}`), 45).getTime() / 60000);
-    const dinnerTime = formatTime(addMinutes(new Date(`1970-01-01T${input.schoolShiftEnd}`), 30).getTime() / 60000);
-    const sleepTime = formatTime(addMinutes(new Date(`1970-01-01T${input.schoolShiftEnd}`), 270).getTime() / 60000);
+    const wakeUpTime = input.wakeUpTime!;
+    const lunchTime = input.lunchTime!;
+    const dinnerTime = input.dinnerTime!;
+    const sleepTime = input.sleepTime!;
+
 
     // 2. FIXED SLOTS (Escola e Atividades Extras)
     addAndOccupy({ activity: 'Escola', startTime: input.schoolShiftStart, endTime: input.schoolShiftEnd, days: weekdays }, 'school_entry', 'school', '🏫');
@@ -66,17 +67,6 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         }, 'extra_activity', details.suggestedAppCategory, details.emoji);
       }
     });
-
-    // Adiciona horários de tela se definidos
-    if (input.screenTimeBefore) {
-        const details = findMissionDetails('Hora livre para brincar'); // Using a generic one
-        if (details) addAndOccupy({ activity: 'Tempo de Tela', startTime: input.screenTimeBefore, endTime: formatTime(parseTime(input.screenTimeBefore) + 60), days: weekdays }, 'essential_routine', 'hobbies', '📱');
-    }
-    if (input.screenTimeAfter) {
-        const details = findMissionDetails('Hora livre para brincar');
-        if (details) addAndOccupy({ activity: 'Tempo de Tela', startTime: input.screenTimeAfter, endTime: formatTime(parseTime(input.screenTimeAfter) + 60), days: weekdays }, 'essential_routine', 'hobbies', '📱');
-    }
-
 
     // 3. ROUTINE SLOTS
     const routineRules = [

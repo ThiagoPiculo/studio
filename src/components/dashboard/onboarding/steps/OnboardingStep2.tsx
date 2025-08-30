@@ -52,9 +52,7 @@ export function OnboardingStep2() {
     let start = '';
     let end = '';
     let mealsAtSchool = { lunch: false, dinner: false };
-
-    const today = new Date();
-
+    
     switch (shift) {
       case 'morning':
         start = '07:30'; end = '12:00'; mealsAtSchool = { lunch: false, dinner: false };
@@ -72,20 +70,6 @@ export function OnboardingStep2() {
     setValue('schoolShiftEnd', end);
     setValue('mealsAtSchool', mealsAtSchool);
     
-    if (start && end) {
-        const startDate = parse(start, 'HH:mm', today);
-        const endDate = parse(end, 'HH:mm', today);
-
-        // Wake up: 5 hours before school
-        setValue('wakeUpTime', format(subMinutes(startDate, 5 * 60), 'HH:mm'));
-        // Lunch: 45 mins before school
-        setValue('lunchTime', format(subMinutes(startDate, 45), 'HH:mm'));
-        // Dinner: 30 mins after school
-        setValue('dinnerTime', format(addMinutes(endDate, 30), 'HH:mm'));
-        // Sleep: 4h 30m after school
-        setValue('sleepTime', format(addMinutes(endDate, 4 * 60 + 30), 'HH:mm'));
-    }
-
   }, [setValue]);
   
   // Set default anchor times when component mounts with an initial shift value
