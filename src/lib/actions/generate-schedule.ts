@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import type { OnboardingFormValues } from '@/components/dashboard/onboarding/OnboardingForm';
@@ -91,8 +92,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
         { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
         { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60 + 55, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
-        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd + 5, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+        { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 120, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
         { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => anchors.schoolStart - 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
         { id: 'Almoçar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
         { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.lunch + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
@@ -117,11 +117,15 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
       
       let startTime = rule.rule(anchors, lastEndTime);
       
-      // Conflict resolution
       let conflict = true;
-      while(conflict) {
+      let iterations = 0;
+      const MAX_ITERATIONS = 100; // safety break
+
+      while(conflict && iterations < MAX_ITERATIONS) {
           conflict = false;
+          iterations++;
           const endTime = startTime + rule.duration;
+
           for (const day of rule.days) {
               for (const slot of occupiedSlots) {
                   if (slot.day === day && Math.max(startTime, slot.start) < Math.min(endTime, slot.end)) {
@@ -132,9 +136,9 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                       break;
                   }
               }
-              if (conflict && rule.isFlexible) break;
+              if (conflict) break; 
           }
-           if (!rule.isFlexible && conflict) break; // Break if not flexible and conflict found
+           if (!rule.isFlexible && conflict) break;
       }
       
       const type = rule.type || 'essential_routine';
