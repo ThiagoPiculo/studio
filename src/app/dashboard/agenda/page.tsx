@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -366,6 +366,11 @@ function AgendaPageContent() {
     setCurrentDate(new Date());
   };
   
+  const handleDayClick = (day: Date) => {
+    setCurrentDate(day);
+    setDateRangeFilter('day');
+  };
+
   const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
     if (!user) return;
     setIsProcessingAction(missionInstance.id);
@@ -489,7 +494,7 @@ function AgendaPageContent() {
   };
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
-    if (range === 'day') return format(date, "EEEE, dd/MM/yy", { locale: ptBR });
+    if (range === 'day') return format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
     if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
     
     const start = interval.start;
@@ -920,15 +925,21 @@ function AgendaPageContent() {
               });
               
               return (
-                <div key={dateKey} className={cn(
-                    "h-28 sm:h-32 md:h-40 border-r border-b p-1 sm:p-2 flex flex-col",
-                    !isSameMonth(day, currentDate) && "bg-muted/50 text-muted-foreground",
-                    isToday(day) && "bg-accent/10"
-                )}>
+                <button
+                    key={dateKey}
+                    onClick={() => handleDayClick(day)}
+                    className={cn(
+                        "h-28 sm:h-32 md:h-40 border-r border-b p-1 sm:p-2 flex flex-col items-start text-left relative group",
+                        !isSameMonth(day, currentDate) && "bg-muted/50 text-muted-foreground hover:bg-muted/70",
+                        isToday(day) && "bg-accent/10 hover:bg-accent/20"
+                    )}>
                   <div className={cn(
                       "font-semibold text-xs sm:text-sm",
                       isToday(day) && "flex items-center justify-center h-7 w-7 rounded-full bg-primary text-primary-foreground"
                   )}>{format(day, 'd')}</div>
+                  <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <ExternalLink className="h-4 w-4 text-muted-foreground" />
+                  </div>
                   <ScrollArea className="flex-1 mt-1">
                     <ul className="space-y-1">
                       {sortedEvents.map(event => {
@@ -1049,7 +1060,7 @@ function AgendaPageContent() {
                       })}
                     </ul>
                   </ScrollArea>
-                </div>
+                </button>
               )
             })}
           </div>
@@ -1082,7 +1093,7 @@ function AgendaPageContent() {
                           <ChevronRight className="h-4 w-4" />
                       </Button>
                   </div>
-                  <h2 className="text-sm sm:text-base font-medium text-center capitalize flex-grow sm:flex-grow-0">
+                  <h2 className="text-sm sm:text-base font-medium text-center flex-grow sm:flex-grow-0">
                     {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                   </h2>
                 </div>
