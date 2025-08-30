@@ -16,9 +16,9 @@ const parseTime = (time: string): number => {
 
 // Helper para converter minutos para "HH:mm"
 const formatTime = (minutes: number): string => {
-    const hours = Math.floor(minutes / 60).toString().padStart(2, '0');
-    const mins = (minutes % 60).toString().padStart(2, '0');
-    return `${hours}:${mins}`;
+    const hours = Math.floor(minutes / 60) % 24; // Use modulo 24 to handle rollovers
+    const mins = (minutes % 60);
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
 const findMissionDetails = (title: string) => {
@@ -59,18 +59,22 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
   // 2. ENCAIXAR ROTINAS ESSENCIAIS
   const routineRules = [
-    { title: 'Hora de acordar', time: input.wakeUpTime, duration: 10, days: weekdays },
-    { title: 'Arrumar a cama', time: input.wakeUpTime, offset: 10, duration: 5, days: weekdays },
-    { title: 'Tomar café da manhã', time: input.wakeUpTime, offset: 15, duration: 20, days: weekdays },
-    { title: 'Escovar os dentes', time: input.wakeUpTime, offset: 35, duration: 5, days: weekdays },
-    { title: 'Almoçar', time: input.lunchTime, duration: 25, days: weekdays },
-    { title: 'Escovar os dentes', time: input.lunchTime, offset: 25, duration: 5, days: weekdays },
-    { title: 'Tomar banho', time: input.sleepTime, offset: -45, duration: 15, days: weekdays },
-    { title: 'Jantar', time: input.dinnerTime, duration: 25, days: weekdays },
-    { title: 'Escovar os dentes', time: input.dinnerTime, offset: 25, duration: 5, days: weekdays },
-    { title: 'Organizar a mochila para amanhã', time: input.sleepTime, offset: -25, duration: 5, days: weekdays },
-    { title: 'Hora de dormir', time: input.sleepTime, offset: -20, duration: 20, days: weekdays },
-    { title: 'Fazer a lição de casa', time: input.schoolShift === 'afternoon' ? '09:00' : '18:30', duration: 55, days: weekdays }
+    { title: 'Hora de acordar', time: input.wakeUpTime, duration: 10, days: weekdays, anchor: 'wakeUpTime' },
+    { title: 'Arrumar a cama', time: input.wakeUpTime, offset: 10, duration: 5, days: weekdays, anchor: 'wakeUpTime' },
+    { title: 'Tomar café da manhã', time: input.wakeUpTime, offset: 15, duration: 20, days: weekdays, anchor: 'wakeUpTime' },
+    { title: 'Escovar os dentes', time: input.wakeUpTime, offset: 35, duration: 5, days: weekdays, anchor: 'wakeUpTime', instanceId: 'after_wakeup' },
+    
+    { title: 'Almoçar', time: input.lunchTime, duration: 25, days: weekdays, anchor: 'lunchTime' },
+    { title: 'Escovar os dentes', time: input.lunchTime, offset: 25, duration: 5, days: weekdays, anchor: 'lunchTime', instanceId: 'after_lunch' },
+    
+    { title: 'Jantar', time: input.dinnerTime, duration: 25, days: weekdays, anchor: 'dinnerTime' },
+    { title: 'Escovar os dentes', time: input.dinnerTime, offset: 25, duration: 5, days: weekdays, anchor: 'dinnerTime', instanceId: 'after_dinner' },
+    
+    { title: 'Tomar banho', time: input.sleepTime, offset: -45, duration: 15, days: weekdays, anchor: 'sleepTime' },
+    { title: 'Organizar a mochila para amanhã', time: input.sleepTime, offset: -25, duration: 5, days: weekdays, anchor: 'sleepTime' },
+    { title: 'Hora de dormir', time: input.sleepTime, offset: -20, duration: 20, days: weekdays, anchor: 'sleepTime' },
+    
+    { title: 'Fazer a lição de casa', time: input.schoolShift === 'afternoon' ? '09:00' : '18:30', duration: 55, days: weekdays, anchor: 'fixed' }
   ];
 
   routineRules.forEach(rule => {
