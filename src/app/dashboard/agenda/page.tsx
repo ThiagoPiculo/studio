@@ -696,61 +696,58 @@ function AgendaPageContent() {
     // Different rendering logic for mobile vs desktop for 'week' view
     if (isMobile && (dateRangeFilter === 'week' || dateRangeFilter === 'workweek')) {
         return (
-            <ScrollArea className="w-full">
-                <div className="flex pb-4 gap-4">
-                    {days.map(day => {
-                        const dateKey = format(day, 'yyyy-MM-dd');
-                        const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-                        const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
-                        const child = selectedChildId ? childrenMap.get(selectedChildId) : null;
-                        
-                        return (
-                            <div key={dateKey} className="flex-none w-[85vw] sm:w-[45vw] space-y-2">
-                                <h2 className={cn("text-lg font-headline flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                    {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
-                                    {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
-                                </h2>
-                               {selectedChildId && child ? (
-                                    <div className="flex items-center gap-3 mb-2">
-                                      <Avatar
-                                        className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
-                                        style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                      >
-                                          <AvatarImage src={child.avatar} alt={child.name} />
-                                          <AvatarFallback style={{backgroundColor: child.color}}>
-                                              {getInitials(child.name)}
-                                          </AvatarFallback>
-                                      </Avatar>
-                                      <h4 className="font-semibold text-foreground/90">{child.name}</h4>
-                                    </div>
-                               ) : (
-                                  <AllHeroesDayAccordion day={day} events={dayEvents} />
-                               )}
-                                <Card className="shadow-sm flex-1">
-                                    {!hasEventsForDay ? (
-                                        <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
-                                            Nenhuma missão.
-                                        </CardContent>
-                                    ) : (
-                                        <CardContent className="p-4 space-y-4">
-                                            {dayEvents.morning.length > 0 && (
-                                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
-                                            )}
-                                            {dayEvents.afternoon.length > 0 && (
-                                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
-                                            )}
-                                            {dayEvents.night.length > 0 && (
-                                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
-                                            )}
-                                        </CardContent>
-                                    )}
-                                </Card>
-                            </div>
-                        );
-                    })}
-                </div>
-                <ScrollBar orientation="horizontal" />
-            </ScrollArea>
+            <div className="grid grid-cols-1 gap-6">
+                {days.map(day => {
+                    const dateKey = format(day, 'yyyy-MM-dd');
+                    const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
+                    const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+                    const child = selectedChildId ? childrenMap.get(selectedChildId) : null;
+                    
+                    return (
+                        <div key={dateKey} className="w-full space-y-2">
+                            <h2 className={cn("text-lg font-headline flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
+                                {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
+                                {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
+                            </h2>
+                           {selectedChildId && child ? (
+                                <div className="flex items-center gap-3 mb-2">
+                                  <Avatar
+                                    className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                  >
+                                      <AvatarImage src={child.avatar} alt={child.name} />
+                                      <AvatarFallback style={{backgroundColor: child.color}}>
+                                          {getInitials(child.name)}
+                                      </AvatarFallback>
+                                  </Avatar>
+                                  <h4 className="font-semibold text-foreground/90">{child.name}</h4>
+                                </div>
+                           ) : (
+                              <AllHeroesDayAccordion day={day} events={dayEvents} />
+                           )}
+                            <Card className="shadow-sm flex-1">
+                                {!hasEventsForDay ? (
+                                    <CardContent className="p-4 text-center text-sm text-muted-foreground h-full flex items-center justify-center">
+                                        Nenhuma missão.
+                                    </CardContent>
+                                ) : (
+                                    <CardContent className="p-4 space-y-4">
+                                        {dayEvents.morning.length > 0 && (
+                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
+                                        )}
+                                        {dayEvents.afternoon.length > 0 && (
+                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
+                                        )}
+                                        {dayEvents.night.length > 0 && (
+                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
+                                        )}
+                                    </CardContent>
+                                )}
+                            </Card>
+                        </div>
+                    );
+                })}
+            </div>
         );
     }
     
@@ -1220,5 +1217,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
