@@ -26,6 +26,7 @@ export const extraActivitySchema = z.object({
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de início inválido."),
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de término inválido."),
+  category: z.string().optional(), // Added to track which category a custom activity belongs to
 }).refine(data => data.startTime < data.endTime, {
     message: "O término deve ser depois do início.",
     path: ["endTime"],
@@ -195,7 +196,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
   const handleActivityToggle = (activityName: string, emoji: string, isChecked: boolean) => {
     if (isChecked) {
-        append({ name: activityName, days: [], startTime: '18:00', endTime: '19:00', emoji: emoji } as any);
+        append({ name: activityName, days: [], startTime: '18:00', endTime: '19:00', emoji: emoji, category: '' } as any);
     } else {
         const indexToRemove = fields.findIndex(field => (field as any).name === activityName);
         if (indexToRemove > -1) {
@@ -210,7 +211,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
   };
 
   const handleAddCustomActivity = (activity: ActivityFormValues) => {
-    append(activity);
+    append({ ...activity, category: currentCategoryForCustom }); // Tag the activity with its category
   };
 
   return (
@@ -222,11 +223,11 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
         <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-2">
           {extraActivityGroups.map((group) => {
-              const activitiesInGroup = allActivities?.filter(activity => 
-                  fields.some(field => (field as any).name === activity.name) &&
-                  (group.items.some(item => item.title === activity.name) || 
-                  !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name))
-              ) || [];
+              const activitiesInGroup = (allActivities || []).filter(activity => {
+                  const isPredefined = group.items.some(item => item.title === activity.name);
+                  const isCustomInCategory = (activity as any).category === group.userCategory;
+                  return isPredefined || isCustomInCategory;
+              });
 
               return (
                   <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg px-4">

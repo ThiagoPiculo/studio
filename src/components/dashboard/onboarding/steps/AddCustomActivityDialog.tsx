@@ -14,7 +14,7 @@ import { allWeekdays, weekdayLabels, type Weekday } from '@/lib/types';
 import { TimePicker } from "../../missions/TimePicker";
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { ActivityFormValues } from '../OnboardingForm';
+import { extraActivitySchema, type ActivityFormValues } from '../OnboardingForm';
 
 const customActivitySchema = z.object({
   name: z.string().min(2, { message: "O nome da atividade deve ter pelo menos 2 caracteres." }),
