@@ -590,13 +590,11 @@ function AgendaPageContent() {
                                 }
                               }}>
                                 <PopoverTrigger asChild>
-                                    <div 
+                                    <button 
                                         data-mission-id={popoverId}
-                                        role="button"
-                                        aria-disabled={isProcessingAction === event.data.id || isFamilyLoading}
-                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 flex items-center gap-1.5", 
+                                        disabled={isProcessingAction === event.data.id || isFamilyLoading}
+                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
                                           "hover:bg-accent/50",
-                                           (isProcessingAction === event.data.id || isFamilyLoading) ? "opacity-50 cursor-wait" : "cursor-pointer",
                                           isCompleted && "text-muted-foreground/70",
                                           highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
                                         )}
@@ -611,7 +609,7 @@ function AgendaPageContent() {
                                       <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                       {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                       <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                    </div>
+                                    </button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 p-0">
                                     <div className="p-4 space-y-3">
@@ -987,13 +985,10 @@ function AgendaPageContent() {
                                 }
                               }}>
                                   <PopoverTrigger asChild>
-                                      <div
+                                      <button
                                           data-mission-id={popoverId}
-                                          role="button"
-                                          aria-disabled={isProcessingAction === event.data.id || isFamilyLoading}
-                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 flex items-center",
-                                            canEdit && "cursor-pointer hover:bg-accent/50",
-                                            (isProcessingAction === event.data.id || isFamilyLoading) && "opacity-50 cursor-wait",
+                                          disabled={isProcessingAction === event.data.id || isFamilyLoading}
+                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center",
                                             isCompleted && "text-muted-foreground/70",
                                             highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary-offset"
                                           )}
@@ -1007,7 +1002,7 @@ function AgendaPageContent() {
                                           )}
                                           <span className={cn("font-semibold text-foreground/80 mr-1 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                           <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                      </div>
+                                      </button>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-80 p-0">
                                       <div className="p-4 space-y-3">
@@ -1240,4 +1235,3 @@ export default function AgendaPage() {
   )
 }
 
-    
