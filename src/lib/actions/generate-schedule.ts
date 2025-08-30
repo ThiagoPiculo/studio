@@ -46,6 +46,9 @@ const addAndOccupy = (
     days: Weekday[], 
     type: 'essential_routine' | 'extra_activity' | 'school_entry' | 'school_exit'
 ) => {
+    // Only add if duration is meaningful
+    if (duration < 5) return;
+    
     const endTime = startTime + duration;
     const details = findMissionDetails(activityName);
     
@@ -71,8 +74,8 @@ const routineRules = [
     { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
     { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60 + 55, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
-    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 120, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 120, isFlexible: true, minDuration: 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, minDuration: 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => anchors.schoolStart - 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
     { id: 'Almoçar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.lunch + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
@@ -81,9 +84,9 @@ const routineRules = [
     { id: 'Saída da Escola', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.schoolShiftEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_exit' },
     { id: 'Jantar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.dinner, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.dinner + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, minDuration: 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, minDuration: 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Hora livre para brincar', duration: 60, rule: (anchors: any, prevEnd: number) => prevEnd, isFlexible: true, minDuration: 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Tomar banho', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.sleep - 20, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Hora de dormir', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
 ];
@@ -110,43 +113,61 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     };
     
     let lastEndTime = 0;
-    let lastFlexibleEndTime = 0;
-
+    
     for (const rule of routineRules) {
       if (rule.id === 'Início da Escola' && input.schoolShift === 'not_applicable') continue;
       if (rule.id === 'Saída da Escola' && input.schoolShift === 'not_applicable') continue;
       if (rule.id === 'Sair para escola' && input.schoolShift === 'not_applicable') continue;
       if (rule.id === 'Tomar banho' && input.schoolShift === 'not_applicable' && rule.rule.toString().includes('schoolStart')) continue;
-      if (!input.essentialRoutines?.includes(rule.id) && rule.id.toLowerCase().includes('brincar')) continue;
+      if (!input.essentialRoutines?.includes(rule.id) && !rule.id.toLowerCase().includes('brincar')) continue;
       
       let startTime = rule.rule(anchors, lastEndTime);
       let conflict = true;
       let iterations = 0;
       const MAX_ITERATIONS = 100;
+      let finalDuration = rule.duration;
 
       while(conflict && iterations < MAX_ITERATIONS) {
           conflict = false;
           iterations++;
-          const endTime = startTime + rule.duration;
+          
+          let potentialEndTime = startTime + rule.duration;
 
           for (const day of rule.days) {
-              for (const slot of occupiedSlots) {
-                  if (slot.day === day && Math.max(startTime, slot.start) < Math.min(endTime, slot.end)) {
+              const daySlots = occupiedSlots.filter(s => s.day === day).sort((a,b) => a.start - b.start);
+              for (const slot of daySlots) {
+                  if (Math.max(startTime, slot.start) < Math.min(potentialEndTime, slot.end)) {
                       conflict = true;
                       if (rule.isFlexible) {
-                          startTime = slot.end + 20; // Re-schedule 20 minutes after conflict
+                          startTime = slot.end + 5; // Tenta agendar 5 min depois
+                          potentialEndTime = startTime + rule.duration;
                       }
-                      break;
+                      break; 
                   }
               }
-              if (conflict) break; 
+              if (conflict && !rule.isFlexible) break;
           }
-          if (!rule.isFlexible && conflict) break;
       }
       
-      const type = rule.type || 'essential_routine';
-      addAndOccupy(rule.id, startTime, rule.duration, occupiedSlots, finalSchedule, rule.days, type);
-      lastEndTime = startTime + rule.duration;
+      // If still in conflict and flexible, try to shorten the duration
+      if (conflict && rule.isFlexible) {
+          const nextSlot = occupiedSlots
+              .filter(s => s.start > startTime && rule.days.includes(s.day))
+              .sort((a, b) => a.start - b.start)[0];
+          
+          if (nextSlot) {
+              finalDuration = nextSlot.start - startTime - 5;
+          } else {
+              finalDuration = (23*60+59) - startTime;
+          }
+      }
+      
+      const minDuration = (rule as any).minDuration || 5;
+      if (finalDuration >= minDuration) {
+          const type = (rule as any).type || 'essential_routine';
+          addAndOccupy(rule.id, startTime, finalDuration, occupiedSlots, finalSchedule, rule.days, type);
+          lastEndTime = startTime + finalDuration;
+      }
     }
     
     const uniqueSchedule = Array.from(new Map(finalSchedule.map(item => [item.activity + item.startTime, item])).values());
