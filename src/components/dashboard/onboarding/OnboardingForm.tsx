@@ -115,15 +115,13 @@ export function OnboardingForm() {
     }
   }, [step, methods]);
 
-  const proceedToNextStep = () => {
-    if (step < TOTAL_STEPS) {
-      if (step === 5) {
-        handleGenerateSchedule();
-      } else {
+  const proceedToNextStep = async () => {
+    if (step === 5) {
+        await handleGenerateSchedule();
+    } else if (step < TOTAL_STEPS) {
         setStep(prev => prev + 1);
-      }
-      setErrorToHighlight(null);
     }
+    setErrorToHighlight(null);
   };
   
   const goToNextStep = async () => {
@@ -149,7 +147,7 @@ export function OnboardingForm() {
     const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
     
     if (isStepValid) {
-        if (step === 5) { // Check for conflicts before moving from extra activities
+        if (step === 4) { // Check for conflicts before moving from extra activities
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
             if (schoolShift === 'not_applicable' || !activity.startTime) return false;
