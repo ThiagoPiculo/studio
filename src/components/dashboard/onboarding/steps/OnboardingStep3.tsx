@@ -1,27 +1,10 @@
 
 "use client";
 
-import { useFormContext, FormProvider } from "react-hook-form";
+import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { TimePicker } from "../../missions/TimePicker";
 import * as z from "zod";
-import React, { useEffect, useCallback } from 'react';
-import { useFieldArray } from "react-hook-form";
-
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { AlertCircle, Trash2 } from "lucide-react";
-import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
-import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { parseTime } from "@/lib/calendar-utils";
-import { useToast } from "@/hooks/use-toast";
-import { cn } from "@/lib/utils";
-
 
 export const onboardingSchemaStep3 = z.object({
   wakeUpTime: z.string({ required_error: "O horário de acordar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
@@ -30,7 +13,6 @@ export const onboardingSchemaStep3 = z.object({
   sleepTime: z.string({ required_error: "O horário de dormir é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
 });
 
-
 const anchorTimeFields = [
     { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão: 5 horas antes da escola.' },
     { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão: 45 minutos antes da escola.' },
@@ -38,21 +20,8 @@ const anchorTimeFields = [
     { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão: 4h30 após a escola.' },
 ] as const;
 
-export interface ExtraActivityError {
-    index: number;
-    field: 'days' | 'time';
-}
-
-interface OnboardingStep3Props {
-    errorToHighlight: ExtraActivityError | null;
-}
-
-export function OnboardingStep3({ errorToHighlight }: OnboardingStep3Props) {
-  const { control, watch } = useFormContext<OnboardingFormValues>();
-  const { fields, append, remove } = useFieldArray({
-      control,
-      name: "extraActivities"
-  });
+export function OnboardingStep3() {
+  const { control } = useFormContext();
   
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">

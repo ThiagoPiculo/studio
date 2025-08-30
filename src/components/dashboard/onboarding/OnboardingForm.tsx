@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm, FormProvider, FieldError, FieldErrors } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,7 @@ import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { isValid, parse, format, addDays, subHours, subMinutes, addMinutes } from "date-fns";
+import { isValid, parse, format, addDays } from "date-fns";
 import type { MissionTemplate, Weekday, MissionCategory, SchoolShift, ScheduleItem } from "@/lib/types";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { Timestamp } from "firebase/firestore";
@@ -86,7 +86,7 @@ export function OnboardingForm() {
     defaultValues: {
       name: "",
       birthDate: undefined,
-      gender: undefined,
+      gender: "not-informed",
       contextId: currentContext,
       schoolShift: "afternoon",
       schoolShiftStart: '13:00',
@@ -149,7 +149,7 @@ export function OnboardingForm() {
     const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
     
     if (isStepValid) {
-        if (step === 4) { // Check for conflicts before moving from extra activities
+        if (step === 5) { // Check for conflicts before moving from extra activities
           const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
           const conflicts = (extraActivities || []).filter(activity => {
             if (schoolShift === 'not_applicable' || !activity.startTime) return false;
