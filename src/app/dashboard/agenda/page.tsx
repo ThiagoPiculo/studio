@@ -493,19 +493,20 @@ function AgendaPageContent() {
   };
 
   const formatHeaderDate = (date: Date, range: DateRangeFilter, interval: {start: Date, end: Date}) => {
-    if (range === 'day') return format(date, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR });
-    if (range === 'month') return format(date, 'MMMM yyyy', { locale: ptBR });
+    const monthFormat = isMobile ? 'MMM' : 'MMMM';
+    if (range === 'day') return format(date, `EEEE, dd 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR });
+    if (range === 'month') return format(date, `${monthFormat} yyyy`, { locale: ptBR });
     
     const start = interval.start;
     const end = interval.end;
 
-    const startMonth = format(start, 'MMMM', { locale: ptBR });
-    const endMonth = format(end, 'MMMM', { locale: ptBR });
+    const startMonth = format(start, monthFormat, { locale: ptBR });
+    const endMonth = format(end, monthFormat, { locale: ptBR });
 
     if (startMonth === endMonth) {
-        return `${format(start, 'd')} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+        return `${format(start, 'd')} - ${format(end, `d 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR })}`;
     } else {
-        return `${format(start, "d 'de' MMMM", { locale: ptBR })} - ${format(end, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}`;
+        return `${format(start, `d 'de' ${monthFormat}`, { locale: ptBR })} - ${format(end, `d 'de' ${monthFormat} 'de' yyyy`, { locale: ptBR })}`;
     }
   };
 
@@ -710,7 +711,7 @@ function AgendaPageContent() {
                     return (
                         <div key={dateKey} className="w-full space-y-2">
                             <h2 className={cn("text-lg font-headline flex items-center gap-2 whitespace-nowrap mb-2", isToday(day) && "text-primary")}>
-                                {format(day, "ccc, dd/MM/yy", { locale: ptBR })}
+                                {format(day, "EEEE, dd/MM/yy", { locale: ptBR })}
                                 {isToday(day) && <span className="text-xs font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">HOJE</span>}
                             </h2>
                            {selectedChildId && child ? (
@@ -974,11 +975,11 @@ function AgendaPageContent() {
                                 }
                               }}>
                                   <PopoverTrigger asChild>
-                                      <button 
+                                      <div
                                           data-mission-id={popoverId}
-                                          disabled={isProcessingAction === event.data.id || isFamilyLoading} 
-                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center", 
-                                            "hover:bg-accent/50",
+                                          className={cn("w-full text-left leading-tight p-1 -m-1 rounded-md transition-all duration-300 flex items-center",
+                                            canEdit && "cursor-pointer hover:bg-accent/50",
+                                            isProcessingAction === event.data.id && "opacity-50 cursor-wait",
                                             isCompleted && "text-muted-foreground/70",
                                             highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary-offset"
                                           )}
@@ -992,7 +993,7 @@ function AgendaPageContent() {
                                           )}
                                           <span className={cn("font-semibold text-foreground/80 mr-1 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
                                           <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                      </button>
+                                      </div>
                                   </PopoverTrigger>
                                   <PopoverContent className="w-80 p-0">
                                       <div className="p-4 space-y-3">
@@ -1083,22 +1084,19 @@ function AgendaPageContent() {
         <Card>
             <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
                 <div className="flex items-center gap-2 flex-grow">
-                  <Button variant="outline" onClick={handleToday} className="h-9 px-3 hidden sm:inline-flex">Hoje</Button>
-                  <div className="flex items-center gap-1">
-                      <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
-                          <ChevronLeft className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
-                          <ChevronRight className="h-4 w-4" />
-                      </Button>
-                  </div>
-                  <h2 className="text-sm sm:text-base font-medium text-center flex-grow sm:flex-grow-0">
-                    {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
-                  </h2>
+                    <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
+                        <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
+                        <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
                 </div>
+                <h2 className="text-sm sm:text-base font-medium text-center flex-grow">
+                    {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
+                </h2>
 
                 <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
-                   <Button variant="outline" onClick={handleToday} className="h-9 px-3 sm:hidden flex-grow">Hoje</Button>
                   <div className="flex-grow sm:flex-grow-0">
                     <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
                         <SelectTrigger className="w-full sm:w-[140px] h-9">
@@ -1227,5 +1225,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
