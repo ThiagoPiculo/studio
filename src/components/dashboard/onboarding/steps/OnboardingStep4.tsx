@@ -12,15 +12,13 @@ import { predefinedMissionGroups } from "@/lib/predefined-missions";
 import { AlertCircle, Trash2, PlusCircle } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import React, { useCallback } from 'react';
 import { parseTime } from "@/lib/calendar-utils";
-import React, { useEffect, useCallback } from 'react';
-import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import * as z from "zod";
 import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { addMinutes, format } from "date-fns";
-import { Input } from "@/components/ui/input";
+import { AddCustomActivityDialog } from "./AddCustomActivityDialog";
 
 
 export const extraActivitySchema = z.object({
@@ -51,7 +49,6 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
     const handleStartTimeChange = useCallback((newStartTime: string) => {
         setValue(`${fieldName}.startTime`, newStartTime, { shouldValidate: true });
         
-        // Automatically update endTime to be 60 minutes after startTime
         const startMinutes = parseTime(newStartTime);
         const newEndDate = addMinutes(new Date().setHours(0, 0, 0, 0), startMinutes + 60);
         const newEndTime = format(newEndDate, 'HH:mm');
@@ -67,7 +64,6 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
         const schoolStartMinutes = parseTime(schoolShiftStart);
         const schoolEndMinutes = parseTime(schoolShiftEnd);
         
-        // Check for any overlap
         return Math.max(activityStartMinutes, schoolStartMinutes) < Math.min(activityEndMinutes, schoolEndMinutes);
 
     }, [schoolShift, schoolShiftStart, schoolShiftEnd, activityStartTime, activityEndTime]);
@@ -165,7 +161,7 @@ const extraActivityGroups = predefinedMissionGroups
 
 export interface ExtraActivityError {
     index: number;
-    field: 'days' | 'time';
+    field: 'days' | 'startTime' | 'endTime';
 }
 
 interface OnboardingStep4Props {
@@ -178,12 +174,11 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
       control,
       name: "extraActivities"
   });
-  
-  const [customActivityInputs, setCustomActivityInputs] = React.useState<Record<string, Partial<ActivityFormValues>>>({});
-  const { toast } = useToast();
 
   const [openAccordions, setOpenAccordions] = React.useState<string[]>([]);
-  
+  const [isCustomActivityDialogOpen, setIsCustomActivityDialogOpen] = React.useState(false);
+  const [currentCategoryForCustom, setCurrentCategoryForCustom] = React.useState<string | null>(null);
+
   React.useEffect(() => {
     if (errorToHighlight) {
       const activityWithError = (fields[errorToHighlight.index] as any);
@@ -209,162 +204,99 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
     }
   };
 
-  const handleCustomFormChange = (category: string, field: keyof ActivityFormValues, value: any) => {
-    setCustomActivityInputs(prev => ({
-        ...prev,
-        [category]: {
-            ...prev[category],
-            [field]: value,
-        }
-    }));
+  const handleOpenCustomDialog = (category: string) => {
+    setCurrentCategoryForCustom(category);
+    setIsCustomActivityDialogOpen(true);
   };
 
-  const handleAddCustomActivity = (category: string) => {
-    const activityData = customActivityInputs[category];
-    const { name, days, startTime, endTime } = activityData || {};
-
-    // Validation
-    if (!name?.trim()) {
-        toast({ title: "Atividade sem nome", description: "Por favor, digite um nome para a nova atividade.", variant: "destructive" });
-        return;
-    }
-     if (!days || days.length === 0) {
-        toast({ title: "Faltam os dias", description: `Selecione os dias da semana para "${name}".`, variant: "destructive" });
-        return;
-    }
-    if (!startTime || !endTime) {
-        toast({ title: "Faltam os horários", description: `Defina o horário de início e fim para "${name}".`, variant: "destructive" });
-        return;
-    }
-    if (startTime >= endTime) {
-        toast({ title: "Horário Inválido", description: `O horário de término para "${name}" deve ser depois do início.`, variant: "destructive" });
-        return;
-    }
-    
-    append({
-        name: name.trim(),
-        emoji: '✨',
-        days: days,
-        startTime: startTime,
-        endTime: endTime,
-    } as any);
-
-    setCustomActivityInputs(prev => ({
-        ...prev,
-        [category]: { name: '', days: [], startTime: '18:00', endTime: '19:00' }
-    }));
+  const handleAddCustomActivity = (activity: ActivityFormValues) => {
+    append(activity);
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in-50 duration-500">
-      <div className="text-center">
-        <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Marque as atividades e defina os horários fixos para cada uma delas.</p>
+    <>
+      <div className="space-y-6 animate-in fade-in-50 duration-500">
+        <div className="text-center">
+          <p className="text-muted-foreground">Agora, vamos adicionar os treinos que aprimoram os talentos do nosso herói. Marque as atividades e defina os horários fixos para cada uma delas.</p>
+        </div>
+
+        <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-2">
+          {extraActivityGroups.map((group) => {
+              const activitiesInGroup = allActivities?.filter(activity => 
+                  fields.some(field => (field as any).name === activity.name) &&
+                  (group.items.some(item => item.title === activity.name) || 
+                  !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name))
+              ) || [];
+
+              return (
+                  <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg px-4">
+                      <AccordionTrigger>
+                          <div className="flex flex-col text-left items-start gap-2 w-full">
+                              <div className="flex items-center gap-3">
+                                  <group.icon className="h-6 w-6 text-primary" />
+                                  <span className="font-semibold">{group.userCategory}</span>
+                              </div>
+                               {activitiesInGroup.length > 0 && (
+                                  <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
+                                      {activitiesInGroup.map(activity => (
+                                          <p key={activity.name} className="truncate flex items-center gap-2">
+                                              - <span className="text-base">{(activity as any).emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} das {activity.startTime || 'N/A'} às {activity.endTime || 'N/A'}
+                                          </p>
+                                      ))}
+                                  </div>
+                              )}
+                          </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="pt-2">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {group.items.map(item => {
+                                  const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
+                                  const isChecked = currentFieldIndex > -1;
+                                  const hasError = errorToHighlight?.index === currentFieldIndex;
+
+                                  return (
+                                      <div key={item.title} className="space-y-2">
+                                          <div className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50">
+                                              <Checkbox
+                                                  id={`${group.userCategory}-${item.title}`}
+                                                  checked={isChecked}
+                                                  onCheckedChange={(checked) => handleActivityToggle(item.title, item.emoji, !!checked)}
+                                              />
+                                              <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
+                                              <span className="text-xl">{item.emoji}</span>
+                                              {item.title}
+                                              </Label>
+                                          </div>
+                                          {isChecked && <ActivityScheduler activityIndex={currentFieldIndex} remove={remove} hasError={hasError} />}
+                                      </div>
+                                  )
+                              })}
+                          </div>
+                           <div className="mt-4 pt-4 border-t">
+                              <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full"
+                                  onClick={() => handleOpenCustomDialog(group.userCategory)}
+                              >
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Adicionar outra atividade
+                              </Button>
+                          </div>
+                      </AccordionContent>
+                  </AccordionItem>
+              );
+          })}
+        </Accordion>
       </div>
 
-      <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-2">
-        {extraActivityGroups.map((group) => {
-            const activitiesInGroup = allActivities?.filter(activity => 
-                group.items.some(item => item.title === activity.name) ||
-                (allActivities.some(a => a.name === activity.name) && !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name))
-            ) || [];
-
-            return (
-                <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg px-4">
-                    <AccordionTrigger>
-                        <div className="flex flex-col text-left items-start gap-2 w-full">
-                            <div className="flex items-center gap-3">
-                                <group.icon className="h-6 w-6 text-primary" />
-                                <span className="font-semibold">{group.userCategory}</span>
-                            </div>
-                            {activitiesInGroup.length > 0 && (
-                                <div className="pl-9 text-xs text-muted-foreground font-normal space-y-0.5">
-                                    {activitiesInGroup.map(activity => (
-                                        <p key={activity.name} className="truncate flex items-center gap-2">
-                                            - <span className="text-base">{activity.emoji}</span> {activity.name}: {activity.days?.map(d => weekdayLabels[d as Weekday].short).join(', ') || 'Nenhum dia'} das {activity.startTime || 'N/A'} às {activity.endTime || 'N/A'}
-                                        </p>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="pt-2">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            {group.items.map(item => {
-                                const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
-                                const isChecked = currentFieldIndex > -1;
-                                const hasError = errorToHighlight?.index === currentFieldIndex;
-
-                                return (
-                                    <div key={item.title} className="space-y-2">
-                                        <div className="flex items-center space-x-2 rounded-md border p-3 hover:bg-accent/50">
-                                            <Checkbox
-                                                id={`${group.userCategory}-${item.title}`}
-                                                checked={isChecked}
-                                                onCheckedChange={(checked) => handleActivityToggle(item.title, item.emoji, !!checked)}
-                                            />
-                                            <Label htmlFor={`${group.userCategory}-${item.title}`} className="flex-1 cursor-pointer flex items-center gap-2">
-                                            <span className="text-xl">{item.emoji}</span>
-                                            {item.title}
-                                            </Label>
-                                        </div>
-                                        {isChecked && <ActivityScheduler activityIndex={currentFieldIndex} remove={remove} hasError={hasError} />}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                         <div className="mt-4 pt-4 border-t space-y-3">
-                            <Label className="text-sm font-semibold">Adicionar outra atividade</Label>
-                            <div className="p-3 border rounded-lg bg-background space-y-3">
-                                <Input
-                                    placeholder={`Ex: ${group.items[0]?.title || 'Nova Atividade'}`}
-                                    value={customActivityInputs[group.userCategory]?.name || ''}
-                                    onChange={(e) => handleCustomFormChange(group.userCategory, 'name', e.target.value)}
-                                />
-                                <ToggleGroup
-                                    type="multiple"
-                                    variant="outline"
-                                    value={customActivityInputs[group.userCategory]?.days || []}
-                                    onValueChange={(value) => handleCustomFormChange(group.userCategory, 'days', value)}
-                                    className="flex flex-wrap justify-start gap-1"
-                                >
-                                    {allWeekdays.map(day => (
-                                        <ToggleGroupItem key={day} value={day} className="h-7 w-7 p-0 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
-                                            {weekdayLabels[day].short}
-                                        </ToggleGroupItem>
-                                    ))}
-                                </ToggleGroup>
-                                <div className="grid grid-cols-2 gap-2">
-                                    <div>
-                                        <Label className="text-xs">Início</Label>
-                                        <TimePicker
-                                            value={customActivityInputs[group.userCategory]?.startTime || '18:00'}
-                                            onChange={(value) => handleCustomFormChange(group.userCategory, 'startTime', value)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label className="text-xs">Fim</Label>
-                                        <TimePicker
-                                            value={customActivityInputs[group.userCategory]?.endTime || '19:00'}
-                                            onChange={(value) => handleCustomFormChange(group.userCategory, 'endTime', value)}
-                                        />
-                                    </div>
-                                </div>
-                                <Button
-                                    type="button"
-                                    size="sm"
-                                    className="w-full"
-                                    onClick={() => handleAddCustomActivity(group.userCategory)}
-                                >
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adicionar à Lista
-                                </Button>
-                            </div>
-                        </div>
-                    </AccordionContent>
-                </AccordionItem>
-            );
-        })}
-      </Accordion>
-    </div>
+      <AddCustomActivityDialog 
+        isOpen={isCustomActivityDialogOpen}
+        onOpenChange={setIsCustomActivityDialogOpen}
+        onAddActivity={handleAddCustomActivity}
+        category={currentCategoryForCustom || ''}
+      />
+    </>
   );
 }
