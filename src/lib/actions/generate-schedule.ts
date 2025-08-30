@@ -70,7 +70,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             }, 'extra_activity');
         }
     });
-
+    
     // 2. Mapear âncoras de horário
     const anchors = {
         schoolStart: parseTime(input.schoolShiftStart || '00:00'),
@@ -80,28 +80,32 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         dinner: parseTime(input.dinnerTime!),
         sleep: parseTime(input.sleepTime!),
     };
-    
+
+    const dinnerDuration = 20;
+    const lunchDuration = 20;
+    const breakfastDuration = 20;
+
     // 3. Definir a estrutura da rotina com base nas regras de negócio fornecidas
     const routineRules = [
-        { title: 'Hora de acordar', duration: 10, startTime: anchors.wakeUp, days: allWeekdays },
-        { title: 'Arrumar a cama', duration: 5, startTime: anchors.wakeUp + 10, days: allWeekdays },
-        { title: 'Tomar café da manhã', duration: 15, startTime: anchors.wakeUp + 15, days: allWeekdays },
-        { title: 'Escovar os dentes', duration: 5, startTime: anchors.wakeUp + 30, days: allWeekdays }, // After Breakfast
-        { title: 'Fazer a lição de casa', duration: 50, startTime: anchors.wakeUp + 60, days: weekdays },
-        { title: 'Organizar a mochila para amanhã', duration: 5, startTime: anchors.wakeUp + 115, days: weekdays }, // After homework
-        { title: 'Hora livre para brincar', duration: 60, startTime: anchors.wakeUp + 120, days: weekdays }, // After backpack
-        { title: 'Tomar banho', duration: 15, startTime: anchors.schoolStart - 60, days: weekdays }, // Before school
-        { title: 'Almoçar', duration: 20, startTime: anchors.lunch, days: allWeekdays },
-        { title: 'Escovar os dentes', duration: 5, startTime: anchors.lunch + 20, days: allWeekdays }, // After lunch
-        { title: 'Sair para escola', duration: 20, startTime: anchors.schoolStart - 20, days: weekdays },
-        { title: 'Hora livre para brincar', duration: 60, startTime: anchors.schoolEnd + 30, days: weekdays },
-        { title: 'Jantar', duration: 15, startTime: anchors.dinner, days: allWeekdays },
-        { title: 'Escovar os dentes', duration: 5, startTime: anchors.dinner + 15, days: allWeekdays }, // After dinner
-        { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 20, days: weekdays },
-        { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 50, days: weekdays },
-        { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 80, days: weekdays },
-        { title: 'Tomar banho', duration: 20, startTime: anchors.sleep - 20, days: allWeekdays },
-        { title: 'Hora de dormir', duration: 20, startTime: anchors.sleep, days: allWeekdays },
+      { title: 'Hora de acordar', duration: 10, startTime: anchors.wakeUp, days: allWeekdays },
+      { title: 'Arrumar a cama', duration: 5, startTime: anchors.wakeUp + 10, days: allWeekdays },
+      { title: 'Tomar café da manhã', duration: breakfastDuration, startTime: anchors.wakeUp + 15, days: allWeekdays },
+      { title: 'Escovar os dentes', duration: 5, startTime: anchors.wakeUp + 15 + breakfastDuration, days: allWeekdays },
+      { title: 'Fazer a lição de casa', duration: 50, startTime: anchors.wakeUp + 60, days: weekdays },
+      { title: 'Organizar a mochila para amanhã', duration: 5, startTime: anchors.wakeUp + 115, days: weekdays },
+      { title: 'Hora livre para brincar', duration: 60, startTime: anchors.wakeUp + 120, days: weekdays },
+      { title: 'Tomar banho', duration: 15, startTime: anchors.schoolStart - 60, days: weekdays },
+      { title: 'Almoçar', duration: lunchDuration, startTime: anchors.lunch, days: allWeekdays },
+      { title: 'Escovar os dentes', duration: 5, startTime: anchors.lunch + lunchDuration, days: allWeekdays },
+      { title: 'Sair para escola', duration: 20, startTime: anchors.schoolStart - 20, days: weekdays },
+      { title: 'Hora livre para brincar', duration: 60, startTime: anchors.schoolEnd + 30, days: weekdays },
+      { title: 'Jantar', duration: dinnerDuration, startTime: anchors.dinner, days: allWeekdays },
+      { title: 'Escovar os dentes', duration: 5, startTime: anchors.dinner + dinnerDuration, days: allWeekdays },
+      { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 20, days: weekdays },
+      { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 50, days: weekdays },
+      { title: 'Hora livre para brincar', duration: 30, startTime: anchors.dinner + 80, days: weekdays },
+      { title: 'Tomar banho', duration: 20, startTime: anchors.sleep - 20, days: allWeekdays },
+      { title: 'Hora de dormir', duration: 20, startTime: anchors.sleep, days: allWeekdays },
     ];
     
      // 4. Processar rotina essencial, resolvendo conflitos
@@ -122,20 +126,18 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                 for (const slot of occupiedSlots) {
                     if (slot.day === day && Math.max(attemptTime, slot.start) < Math.min(endTime, slot.end)) {
                         hasConflict = true;
-                        // Regra de negócio: "Hora livre" é descartada se houver conflito.
                         if (rule.title.includes('Hora livre')) {
                             break; 
                         }
-                        // Outras tarefas são reagendadas para depois.
-                        attemptTime = slot.end + 15; // Adiciona um intervalo de 15min
+                        attemptTime = slot.end + 15;
                         endTime = attemptTime + rule.duration;
                         break;
                     }
                 }
-                 if(hasConflict && rule.title.includes('Hora livre')) break; // Sai do do-while
+                 if(hasConflict && rule.title.includes('Hora livre')) break;
                  attempts++;
 
-            } while (hasConflict && attempts < 20); // Limite de tentativas para evitar loop infinito
+            } while (hasConflict && attempts < 20);
 
             if (!hasConflict) {
                  const newActivity = {
