@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimePicker } from "../../missions/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { AlertCircle, Trash2 } from "lucide-react";
+import { AlertCircle, Trash2, PlusCircle } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 import * as z from "zod";
 import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescription } from "@/components/ui/form";
 import { addMinutes, format } from "date-fns";
+import { Input } from "@/components/ui/input";
 
 
 export const extraActivitySchema = z.object({
@@ -177,6 +178,8 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
       control,
       name: "extraActivities"
   });
+  
+  const [customActivityInputs, setCustomActivityInputs] = React.useState<Record<string, string>>({});
 
   const [openAccordions, setOpenAccordions] = React.useState<string[]>([]);
   
@@ -205,6 +208,13 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
     }
   };
 
+  const handleAddCustomActivity = (category: string) => {
+    const activityName = customActivityInputs[category]?.trim();
+    if (!activityName) return;
+    
+    append({ name: activityName, emoji: '✨', days: [], startTime: '18:00', endTime: '19:00' } as any);
+    setCustomActivityInputs(prev => ({...prev, [category]: ''}));
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -261,6 +271,19 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                     </div>
                                 )
                             })}
+                        </div>
+                         <div className="mt-4 pt-4 border-t">
+                            <Label className="text-sm font-semibold">Adicionar outra atividade</Label>
+                            <div className="flex gap-2 mt-2">
+                                <Input
+                                    placeholder="Ex: Aula de Xadrez"
+                                    value={customActivityInputs[group.userCategory] || ''}
+                                    onChange={(e) => setCustomActivityInputs(prev => ({ ...prev, [group.userCategory]: e.target.value }))}
+                                />
+                                <Button type="button" onClick={() => handleAddCustomActivity(group.userCategory)}>
+                                    <PlusCircle className="h-4 w-4" />
+                                </Button>
+                            </div>
                         </div>
                     </AccordionContent>
                 </AccordionItem>
