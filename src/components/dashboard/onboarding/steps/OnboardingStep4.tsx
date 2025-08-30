@@ -179,7 +179,8 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
       name: "extraActivities"
   });
   
-  const [customActivityInputs, setCustomActivityInputs] = React.useState<Record<string, string>>({});
+  const [customActivityInputs, setCustomActivityInputs] = React.useState<Record<string, Partial<ActivityFormValues>>>({});
+  const { toast } = useToast();
 
   const [openAccordions, setOpenAccordions] = React.useState<string[]>([]);
   
@@ -208,12 +209,40 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
     }
   };
 
+  const handleCustomFormChange = (category: string, field: keyof ActivityFormValues, value: any) => {
+    setCustomActivityInputs(prev => ({
+        ...prev,
+        [category]: {
+            ...prev[category],
+            [field]: value,
+        }
+    }));
+  };
+
   const handleAddCustomActivity = (category: string) => {
-    const activityName = customActivityInputs[category]?.trim();
-    if (!activityName) return;
+    const activityData = customActivityInputs[category];
+    if (!activityData || !activityData.name?.trim() || !activityData.days || activityData.days.length === 0 || !activityData.startTime || !activityData.endTime) {
+        toast({
+            title: "Faltam Informações",
+            description: "Por favor, preencha nome, dias e horários para a nova atividade.",
+            variant: "destructive"
+        });
+        return;
+    }
     
-    append({ name: activityName, emoji: '✨', days: [], startTime: '18:00', endTime: '19:00' } as any);
-    setCustomActivityInputs(prev => ({...prev, [category]: ''}));
+    append({
+        name: activityData.name.trim(),
+        emoji: '✨', // Default emoji
+        days: activityData.days,
+        startTime: activityData.startTime,
+        endTime: activityData.endTime,
+    } as any);
+
+    // Reset the form for that category
+    setCustomActivityInputs(prev => ({
+        ...prev,
+        [category]: { name: '', days: [], startTime: '18:00', endTime: '19:00' }
+    }));
   };
 
   return (
@@ -225,7 +254,8 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
       <Accordion type="multiple" value={openAccordions} onValueChange={setOpenAccordions} className="w-full space-y-2">
         {extraActivityGroups.map((group) => {
             const activitiesInGroup = allActivities?.filter(activity => 
-                group.items.some(item => item.title === activity.name)
+                group.items.some(item => item.title === activity.name) ||
+                !predefinedMissionGroups.flatMap(g => g.items).some(item => item.title === activity.name)
             ) || [];
 
             return (
@@ -272,16 +302,51 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                 )
                             })}
                         </div>
-                         <div className="mt-4 pt-4 border-t">
+                         <div className="mt-4 pt-4 border-t space-y-3">
                             <Label className="text-sm font-semibold">Adicionar outra atividade</Label>
-                            <div className="flex gap-2 mt-2">
+                            <div className="p-3 border rounded-lg bg-background space-y-3">
                                 <Input
-                                    placeholder="Ex: Aula de Xadrez"
-                                    value={customActivityInputs[group.userCategory] || ''}
-                                    onChange={(e) => setCustomActivityInputs(prev => ({ ...prev, [group.userCategory]: e.target.value }))}
+                                    placeholder={`Ex: ${group.items[0]?.title || 'Nova Atividade'}`}
+                                    value={customActivityInputs[group.userCategory]?.name || ''}
+                                    onChange={(e) => handleCustomFormChange(group.userCategory, 'name', e.target.value)}
                                 />
-                                <Button type="button" onClick={() => handleAddCustomActivity(group.userCategory)}>
-                                    <PlusCircle className="h-4 w-4" />
+                                <ToggleGroup
+                                    type="multiple"
+                                    variant="outline"
+                                    value={customActivityInputs[group.userCategory]?.days || []}
+                                    onValueChange={(value) => handleCustomFormChange(group.userCategory, 'days', value)}
+                                    className="flex flex-wrap justify-start gap-1"
+                                >
+                                    {allWeekdays.map(day => (
+                                        <ToggleGroupItem key={day} value={day} className="h-7 w-7 p-0 text-xs data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+                                            {weekdayLabels[day].short}
+                                        </ToggleGroupItem>
+                                    ))}
+                                </ToggleGroup>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <Label className="text-xs">Início</Label>
+                                        <TimePicker
+                                            value={customActivityInputs[group.userCategory]?.startTime || '18:00'}
+                                            onChange={(value) => handleCustomFormChange(group.userCategory, 'startTime', value)}
+                                        />
+                                    </div>
+                                    <div>
+                                        <Label className="text-xs">Fim</Label>
+                                        <TimePicker
+                                            value={customActivityInputs[group.userCategory]?.endTime || '19:00'}
+                                            onChange={(value) => handleCustomFormChange(group.userCategory, 'endTime', value)}
+                                        />
+                                    </div>
+                                </div>
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    className="w-full"
+                                    onClick={() => handleAddCustomActivity(group.userCategory)}
+                                >
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar à Lista
                                 </Button>
                             </div>
                         </div>
