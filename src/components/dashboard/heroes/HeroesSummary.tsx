@@ -351,16 +351,32 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     <TabsContent value="schedule" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
                                         {isLoadingSchedules && expandedChildId === child.id ? (
                                             <div className="flex items-center justify-center h-full"><Loader2 className="h-5 w-5 animate-spin" /></div>
-                                        ) : getTodaysSchedule(child.id).length === 0 ? (
+                                        ) : getTodaysSchedule(child.id).length === 0 && (!child.schoolShift || child.schoolShift === 'not_applicable') ? (
                                              <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">Nenhuma aula para hoje.</div>
                                         ) : (
-                                            getTodaysSchedule(child.id).map(entry => (
-                                                <div key={entry.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-muted/40">
-                                                    <div className="text-muted-foreground font-mono text-xs w-10 text-center">{entry.startTime}</div>
-                                                    <NotebookPen className="h-4 w-4 text-chart-4" />
-                                                    <span className="truncate">{entry.subject}</span>
-                                                </div>
-                                            ))
+                                            <>
+                                                {child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftStart && (
+                                                    <div className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
+                                                        <div className="text-indigo-700 font-mono text-xs w-10 text-center">{child.schoolShiftStart}</div>
+                                                        <NotebookPen className="h-4 w-4 text-indigo-600" />
+                                                        <span className="font-semibold text-indigo-800">Entrada na Escola</span>
+                                                    </div>
+                                                )}
+                                                {getTodaysSchedule(child.id).map(entry => (
+                                                    <div key={entry.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-muted/40">
+                                                        <div className="text-muted-foreground font-mono text-xs w-10 text-center">{entry.startTime}</div>
+                                                        <div className="h-4 w-4 flex items-center justify-center" style={{ color: entry.color }}>•</div>
+                                                        <span className="truncate">{entry.subject}</span>
+                                                    </div>
+                                                ))}
+                                                {child.schoolShift && child.schoolShift !== 'not_applicable' && child.schoolShiftEnd && (
+                                                     <div className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
+                                                        <div className="text-indigo-700 font-mono text-xs w-10 text-center">{child.schoolShiftEnd}</div>
+                                                        <NotebookPen className="h-4 w-4 text-indigo-600" />
+                                                        <span className="font-semibold text-indigo-800">Saída da Escola</span>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
                                     </TabsContent>
                                 </Tabs>
