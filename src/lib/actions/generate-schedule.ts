@@ -66,59 +66,28 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     });
 
   // 2. Definir Âncoras e Regras de Negócio
-    const schoolStartTime = input.schoolShiftStart ? parseTime(input.schoolShiftStart) : 0;
-    const schoolEndTime = input.schoolShiftEnd ? parseTime(input.schoolShiftEnd) : 0;
-
     const anchors = {
         'Hora de acordar': parseTime(input.wakeUpTime!),
         'Almoçar': parseTime(input.lunchTime!),
         'Jantar': parseTime(input.dinnerTime!),
         'Hora de dormir': parseTime(input.sleepTime!),
-        'Fim da Escola': schoolEndTime,
     };
 
-    let routineRules;
-
-    if (input.schoolShift === 'afternoon') {
-        routineRules = [
-            { title: 'Hora de acordar', duration: 10, dependsOn: 'Hora de acordar', offset: 0 },
-            { title: 'Arrumar a cama', duration: 5, dependsOn: 'Hora de acordar', offset: 10 },
-            { title: 'Tomar café da manhã', duration: 20, dependsOn: 'Hora de acordar', offset: 15 },
-            { title: 'Escovar os dentes', instanceId: 'after_wakeup', duration: 5, dependsOn: 'Tomar café da manhã', offset: 20 },
-            { title: 'Hora livre para brincar', instanceId: 'morning_play', duration: 60, dependsOn: 'Escovar os dentes', offset: 5 },
-            { title: 'Tomar banho', instanceId: 'before_school', duration: 15, dependsOn: 'Almoçar', offset: -45 },
-            { title: 'Almoçar', duration: 20, dependsOn: 'Almoçar', offset: 0 },
-            { title: 'Escovar os dentes', instanceId: 'after_lunch', duration: 5, dependsOn: 'Almoçar', offset: 20 },
-            { title: 'Sair para escola', duration: 10, dependsOn: 'Almoçar', offset: 25 },
-            // Tarde / Noite
-            { title: 'Lanche da Tarde', duration: 15, dependsOn: 'Fim da Escola', offset: 15 },
-            { title: 'Guardar o material da escola', duration: 10, dependsOn: 'Lanche da Tarde', offset: 15 },
-            { title: 'Fazer a lição de casa', duration: 50, dependsOn: 'Guardar o material da escola', offset: 10 },
-            { title: 'Hora livre para brincar', instanceId: 'afternoon_play', duration: 60, dependsOn: 'Fazer a lição de casa', offset: 50 },
-            { title: 'Tomar banho', instanceId: 'before_sleep', duration: 15, dependsOn: 'Jantar', offset: -30 },
-            { title: 'Jantar', duration: 20, dependsOn: 'Jantar', offset: 0 },
-            { title: 'Escovar os dentes', instanceId: 'after_dinner', duration: 5, dependsOn: 'Jantar', offset: 20 },
-            { title: 'Hora de dormir', duration: 20, dependsOn: 'Hora de dormir', offset: 0 },
-        ];
-    } else { // Manhã ou Integral
-        routineRules = [
-            { title: 'Hora de acordar', duration: 10, dependsOn: 'Hora de acordar', offset: 0 },
-            { title: 'Arrumar a cama', duration: 5, dependsOn: 'Hora de acordar', offset: 10 },
-            { title: 'Tomar café da manhã', duration: 15, dependsOn: 'Hora de acordar', offset: 15 },
-            { title: 'Escovar os dentes', instanceId: 'after_wakeup', duration: 5, dependsOn: 'Tomar café da manhã', offset: 15 },
-            { title: 'Sair para escola', duration: 10, dependsOn: 'Escovar os dentes', offset: 5 },
-            { title: 'Almoçar', duration: 20, dependsOn: 'Almoçar', offset: 0 },
-            { title: 'Escovar os dentes', instanceId: 'after_lunch', duration: 5, dependsOn: 'Almoçar', offset: 20 },
-            // Tarde / Noite
-            { title: 'Lanche da Tarde', duration: 15, dependsOn: 'Fim da Escola', offset: 15 },
-            { title: 'Fazer a lição de casa', duration: 50, dependsOn: 'Lanche da Tarde', offset: 15 },
-            { title: 'Hora livre para brincar', duration: 60, dependsOn: 'Fazer a lição de casa', offset: 50 },
-            { title: 'Tomar banho', instanceId: 'before_sleep', duration: 15, dependsOn: 'Jantar', offset: -30 },
-            { title: 'Jantar', duration: 20, dependsOn: 'Jantar', offset: 0 },
-            { title: 'Escovar os dentes', instanceId: 'after_dinner', duration: 5, dependsOn: 'Jantar', offset: 20 },
-            { title: 'Hora de dormir', duration: 20, dependsOn: 'Hora de dormir', offset: 0 },
-        ];
-    }
+    const routineRules = [
+        { title: 'Hora de acordar', duration: 10, dependsOn: 'Hora de acordar', offset: 0 },
+        { title: 'Arrumar a cama', duration: 5, dependsOn: 'Hora de acordar', offset: 10 },
+        { title: 'Tomar café da manhã', duration: 20, dependsOn: 'Arrumar a cama', offset: 5 },
+        { title: 'Escovar os dentes', duration: 5, dependsOn: 'Tomar café da manhã', offset: 20 },
+        { title: 'Sair para escola', duration: 10, dependsOn: 'Escovar os dentes', offset: 5 },
+        { title: 'Almoçar', duration: 20, dependsOn: 'Almoçar', offset: 0 },
+        { title: 'Escovar os dentes', duration: 5, dependsOn: 'Almoçar', offset: 20 },
+        { title: 'Fazer a lição de casa', duration: 50, dependsOn: 'Almoçar', offset: 45 },
+        { title: 'Hora livre para brincar', duration: 60, dependsOn: 'Fazer a lição de casa', offset: 50 },
+        { title: 'Tomar banho', duration: 15, dependsOn: 'Jantar', offset: -30 },
+        { title: 'Jantar', duration: 20, dependsOn: 'Jantar', offset: 0 },
+        { title: 'Escovar os dentes', duration: 5, dependsOn: 'Jantar', offset: 20 },
+        { title: 'Hora de dormir', duration: 20, dependsOn: 'Hora de dormir', offset: 0 },
+    ];
     
   // 3. Processar e agendar tarefas essenciais
     const calculatedTimes: Record<string, { start: number, end: number }> = {};
