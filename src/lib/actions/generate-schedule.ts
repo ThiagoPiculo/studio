@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import type { OnboardingFormValues } from '@/components/dashboard/onboarding/OnboardingForm';
@@ -68,31 +67,29 @@ const addAndOccupy = (
 };
 
 const routineRules = [
-    // --- Bloco de acordar ---
-    { id: 'Hora de acordar', duration: 10, rule: (anchors: any, prevEnd: number) => anchors.wakeUp, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Arrumar a cama', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 10, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Tomar café da manhã', duration: 15, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 15, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    // --- Bloco de acordar (Sequencial) ---
+    { id: 'Hora de acordar', duration: 10, rule: (anchors: any, prevEnd: number) => anchors.wakeUp, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'morning' },
+    { id: 'Arrumar a cama', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'morning' },
+    { id: 'Tomar café da manhã', duration: 20, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'morning' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'morning' },
 
-    // --- Bloco de Estudo (se houver tempo antes do almoço) ---
-    { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
-    { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.wakeUp + 60 + 55, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
+    // --- Bloco de Estudo (Manhã) ---
+    { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], block: 'morning' },
+    
+    // --- Bloco Pré-Escola (Sequencial a partir do Almoço) ---
+    { id: 'Almoçar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'pre-school' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'pre-school' },
+    { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], block: 'pre-school' },
+    { id: 'Sair para escola', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], block: 'pre-school' },
 
-    // --- Bloco Pré-Escola ---
-    { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => anchors.schoolStart - 60, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
-    { id: 'Almoçar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.lunch + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Sair para escola', duration: 5, rule: (anchors: any) => anchors.schoolStart - 20, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+    // --- Âncora da Escola ---
+    { id: 'Início da Escola', duration: 270, rule: (anchors: any) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_entry', block: 'school' },
 
-    // --- Âncoras da Escola (não são tarefas, mas definem o bloco) ---
-    { id: 'Início da Escola', duration: 270, rule: (anchors: any, prevEnd: number) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_entry' },
-    { id: 'Saída da Escola', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.schoolShiftEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_exit' },
-
-    // --- Bloco da Noite ---
-    { id: 'Jantar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.dinner, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.dinner + 20, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Tomar banho', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.sleep - 20, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Hora de dormir', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    // --- Bloco da Noite (Sequencial a partir do Jantar) ---
+    { id: 'Jantar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.dinner, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'night' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'night' },
+    { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[], block: 'night' },
+    { id: 'Hora de dormir', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[], block: 'night' },
 ];
     
 export async function generateSchedule(input: OnboardingFormValues): Promise<{ schedule: ScheduleItem[] }> {
@@ -116,7 +113,6 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         sleep: parseTime(input.sleepTime),
     };
     
-    // Add school block to occupied slots but not to the final mission schedule yet
     if (input.schoolShift !== 'not_applicable') {
         const schoolDuration = anchors.schoolShiftEnd - anchors.schoolStart;
         if (schoolDuration > 0) {
@@ -125,73 +121,69 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                 anchors.schoolStart, 
                 schoolDuration, 
                 occupiedSlots, 
-                [], // Pass empty array to not add to final schedule yet
+                [], // Não adiciona à lista final de missões, apenas ocupa o tempo
                 ['MO', 'TU', 'WE', 'TH', 'FR'], 
                 'school_entry'
             );
         }
     }
     
-    let lastEndTimeByDay: Record<Weekday, number> = { MO: 0, TU: 0, WE: 0, TH: 0, FR: 0, SA: 0, SU: 0};
-    
-    const sortedRules = [...routineRules].sort((a, b) => {
-        const timeA = a.rule(anchors, 0);
-        const timeB = b.rule(anchors, 0);
-        return timeA - timeB;
-    });
+    // Processar tarefas sequencialmente por dia e por bloco
+    const allDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'];
+    for (const day of allDays) {
+        let lastEndTime = 0;
+        
+        const dayRules = routineRules.filter(r => r.days.includes(day) && input.essentialRoutines?.includes(r.id));
+        const blocks = ['morning', 'pre-school', 'night'];
 
-    for (const rule of sortedRules) {
-      if (rule.id === 'Saída da Escola') continue;
-      if (input.schoolShift === 'not_applicable' && rule.id === 'Sair para escola') continue;
-      if (input.schoolShift !== 'full_time' && input.mealsAtSchool?.lunch && rule.id === 'Almoçar') continue;
+        for (const block of blocks) {
+            const blockRules = dayRules.filter(r => r.block === block).sort((a, b) => a.rule(anchors, 0) - b.rule(anchors, 0));
+            let blockLastEndTime = 0;
+            let isFirstInBlock = true;
 
-      if (!input.essentialRoutines?.includes(rule.id) && rule.id !== 'Início da Escola' && rule.id !== 'Hora de dormir') continue;
-      
-      const relevantDays = rule.days;
-      
-      let baseStartTime = rule.rule(anchors, 0); // Get the ideal start time regardless of sequence
-
-      for (const day of relevantDays) {
-          let lastEndTime = lastEndTimeByDay[day] || baseStartTime;
-          let startTime = rule.isFlexible ? baseStartTime : lastEndTime;
-          let conflict = true;
-          let iterations = 0;
-          const MAX_ITERATIONS = 100;
-          let finalDuration = rule.duration;
-
-          while(conflict && iterations < MAX_ITERATIONS) {
-              conflict = false;
-              iterations++;
-              
-              let potentialEndTime = startTime + rule.duration;
-
-              const daySlots = occupiedSlots.filter(s => s.day === day).sort((a,b) => a.start - b.start);
-              for (const slot of daySlots) {
-                  if (Math.max(startTime, slot.start) < Math.min(potentialEndTime, slot.end)) {
-                      conflict = true;
-                      startTime = slot.end + 5; // Tenta agendar 5 min depois
-                      potentialEndTime = startTime + rule.duration;
-                      break; 
-                  }
-              }
-          }
-          
-          const minDuration = 5;
-          if (finalDuration >= minDuration && !conflict) {
-              const type = (rule as any).type || 'essential_routine';
-              addAndOccupy(rule.id, startTime, finalDuration, occupiedSlots, finalSchedule, [day], type);
-              lastEndTimeByDay[day] = startTime + finalDuration;
-          }
-      }
+            for (const rule of blockRules) {
+                let startTime = isFirstInBlock ? rule.rule(anchors, 0) : blockLastEndTime;
+                isFirstInBlock = false;
+                let duration = rule.duration;
+                
+                // Lógica de encaixe
+                let conflict = true;
+                let iterations = 0;
+                const MAX_ITERATIONS = 100;
+                
+                while (conflict && iterations < MAX_ITERATIONS) {
+                    conflict = false;
+                    iterations++;
+                    
+                    let potentialEndTime = startTime + duration;
+                    const daySlots = occupiedSlots.filter(s => s.day === day).sort((a,b) => a.start - b.start);
+                    
+                    for (const slot of daySlots) {
+                        if (Math.max(startTime, slot.start) < Math.min(potentialEndTime, slot.end)) {
+                            conflict = true;
+                            startTime = slot.end + 1; // Tenta agendar 1 min depois
+                            potentialEndTime = startTime + duration;
+                            break; 
+                        }
+                    }
+                }
+                
+                if (duration > 0 && !conflict) {
+                    const type = (rule as any).type || 'essential_routine';
+                    addAndOccupy(rule.id, startTime, duration, occupiedSlots, finalSchedule, [day], type);
+                    blockLastEndTime = startTime + duration;
+                }
+            }
+        }
     }
     
-    const uniqueSchedule = Array.from(new Map(finalSchedule.map(item => [item.activity + item.days.join(',') + item.startTime, item])).values());
-
+    const uniqueSchedule = Array.from(new Map(finalSchedule.map(item => [item.activity + item.days.join(','), item])).values());
+    
     // Manually add the school entry and exit to ensure they are present and correct
     if (input.schoolShift !== 'not_applicable') {
         uniqueSchedule.push({
             activity: 'Início da Escola', startTime: formatTime(anchors.schoolStart), endTime: formatTime(anchors.schoolStart),
-            days: ['MO', 'TU', 'WE', 'TH', 'FR'], type: 'school_entry', emoji: '🏫', category: 'school'
+            days: ['MO', 'TU', 'WE', 'TH', 'FR'], type: 'school_entry', emoji: '📒', category: 'school'
         });
         uniqueSchedule.push({
             activity: 'Saída da Escola', startTime: formatTime(anchors.schoolShiftEnd), endTime: formatTime(anchors.schoolShiftEnd),
