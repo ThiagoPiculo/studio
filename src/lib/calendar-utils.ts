@@ -53,12 +53,22 @@ export const getPeriodOfDay = (dateInput: Date | Timestamp | string | null | und
 };
 
 export const parseTime = (time: string): number => {
+  if (!time || !time.includes(':')) return 0;
   const [hours, minutes] = time.split(':').map(Number);
   if (isNaN(hours) || isNaN(minutes)) {
     return 0;
   }
   return hours * 60 + minutes;
 };
+
+// Helper para converter minutos para "HH:mm"
+export const formatTime = (minutes: number): string => {
+    if (isNaN(minutes)) return "00:00"; // Safeguard against NaN
+    const totalMinutes = Math.round(minutes);
+    const hours = Math.floor(totalMinutes / 60) % 24;
+    const mins = totalMinutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
 
 export function isMissionScheduledForDate(mission: MissionInstance, date: Date): boolean {
     const checkDate = startOfDay(date);
