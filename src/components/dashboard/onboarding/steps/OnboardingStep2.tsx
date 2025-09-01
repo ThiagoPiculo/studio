@@ -44,6 +44,7 @@ const shiftDetails = {
 export function OnboardingStep2() {
   const { control, watch, setValue } = useFormContext();
   const schoolShift = watch('schoolShift');
+  const schoolShiftStart = watch('schoolShiftStart');
 
   const handleShiftChange = useCallback((value: string) => {
     const shift = value as SchoolShift;
@@ -55,13 +56,13 @@ export function OnboardingStep2() {
     
     switch (shift) {
       case 'morning':
-        start = '07:30'; end = '12:00'; mealsAtSchool = { lunch: false, dinner: false };
+        start = '07:00'; end = '11:30'; mealsAtSchool = { lunch: false, dinner: false };
         break;
       case 'afternoon':
         start = '13:00'; end = '17:30'; mealsAtSchool = { lunch: false, dinner: false };
         break;
       case 'full_time':
-        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: false };
+        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: true };
         break;
       case 'not_applicable':
         mealsAtSchool = { lunch: false, dinner: false }; break;
@@ -72,10 +73,23 @@ export function OnboardingStep2() {
     
   }, [setValue]);
   
-  // Set default anchor times when component mounts with an initial shift value
   useEffect(() => {
-    handleShiftChange(schoolShift);
-  }, []);
+    if (schoolShift === 'morning' || schoolShift === 'afternoon') {
+      if (schoolShiftStart) {
+        try {
+          const [hours, minutes] = schoolShiftStart.split(':').map(Number);
+          const startDate = new Date();
+          startDate.setHours(hours, minutes, 0, 0);
+          const endDate = addMinutes(startDate, 4 * 60 + 30);
+          const endTimeString = format(endDate, 'HH:mm');
+          setValue('schoolShiftEnd', endTimeString);
+        } catch(e) {
+          console.error("Invalid time for shift calculation");
+        }
+      }
+    }
+  }, [schoolShift, schoolShiftStart, setValue]);
+
 
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -137,7 +151,7 @@ export function OnboardingStep2() {
                           <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-normal">Almoça na escola</Label></FormItem>
                       )}/>
                       <FormField control={control} name="mealsAtSchool.dinner" render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-normal">Janta na escola (se aplicável)</Label></FormItem>
+                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-normal">Janta na escola</Label></FormItem>
                       )}/>
                     </div>
                   </AlertDescription>
@@ -157,3 +171,5 @@ export function OnboardingStep2() {
     </div>
   );
 }
+
+    

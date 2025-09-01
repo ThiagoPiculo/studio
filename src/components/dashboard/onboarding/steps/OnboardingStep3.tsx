@@ -5,6 +5,9 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { TimePicker } from "../../missions/TimePicker";
 import * as z from "zod";
+import { useEffect } from "react";
+import { parseTime, formatTime } from "@/lib/calendar-utils";
+import type { SchoolShift } from "@/lib/types";
 
 export const onboardingSchemaStep3 = z.object({
   wakeUpTime: z.string({ required_error: "O horário de acordar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
@@ -14,14 +17,67 @@ export const onboardingSchemaStep3 = z.object({
 });
 
 const anchorTimeFields = [
-    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão: 5 horas antes da escola.' },
-    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão: 45 minutos antes da escola.' },
-    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão: 30 minutos após a escola.' },
-    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão: 4h30 após a escola.' },
+    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
 ] as const;
 
 export function OnboardingStep3() {
-  const { control } = useFormContext();
+  const { control, watch, setValue } = useFormContext();
+  const schoolShift: SchoolShift = watch('schoolShift');
+  const schoolShiftStart = watch('schoolShiftStart');
+  const schoolShiftEnd = watch('schoolShiftEnd');
+
+  useEffect(() => {
+    const calculateAnchorTimes = () => {
+        let wakeUp = parseTime('07:00');
+        let lunch = parseTime('12:00');
+        let dinner = parseTime('18:00');
+        let sleep = parseTime('21:00');
+
+        const schoolStartMinutes = parseTime(schoolShiftStart);
+        const schoolEndMinutes = parseTime(schoolShiftEnd);
+
+        switch(schoolShift) {
+            case 'morning':
+                wakeUp = schoolStartMinutes - 60;
+                lunch = schoolEndMinutes + 30;
+                dinner = schoolEndMinutes + 6 * 60;
+                sleep = schoolEndMinutes + 9 * 60;
+                break;
+            case 'afternoon':
+                wakeUp = schoolStartMinutes - 5 * 60;
+                lunch = schoolStartMinutes - 45;
+                dinner = schoolEndMinutes + 30;
+                sleep = schoolEndMinutes + 4.5 * 60;
+                break;
+            case 'full_time':
+                 wakeUp = schoolStartMinutes - 60;
+                 // Lunch and dinner are based on user checkbox, but we set a default here
+                 lunch = schoolEndMinutes + 30;
+                 dinner = schoolEndMinutes + 30; // Fallback, real logic is in the form
+                 sleep = 21 * 60; // Fixed suggestion
+                 break;
+            case 'not_applicable':
+                lunch = parseTime('12:00');
+                wakeUp = lunch - 4 * 60;
+                dinner = lunch + 6 * 60;
+                sleep = lunch + 10 * 60;
+                break;
+        }
+
+        setValue('wakeUpTime', formatTime(wakeUp));
+        setValue('lunchTime', formatTime(lunch));
+        setValue('dinnerTime', formatTime(dinner));
+        setValue('sleepTime', formatTime(sleep));
+    };
+    
+    if (schoolShift) {
+        calculateAnchorTimes();
+    }
+
+  }, [schoolShift, schoolShiftStart, schoolShiftEnd, setValue]);
   
   return (
     <div className="space-y-6 animate-in fade-in-50 duration-500">
@@ -53,3 +109,5 @@ export function OnboardingStep3() {
     </div>
   );
 }
+
+    

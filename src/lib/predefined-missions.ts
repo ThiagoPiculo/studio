@@ -28,6 +28,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Tomar café da manhã', emoji: '☕', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após acordar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Almoçar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Lanche da tarde', emoji: '🍎', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após almoço)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Tomar banho pela Manhã', emoji: '🚿', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Tomar banho a tarde', emoji: '🚿', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
@@ -239,12 +240,4 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
   },
 ];
 
-export const weekdayLabels: Record<Weekday, { long: string, short: string }> = {
-  SU: { long: 'Domingo', short: 'Dom' },
-  MO: { long: 'Segunda-feira', short: 'Seg' },
-  TU: { long: 'Terça-feira', short: 'Ter' },
-  WE: { long: 'Quarta-feira', short: 'Qua' },
-  TH: { long: 'Quinta-feira', short: 'Qui' },
-  FR: { long: 'Sexta-feira', short: 'Sex' },
-  SA: { long: 'Sábado', short: 'Sáb' },
-};
+    

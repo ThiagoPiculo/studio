@@ -28,95 +28,87 @@ const findMissionDetails = (title: string) => {
   return {
     emoji: predefined?.emoji || '✨',
     category: predefined?.suggestedAppCategory || ('essential_routines' as MissionCategory),
+    duration: 15, // Default duration if not specified, can be more specific later
   };
 };
 
+// --- NEW ROUTINE BLUEPRINTS ---
 type RoutineRule = {
-    id: string;
-    duration: number; // in minutes
-    anchor: 'wakeUp' | 'lunch' | 'dinner' | 'sleep' | 'schoolStart' | 'schoolEnd' | 'prevTask';
-    offset?: number; // in minutes, relative to anchor
+  id: string;
+  duration: number; // in minutes
+  anchor: 'wakeUp' | 'lunch' | 'dinner' | 'sleep' | 'schoolStart' | 'schoolEnd' | 'prevTask' | 'none'; // 'none' for fixed offset from another anchor
+  offset?: number; // in minutes, relative to anchor
 };
 
 const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
-    morning: [
-        // Bloco: Hora de Acordar
-        { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', offset: 0 },
-        { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
-        { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
-        { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: antes da escola
-        { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
-        // Bloco: após a escola
-        { id: 'Almoçar', duration: 20, anchor: 'lunch', offset: 0 },
-        { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
-        { id: 'Fazer a lição de casa', duration: 50, anchor: 'lunch', offset: 120 },
-        { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
-        { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 180 },
-        // Bloco: Jantar
-        { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', offset: 0 },
-        { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: Hora de Dormir
-        { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -55 },
-        { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -35 },
-        { id: 'Hora de dormir', duration: 30, anchor: 'sleep', offset: -30 },
-    ],
-    afternoon: [
-        // Bloco: Hora de Acordar
-        { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', offset: 0 },
-        { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
-        { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
-        { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
-        { id: 'Fazer a lição de casa', duration: 50, anchor: 'wakeUp', offset: 60 },
-        { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
-        // Bloco: Antes da escola
-        { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'lunch', offset: -55 },
-        { id: 'Almoçar', duration: 20, anchor: 'lunch', offset: -35 },
-        { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'lunch', offset: -15 },
-        { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
-        // Bloco: Jantar
-        { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', offset: 0 },
-        { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: Hora de Dormir
-        { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -55 },
-        { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -35 },
-        { id: 'Hora de dormir', duration: 30, anchor: 'sleep', offset: -30 },
-    ],
-    full_time: [
-        // Bloco: Hora de Acordar
-        { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', offset: 0 },
-        { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
-        { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
-        { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: antes da escola
-        { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
-        // Bloco: Jantar
-        { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', offset: 0 },
-        { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: Hora de Dormir
-        { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -55 },
-        { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -35 },
-        { id: 'Hora de dormir', duration: 30, anchor: 'sleep', offset: -30 },
-    ],
-    not_applicable: [
-         // Bloco: Hora de Acordar
-        { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', offset: 0 },
-        { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
-        { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
-        { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: Almoço
-        { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'lunch', offset: -55 },
-        { id: 'Almoçar', duration: 20, anchor: 'lunch', offset: -35 },
-        { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'lunch', offset: -15 },
-        { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 180 },
-        // Bloco: Jantar
-        { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', offset: 0 },
-        { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-        // Bloco: Hora de Dormir
-        { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -55 },
-        { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -35 },
-        { id: 'Hora de dormir', duration: 30, anchor: 'sleep', offset: -30 },
-    ],
+  morning: [
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' }, // Zero duration event
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' }, // Zero duration event
+    { id: 'Almoçar', duration: 20, anchor: 'lunch' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
+    { id: 'Fazer a lição de casa', duration: 50, anchor: 'none', offset: 120 }, // Relative to lunch
+    { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
+    { id: 'Lanche da tarde', duration: 15, anchor: 'none', offset: 180 }, // Relative to lunch
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+  ],
+  afternoon: [
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Fazer a lição de casa', duration: 50, anchor: 'wakeUp', offset: 60 },
+    { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' },
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+  ],
+  full_time: [
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch'},
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+  ],
+  not_applicable: [
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
+    { id: 'Lanche da tarde', duration: 15, anchor: 'none', offset: 180 }, // Relative to lunch
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+  ]
 };
 
 const findNextAvailableSlot = (startTime: number, duration: number, occupiedSlots: { start: number; end: number }[]): number => {
@@ -138,26 +130,17 @@ const findNextAvailableSlot = (startTime: number, duration: number, occupiedSlot
     }
 };
 
-
 export async function generateSchedule(input: OnboardingFormValues): Promise<{ schedule: ScheduleItem[] }> {
     const finalScheduleByDay: Record<Weekday, ScheduleItem[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
     const occupiedSlotsByDay: Record<Weekday, { start: number; end: number }[]> = { MO: [], TU: [], WE: [], TH: [], FR: [], SA: [], SU: [] };
 
     // 1. Prioritize and block fixed schedules
     const schoolDays: Weekday[] = ['MO', 'TU', 'WE', 'TH', 'FR'];
-    if (input.schoolShift !== 'not_applicable') {
+    if (input.schoolShift !== 'not_applicable' && input.schoolShiftStart && input.schoolShiftEnd) {
         const schoolStart = parseTime(input.schoolShiftStart);
         const schoolEnd = parseTime(input.schoolShiftEnd);
         schoolDays.forEach(day => {
             occupiedSlotsByDay[day].push({ start: schoolStart, end: schoolEnd });
-            finalScheduleByDay[day].push({
-                activity: 'Entrada na escola', startTime: formatTime(schoolStart), endTime: formatTime(schoolStart),
-                days: [day], type: 'school_entry', emoji: '📒', category: 'school'
-            });
-             finalScheduleByDay[day].push({
-                activity: 'Saída da escola', startTime: formatTime(schoolEnd), endTime: formatTime(schoolEnd),
-                days: [day], type: 'school_exit', emoji: '📒', category: 'school'
-            });
         });
     }
 
@@ -186,8 +169,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     // 2. Process each day of the week
     for (const day of allWeekdays) {
         const isWeekend = day === 'SA' || day === 'SU';
-        const shiftForThisDay = isWeekend ? 'not_applicable' : input.schoolShift;
-        const blueprint = routineBlueprints[shiftForThisDay];
+        const blueprint = isWeekend ? routineBlueprints.not_applicable : routineBlueprints[input.schoolShift];
         
         const anchors = {
             wakeUp: parseTime(input.wakeUpTime),
@@ -198,45 +180,51 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             sleep: parseTime(input.sleepTime),
         };
 
-        let lastEndTime = 0;
+        const ruleMap = new Map(blueprint.map(rule => [rule.id, rule]));
+        const processedRules = new Set<string>();
 
-        // 3. Process the blueprint for the current day
-        for (const rule of blueprint) {
-            if (!userRoutines.has(rule.id)) continue;
-
-            let baseTime: number;
+        const processRule = (ruleId: string) => {
+            if (processedRules.has(ruleId)) return 0;
+            const rule = ruleMap.get(ruleId);
+            if (!rule || !userRoutines.has(rule.id)) {
+                processedRules.add(ruleId);
+                return 0; // Return a default value for anchor calculation
+            }
             
+            let startTime: number;
             if (rule.anchor === 'prevTask') {
-                baseTime = lastEndTime;
+                // This logic is simplified; needs a proper predecessor logic
+                const predecessorId = blueprint[blueprint.indexOf(rule) - 1]?.id;
+                startTime = predecessorId ? processRule(predecessorId) : anchors.wakeUp;
+            } else if (rule.anchor !== 'none') {
+                startTime = anchors[rule.anchor] + (rule.offset || 0);
             } else {
-                baseTime = anchors[rule.anchor];
+                 if(rule.id === 'Lanche da tarde') startTime = anchors.lunch + (rule.offset || 0);
+                 else if (rule.id === 'Fazer a lição de casa') startTime = anchors.lunch + (rule.offset || 0);
+                 else startTime = 0; // Fallback
             }
 
-            let startTime = baseTime + (rule.offset || 0);
-            
-            // "Rio que desvia" logic
-            let resolvedStartTime = findNextAvailableSlot(startTime, rule.duration, occupiedSlotsByDay[day]);
-            
+            const resolvedStartTime = findNextAvailableSlot(startTime, rule.duration, occupiedSlotsByDay[day]);
             const endTime = resolvedStartTime + rule.duration;
-            
             const details = findMissionDetails(rule.id);
-            const type = (rule as any).type || 'essential_routine';
 
             finalScheduleByDay[day].push({
                 activity: rule.id,
                 startTime: formatTime(resolvedStartTime),
                 endTime: formatTime(endTime),
                 days: [day],
-                type: type,
+                type: 'essential_routine',
                 emoji: details.emoji,
                 category: details.category
             });
 
             occupiedSlotsByDay[day].push({ start: resolvedStartTime, end: endTime });
             occupiedSlotsByDay[day].sort((a, b) => a.start - b.start);
+            processedRules.add(ruleId);
+            return endTime;
+        };
 
-            lastEndTime = endTime;
-        }
+        blueprint.forEach(rule => processRule(rule.id));
     }
     
     // 4. Flatten and sort the final schedule
