@@ -58,7 +58,7 @@ const addAndOccupy = (
         endTime: formatTime(endTime),
         days: days,
         type: type,
-        emoji: type === 'school_entry' ? '🏫' : details.emoji, // Specific emoji for school
+        emoji: type === 'school_entry' ? '📒' : details.emoji, // Specific emoji for school
         category: details.category
     });
 
