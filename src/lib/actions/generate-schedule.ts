@@ -73,24 +73,25 @@ const routineRules = [
     { id: 'Arrumar a cama', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Tomar café da manhã', duration: 20, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Escovar os dentes (após acordar)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    
+
     // --- Bloco de Estudo (se houver tempo antes do almoço) ---
-    { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => prevEnd + 30, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
-    
+    { id: 'Fazer a lição de casa', duration: 55, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+    { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
+
     // --- Bloco Pré-Escola ---
     { id: 'Almoçar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.lunch, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Escovar os dentes (após almoço)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Sair para escola', duration: 20, rule: (anchors: any) => anchors.schoolStart - 20, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+    { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
+    { id: 'Sair para escola', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[] },
     
     // --- Âncoras da Escola (não são tarefas, mas definem o bloco) ---
-    { id: 'Início da Escola', duration: 0, rule: (anchors: any) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_entry' },
-    { id: 'Saída da Escola', duration: 0, rule: (anchors: any) => anchors.schoolShiftEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_exit' },
+    { id: 'Início da Escola', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.schoolStart, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_entry' },
+    { id: 'Saída da Escola', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.schoolShiftEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR'] as Weekday[], type: 'school_exit' },
 
     // --- Bloco da Noite ---
-    { id: 'Jantar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.dinner, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
+    { id: 'Jantar', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.dinner, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Escovar os dentes (após jantar)', duration: 5, rule: (anchors: any, prevEnd: number) => prevEnd, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Tomar banho', duration: 15, rule: (anchors: any, prevEnd: number) => prevEnd + 30, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
-    { id: 'Organizar a mochila para amanhã', duration: 5, rule: (anchors: any, prevEnd: number) => anchors.sleep - 20, days: ['SU', 'MO', 'TU', 'WE', 'TH'] as Weekday[] },
+    { id: 'Tomar banho', duration: 20, rule: (anchors: any, prevEnd: number) => anchors.sleep - 20, isFlexible: true, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
     { id: 'Hora de dormir', duration: 0, rule: (anchors: any, prevEnd: number) => anchors.sleep, days: ['MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU'] as Weekday[] },
 ];
     
@@ -140,11 +141,11 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     });
 
     for (const rule of sortedRules) {
-      if (rule.id === 'Início da Escola' || rule.id === 'Saída da Escola') continue;
+      if (rule.id === 'Saída da Escola') continue;
       if (input.schoolShift === 'not_applicable' && rule.id === 'Sair para escola') continue;
       if (input.schoolShift !== 'full_time' && input.mealsAtSchool?.lunch && rule.id === 'Almoçar') continue;
 
-      if (!input.essentialRoutines?.includes(rule.id)) continue;
+      if (!input.essentialRoutines?.includes(rule.id) && rule.id !== 'Início da Escola' && rule.id !== 'Hora de dormir') continue;
       
       const relevantDays = rule.days;
       
@@ -152,7 +153,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
       for (const day of relevantDays) {
           let lastEndTime = lastEndTimeByDay[day] || baseStartTime;
-          let startTime = rule.rule(anchors, lastEndTime);
+          let startTime = rule.isFlexible ? baseStartTime : lastEndTime;
           let conflict = true;
           let iterations = 0;
           const MAX_ITERATIONS = 100;
