@@ -35,6 +35,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Escovar os dentes (antes de dormir)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15, xpReward: 25 },
       { title: 'Organizar a mochila para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10, xpReward: 15 },
