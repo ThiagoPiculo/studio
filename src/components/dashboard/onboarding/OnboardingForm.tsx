@@ -309,7 +309,7 @@ export function OnboardingForm() {
   return (
     <FormProvider {...methods}>
       <Card className="w-full max-w-5xl mx-auto shadow-2xl animate-in fade-in duration-500">
-        <CardHeader className="p-6 space-y-4 pb-0">
+        <CardHeader className="p-6 pb-0 flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex items-center gap-3">
                 <Wand2 className="h-8 w-8 text-primary" />
                 <div className="flex flex-col">
@@ -317,8 +317,8 @@ export function OnboardingForm() {
                     <CardDescription>Cadastro guiado e divertido</CardDescription>
                 </div>
             </div>
-             {step > 1 && (
-                <div className="flex items-center justify-center gap-3 text-sm pt-2">
+            {step > 1 && (
+                <div className="flex items-center justify-center gap-3 text-sm md:pt-2 w-full md:w-auto">
                     <span className="text-muted-foreground font-semibold whitespace-nowrap">
                        Etapa {step - 1} de {DISPLAY_TOTAL_STEPS}
                     </span>
