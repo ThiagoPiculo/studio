@@ -27,7 +27,7 @@ type RoutineRule = {
   block: string; // The UI block name this task belongs to.
 };
 
-const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
+const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
   morning: [
     // Bloco: Rotina Hora de Acordar
     { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
@@ -56,28 +56,86 @@ const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
     { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
   ],
   afternoon: [
-    // This will be updated with the new logic in a future step.
-    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Bloco Manhã' },
-    { id: 'Fazer a lição de casa', duration: 50, anchor: 'prevTask', block: 'Bloco Manhã' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Bloco Almoço' },
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Bloco Tarde' },
-    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Bloco Jantar' },
-    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Bloco Noite' },
+    // Bloco: Rotina Hora de Acordar
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    // Bloco: Rotina Tarefas Escolares
+    { id: 'Fazer a lição de casa', duration: 55, anchor: 'wakeUp', offset: 60, block: 'Rotina Tarefas Escolares' },
+    { id: 'Organizar a mochila para escola', duration: 5, anchor: 'prevTask', block: 'Rotina Tarefas Escolares' },
+    // Bloco: Rotina Saindo para escola
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'schoolStart', offset: -60, block: 'Rotina Saindo para escola' },
+    { id: 'Almoçar', duration: 20, anchor: 'schoolStart', offset: -45, block: 'Rotina Saindo para escola' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Saindo para escola' },
+    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
+    // Bloco: Rotina Hora da escola
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da escola' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da escola' },
+    // Bloco: Rotina Hora do Jantar
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
+    // Bloco: Rotina Hora de Dormir
+    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
+    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
   ],
   full_time: [
-    // This will be updated with the new logic in a future step.
-    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Bloco Manhã' },
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Bloco Tarde' },
-    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Bloco Jantar' },
-    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Bloco Noite' },
+    // Bloco: Rotina Hora de Acordar
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    // Bloco: Rotina Saindo para escola
+    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
+    // Bloco: Rotina Hora da escola
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da escola' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da escola' },
+    // Bloco: Rotina Hora de Dormir
+    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
+    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
   ],
   not_applicable: [
-     // This will be updated with the new logic in a future step.
-    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Bloco Manhã' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Bloco Almoço' },
-    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Bloco Jantar' },
-    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Bloco Noite' },
+    // Bloco: Rotina Hora de Acordar
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    // Bloco: Rotina hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
+    // Bloco: Rotina Lanche da tarde
+    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
+    // Bloco: Rotina Hora do Jantar
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
+    // Bloco: Rotina Hora de Dormir
+    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
+    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
   ],
+  weekend: [
+    // Bloco: Rotina Hora de Acordar
+    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
+    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+    // Bloco: Rotina hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
+    // Bloco: Rotina Lanche da tarde
+    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
+    // Bloco: Rotina Hora do Jantar
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
+    // Bloco: Rotina Hora de Dormir
+    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
+    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
+    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
+  ]
 };
 
 
@@ -139,8 +197,8 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     // 2. Process each day of the week
     for (const day of allWeekdays) {
         const isWeekend = day === 'SA' || day === 'SU';
-        // Use 'not_applicable' blueprint for weekends
-        const blueprint = isWeekend ? routineBlueprints.not_applicable : routineBlueprints[input.schoolShift];
+        // Use 'weekend' blueprint for weekends, otherwise use the selected school shift blueprint
+        const blueprint = isWeekend ? routineBlueprints.weekend : routineBlueprints[input.schoolShift];
         
         const anchors = {
             wakeUp: parseTime(input.wakeUpTime),
