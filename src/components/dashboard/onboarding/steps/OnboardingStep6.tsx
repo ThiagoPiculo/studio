@@ -23,10 +23,10 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
   }, {} as Record<string, ScheduleItem[]>);
   
   const blockOrder = [
-    'Atividades Extras',
     'Rotina Hora de Acordar',
     'Rotina Tarefas Escolares',
     'Rotina Saindo para escola',
+    'Atividades Extras',
     'Rotina Hora da escola',
     'Rotina Cheguei da escola',
     'Rotina Lanche da tarde',
@@ -173,7 +173,7 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
                     </TabsTrigger>
                 ))}
             </TabsList>
-             <ScrollArea className="h-[350px] mt-4 pr-3">
+             <ScrollArea className="mt-4 pr-3">
                 {allWeekdays.map(day => (
                     <TabsContent key={day} value={day}>
                         <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
