@@ -1,3 +1,11 @@
+# Versão Estável Atual
+
+- **Commit:** `db6bbd1`
+- **Data:** 2024-07-30
+- **Descrição:** Versão estável após correções de capitalização, ordenação de blocos e melhorias de UX no assistente de criação de rotinas.
+
+---
+
 # Checklist de Testes Pós-Refatoração
 
 Este checklist foi criado para validar de forma holística o funcionamento do aplicativo após as importantes correções de segurança e refatoração para Server Components. Se todos os itens abaixo funcionarem como esperado, o aplicativo pode ser considerado 100% operacional.
