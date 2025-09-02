@@ -40,10 +40,10 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Hora da escola
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
-    // Bloco: Rotina hora do Almoço
-    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
+     // Bloco: Rotina Hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina Hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Almoço' },
     // Bloco: Rotina Tarefas Escolares
     { id: 'Fazer a lição de casa', duration: 55, anchor: 'lunch', offset: 90, block: 'Rotina Tarefas Escolares' },
     { id: 'Organizar a mochila para escola', duration: 5, anchor: 'prevTask', block: 'Rotina Tarefas Escolares' },
@@ -68,7 +68,7 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     { id: 'Organizar a mochila para escola', duration: 5, anchor: 'prevTask', block: 'Rotina Tarefas Escolares' },
     // Bloco: Rotina Saindo para escola
     { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'schoolStart', offset: -60, block: 'Rotina Saindo para escola' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Saindo para escola' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', offset: -45, block: 'Rotina Saindo para escola' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Saindo para escola' },
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
     // Bloco: Rotina Hora da escola
@@ -104,10 +104,10 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
     { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
     { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
-    // Bloco: Rotina hora do Almoço
-    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
+    // Bloco: Rotina Hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina Hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Almoço' },
     // Bloco: Rotina Lanche da tarde
     { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
     // Bloco: Rotina Hora do Jantar
@@ -124,10 +124,10 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
     { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
     { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
-    // Bloco: Rotina hora do Almoço
-    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
+    // Bloco: Rotina Hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina Hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Almoço' },
     // Bloco: Rotina Lanche da tarde
     { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
     // Bloco: Rotina Hora do Jantar

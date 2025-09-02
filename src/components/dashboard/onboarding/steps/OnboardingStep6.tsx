@@ -28,10 +28,9 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
     'Rotina Hora de Acordar',
     'Rotina Saindo para escola',
     'Rotina Hora da Escola',
-    'Rotina Cheguei da escola',
-    'Rotina Tarefas Escolares',
-    'Rotina hora do Almoço',
+    'Rotina Hora do Almoço',
     'Rotina Lanche da tarde',
+    'Rotina Tarefas Escolares',
     'Rotina Hora do Jantar',
     'Rotina Hora de Dormir',
     'Outras Atividades'
