@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -1109,56 +1110,61 @@ function AgendaPageContent() {
                 </h2>
             </div>
             
-            <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
-              <div className="flex items-center space-x-2">
-                <Switch id="show-emoji" checked={showEmoji} onCheckedChange={setShowEmoji}/>
-                <Label htmlFor="show-emoji" className="text-sm whitespace-nowrap">Modo Compacto</Label>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-x-2 md:gap-y-2 md:flex-wrap">
+              <div className="grid grid-cols-2 md:flex md:items-center gap-2">
+                <div className="flex-grow sm:flex-grow-0">
+                  <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
+                      <SelectTrigger className="w-full sm:w-[140px] h-9">
+                          <SelectValue placeholder="Selecione a visão" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="day">1 Dia</SelectItem>
+                          <SelectItem value="3days">3 Dias</SelectItem>
+                          <SelectItem value="workweek">Semana Útil</SelectItem>
+                          <SelectItem value="week">Semana</SelectItem>
+                          <SelectItem value="month">Mês</SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-grow sm:flex-grow-0">
+                  <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
+                      <SelectTrigger className="w-full sm:w-[130px] h-9">
+                          <SelectValue placeholder="Selecione o período" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          <SelectItem value="all">
+                              <span className="flex items-center gap-2">
+                                  <Sun className="h-4 w-4 text-yellow-500" />
+                                  <CloudSun className="h-4 w-4 text-orange-500" />
+                                  <Moon className="h-4 w-4 text-indigo-500" />
+                              </span>
+                          </SelectItem>
+                          <SelectItem value="morning">
+                              <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
+                          </SelectItem>
+                          <SelectItem value="afternoon">
+                              <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
+                          </SelectItem>
+                          <SelectItem value="night">
+                              <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
+                          </SelectItem>
+                      </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="flex-grow sm:flex-grow-0">
-                <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
-                    <SelectTrigger className="w-full sm:w-[140px] h-9">
-                        <SelectValue placeholder="Selecione a visão" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="day">1 Dia</SelectItem>
-                        <SelectItem value="3days">3 Dias</SelectItem>
-                        <SelectItem value="workweek">Semana Útil</SelectItem>
-                        <SelectItem value="week">Semana</SelectItem>
-                        <SelectItem value="month">Mês</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-              <div className="flex-grow sm:flex-grow-0">
-                <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
-                    <SelectTrigger className="w-full sm:w-[130px] h-9">
-                        <SelectValue placeholder="Selecione o período" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">
-                            <span className="flex items-center gap-2">
-                                <Sun className="h-4 w-4 text-yellow-500" />
-                                <CloudSun className="h-4 w-4 text-orange-500" />
-                                <Moon className="h-4 w-4 text-indigo-500" />
-                            </span>
-                        </SelectItem>
-                        <SelectItem value="morning">
-                            <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
-                        </SelectItem>
-                        <SelectItem value="afternoon">
-                            <span className="flex items-center gap-2"><CloudSun className="h-4 w-4 text-orange-500" />Tarde</span>
-                        </SelectItem>
-                        <SelectItem value="night">
-                            <span className="flex items-center gap-2"><Moon className="h-4 w-4 text-indigo-500" />Noite</span>
-                        </SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-               {canEdit && (
-                <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow sm:flex-grow-0">
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Criar Missão
-                </Button>
-              )}
+
+               <div className="flex items-center justify-between gap-2">
+                 <div className="flex items-center space-x-2">
+                   <Switch id="show-emoji" checked={!showEmoji} onCheckedChange={(checked) => setShowEmoji(!checked)}/>
+                   <Label htmlFor="show-emoji" className="text-sm whitespace-nowrap">Modo Compacto</Label>
+                 </div>
+                 {canEdit && (
+                  <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0 sm:flex-grow-0">
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Criar Missão
+                  </Button>
+                )}
+               </div>
             </div>
           </div>
         </Card>
@@ -1242,5 +1248,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
