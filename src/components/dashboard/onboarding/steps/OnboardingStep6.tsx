@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React from 'react';
@@ -26,6 +27,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
     'Atividades Extras',
     'Rotina Hora de Acordar',
     'Rotina Saindo para escola',
+    'Rotina Hora da Escola',
     'Rotina Cheguei da escola',
     'Rotina Tarefas Escolares',
     'Rotina hora do Almoço',
@@ -52,6 +54,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
     <Accordion type="multiple" defaultValue={[]} className="w-full space-y-2">
       {sortedBlockNames.map(blockName => {
         const isExtraActivityBlock = blockName === 'Atividades Extras';
+        const isSchoolBlock = blockName === 'Rotina Hora da Escola';
         return (
             <AccordionItem value={blockName} key={blockName} className="border rounded-lg px-4 data-[state=open]:bg-muted/30 transition-colors">
               <AccordionTrigger className="hover:no-underline">
@@ -68,7 +71,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
                   {blocks[blockName].map((item, index) => (
                     <div 
                         key={`${item.activity}-${index}`} 
-                        className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${isExtraActivityBlock ? 'bg-primary/10 border border-primary/20' : 'bg-background'}`}
+                        className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${isExtraActivityBlock ? 'bg-primary/10 border border-primary/20' : isSchoolBlock ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-background'}`}
                       >
                         <div className="text-xs text-muted-foreground font-mono bg-card px-2 py-1 rounded-md shrink-0 w-14 text-center">
                             {item.startTime}

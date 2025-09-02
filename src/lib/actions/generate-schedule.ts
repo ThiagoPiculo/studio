@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import type { OnboardingFormValues } from '@/components/dashboard/onboarding/OnboardingForm';
@@ -37,8 +38,8 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Saindo para escola
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
     // Bloco: Rotina Hora da escola
-    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da escola' },
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da escola' },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
     // Bloco: Rotina Cheguei da escola
     { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Cheguei da escola' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Cheguei da escola' },
@@ -70,8 +71,8 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Saindo para escola' },
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
     // Bloco: Rotina Hora da escola
-    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da escola' },
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da escola' },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
     // Bloco: Rotina Hora do Jantar
     { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
     { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
@@ -89,8 +90,8 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Saindo para escola
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
     // Bloco: Rotina Hora da escola
-    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da escola' },
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da escola' },
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
     // Bloco: Rotina Hora de Dormir
     { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
@@ -228,8 +229,19 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
             const details = findMissionDetails(rule.id);
             
-            // Avoid adding placeholder tasks like 'Entrada/Saída da escola' which have 0 duration and are just for anchoring
-            if (rule.duration > 0) {
+            // Include items with duration 0 like school entry/exit
+            if (rule.id === 'Entrada na escola' || rule.id === 'Saída da escola') {
+                 finalScheduleByDay[day].push({
+                    activity: rule.id,
+                    startTime: formatTime(resolvedStartTime),
+                    endTime: formatTime(endTime),
+                    days: [day],
+                    type: 'school_entry',
+                    emoji: details.emoji,
+                    category: details.category,
+                    block: rule.block,
+                });
+            } else if (rule.duration > 0) {
                 finalScheduleByDay[day].push({
                     activity: rule.id,
                     startTime: formatTime(resolvedStartTime),
