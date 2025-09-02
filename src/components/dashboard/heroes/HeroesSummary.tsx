@@ -344,38 +344,42 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                     
                                                     return (
                                                         <div key={mission.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", item.isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                            <div className="text-muted-foreground font-mono text-xs w-10 text-center">{item.time}</div>
-                                                            <span className="text-xl shrink-0 w-5 text-center">{item.emoji || '🎯'}</span>
-                                                            <span className={cn("truncate font-medium flex-grow", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</span>
-                                                             <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, today, !!item.isCompleted)} disabled={processingMissionId === mission.id}>
-                                                                {processingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : item.isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
-                                                            </Button>
-                                                            <DropdownMenu>
-                                                                <DropdownMenuTrigger asChild>
-                                                                    <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                        <MoreVertical className="h-4 w-4" />
-                                                                    </Button>
-                                                                </DropdownMenuTrigger>
-                                                                <DropdownMenuContent align="end">
-                                                                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                                                                        <div className="flex items-center justify-between gap-4">
-                                                                            <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{mission.starsReward}</span>
-                                                                            <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{mission.xpReward} XP</span>
-                                                                        </div>
-                                                                    </DropdownMenuLabel>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
-                                                                        Ver na Agenda
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${mission.templateId}`)}>
-                                                                        Editar Missão
-                                                                    </DropdownMenuItem>
-                                                                    <DropdownMenuSeparator />
-                                                                    <DropdownMenuItem onSelect={() => setMissionToDelete(mission)} className="text-destructive">
-                                                                        Remover Atribuição
-                                                                    </DropdownMenuItem>
-                                                                </DropdownMenuContent>
-                                                            </DropdownMenu>
+                                                            <div className="flex items-center gap-2 flex-grow min-w-0">
+                                                                <div className="text-muted-foreground font-mono text-xs w-10 text-center">{item.time}</div>
+                                                                <span className="text-xl shrink-0 w-5 text-center">{item.emoji || '🎯'}</span>
+                                                                <span className={cn("truncate font-medium", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</span>
+                                                            </div>
+                                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, today, !!item.isCompleted)} disabled={processingMissionId === mission.id}>
+                                                                    {processingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : item.isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
+                                                                </Button>
+                                                                <DropdownMenu>
+                                                                    <DropdownMenuTrigger asChild>
+                                                                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                            <MoreVertical className="h-4 w-4" />
+                                                                        </Button>
+                                                                    </DropdownMenuTrigger>
+                                                                    <DropdownMenuContent align="end">
+                                                                        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                                                                            <div className="flex items-center justify-between gap-4">
+                                                                                <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{mission.starsReward}</span>
+                                                                                <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{mission.xpReward} XP</span>
+                                                                            </div>
+                                                                        </DropdownMenuLabel>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                                            Ver na Agenda
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${mission.templateId}`)}>
+                                                                            Editar Missão
+                                                                        </DropdownMenuItem>
+                                                                        <DropdownMenuSeparator />
+                                                                        <DropdownMenuItem onSelect={() => setMissionToDelete(mission)} className="text-destructive">
+                                                                            Remover Atribuição
+                                                                        </DropdownMenuItem>
+                                                                    </DropdownMenuContent>
+                                                                </DropdownMenu>
+                                                            </div>
                                                         </div>
                                                     )
                                                 })}
@@ -461,3 +465,4 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
         </div>
     );
 }
+
