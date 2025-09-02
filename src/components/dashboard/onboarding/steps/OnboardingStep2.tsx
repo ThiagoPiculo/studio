@@ -140,24 +140,6 @@ export function OnboardingStep2() {
             <FormField control={control} name="schoolShiftEnd" render={({ field }) => (
               <FormItem><FormLabel>Horário de Saída</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
-            {schoolShift === 'full_time' && (
-              <div className="md:col-span-2">
-                <Alert variant="default" className="border-primary/20 bg-primary/5">
-                  <Info className="h-4 w-4 text-primary" />
-                  <AlertTitle className="font-semibold text-primary">Refeições na Escola</AlertTitle>
-                  <AlertDescription className="text-primary/90">
-                    <div className="space-y-2 mt-2">
-                      <FormField control={control} name="mealsAtSchool.lunch" render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-normal">Almoça na escola</Label></FormItem>
-                      )}/>
-                      <FormField control={control} name="mealsAtSchool.dinner" render={({ field }) => (
-                          <FormItem className="flex flex-row items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><Label className="font-normal">Janta na escola</Label></FormItem>
-                      )}/>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              </div>
-            )}
           </>
       </div>
 
@@ -171,5 +153,3 @@ export function OnboardingStep2() {
     </div>
   );
 }
-
-    
