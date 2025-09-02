@@ -571,10 +571,10 @@ function AgendaPageContent() {
                           
                           if (event.type === 'school') {
                               return (
-                                  <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex items-center p-1 -m-1">
-                                      <NotebookPen className="h-4 w-4 inline-block text-gray-500 shrink-0" />
-                                      <span className="font-semibold text-foreground/80 w-12 text-left ml-1.5 mr-0.5 text-xs">{formattedTime}</span>
-                                      <span className="flex-1 truncate font-semibold text-foreground/80">{event.title}</span>
+                                  <li key={event.data.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
+                                      <div className="text-indigo-700 font-mono text-xs w-10 text-center">{formattedTime}</div>
+                                      <NotebookPen className="h-4 w-4 text-indigo-600" />
+                                      <span className="font-semibold text-indigo-800">{event.title}</span>
                                   </li>
                               )
                           }
@@ -1234,4 +1234,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
