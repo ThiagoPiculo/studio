@@ -50,9 +50,9 @@ export function OnboardingStep1() {
       digits = digits.slice(0, 8);
     }
     if (digits.length > 4) {
-      return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+      return `${''}${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
     } else if (digits.length > 2) {
-      return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+      return `${''}${digits.slice(0, 2)}/${digits.slice(2)}`;
     }
     return digits;
   };
@@ -135,9 +135,7 @@ export function OnboardingStep1() {
                     </PopoverContent>
                 </Popover>
                 {calculatedAge !== null && (
-                <div className="text-sm text-muted-foreground whitespace-nowrap">
-                    ({calculatedAge} anos)
-                </div>
+                <div className="text-sm text-muted-foreground whitespace-nowrap">({calculatedAge} anos)</div>
                 )}
               </div>
               <FormMessage />
@@ -146,87 +144,89 @@ export function OnboardingStep1() {
         />
       </div>
 
-       <FormField
-        control={control}
-        name="gender"
-        render={({ field }) => (
-          <FormItem>
-            <FormLabel>Gênero</FormLabel>
-            <FormControl>
-              <RadioGroup
-                onValueChange={field.onChange}
-                value={field.value}
-                className="grid grid-cols-3 gap-4"
-              >
-                <FormItem>
-                  <Label 
-                    htmlFor="gender-boy" 
-                    className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
-                        field.value === 'boy' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
-                    )}
-                  >
-                      <RadioGroupItem value="boy" id="gender-boy" className="sr-only" />
-                      Menino
-                  </Label>
-                </FormItem>
-                <FormItem>
-                  <Label 
-                    htmlFor="gender-girl" 
-                    className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
-                        field.value === 'girl' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
-                    )}
-                  >
-                      <RadioGroupItem value="girl" id="gender-girl" className="sr-only" />
-                      Menina
-                  </Label>
-                </FormItem>
-                <FormItem>
-                  <Label 
-                    htmlFor="gender-other" 
-                    className={cn(
-                        "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
-                        field.value === 'not-informed' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
-                    )}
-                  >
-                      <RadioGroupItem value="not-informed" id="gender-other" className="sr-only" />
-                      Não informar
-                  </Label>
-                </FormItem>
-              </RadioGroup>
-            </FormControl>
-            <FormMessage />
-          </FormItem>
-        )}
-      />
-
-       {availableContexts.length > 1 && (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={control}
-          name="contextId"
+          name="gender"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Onde este herói será gerenciado?</FormLabel>
-              <Select onValueChange={field.onChange} value={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um espaço..." />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {availableContexts.map(context => (
-                    <SelectItem key={context.id} value={context.id}>
-                      {context.id === 'my-space' ? "Cuidar Solo (sem colaboração)" : `Na Aliança: ${context.name}`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <FormLabel>Gênero</FormLabel>
+              <FormControl>
+                <RadioGroup
+                  onValueChange={field.onChange}
+                  value={field.value}
+                  className="grid grid-cols-3 gap-4"
+                >
+                  <FormItem>
+                    <Label 
+                      htmlFor="gender-boy" 
+                      className={cn(
+                          "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
+                          field.value === 'boy' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                      )}
+                    >
+                        <RadioGroupItem value="boy" id="gender-boy" className="sr-only" />
+                        Menino
+                    </Label>
+                  </FormItem>
+                  <FormItem>
+                    <Label 
+                      htmlFor="gender-girl" 
+                      className={cn(
+                          "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
+                          field.value === 'girl' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                      )}
+                    >
+                        <RadioGroupItem value="girl" id="gender-girl" className="sr-only" />
+                        Menina
+                    </Label>
+                  </FormItem>
+                  <FormItem>
+                    <Label 
+                      htmlFor="gender-other" 
+                      className={cn(
+                          "flex items-center justify-center p-4 border-2 rounded-lg cursor-pointer transition-colors h-full",
+                          field.value === 'not-informed' ? "border-primary bg-primary/10" : "hover:bg-muted/50"
+                      )}
+                    >
+                        <RadioGroupItem value="not-informed" id="gender-other" className="sr-only" />
+                        Não informar
+                    </Label>
+                  </FormItem>
+                </RadioGroup>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-       )}
+
+        {availableContexts.length > 1 && (
+          <FormField
+            control={control}
+            name="contextId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Onde este herói será gerenciado?</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um espaço..." />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {availableContexts.map(context => (
+                      <SelectItem key={context.id} value={context.id}>
+                        {context.id === 'my-space' ? "Cuidar Solo (sem colaboração)" : `Na Aliança: ${context.name}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+      </div>
     </div>
   );
 }
