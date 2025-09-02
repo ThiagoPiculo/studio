@@ -122,7 +122,7 @@ function AgendaPageContent() {
   );
   
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
-  const [showEmoji, setShowEmoji] = useState(true);
+  const [isCompactMode, setIsCompactMode] = useState(true);
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -574,11 +574,21 @@ function AgendaPageContent() {
                           
                           if (event.type === 'school') {
                               return (
-                                <Card key={event.data.id} className="p-3 text-sm flex items-center gap-3 bg-indigo-500/10 border-l-4 border-indigo-500 shadow-sm">
-                                    <div className="text-indigo-700 font-mono text-sm w-12 text-center shrink-0">{formattedTime}</div>
-                                    <NotebookPen className="h-5 w-5 text-indigo-600 shrink-0" />
-                                    <span className="font-semibold text-indigo-800 flex-grow">{event.title}</span>
-                                </Card>
+                                <li key={event.data.id}>
+                                  {!showEmojiInCard ? (
+                                      <div className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10">
+                                          <div className="text-indigo-700 font-mono text-xs w-10 text-center">{formattedTime}</div>
+                                          <NotebookPen className="h-4 w-4 text-indigo-600" />
+                                          <span className="font-semibold text-indigo-800">{event.title}</span>
+                                      </div>
+                                  ) : (
+                                      <Card className="p-3 text-sm flex items-center gap-3 bg-indigo-500/10 border-l-4 border-indigo-500 shadow-sm">
+                                          <div className="text-indigo-700 font-mono text-sm w-12 text-center shrink-0">{formattedTime}</div>
+                                          <NotebookPen className="h-5 w-5 text-indigo-600 shrink-0" />
+                                          <span className="font-semibold text-indigo-800 flex-grow">{event.title}</span>
+                                      </Card>
+                                  )}
+                                </li>
                               )
                           }
                           
@@ -709,7 +719,7 @@ function AgendaPageContent() {
     };
   
     const finalGridClass = gridClasses[dateRangeFilter as keyof typeof gridClasses];
-    const showEmojiInGrid = showEmoji && (dateRangeFilter === 'day' || dateRangeFilter === '3days');
+    const showEmojiInGrid = !isCompactMode && (dateRangeFilter === 'day' || dateRangeFilter === '3days');
 
     // Different rendering logic for mobile vs desktop for 'week' view
     if (isMobile && (dateRangeFilter === 'week' || dateRangeFilter === 'workweek')) {
@@ -751,13 +761,13 @@ function AgendaPageContent() {
                                 ) : (
                                     <CardContent className="p-4 space-y-4">
                                         {dayEvents.morning.length > 0 && (
-                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, showEmoji)}</div>
+                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, !isCompactMode)}</div>
                                         )}
                                         {dayEvents.afternoon.length > 0 && (
-                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, showEmoji)}</div>
+                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, !isCompactMode)}</div>
                                         )}
                                         {dayEvents.night.length > 0 && (
-                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, showEmoji)}</div>
+                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, !isCompactMode)}</div>
                                         )}
                                     </CardContent>
                                 )}
@@ -884,13 +894,13 @@ function AgendaPageContent() {
                             <AccordionContent className="p-4 pt-0 border-t bg-card" style={{borderColor: `${child.color}30`}}>
                                 <div className="space-y-4 pt-2">
                                   {childEvents.morning.length > 0 && (
-                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, showEmoji)}</div>
+                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, !isCompactMode)}</div>
                                   )}
                                   {childEvents.afternoon.length > 0 && (
-                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day, showEmoji)}</div>
+                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day, !isCompactMode)}</div>
                                   )}
                                   {childEvents.night.length > 0 && (
-                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day, showEmoji)}</div>
+                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day, !isCompactMode)}</div>
                                   )}
                                 </div>
                             </AccordionContent>
@@ -1026,7 +1036,7 @@ function AgendaPageContent() {
                                             </div>
                                           </div>
                                           <h3 className="text-lg font-semibold flex items-center gap-2">
-                                            {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                            {!isCompactMode && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                             {event.data.title}
                                           </h3>
                                           <div className="flex flex-wrap items-center gap-2">
@@ -1155,7 +1165,7 @@ function AgendaPageContent() {
 
                <div className="flex items-center justify-between gap-2">
                  <div className="flex items-center space-x-2">
-                   <Switch id="show-emoji" checked={!showEmoji} onCheckedChange={(checked) => setShowEmoji(!checked)}/>
+                   <Switch id="show-emoji" checked={isCompactMode} onCheckedChange={setIsCompactMode}/>
                    <Label htmlFor="show-emoji" className="text-sm whitespace-nowrap">Modo Compacto</Label>
                  </div>
                  {canEdit && (
