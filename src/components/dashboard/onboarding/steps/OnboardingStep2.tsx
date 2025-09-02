@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -69,7 +68,6 @@ export function OnboardingStep2() {
     }
     setValue('schoolShiftStart', start);
     setValue('schoolShiftEnd', end);
-    setValue('mealsAtSchool', mealsAtSchool);
     
   }, [setValue]);
   
@@ -132,13 +130,13 @@ export function OnboardingStep2() {
         )}
       />
 
-      <div className={cn("grid grid-cols-1 md:grid-cols-2 gap-6 p-4 border rounded-lg animate-in fade-in duration-300", schoolShift === 'not_applicable' ? 'hidden' : 'grid')}>
+      <div className={cn("grid grid-cols-2 gap-6 p-4 border rounded-lg animate-in fade-in duration-300", schoolShift === 'not_applicable' ? 'hidden' : 'grid')}>
           <>
             <FormField control={control} name="schoolShiftStart" render={({ field }) => (
-              <FormItem><FormLabel>Horário de Entrada</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Entrada na Escola</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={control} name="schoolShiftEnd" render={({ field }) => (
-              <FormItem><FormLabel>Horário de Saída</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
+              <FormItem><FormLabel>Saída da Escola</FormLabel><FormControl><TimePicker {...field} /></FormControl><FormMessage /></FormItem>
             )} />
           </>
       </div>
