@@ -40,9 +40,10 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Hora da escola
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
-    // Bloco: Rotina Cheguei da escola
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Cheguei da escola' },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Cheguei da escola' },
+    // Bloco: Rotina hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina hora do Almoço' },
     // Bloco: Rotina Tarefas Escolares
     { id: 'Fazer a lição de casa', duration: 55, anchor: 'lunch', offset: 90, block: 'Rotina Tarefas Escolares' },
     { id: 'Organizar a mochila para escola', duration: 5, anchor: 'prevTask', block: 'Rotina Tarefas Escolares' },
@@ -179,7 +180,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             const end = parseTime(activity.endTime);
             const details = findMissionDetails(activity.name);
             activity.days.forEach(day => {
-                occupiedSlotsByDay[day as Weekday].push({ start, end });
+                occupiedSlotsByDay[day as Weekday].push({ start: start, end: end });
                 finalScheduleByDay[day as Weekday].push({
                     activity: activity.name, startTime: formatTime(start), endTime: formatTime(end),
                     days: [day as Weekday], type: 'extra_activity', emoji: details.emoji, category: details.category, block: 'Atividades Extras'
