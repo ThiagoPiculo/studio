@@ -7,14 +7,14 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
 import { weekdayLabels, allWeekdays, type Weekday } from "@/lib/types";
-import { Loader2, Wand2, BrainCircuit } from "lucide-react";
+import { Loader2, Wand2, BrainCircuit, Sparkles } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] }) => {
   const sortedItems = [...items].sort((a,b) => a.startTime.localeCompare(b.startTime));
   
   const blocks = sortedItems.reduce((acc, item) => {
-    const blockName = item.block || 'Outras Atividades';
+    const blockName = item.type === 'extra_activity' ? 'Atividades Extras' : (item.block || 'Outras Atividades');
     if (!acc[blockName]) {
       acc[blockName] = [];
     }
@@ -23,10 +23,10 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
   }, {} as Record<string, ScheduleItem[]>);
   
   const blockOrder = [
+    'Atividades Extras', // Always first
     'Rotina Hora de Acordar',
     'Rotina Saindo para escola',
     'Rotina Hora da escola',
-    'Atividades Extras',
     'Rotina Cheguei da escola',
     'Rotina Tarefas Escolares',
     'Rotina Lanche da tarde',
@@ -50,32 +50,42 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
 
   return (
     <Accordion type="multiple" defaultValue={sortedBlockNames} className="w-full space-y-2">
-      {sortedBlockNames.map(blockName => (
-        <AccordionItem value={blockName} key={blockName} className="border rounded-lg px-4">
-          <AccordionTrigger>{blockName}</AccordionTrigger>
-          <AccordionContent>
-            <div className="space-y-2">
-              {blocks[blockName].map((item, index) => (
-                <div 
-                    key={`${item.activity}-${index}`} 
-                    className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${item.type === 'extra_activity' ? 'bg-primary/10 border border-primary/20' : item.type === 'school_entry' ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-muted/50'}`}
-                  >
-                    <div className="text-xs text-muted-foreground font-mono bg-background px-2 py-1 rounded-md shrink-0 w-14 text-center">
-                        {item.startTime}
+      {sortedBlockNames.map(blockName => {
+        const isExtraActivityBlock = blockName === 'Atividades Extras';
+        return (
+            <AccordionItem value={blockName} key={blockName} className="border rounded-lg px-4 data-[state=open]:bg-muted/30 transition-colors">
+              <AccordionTrigger className="hover:no-underline">
+                 <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                       {isExtraActivityBlock && <Sparkles className="h-5 w-5 text-primary" />}
+                       <span className="font-semibold">{blockName}</span>
                     </div>
-                    <div className="flex-grow flex items-center gap-2">
-                        <span className="text-xl">{item.emoji}</span>
-                        <div className="flex flex-col">
-                            <span className="font-semibold">{item.activity}</span>
-                            {item.type === 'extra_activity' && <Badge variant="secondary" className="w-fit text-xs mt-1">Atividade Extra</Badge>}
+                    <Badge variant="secondary" className="mr-2">{blocks[blockName].length}</Badge>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2">
+                <div className="space-y-2">
+                  {blocks[blockName].map((item, index) => (
+                    <div 
+                        key={`${item.activity}-${index}`} 
+                        className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${isExtraActivityBlock ? 'bg-primary/10 border border-primary/20' : 'bg-background'}`}
+                      >
+                        <div className="text-xs text-muted-foreground font-mono bg-card px-2 py-1 rounded-md shrink-0 w-14 text-center">
+                            {item.startTime}
+                        </div>
+                        <div className="flex-grow flex items-center gap-2">
+                            <span className="text-xl">{item.emoji}</span>
+                            <div className="flex flex-col">
+                                <span className="font-semibold">{item.activity}</span>
+                            </div>
                         </div>
                     </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      ))}
+              </AccordionContent>
+            </AccordionItem>
+        )
+      })}
     </Accordion>
   )
 }
@@ -102,6 +112,17 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     }, {} as Record<Weekday, ScheduleItem[]>);
 
     return grouped;
+  }, [generatedSchedule]);
+
+  const scheduleCountsByDay = React.useMemo(() => {
+      const counts: Record<Weekday, number> = { MO: 0, TU: 0, WE: 0, TH: 0, FR: 0, SA: 0, SU: 0 };
+      if (!generatedSchedule?.schedule) return counts;
+      generatedSchedule.schedule.forEach(item => {
+          (item.days || []).forEach(day => {
+              counts[day] = (counts[day] || 0) + 1;
+          });
+      });
+      return counts;
   }, [generatedSchedule]);
 
 
@@ -142,9 +163,12 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
                     <TabsTrigger 
                         key={day} 
                         value={day} 
-                        className="flex-col gap-1 h-auto py-2 px-1 text-xs sm:text-sm data-[state=active]:shadow-lg"
+                        className="flex-col gap-1 h-auto py-2 px-1 text-xs sm:text-sm data-[state=active]:shadow-lg relative"
                     >
                        <span className="font-semibold">{weekdayLabels[day].short}</span>
+                       {scheduleCountsByDay[day] > 0 && (
+                          <Badge variant="secondary" className="absolute -top-1 -right-1 h-4 w-4 justify-center p-0">{scheduleCountsByDay[day]}</Badge>
+                       )}
                     </TabsTrigger>
                 ))}
             </TabsList>
@@ -159,3 +183,4 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     </div>
   );
 }
+
