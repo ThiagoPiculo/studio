@@ -33,7 +33,10 @@ export function OnboardingStep0() {
           </ul>
       </div>
 
-       <p className="text-sm italic pt-2 text-center text-muted-foreground font-semibold">Relaxe e curta o fluxo. Vou te ajudar em tudo! É rápido e prático.</p>
+       <div className="text-sm italic pt-2 text-center text-muted-foreground">
+        <p>Relaxe e curta o fluxo. Vou te ajudar em tudo!</p>
+        <p className="font-semibold mt-2">Será rápido e prático.</p>
+      </div>
     </div>
   );
 }
