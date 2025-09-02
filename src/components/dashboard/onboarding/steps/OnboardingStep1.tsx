@@ -81,7 +81,7 @@ export function OnboardingStep1() {
           control={control}
           name="birthDate"
           render={({ field }) => (
-            <FormItem className="flex flex-col">
+            <FormItem>
               <FormLabel>Data de nascimento</FormLabel>
               <div className="flex items-center gap-4">
                 <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
@@ -142,9 +142,6 @@ export function OnboardingStep1() {
             </FormItem>
           )}
         />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <FormField
           control={control}
           name="gender"
@@ -199,7 +196,6 @@ export function OnboardingStep1() {
             </FormItem>
           )}
         />
-
         {availableContexts.length > 1 && (
           <FormField
             control={control}
