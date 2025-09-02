@@ -66,7 +66,7 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     { id: 'Organizar a mochila para escola', duration: 5, anchor: 'prevTask', block: 'Rotina Tarefas Escolares' },
     // Bloco: Rotina Saindo para escola
     { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'schoolStart', offset: -60, block: 'Rotina Saindo para escola' },
-    { id: 'Almoçar', duration: 20, anchor: 'schoolStart', offset: -45, block: 'Rotina Saindo para escola' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Saindo para escola' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Saindo para escola' },
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
     // Bloco: Rotina Hora da escola
