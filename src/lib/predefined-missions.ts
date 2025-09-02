@@ -34,7 +34,9 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Tomar banho a tarde', emoji: '🚿', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Tomar banho a Noite', emoji: '🚿', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Sair para escola', emoji: '🎒', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
-      { title: 'Jantar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
+      { title: 'Entrada na escola', emoji: '📒', suggestedAppCategory: 'essential_routines', starsReward: 0, xpReward: 0 },
+      { title: 'Saída da escola', emoji: '📒', suggestedAppCategory: 'essential_routines', starsReward: 0, xpReward: 0 },
+      { title: 'Hora do Jantar', emoji: '🍽️', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (após jantar)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Escovar os dentes (antes de dormir)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
       { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'essential_routines', starsReward: 5, xpReward: 10 },
@@ -239,5 +241,3 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     ],
   },
 ];
-
-    

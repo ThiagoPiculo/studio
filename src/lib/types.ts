@@ -330,6 +330,17 @@ export interface SchoolScheduleEntry {
   updatedAt: Timestamp;
 }
 
+export interface ScheduleItem {
+    activity: string;
+    startTime: string;
+    endTime: string;
+    days: Weekday[];
+    type: 'essential_routine' | 'extra_activity' | 'school_entry' | 'school_exit';
+    emoji: string;
+    category: MissionCategory;
+    block?: string; // The UI block name this task belongs to.
+}
+
 // Context types
 export type Theme = {
   id: string;
