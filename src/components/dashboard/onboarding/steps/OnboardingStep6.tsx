@@ -29,8 +29,8 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
     'Rotina Saindo para escola',
     'Rotina Hora da Escola',
     'Rotina Hora do Almoço',
-    'Rotina Lanche da tarde',
     'Rotina Tarefas Escolares',
+    'Rotina Lanche da tarde',
     'Rotina Hora do Jantar',
     'Rotina Hora de Dormir',
     'Outras Atividades'
@@ -185,3 +185,4 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     </div>
   );
 }
+
