@@ -23,13 +23,14 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
   }, {} as Record<string, ScheduleItem[]>);
   
   const blockOrder = [
-    'Atividades Extras', // Always first
+    'Atividades Extras',
     'Rotina Hora de Acordar',
+    'Rotina Tarefas Escolares',
     'Rotina Saindo para escola',
     'Rotina Hora da escola',
     'Rotina Cheguei da escola',
-    'Rotina Tarefas Escolares',
     'Rotina Lanche da tarde',
+    'Rotina hora do Almoço',
     'Rotina Hora do Jantar',
     'Rotina Hora de Dormir',
     'Outras Atividades'
@@ -183,4 +184,3 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     </div>
   );
 }
-
