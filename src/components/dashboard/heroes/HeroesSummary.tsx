@@ -160,6 +160,10 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
         }
     }
     
+    const containerClasses = filteredChildren.length === 1
+        ? "max-w-2xl mx-auto"
+        : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6";
+
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -174,7 +178,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     </Link>
                 </Button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className={containerClasses}>
                 {filteredChildren.map(child => {
                     const today = startOfDay(new Date());
 
@@ -465,4 +469,3 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
         </div>
     );
 }
-
