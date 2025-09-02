@@ -27,9 +27,9 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
     'Rotina Hora de Acordar',
     'Rotina Saindo para escola',
     'Rotina Cheguei da escola',
+    'Rotina Tarefas Escolares',
     'Rotina hora do Almoço',
     'Rotina Lanche da tarde',
-    'Rotina Tarefas Escolares',
     'Rotina Hora do Jantar',
     'Rotina Hora de Dormir',
     'Outras Atividades'
@@ -49,7 +49,7 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
   }
 
   return (
-    <Accordion type="multiple" defaultValue={sortedBlockNames} className="w-full space-y-2">
+    <Accordion type="multiple" defaultValue={[]} className="w-full space-y-2">
       {sortedBlockNames.map(blockName => {
         const isExtraActivityBlock = blockName === 'Atividades Extras';
         return (
