@@ -23,16 +23,15 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
   }, {} as Record<string, ScheduleItem[]>);
   
   const blockOrder = [
+    'Atividades Extras',
     'Rotina Hora de Acordar',
     'Rotina Saindo para escola',
-    'Rotina Hora da escola',
     'Rotina Cheguei da escola',
     'Rotina hora do Almoço',
-    'Rotina Tarefas Escolares',
     'Rotina Lanche da tarde',
+    'Rotina Tarefas Escolares',
     'Rotina Hora do Jantar',
     'Rotina Hora de Dormir',
-    'Atividades Extras',
     'Outras Atividades'
   ];
 
@@ -173,7 +172,7 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
                     </TabsTrigger>
                 ))}
             </TabsList>
-             <div className="mt-4 pr-1">
+             <div className="mt-4">
                 {allWeekdays.map(day => (
                     <TabsContent key={day} value={day}>
                         <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
