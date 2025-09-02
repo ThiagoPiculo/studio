@@ -8,6 +8,8 @@ import * as z from "zod";
 import { useEffect } from "react";
 import { parseTime, formatTime } from "@/lib/calendar-utils";
 import type { SchoolShift } from "@/lib/types";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Info } from "lucide-react";
 
 export const onboardingSchemaStep3 = z.object({
   wakeUpTime: z.string({ required_error: "O horário de acordar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
@@ -106,6 +108,13 @@ export function OnboardingStep3() {
           />
         ))}
       </div>
+       <Alert variant="default" className="border-primary/20 bg-primary/5 mt-6">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertTitle className="font-semibold text-primary">Dica do Assistente</AlertTitle>
+          <AlertDescription className="text-primary/90">
+            A rotina será criada com base nestes horários. Fique tranquilo(a), você poderá ajustar e personalizar tudo depois na tela 'Rotina de Missões'!
+          </AlertDescription>
+        </Alert>
     </div>
   );
 }
