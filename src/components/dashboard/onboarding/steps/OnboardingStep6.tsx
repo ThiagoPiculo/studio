@@ -185,4 +185,3 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     </div>
   );
 }
-

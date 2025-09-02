@@ -215,7 +215,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         let lastTaskEndTime = 0;
 
         for (const rule of blueprint) {
-            if (!userRoutines.has(rule.id)) continue;
+            if (!userRoutines.has(rule.id) && rule.id !== 'Entrada na escola' && rule.id !== 'Saída da escola') continue;
             
             let startTime: number;
             if (rule.anchor === 'prevTask') {
@@ -232,16 +232,18 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             
             // Include items with duration 0 like school entry/exit
             if (rule.id === 'Entrada na escola' || rule.id === 'Saída da escola') {
-                 finalScheduleByDay[day].push({
-                    activity: rule.id,
-                    startTime: formatTime(resolvedStartTime),
-                    endTime: formatTime(endTime),
-                    days: [day],
-                    type: 'school_entry',
-                    emoji: details.emoji,
-                    category: details.category,
-                    block: rule.block,
-                });
+                 if (input.schoolShift !== 'not_applicable') {
+                    finalScheduleByDay[day].push({
+                        activity: rule.id,
+                        startTime: formatTime(resolvedStartTime),
+                        endTime: formatTime(endTime),
+                        days: [day],
+                        type: 'school_entry',
+                        emoji: details.emoji,
+                        category: details.category,
+                        block: rule.block,
+                    });
+                }
             } else if (rule.duration > 0) {
                 finalScheduleByDay[day].push({
                     activity: rule.id,
