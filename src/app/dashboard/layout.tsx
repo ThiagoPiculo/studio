@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help'].includes(pathname) &&
+  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help'].includes(pathname) &&
                                !pathname.startsWith('/dashboard/missions/edit') &&
                                !pathname.startsWith('/dashboard/rewards/edit-template') &&
                                !pathname.startsWith('/dashboard/missions/new');
@@ -188,7 +188,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               
-              {isClient && showContextSwitcher && (
+              {showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2">
                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-4">
                          <FamilyContextSwitcher />
