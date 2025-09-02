@@ -6,11 +6,11 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const steps = [
-    "Criar o Perfil do seu Mini Herói.",
-    "Indicar o turno da escola para a Rotina Escolar.",
-    "Adicionar as Atividades Extras (Aulas de Idioma, Esporte, Artes).",
-    "Selecionar as Tarefas Essenciais do dia a dia que selecionarei.",
-    "Revisar e aprovar a Rotina de Missões criada por mim!"
+    "Criar o Perfil.",
+    "Turno escolar.",
+    "Atividades Extras.",
+    "Missões Essenciais.",
+    "Aprovar a Rotina de Missões criada."
 ];
 
 export function OnboardingStep0() {
