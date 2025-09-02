@@ -193,7 +193,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-start gap-4">
                          <FamilyContextSwitcher />
                         {showHeroSelector && (
-                            <div className="w-full sm:w-auto">
+                            <div className="sm:w-auto">
                                 <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
                             </div>
                         )}
