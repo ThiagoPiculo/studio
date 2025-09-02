@@ -148,7 +148,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <SidebarInset>
           <Sheet>
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
-              <header className="sticky top-0 z-40 flex h-14 items-center justify-between border-b bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
+              <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
                 <div className="flex items-center gap-2 sm:gap-4">
                   {isClient && isMobile && !currentHeader && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
@@ -189,7 +189,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               </header>
               
               {isClient && showContextSwitcher && (
-                 <div className="px-4 sm:px-6 py-2">
+                 <div className="px-4 sm:px-6 py-2 border-b">
                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                          <FamilyContextSwitcher />
                         {showHeroSelector && (
