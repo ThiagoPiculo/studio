@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -35,7 +35,8 @@ import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRe
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from '@/components/ui/badge';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
+import { Switch } from '@/components/ui/switch';
 
 
 export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
@@ -120,6 +121,7 @@ function AgendaPageContent() {
   );
   
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
+  const [showEmoji, setShowEmoji] = useState(true);
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -528,7 +530,7 @@ function AgendaPageContent() {
     return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
   });
 
-  const renderEventListForPeriod = (events: CalendarEvent[], day: Date, showEmoji: boolean) => {
+  const renderEventListForPeriod = (events: CalendarEvent[], day: Date, showEmojiInCard: boolean) => {
       const eventsByChild = events.reduce((acc, event) => {
           const childId = event.data.childId;
           if (!acc[childId]) acc[childId] = [];
@@ -571,11 +573,11 @@ function AgendaPageContent() {
                           
                           if (event.type === 'school') {
                               return (
-                                  <li key={event.data.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
-                                      <div className="text-indigo-700 font-mono text-xs w-10 text-center">{formattedTime}</div>
-                                      <NotebookPen className="h-4 w-4 text-indigo-600" />
-                                      <span className="font-semibold text-indigo-800">{event.title}</span>
-                                  </li>
+                                <Card key={event.data.id} className="p-3 text-sm flex items-center gap-3 bg-indigo-500/10 border-l-4 border-indigo-500 shadow-sm">
+                                    <div className="text-indigo-700 font-mono text-sm w-12 text-center shrink-0">{formattedTime}</div>
+                                    <NotebookPen className="h-5 w-5 text-indigo-600 shrink-0" />
+                                    <span className="font-semibold text-indigo-800 flex-grow">{event.title}</span>
+                                </Card>
                               )
                           }
                           
@@ -607,7 +609,7 @@ function AgendaPageContent() {
                                         <Square className="h-4 w-4 inline-block text-primary shrink-0" />
                                       )}
                                       <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
-                                      {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                      {showEmojiInCard && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                       <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                                     </button>
                                 </PopoverTrigger>
@@ -706,7 +708,7 @@ function AgendaPageContent() {
     };
   
     const finalGridClass = gridClasses[dateRangeFilter as keyof typeof gridClasses];
-    const showEmojiInGrid = dateRangeFilter === 'day' || dateRangeFilter === '3days';
+    const showEmojiInGrid = showEmoji && (dateRangeFilter === 'day' || dateRangeFilter === '3days');
 
     // Different rendering logic for mobile vs desktop for 'week' view
     if (isMobile && (dateRangeFilter === 'week' || dateRangeFilter === 'workweek')) {
@@ -748,13 +750,13 @@ function AgendaPageContent() {
                                 ) : (
                                     <CardContent className="p-4 space-y-4">
                                         {dayEvents.morning.length > 0 && (
-                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, true)}</div>
+                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, showEmoji)}</div>
                                         )}
                                         {dayEvents.afternoon.length > 0 && (
-                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, true)}</div>
+                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, showEmoji)}</div>
                                         )}
                                         {dayEvents.night.length > 0 && (
-                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, true)}</div>
+                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, showEmoji)}</div>
                                         )}
                                     </CardContent>
                                 )}
@@ -881,13 +883,13 @@ function AgendaPageContent() {
                             <AccordionContent className="p-4 pt-0 border-t bg-card" style={{borderColor: `${child.color}30`}}>
                                 <div className="space-y-4 pt-2">
                                   {childEvents.morning.length > 0 && (
-                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, true)}</div>
+                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, showEmoji)}</div>
                                   )}
                                   {childEvents.afternoon.length > 0 && (
-                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day, true)}</div>
+                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day, showEmoji)}</div>
                                   )}
                                   {childEvents.night.length > 0 && (
-                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day, true)}</div>
+                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day, showEmoji)}</div>
                                   )}
                                 </div>
                             </AccordionContent>
@@ -1023,7 +1025,7 @@ function AgendaPageContent() {
                                             </div>
                                           </div>
                                           <h3 className="text-lg font-semibold flex items-center gap-2">
-                                            {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                            {showEmoji && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                             {event.data.title}
                                           </h3>
                                           <div className="flex flex-wrap items-center gap-2">
@@ -1092,7 +1094,7 @@ function AgendaPageContent() {
       <div className="space-y-6">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
-            <div className="flex items-center gap-4 flex-grow">
+            <div className="flex items-center gap-2 flex-grow">
               <Button variant="outline" onClick={handleToday} className="h-9 px-3 shrink-0">Hoje</Button>
               <div className="flex items-center shrink-0">
                 <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
@@ -1108,6 +1110,10 @@ function AgendaPageContent() {
             </div>
             
             <div className="flex items-center justify-end gap-x-2 gap-y-2 flex-wrap">
+              <div className="flex items-center space-x-2">
+                <Switch id="show-emoji" checked={showEmoji} onCheckedChange={setShowEmoji}/>
+                <Label htmlFor="show-emoji" className="text-sm whitespace-nowrap">Modo Compacto</Label>
+              </div>
               <div className="flex-grow sm:flex-grow-0">
                 <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
                     <SelectTrigger className="w-full sm:w-[140px] h-9">
@@ -1236,3 +1242,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
