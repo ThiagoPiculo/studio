@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -9,7 +8,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { format, parse, isValid } from "date-fns";
+import { format, parse, isValid, differenceInYears } from "date-fns";
 import { ptBR } from 'date-fns/locale';
 import { CalendarIcon } from "lucide-react";
 import * as z from "zod";
@@ -37,6 +36,13 @@ export function OnboardingStep1() {
   const [dateInput, setDateInput] = useState<string>(
     birthDateValue ? format(birthDateValue, "dd/MM/yyyy") : ""
   );
+
+  const calculateAge = (birthDate: Date | null): number | null => {
+    if (!birthDate) return null;
+    return differenceInYears(new Date(), birthDate);
+  };
+  const calculatedAge = calculateAge(birthDateValue);
+
 
   const handleDateMask = (value: string) => {
     let digits = value.replace(/\D/g, '');
@@ -77,56 +83,63 @@ export function OnboardingStep1() {
           render={({ field }) => (
             <FormItem className="flex flex-col">
               <FormLabel>Data de nascimento</FormLabel>
-              <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <FormControl>
-                    <Button
-                      variant={"outline"}
-                      className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
-                    >
-                      {birthDateValue ? format(birthDateValue, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
-                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                    </Button>
-                  </FormControl>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                   <div className="p-2 border-b">
-                     <Input
-                        placeholder="Digite: dd/mm/aaaa"
-                        value={dateInput}
-                        onChange={(e) => {
-                            const maskedValue = handleDateMask(e.target.value);
-                            setDateInput(maskedValue);
-                            if (maskedValue.length === 10) {
-                                const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
-                                if (isValid(parsedDate)) {
-                                    setValue("birthDate", format(parsedDate, 'yyyy-MM-dd'));
-                                    setMonth(parsedDate);
-                                    setIsCalendarOpen(false); // Close on valid manual entry
+              <div className="flex items-center gap-4">
+                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                    <FormControl>
+                        <Button
+                        variant={"outline"}
+                        className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                        >
+                        {birthDateValue ? format(birthDateValue, "PPP", { locale: ptBR }) : <span>Escolha uma data</span>}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                    </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                    <div className="p-2 border-b">
+                        <Input
+                            placeholder="Digite: dd/mm/aaaa"
+                            value={dateInput}
+                            onChange={(e) => {
+                                const maskedValue = handleDateMask(e.target.value);
+                                setDateInput(maskedValue);
+                                if (maskedValue.length === 10) {
+                                    const parsedDate = parse(maskedValue, 'dd/MM/yyyy', new Date());
+                                    if (isValid(parsedDate)) {
+                                        setValue("birthDate", format(parsedDate, 'yyyy-MM-dd'));
+                                        setMonth(parsedDate);
+                                        setIsCalendarOpen(false); // Close on valid manual entry
+                                    }
                                 }
+                            }}
+                        />
+                    </div>
+                    <Calendar
+                        locale={ptBR}
+                        mode="single"
+                        month={month}
+                        onMonthChange={setMonth}
+                        selected={birthDateValue || undefined}
+                        onSelect={(date) => {
+                            if(date) {
+                                setValue("birthDate", format(date, 'yyyy-MM-dd'));
+                                setDateInput(format(date, 'dd/MM/yyyy'));
                             }
+                            setIsCalendarOpen(false);
                         }}
-                     />
-                   </div>
-                  <Calendar
-                    locale={ptBR}
-                    mode="single"
-                    month={month}
-                    onMonthChange={setMonth}
-                    selected={birthDateValue || undefined}
-                    onSelect={(date) => {
-                        if(date) {
-                            setValue("birthDate", format(date, 'yyyy-MM-dd'));
-                            setDateInput(format(date, 'dd/MM/yyyy'));
-                        }
-                        setIsCalendarOpen(false);
-                    }}
-                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                    initialFocus
-                    weekStartsOn={1}
-                  />
-                </PopoverContent>
-              </Popover>
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                        weekStartsOn={1}
+                    />
+                    </PopoverContent>
+                </Popover>
+                {calculatedAge !== null && (
+                <div className="text-sm text-muted-foreground whitespace-nowrap">
+                    ({calculatedAge} anos)
+                </div>
+                )}
+              </div>
               <FormMessage />
             </FormItem>
           )}
