@@ -1092,15 +1092,17 @@ function AgendaPageContent() {
       <div className="space-y-6">
         <Card>
           <div className="p-4 flex flex-col md:flex-row md:items-center md:flex-wrap gap-4">
-            <div className="flex items-center gap-2 flex-grow">
-              <Button variant="outline" onClick={handleToday} className="h-9 px-3">Hoje</Button>
-              <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
-                  <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
-                  <ChevronRight className="h-4 w-4" />
-              </Button>
-               <h2 className="text-sm sm:text-base font-medium text-center flex-grow">
+            <div className="flex items-center gap-4 flex-grow">
+              <Button variant="outline" onClick={handleToday} className="h-9 px-3 shrink-0">Hoje</Button>
+              <div className="flex items-center shrink-0">
+                <Button variant="outline" size="icon" onClick={handlePrev} aria-label="Período anterior" className="h-9 w-9">
+                    <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={handleNext} aria-label="Próximo período" className="h-9 w-9">
+                    <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+               <h2 className="text-sm sm:text-base font-medium text-left">
                     {formatHeaderDate(currentDate, dateRangeFilter, viewInterval)}
                 </h2>
             </div>
