@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -51,20 +52,19 @@ export function OnboardingStep2() {
     
     let start = '';
     let end = '';
-    let mealsAtSchool = { lunch: false, dinner: false };
     
     switch (shift) {
       case 'morning':
-        start = '07:00'; end = '11:30'; mealsAtSchool = { lunch: false, dinner: false };
+        start = '07:00'; end = '11:30';
         break;
       case 'afternoon':
-        start = '13:00'; end = '17:30'; mealsAtSchool = { lunch: false, dinner: false };
+        start = '13:00'; end = '17:30';
         break;
       case 'full_time':
-        start = '08:00'; end = '18:00'; mealsAtSchool = { lunch: true, dinner: true };
+        start = '08:00'; end = '18:00';
         break;
       case 'not_applicable':
-        mealsAtSchool = { lunch: false, dinner: false }; break;
+        break;
     }
     setValue('schoolShiftStart', start);
     setValue('schoolShiftEnd', end);
@@ -141,11 +141,11 @@ export function OnboardingStep2() {
           </>
       </div>
 
-       <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Ponto de Atenção</AlertTitle>
-          <AlertDescription>
-            Os horários informados aqui são a base para o Assistente criar a rotina. Alterações futuras no turno não atualizarão automaticamente as missões já criadas. Você pode ajustar manualmente na tela de "Rotina de Missões".
+       <Alert variant="default" className="border-primary/20 bg-primary/5">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertTitle className="font-semibold text-primary">Dica do Assistente</AlertTitle>
+          <AlertDescription className="text-primary/90">
+            A rotina será criada com base nestes horários. Fique tranquilo(a), você poderá ajustar e personalizar tudo depois na tela 'Rotina de Missões'!
           </AlertDescription>
         </Alert>
     </div>
