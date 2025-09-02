@@ -5,39 +5,23 @@ import type { OnboardingFormValues } from '@/components/dashboard/onboarding/Onb
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { ScheduleItem, Weekday, MissionCategory, SchoolShift } from '@/lib/types';
 import { allWeekdays } from '@/lib/types';
+import { parseTime, formatTime } from '@/lib/calendar-utils';
 
-// Helper para converter "HH:mm" para minutos desde o início do dia
-const parseTime = (time: string | undefined): number => {
-  if (!time || !time.includes(':')) return 0;
-  const [hours, minutes] = time.split(':').map(Number);
-  if (isNaN(hours) || isNaN(minutes)) return 0;
-  return hours * 60 + minutes;
-};
-
-// Helper para converter minutos para "HH:mm"
-const formatTime = (minutes: number): string => {
-    if (isNaN(minutes)) return "00:00"; // Safeguard against NaN
-    const totalMinutes = Math.round(minutes);
-    const hours = Math.floor(totalMinutes / 60) % 24;
-    const mins = totalMinutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-}
-
+// Helper to find mission details from our predefined list
 const findMissionDetails = (title: string) => {
   const predefined = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === title);
   return {
     emoji: predefined?.emoji || '✨',
     category: predefined?.suggestedAppCategory || ('essential_routines' as MissionCategory),
-    duration: 15, // Default duration if not specified, can be more specific later
   };
 };
 
 // --- NEW ROUTINE BLUEPRINTS ---
 type RoutineRule = {
   id: string;
-  duration: number; // in minutes
+  duration: number; // Duration in minutes
   anchor: 'wakeUp' | 'lunch' | 'dinner' | 'sleep' | 'schoolStart' | 'schoolEnd' | 'prevTask' | 'none'; // 'none' for fixed offset from another anchor
-  offset?: number; // in minutes, relative to anchor
+  offset?: number; // Offset in minutes, relative to the anchor
 };
 
 const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
@@ -47,18 +31,18 @@ const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
     { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
     { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
-    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' }, // Zero duration event
-    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' }, // Zero duration event
+    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' },
+    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' },
     { id: 'Almoçar', duration: 20, anchor: 'lunch' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
-    { id: 'Fazer a lição de casa', duration: 50, anchor: 'none', offset: 120 }, // Relative to lunch
+    { id: 'Fazer a lição de casa', duration: 50, anchor: 'lunch', offset: 120 },
     { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
-    { id: 'Lanche da tarde', duration: 15, anchor: 'none', offset: 180 }, // Relative to lunch
+    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 180 },
     { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
     { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -50 },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
   ],
   afternoon: [
     { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
@@ -67,17 +51,17 @@ const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
     { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
     { id: 'Fazer a lição de casa', duration: 50, anchor: 'wakeUp', offset: 60 },
     { id: 'Organizar a mochila para escola', duration: 10, anchor: 'prevTask' },
+    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
     { id: 'Almoçar', duration: 20, anchor: 'lunch' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' },
     { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
     { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -50 },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
   ],
   full_time: [
     { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
@@ -87,28 +71,28 @@ const routineBlueprints: Record<SchoolShift, RoutineRule[]> = {
     { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20 },
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch'},
+    { id: 'Almoçar', duration: 20, anchor: 'lunch' },
     { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
     { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -50 },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
   ],
   not_applicable: [
     { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp' },
     { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask' },
     { id: 'Tomar café da manhã', duration: 20, anchor: 'prevTask' },
     { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask' },
+    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
     { id: 'Almoçar', duration: 20, anchor: 'lunch' },
     { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho pela Manhã', duration: 20, anchor: 'prevTask' },
-    { id: 'Lanche da tarde', duration: 15, anchor: 'none', offset: 180 }, // Relative to lunch
+    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 180 },
     { id: 'Hora do Jantar', duration: 20, anchor: 'dinner' },
     { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask' },
-    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+    { id: 'Tomar banho a Noite', duration: 20, anchor: 'sleep', offset: -50 },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'prevTask' },
-    { id: 'Tomar banho a Noite', duration: 20, anchor: 'prevTask' },
-  ]
+    { id: 'Hora de dormir', duration: 30, anchor: 'sleep' },
+  ],
 };
 
 const findNextAvailableSlot = (startTime: number, duration: number, occupiedSlots: { start: number; end: number }[]): number => {
@@ -179,12 +163,13 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             dinner: parseTime(input.dinnerTime),
             sleep: parseTime(input.sleepTime),
         };
-
+        
         const ruleMap = new Map(blueprint.map(rule => [rule.id, rule]));
         const processedRules = new Set<string>();
+        const endTimeMap = new Map<string, number>();
 
-        const processRule = (ruleId: string) => {
-            if (processedRules.has(ruleId)) return 0;
+        const processRule = (ruleId: string): number => {
+            if (processedRules.has(ruleId)) return endTimeMap.get(ruleId) || 0;
             const rule = ruleMap.get(ruleId);
             if (!rule || !userRoutines.has(rule.id)) {
                 processedRules.add(ruleId);
@@ -193,15 +178,14 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             
             let startTime: number;
             if (rule.anchor === 'prevTask') {
-                // This logic is simplified; needs a proper predecessor logic
-                const predecessorId = blueprint[blueprint.indexOf(rule) - 1]?.id;
+                const predecessorIndex = blueprint.findIndex(r => r.id === ruleId) - 1;
+                const predecessorId = blueprint[predecessorIndex]?.id;
                 startTime = predecessorId ? processRule(predecessorId) : anchors.wakeUp;
             } else if (rule.anchor !== 'none') {
                 startTime = anchors[rule.anchor] + (rule.offset || 0);
-            } else {
-                 if(rule.id === 'Lanche da tarde') startTime = anchors.lunch + (rule.offset || 0);
-                 else if (rule.id === 'Fazer a lição de casa') startTime = anchors.lunch + (rule.offset || 0);
-                 else startTime = 0; // Fallback
+            } else { // Handle 'none' anchor case for specific rules
+                if (rule.id === 'Lanche da tarde') startTime = anchors.lunch + (rule.offset || 0);
+                else startTime = 0; // Fallback for other 'none' rules if any
             }
 
             const resolvedStartTime = findNextAvailableSlot(startTime, rule.duration, occupiedSlotsByDay[day]);
@@ -221,6 +205,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             occupiedSlotsByDay[day].push({ start: resolvedStartTime, end: endTime });
             occupiedSlotsByDay[day].sort((a, b) => a.start - b.start);
             processedRules.add(ruleId);
+            endTimeMap.set(ruleId, endTime);
             return endTime;
         };
 
@@ -234,5 +219,3 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         schedule: finalSchedule.sort((a,b) => parseTime(a.startTime!) - parseTime(b.startTime!)),
     };
 }
-
-    
