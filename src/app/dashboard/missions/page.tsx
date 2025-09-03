@@ -215,8 +215,19 @@ function MissionsHubContent() {
 
       <Card>
           <CardHeader>
-              <CardTitle>Ideias de Missões</CardTitle>
-              <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                  <CardTitle>Ideias de Missões</CardTitle>
+                  <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
+                </div>
+                 <div className="flex w-full sm:w-auto gap-2">
+                    <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
+                        <Link href="/dashboard/missions/new">
+                            <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão
+                        </Link>
+                    </Button>
+                </div>
+              </div>
           </CardHeader>
           <CardContent>
               <Accordion type="multiple" className="w-full space-y-4">
