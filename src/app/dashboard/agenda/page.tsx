@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -28,6 +28,7 @@ import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Loader2 } from 'lucide-react';
 import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -380,49 +381,34 @@ function AgendaPageContent() {
     setDateRangeFilter('day');
   };
 
-  const handleCompleteMission = async (missionInstance: MissionInstance, date: Date) => {
-    if (!user) return;
-    setIsProcessingAction(missionInstance.id);
-    setActivePopover(null);
-    try {
-        const actor = { id: user.uid, name: user.name };
-        const result = await completeMissionInstance(missionInstance.id, date, actor);
-        if (result) {
-            toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
-        } else {
-            toast({ title: 'Ação Duplicada', description: 'Esta missão já foi concluída para esta data.', variant: 'default' });
-        }
-        refetchData();
-    } catch (error: any) {
-        console.error("Error completing mission:", error);
-        toast({ title: 'Erro ao concluir', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
-        refetchData();
-    } finally {
-        setIsProcessingAction(null);
-    }
+  const handleToggleCompletion = async (missionInstance: MissionInstance, date: Date) => {
+      if (!user) return;
+      const isCompleted = isMissionCompletedForDate(missionInstance, date);
+      setIsProcessingAction(missionInstance.id);
+      setActivePopover(null);
+      try {
+          const actor = { id: user.uid, name: user.name };
+          if (isCompleted) {
+              const result = await reactivateMissionInstance(missionInstance.id, date, actor);
+              if (result) {
+                  toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
+              }
+          } else {
+              const result = await completeMissionInstance(missionInstance.id, date, actor);
+              if (result) {
+                  toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
+              }
+          }
+          refetchData();
+      } catch (error: any) {
+          console.error("Error toggling completion:", error);
+          toast({ title: 'Erro ao atualizar', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
+          refetchData();
+      } finally {
+          setIsProcessingAction(null);
+      }
   };
 
-  const handleUndoCompletion = async (missionInstance: MissionInstance, date: Date) => {
-    if (!user) return;
-    setIsProcessingAction(missionInstance.id);
-    setActivePopover(null);
-    try {
-        const actor = { id: user.uid, name: user.name };
-        const result = await reactivateMissionInstance(missionInstance.id, date, actor);
-        if (result) {
-            toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
-        } else {
-            toast({ title: 'Ação Inválida', description: 'Não havia uma conclusão para esta data para ser desfeita.', variant: 'default' });
-        }
-        refetchData();
-    } catch (error: any) {
-        console.error("Error undoing completion:", error);
-        toast({ title: 'Erro ao desfazer', description: error.message, variant: 'destructive' });
-        refetchData();
-    } finally {
-        setIsProcessingAction(null);
-    }
-  };
   
   const handleExcludeClick = (instance: MissionInstance, date: Date) => {
     setActivePopover(null);
@@ -595,95 +581,37 @@ function AgendaPageContent() {
                           const categoryDetails = categoryMap.get(event.data.category);
 
                           return(
-                          <li key={event.data.id} className="text-sm text-muted-foreground leading-snug flex justify-between items-center">
-                              <Popover open={activePopover === popoverId && canEdit} onOpenChange={(isOpen) => {
-                                setActivePopover(isOpen ? popoverId : null);
-                                if (!isOpen) {
-                                  setHighlightedMissionId(null);
-                                }
-                              }}>
-                                <PopoverTrigger asChild>
-                                    <button 
-                                        data-mission-id={popoverId}
-                                        disabled={isProcessingAction === event.data.id || isFamilyLoading}
-                                        className={cn("w-full text-left p-1 -m-1 rounded-md transition-all duration-300 disabled:opacity-50 disabled:cursor-wait flex items-center gap-1.5", 
-                                          "hover:bg-accent/50",
-                                          isCompleted && "text-muted-foreground/70",
-                                          highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
-                                        )}
-                                    >
-                                      {isProcessingAction === event.data.id ? (
-                                        <Loader2 className="h-4 w-4 animate-spin inline-block shrink-0" />
-                                      ) : isCompleted ? (
-                                        <CheckSquare className="h-4 w-4 inline-block text-green-500 shrink-0" />
-                                      ) : (
-                                        <Square className="h-4 w-4 inline-block text-primary shrink-0" />
-                                      )}
-                                      <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
-                                      {showEmojiInCard && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
-                                      <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
-                                    </button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-0">
-                                    <div className="p-4 space-y-3">
-                                        <div className="flex items-start justify-between">
-                                          <div className="flex items-center gap-3">
-                                            <Avatar className="h-10 w-10">
-                                              <AvatarImage src={child.avatar} alt={child.name}/>
-                                              <AvatarFallback style={{backgroundColor: child.color}}>
-                                                {getInitials(child.name)}
-                                              </AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                              <p className="font-semibold">{child.name}</p>
-                                              <p className="text-xs text-muted-foreground">
-                                                  Ocorrência de {format(day, 'dd/MM/yyyy')}
-                                              </p>
+                          <li key={event.data.id} data-mission-id={popoverId} className={cn("text-sm text-muted-foreground leading-snug flex justify-between items-center p-1 -m-1 rounded-md transition-all duration-300", 
+                              highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background"
+                          )}>
+                              <div className="flex items-center gap-2.5 flex-grow min-w-0">
+                                  <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
+                                  {showEmojiInCard && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                  <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => handleToggleCompletion(event.data, day)} disabled={!canEdit || isProcessingAction === event.data.id}>
+                                      {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-primary" />}
+                                  </Button>
+                                  <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-7 w-7" disabled={!canEdit}><MoreVertical className="h-4 w-4" /></Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                          <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                                            <div className="flex items-center justify-between gap-4">
+                                                <span className="flex items-center gap-1.5 text-amber-600"><StarIcon className="h-3.5 w-3.5" /> +{event.data.starsReward}</span>
+                                                <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{event.data.xpReward} XP</span>
                                             </div>
-                                          </div>
-                                        </div>
-                                        <h3 className="text-lg font-semibold flex items-center gap-2">
-                                          {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
-                                          {event.data.title}
-                                        </h3>
-                                        <div className="flex flex-wrap items-center gap-2">
-                                            {categoryDetails && (
-                                                <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                                                    {categoryDetails.label}
-                                                </Badge>
-                                            )}
-                                            <Badge variant="secondary" className="flex items-center gap-1">
-                                              <Repeat className="h-3 w-3"/>
-                                              <span className="text-xs">{formatRecurrenceSummary(event.data)}</span>
-                                            </Badge>
-                                        </div>
-                                        
-                                        <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
-                                          <span className="flex items-center gap-1.5">
-                                            <StarIcon className="h-4 w-4 text-yellow-500"/>
-                                            <span className="font-semibold text-foreground">{event.data.starsReward}</span>
-                                          </span>
-                                           <span className="flex items-center gap-1.5">
-                                            <BadgeCheck className="h-4 w-4 text-blue-500"/>
-                                             <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
-                                          </span>
-                                        </div>
-
-                                    </div>
-                                    <Separator/>
-                                    <div className="p-2 flex flex-col gap-1">
-                                      {isCompleted ? (
-                                        <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
-                                      ) : (
-                                        <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
-                                      )}
-                                      <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
-                                      <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
-                                      <Separator />
-                                      <Button variant="ghost" size="sm" className="justify-start text-destructive hover:text-destructive-foreground hover:bg-destructive" onClick={() => handleDeleteClick(event.data, day)}><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</Button>
-                                    </div>
-                                </PopoverContent>
-                              </Popover>
+                                          </DropdownMenuLabel>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem onSelect={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</DropdownMenuItem>
+                                          <DropdownMenuItem onSelect={() => handleEditTemplateClick(event.data)}><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</DropdownMenuItem>
+                                          <DropdownMenuSeparator />
+                                          <DropdownMenuItem onSelect={() => handleDeleteClick(event.data, day)} className="text-destructive focus:bg-destructive focus:text-destructive-foreground"><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
+                              </div>
                           </li>
                           )
                       })}
@@ -1066,9 +994,9 @@ function AgendaPageContent() {
                                       <Separator/>
                                       <div className="p-2 flex flex-col gap-1">
                                           {isCompleted ? (
-                                            <Button variant="ghost" size="sm" onClick={() => handleUndoCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleToggleCompletion(event.data, day)} className="justify-start"><Undo2 className="mr-2 h-4 w-4" /> Desfazer Conclusão</Button>
                                           ) : (
-                                            <Button variant="ghost" size="sm" onClick={() => handleCompleteMission(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
+                                            <Button variant="ghost" size="sm" onClick={() => handleToggleCompletion(event.data, day)} className="justify-start"><CheckSquare className="mr-2 h-4 w-4 text-green-500" /> Concluir Missão</Button>
                                           )}
                                           <Button variant="ghost" size="sm" onClick={() => handleEditClick(event.data, day)} className="justify-start"><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</Button>
                                            <Button variant="ghost" size="sm" onClick={() => handleEditTemplateClick(event.data)} className="justify-start"><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</Button>
@@ -1258,5 +1186,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
