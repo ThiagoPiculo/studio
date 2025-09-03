@@ -257,6 +257,7 @@ function MissionsHubContent() {
                                                   <Puzzle className="mr-1.5 h-3 w-3" />
                                                   Personalizada
                                                </Badge>
+                                               <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
                                                <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
                                                 {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                                                </Badge>
