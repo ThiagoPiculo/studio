@@ -6,12 +6,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -23,17 +17,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreVertical, Edit3, Trash2, PackagePlus, Sparkles, ArrowRight, Users, Filter, Search, Tag, Coins, Info, AlertTriangle, Lightbulb, BadgeCheck, CalendarDays, Target, HelpCircle, LayoutGrid, List } from 'lucide-react';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getMissionTemplatesByOwnerOrFamily, 
   deleteMissionTemplate,
-  getChildProfilesForAttribution,
-  getMissionInstancesForContext,
   deleteMissionTemplateAndInstances,
 } from '@/lib/firebase/firestore';
-import type { MissionTemplate, MissionCategoryDetails, ChildProfile, MissionInstance, FamilyRole } from '@/lib/types';
+import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -41,34 +34,29 @@ import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { predefinedMissionGroups } from '@/lib/predefined-missions';
+import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { Skeleton } from '@/components/ui/skeleton';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
-  const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
-  const [alsoDeleteInstances, setAlsoDeleteInstances] = useState(false);
-  
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
+  const [isProcessingAction, setIsProcessingAction] = useState(false);
   
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
     if (!currentRole) return false;
@@ -76,7 +64,7 @@ function MissionsHubContent() {
     return editableRoles.includes(currentRole as FamilyRole);
   }, [currentContext, currentRole]);
   
-  const refetchAllData = useCallback(async () => {
+  const refetchData = useCallback(async () => {
     if (!user) {
         setIsDataLoading(false);
         return;
@@ -84,14 +72,8 @@ function MissionsHubContent() {
     setIsDataLoading(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [templates, childrenData, instances] = await Promise.all([
-          getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-          getChildProfilesForAttribution(user.uid, currentContext),
-          getMissionInstancesForContext(user.uid, familyIdToQuery)
-        ]);
+        const templates = await getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
         setMissionTemplates(templates);
-        setChildren(childrenData);
-        setMissionInstances(instances.filter(i => i.status === 'pending'));
     } catch (err) {
       console.error("Error refetching missions data:", err)
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
@@ -102,78 +84,48 @@ function MissionsHubContent() {
 
   useEffect(() => {
     if (!authLoading && !isFamilyLoading) {
-      refetchAllData();
+      refetchData();
     }
-  }, [authLoading, isFamilyLoading, refetchAllData, currentContext]);
+  }, [authLoading, isFamilyLoading, refetchData, currentContext]);
   
-  const childrenMap = useMemo(() => {
-    return new Map(children.map(child => [child.id, child]));
-  }, [children]);
-
-  const assignmentsByTemplate = useMemo(() => {
-    const assignments = new Map<string, ChildProfile[]>();
-    missionInstances.forEach(instance => {
-      const child = childrenMap.get(instance.childId);
-      if (child) {
-        const existing = assignments.get(instance.templateId) || [];
-        if (!existing.find(c => c.id === child.id)) {
-          assignments.set(instance.templateId, [...existing, child]);
-        }
-      }
-    });
-    return assignments;
-  }, [missionInstances, childrenMap]);
-  
-  const getInitials = (name?: string | null) => {
-    if (!name) return "MH"; 
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
-  };
-
-  const getCategoryDetails = (categoryId: MissionTemplate['category']): MissionCategoryDetails | undefined => {
-    return missionCategories.find(cat => cat.id === categoryId);
-  };
-  
-  const currentContextText = useMemo(() => {
-    if (currentContext === 'my-space') return "o seu Espaço Pessoal";
-    const family = availableContexts.find(f => f.id === currentContext);
-    return family ? `a Aliança ${family.name}` : "o contexto atual";
-  }, [availableContexts, currentContext]);
-  
-  const filteredTemplates = useMemo(() => {
-    let templates = [...missionTemplates];
-
-    if (selectedChildId) {
-        const assignedTemplateIds = new Set(
-            missionInstances
-                .filter(inst => inst.childId === selectedChildId)
-                .map(inst => inst.templateId)
-        );
-        templates = templates.filter(template => assignedTemplateIds.has(template.id));
-    }
-
-    return templates;
-  }, [missionTemplates, missionInstances, selectedChildId]);
+  const existingTemplateTitles = useMemo(() => {
+    return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
+  }, [missionTemplates]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
     try {
-      if (alsoDeleteInstances) {
-        await deleteMissionTemplateAndInstances(user, templateToDelete.id);
-        toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
-      } else {
-        await deleteMissionTemplate(user, templateToDelete.id);
-        toast({ title: "Missão Removida do Catálogo!", description: `A missão "${templateToDelete.title}" foi removida. As atribuições existentes não foram afetadas.` });
-      }
-      refetchAllData();
+      await deleteMissionTemplateAndInstances(user, templateToDelete.id);
+      toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
+      refetchData();
     } catch (error) {
       console.error("Error deleting mission template:", error);
       toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
     } finally {
       setTemplateToDelete(null);
-      setAlsoDeleteInstances(false);
       setIsProcessingAction(false);
     }
+  };
+
+  const handleOpenAssignDialog = (template: MissionTemplate) => {
+    setTemplateToAssign(template);
+    setIsAssignDialogOpen(true);
+  };
+  
+  const handleUseIdea = (idea: PredefinedMissionIdea) => {
+    const existingTemplate = missionTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
+    if (existingTemplate) {
+      handleOpenAssignDialog(existingTemplate);
+      return;
+    }
+    const queryParams = new URLSearchParams();
+    queryParams.append('title', idea.title);
+    queryParams.append('emoji', idea.emoji);
+    queryParams.append('category', idea.suggestedAppCategory);
+    queryParams.append('starsReward', String(idea.starsReward));
+    queryParams.append('xpReward', String(idea.xpReward));
+    router.push(`/dashboard/missions/new?${queryParams.toString()}`);
   };
 
   const getStatusBadgeVariant = (status: MissionTemplate['status']): "default" | "secondary" | "outline" => {
@@ -184,294 +136,143 @@ function MissionsHubContent() {
     }
   };
 
-  const handleOpenAssignDialog = (template: MissionTemplate) => {
-    setTemplateToAssign(template);
-    setIsAssignDialogOpen(true);
-  };
-
-  const assignedChildrenForDeletion = templateToDelete ? assignmentsByTemplate.get(templateToDelete.id) || [] : [];
-  
-  const renderCardView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredTemplates.map(renderMissionCard)}
-    </div>
-  );
-
-  const renderListView = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      {filteredTemplates.map(renderMissionListItem)}
-    </div>
-  );
-
-  const renderMissionListItem = (template: MissionTemplate) => {
-    const categoryDetails = getCategoryDetails(template.category);
-    const CategoryIconComponent = categoryDetails?.icon;
-    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
-    
-    return (
-        <div key={template.id} className="flex items-center gap-4 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors shadow-sm hover:shadow-md">
-            <span className="text-3xl">{template.emoji}</span>
-            <div className="flex-grow space-y-2">
-                <div className="flex items-center justify-between">
-                    <h4 className="font-semibold">{template.title}</h4>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                    {categoryDetails && (
-                        <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                            {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
-                            {categoryDetails.label}
-                        </Badge>
-                    )}
-                    <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
-                    <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
-                </div>
-                 <div className="flex items-center justify-between pt-1">
-                    <div className="flex items-center gap-2">
-                       <span className="text-xs text-muted-foreground">Ativo para:</span>
-                       {isDataLoading ? (
-                            <div className="flex -space-x-2">
-                                <Skeleton className="h-6 w-6 rounded-full" />
-                                <Skeleton className="h-6 w-6 rounded-full" />
-                            </div>
-                        ) : assignedChildren.length > 0 ? (
-                           <div className="flex -space-x-2">
-                               {assignedChildren.slice(0, 5).map(child => (
-                                   <TooltipProvider key={child.id} delayDuration={100}>
-                                       <Tooltip>
-                                           <TooltipTrigger asChild>
-                                           <Avatar
-                                               className="h-6 w-6 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                               style={{ '--ring-color': child.color } as React.CSSProperties}
-                                           >
-                                               <AvatarImage src={child.avatar} alt={child.name} />
-                                               <AvatarFallback
-                                               className="text-xs"
-                                               style={{ backgroundColor: child.color }}
-                                               >
-                                                   {getInitials(child.name)}
-                                               </AvatarFallback>
-                                           </Avatar>
-                                           </TooltipTrigger>
-                                           <TooltipContent>
-                                           <p>{child.name}</p>
-                                           </TooltipContent>
-                                       </Tooltip>
-                                   </TooltipProvider>
-                               ))}
-                               {assignedChildren.length > 5 && (
-                                   <span className="text-xs font-medium text-muted-foreground self-center pl-3">
-                                       + {assignedChildren.length - 5}
-                                   </span>
-                               )}
-                           </div>
-                       ) : (
-                           <span className="text-xs italic text-muted-foreground">Ninguém</span>
-                       )}
-                   </div>
-                   <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">{template.status === 'active' ? 'Ativa' : 'Arquivada'}</Badge>
-                </div>
-            </div>
-             <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
-                        <MoreVertical className="h-4 w-4" />
-                        <span className="sr-only">Opções da missão</span>
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
-                        <Users className="mr-2 h-4 w-4" />
-                        Atribuir / Gerenciar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
-                        <Edit3 className="mr-2 h-4 w-4" />
-                        Editar Missão
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        Excluir Missão
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-    )
-  }
-
-  const renderMissionCard = (template: MissionTemplate) => {
-    const categoryDetails = getCategoryDetails(template.category);
-    const CategoryIconComponent = categoryDetails?.icon;
-    const assignedChildren = assignmentsByTemplate.get(template.id) || [];
-    
-    return (
-      <Card key={template.id} className="shadow-md hover:shadow-lg transition-shadow flex flex-col bg-card">
-        <CardHeader className="p-4">
-            <div className="flex justify-between items-start gap-2">
-               <div className="flex items-start gap-3 pr-2 min-h-14 flex-grow">
-                    <span className="text-3xl mt-1">{template.emoji}</span>
-                    <CardTitle className="text-lg leading-tight line-clamp-2">
-                    {template.title}
-                    </CardTitle>
-                </div>
-                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 flex-shrink-0" disabled={!canEdit}>
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Opções da missão</span>
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleOpenAssignDialog(template)} disabled={template.status === 'archived'}>
-                            <Users className="mr-2 h-4 w-4" />
-                            Atribuir / Gerenciar
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)}>
-                            <Edit3 className="mr-2 h-4 w-4" />
-                            Editar Missão
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="text-destructive focus:bg-destructive focus:text-destructive-foreground" onClick={() => setTemplateToDelete(template)}>
-                            <Trash2 className="mr-2 h-4 w-4" />
-                            Excluir Missão
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </CardHeader>
-        <CardContent className="flex flex-col flex-grow p-4 pt-0">
-           <div className="flex flex-wrap items-center gap-2 mb-3">
-                {categoryDetails && (
-                    <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                        {CategoryIconComponent && <CategoryIconComponent className="h-3 w-3 mr-1" />}
-                        {categoryDetails.label}
-                    </Badge>
-                )}
-                <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
-                <Badge variant="secondary" className="font-semibold text-xs"><BadgeCheck className="h-3 w-3 mr-1.5 text-blue-500" /> {template.xpReward} XP</Badge>
-            </div>
-
-          <Separator className="mb-3"/>
-
-          <div className="flex-grow" />
-
-          <div className="pt-1">
-            <div className="flex items-center justify-between gap-2">
-              <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                <Users className="h-4 w-4" />
-                Atribuído a:
-              </h4>
-               <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize flex-shrink-0">
-                    {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                </Badge>
-            </div>
-             <div className="min-h-[32px] mt-2">
-                {isDataLoading ? (
-                     <div className="flex -space-x-2">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                    </div>
-                ) : assignedChildren.length > 0 ? (
-                    <div className="flex items-center space-x-2">
-                        <div className="flex -space-x-2">
-                            {assignedChildren.slice(0, 5).map(child => (
-                                <TooltipProvider key={child.id} delayDuration={100}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Avatar
-                                                className="h-8 w-8 border-2 border-background ring-1 ring-offset-background ring-[var(--ring-color)]"
-                                                style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
-                                            >
-                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                <AvatarFallback
-                                                className="text-xs"
-                                                style={{ backgroundColor: child.color }}
-                                                >
-                                                    {getInitials(child.name)}
-                                                </AvatarFallback>
-                                            </Avatar>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>{child.name}</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                            ))}
-                        </div>
-                        {assignedChildren.length > 5 && (
-                            <span className="text-xs font-medium text-muted-foreground">
-                                + {assignedChildren.length - 5}
-                            </span>
-                        )}
-                    </div>
-                ) : (
-                    <p className="text-xs text-muted-foreground italic">Nenhum herói com esta missão ativa.</p>
-                )}
-             </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
-
   if (isDataLoading || isFamilyLoading) {
       return <Loading />;
   }
 
   return (
-    <div className="space-y-6">
-       <Card>
-          <CardContent className="p-4">
-             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full">
-                  <Button asChild variant="outline" className="w-full sm:w-auto">
-                    <Link href="/dashboard/agenda">
-                      <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
+    <div className="space-y-8 pb-10">
+      <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+                <Target className="h-8 w-8 text-primary" />
+                <div>
+                    <CardTitle className="text-3xl font-headline">Quadro de Missões</CardTitle>
+                    <CardDescription>Inspire-se, crie e gerencie as missões para sua equipe de heróis.</CardDescription>
+                </div>
+                 <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                            <HelpCircle className="h-5 w-5" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80">
+                         <div className="space-y-3">
+                            <h4 className="font-medium leading-none">O Catálogo de Aventuras</h4>
+                            <p className="text-sm text-muted-foreground">
+                              Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis.
+                            </p>
+                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                                <li><strong>Use uma Ideia:</strong> Navegue pelas sugestões abaixo e clique em "Usar Ideia" para adicionar rapidamente uma missão ao seu catálogo.</li>
+                                <li><strong>Crie do Zero:</strong> Use o botão "Criar Missão" para definir uma tarefa totalmente personalizada.</li>
+                                <li><strong>Gerencie a Agenda:</strong> Depois que uma missão está no seu catálogo, clique em "Gerenciar" para atribuí-la na rotina de um ou mais heróis.</li>
+                            </ul>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            </div>
+            <div className="pt-4">
+                <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
+                    <Link href="/dashboard/missions/new">
+                        <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão Personalizada
                     </Link>
-                  </Button>
-                  <Button asChild variant="secondary" className="w-full sm:w-auto">
-                    <Link href="/dashboard/missions/ideas">
-                      <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
-                    </Link>
-                  </Button>
-              </div>
-               <div className="flex-shrink-0 w-full sm:w-auto">
-                  <Button asChild className="w-full" disabled={!canEdit}>
-                      <Link href="/dashboard/missions/new">
-                          <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
-                      </Link>
-                  </Button>
-               </div>
-             </div>
-          </CardContent>
-       </Card>
+                </Button>
+            </div>
+          </CardHeader>
+      </Card>
       
-      <div className="px-2 md:px-6 md:py-6">
-          <div className="mb-4 flex items-center justify-between">
-            <div>
-              <h3 className="text-xl font-semibold tracking-tight">Missões do Catálogo</h3>
-              <p className="text-sm text-muted-foreground">Abaixo estão as missões que você já criou para {currentContextText}.</p>
-            </div>
-            <ToggleGroup type="single" value={viewMode} onValueChange={(value) => value && setViewMode(value as 'grid' | 'list')} aria-label="Modo de visualização">
-                <ToggleGroupItem value="grid" aria-label="Ver em Grade">
-                    <LayoutGrid className="h-4 w-4" />
-                </ToggleGroupItem>
-                <ToggleGroupItem value="list" aria-label="Ver em Lista">
-                    <List className="h-4 w-4" />
-                </ToggleGroupItem>
-            </ToggleGroup>
-          </div>
-          
-          {filteredTemplates.length === 0 ? (
-            <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-              <Target className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-              <p className="text-lg text-muted-foreground">Nenhuma missão encontrada com os filtros atuais.</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Tente outro filtro ou <Link href="/dashboard/missions/new" className="text-primary hover:underline font-semibold">crie uma nova missão</Link>.
-              </p>
-            </div>
-          ) : (
-            viewMode === 'grid' ? renderCardView() : renderListView()
-          )}
-      </div>
+      {missionTemplates.length > 0 && (
+         <Card>
+            <CardHeader>
+                <CardTitle>Seu Catálogo de Missões</CardTitle>
+                <CardDescription>
+                  As missões que você já criou. Clique em "Gerenciar" para atribuí-las.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {missionTemplates.map(template => (
+                    <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                        <CardHeader>
+                            <div className="flex items-start gap-2">
+                                <span className="text-2xl mt-1">{template.emoji}</span>
+                                <CardTitle className="text-base leading-tight">
+                                    {template.title}
+                                </CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow pt-0">
+                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                           </Badge>
+                        </CardContent>
+                        <CardFooter className="flex items-center gap-2">
+                           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
+                                <Users className="mr-2 h-4 w-4" /> Gerenciar
+                            </Button>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
+                                            <Edit3 className="h-4 w-4" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Editar Missão</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </CardFooter>
+                    </Card>
+                ))}
+            </CardContent>
+         </Card>
+      )}
+
+      <Card>
+          <CardHeader>
+              <CardTitle>Ideias de Missões</CardTitle>
+              <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo.</CardDescription>
+          </CardHeader>
+          <CardContent>
+              <Accordion type="multiple" className="w-full space-y-4">
+                  {predefinedMissionGroups.map((group) => (
+                      <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
+                          <AccordionTrigger className="p-4 hover:no-underline">
+                             <div className="flex items-center gap-3">
+                                <group.icon className="h-6 w-6 text-primary" />
+                                <span className="text-lg font-semibold">{group.userCategory}</span>
+                             </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                {group.items.map(idea => {
+                                    const isAdded = existingTemplateTitles.has(idea.title.toLowerCase().trim());
+                                    return (
+                                        <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
+                                            <CardHeader>
+                                                <CardTitle className="text-base flex items-center gap-2">
+                                                    <span className="text-2xl">{idea.emoji}</span>
+                                                    {idea.title}
+                                                </CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow">
+                                                <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsReward}</Badge>
+                                            </CardContent>
+                                            <CardFooter>
+                                                <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                    {isAdded ? "Gerenciar Missão" : "Usar esta Ideia"}
+                                                </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
+                            </div>
+                          </AccordionContent>
+                      </AccordionItem>
+                  ))}
+              </Accordion>
+          </CardContent>
+      </Card>
+
 
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
@@ -479,55 +280,18 @@ function MissionsHubContent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Excluir Missão do Catálogo</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja remover a missão "{templateToDelete.title}"?
+                Tem certeza que deseja remover a missão "{templateToDelete.title}"? Isso removerá a missão do catálogo e de TODAS as agendas em que ela foi atribuída. Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
-
-            {assignedChildrenForDeletion.length > 0 && (
-                <div className="my-4 space-y-3">
-                    <div className="flex items-start gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
-                        <AlertTriangle className="h-5 w-5 text-destructive mt-1 flex-shrink-0" />
-                        <div>
-                            <h4 className="font-semibold text-destructive">Atenção: Missão em uso!</h4>
-                            <p className="text-xs text-destructive/90">Esta missão está atualmente atribuída aos seguintes heróis:</p>
-                        </div>
-                    </div>
-                    <ScrollArea className="h-32 rounded-md border p-2">
-                        <div className="space-y-2">
-                        {assignedChildrenForDeletion.map(child => {
-                            const instance = missionInstances.find(inst => inst.templateId === templateToDelete.id && inst.childId === child.id);
-                            return (
-                                <div key={child.id} className="flex items-center gap-2">
-                                     <Avatar className="h-8 w-8">
-                                        <AvatarImage src={child.avatar} alt={child.name} />
-                                        <AvatarFallback className="text-xs" style={{ backgroundColor: child.color }}>{getInitials(child.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-medium text-sm">{child.name}</p>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        </div>
-                    </ScrollArea>
-                    <div className="flex items-center space-x-2 mt-2 p-2 rounded-md bg-muted/50">
-                        <Checkbox id="delete-instances-checkbox" checked={alsoDeleteInstances} onCheckedChange={(checked) => setAlsoDeleteInstances(!!checked)} />
-                        <Label htmlFor="delete-instances-checkbox" className="text-xs font-normal text-foreground cursor-pointer">
-                            Sim, também remover esta missão da agenda de todos os heróis listados.
-                        </Label>
-                    </div>
-                </div>
-            )}
-            
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => { setTemplateToDelete(null); setAlsoDeleteInstances(false); }} disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
                 className="bg-destructive hover:bg-destructive/90"
                 disabled={isProcessingAction}
               >
                 {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                {alsoDeleteInstances ? "Excluir Tudo" : "Excluir do Catálogo"}
+                Sim, Excluir Tudo
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -539,7 +303,7 @@ function MissionsHubContent() {
           template={templateToAssign}
           isOpen={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          onAssigned={refetchAllData}
+          onAssigned={refetchData}
         />
       )}
     </div>
