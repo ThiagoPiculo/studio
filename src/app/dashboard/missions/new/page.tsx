@@ -110,7 +110,7 @@ function CreateMissionTemplatePageContent() {
     setIsLoading(true);
 
     try {
-      const isFromIdea = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title);
+      const isFromPredefined = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
 
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
@@ -125,7 +125,7 @@ function CreateMissionTemplatePageContent() {
         startDate: null,
         dueDate: null,
         recurrenceRule: null,
-        source: isFromIdea ? 'predefined' : 'custom', // Set the source field here
+        source: isFromPredefined ? 'predefined' : 'custom',
       };
       
       const createdTemplate = await addMissionTemplate(user, templateDataPayload);
@@ -185,69 +185,64 @@ function CreateMissionTemplatePageContent() {
                       )}
                     />
                     <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col w-full">
-                          <FormLabel>Título da Missão</FormLabel>
-                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className={cn("w-full justify-between font-normal", !field.value && "text-muted-foreground")}
-                                        >
-                                            {field.value ? field.value : "Buscar ou digitar um título..."}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput 
-                                            placeholder="Buscar ideia de missão..."
-                                            onValueChange={(search) => form.setValue("title", search)}
-                                        />
-                                        <CommandList>
-                                            <CommandEmpty>Nenhuma ideia encontrada. Continue digitando para criar uma nova!</CommandEmpty>
-                                            {allMissionIdeas.map((group) => (
-                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                                    {group.items.map(idea => {
-                                                        const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
-                                                        return (
-                                                            <CommandItem
-                                                                value={idea.title}
-                                                                key={idea.title}
-                                                                onSelect={() => {
-                                                                    if (isDuplicate) {
-                                                                        setDuplicateTitle(idea.title);
-                                                                        setShowDuplicateDialog(true);
-                                                                        return;
-                                                                    }
-                                                                    form.setValue("title", idea.title);
-                                                                    form.setValue("emoji", idea.emoji);
-                                                                    form.setValue("category", idea.suggestedAppCategory);
-                                                                    form.setValue("starsReward", idea.starsReward);
-                                                                    form.setValue("xpReward", idea.xpReward);
-                                                                    setIsPopoverOpen(false);
-                                                                }}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                                {idea.title}
-                                                                {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
-                                                            </CommandItem>
-                                                        )
-                                                    })}
-                                                </CommandGroup>
-                                            ))}
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel className="flex items-center justify-between">
+                                    Título da Missão
+                                    <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                        <PopoverTrigger asChild>
+                                            <Button type="button" variant="link" className="p-0 h-auto text-xs">
+                                                <Lightbulb className="mr-1 h-3 w-3" /> Buscar ideias
+                                            </Button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                             <Command>
+                                                <CommandInput placeholder="Buscar ideia de missão..." />
+                                                <CommandList>
+                                                    <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                                    {allMissionIdeas.map((group) => (
+                                                        <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                            {group.items.map(idea => {
+                                                                const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
+                                                                return (
+                                                                    <CommandItem
+                                                                        value={idea.title}
+                                                                        key={idea.title}
+                                                                        onSelect={() => {
+                                                                            if (isDuplicate) {
+                                                                                setDuplicateTitle(idea.title);
+                                                                                setShowDuplicateDialog(true);
+                                                                                return;
+                                                                            }
+                                                                            form.setValue("title", idea.title);
+                                                                            form.setValue("emoji", idea.emoji);
+                                                                            form.setValue("category", idea.suggestedAppCategory);
+                                                                            form.setValue("starsReward", idea.starsReward);
+                                                                            form.setValue("xpReward", idea.xpReward);
+                                                                            setIsPopoverOpen(false);
+                                                                        }}
+                                                                    >
+                                                                        <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                        {idea.title}
+                                                                        {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                                    </CommandItem>
+                                                                )
+                                                            })}
+                                                        </CommandGroup>
+                                                    ))}
+                                                </CommandList>
+                                            </Command>
+                                        </PopoverContent>
+                                    </Popover>
+                                </FormLabel>
+                                <FormControl>
+                                    <Input placeholder="Ex: Arrumar a cama" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
                     />
                 </div>
 
@@ -267,7 +262,7 @@ function CreateMissionTemplatePageContent() {
                             {missionCategories.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 <div className="flex items-center">
-                                  <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />
+                                  <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
                                   <span>{category.label}</span>
                                 </div>
                               </SelectItem>
@@ -353,31 +348,29 @@ function CreateMissionTemplatePageContent() {
 
        {showDuplicateDialog && (
         <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-            <AlertDialogContent>
-                <AlertDialogHeader>
-                    <AlertDialogTitle>Missão Já Existe!</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        A missão "{duplicateTitle}" já está no seu catálogo. Você gostaria de gerenciá-la ou criar uma nova versão?
-                    </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogAction onClick={() => {
-                        setShowDuplicateDialog(false);
-                        const idea = allMissionIdeas.flatMap(g => g.items).find(i => i.title === duplicateTitle);
-                        if(idea) {
-                             form.setValue("title", idea.title);
-                             form.setValue("emoji", idea.emoji);
-                             form.setValue("category", idea.suggestedAppCategory);
-                             form.setValue("starsReward", idea.starsReward);
-                             form.setValue("xpReward", idea.xpReward);
-                        }
-                    }}>Criar mesmo assim</AlertDialogAction>
-                    <AlertDialogCancel onClick={() => {
-                        setShowDuplicateDialog(false);
-                        router.push('/dashboard/missions');
-                    }}>Ir para o Catálogo</AlertDialogCancel>
-                </AlertDialogFooter>
-            </AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Missão Já Existe!</AlertDialogTitle>
+                <AlertDialogDescription>
+                    A missão "{duplicateTitle}" já está no seu catálogo. Você gostaria de gerenciá-la ou criar uma nova versão?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogAction onClick={() => {
+                    setShowDuplicateDialog(false);
+                    const idea = allMissionIdeas.flatMap(g => g.items).find(i => i.title === duplicateTitle);
+                    if(idea) {
+                         form.setValue("title", idea.title);
+                         form.setValue("emoji", idea.emoji);
+                         form.setValue("category", idea.suggestedAppCategory);
+                         form.setValue("starsReward", idea.starsReward);
+                         form.setValue("xpReward", idea.xpReward);
+                    }
+                }}>Criar mesmo assim</AlertDialogAction>
+                <AlertDialogCancel onClick={() => {
+                    setShowDuplicateDialog(false);
+                    router.push('/dashboard/missions');
+                }}>Ir para o Catálogo</AlertDialogCancel>
+            </AlertDialogFooter>
         </AlertDialog>
       )}
 

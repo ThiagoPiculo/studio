@@ -39,6 +39,7 @@ const missionTemplateFormSchema = z.object({
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
   xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
   status: z.enum(['active', 'archived']).default('active'),
+  source: z.enum(['custom', 'predefined']).default('custom'),
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -73,6 +74,7 @@ export default function EditMissionTemplatePage() {
       starsReward: 5,
       xpReward: 10,
       status: 'active',
+      source: 'custom',
     },
   });
 
@@ -101,6 +103,7 @@ export default function EditMissionTemplatePage() {
           starsReward: fetchedTemplate.starsReward,
           xpReward: fetchedTemplate.xpReward,
           status: fetchedTemplate.status,
+          source: fetchedTemplate.source || 'custom',
         });
 
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
@@ -175,6 +178,7 @@ export default function EditMissionTemplatePage() {
           starsReward: values.starsReward,
           xpReward: values.xpReward,
           status: values.status,
+          source: 'custom', // Any manual edit makes it custom
       };
 
       await updateMissionTemplate(user, missionTemplate.id, updatePayload);
