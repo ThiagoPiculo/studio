@@ -231,17 +231,18 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
             const details = findMissionDetails(rule.id);
             
             // Include items with duration 0 like school entry/exit
-            if (rule.id === 'Entrada na escola' || rule.id === 'Saída da escola') {
+            if (rule.id === 'Entrada na escola') {
                  if (input.schoolShift !== 'not_applicable') {
                     finalScheduleByDay[day].push({
-                        activity: rule.id,
-                        startTime: formatTime(resolvedStartTime),
-                        endTime: formatTime(endTime),
-                        days: [day],
-                        type: 'school_entry',
-                        emoji: details.emoji,
-                        category: details.category,
-                        block: rule.block,
+                        activity: rule.id, startTime: formatTime(resolvedStartTime), endTime: formatTime(endTime),
+                        days: [day], type: 'school_entry', emoji: details.emoji, category: details.category, block: rule.block,
+                    });
+                }
+            } else if (rule.id === 'Saída da escola') {
+                if (input.schoolShift !== 'not_applicable') {
+                    finalScheduleByDay[day].push({
+                        activity: rule.id, startTime: formatTime(resolvedStartTime), endTime: formatTime(endTime),
+                        days: [day], type: 'school_exit', emoji: details.emoji, category: details.category, block: rule.block,
                     });
                 }
             } else if (rule.duration > 0) {

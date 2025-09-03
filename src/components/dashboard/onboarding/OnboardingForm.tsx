@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -249,7 +250,7 @@ export function OnboardingForm() {
 
         if (generatedSchedule && generatedSchedule.schedule) {
             for (const item of generatedSchedule.schedule) {
-                 if(item.type === 'school_entry' || item.type === 'school_exit') continue;
+                 if (item.type === 'school_entry' || item.type === 'school_exit') continue;
                  
                  const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
                  
