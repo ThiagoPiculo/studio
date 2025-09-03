@@ -146,6 +146,10 @@ function MissionsHubContent() {
     }
   };
 
+  const getCategoryDetails = (categoryId: MissionTemplate['category']): MissionCategoryDetails | undefined => {
+    return missionCategories.find(cat => cat.id === categoryId);
+  };
+
   if (isDataLoading || isFamilyLoading) {
       return <Loading />;
   }
@@ -230,47 +234,56 @@ function MissionsHubContent() {
                     <CardContent>
                         {customTemplates.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {customTemplates.map(template => (
-                                    <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
-                                        <CardHeader>
-                                            <div className="flex items-start gap-2">
-                                                <span className="text-2xl mt-1">{template.emoji}</span>
-                                                <CardTitle className="text-base leading-tight">
-                                                    {template.title}
-                                                </CardTitle>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="flex-grow pt-0 space-y-2">
-                                           <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
-                                              <Puzzle className="mr-1.5 h-3 w-3" />
-                                              Personalizada
-                                           </Badge>
-                                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                                           </Badge>
-                                        </CardContent>
-                                        <CardFooter className="flex items-center gap-2">
-                                           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                <Users className="mr-2 h-4 w-4" /> Gerenciar
-                                            </Button>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="outline" size="icon" className="flex-shrink-0">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
-                                                        <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </CardFooter>
-                                    </Card>
-                                ))}
+                                {customTemplates.map(template => {
+                                    const categoryDetails = getCategoryDetails(template.category);
+                                    return (
+                                        <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                                            <CardHeader>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-2xl mt-1">{template.emoji}</span>
+                                                    <CardTitle className="text-base leading-tight">
+                                                        {template.title}
+                                                    </CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow pt-0 flex flex-wrap gap-2 items-center">
+                                               {categoryDetails && (
+                                                    <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                      {categoryDetails.icon && <categoryDetails.icon className="mr-1.5 h-3 w-3" />}
+                                                      {categoryDetails.label}
+                                                    </Badge>
+                                                )}
+                                               <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                                  <Puzzle className="mr-1.5 h-3 w-3" />
+                                                  Personalizada
+                                               </Badge>
+                                               <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                                                {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                               </Badge>
+                                            </CardContent>
+                                            <CardFooter className="flex items-center gap-2">
+                                               <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
+                                                    <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                </Button>
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="icon" className="flex-shrink-0">
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
+                                                            <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
                             </div>
                         ) : (
                             <div className="text-center py-10 text-muted-foreground">
