@@ -15,10 +15,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -36,13 +34,12 @@ import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissi
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn, getInitials } from '@/lib/utils';
-import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
@@ -82,7 +79,7 @@ function MissionsHubContent() {
         ]);
         setMissionTemplates(templates);
         setChildren(childrenData);
-        setMissionInstances(instances.filter(i => i.status === 'pending')); // Only active instances matter for assignment display
+        setMissionInstances(instances.filter(i => i.status === 'pending')); 
     } catch (err) {
       console.error("Error refetching missions data:", err)
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
@@ -153,172 +150,178 @@ function MissionsHubContent() {
     }
   };
 
-   const childrenWithAssignment = useMemo(() => {
-    const assignments = new Map<string, ChildProfile[]>();
-    missionInstances.forEach(instance => {
-      const child = children.find(c => c.id === instance.childId);
-      if (child) {
-        const existing = assignments.get(instance.templateId) || [];
-        if (!existing.find(c => c.id === child.id)) {
-          assignments.set(instance.templateId, [...existing, child]);
-        }
-      }
-    });
-    return assignments;
-  }, [missionInstances, children]);
-
   if (isDataLoading || isFamilyLoading) {
       return <Loading />;
   }
 
   return (
     <div className="space-y-8 pb-10">
-      
-      {customTemplates.length > 0 && (
-         <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Criadas por Você</CardTitle>
-                <CardDescription>
-                  Estas são as missões que você criou do zero. Clique em "Gerenciar" para atribuí-las.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {customTemplates.map(template => (
-                    <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
-                        <CardHeader>
-                            <div className="flex items-start gap-2">
-                                <span className="text-2xl mt-1">{template.emoji}</span>
-                                <CardTitle className="text-base leading-tight">
-                                    {template.title}
-                                </CardTitle>
-                            </div>
-                        </CardHeader>
-                        <CardContent className="flex-grow pt-0 space-y-2">
-                           <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
-                              <Puzzle className="mr-1.5 h-3 w-3" />
-                              Personalizada
-                           </Badge>
-                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
-                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                           </Badge>
-                        </CardContent>
-                        <CardFooter className="flex items-center gap-2">
-                           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                <Users className="mr-2 h-4 w-4" /> Gerenciar
-                            </Button>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="icon" className="flex-shrink-0">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
-                                        <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
-                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </CardFooter>
-                    </Card>
-                ))}
-            </CardContent>
-         </Card>
-      )}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2">
+            </div>
+             <div className="flex w-full sm:w-auto gap-2">
+                <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
+                    <Link href="/dashboard/missions/new">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão
+                    </Link>
+                </Button>
+            </div>
+        </div>
 
-      <Card>
-          <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-                <div>
-                  <CardTitle>Ideias de Missões</CardTitle>
-                  <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
-                </div>
-                 <div className="flex w-full sm:w-auto gap-2">
-                    <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
-                        <Link href="/dashboard/missions/new">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão
-                        </Link>
-                    </Button>
-                </div>
-              </div>
-          </CardHeader>
-          <CardContent>
-              <Accordion type="multiple" className="w-full space-y-4">
-                  {predefinedMissionGroups.map((group) => (
-                      <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
-                          <AccordionTrigger className="p-4 hover:no-underline">
-                             <div className="flex items-center gap-3">
-                                <group.icon className="h-6 w-6 text-primary" />
-                                <span className="text-lg font-semibold">{group.userCategory}</span>
-                             </div>
-                          </AccordionTrigger>
-                          <AccordionContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {group.items.map(idea => {
-                                    const isAdded = existingTemplateTitles.has(idea.title.toLowerCase().trim());
-                                    return (
-                                        <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
-                                            <CardHeader>
-                                                <CardTitle className="text-base flex items-center gap-2">
-                                                    <span className="text-2xl">{idea.emoji}</span>
-                                                    {idea.title}
+        <Tabs defaultValue="ideas" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="ideas">
+                    <Lightbulb className="mr-2 h-4 w-4"/>Ideias de Missões
+                </TabsTrigger>
+                <TabsTrigger value="custom">
+                    <User className="mr-2 h-4 w-4"/>Personalizadas
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="ideas" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Ideias de Missões</CardTitle>
+                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="multiple" className="w-full space-y-4">
+                            {predefinedMissionGroups.map((group) => (
+                                <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
+                                    <AccordionTrigger className="p-4 hover:no-underline">
+                                        <div className="flex items-center gap-3">
+                                            <group.icon className="h-6 w-6 text-primary" />
+                                            <span className="text-lg font-semibold">{group.userCategory}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 pt-0">
+                                        <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {group.items.map(idea => {
+                                                const isAdded = existingTemplateTitles.has(idea.title.toLowerCase().trim());
+                                                return (
+                                                    <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base flex items-center gap-2">
+                                                                <span className="text-2xl">{idea.emoji}</span>
+                                                                {idea.title}
+                                                            </CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent className="flex-grow">
+                                                            <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsReward}</Badge>
+                                                        </CardContent>
+                                                        <CardFooter>
+                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                                {isAdded ? "Gerenciar Missão" : "Usar esta Ideia"}
+                                                            </Button>
+                                                        </CardFooter>
+                                                    </Card>
+                                                )
+                                            })}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="custom" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Criadas por Você</CardTitle>
+                        <CardDescription>
+                            Estas são as missões que você criou do zero. Clique em "Gerenciar" para atribuí-las.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {customTemplates.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {customTemplates.map(template => (
+                                    <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                                        <CardHeader>
+                                            <div className="flex items-start gap-2">
+                                                <span className="text-2xl mt-1">{template.emoji}</span>
+                                                <CardTitle className="text-base leading-tight">
+                                                    {template.title}
                                                 </CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow">
-                                                <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsReward}</Badge>
-                                            </CardContent>
-                                            <CardFooter>
-                                                <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                    {isAdded ? "Gerenciar Missão" : "Usar esta Ideia"}
-                                                </Button>
-                                            </CardFooter>
-                                        </Card>
-                                    )
-                                })}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent className="flex-grow pt-0 space-y-2">
+                                           <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                              <Puzzle className="mr-1.5 h-3 w-3" />
+                                              Personalizada
+                                           </Badge>
+                                           <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
+                                            {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                           </Badge>
+                                        </CardContent>
+                                        <CardFooter className="flex items-center gap-2">
+                                           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
+                                                <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                            </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="outline" size="icon" className="flex-shrink-0">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
+                                                        <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </CardFooter>
+                                    </Card>
+                                ))}
                             </div>
-                          </AccordionContent>
-                      </AccordionItem>
-                  ))}
-              </Accordion>
-          </CardContent>
-      </Card>
+                        ) : (
+                            <div className="text-center py-10 text-muted-foreground">
+                                <PackageSearch className="h-12 w-12 mx-auto mb-4 text-primary" />
+                                <p className="font-semibold">Nenhuma missão personalizada encontrada.</p>
+                                <p className="text-sm mt-1">Clique em "Criar Missão" para adicionar uma que não esteja nas ideias.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                 </Card>
+            </TabsContent>
+        </Tabs>
+        
+        {templateToDelete && (
+            <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Missão do Catálogo</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tem certeza que deseja remover a missão "{templateToDelete.title}"? Isso removerá a missão do catálogo e de TODAS as agendas em que ela foi atribuída. Esta ação não pode ser desfeita.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleDeleteConfirm}
+                        className="bg-destructive hover:bg-destructive/90"
+                        disabled={isProcessingAction}
+                    >
+                        {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Sim, Excluir Tudo
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
 
-
-      {templateToDelete && (
-        <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Missão do Catálogo</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja remover a missão "{templateToDelete.title}"? Isso removerá a missão do catálogo e de TODAS as agendas em que ela foi atribuída. Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive hover:bg-destructive/90"
-                disabled={isProcessingAction}
-              >
-                {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sim, Excluir Tudo
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      {templateToAssign && (
-        <AssignMissionDialog
-          template={templateToAssign}
-          isOpen={isAssignDialogOpen}
-          onOpenChange={setIsAssignDialogOpen}
-          onAssigned={refetchData}
-        />
-      )}
+        {templateToAssign && (
+            <AssignMissionDialog
+                template={templateToAssign}
+                isOpen={isAssignDialogOpen}
+                onOpenChange={setIsAssignDialogOpen}
+                onAssigned={refetchData}
+            />
+        )}
     </div>
   );
 }
