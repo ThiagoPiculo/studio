@@ -266,21 +266,26 @@ function MissionsHubContent() {
                                                <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
                                                     <Users className="mr-2 h-4 w-4" /> Gerenciar
                                                 </Button>
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="outline" size="icon" className="flex-shrink-0">
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
-                                                            <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
-                                                            <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
+                                                                <Edit3 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Editar Missão</p></TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent><p>Excluir Missão</p></TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             </CardFooter>
                                         </Card>
                                     )
