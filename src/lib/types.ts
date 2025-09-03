@@ -254,6 +254,7 @@ export interface RewardTemplate {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: 'active' | 'archived';
+  source?: 'custom' | 'predefined';
 }
 
 export interface ChildRewardInstance {

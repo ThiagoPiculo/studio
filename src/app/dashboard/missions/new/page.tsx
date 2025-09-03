@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,10 +15,10 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3 } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
@@ -54,10 +54,13 @@ function CreateMissionTemplatePageContent() {
 
   const [userTemplates, setUserTemplates] = useState<MissionTemplate[]>([]);
   const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(true);
-  const [showDuplicateDialog, setShowDuplicateDialog] = useState(false);
-  const [duplicateTitle, setDuplicateTitle] = useState('');
   
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  
+  const [duplicateMission, setDuplicateMission] = useState<MissionTemplate | null>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
+
 
   const allMissionIdeas = useMemo(() => predefinedMissionGroups, []);
 
@@ -85,9 +88,12 @@ function CreateMissionTemplatePageContent() {
     },
   });
   
-  const existingTitles = useMemo(() => {
-    return new Set(userTemplates.map(t => t.title.trim().toLowerCase()));
+  const existingTemplatesMap = useMemo(() => {
+    const map = new Map<string, MissionTemplate>();
+    userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
+    return map;
   }, [userTemplates]);
+
 
   useEffect(() => {
     if (!user) {
@@ -100,6 +106,22 @@ function CreateMissionTemplatePageContent() {
       .catch(console.error)
       .finally(() => setIsCheckingDuplicates(false));
   }, [user, currentContext]);
+  
+  const handleIdeaSelection = (idea: any) => {
+    const existingTemplate = existingTemplatesMap.get(idea.title.trim().toLowerCase());
+    if (existingTemplate) {
+        setDuplicateMission(existingTemplate);
+        setIdeaForDuplicate(idea);
+        setIsDuplicateDialogOpen(true);
+    } else {
+        form.setValue("title", idea.title);
+        form.setValue("emoji", idea.emoji);
+        form.setValue("category", idea.suggestedAppCategory);
+        form.setValue("starsReward", idea.starsReward);
+        form.setValue("xpReward", idea.xpReward);
+        setIsPopoverOpen(false);
+    }
+  };
 
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
@@ -107,6 +129,15 @@ function CreateMissionTemplatePageContent() {
       toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
       return;
     }
+    
+    // Check for exact title match again on submit, in case user manually typed it
+    const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
+    if (existingTemplate) {
+        setDuplicateMission(existingTemplate);
+        setIsDuplicateDialogOpen(true);
+        return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -125,7 +156,7 @@ function CreateMissionTemplatePageContent() {
         startDate: null,
         dueDate: null,
         recurrenceRule: null,
-        source: 'custom',
+        source: isFromPredefined ? 'predefined' : 'custom',
       };
       
       const createdTemplate = await addMissionTemplate(user, templateDataPayload);
@@ -148,6 +179,26 @@ function CreateMissionTemplatePageContent() {
       setIsLoading(false);
     }
   };
+  
+  const handleEditDuplicate = () => {
+    if (duplicateMission) {
+      router.push(`/dashboard/missions/edit/${duplicateMission.id}`);
+    }
+    setIsDuplicateDialogOpen(false);
+  };
+
+  const handleCreateAnyway = () => {
+    if (ideaForDuplicate) {
+        form.setValue("title", ideaForDuplicate.title);
+        form.setValue("emoji", ideaForDuplicate.emoji);
+        form.setValue("category", ideaForDuplicate.suggestedAppCategory);
+        form.setValue("starsReward", ideaForDuplicate.starsReward);
+        form.setValue("xpReward", ideaForDuplicate.xpReward);
+    }
+    setIsDuplicateDialogOpen(false);
+    // User can now edit and submit again
+  };
+
 
   return (
     <>
@@ -211,28 +262,16 @@ function CreateMissionTemplatePageContent() {
                                                 {allMissionIdeas.map((group) => (
                                                     <CommandGroup key={group.userCategory} heading={group.userCategory}>
                                                         {group.items.map(idea => {
-                                                            const isDuplicate = existingTitles.has(idea.title.trim().toLowerCase());
+                                                            const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
                                                             return (
                                                                 <CommandItem
                                                                     value={idea.title}
                                                                     key={idea.title}
-                                                                    onSelect={() => {
-                                                                        if (isDuplicate) {
-                                                                            setDuplicateTitle(idea.title);
-                                                                            setShowDuplicateDialog(true);
-                                                                            return;
-                                                                        }
-                                                                        form.setValue("title", idea.title);
-                                                                        form.setValue("emoji", idea.emoji);
-                                                                        form.setValue("category", idea.suggestedAppCategory);
-                                                                        form.setValue("starsReward", idea.starsReward);
-                                                                        form.setValue("xpReward", idea.xpReward);
-                                                                        setIsPopoverOpen(false);
-                                                                    }}
+                                                                    onSelect={() => handleIdeaSelection(idea)}
                                                                 >
                                                                     <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
                                                                     {idea.title}
-                                                                    {isDuplicate && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
                                                                 </CommandItem>
                                                             )
                                                         })}
@@ -286,9 +325,6 @@ function CreateMissionTemplatePageContent() {
                         <FormControl>
                           <Input type="number" placeholder="Ex: 5" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Estrelas que o heroi ganha.
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -302,9 +338,6 @@ function CreateMissionTemplatePageContent() {
                         <FormControl>
                           <Input type="number" placeholder="Ex: 10" {...field} />
                         </FormControl>
-                        <FormDescription>
-                          Pontos para subir de nível.
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -348,33 +381,25 @@ function CreateMissionTemplatePageContent() {
         </Card>
       </div>
 
-       {showDuplicateDialog && (
-        <AlertDialog open={showDuplicateDialog} onOpenChange={setShowDuplicateDialog}>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Missão Já Existe!</AlertDialogTitle>
-                <AlertDialogDescription>
-                    A missão "{duplicateTitle}" já está no seu catálogo. Você gostaria de gerenciá-la ou criar uma nova versão?
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogAction onClick={() => {
-                    setShowDuplicateDialog(false);
-                    const idea = allMissionIdeas.flatMap(g => g.items).find(i => i.title === duplicateTitle);
-                    if(idea) {
-                         form.setValue("title", idea.title);
-                         form.setValue("emoji", idea.emoji);
-                         form.setValue("category", idea.suggestedAppCategory);
-                         form.setValue("starsReward", idea.starsReward);
-                         form.setValue("xpReward", idea.xpReward);
-                    }
-                }}>Criar mesmo assim</AlertDialogAction>
-                <AlertDialogCancel onClick={() => {
-                    setShowDuplicateDialog(false);
-                    router.push('/dashboard/missions');
-                }}>Ir para o Catálogo</AlertDialogCancel>
-            </AlertDialogFooter>
+       <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Missão Já Existe no Catálogo</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Você já tem uma missão chamada "{duplicateMission?.title}". O que você gostaria de fazer?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
+                        Criar uma nova versão
+                    </Button>
+                    <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Gerenciar a existente
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
         </AlertDialog>
-      )}
 
       {newlyCreatedTemplate && (
         <AssignMissionDialog
@@ -403,5 +428,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
-    

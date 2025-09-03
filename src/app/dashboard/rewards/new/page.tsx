@@ -22,6 +22,8 @@ import { rewardCategories } from '@/lib/types';
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import Link from 'next/link';
+import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
+
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -136,6 +138,7 @@ function CreateRewardTemplatePageContent() {
     }
     setIsLoading(true);
     try {
+      const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
       const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
         title: values.title,
@@ -145,6 +148,7 @@ function CreateRewardTemplatePageContent() {
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
         familyId: currentContext === 'my-space' ? null : currentContext,
+        source: isFromPredefined ? 'predefined' : 'custom',
       };
       
       const createdTemplate = await addRewardTemplate(user, templateDataPayload);
