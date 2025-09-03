@@ -134,7 +134,7 @@ export function AppSidebar() {
                     <Accordion type="multiple" className="w-full" defaultValue={defaultAccordionValue}>
                         <AccordionItem value="item-2" className="border-none">
                             <CustomAccordionTrigger>
-                                Gerenciamento
+                                Crianças
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
