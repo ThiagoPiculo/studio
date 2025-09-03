@@ -160,7 +160,7 @@ function MissionsHubContent() {
              <div className="flex w-full sm:w-auto gap-2">
                 <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
                     <Link href="/dashboard/missions/new">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão
+                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão Personalizada
                     </Link>
                 </Button>
             </div>
