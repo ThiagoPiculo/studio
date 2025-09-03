@@ -42,6 +42,7 @@ import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
@@ -209,16 +210,21 @@ function MissionsHubContent() {
                            <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
                                 <Users className="mr-2 h-4 w-4" /> Gerenciar
                             </Button>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
-                                            <Edit3 className="h-4 w-4" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Editar Missão</p></TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="icon" className="flex-shrink-0">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${template.id}`)} disabled={!canEdit}>
+                                        <Edit3 className="mr-2 h-4 w-4" /> Editar Missão
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onSelect={() => setTemplateToDelete(template)} disabled={!canEdit} className="text-destructive focus:text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" /> Excluir Missão
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </CardFooter>
                     </Card>
                 ))}
