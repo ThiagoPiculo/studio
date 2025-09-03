@@ -122,7 +122,7 @@ function AgendaPageContent() {
   );
   
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
-  const [isCompactMode, setIsCompactMode] = useState(true);
+  const [isCompactMode, setIsCompactMode] = useState(false);
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -1258,3 +1258,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
