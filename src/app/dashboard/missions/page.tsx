@@ -91,17 +91,8 @@ function MissionsHubContent() {
     return new Set(predefinedMissionGroups.flatMap(g => g.items.map(item => item.title.toLowerCase().trim())));
   }, []);
 
-  const { customTemplates, catalogTemplates } = useMemo(() => {
-    const custom: MissionTemplate[] = [];
-    const catalog: MissionTemplate[] = [];
-    missionTemplates.forEach(template => {
-      if (predefinedMissionTitles.has(template.title.toLowerCase().trim())) {
-        catalog.push(template);
-      } else {
-        custom.push(template);
-      }
-    });
-    return { customTemplates: custom, catalogTemplates: catalog };
+  const customTemplates = useMemo(() => {
+    return missionTemplates.filter(template => !predefinedMissionTitles.has(template.title.toLowerCase().trim()));
   }, [missionTemplates, predefinedMissionTitles]);
 
   const existingTemplateTitles = useMemo(() => {

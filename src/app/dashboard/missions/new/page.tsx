@@ -161,11 +161,6 @@ function CreateMissionTemplatePageContent() {
                   </CardDescription>
                   </div>
               </div>
-              <Link href="/dashboard/missions/ideas">
-                <Button variant="secondary" className="w-full sm:w-auto">
-                    <Lightbulb className="mr-2 h-4 w-4" /> Ver Ideias de Missões
-                </Button>
-              </Link>
             </div>
           </CardHeader>
           <CardContent>
