@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from 'react';
@@ -117,8 +116,18 @@ export function AppSidebar() {
                         </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
+                        <NavLink href="/dashboard/agenda" tooltip="Rotina de Missões" label="Rotina de Missões">
+                            <CalendarDays className="text-chart-5" />
+                        </NavLink>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
                          <NavLink href="/dashboard/progressos" tooltip="Painel de Progressos" label="Painel de Progressos">
                             <CalendarCheck2 className="text-chart-1" />
+                        </NavLink>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <NavLink href="/dashboard/school-schedule" tooltip="Rotina Escolar" label="Rotina Escolar">
+                            <NotebookPen className="text-chart-4" />
                         </NavLink>
                     </SidebarMenuItem>
                     
@@ -148,19 +157,9 @@ export function AppSidebar() {
 
                         <AccordionItem value="item-3" className="border-none">
                              <CustomAccordionTrigger>
-                                Quadros e Rotinas
+                                Quadros e Catálogos
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
-                                <SidebarMenuItem>
-                                    <NavLink href="/dashboard/agenda" tooltip="Rotina de Missões" label="Rotina de Missões">
-                                        <CalendarDays className="text-chart-5" />
-                                    </NavLink>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <NavLink href="/dashboard/school-schedule" tooltip="Rotina Escolar" label="Rotina Escolar">
-                                        <NotebookPen className="text-chart-4" />
-                                    </NavLink>
-                                </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <NavLink href="/dashboard/missions" tooltip="Quadro de Missões" label="Quadro de Missões">
                                         <Target className="text-destructive" />
