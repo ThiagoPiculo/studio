@@ -24,8 +24,10 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getMissionTemplatesByOwnerOrFamily, 
   deleteMissionTemplateAndInstances,
+  getChildProfilesForAttribution,
+  getMissionInstancesForContext
 } from '@/lib/firebase/firestore';
-import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole } from '@/lib/types';
+import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole, MissionInstance } from '@/lib/types';
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +51,8 @@ function MissionsHubContent() {
   const router = useRouter();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
+  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
@@ -71,8 +75,14 @@ function MissionsHubContent() {
     setIsDataLoading(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const templates = await getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+        const [templates, childrenData, instances] = await Promise.all([
+            getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+            getChildProfilesForAttribution(user.uid, currentContext),
+            getMissionInstancesForContext(user.uid, familyIdToQuery)
+        ]);
         setMissionTemplates(templates);
+        setChildren(childrenData);
+        setMissionInstances(instances.filter(i => i.status === 'pending')); // Only active instances matter for assignment display
     } catch (err) {
       console.error("Error refetching missions data:", err)
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
@@ -142,6 +152,20 @@ function MissionsHubContent() {
       default: return 'outline';
     }
   };
+
+   const childrenWithAssignment = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    missionInstances.forEach(instance => {
+      const child = children.find(c => c.id === instance.childId);
+      if (child) {
+        const existing = assignments.get(instance.templateId) || [];
+        if (!existing.find(c => c.id === child.id)) {
+          assignments.set(instance.templateId, [...existing, child]);
+        }
+      }
+    });
+    return assignments;
+  }, [missionInstances, children]);
 
   if (isDataLoading || isFamilyLoading) {
       return <Loading />;
