@@ -94,13 +94,9 @@ function MissionsHubContent() {
     }
   }, [authLoading, isFamilyLoading, refetchData]);
   
-  const predefinedMissionTitles = useMemo(() => {
-    return new Set(predefinedMissionGroups.flatMap(g => g.items.map(item => item.title.toLowerCase().trim())));
-  }, []);
-
   const customTemplates = useMemo(() => {
-    return missionTemplates.filter(template => !predefinedMissionTitles.has(template.title.toLowerCase().trim()));
-  }, [missionTemplates, predefinedMissionTitles]);
+    return missionTemplates.filter(template => template.source === 'custom');
+  }, [missionTemplates]);
 
   const existingTemplateTitles = useMemo(() => {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
@@ -156,9 +152,7 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-2">
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
              <div className="flex w-full sm:w-auto gap-2">
                 <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
                     <Link href="/dashboard/missions/new">

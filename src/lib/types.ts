@@ -170,6 +170,7 @@ export interface MissionTemplate {
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: 'active' | 'archived';
+  source?: 'custom' | 'predefined';
   // Scheduling fields
   startDate?: Timestamp | null;
   dueDate?: Timestamp | null;

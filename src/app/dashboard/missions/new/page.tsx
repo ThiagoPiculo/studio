@@ -110,6 +110,8 @@ function CreateMissionTemplatePageContent() {
     setIsLoading(true);
 
     try {
+      const isFromIdea = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title);
+
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
         familyId: currentContext === 'my-space' ? null : currentContext,
@@ -123,6 +125,7 @@ function CreateMissionTemplatePageContent() {
         startDate: null,
         dueDate: null,
         recurrenceRule: null,
+        source: isFromIdea ? 'predefined' : 'custom', // Set the source field here
       };
       
       const createdTemplate = await addMissionTemplate(user, templateDataPayload);
