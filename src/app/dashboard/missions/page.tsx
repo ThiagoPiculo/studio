@@ -23,7 +23,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getMissionTemplatesByOwnerOrFamily, 
-  deleteMissionTemplate,
   deleteMissionTemplateAndInstances,
 } from '@/lib/firebase/firestore';
 import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole } from '@/lib/types';
@@ -34,19 +33,18 @@ import { useRouter } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -87,7 +85,7 @@ function MissionsHubContent() {
     if (!authLoading && !isFamilyLoading) {
       refetchData();
     }
-  }, [authLoading, isFamilyLoading, refetchData, currentContext]);
+  }, [authLoading, isFamilyLoading, refetchData]);
   
   const existingTemplateTitles = useMemo(() => {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
@@ -143,44 +141,6 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-      <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-                <Target className="h-8 w-8 text-primary" />
-                <div>
-                    <CardTitle className="text-3xl font-headline">Quadro de Missões</CardTitle>
-                    <CardDescription>Inspire-se, crie e gerencie as missões para sua equipe de heróis.</CardDescription>
-                </div>
-                 <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                         <div className="space-y-3">
-                            <h4 className="font-medium leading-none">O Catálogo de Aventuras</h4>
-                            <p className="text-sm text-muted-foreground">
-                              Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis.
-                            </p>
-                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                <li><strong>Use uma Ideia:</strong> Navegue pelas sugestões abaixo e clique em "Usar Ideia" para adicionar rapidamente uma missão ao seu catálogo.</li>
-                                <li><strong>Crie do Zero:</strong> Use o botão "Criar Missão" para definir uma tarefa totalmente personalizada.</li>
-                                <li><strong>Gerencie a Agenda:</strong> Depois que uma missão está no seu catálogo, clique em "Gerenciar" para atribuí-la na rotina de um ou mais heróis.</li>
-                            </ul>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
-            <div className="pt-4">
-                <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
-                    <Link href="/dashboard/missions/new">
-                        <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão Personalizada
-                    </Link>
-                </Button>
-            </div>
-          </CardHeader>
-      </Card>
       
       {missionTemplates.length > 0 && (
          <Card>
