@@ -150,7 +150,7 @@ function CuidandoSoloPageContent() {
                             <User className="h-6 w-6 text-primary"/>
                             Mini Herois em Cuidar Solo
                         </CardTitle>
-                        <CardDescription>Estes são os heróis que você gerencia pessoalmente.</CardDescription>
+                        <CardDescription>Estes são os heróis que você gerencia pessoalmente. Para colaborar com outros responsáveis, adicione o herói a uma aliança.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

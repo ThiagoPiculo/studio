@@ -62,8 +62,8 @@ function HeroesPageContent() {
         return (
             <GettingStartedGuide 
                 hasChildren={false}
-                hasMissions={false}
-                hasRewards={false}
+                hasMissions={missions.length > 0}
+                hasRewards={rewards.length > 0}
             />
         );
     }
