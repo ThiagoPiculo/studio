@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
@@ -39,18 +38,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
-import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import Loading from './loading';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
 function MissionsHubContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId, setSelectedChildId } = useFamily();
+  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading, selectedChildId } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -417,72 +412,31 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-6">
-        <Card>
-            <CardHeader>
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div className="flex items-center gap-2">
-                        <Target className="h-8 w-8 text-primary" />
-                        <h2 className="text-3xl font-headline font-bold whitespace-nowrap">Quadro de Missões</h2>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                                    <HelpCircle className="h-5 w-5" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-80">
-                                <div className="space-y-3">
-                                    <h4 className="font-medium leading-none">O Motor da Aventura: Missões</h4>
-                                    <p className="text-sm text-muted-foreground">
-                                        Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis.
-                                    </p>
-                                    <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                        <li><strong>Crie Primeiro Aqui:</strong> Antes de agendar uma missão, crie-a neste quadro.</li>
-                                        <li><strong>Atribua aos Herois:</strong> Use o botão "Atribuir" para agendar a missão na rotina de um ou mais heróis.</li>
-                                    </ul>
-                                     <p className="text-sm text-muted-foreground">
-                                        Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
-                                     </p>
-                                    <PopoverClose asChild>
-                                        <Button className="w-full">Entendi 👍</Button>
-                                    </PopoverClose>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                     <div className="flex w-full flex-row sm:w-auto items-center gap-2">
-                         {children.length > 1 && (
-                            <div className="flex-grow sm:flex-grow-0">
-                                <HeroSelector
-                                    heroes={children}
-                                    selectedHeroId={selectedChildId}
-                                    onSelectHero={setSelectedChildId}
-                                    showAllOption={true}
-                                />
-                            </div>
-                         )}
-                         <div className="flex-shrink-0">
-                            <Button asChild className="w-full sm:w-auto bg-accent text-accent-foreground hover:bg-accent/90" disabled={!canEdit}>
-                                <Link href="/dashboard/missions/new">
-                                    <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
-                                </Link>
-                            </Button>
-                         </div>
-                    </div>
-                </div>
-                 <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 pt-4">
-                    <Button asChild variant="outline" className="w-full sm:w-auto">
-                      <Link href="/dashboard/agenda">
-                        <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
+       <Card>
+          <CardContent className="p-4">
+             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 w-full">
+                  <Button asChild variant="outline" className="w-full sm:w-auto">
+                    <Link href="/dashboard/agenda">
+                      <CalendarDays className="mr-2 h-5 w-5" /> Rotina de Missões
+                    </Link>
+                  </Button>
+                  <Button asChild variant="secondary" className="w-full sm:w-auto">
+                    <Link href="/dashboard/missions/ideas">
+                      <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
+                    </Link>
+                  </Button>
+              </div>
+               <div className="flex-shrink-0 w-full sm:w-auto">
+                  <Button asChild className="w-full" disabled={!canEdit}>
+                      <Link href="/dashboard/missions/new">
+                          <PlusCircle className="mr-2 h-5 w-5" /> Criar Missão
                       </Link>
-                    </Button>
-                    <Button asChild variant="secondary" className="w-full sm:w-auto">
-                      <Link href="/dashboard/missions/ideas">
-                        <Lightbulb className="mr-2 h-5 w-5" /> Ideias de Missões
-                      </Link>
-                    </Button>
-                </div>
-            </CardHeader>
-        </Card>
+                  </Button>
+               </div>
+             </div>
+          </CardContent>
+       </Card>
       
       <div className="px-2 md:px-6 md:py-6">
           <div className="mb-4 flex items-center justify-between">
@@ -593,5 +547,3 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
-
-    

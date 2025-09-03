@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2 } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -102,6 +102,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         )
       }
     },
+     '/dashboard/missions': {
+      title: 'Quadro de Missões',
+      icon: Target,
+      help: {
+        title: 'O Catálogo de Aventuras',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">
+              Esta tela é o seu <strong>catálogo central</strong>, onde você cria os "modelos" de todas as missões possíveis.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                <li><strong>Crie Primeiro Aqui:</strong> Antes de agendar uma missão, crie-a neste quadro.</li>
+                <li><strong>Atribua aos Herois:</strong> Use o botão "Gerenciar" em cada card para atribuir a missão na rotina de um ou mais heróis.</li>
+            </ul>
+             <p className="text-sm text-muted-foreground">
+                Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
+             </p>
+          </>
+        )
+      }
+    },
     '/dashboard/progressos': {
         title: 'Painel de Progressos',
         icon: CalendarCheck2,
@@ -137,7 +158,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
   
   const showHeroSelector = isClient &&
-    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&
+    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule', '/dashboard/missions'].includes(pathname) &&
     childrenInContext.length > 1;
 
 
