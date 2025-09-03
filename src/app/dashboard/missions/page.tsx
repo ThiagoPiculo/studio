@@ -18,7 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -87,6 +87,23 @@ function MissionsHubContent() {
     }
   }, [authLoading, isFamilyLoading, refetchData]);
   
+  const predefinedMissionTitles = useMemo(() => {
+    return new Set(predefinedMissionGroups.flatMap(g => g.items.map(item => item.title.toLowerCase().trim())));
+  }, []);
+
+  const { customTemplates, catalogTemplates } = useMemo(() => {
+    const custom: MissionTemplate[] = [];
+    const catalog: MissionTemplate[] = [];
+    missionTemplates.forEach(template => {
+      if (predefinedMissionTitles.has(template.title.toLowerCase().trim())) {
+        catalog.push(template);
+      } else {
+        custom.push(template);
+      }
+    });
+    return { customTemplates: custom, catalogTemplates: catalog };
+  }, [missionTemplates, predefinedMissionTitles]);
+
   const existingTemplateTitles = useMemo(() => {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
   }, [missionTemplates]);
@@ -142,16 +159,16 @@ function MissionsHubContent() {
   return (
     <div className="space-y-8 pb-10">
       
-      {missionTemplates.length > 0 && (
+      {customTemplates.length > 0 && (
          <Card>
             <CardHeader>
-                <CardTitle>Seu Catálogo de Missões</CardTitle>
+                <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Criadas por Você</CardTitle>
                 <CardDescription>
-                  As missões que você já criou. Clique em "Gerenciar" para atribuí-las.
+                  Estas são as missões que você criou do zero. Clique em "Gerenciar" para atribuí-las.
                 </CardDescription>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {missionTemplates.map(template => (
+                {customTemplates.map(template => (
                     <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
                         <CardHeader>
                             <div className="flex items-start gap-2">
@@ -161,7 +178,11 @@ function MissionsHubContent() {
                                 </CardTitle>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-grow pt-0">
+                        <CardContent className="flex-grow pt-0 space-y-2">
+                           <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                              <Puzzle className="mr-1.5 h-3 w-3" />
+                              Personalizada
+                           </Badge>
                            <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
                             {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                            </Badge>
@@ -195,7 +216,7 @@ function MissionsHubContent() {
       <Card>
           <CardHeader>
               <CardTitle>Ideias de Missões</CardTitle>
-              <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo.</CardDescription>
+              <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
           </CardHeader>
           <CardContent>
               <Accordion type="multiple" className="w-full space-y-4">
