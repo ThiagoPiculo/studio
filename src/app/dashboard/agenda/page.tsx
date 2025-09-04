@@ -233,6 +233,13 @@ function AgendaPageContent() {
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
   const categoryMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
 
+  // Effect to manage filter state when switching views
+  useEffect(() => {
+    if (isKidsView && !['day', '3days'].includes(dateRangeFilter)) {
+      setDateRangeFilter('day'); // Reset to a valid default for kids view
+    }
+  }, [isKidsView, dateRangeFilter]);
+
 
   const viewInterval = useMemo(() => {
     const weekStartsOn = 1; // Monday
@@ -1097,6 +1104,19 @@ function AgendaPageContent() {
     }
     return renderGridView();
   }
+  
+  const dateRangeOptions = [
+    { value: 'day', label: '1 Dia' },
+    { value: '3days', label: '3 Dias' },
+    { value: 'workweek', label: 'Semana Útil' },
+    { value: 'week', label: 'Semana' },
+    { value: 'month', label: 'Mês' },
+  ];
+  
+  const availableDateRangeOptions = isKidsView
+    ? dateRangeOptions.filter(opt => opt.value === 'day' || opt.value === '3days')
+    : dateRangeOptions;
+
 
   return (
     <>
@@ -1121,18 +1141,18 @@ function AgendaPageContent() {
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-end md:gap-x-2 md:gap-y-2 md:flex-wrap">
               <div className="grid grid-cols-2 md:flex md:items-center gap-2">
                 <div className="flex-grow sm:flex-grow-0">
-                  <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
-                      <SelectTrigger className="w-full sm:w-[140px] h-9">
-                          <SelectValue placeholder="Selecione a visão" />
-                      </SelectTrigger>
-                      <SelectContent>
-                          <SelectItem value="day">1 Dia</SelectItem>
-                          <SelectItem value="3days">3 Dias</SelectItem>
-                          <SelectItem value="workweek">Semana Útil</SelectItem>
-                          <SelectItem value="week">Semana</SelectItem>
-                          <SelectItem value="month">Mês</SelectItem>
-                      </SelectContent>
-                  </Select>
+                   <Select value={dateRangeFilter} onValueChange={(v) => setDateRangeFilter(v as DateRangeFilter)}>
+                        <SelectTrigger className="w-full sm:w-[140px] h-9">
+                            <SelectValue placeholder="Selecione a visão" />
+                        </SelectTrigger>
+                        <SelectContent>
+                           {availableDateRangeOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </div>
                 <div className="flex-grow sm:flex-grow-0">
                   <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
@@ -1141,7 +1161,7 @@ function AgendaPageContent() {
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="all">
-                              Todos os Períodos
+                             <span className="flex items-center gap-2">Todos os Períodos</span>
                           </SelectItem>
                           <SelectItem value="morning">
                               <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
