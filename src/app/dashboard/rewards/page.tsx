@@ -15,19 +15,16 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Label } from "@/components/ui/label";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, User, Lightbulb } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getRewardTemplatesByOwnerOrFamily, 
   deleteRewardTemplate,
   getChildProfilesForAttribution,
-  getChildRewardInstancesForContext
 } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, ChildProfile, ChildRewardInstance, FamilyRole } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, ChildProfile, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -35,16 +32,19 @@ import { useRouter } from 'next/navigation';
 import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { db } from '@/lib/firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
-import { Separator } from '@/components/ui/separator';
-import { getInitials } from '@/lib/utils';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
+import type { PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { db } from '@/lib/firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
+import { Separator } from '@/components/ui/separator';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 
 function RewardsHubContent() {
@@ -181,160 +181,7 @@ function RewardsHubContent() {
     const contextData = availableContexts.find(c => c.id === currentContext);
     return `Catálogo da Aliança: ${contextData?.name || ''}`;
   }, [currentContext, availableContexts]);
-
-  const renderRewardCard = (template: RewardTemplate) => {
-    const categoryDetails = getCategoryDetails(template.category);
-    
-    return (
-      <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
-        <CardHeader>
-          <div className="flex items-center gap-2">
-            {categoryDetails?.icon && <categoryDetails.icon className="h-4 w-4 text-muted-foreground" />}
-            <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
-          </div>
-          {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
-        </CardHeader>
-        <CardContent className="flex flex-col flex-grow p-6 pt-0">
-          <div className="space-y-2">
-            <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
-          </div>
-          <div className="flex-grow" />
-           <div className="pt-4">
-              <Separator className="mb-3" />
-              <div className="space-y-2">
-                <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                  <Users className="h-4 w-4" /> Desbloqueado por:
-                </h4>
-                <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
-                {isDataLoading ? (
-                    <div className="flex -space-x-2">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                    </div>
-                ) : children.length > 0 ? (
-                  children.map(child => {
-                    const canAfford = child.stars >= template.starsCost;
-                    const progress = canAfford ? 100 : (child.stars / template.starsCost) * 100;
-                    return (
-                       <TooltipProvider key={child.id} delayDuration={100}>
-                        <Tooltip>
-                          <TooltipTrigger>
-                              <div className="relative">
-                                  <Avatar className={cn("h-8 w-8", !canAfford && "opacity-40")}>
-                                      <AvatarImage src={child.avatar} alt={child.name} />
-                                      <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                  </Avatar>
-                                  {!canAfford && (
-                                    <svg className="h-8 w-8 absolute top-0 left-0" viewBox="0 0 36 36">
-                                      <path
-                                        className="stroke-muted"
-                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        strokeWidth="2"
-                                        fill="none"
-                                      />
-                                      <path
-                                        className="stroke-primary"
-                                        strokeDasharray={`${progress}, 100`}
-                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-                                        strokeWidth="2"
-                                        fill="none"
-                                      />
-                                    </svg>
-                                  )}
-                              </div>
-                          </TooltipTrigger>
-                          <TooltipContent><p>{child.name}: {child.stars}/{template.starsCost} estrelas</p></TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )
-                  })
-                ) : (
-                  <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                )}
-                </div>
-              </div>
-            </div>
-        </CardContent>
-        <CardFooter className="flex items-center gap-2">
-           <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit}>
-                <Users className="mr-2 h-4 w-4" /> Gerenciar
-            </Button>
-            <TooltipProvider>
-                <Tooltip><TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
-                        <Edit3 className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-                <Tooltip><TooltipTrigger asChild>
-                    <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                    </Button>
-                </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
-            </TooltipProvider>
-        </CardFooter>
-      </Card>
-    );
-  };
   
-  const renderCatalogView = () => (
-    <div className="space-y-6">
-      <Card>
-          <CardHeader>
-              <CardTitle>{currentContextName}</CardTitle>
-              <CardDescription>
-                  {rewardTemplates.length > 0
-                  ? "Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis."
-                  : "Seu catálogo está vazio. Adicione recompensas das ideias abaixo ou crie uma do zero."
-                  }
-              </CardDescription>
-          </CardHeader>
-          {rewardTemplates.length > 0 && (
-            <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {rewardTemplates.map(renderRewardCard)}
-                  </div>
-            </CardContent>
-          )}
-      </Card>
-
-       <Card>
-        <CardHeader>
-            <CardTitle>Ideias de Recompensas</CardTitle>
-            <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <div className="space-y-6">
-              {predefinedRewardGroups.map(group => (
-                <section key={group.userCategory}>
-                  <h3 className="text-xl font-headline font-bold mb-3">{group.userCategory}</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
-                      <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
-                        <CardHeader>
-                           <CardTitle className="text-base">{idea.title}</CardTitle>
-                           {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
-                        </CardHeader>
-                        <CardContent className="flex-grow">
-                          <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
-                        </CardContent>
-                        <CardFooter>
-                           <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                {idea.isAdded ? "Editar no Catálogo" : "Usar Ideia"}
-                            </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
-                  </div>
-                </section>
-              ))}
-            </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-
   if (isDataLoading || isFamilyLoading) {
     return <Loading />;
   }
@@ -380,72 +227,184 @@ function RewardsHubContent() {
             </div>
         </div>
 
-        <Card>
-           <CardContent className="p-6">
-             <Accordion type="single" collapsible className="w-full" defaultValue="strategy">
-                <AccordionItem value="strategy" className="border rounded-lg bg-card text-card-foreground shadow-sm">
-                  <AccordionTrigger className="p-6 hover:no-underline w-full group text-left">
-                    <div className="flex items-center gap-4">
-                      <Info className="h-8 w-8 text-primary" />
-                      <div>
-                          <h2 className="text-2xl font-headline font-bold">Estratégia de Recompensas</h2>
-                          <p className="text-sm text-muted-foreground font-normal mt-1">Escolha como as recompensas são disponibilizadas para seus heróis.</p>
-                      </div>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent className="p-6 pt-0">
-                     <RadioGroup value={rewardMode} onValueChange={(v) => handleRewardModeChange(v as any)} className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-                        <Label htmlFor="mode-auto" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                            <RadioGroupItem value="automatic" id="mode-auto" className="mt-1" />
-                            <div className="flex-grow">
-                              <p className="font-semibold text-foreground">Automático (Recomendado)</p>
-                              <p className="text-sm text-muted-foreground">O sistema notifica quando o herói pode resgatar. Você aprova, e pronto. Menos trabalho para você!</p>
+        <Tabs defaultValue="ideas" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="ideas">
+                    <Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas
+                </TabsTrigger>
+                <TabsTrigger value="custom">
+                    <User className="mr-2 h-4 w-4"/>Personalizadas
+                </TabsTrigger>
+            </TabsList>
+            <TabsContent value="ideas" className="mt-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
+                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-6">
+                          {predefinedRewardGroups.map(group => (
+                            <section key={group.userCategory}>
+                              <h3 className="text-xl font-headline font-bold mb-3">{group.userCategory}</h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
+                                  <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
+                                    <CardHeader>
+                                       <CardTitle className="text-base">{idea.title}</CardTitle>
+                                       {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
+                                    </CardHeader>
+                                    <CardContent className="flex-grow">
+                                      <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
+                                    </CardContent>
+                                    <CardFooter>
+                                       <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                            {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
+                                        </Button>
+                                    </CardFooter>
+                                  </Card>
+                                ))}
+                              </div>
+                            </section>
+                          ))}
+                        </div>
+                    </CardContent>
+                  </Card>
+            </TabsContent>
+            <TabsContent value="custom" className="mt-6">
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{currentContextName}</CardTitle>
+                        <CardDescription>
+                            {rewardTemplates.length > 0
+                            ? "Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis."
+                            : "Seu catálogo está vazio. Adicione recompensas das ideias ou crie uma do zero."
+                            }
+                        </CardDescription>
+                    </CardHeader>
+                    {rewardTemplates.length > 0 && (
+                        <CardContent>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {rewardTemplates.map(template => {
+                                    const categoryDetails = getCategoryDetails(template.category);
+                                    return (
+                                        <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                                            <CardHeader>
+                                                <div className="flex items-start gap-2">
+                                                    {categoryDetails?.icon && <categoryDetails.icon className="h-5 w-5 text-muted-foreground" />}
+                                                    <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
+                                                </div>
+                                            </CardHeader>
+                                            <CardContent className="flex-grow pt-0 flex flex-col">
+                                                <div className="space-y-2">
+                                                    <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                </div>
+                                                <div className="flex-grow" />
+                                                <div className="pt-4">
+                                                    <Separator className="mb-3" />
+                                                    <div className="space-y-2">
+                                                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
+                                                        <Users className="h-4 w-4" /> Desbloqueado por:
+                                                        </h4>
+                                                        <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
+                                                        {isDataLoading ? (
+                                                            <div className="flex -space-x-2">
+                                                                <Skeleton className="h-8 w-8 rounded-full" />
+                                                            </div>
+                                                        ) : children.length > 0 ? (
+                                                            children.map(child => {
+                                                            const canAfford = child.stars >= template.starsCost;
+                                                            const progress = canAfford ? 100 : (child.stars / template.starsCost) * 100;
+                                                            return (
+                                                                <TooltipProvider key={child.id} delayDuration={100}>
+                                                                    <Tooltip>
+                                                                        <TooltipTrigger>
+                                                                            <div className="relative">
+                                                                                <Avatar className={cn("h-8 w-8", !canAfford && "opacity-40")}>
+                                                                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                                                                    <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                                                </Avatar>
+                                                                                {!canAfford && (
+                                                                                    <svg className="h-8 w-8 absolute top-0 left-0" viewBox="0 0 36 36">
+                                                                                        <circle className="stroke-muted" cx="18" cy="18" r="15.9155" strokeWidth="2" fill="none" />
+                                                                                        <circle className="stroke-primary" strokeDasharray={`${progress}, 100`} cx="18" cy="18" r="15.9155" strokeWidth="2" fill="none" strokeLinecap="round" transform="rotate(-90 18 18)" />
+                                                                                    </svg>
+                                                                                )}
+                                                                            </div>
+                                                                        </TooltipTrigger>
+                                                                        <TooltipContent><p>{child.name}: {child.stars}/{template.starsCost} estrelas</p></TooltipContent>
+                                                                    </Tooltip>
+                                                                </TooltipProvider>
+                                                            )
+                                                            })
+                                                        ) : (
+                                                        <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
+                                                        )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </CardContent>
+                                            <CardFooter className="flex items-center gap-2">
+                                                <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit}>
+                                                    <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                </Button>
+                                                <TooltipProvider>
+                                                    <Tooltip><TooltipTrigger asChild>
+                                                        <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
+                                                            <Edit3 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
+                                                </TooltipProvider>
+                                                <TooltipProvider>
+                                                    <Tooltip><TooltipTrigger asChild>
+                                                        <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
+                                                </TooltipProvider>
+                                            </CardFooter>
+                                        </Card>
+                                    )
+                                })}
                             </div>
-                        </Label>
-                        <Label htmlFor="mode-manual" className="flex items-start gap-4 rounded-lg border p-4 transition-all has-[:checked]:border-primary has-[:checked]:ring-1 has-[:checked]:ring-primary cursor-pointer">
-                            <RadioGroupItem value="manual" id="mode-manual" className="mt-1" />
-                            <div className="flex-grow">
-                                <p className="font-semibold text-foreground">Manual</p>
-                                <p className="text-sm text-muted-foreground">Você tem controle total e atribui manualmente cada recompensa do catálogo para cada criança.</p>
-                            </div>
-                        </Label>
-                     </RadioGroup>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-           </CardContent>
-      </Card>
-      
-      {renderCatalogView()}
+                        </CardContent>
+                    )}
+                </Card>
+            </TabsContent>
+        </Tabs>
+        
+        {templateToDelete && (
+            <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
+                    </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        onClick={handleDeleteConfirm}
+                        className="bg-destructive hover:bg-destructive/90"
+                        disabled={isProcessingAction}
+                    >
+                        {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Sim, Excluir
+                    </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        )}
 
-      {templateToDelete && (
-        <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteConfirm} className="bg-destructive hover:bg-destructive/90" disabled={isProcessingAction}>
-                {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sim, Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      {templateToAssign && (
-        <AssignRewardDialog
-          template={templateToAssign}
-          isOpen={isAssignDialogOpen}
-          onOpenChange={setIsAssignDialogOpen}
-          onAssigned={refetchData}
-        />
-      )}
+        {templateToAssign && (
+            <AssignRewardDialog
+                template={templateToAssign}
+                isOpen={isAssignDialogOpen}
+                onOpenChange={setIsAssignDialogOpen}
+                onAssigned={refetchData}
+            />
+        )}
     </div>
   );
 }
