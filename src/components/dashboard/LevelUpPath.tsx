@@ -2,7 +2,7 @@
 
 "use client";
 
-import { BadgeCheck } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
 import { Progress } from '@/components/ui/progress';
@@ -14,13 +14,13 @@ interface LevelUpPathProps {
 
 const Milestone = ({
   label,
-  xpGoal,
+  starGoal,
   isCurrent,
   isCompleted,
   progressPercentage,
 }: {
   label: string;
-  xpGoal: number;
+  starGoal: number;
   isCurrent: boolean;
   isCompleted: boolean;
   progressPercentage: number;
@@ -32,18 +32,18 @@ const Milestone = ({
         <div className={cn(
             "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10 bg-background"
         )}>
-             <BadgeCheck
+             <Star
                 className={cn(
                     "h-5 w-5 sm:h-6 sm:w-6 transition-all",
-                    isCompleted ? 'text-blue-500 fill-blue-500/20' : 
-                    isCurrent ? 'text-blue-600' : 
+                    isCompleted ? 'text-yellow-500 fill-yellow-500/20' : 
+                    isCurrent ? 'text-yellow-600' : 
                     'text-muted-foreground/50'
                 )}
             />
         </div>
       </div>
       <span className="text-xs font-semibold text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">{xpGoal} ★</span>
+      <span className="text-xs text-muted-foreground">{starGoal} ★</span>
     </div>
   );
 };
@@ -95,7 +95,7 @@ export function LevelUpPath({ currentLevel, currentXp: currentTotalStars }: Leve
                  <Milestone
                     key={data.level}
                     label={data.label}
-                    xpGoal={data.xpGoal}
+                    starGoal={data.xpGoal}
                     isCompleted={data.isCompleted}
                     isCurrent={data.isCurrent}
                     progressPercentage={data.progressPercentage}
