@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -236,7 +237,7 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
 // --- Child Profile ---
 export const addChildProfile = async (
     ownerId: string,
-    childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'xp' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { name: string, birthDate: string, gender: 'boy' | 'girl' | 'not-informed' },
+    childData: Omit<ChildProfile, 'id' | 'ownerId' | 'createdAt' | 'updatedAt' | 'accessCode' | 'stars' | 'totalStars' | 'level' | 'familyId' | 'avatar' | 'color' | 'birthDate'> & { name: string, birthDate: string, gender: 'boy' | 'girl' | 'not-informed' },
     contextId: string
 ): Promise<ChildProfile> => {
   const accessCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -272,7 +273,7 @@ export const addChildProfile = async (
     schoolShiftEnd: childData.schoolShiftEnd || '',
     avatar: '',
     stars: 0,
-    xp: 0,
+    totalStars: 0,
     level: 1,
     accessCode,
     color: availableColor,
@@ -467,7 +468,7 @@ export const resetChildProgress = async (actor: UserProfile, childId: string): P
 
     batch.update(childRef, {
       stars: 0,
-      xp: 0,
+      totalStars: 0,
       level: 1,
       earnedBadgeIds: [],
       updatedAt: serverTimestamp(),
@@ -1565,7 +1566,6 @@ export const updateMissionTemplate = async (actor: UserProfile, templateId: stri
         if (updates.emoji !== undefined) instanceUpdates.emoji = updates.emoji;
         if (updates.category !== undefined) instanceUpdates.category = updates.category;
         if (updates.starsReward !== undefined) instanceUpdates.starsReward = updates.starsReward;
-        if (updates.xpReward !== undefined) instanceUpdates.xpReward = updates.xpReward;
         
         transaction.update(docSnap.ref, instanceUpdates);
       }
@@ -1664,7 +1664,7 @@ export const getMissionInstancesForContext = async (userId: string, contextId: '
 
 export const addMissionInstance = async (
   actor: UserProfile,
-  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates' | 'emoji'>,
+  instanceData: Omit<MissionInstance, 'id' | 'assignedAt' | 'updatedAt' | 'status' | 'dueDate' | 'startDate' | 'title' | 'description' | 'category' | 'starsReward' | 'isRecurring' | 'recurrenceRule' | 'completionCount' | 'completionLog' | 'exceptionDates' | 'emoji'>,
   templateSnapshot: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'ownerId' | 'familyId'>
 ): Promise<MissionInstance> => {
   const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -1681,7 +1681,6 @@ export const addMissionInstance = async (
     emoji: templateSnapshot.emoji || '',
     category: templateSnapshot.category,
     starsReward: templateSnapshot.starsReward,
-    xpReward: templateSnapshot.xpReward,
     status: 'pending',
     assignedAt: now as Timestamp,
     updatedAt: now as Timestamp,
@@ -1747,7 +1746,7 @@ export const getMissionInstancesByChild = async (childId: string): Promise<Missi
   return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
 };
 
-export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'xpReward' | 'emoji'>>): Promise<void> => {
+export const updateMissionInstance = async (instanceId: string, updates: Partial<Omit<MissionInstance, 'id' | 'templateId' | 'childId' | 'ownerId' | 'familyId' | 'assignedAt' | 'title' | 'description' | 'category' | 'starsReward' | 'emoji'>>): Promise<void> => {
   const instanceRef = doc(db, 'missionInstances', instanceId);
   await updateDoc(instanceRef, {
     ...updates,
@@ -2026,12 +2025,12 @@ export const completeMissionInstance = async (
 ): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
-    const calculateXpForNextLevel = (level: number): number => {
-        let xpForCurrentLevel = 0;
+    const calculateStarsForNextLevel = (level: number): number => {
+        let starsForCurrentLevel = 0;
         for (let i = 1; i < level; i++) {
-            xpForCurrentLevel += 100 + (i - 1) * 50;
+            starsForCurrentLevel += 100 + (i - 1) * 50;
         }
-        return xpForCurrentLevel + (100 + (level - 1) * 50);
+        return starsForCurrentLevel + (100 + (level - 1) * 50);
     };
 
     const updatedChildProfile = await runTransaction(db, async (transaction) => {
@@ -2059,18 +2058,18 @@ export const completeMissionInstance = async (
         const originalLevel = childData.level;
         
         const newStars = childData.stars + missionData.starsReward;
-        const newXp = childData.xp + missionData.xpReward;
+        const newTotalStars = (childData.totalStars || 0) + missionData.starsReward;
         let newLevel = childData.level;
 
-        let xpForNextLevel = calculateXpForNextLevel(childData.level);
-        while (newXp >= xpForNextLevel) {
+        let starsForNextLevel = calculateStarsForNextLevel(childData.level);
+        while (newTotalStars >= starsForNextLevel) {
             newLevel++;
-            xpForNextLevel = calculateXpForNextLevel(newLevel);
+            starsForNextLevel = calculateStarsForNextLevel(newLevel);
         }
 
         transaction.update(childRef, {
             stars: newStars,
-            xp: newXp,
+            totalStars: newTotalStars,
             level: newLevel,
             updatedAt: serverTimestamp(),
         });
@@ -2084,7 +2083,6 @@ export const completeMissionInstance = async (
             [`completionLog.${completionDateKey}`]: {
               completedAt: Timestamp.now(),
               stars: missionData.starsReward,
-              xp: missionData.xpReward,
               actorId: actor.id || null,
               actorName: actor.name || null,
             },
@@ -2098,7 +2096,7 @@ export const completeMissionInstance = async (
         
         return {
             ...childData,
-            ...{ stars: newStars, xp: newXp, level: newLevel },
+            ...{ stars: newStars, totalStars: newTotalStars, level: newLevel },
             id: childSnap.id,
             didLevelUp: newLevel > originalLevel,
         } as ChildProfile & { didLevelUp: boolean };
@@ -2168,9 +2166,10 @@ export const reactivateMissionInstance = async (
         }
         const childData = childSnap.data() as ChildProfile;
 
+        const starsToSubtract = completionLogEntry.stars || missionData.starsReward;
         const finalChildUpdates: any = { 
-            stars: Math.max(0, childData.stars - (completionLogEntry.stars || missionData.starsReward)),
-            xp: Math.max(0, childData.xp - (completionLogEntry.xp || missionData.xpReward)),
+            stars: Math.max(0, childData.stars - starsToSubtract),
+            totalStars: Math.max(0, (childData.totalStars || 0) - starsToSubtract),
             updatedAt: serverTimestamp() 
         };
         transaction.update(childRef, finalChildUpdates);
@@ -2186,7 +2185,7 @@ export const reactivateMissionInstance = async (
 
         return {
             ...childData,
-            ...{ stars: finalChildUpdates.stars, xp: finalChildUpdates.xp },
+            ...{ stars: finalChildUpdates.stars, totalStars: finalChildUpdates.totalStars },
             id: childSnap.id
         } as ChildProfile;
     });

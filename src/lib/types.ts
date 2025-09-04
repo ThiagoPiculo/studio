@@ -68,8 +68,8 @@ export interface ChildProfile {
   schoolShiftEnd?: string;   // "HH:mm" format
   avatar?: string; // URL to avatar image
   color: HeroColor;
-  stars: number;
-  xp: number;
+  stars: number; // Spendable currency
+  totalStars: number; // Lifetime earned stars for level calculation
   level: number;
   accessCode: string; // 6-digit code for child login
   earnedBadgeIds?: string[];
@@ -166,7 +166,6 @@ export interface MissionTemplate {
   emoji?: string;
   category: MissionCategory;
   starsReward: number;
-  xpReward: number;
   createdAt: Timestamp;
   updatedAt: Timestamp;
   status: 'active' | 'archived';
@@ -189,7 +188,6 @@ export interface MissionInstance {
   emoji?: string;
   category: MissionCategory;
   starsReward: number;
-  xpReward: number;
   status: 'pending' | 'completed' | 'expired';
   assignedAt: Timestamp;
   updatedAt: Timestamp;
@@ -198,7 +196,7 @@ export interface MissionInstance {
   isRecurring?: boolean;
   recurrenceRule?: RecurrenceRule | null;
   completionCount?: number; // How many times it has been completed
-  completionLog?: { [dateKey: string]: { completedAt: Timestamp, stars: number, xp: number, actorId?: string, actorName?: string } };
+  completionLog?: { [dateKey: string]: { completedAt: Timestamp, stars: number, actorId?: string, actorName?: string } };
   exceptionDates?: { [key: string]: boolean }; // Using a map for faster lookups
 }
 

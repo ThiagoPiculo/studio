@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useState, useMemo, useEffect } from 'react';
@@ -164,11 +165,6 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button asChild variant="secondary" className="w-full sm:w-auto">
-                    <Link href="/dashboard/missions/ideas">
-                        <Lightbulb className="mr-2 h-4 w-4" /> Ideias de Missões
-                    </Link>
-                </Button>
                 <Button asChild className="w-full sm:w-auto">
                     <Link href="/dashboard/missions/new">
                         <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
@@ -223,9 +219,8 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     
                     const todaysGains = completedMissions.reduce((acc, mission) => {
                         acc.stars += mission.starsReward;
-                        acc.xp += mission.xpReward;
                         return acc;
-                    }, { stars: 0, xp: 0 });
+                    }, { stars: 0 });
 
                     const isExpanded = expandedChildId === child.id;
                     const displayActivities = isExpanded ? allTodaysActivities : allTodaysActivities.slice(0, 5);
@@ -293,11 +288,6 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                             <Star className="h-5 w-5 fill-current" />
                                             <span className="text-lg font-bold">{child.stars}</span>
                                         </div>
-                                        <div className="flex items-center gap-1 text-blue-600">
-                                            <BadgeCheck className="h-5 w-5" />
-                                            <span className="text-lg font-bold">{child.xp}</span>
-                                            <span className="text-sm font-normal">XP</span>
-                                        </div>
                                         <Badge
                                             variant="secondary"
                                             className="font-semibold text-xs border-2 border-background shadow-md"
@@ -364,7 +354,6 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                                         <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                                                                             <div className="flex items-center justify-between gap-4">
                                                                                 <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{mission.starsReward}</span>
-                                                                                <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{mission.xpReward} XP</span>
                                                                             </div>
                                                                         </DropdownMenuLabel>
                                                                         <DropdownMenuSeparator />
@@ -416,10 +405,6 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                         <div className="flex items-center gap-1 text-amber-600">
                                           +{todaysGains.stars} <Star className="h-4 w-4 fill-current" />
                                         </div>
-                                        <span className="text-muted-foreground">/</span>
-                                        <div className="flex items-center gap-1 text-blue-600">
-                                          +{todaysGains.xp} <BadgeCheck className="h-4 w-4" />
-                                        </div>
                                     </div>
                                     <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
                                 </div>
@@ -463,16 +448,17 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     </AlertDialogContent>
                 </AlertDialog>
             )}
-
+            
             {confirmingMission && (
-                <CompleteMissionConfirmationDialog 
-                    isOpen={!!confirmingMission}
-                    onOpenChange={() => setConfirmingMission(null)}
-                    onConfirm={() => triggerToggleCompletion(confirmingMission, startOfDay(new Date()), false)}
-                    onConfirmAndDismiss={() => {
-                        sessionStorage.setItem('dismissCompleteMissionConfirmation', 'true');
-                        triggerToggleCompletion(confirmingMission, startOfDay(new Date()), false);
-                    }}
+                <CompleteMissionConfirmationDialog
+                  isOpen={!!confirmingMission}
+                  onOpenChange={() => setConfirmingMission(null)}
+                  onConfirm={(dismiss) => {
+                    if (dismiss) {
+                      sessionStorage.setItem('dismissCompleteMissionConfirmation', 'true');
+                    }
+                    triggerToggleCompletion(confirmingMission, startOfDay(new Date()), false);
+                  }}
                 />
             )}
         </div>

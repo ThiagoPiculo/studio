@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { BadgeCheck } from 'lucide-react';
@@ -8,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 
 interface LevelUpPathProps {
   currentLevel: number;
-  currentXp: number;
+  currentXp: number; // This will now be totalStars
 }
 
 const Milestone = ({
@@ -42,22 +43,22 @@ const Milestone = ({
         </div>
       </div>
       <span className="text-xs font-semibold text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">{xpGoal} XP</span>
+      <span className="text-xs text-muted-foreground">{xpGoal} ★</span>
     </div>
   );
 };
 
-export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
-  const calculateLevelDetails = (level: number): { startXp: number, endXp: number } => {
-      if (level <= 1) return { startXp: 0, endXp: 100 };
-      let totalXpForPreviousLevels = 0;
+export function LevelUpPath({ currentLevel, currentXp: currentTotalStars }: LevelUpPathProps) {
+  const calculateLevelDetails = (level: number): { startStars: number, endStars: number } => {
+      if (level <= 1) return { startStars: 0, endStars: 100 };
+      let totalStarsForPreviousLevels = 0;
       for (let i = 1; i < level; i++) {
-          totalXpForPreviousLevels += 100 + (i - 1) * 50;
+          totalStarsForPreviousLevels += 100 + (i - 1) * 50;
       }
-      const xpNeededForThisLevel = 100 + (level - 1) * 50;
+      const starsNeededForThisLevel = 100 + (level - 1) * 50;
       return {
-          startXp: totalXpForPreviousLevels,
-          endXp: totalXpForPreviousLevels + xpNeededForThisLevel,
+          startStars: totalStarsForPreviousLevels,
+          endStars: totalStarsForPreviousLevels + starsNeededForThisLevel,
       };
   };
 
@@ -67,25 +68,25 @@ export function LevelUpPath({ currentLevel, currentXp }: LevelUpPathProps) {
 
     for (let i = 0; i < 3; i++) {
         const level = startLevel + i;
-        const { startXp, endXp } = calculateLevelDetails(level);
-        const xpForThisLevel = endXp - startXp;
-        const xpInThisLevel = currentXp - startXp;
+        const { startStars, endStars } = calculateLevelDetails(level);
+        const starsForThisLevel = endStars - startStars;
+        const starsInThisLevel = currentTotalStars - startStars;
 
-        const progressPercentage = xpForThisLevel > 0 
-            ? Math.max(0, Math.min(100, (xpInThisLevel / xpForThisLevel) * 100))
+        const progressPercentage = starsForThisLevel > 0 
+            ? Math.max(0, Math.min(100, (starsInThisLevel / starsForThisLevel) * 100))
             : 0;
         
         data.push({
             level: level,
             label: `Nível ${level}`,
-            xpGoal: endXp,
+            xpGoal: endStars,
             isCompleted: level < currentLevel,
             isCurrent: level === currentLevel,
             progressPercentage: progressPercentage
         });
     }
     return data;
-  }, [currentLevel, currentXp]);
+  }, [currentLevel, currentTotalStars]);
 
   return (
     <div className="w-full">
