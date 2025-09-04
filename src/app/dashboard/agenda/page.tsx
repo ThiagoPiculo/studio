@@ -270,12 +270,11 @@ function AgendaPageContent() {
       
     const instancesToProcess = missionInstances.filter(inst => childrenToProcess.some(c => c.id === inst.childId));
 
-    const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: [] }> = {};
+    const acc: Record<string, { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }> = {};
     const daysInView = eachDayOfInterval(viewInterval);
     
     daysInView.forEach(day => {
-        const dateKey = format(day, 'yyyy-MM-dd');
-        acc[dateKey] = { morning: [], afternoon: [], night: [] };
+        acc[dateKey] = { all: [], morning: [], afternoon: [], night: [] };
     });
 
     // Process Mission Instances
@@ -284,10 +283,6 @@ function AgendaPageContent() {
       if (!eventTimeSource) return;
 
       const period = getPeriodForDate(eventTimeSource);
-      
-      if (timePeriodFilter !== 'all' && period !== timePeriodFilter) {
-        return;
-      }
       
       daysInView.forEach(day => {
         if (isMissionScheduledForDate(instance, day)) {
@@ -301,6 +296,7 @@ function AgendaPageContent() {
           };
           
           acc[dateKey][period].push(event);
+          acc[dateKey].all.push(event);
         }
       });
     });
@@ -337,20 +333,28 @@ function AgendaPageContent() {
 
                     const startPeriod = getPeriodForDate(startEvent.date);
                     const endPeriod = getPeriodForDate(endEvent.date);
-
-                    if (timePeriodFilter === 'all' || timePeriodFilter === startPeriod) {
-                        acc[dateKey][startPeriod].push(startEvent);
-                    }
-                    if (timePeriodFilter === 'all' || timePeriodFilter === endPeriod) {
-                        acc[dateKey][endPeriod].push(endEvent);
-                    }
+                    
+                    acc[dateKey][startPeriod].push(startEvent);
+                    acc[dateKey][endPeriod].push(endEvent);
+                    acc[dateKey].all.push(startEvent, endEvent);
                 }
             });
         }
     });
+    
+    for (const dateKey in acc) {
+      if (acc[dateKey]) {
+        acc[dateKey].all.sort((a,b) => {
+            const timeA = getDateObject(a.data.startDate) || new Date(0);
+            const timeB = getDateObject(b.data.startDate) || new Date(0);
+            return timeA.getTime() - timeB.getTime();
+        });
+      }
+    }
+
 
     return acc;
-  }, [viewInterval, missionInstances, selectedChildId, timePeriodFilter, children]);
+  }, [viewInterval, missionInstances, selectedChildId, children]);
   
   const handlePrev = () => {
     let newDate;
@@ -528,9 +532,9 @@ function AgendaPageContent() {
   const getInitials = (name?: string) => name ? name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2) : 'MH';
   
   const hasAnyEvents = Object.values(eventsByDate).some(day => {
-    const events = day as { morning: any[], afternoon: any[], night: any[] };
+    const events = day as { all: any[] };
     if (!events) return false;
-    return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
+    return events.all.length > 0;
   });
 
   const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
@@ -685,8 +689,8 @@ function AgendaPageContent() {
             <div className="grid grid-cols-1 gap-6">
                 {days.map(day => {
                     const dateKey = format(day, 'yyyy-MM-dd');
-                    const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-                    const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+                    const dayEvents = (eventsByDate[dateKey] as { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { all: [], morning: [], afternoon: [], night: [] };
+                    const hasEventsForDay = dayEvents.all.length > 0;
                     const child = selectedChildId ? childrenMap.get(selectedChildId) : null;
                     
                     return (
@@ -709,7 +713,7 @@ function AgendaPageContent() {
                                   <h4 className="font-semibold text-foreground/90">{child.name}</h4>
                                 </div>
                            ) : (
-                              <AllHeroesDayAccordion day={day} events={dayEvents} />
+                              <AllHeroesDayAccordion day={day} events={{all: dayEvents.all, morning: dayEvents.morning, afternoon: dayEvents.afternoon, night: dayEvents.night}} />
                            )}
                             <Card className="shadow-sm flex-1">
                                 {!hasEventsForDay ? (
@@ -718,15 +722,22 @@ function AgendaPageContent() {
                                     </CardContent>
                                 ) : (
                                     <CardContent className="p-4 space-y-4">
-                                        {dayEvents.morning.length > 0 && (
-                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
-                                        )}
-                                        {dayEvents.afternoon.length > 0 && (
-                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
-                                        )}
-                                        {dayEvents.night.length > 0 && (
-                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
-                                        )}
+                                       {timePeriodFilter === 'all' 
+                                            ? renderEventListForPeriod(dayEvents.all, day)
+                                            : (
+                                                <>
+                                                    {dayEvents.morning.length > 0 && (
+                                                        <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
+                                                    )}
+                                                    {dayEvents.afternoon.length > 0 && (
+                                                        <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
+                                                    )}
+                                                    {dayEvents.night.length > 0 && (
+                                                        <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
+                                                    )}
+                                                </>
+                                            )
+                                        }
                                     </CardContent>
                                 )}
                             </Card>
@@ -746,8 +757,8 @@ function AgendaPageContent() {
       )}>
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
-          const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-          const hasEventsForDay = dayEvents.morning.length > 0 || dayEvents.afternoon.length > 0 || dayEvents.night.length > 0;
+          const dayEvents = (eventsByDate[dateKey] as { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { all: [], morning: [], afternoon: [], night: [] };
+          const hasEventsForDay = dayEvents.all.length > 0;
           
           return (
             <div key={dateKey} className="flex flex-col space-y-2">
@@ -781,17 +792,24 @@ function AgendaPageContent() {
                       </Card>
                   ) : selectedChildId ? (
                        <Card className="shadow-sm flex-1">
-                          <CardContent className="p-4 space-y-4">
-                              {dayEvents.morning.length > 0 && (
-                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
-                              )}
-                              {dayEvents.afternoon.length > 0 && (
-                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
-                              )}
-                              {dayEvents.night.length > 0 && (
-                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
-                              )}
-                          </CardContent>
+                           <CardContent className="p-4 space-y-4">
+                                {timePeriodFilter === 'all' 
+                                    ? renderEventListForPeriod(dayEvents.all, day)
+                                    : (
+                                        <>
+                                            {dayEvents.morning.length > 0 && timePeriodFilter === 'morning' && (
+                                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
+                                            )}
+                                            {dayEvents.afternoon.length > 0 && timePeriodFilter === 'afternoon' && (
+                                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
+                                            )}
+                                            {dayEvents.night.length > 0 && timePeriodFilter === 'night' && (
+                                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
+                                            )}
+                                        </>
+                                    )
+                                }
+                            </CardContent>
                        </Card>
                   ) : null }
                </div>
@@ -802,15 +820,16 @@ function AgendaPageContent() {
     );
   };
 
-  const AllHeroesDayAccordion = ({ day, events }: { day: Date, events: { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] } }) => {
-    const eventsByChild = [...events.morning, ...events.afternoon, ...events.night].reduce((acc, event) => {
+  const AllHeroesDayAccordion = ({ day, events }: { day: Date, events: { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] } }) => {
+    const eventsByChild = [...events.all].reduce((acc, event) => {
         if (!acc[event.data.childId]) {
-            acc[event.data.childId] = { morning: [], afternoon: [], night: [] };
+            acc[event.data.childId] = { all: [], morning: [], afternoon: [], night: [] };
         }
         const period = getPeriodForDate(getDateObject(event.data.startDate) || getDateObject(event.data.dueDate)!);
         acc[event.data.childId][period].push(event);
+        acc[event.data.childId].all.push(event);
         return acc;
-    }, {} as Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }>);
+    }, {} as Record<string, { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }>);
     
     const sortedChildKeys = Object.keys(eventsByChild).sort((a,b) => {
         const nameA = childrenMap.get(a)?.name || '';
@@ -855,15 +874,22 @@ function AgendaPageContent() {
                             </AccordionTrigger>
                             <AccordionContent className="p-4 pt-0 border-t bg-card" style={{borderColor: `${child.color}30`}}>
                                 <div className="space-y-4 pt-2">
-                                  {childEvents.morning.length > 0 && (
-                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day)}</div>
-                                  )}
-                                  {childEvents.afternoon.length > 0 && (
-                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day)}</div>
-                                  )}
-                                  {childEvents.night.length > 0 && (
-                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day)}</div>
-                                  )}
+                                  {timePeriodFilter === 'all' 
+                                    ? renderEventListForPeriod(childEvents.all, day)
+                                    : (
+                                        <>
+                                            {childEvents.morning.length > 0 && timePeriodFilter === 'morning' &&(
+                                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day)}</div>
+                                            )}
+                                            {childEvents.afternoon.length > 0 && timePeriodFilter === 'afternoon' &&(
+                                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day)}</div>
+                                            )}
+                                            {childEvents.night.length > 0 && timePeriodFilter === 'night' &&(
+                                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day)}</div>
+                                            )}
+                                        </>
+                                    )
+                                  }
                                 </div>
                             </AccordionContent>
                          </div>
@@ -888,8 +914,8 @@ function AgendaPageContent() {
           <div className="grid grid-cols-7 border-t border-l">
             {days.map(day => {
               const dateKey = format(day, 'yyyy-MM-dd');
-              const dayEventsByPeriod = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
-              const dayEvents = [...dayEventsByPeriod.morning, ...dayEventsByPeriod.afternoon, ...dayEventsByPeriod.night];
+              const dayEventsByPeriod = (eventsByDate[dateKey] as { all: CalendarEvent[], morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { all: [], morning: [], afternoon: [], night: [] };
+              const dayEvents = dayEventsByPeriod.all;
               
               const sortedEvents = [...dayEvents].sort((a, b) => {
                 const childA = childrenMap.get(a.data.childId)?.name || '';
@@ -1101,11 +1127,7 @@ function AgendaPageContent() {
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="all">
-                              <span className="flex items-center gap-2">
-                                  <Sun className="h-4 w-4 text-yellow-500" />
-                                  <CloudSun className="h-4 w-4 text-orange-500" />
-                                  <Moon className="h-4 w-4 text-indigo-500" />
-                              </span>
+                              Todos os Períodos
                           </SelectItem>
                           <SelectItem value="morning">
                               <span className="flex items-center gap-2"><Sun className="h-4 w-4 text-yellow-500" />Manhã</span>
@@ -1229,5 +1251,3 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
-
-    
