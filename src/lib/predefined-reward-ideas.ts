@@ -34,7 +34,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 50,
+        starsCost: 150,
         source: 'predefined',
       },
       {
@@ -44,7 +44,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 30,
+        starsCost: 50,
         source: 'predefined',
       },
       {
@@ -54,7 +54,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 45,
+        starsCost: 80,
         source: 'predefined',
       },
       {
@@ -64,7 +64,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 75,
+        starsCost: 300,
         source: 'predefined',
       },
       {
@@ -74,7 +74,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 25,
+        starsCost: 40,
         source: 'predefined',
       },
       {
@@ -84,7 +84,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Controle",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 65,
+        starsCost: 120,
         source: 'predefined',
       },
       // Flexibilidade
@@ -95,7 +95,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 25,
+        starsCost: 100,
         source: 'predefined',
       },
       {
@@ -105,7 +105,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 45,
+        starsCost: 150,
         source: 'predefined',
       },
       {
@@ -115,7 +115,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 100,
+        starsCost: 400,
         source: 'predefined',
       },
       {
@@ -125,7 +125,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 15,
+        starsCost: 50,
         source: 'predefined',
       },
       {
@@ -135,7 +135,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Flexibilidade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 15,
+        starsCost: 40,
         source: 'predefined',
       },
       // Exclusividade
@@ -146,7 +146,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "experiences", 
         isMaterialSuggestion: false,
-        starsCost: 160,
+        starsCost: 600,
         source: 'predefined',
       },
       {
@@ -156,7 +156,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 250,
+        starsCost: 1200,
         source: 'predefined',
       },
       {
@@ -166,7 +166,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 20,
+        starsCost: 30,
         source: 'predefined',
       },
       {
@@ -176,7 +176,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 80,
+        starsCost: 200,
         source: 'predefined',
       },
       {
@@ -186,7 +186,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Exclusividade",
         suggestedAppCategory: "privileges",
         isMaterialSuggestion: false,
-        starsCost: 15,
+        starsCost: 25,
         source: 'predefined',
       },
     ],
@@ -204,7 +204,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 130,
+        starsCost: 450,
         source: 'predefined',
       },
       {
@@ -214,7 +214,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 80,
+        starsCost: 250,
         source: 'predefined',
       },
       {
@@ -224,7 +224,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 60,
+        starsCost: 150,
         source: 'predefined',
       },
       {
@@ -234,7 +234,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 70,
+        starsCost: 200,
         source: 'predefined',
       },
       {
@@ -244,7 +244,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 50,
+        starsCost: 100,
         source: 'predefined',
       },
       {
@@ -254,7 +254,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 40,
+        starsCost: 80,
         source: 'predefined',
       },
       {
@@ -264,7 +264,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Em Família",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 65,
+        starsCost: 180,
         source: 'predefined',
       },
       // Social
@@ -275,7 +275,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 200,
+        starsCost: 800,
         source: 'predefined',
       },
       {
@@ -285,7 +285,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 150,
+        starsCost: 600,
         source: 'predefined',
       },
       {
@@ -295,7 +295,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 75,
+        starsCost: 250,
         source: 'predefined',
       },
       {
@@ -305,7 +305,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Social",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 20,
+        starsCost: 50,
         source: 'predefined',
       },
       // Cultural
@@ -316,7 +316,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 100,
+        starsCost: 350,
         source: 'predefined',
       },
       {
@@ -326,7 +326,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 125,
+        starsCost: 400,
         source: 'predefined',
       },
       {
@@ -336,7 +336,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 80,
+        starsCost: 250,
         source: 'predefined',
       },
       {
@@ -346,7 +346,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Cultural",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 150,
+        starsCost: 500,
         source: 'predefined',
       },
     ],
@@ -364,7 +364,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 70,
+        starsCost: 250,
         source: 'predefined',
       },
       {
@@ -374,7 +374,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 90,
+        starsCost: 350,
         source: 'predefined',
       },
       {
@@ -384,7 +384,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 55,
+        starsCost: 150,
         source: 'predefined',
       },
       {
@@ -394,7 +394,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 35,
+        starsCost: 80,
         source: 'predefined',
       },
       {
@@ -404,7 +404,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Relacionados a Hobbies",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 10,
+        starsCost: 20,
         source: 'predefined',
       },
       // Necessidades Planejadas
@@ -415,7 +415,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 25,
+        starsCost: 50,
         source: 'predefined',
       },
       {
@@ -425,7 +425,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Necessidades Planejadas",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 20,
+        starsCost: 40,
         source: 'predefined',
       },
       // Pequenos Mimos
@@ -436,7 +436,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 10,
+        starsCost: 20,
         source: 'predefined',
       },
       {
@@ -446,7 +446,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 25,
+        starsCost: 50,
         source: 'predefined',
       },
       {
@@ -456,7 +456,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 15,
+        starsCost: 30,
         source: 'predefined',
       },
       {
@@ -466,7 +466,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Pequenos Mimos",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 10,
+        starsCost: 20,
         source: 'predefined',
       },
     ],
@@ -484,7 +484,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false,
-        starsCost: 120,
+        starsCost: 400,
         source: 'predefined',
       },
       {
@@ -494,7 +494,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
-        starsCost: 120,
+        starsCost: 400,
         source: 'predefined',
       },
       {
@@ -504,7 +504,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false,
-        starsCost: 90,
+        starsCost: 300,
         source: 'predefined',
       },
       {
@@ -514,7 +514,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: false, 
-        starsCost: 60,
+        starsCost: 200,
         source: 'predefined',
       },
       {
@@ -524,7 +524,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Aprendizado",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
-        starsCost: 95,
+        starsCost: 350,
         source: 'predefined',
       },
       // Criatividade
@@ -535,7 +535,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "personal_development",
         isMaterialSuggestion: true,
-        starsCost: 75,
+        starsCost: 250,
         source: 'predefined',
       },
       {
@@ -545,7 +545,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 40,
+        starsCost: 100,
         source: 'predefined',
       },
       {
@@ -555,7 +555,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 65,
+        starsCost: 220,
         source: 'predefined',
       },
       {
@@ -565,7 +565,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Criatividade",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 55,
+        starsCost: 180,
         source: 'predefined',
       },
       // Saúde e Bem-estar
@@ -576,7 +576,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 200,
+        starsCost: 700,
         source: 'predefined',
       },
       {
@@ -586,7 +586,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "material_items",
         isMaterialSuggestion: true,
-        starsCost: 85,
+        starsCost: 300,
         source: 'predefined',
       },
       {
@@ -596,7 +596,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Saúde e Bem-estar",
         suggestedAppCategory: "experiences",
         isMaterialSuggestion: false,
-        starsCost: 70,
+        starsCost: 250,
         source: 'predefined',
       },
     ],
@@ -614,7 +614,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 10,
+        starsCost: 20,
         source: 'predefined',
       },
       {
@@ -624,7 +624,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 15,
+        starsCost: 30,
         source: 'predefined',
       },
       {
@@ -634,7 +634,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Doação",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 20,
+        starsCost: 40,
         source: 'predefined',
       },
       // Voluntariado
@@ -645,7 +645,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
       {
@@ -655,7 +655,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
       {
@@ -665,7 +665,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Voluntariado",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
       // Atos de Gentileza
@@ -676,7 +676,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
       {
@@ -686,7 +686,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity",
         isMaterialSuggestion: false,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
       {
@@ -696,7 +696,7 @@ export const predefinedRewardGroups: PredefinedRewardGroup[] = [
         userSubCategory: "Atos de Gentileza",
         suggestedAppCategory: "impact_generosity", 
         isMaterialSuggestion: true,
-        starsCost: 5,
+        starsCost: 10,
         source: 'predefined',
       },
     ],
