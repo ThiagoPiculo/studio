@@ -595,22 +595,34 @@ function AgendaPageContent() {
                           if (isKidsView) {
                             return (
                                 <li key={event.data.id} data-mission-id={popoverId} className={cn(highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background rounded-lg")}>
-                                    <div 
-                                        className={cn(
-                                            "flex items-center gap-4 p-3 rounded-lg border-l-4 cursor-pointer transition-all",
-                                            isCompleted ? 'bg-green-500/10 border-green-500' : 'bg-muted/50 border-transparent hover:bg-muted'
-                                        )}
-                                        onClick={() => canEdit && handleToggleCompletion(event.data, day)}
-                                    >
+                                    <div className={cn("flex items-center gap-4 p-3 rounded-lg border-l-4 transition-all", isCompleted ? 'bg-green-500/10 border-green-500' : 'bg-muted/50 border-transparent')}>
                                       <div className="text-5xl">{event.data.emoji || '🎯'}</div>
-                                      <div className="flex-grow space-y-0.5">
+                                      <div className="flex-grow space-y-1">
                                         <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
-                                        <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>
-                                          {event.title}
-                                        </p>
-                                        <div className={cn("flex items-center gap-1 font-bold", isCompleted ? "text-green-600" : "text-amber-600")}>
-                                          {isCompleted ? <CheckCircle className="h-4 w-4" /> : `+${event.data.starsReward}`}
-                                          {!isCompleted && <StarIcon className="h-4 w-4 fill-current" />}
+                                        <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>{event.title}</p>
+                                        <div className="flex items-center justify-between">
+                                            <div className={cn("flex items-center gap-1 font-bold", isCompleted ? "text-green-600" : "text-amber-600")}>
+                                              {isCompleted ? <CheckCircle className="h-4 w-4" /> : `+${event.data.starsReward}`}
+                                              {!isCompleted && <StarIcon className="h-4 w-4 fill-current" />}
+                                            </div>
+                                             {canEdit && (
+                                                <div className="flex items-center gap-1">
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={(e) => { e.stopPropagation(); handleToggleCompletion(event.data, day); }} disabled={isProcessingAction === event.data.id}>
+                                                        {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-primary" />}
+                                                    </Button>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-7 w-7"><MoreVertical className="h-4 w-4" /></Button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end">
+                                                            <DropdownMenuItem onSelect={() => handleEditClick(event.data, day)}><Edit className="mr-2 h-4 w-4" /> Editar Agendamento</DropdownMenuItem>
+                                                            <DropdownMenuItem onSelect={() => handleEditTemplateClick(event.data)}><Edit3 className="mr-2 h-4 w-4" /> Editar Missão (Catálogo)</DropdownMenuItem>
+                                                            <DropdownMenuSeparator />
+                                                            <DropdownMenuItem onSelect={() => handleDeleteClick(event.data, day)} className="text-destructive focus:bg-destructive focus:text-destructive-foreground"><Trash2 className="mr-2 h-4 w-4" /> Excluir Missão</DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </div>
+                                             )}
                                         </div>
                                       </div>
                                     </div>
@@ -799,13 +811,13 @@ function AgendaPageContent() {
                                     ? renderEventListForPeriod(dayEvents.all, day)
                                     : (
                                         <>
-                                            {dayEvents.morning.length > 0 && timePeriodFilter === 'morning' && (
+                                            {dayEvents.morning.length > 0 && timePeriodFilter === 'morning' &&(
                                                 <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
                                             )}
-                                            {dayEvents.afternoon.length > 0 && timePeriodFilter === 'afternoon' && (
+                                            {dayEvents.afternoon.length > 0 && timePeriodFilter === 'afternoon' &&(
                                                 <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
                                             )}
-                                            {dayEvents.night.length > 0 && timePeriodFilter === 'night' && (
+                                            {dayEvents.night.length > 0 && timePeriodFilter === 'night' &&(
                                                 <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
                                             )}
                                         </>
@@ -1125,7 +1137,7 @@ function AgendaPageContent() {
                 <div className="flex-grow sm:flex-grow-0">
                   <Select value={timePeriodFilter} onValueChange={(v) => setTimePeriodFilter(v as TimePeriod)}>
                       <SelectTrigger className="w-full sm:w-[130px] h-9">
-                          <SelectValue placeholder="Selecione o período" />
+                          <SelectValue placeholder="Todos os Períodos" />
                       </SelectTrigger>
                       <SelectContent>
                           <SelectItem value="all">
