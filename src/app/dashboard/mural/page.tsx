@@ -61,7 +61,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 
 type Activity =
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, xp: number, actorId?: string, actorName?: string } })
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
     | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
 
 function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstance, onManage: (instance: MissionInstance) => void, onDelete: (instance: MissionInstance) => void }) {
@@ -177,7 +177,7 @@ function BadgeCard({ badge, child, badgeProgress, isCalculatingProgress, onClick
       switch (badge.progressType) {
           case 'singleMissionStreak': currentProgress = badgeProgress.longestSingleMissionStreak; break;
           case 'perfectStreak': currentProgress = badgeProgress.longestPerfectStreak; break;
-          case 'stars': currentProgress = child.stars; break;
+          case 'stars': currentProgress = child.totalStars; break;
           case 'level': currentProgress = child.level; break;
       }
   }
@@ -495,7 +495,7 @@ function MuralCompletoPageContent() {
 
     return {
       completedMissions: totalCompletedOccurrences,
-      starsEarned: totalStarsEarned,
+      starsEarned: child.totalStars,
       rewardsRedeemed: redeemedRewardsCount,
       pendingMissions: pendingMissionsCount,
       availableRewards: availableRewardsCount,
@@ -901,18 +901,13 @@ function MuralCompletoPageContent() {
                           <StarIcon className="h-7 w-7 fill-current"/>
                           <span className="text-2xl font-bold">{child.stars}</span>
                       </div>
-                      <div className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
-                          <BadgeCheck className="h-7 w-7"/>
-                          <span className="text-2xl font-bold">{child.xp}</span>
-                          <span className="text-sm font-normal">XP</span>
-                      </div>
                   </div>
               </div>
             </div>
 
             <div className="mt-4 flex flex-col gap-4 font-semibold">
                 <div className="w-full">
-                    <LevelUpPath currentLevel={child.level} currentXp={child.xp} />
+                    <LevelUpPath currentLevel={child.level} currentXp={child.totalStars} />
                 </div>
             </div>
         </div>
@@ -1027,7 +1022,7 @@ function MuralCompletoPageContent() {
                                                         <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
                                                             <span>{child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida</span>
                                                             <span className="font-bold text-green-600 text-xs flex items-center gap-1.5 whitespace-nowrap">
-                                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" /> e {activity.completionLogEntry.xp} <BadgeCheck className="h-3.5 w-3.5" />)
+                                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" />)
                                                             </span>
                                                         </p>
                                                         <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
