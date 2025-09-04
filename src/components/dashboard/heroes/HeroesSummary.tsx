@@ -28,6 +28,7 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { CompleteMissionConfirmationDialog } from '../missions/CompleteMissionConfirmationDialog';
 
 interface ActivityItem {
     id: string;
@@ -42,9 +43,10 @@ interface ActivityItem {
 interface HeroesSummaryProps {
   children: ChildProfile[];
   missionInstances: MissionInstance[];
+  onDataRefresh: () => void;
 }
 
-export function HeroesSummary({ children: initialChildren, missionInstances: initialMissionInstances }: HeroesSummaryProps) {
+export function HeroesSummary({ children: initialChildren, missionInstances: initialMissionInstances, onDataRefresh }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
@@ -59,6 +61,8 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
     const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
     const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
     
+    const [confirmingMission, setConfirmingMission] = useState<MissionInstance | null>(null);
+
     useEffect(() => {
         setMissionInstances(initialMissionInstances);
     }, [initialMissionInstances]);
@@ -98,7 +102,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
         return children.filter(child => child.id === selectedChildId);
     }, [children, selectedChildId]);
     
-    const handleToggleCompletion = async (mission: MissionInstance, date: Date, isCompleted: boolean) => {
+    const triggerToggleCompletion = async (mission: MissionInstance, date: Date, isCompleted: boolean) => {
         if (!user) return;
         setProcessingMissionId(mission.id);
 
@@ -107,30 +111,9 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
             const updatedChild = isCompleted
                 ? await reactivateMissionInstance(mission.id, date, actor)
                 : await completeMissionInstance(mission.id, date, actor);
-
-            // Optimistically update the UI
-            setMissionInstances(prev => prev.map(m => {
-                if (m.id === mission.id) {
-                    const newLog = { ...m.completionLog };
-                    const dateKey = formatDateFns(date, 'yyyy-MM-dd');
-                    if (isCompleted) {
-                        delete newLog[dateKey];
-                    } else {
-                        newLog[dateKey] = { 
-                            completedAt: new Date().toISOString(), 
-                            actorId: actor.id, 
-                            actorName: actor.name,
-                            stars: m.starsReward,
-                            xp: m.xpReward
-                        } as any;
-                    }
-                    return { ...m, completionLog: newLog };
-                }
-                return m;
-            }));
             
             if (updatedChild) {
-                 setChildren(prev => prev.map(c => c.id === updatedChild.id ? updatedChild : c));
+                onDataRefresh(); // Refresh data from parent
                 toast({
                     title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
                     description: `A missão "${mission.title}" foi atualizada.`
@@ -141,6 +124,20 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
             toast({ title: "Erro ao atualizar missão", variant: "destructive" });
         } finally {
             setProcessingMissionId(null);
+            setConfirmingMission(null);
+        }
+    };
+
+    const handleToggleCompletion = async (mission: MissionInstance, date: Date, isCompleted: boolean) => {
+        if (isCompleted) {
+             await triggerToggleCompletion(mission, date, true);
+        } else {
+            const dismissedToday = sessionStorage.getItem('dismissCompleteMissionConfirmation');
+            if (dismissedToday === 'true') {
+                 await triggerToggleCompletion(mission, date, false);
+            } else {
+                 setConfirmingMission(mission);
+            }
         }
     };
     
@@ -465,6 +462,18 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+            )}
+
+            {confirmingMission && (
+                <CompleteMissionConfirmationDialog 
+                    isOpen={!!confirmingMission}
+                    onOpenChange={() => setConfirmingMission(null)}
+                    onConfirm={() => triggerToggleCompletion(confirmingMission, startOfDay(new Date()), false)}
+                    onConfirmAndDismiss={() => {
+                        sessionStorage.setItem('dismissCompleteMissionConfirmation', 'true');
+                        triggerToggleCompletion(confirmingMission, startOfDay(new Date()), false);
+                    }}
+                />
             )}
         </div>
     );

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
@@ -68,7 +69,7 @@ function HeroesPageContent() {
         );
     }
     
-    return <HeroesSummary children={children} missionInstances={missions} />;
+    return <HeroesSummary children={children} missionInstances={missions} onDataRefresh={fetchData} />;
 }
 
 
