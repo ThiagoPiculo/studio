@@ -220,8 +220,9 @@ function AgendaPageContent() {
   };
   
   const handleEditTemplateClick = (instance: MissionInstance) => {
-    router.push(`/dashboard/missions/edit/${instance.templateId}`);
-  }
+    const redirectUrl = `${pathname}?${searchParams.toString()}`;
+    router.push(`/dashboard/missions/edit/${instance.templateId}?redirect=${encodeURIComponent(redirectUrl)}`);
+  };
 
   const handleAssignmentComplete = () => {
     refetchData();

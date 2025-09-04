@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter, useParams } from 'next/navigation';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -48,6 +48,9 @@ export default function EditMissionTemplatePage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect');
+
   const missionId = params.missionId as string;
   const { user } = useAuth();
   const { currentContext } = useFamily();
@@ -132,12 +135,12 @@ export default function EditMissionTemplatePage() {
         setAssignedChildren(childrenWithAssignment);
       } else {
         toast({ title: "Missão não encontrada", variant: "destructive" });
-        router.push('/dashboard/missions');
+        router.push(redirectUrl || '/dashboard/missions');
       }
     } catch (error) {
       console.error("Error fetching mission data:", error);
       toast({ title: "Erro ao carregar missão", variant: "destructive" });
-      router.push('/dashboard/missions');
+      router.push(redirectUrl || '/dashboard/missions');
     } finally {
       setIsFetchingData(false);
       setIsLoadingAssignments(false);
@@ -161,6 +164,15 @@ export default function EditMissionTemplatePage() {
   const handleEditTemplateClick = (instance: MissionInstance) => {
     router.push(`/dashboard/missions/edit/${instance.templateId}`);
   }
+
+  const handleBackNavigation = () => {
+    if (redirectUrl) {
+      router.push(redirectUrl);
+    } else {
+      router.back();
+    }
+  };
+
 
   const onSubmit = async (values: MissionTemplateFormValues) => {
     if (!user || !missionTemplate) {
@@ -187,7 +199,7 @@ export default function EditMissionTemplatePage() {
         title: 'Missão Atualizada!',
         description: `A missão "${values.title}" e suas agendas ativas foram atualizadas com sucesso.`,
       });
-      router.push('/dashboard/missions'); 
+      handleBackNavigation();
     } catch (error) {
       console.error('Error updating mission template:', error);
       toast({
@@ -367,7 +379,7 @@ export default function EditMissionTemplatePage() {
                 
                 {canEdit && (
                   <div className="flex items-center justify-end gap-2 border-t pt-6">
-                    <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+                    <Button type="button" variant="outline" onClick={handleBackNavigation} disabled={isLoading}>
                         Cancelar
                     </Button>
                     <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
