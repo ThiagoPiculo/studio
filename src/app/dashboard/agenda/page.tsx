@@ -710,7 +710,11 @@ function AgendaPageContent() {
     
     // Desktop rendering for all views
     return (
-      <div className={cn("grid gap-4", finalGridClass)}>
+      <div className={cn(
+        "grid gap-4",
+        finalGridClass,
+        dateRangeFilter === 'day' && selectedChildId && 'max-w-2xl mx-auto w-full'
+      )}>
         {days.map(day => {
           const dateKey = format(day, 'yyyy-MM-dd');
           const dayEvents = (eventsByDate[dateKey] as { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }) || { morning: [], afternoon: [], night: [] };
