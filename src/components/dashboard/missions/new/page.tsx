@@ -69,6 +69,7 @@ function CreateMissionTemplatePageContent() {
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
 
+
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
     resolvedInitialCategory = categoryParam;
@@ -309,7 +310,7 @@ function CreateMissionTemplatePageContent() {
                     )}
                   />
 
-                <div className="grid grid-cols-1">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <FormField
                     control={form.control}
                     name="starsReward"

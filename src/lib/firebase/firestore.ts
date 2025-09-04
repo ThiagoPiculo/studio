@@ -1265,6 +1265,8 @@ export const updateRewardTemplate = async (actor: UserProfile, templateId: strin
   }
 };
 
+
+
 export const deleteRewardTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
   const templateRef = doc(db, 'rewardTemplates', templateId);
   const templateSnap = await getDoc(templateRef);
@@ -1897,9 +1899,9 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
     if (childProfile.level >= 10) finalBadgeSet.add('campeao_herois');
     if (childProfile.level >= 15) finalBadgeSet.add('arquiteto_sonhos');
     if (childProfile.level >= 20) finalBadgeSet.add('heroi_lendario');
-    if (childProfile.stars >= 100) finalBadgeSet.add('cacador_estrelas');
-    if (childProfile.stars >= 500) finalBadgeSet.add('colecionador_tesouros');
-    if (childProfile.stars >= 1000) finalBadgeSet.add('lenda_estelar');
+    if (childProfile.totalStars >= 100) finalBadgeSet.add('cacador_estrelas');
+    if (childProfile.totalStars >= 500) finalBadgeSet.add('colecionador_tesouros');
+    if (childProfile.totalStars >= 1000) finalBadgeSet.add('lenda_estelar');
 
     const allInstancesQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
     const allInstancesSnapshot = await getDocs(allInstancesQuery);
@@ -2025,12 +2027,17 @@ export const completeMissionInstance = async (
 ): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
     
-    const calculateStarsForNextLevel = (level: number): number => {
-        let starsForCurrentLevel = 0;
-        for (let i = 1; i < level; i++) {
-            starsForCurrentLevel += 100 + (i - 1) * 50;
+    const calculateLevelDetails = (totalStars: number): { level: number, starsForNextLevel: number } => {
+        let level = 1;
+        let starsNeededForNext = 100;
+        let cumulativeStars = 0;
+
+        while (totalStars >= cumulativeStars + starsNeededForNext) {
+            cumulativeStars += starsNeededForNext;
+            level++;
+            starsNeededForNext = 100 + (level - 1) * 50;
         }
-        return starsForCurrentLevel + (100 + (level - 1) * 50);
+        return { level, starsForNextLevel: cumulativeStars + starsNeededForNext };
     };
 
     const updatedChildProfile = await runTransaction(db, async (transaction) => {
@@ -2059,13 +2066,7 @@ export const completeMissionInstance = async (
         
         const newStars = childData.stars + missionData.starsReward;
         const newTotalStars = (childData.totalStars || 0) + missionData.starsReward;
-        let newLevel = childData.level;
-
-        let starsForNextLevel = calculateStarsForNextLevel(childData.level);
-        while (newTotalStars >= starsForNextLevel) {
-            newLevel++;
-            starsForNextLevel = calculateStarsForNextLevel(newLevel);
-        }
+        const { level: newLevel } = calculateLevelDetails(newTotalStars);
 
         transaction.update(childRef, {
             stars: newStars,
@@ -2142,6 +2143,18 @@ export const reactivateMissionInstance = async (
 ): Promise<ChildProfile | null> => {
     const missionRef = doc(db, 'missionInstances', missionInstanceId);
 
+    const calculateLevelDetails = (totalStars: number): { level: number } => {
+        let level = 1;
+        let starsNeededForNext = 100;
+        let cumulativeStars = 0;
+        while (totalStars >= cumulativeStars + starsNeededForNext) {
+            cumulativeStars += starsNeededForNext;
+            level++;
+            starsNeededForNext = 100 + (level - 1) * 50;
+        }
+        return { level };
+    };
+
     const updatedChildProfile = await runTransaction(db, async (transaction) => {
         const missionSnap = await transaction.get(missionRef);
         if (!missionSnap.exists()) {
@@ -2167,9 +2180,13 @@ export const reactivateMissionInstance = async (
         const childData = childSnap.data() as ChildProfile;
 
         const starsToSubtract = completionLogEntry.stars || missionData.starsReward;
+        const newTotalStars = Math.max(0, (childData.totalStars || 0) - starsToSubtract);
+        const { level: newLevel } = calculateLevelDetails(newTotalStars);
+
         const finalChildUpdates: any = { 
             stars: Math.max(0, childData.stars - starsToSubtract),
-            totalStars: Math.max(0, (childData.totalStars || 0) - starsToSubtract),
+            totalStars: newTotalStars,
+            level: newLevel,
             updatedAt: serverTimestamp() 
         };
         transaction.update(childRef, finalChildUpdates);

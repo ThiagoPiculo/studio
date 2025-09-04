@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo, useState } from 'react';
@@ -30,7 +31,6 @@ interface DailyProgress {
     total: number;
     completed: number;
     starsEarned: number;
-    xpEarned: number;
     dayKey: 'MO' | 'TU' | 'WE' | 'TH' | 'FR' | 'SA' | 'SU';
 }
 
@@ -53,13 +53,12 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             const completedMissions = scheduledMissions.filter(inst => isMissionCompletedForDate(inst, day));
             const dayKey = getDayToWeekday[day.getDay()];
 
-            const { starsEarned, xpEarned } = completedMissions.reduce(
+            const { starsEarned } = completedMissions.reduce(
               (acc, mission) => {
                   acc.starsEarned += mission.starsReward;
-                  acc.xpEarned += mission.xpReward;
                   return acc;
               },
-              { starsEarned: 0, xpEarned: 0 }
+              { starsEarned: 0 }
             );
 
             return {
@@ -70,7 +69,6 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                 total: scheduledMissions.length,
                 completed: completedMissions.length,
                 starsEarned,
-                xpEarned,
             };
         });
         
@@ -80,7 +78,7 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
             childAvatar: child.avatar,
             childColor: child.color,
             stars: child.stars,
-            xp: child.xp,
+            totalStars: child.totalStars,
             dailyData: dailyData
         };
     });
@@ -140,9 +138,6 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                       <span className="flex items-center gap-1 font-semibold text-amber-600">
                                         <Star className="h-4 w-4" /> {data.stars}
                                       </span>
-                                      <span className="flex items-center gap-1 font-semibold text-blue-600">
-                                        <BadgeCheck className="h-4 w-4" /> {data.xp}
-                                      </span>
                                   </div>
                                 </div>
                             </div>
@@ -195,9 +190,6 @@ export function ProgressAnalysis({ childrenProfiles, missionInstances }: Progres
                                                 <Separator orientation="vertical" className="h-3" />
                                                 <span className={cn("flex items-center gap-1 w-12", dayProgress.starsEarned > 0 ? 'text-amber-600' : 'text-muted-foreground/80')}>
                                                     <Star className="h-3 w-3" /> {dayProgress.starsEarned}
-                                                </span>
-                                                <span className={cn("flex items-center gap-1 w-12", dayProgress.xpEarned > 0 ? 'text-blue-600' : 'text-muted-foreground/80')}>
-                                                    <BadgeCheck className="h-3 w-3" /> {dayProgress.xpEarned}
                                                 </span>
                                               </>
                                             ) : (

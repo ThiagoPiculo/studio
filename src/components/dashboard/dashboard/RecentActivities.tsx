@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { ArrowRight, CheckCircle, Clock } from 'lucide-react';
+import { ArrowRight, CheckCircle, Clock, Star } from 'lucide-react';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { getDateObject } from '@/lib/calendar-utils';
@@ -15,7 +16,7 @@ import { Fragment } from 'react';
 import { Separator } from '@/components/ui/separator';
 
 type Activity =
-    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: string, stars: number, xp: number, actorId?: string, actorName?: string } })
+    | (MissionInstance & { type: 'mission', scheduledFor: Date, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
     | (RewardTemplate & { type: 'reward', redeemedAt: string, actorId?: string, actorName?: string, childId: string });
 
 interface RecentActivitiesProps {
@@ -92,8 +93,7 @@ export function RecentActivities({ childrenProfiles, missionInstances }: RecentA
                         </div>
                     </div>
                     <div className="text-right flex-shrink-0">
-                        <p className="font-bold text-green-600 text-sm">+{activity.completionLogEntry.stars} ⭐</p>
-                        <p className="font-bold text-blue-600 text-sm">+{activity.completionLogEntry.xp} XP</p>
+                        <p className="font-bold text-green-600 text-sm flex items-center gap-1">+{activity.completionLogEntry.stars} <Star className="h-4 w-4 text-yellow-500 fill-yellow-500"/></p>
                     </div>
                   </li>
                   {index < activities.length - 1 && <Separator />}
