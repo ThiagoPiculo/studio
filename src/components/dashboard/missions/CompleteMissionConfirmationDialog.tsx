@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Lightbulb } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface CompleteMissionConfirmationDialogProps {
   isOpen: boolean;
@@ -55,13 +57,12 @@ export function CompleteMissionConfirmationDialog({
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
             <AlertDialogAction 
                 onClick={() => onConfirm(dismissToday)}
-                className="w-full sm:w-auto"
-                variant="secondary"
+                className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}
             >
                 Continuar mesmo assim
             </AlertDialogAction>
-            <AlertDialogCancel asChild>
-                <Button variant="default" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Deixar para o herói marcar</Button>
+             <AlertDialogCancel className={cn(buttonVariants({ variant: "default" }), "w-full sm:w-auto")}>
+                Deixar para o herói marcar
             </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
