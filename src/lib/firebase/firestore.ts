@@ -2304,7 +2304,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));

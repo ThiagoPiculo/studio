@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -37,7 +38,6 @@ const missionTemplateFormSchema = z.object({
     message: "Selecione uma categoria válida.",
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
-  xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -68,8 +68,6 @@ function CreateMissionTemplatePageContent() {
   const initialEmoji = searchParams.get('emoji') || '';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
-  const xpParam = searchParams.get('xpReward');
-
 
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
@@ -84,7 +82,6 @@ function CreateMissionTemplatePageContent() {
       description: '',
       category: resolvedInitialCategory, 
       starsReward: starsParam ? parseInt(starsParam, 10) : 5,
-      xpReward: xpParam ? parseInt(xpParam, 10) : 10,
     },
   });
   
@@ -118,7 +115,6 @@ function CreateMissionTemplatePageContent() {
         form.setValue("emoji", idea.emoji);
         form.setValue("category", idea.suggestedAppCategory);
         form.setValue("starsReward", idea.starsReward);
-        form.setValue("xpReward", idea.xpReward);
         setIsPopoverOpen(false);
     }
   };
@@ -151,7 +147,6 @@ function CreateMissionTemplatePageContent() {
         description: values.description,
         category: values.category,
         starsReward: values.starsReward,
-        xpReward: values.xpReward,
         isRecurring: false,
         startDate: null,
         dueDate: null,
@@ -193,7 +188,6 @@ function CreateMissionTemplatePageContent() {
         form.setValue("emoji", ideaForDuplicate.emoji);
         form.setValue("category", ideaForDuplicate.suggestedAppCategory);
         form.setValue("starsReward", ideaForDuplicate.starsReward);
-        form.setValue("xpReward", ideaForDuplicate.xpReward);
     }
     setIsDuplicateDialogOpen(false);
     // User can now edit and submit again
@@ -324,19 +318,6 @@ function CreateMissionTemplatePageContent() {
                         <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Recompensa em Estrelas</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="Ex: 5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="xpReward"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5"><BadgeCheck className="text-blue-500" /> Recompensa em XP</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Ex: 10" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

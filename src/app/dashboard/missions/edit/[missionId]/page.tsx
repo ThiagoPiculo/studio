@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -37,7 +38,6 @@ const missionTemplateFormSchema = z.object({
     message: "Selecione uma categoria válida.",
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
-  xpReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 XP."}),
   status: z.enum(['active', 'archived']).default('active'),
   source: z.enum(['custom', 'predefined']).default('custom'),
 });
@@ -75,7 +75,6 @@ export default function EditMissionTemplatePage() {
       description: '',
       category: undefined, 
       starsReward: 5,
-      xpReward: 10,
       status: 'active',
       source: 'custom',
     },
@@ -104,7 +103,6 @@ export default function EditMissionTemplatePage() {
           description: fetchedTemplate.description || '',
           category: fetchedTemplate.category,
           starsReward: fetchedTemplate.starsReward,
-          xpReward: fetchedTemplate.xpReward,
           status: fetchedTemplate.status,
           source: fetchedTemplate.source || 'custom',
         });
@@ -188,7 +186,6 @@ export default function EditMissionTemplatePage() {
           description: values.description,
           category: values.category,
           starsReward: values.starsReward,
-          xpReward: values.xpReward,
           status: values.status,
           source: 'custom', // Any manual edit makes it custom
       };
@@ -314,19 +311,6 @@ export default function EditMissionTemplatePage() {
                         <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Recompensa em Estrelas</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="Ex: 5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="xpReward"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5"><BadgeCheck className="text-blue-500" /> Recompensa em XP</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Ex: 10" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
