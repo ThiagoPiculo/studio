@@ -1,6 +1,7 @@
 
 "use client";
 
+import * as React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,7 +49,7 @@ export function CompleteMissionConfirmationDialog({
         <div className="flex items-center space-x-2 pt-2">
           <Checkbox id="dismiss-today" checked={dismissToday} onCheckedChange={(checked) => setDismissToday(!!checked)} />
           <Label htmlFor="dismiss-today" className="text-sm font-medium text-muted-foreground">
-            Entendi, não me lembrar novamente hoje.
+            Não me lembrar novamente hoje.
           </Label>
         </div>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
@@ -60,7 +61,7 @@ export function CompleteMissionConfirmationDialog({
                 Continuar mesmo assim
             </AlertDialogAction>
             <AlertDialogCancel asChild>
-                <Button variant="default" className="w-full sm:w-auto">Deixar para o herói marcar</Button>
+                <Button variant="default" className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Deixar para o herói marcar</Button>
             </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
