@@ -605,14 +605,9 @@ function AgendaPageContent() {
                                     <div className={cn("flex items-center gap-4 p-3 rounded-lg border-l-4 transition-all", isCompleted ? 'bg-green-500/10 border-green-500' : 'bg-muted/50 border-transparent')}>
                                       <div className="text-5xl">{event.data.emoji || '🎯'}</div>
                                       <div className="flex-grow space-y-1">
-                                        <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
-                                        <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>{event.title}</p>
                                         <div className="flex items-center justify-between">
-                                            <div className={cn("flex items-center gap-1 font-bold", isCompleted ? "text-green-600" : "text-amber-600")}>
-                                              {isCompleted ? <CheckCircle className="h-4 w-4" /> : `+${event.data.starsReward}`}
-                                              {!isCompleted && <StarIcon className="h-4 w-4 fill-current" />}
-                                            </div>
-                                             {canEdit && (
+                                            <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
+                                            {canEdit && (
                                                 <div className="flex items-center gap-1">
                                                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={(e) => { e.stopPropagation(); handleToggleCompletion(event.data, day); }} disabled={isProcessingAction === event.data.id}>
                                                         {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <CheckCircle className="h-5 w-5 text-green-500" /> : <Circle className="h-5 w-5 text-primary" />}
@@ -630,6 +625,11 @@ function AgendaPageContent() {
                                                     </DropdownMenu>
                                                 </div>
                                              )}
+                                        </div>
+                                        <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>{event.title}</p>
+                                        <div className={cn("flex items-center gap-1 font-bold", isCompleted ? "text-green-600" : "text-amber-600")}>
+                                          {isCompleted ? <CheckCircle className="h-4 w-4" /> : `+${event.data.starsReward}`}
+                                          {!isCompleted && <StarIcon className="h-4 w-4 fill-current" />}
                                         </div>
                                       </div>
                                     </div>
