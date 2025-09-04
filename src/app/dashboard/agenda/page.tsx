@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -568,7 +567,7 @@ function AgendaPageContent() {
 
             return (
               <li key={childId} className={cn(!selectedChildId && "relative pt-12")}>
-                  <ul className={cn("space-y-1.5", isKidsView && "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4")}>
+                  <ul className={cn("space-y-1.5", isKidsView && "space-y-3")}>
                       {childEvents.map(event => {
                           const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                           const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
@@ -590,25 +589,25 @@ function AgendaPageContent() {
                           if (isKidsView) {
                             return (
                                 <li key={event.data.id} data-mission-id={popoverId} className={cn(highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background rounded-lg")}>
-                                    <Card className={cn("text-center p-3 transition-all relative overflow-hidden", isCompleted && "bg-green-500/10 border-green-500/30")}>
-                                      {isCompleted && (
-                                        <div className="absolute top-2 right-2 p-1.5 bg-white/70 rounded-full">
-                                            <CheckCircle className="h-6 w-6 text-green-600" />
+                                    <div 
+                                        className={cn(
+                                            "flex items-center gap-4 p-3 rounded-lg border-l-4 cursor-pointer transition-all",
+                                            isCompleted ? 'bg-green-500/10 border-green-500' : 'bg-muted/50 border-transparent hover:bg-muted'
+                                        )}
+                                        onClick={() => canEdit && handleToggleCompletion(event.data, day)}
+                                    >
+                                      <div className="text-5xl">{event.data.emoji || '🎯'}</div>
+                                      <div className="flex-grow space-y-0.5">
+                                        <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
+                                        <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>
+                                          {event.title}
+                                        </p>
+                                        <div className={cn("flex items-center gap-1 font-bold", isCompleted ? "text-green-600" : "text-amber-600")}>
+                                          {isCompleted ? <CheckCircle className="h-4 w-4" /> : `+${event.data.starsReward}`}
+                                          {!isCompleted && <StarIcon className="h-4 w-4 fill-current" />}
                                         </div>
-                                      )}
-                                      <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
-                                      <div className="flex items-center justify-center gap-4 my-2">
-                                          <span className="text-6xl">{event.data.emoji || '🎯'}</span>
                                       </div>
-                                      <p className="font-semibold text-lg leading-tight h-14 flex items-center justify-center">{event.title}</p>
-                                      <div className="flex items-center justify-center gap-1 font-bold text-amber-600 text-lg mt-2">
-                                          +{event.data.starsReward} <StarIcon className="h-5 w-5 fill-current" />
-                                      </div>
-                                      <Button variant={isCompleted ? 'secondary' : 'default'} size="sm" className="w-full mt-3" onClick={() => handleToggleCompletion(event.data, day)} disabled={!canEdit || isProcessingAction === event.data.id}>
-                                          {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckSquare className="mr-2 h-4 w-4" />}
-                                          {isCompleted ? 'Desfazer' : 'Concluir'}
-                                      </Button>
-                                    </Card>
+                                    </div>
                                 </li>
                             )
                           }
@@ -1230,3 +1229,5 @@ export default function AgendaPage() {
     </Suspense>
   )
 }
+
+    
