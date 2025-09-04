@@ -12,21 +12,23 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, Lightbulb } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Lightbulb } from "lucide-react";
 
 interface CompleteMissionConfirmationDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onConfirm: () => void;
-  onConfirmAndDismiss: () => void;
+  onConfirm: (dismiss: boolean) => void;
 }
 
 export function CompleteMissionConfirmationDialog({
   isOpen,
   onOpenChange,
   onConfirm,
-  onConfirmAndDismiss,
 }: CompleteMissionConfirmationDialogProps) {
+  const [dismissToday, setDismissToday] = React.useState(false);
+
   return (
     <AlertDialog open={isOpen} onOpenChange={onOpenChange}>
       <AlertDialogContent>
@@ -43,14 +45,23 @@ export function CompleteMissionConfirmationDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogFooter className="flex-col sm:flex-col sm:items-stretch gap-2">
-           <AlertDialogAction onClick={onConfirm}>
+        <div className="flex items-center space-x-2 pt-2">
+          <Checkbox id="dismiss-today" checked={dismissToday} onCheckedChange={(checked) => setDismissToday(!!checked)} />
+          <Label htmlFor="dismiss-today" className="text-sm font-medium text-muted-foreground">
+            Entendi, não me lembrar novamente hoje.
+          </Label>
+        </div>
+        <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+            <AlertDialogAction 
+                onClick={() => onConfirm(dismissToday)}
+                className="w-full sm:w-auto"
+                variant="secondary"
+            >
                 Continuar mesmo assim
             </AlertDialogAction>
-            <Button variant="secondary" onClick={onConfirmAndDismiss}>
-                Entendi, concluir e não me lembrar hoje
-            </Button>
-            <AlertDialogCancel>Deixar para o herói marcar</AlertDialogCancel>
+            <AlertDialogCancel asChild>
+                <Button variant="default" className="w-full sm:w-auto">Deixar para o herói marcar</Button>
+            </AlertDialogCancel>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

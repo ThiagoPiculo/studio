@@ -39,7 +39,7 @@ import { Badge } from '@/components/ui/badge';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
 import { Switch } from '@/components/ui/switch';
-
+import { CompleteMissionConfirmationDialog } from '@/components/dashboard/missions/CompleteMissionConfirmationDialog';
 
 export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
 export type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
@@ -124,6 +124,8 @@ function AgendaPageContent() {
   
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
   const [isCompactMode, setIsCompactMode] = useState(false);
+
+  const [confirmingMission, setConfirmingMission] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
   const handleSelectedChildChange = (id: string | null) => {
     setSelectedChildId(id);
@@ -382,31 +384,45 @@ function AgendaPageContent() {
     setDateRangeFilter('day');
   };
 
+  const triggerToggleCompletion = async (missionInstance: MissionInstance, date: Date, isCompleted: boolean) => {
+    if (!user) return;
+    setIsProcessingAction(missionInstance.id);
+    setActivePopover(null); // Close any open popovers
+    try {
+        const actor = { id: user.uid, name: user.name };
+        if (isCompleted) {
+            await reactivateMissionInstance(missionInstance.id, date, actor);
+            toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
+        } else {
+            await completeMissionInstance(missionInstance.id, date, actor);
+            toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
+        }
+        await refetchData();
+    } catch (error: any) {
+        console.error("Error toggling completion:", error);
+        toast({ title: 'Erro ao atualizar', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
+        await refetchData();
+    } finally {
+        setIsProcessingAction(null);
+        setConfirmingMission(null);
+    }
+  };
+  
   const handleToggleCompletion = async (missionInstance: MissionInstance, date: Date) => {
       if (!user) return;
       const isCompleted = isMissionCompletedForDate(missionInstance, date);
-      setIsProcessingAction(missionInstance.id);
-      setActivePopover(null);
-      try {
-          const actor = { id: user.uid, name: user.name };
-          if (isCompleted) {
-              const result = await reactivateMissionInstance(missionInstance.id, date, actor);
-              if (result) {
-                  toast({ title: 'Ação Desfeita!', description: `A conclusão de "${missionInstance.title}" foi revertida.` });
-              }
+  
+      if (isCompleted) {
+          // Undoing doesn't need confirmation
+          await triggerToggleCompletion(missionInstance, date, true);
+      } else {
+          // Completing a mission shows the dialog
+          const dismissedToday = sessionStorage.getItem('dismissCompleteMissionConfirmation');
+          if (dismissedToday === 'true') {
+              await triggerToggleCompletion(missionInstance, date, false);
           } else {
-              const result = await completeMissionInstance(missionInstance.id, date, actor);
-              if (result) {
-                  toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
-              }
+              setConfirmingMission({ instance: missionInstance, date: date });
           }
-          refetchData();
-      } catch (error: any) {
-          console.error("Error toggling completion:", error);
-          toast({ title: 'Erro ao atualizar', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
-          refetchData();
-      } finally {
-          setIsProcessingAction(null);
       }
   };
 
@@ -1114,6 +1130,19 @@ function AgendaPageContent() {
         
         {renderContent()}
       </div>
+
+      {confirmingMission && (
+        <CompleteMissionConfirmationDialog
+          isOpen={!!confirmingMission}
+          onOpenChange={() => setConfirmingMission(null)}
+          onConfirm={(dismiss) => {
+            if (dismiss) {
+              sessionStorage.setItem('dismissCompleteMissionConfirmation', 'true');
+            }
+            triggerToggleCompletion(confirmingMission.instance, confirmingMission.date, false);
+          }}
+        />
+      )}
 
       <SelectMissionTemplateDialog
         isOpen={isSelectMissionDialogOpen}
