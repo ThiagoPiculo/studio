@@ -1099,6 +1099,9 @@ function AgendaPageContent() {
   if (isLoading || isFamilyLoading) return <Loading />;
 
   const renderContent = () => {
+    if (isKidsView) {
+        return renderGridView();
+    }
     if (dateRangeFilter === 'month') {
         return renderCalendarView();
     }
