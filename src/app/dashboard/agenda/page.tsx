@@ -6,7 +6,7 @@ import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle, Heart } from 'lucide-react';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -123,7 +123,7 @@ function AgendaPageContent() {
   );
   
   const [openAccordionItems, setOpenAccordionItems] = useState<string[]>([]);
-  const [isCompactMode, setIsCompactMode] = useState(false);
+  const [isKidsView, setIsKidsView] = useState(false);
 
   const [confirmingMission, setConfirmingMission] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
@@ -271,7 +271,7 @@ function AgendaPageContent() {
       
     const instancesToProcess = missionInstances.filter(inst => childrenToProcess.some(c => c.id === inst.childId));
 
-    const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: CalendarEvent[] }> = {};
+    const acc: Record<string, { morning: CalendarEvent[], afternoon: CalendarEvent[], night: [] }> = {};
     const daysInView = eachDayOfInterval(viewInterval);
     
     daysInView.forEach(day => {
@@ -534,7 +534,7 @@ function AgendaPageContent() {
     return events.morning.length > 0 || events.afternoon.length > 0 || events.night.length > 0;
   });
 
-  const renderEventListForPeriod = (events: CalendarEvent[], day: Date, showEmojiInCard: boolean) => {
+  const renderEventListForPeriod = (events: CalendarEvent[], day: Date) => {
       const eventsByChild = events.reduce((acc, event) => {
           const childId = event.data.childId;
           if (!acc[childId]) acc[childId] = [];
@@ -568,7 +568,7 @@ function AgendaPageContent() {
 
             return (
               <li key={childId} className={cn(!selectedChildId && "relative pt-12")}>
-                  <ul className={cn("space-y-1.5")}>
+                  <ul className={cn("space-y-1.5", isKidsView && "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4")}>
                       {childEvents.map(event => {
                           const popoverId = `${event.data.id}-${format(day, 'yyyy-MM-dd')}`;
                           const isCompleted = event.type === 'mission' && isMissionCompletedForDate(event.data, day);
@@ -578,24 +578,40 @@ function AgendaPageContent() {
                           if (event.type === 'school') {
                               return (
                                 <li key={event.data.id}>
-                                  {!showEmojiInCard ? (
-                                      <div className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10">
-                                          <div className="text-indigo-700 font-mono text-xs w-10 text-center">{formattedTime}</div>
-                                          <NotebookPen className="h-4 w-4 text-indigo-600" />
-                                          <span className="font-semibold text-indigo-800">{event.title}</span>
-                                      </div>
-                                  ) : (
-                                      <Card className="p-3 text-sm flex items-center gap-3 bg-indigo-500/10 border-l-4 border-indigo-500 shadow-sm">
-                                          <div className="text-indigo-700 font-mono text-sm w-12 text-center shrink-0">{formattedTime}</div>
-                                          <NotebookPen className="h-5 w-5 text-indigo-600 shrink-0" />
-                                          <span className="font-semibold text-indigo-800 flex-grow">{event.title}</span>
-                                      </Card>
-                                  )}
+                                  <Card className="p-3 text-sm flex items-center gap-3 bg-indigo-500/10 border-l-4 border-indigo-500 shadow-sm">
+                                      <div className="text-indigo-700 font-mono text-sm w-12 text-center shrink-0">{formattedTime}</div>
+                                      <NotebookPen className="h-5 w-5 text-indigo-600 shrink-0" />
+                                      <span className="font-semibold text-indigo-800 flex-grow">{event.title}</span>
+                                  </Card>
                                 </li>
                               )
                           }
                           
-                          const categoryDetails = categoryMap.get(event.data.category);
+                          if (isKidsView) {
+                            return (
+                                <li key={event.data.id} data-mission-id={popoverId} className={cn(highlightedMissionId === popoverId && "bg-accent/70 ring-2 ring-primary ring-offset-background rounded-lg")}>
+                                    <Card className={cn("text-center p-3 transition-all relative overflow-hidden", isCompleted && "bg-green-500/10 border-green-500/30")}>
+                                      {isCompleted && (
+                                        <div className="absolute top-2 right-2 p-1.5 bg-white/70 rounded-full">
+                                            <CheckCircle className="h-6 w-6 text-green-600" />
+                                        </div>
+                                      )}
+                                      <p className="font-mono text-sm text-muted-foreground">{formattedTime}</p>
+                                      <div className="flex items-center justify-center gap-4 my-2">
+                                          <span className="text-6xl">{event.data.emoji || '🎯'}</span>
+                                      </div>
+                                      <p className="font-semibold text-lg leading-tight h-14 flex items-center justify-center">{event.title}</p>
+                                      <div className="flex items-center justify-center gap-1 font-bold text-amber-600 text-lg mt-2">
+                                          +{event.data.starsReward} <StarIcon className="h-5 w-5 fill-current" />
+                                      </div>
+                                      <Button variant={isCompleted ? 'secondary' : 'default'} size="sm" className="w-full mt-3" onClick={() => handleToggleCompletion(event.data, day)} disabled={!canEdit || isProcessingAction === event.data.id}>
+                                          {isProcessingAction === event.data.id ? <Loader2 className="h-4 w-4 animate-spin" /> : isCompleted ? <Undo2 className="mr-2 h-4 w-4" /> : <CheckSquare className="mr-2 h-4 w-4" />}
+                                          {isCompleted ? 'Desfazer' : 'Concluir'}
+                                      </Button>
+                                    </Card>
+                                </li>
+                            )
+                          }
 
                           return(
                           <li key={event.data.id} data-mission-id={popoverId} className={cn("text-sm text-muted-foreground leading-snug flex justify-between items-center p-1 -m-1 rounded-md transition-all duration-300", 
@@ -603,7 +619,7 @@ function AgendaPageContent() {
                           )}>
                               <div className="flex items-center gap-2.5 flex-grow min-w-0">
                                   <span className={cn("font-semibold text-foreground/80 text-xs", isCompleted && "line-through")}>{formattedTime}</span>
-                                  {showEmojiInCard && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                  {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                   <span className={cn("flex-1 truncate font-semibold text-foreground/80", isCompleted && "line-through")}>{event.title}</span>
                               </div>
                               <div className="flex items-center gap-1">
@@ -618,7 +634,6 @@ function AgendaPageContent() {
                                           <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                                             <div className="flex items-center justify-between gap-4">
                                                 <span className="flex items-center gap-1.5 text-amber-600"><StarIcon className="h-3.5 w-3.5" /> +{event.data.starsReward}</span>
-                                                <span className="flex items-center gap-1.5 text-blue-600"><BadgeCheck className="h-3.5 w-3.5" /> +{event.data.xpReward} XP</span>
                                             </div>
                                           </DropdownMenuLabel>
                                           <DropdownMenuSeparator />
@@ -664,8 +679,7 @@ function AgendaPageContent() {
     };
   
     const finalGridClass = gridClasses[dateRangeFilter as keyof typeof gridClasses];
-    const showEmojiInGrid = !isCompactMode && (dateRangeFilter === 'day' || dateRangeFilter === '3days');
-
+    
     // Different rendering logic for mobile vs desktop for 'week' view
     if (isMobile && (dateRangeFilter === 'week' || dateRangeFilter === 'workweek')) {
         return (
@@ -706,13 +720,13 @@ function AgendaPageContent() {
                                 ) : (
                                     <CardContent className="p-4 space-y-4">
                                         {dayEvents.morning.length > 0 && (
-                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, !isCompactMode)}</div>
+                                            <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
                                         )}
                                         {dayEvents.afternoon.length > 0 && (
-                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, !isCompactMode)}</div>
+                                            <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
                                         )}
                                         {dayEvents.night.length > 0 && (
-                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, !isCompactMode)}</div>
+                                            <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
                                         )}
                                     </CardContent>
                                 )}
@@ -770,13 +784,13 @@ function AgendaPageContent() {
                        <Card className="shadow-sm flex-1">
                           <CardContent className="p-4 space-y-4">
                               {dayEvents.morning.length > 0 && (
-                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day, showEmojiInGrid)}</div>
+                                <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(dayEvents.morning, day)}</div>
                               )}
                               {dayEvents.afternoon.length > 0 && (
-                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day, showEmojiInGrid)}</div>
+                                <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(dayEvents.afternoon, day)}</div>
                               )}
                               {dayEvents.night.length > 0 && (
-                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day, showEmojiInGrid)}</div>
+                                <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(dayEvents.night, day)}</div>
                               )}
                           </CardContent>
                        </Card>
@@ -843,13 +857,13 @@ function AgendaPageContent() {
                             <AccordionContent className="p-4 pt-0 border-t bg-card" style={{borderColor: `${child.color}30`}}>
                                 <div className="space-y-4 pt-2">
                                   {childEvents.morning.length > 0 && (
-                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day, !isCompactMode)}</div>
+                                    <div className="relative space-y-2 bg-yellow-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-yellow-700 dark:text-yellow-400"><Sun className="h-4 w-4 text-yellow-500" /> Manhã</h4>{renderEventListForPeriod(childEvents.morning, day)}</div>
                                   )}
                                   {childEvents.afternoon.length > 0 && (
-                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day, !isCompactMode)}</div>
+                                    <div className="relative space-y-2 bg-orange-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-orange-700 dark:text-orange-400"><CloudSun className="h-4 w-4 text-orange-500" /> Tarde</h4>{renderEventListForPeriod(childEvents.afternoon, day)}</div>
                                   )}
                                   {childEvents.night.length > 0 && (
-                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day, !isCompactMode)}</div>
+                                    <div className="relative space-y-2 bg-indigo-500/5 p-3 rounded-lg"><h4 className="absolute top-2 right-2 flex items-center gap-2 text-xs font-semibold text-indigo-700 dark:text-indigo-400"><Moon className="h-4 w-4 text-indigo-500" /> Noite</h4>{renderEventListForPeriod(childEvents.night, day)}</div>
                                   )}
                                 </div>
                             </AccordionContent>
@@ -985,7 +999,7 @@ function AgendaPageContent() {
                                             </div>
                                           </div>
                                           <h3 className="text-lg font-semibold flex items-center gap-2">
-                                            {!isCompactMode && event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
+                                            {event.data.emoji && <span className="text-xl">{event.data.emoji}</span>}
                                             {event.data.title}
                                           </h3>
                                           <div className="flex flex-wrap items-center gap-2">
@@ -1004,10 +1018,6 @@ function AgendaPageContent() {
                                             <span className="flex items-center gap-1.5">
                                               <StarIcon className="h-4 w-4 text-yellow-500"/>
                                               <span className="font-semibold text-foreground">{event.data.starsReward}</span>
-                                            </span>
-                                             <span className="flex items-center gap-1.5">
-                                              <BadgeCheck className="h-4 w-4 text-blue-500"/>
-                                               <span className="font-semibold text-foreground">{event.data.xpReward} XP</span>
                                             </span>
                                           </div>
 
@@ -1114,8 +1124,8 @@ function AgendaPageContent() {
 
                <div className="flex items-center justify-between gap-2">
                  <div className="flex items-center space-x-2">
-                   <Switch id="show-emoji" checked={isCompactMode} onCheckedChange={setIsCompactMode}/>
-                   <Label htmlFor="show-emoji" className="text-sm whitespace-nowrap">Modo Compacto</Label>
+                   <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
+                   <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5"><Heart className="h-4 w-4 text-pink-500" /> Visão da Criança</Label>
                  </div>
                  {canEdit && (
                   <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0 sm:flex-grow-0">
