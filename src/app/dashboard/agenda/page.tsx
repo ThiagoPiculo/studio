@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -274,6 +275,7 @@ function AgendaPageContent() {
     const daysInView = eachDayOfInterval(viewInterval);
     
     daysInView.forEach(day => {
+        const dateKey = format(day, 'yyyy-MM-dd');
         acc[dateKey] = { all: [], morning: [], afternoon: [], night: [] };
     });
 
