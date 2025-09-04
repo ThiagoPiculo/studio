@@ -135,6 +135,10 @@ function FamilyPageContent() {
 
   useEffect(() => {
     setIsClient(true);
+    const contextIdFromUrl = searchParams.get('contextId');
+    if (contextIdFromUrl && contextIdFromUrl !== currentContext) {
+      setCurrentContext(contextIdFromUrl);
+    }
   }, []);
   
   useEffect(() => {

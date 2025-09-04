@@ -19,8 +19,9 @@ export function FamilySwitcherClient({ contextId, action }: FamilySwitcherClient
 
     const handleClick = () => {
         setIsLoading(true);
-        setCurrentContext(contextId);
-        router.push('/dashboard/family');
+        // We just navigate. The context change will be handled by the destination page
+        // or by the layout listener, preventing the re-render of the current page.
+        router.push(`/dashboard/family?contextId=${contextId}`);
     };
 
     return (

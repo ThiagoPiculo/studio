@@ -20,6 +20,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PopoverClose } from '@radix-ui/react-popover';
 import { useToast } from '@/hooks/use-toast';
 import { InviteMemberDialog } from '@/components/dashboard/family/InviteMemberDialog';
+import { FamilySwitcherClient } from './FamilySwitcherClient';
 
 
 type AllianceDetails = {
@@ -31,25 +32,6 @@ type AllianceDetails = {
   children: ChildProfile[];
   owner: UserProfile | null;
 };
-
-function FamilySwitcherClient({ contextId, action }: { contextId: string; action: 'details' }) {
-    const { setCurrentContext } = useFamily();
-    const router = useRouter();
-    const [isLoading, setIsLoading] = useState(false);
-
-    const handleClick = () => {
-        setIsLoading(true);
-        setCurrentContext(contextId);
-        router.push('/dashboard/family');
-    };
-
-    return (
-        <Button onClick={handleClick} disabled={isLoading}>
-             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <>Gerenciar Aliança <ArrowRight className="ml-2 h-4 w-4" /></>}
-        </Button>
-    )
-}
-
 
 function AlliancesPageClient() {
     const { user, loading: authLoading } = useAuth();
