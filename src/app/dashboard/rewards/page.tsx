@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, User, Lightbulb } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, User, Lightbulb, Puzzle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -121,6 +121,11 @@ function RewardsHubContent() {
           toast({ title: "Erro ao salvar", description: "Não foi possível alterar sua estratégia de recompensas.", variant: "destructive"});
       }
   };
+  
+  const customTemplates = useMemo(() => {
+    return rewardTemplates.filter(template => template.source === 'custom');
+  }, [rewardTemplates]);
+
 
   const allIdeasWithStatus = useMemo(() => {
     const userTemplateTitles = new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
@@ -274,18 +279,18 @@ function RewardsHubContent() {
             <TabsContent value="custom" className="mt-6">
                  <Card>
                     <CardHeader>
-                        <CardTitle>{currentContextName}</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Criadas por Você</CardTitle>
                         <CardDescription>
-                            {rewardTemplates.length > 0
-                            ? "Estas são as recompensas que você criou ou personalizou. Elas aparecem na loja para seus heróis."
-                            : "Seu catálogo está vazio. Adicione recompensas das ideias ou crie uma do zero."
+                            {customTemplates.length > 0
+                            ? "Estas são as recompensas que você criou do zero. Elas aparecem na loja para seus heróis."
+                            : "Seu catálogo de recompensas personalizadas está vazio."
                             }
                         </CardDescription>
                     </CardHeader>
-                    {rewardTemplates.length > 0 && (
+                    {customTemplates.length > 0 && (
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {rewardTemplates.map(template => {
+                                {customTemplates.map(template => {
                                     const categoryDetails = getCategoryDetails(template.category);
                                     return (
                                         <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
@@ -296,17 +301,27 @@ function RewardsHubContent() {
                                                 </div>
                                             </CardHeader>
                                             <CardContent className="flex-grow pt-0 flex flex-col">
-                                                <div className="space-y-2">
-                                                    <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
-                                                </div>
+                                                 <div className="flex flex-wrap gap-2 items-center mb-3">
+                                                      {categoryDetails && (
+                                                          <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                              {categoryDetails.icon && <categoryDetails.icon className="mr-1.5 h-3 w-3" />}
+                                                              {categoryDetails.label}
+                                                          </Badge>
+                                                      )}
+                                                      <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                                        <Puzzle className="mr-1.5 h-3 w-3" />
+                                                        Personalizada
+                                                      </Badge>
+                                                       <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                 </div>
                                                 <div className="flex-grow" />
-                                                <div className="pt-4">
+                                                <div className="pt-2">
                                                     <Separator className="mb-3" />
                                                     <div className="space-y-2">
                                                         <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
                                                         <Users className="h-4 w-4" /> Desbloqueado por:
                                                         </h4>
-                                                        <div className="flex flex-wrap items-center gap-2 min-h-[32px]">
+                                                        <div className="flex items-center -space-x-2 min-h-[32px]">
                                                         {isDataLoading ? (
                                                             <div className="flex -space-x-2">
                                                                 <Skeleton className="h-8 w-8 rounded-full" />
@@ -314,23 +329,14 @@ function RewardsHubContent() {
                                                         ) : children.length > 0 ? (
                                                             children.map(child => {
                                                             const canAfford = child.stars >= template.starsCost;
-                                                            const progress = canAfford ? 100 : (child.stars / template.starsCost) * 100;
                                                             return (
                                                                 <TooltipProvider key={child.id} delayDuration={100}>
                                                                     <Tooltip>
                                                                         <TooltipTrigger>
-                                                                            <div className="relative">
-                                                                                <Avatar className={cn("h-8 w-8", !canAfford && "opacity-40")}>
-                                                                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                                                                    <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                                                                </Avatar>
-                                                                                {!canAfford && (
-                                                                                    <svg className="h-8 w-8 absolute top-0 left-0" viewBox="0 0 36 36">
-                                                                                        <circle className="stroke-muted" cx="18" cy="18" r="15.9155" strokeWidth="2" fill="none" />
-                                                                                        <circle className="stroke-primary" strokeDasharray={`${progress}, 100`} cx="18" cy="18" r="15.9155" strokeWidth="2" fill="none" strokeLinecap="round" transform="rotate(-90 18 18)" />
-                                                                                    </svg>
-                                                                                )}
-                                                                            </div>
+                                                                            <Avatar className={cn("h-8 w-8 border-2 border-card", !canAfford && "opacity-40")}>
+                                                                                <AvatarImage src={child.avatar} alt={child.name} />
+                                                                                <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                                            </Avatar>
                                                                         </TooltipTrigger>
                                                                         <TooltipContent><p>{child.name}: {child.stars}/{template.starsCost} estrelas</p></TooltipContent>
                                                                     </Tooltip>
@@ -416,3 +422,5 @@ export default function RewardsHubPageWrapper() {
         </Suspense>
     );
 }
+
+    
