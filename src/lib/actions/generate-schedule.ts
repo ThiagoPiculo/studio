@@ -11,9 +11,16 @@ import { parseTime, formatTime } from '@/lib/calendar-utils';
 // Helper to find mission details from our predefined list
 const findMissionDetails = (title: string) => {
   const predefined = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === title);
+  if (predefined) {
+      return {
+        emoji: predefined.emoji,
+        category: predefined.suggestedAppCategory,
+      };
+  }
+  // Return a default for custom activities if not found
   return {
-    emoji: predefined?.emoji || '✨',
-    category: predefined?.suggestedAppCategory || ('essential_routines' as MissionCategory),
+    emoji: '✨',
+    category: 'hobbies' as MissionCategory,
   };
 };
 
@@ -183,7 +190,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                 occupiedSlotsByDay[day as Weekday].push({ start: start, end: end });
                 finalScheduleByDay[day as Weekday].push({
                     activity: activity.name, startTime: formatTime(start), endTime: formatTime(end),
-                    days: [day as Weekday], type: 'extra_activity', emoji: details.emoji, category: details.category, block: 'Atividades Extras'
+                    days: [day as Weekday], type: 'extra_activity', emoji: activity.emoji || details.emoji, category: details.category, block: 'Atividades Extras'
                 });
             });
         }
