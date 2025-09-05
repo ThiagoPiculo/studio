@@ -294,9 +294,14 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                                 <span className="text-xl">{activity.emoji || '✨'}</span>
                                                 {activity.name}
                                             </Label>
-                                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEditActivity(activity, index)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
+                                            <div className="flex items-center">
+                                                <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEditActivity(activity, index)}>
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button type="button" size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive" onClick={() => remove(index)}>
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
                                          </div>
                                          <ActivityScheduler activityIndex={index} remove={remove} hasError={hasError} />
                                       </div>
