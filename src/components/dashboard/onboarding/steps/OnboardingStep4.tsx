@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { TimePicker } from "../../missions/TimePicker";
 import { predefinedMissionGroups } from "@/lib/predefined-missions";
-import { AlertCircle, Trash2, PlusCircle } from "lucide-react";
+import { AlertCircle, Trash2, PlusCircle, Edit } from "lucide-react";
 import { allWeekdays, weekdayLabels, type Weekday } from "@/lib/types";
 import { OnboardingFormValues, type ActivityFormValues } from "../OnboardingForm";
 import React, { useCallback } from 'react';
@@ -20,13 +20,14 @@ import { FormField, FormMessage, FormControl, FormItem, FormLabel, FormDescripti
 import { addMinutes, format } from "date-fns";
 import { AddCustomActivityDialog } from "./AddCustomActivityDialog";
 
-
 export const extraActivitySchema = z.object({
   name: z.string(),
   days: z.array(z.string()).min(1, "Selecione pelo menos um dia."),
   startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de início inválido."),
   endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de término inválido."),
-  category: z.string().optional(), // Added to track which category a custom activity belongs to
+  category: z.string().optional(),
+  source: z.enum(['predefined', 'custom']).default('predefined'),
+  emoji: z.string().optional(),
 }).refine(data => data.startTime < data.endTime, {
     message: "O término deve ser depois do início.",
     path: ["endTime"],
@@ -171,7 +172,7 @@ interface OnboardingStep4Props {
 
 export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
   const { control, watch } = useFormContext<OnboardingFormValues>();
-  const { fields, append, remove } = useFieldArray({
+  const { fields, append, remove, update } = useFieldArray({
       control,
       name: "extraActivities"
   });
@@ -179,6 +180,8 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
   const [openAccordions, setOpenAccordions] = React.useState<string[]>([]);
   const [isCustomActivityDialogOpen, setIsCustomActivityDialogOpen] = React.useState(false);
   const [currentCategoryForCustom, setCurrentCategoryForCustom] = React.useState<string | null>(null);
+  const [activityToEdit, setActivityToEdit] = React.useState<{activity: ActivityFormValues, index: number} | null>(null);
+
 
   React.useEffect(() => {
     if (errorToHighlight) {
@@ -196,7 +199,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
 
   const handleActivityToggle = (activityName: string, emoji: string, isChecked: boolean) => {
     if (isChecked) {
-        append({ name: activityName, days: [], startTime: '18:00', endTime: '19:00', emoji: emoji, category: '' } as any);
+        append({ name: activityName, days: [], startTime: '18:00', endTime: '19:00', emoji: emoji, source: 'predefined' } as any);
     } else {
         const indexToRemove = fields.findIndex(field => (field as any).name === activityName);
         if (indexToRemove > -1) {
@@ -206,12 +209,23 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
   };
 
   const handleOpenCustomDialog = (category: string) => {
+    setActivityToEdit(null);
     setCurrentCategoryForCustom(category);
     setIsCustomActivityDialogOpen(true);
   };
 
-  const handleAddCustomActivity = (activity: ActivityFormValues) => {
-    append({ ...activity, category: currentCategoryForCustom }); // Tag the activity with its category
+  const handleEditActivity = (activity: ActivityFormValues, index: number) => {
+    setActivityToEdit({ activity, index });
+    setCurrentCategoryForCustom(activity.category || null);
+    setIsCustomActivityDialogOpen(true);
+  }
+
+  const handleSaveActivity = (activity: ActivityFormValues) => {
+    if(activityToEdit !== null) {
+      update(activityToEdit.index, activity);
+    } else {
+      append({ ...activity, category: currentCategoryForCustom });
+    }
   };
 
   return (
@@ -272,6 +286,27 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                       </div>
                                   )
                               })}
+                              
+                              {/* Custom activities added to this group */}
+                              {(allActivities || []).filter(act => (act as any).source === 'custom' && (act as any).category === group.userCategory).map(activity => {
+                                  const index = fields.findIndex(f => (f as any).id === (activity as any).id);
+                                  const hasError = errorToHighlight?.index === index;
+                                  if (index === -1) return null;
+                                  return (
+                                      <div key={(activity as any).id} className="space-y-2">
+                                         <div className="flex items-center justify-between space-x-2 rounded-md border p-3 bg-primary/5">
+                                            <Label className="flex-1 cursor-pointer flex items-center gap-2">
+                                                <span className="text-xl">✨</span>
+                                                {activity.name}
+                                            </Label>
+                                            <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEditActivity(activity, index)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                         </div>
+                                         <ActivityScheduler activityIndex={index} remove={remove} hasError={hasError} />
+                                      </div>
+                                  )
+                              })}
                           </div>
                            <div className="mt-4 pt-4 border-t">
                               <Button
@@ -282,7 +317,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                   onClick={() => handleOpenCustomDialog(group.userCategory)}
                               >
                                   <PlusCircle className="mr-2 h-4 w-4" />
-                                  Adicionar outra atividade
+                                  Outra Missão
                               </Button>
                           </div>
                       </AccordionContent>
@@ -295,8 +330,9 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
       <AddCustomActivityDialog 
         isOpen={isCustomActivityDialogOpen}
         onOpenChange={setIsCustomActivityDialogOpen}
-        onAddActivity={handleAddCustomActivity}
+        onSaveActivity={handleSaveActivity}
         category={currentCategoryForCustom || ''}
+        activityToEdit={activityToEdit?.activity}
       />
     </>
   );

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -16,21 +16,12 @@ import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { extraActivitySchema, type ActivityFormValues } from '../OnboardingForm';
 
-const customActivitySchema = z.object({
-  name: z.string().min(2, { message: "O nome da atividade deve ter pelo menos 2 caracteres." }),
-  days: z.array(z.string()).min(1, "Selecione pelo menos um dia da semana."),
-  startTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de início inválido."),
-  endTime: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário de término inválido."),
-}).refine(data => data.startTime < data.endTime, {
-    message: "O horário de término deve ser depois do início.",
-    path: ["endTime"],
-});
-
 interface AddCustomActivityDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAddActivity: (activity: ActivityFormValues) => void;
+  onSaveActivity: (activity: ActivityFormValues) => void;
   category: string;
+  activityToEdit?: ActivityFormValues | null;
 }
 
 const categoryPlaceholders: Record<string, string> = {
@@ -40,29 +31,48 @@ const categoryPlaceholders: Record<string, string> = {
     'Prática de Idiomas': 'Ex: Aula de Mandarim',
 };
 
-export function AddCustomActivityDialog({ isOpen, onOpenChange, onAddActivity, category }: AddCustomActivityDialogProps) {
+export function AddCustomActivityDialog({ isOpen, onOpenChange, onSaveActivity, category, activityToEdit }: AddCustomActivityDialogProps) {
     const { toast } = useToast();
     const [isProcessing, setIsProcessing] = useState(false);
 
-    const form = useForm<z.infer<typeof customActivitySchema>>({
-        resolver: zodResolver(customActivitySchema),
+    const form = useForm<ActivityFormValues>({
+        resolver: zodResolver(extraActivitySchema),
         defaultValues: {
             name: '',
             days: [],
             startTime: '18:00',
             endTime: '19:00',
+            emoji: '✨',
+            source: 'custom',
+            category: category,
         },
     });
+    
+    useEffect(() => {
+        if(activityToEdit) {
+            form.reset(activityToEdit);
+        } else {
+             form.reset({
+                name: '',
+                days: [],
+                startTime: '18:00',
+                endTime: '19:00',
+                emoji: '✨',
+                source: 'custom',
+                category: category,
+            });
+        }
+    }, [activityToEdit, isOpen, form, category]);
 
-    const onSubmit = (values: z.infer<typeof customActivitySchema>) => {
+    const onSubmit = (values: ActivityFormValues) => {
         setIsProcessing(true);
         try {
-            onAddActivity({ ...values, emoji: '✨' } as ActivityFormValues);
-            toast({ title: "Atividade Adicionada!", description: `"${values.name}" foi adicionada à sua lista.` });
+            onSaveActivity(values);
+            toast({ title: `Atividade ${activityToEdit ? 'Atualizada' : 'Adicionada'}!`, description: `"${values.name}" foi salva na sua lista.` });
             onOpenChange(false);
             form.reset();
         } catch (error) {
-            toast({ title: "Erro", description: "Não foi possível adicionar a atividade.", variant: "destructive" });
+            toast({ title: "Erro", description: "Não foi possível salvar a atividade.", variant: "destructive" });
         } finally {
             setIsProcessing(false);
         }
@@ -72,9 +82,9 @@ export function AddCustomActivityDialog({ isOpen, onOpenChange, onAddActivity, c
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Adicionar Atividade Personalizada</DialogTitle>
+                    <DialogTitle>{activityToEdit ? 'Editar Missão' : 'Adicionar Outra Missão'}</DialogTitle>
                     <DialogDescription>
-                        Crie uma nova atividade para a categoria "{category}".
+                        {activityToEdit ? 'Edite os detalhes desta missão personalizada.' : `Crie uma nova missão para a categoria "${category}".`}
                     </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -84,7 +94,7 @@ export function AddCustomActivityDialog({ isOpen, onOpenChange, onAddActivity, c
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Nome da Atividade</FormLabel>
+                                    <FormLabel>Nome da Missão</FormLabel>
                                     <FormControl>
                                         <Input {...field} placeholder={categoryPlaceholders[category] || 'Ex: Nova Atividade'} />
                                     </FormControl>
@@ -127,7 +137,7 @@ export function AddCustomActivityDialog({ isOpen, onOpenChange, onAddActivity, c
                     </DialogClose>
                     <Button type="submit" form="custom-activity-form" disabled={isProcessing}>
                         {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                        Salvar Atividade
+                        Salvar Missão
                     </Button>
                 </DialogFooter>
             </DialogContent>

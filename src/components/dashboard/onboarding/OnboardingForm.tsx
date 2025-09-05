@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -252,21 +251,35 @@ export function OnboardingForm() {
             for (const item of generatedSchedule.schedule) {
                  if (item.type === 'school_entry' || item.type === 'school_exit') continue;
                  
-                 const missionDetails = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
-                 
-                 if (!missionDetails) {
-                     console.warn(`Could not find predefined mission for: "${item.activity}". Skipping.`);
-                     continue;
+                 const predefinedMission = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
+                 const customActivity = values.extraActivities?.find(a => a.name === item.activity);
+
+                 let source: 'predefined' | 'custom' = 'predefined';
+                 let emoji = '✨';
+                 let category: MissionCategory = 'essential_routines';
+                 let starsReward = 5;
+
+                 if (customActivity) {
+                     source = 'custom';
+                     emoji = customActivity.emoji || '✨';
+                     // Note: custom activities don't have a direct category from the predefined list, so we default
+                     category = 'hobbies';
+                 } else if (predefinedMission) {
+                     emoji = predefinedMission.emoji;
+                     category = predefinedMission.suggestedAppCategory;
+                     starsReward = predefinedMission.starsReward;
+                 } else {
+                     console.warn(`Could not find details for: "${item.activity}". Using defaults.`);
                  }
+
 
                  const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                     ownerId: user.uid,
                     familyId: values.contextId === 'my-space' ? null : values.contextId,
                     title: item.activity,
-                    emoji: item.emoji,
-                    category: missionDetails.suggestedAppCategory,
-                    starsReward: missionDetails.starsReward,
-                    xpReward: missionDetails.xpReward,
+                    emoji: emoji,
+                    category: category,
+                    starsReward: starsReward,
                     isRecurring: true,
                     startDate: new Date().toISOString(),
                     dueDate: addDays(new Date(), 1).toISOString(),
@@ -275,6 +288,7 @@ export function OnboardingForm() {
                         interval: 1,
                         byDay: item.days,
                     },
+                    source: source,
                 };
                 
                  allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
