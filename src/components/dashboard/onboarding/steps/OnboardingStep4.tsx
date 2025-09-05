@@ -72,15 +72,7 @@ function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex:
 
     return (
         <div className={cn("p-3 border rounded-lg space-y-3 bg-muted/50 mt-2 relative", hasError && "border-destructive ring-2 ring-destructive/50")}>
-            <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="absolute top-1 right-1 h-6 w-6 text-destructive"
-                onClick={() => remove(activityIndex)}
-            >
-                <Trash2 className="h-4 w-4" />
-            </Button>
+            
             <FormField
                 control={control}
                 name={`${fieldName}.days`}
@@ -264,6 +256,7 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                       </AccordionTrigger>
                       <AccordionContent className="pt-2">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {/* Render predefined activities */}
                               {group.items.map(item => {
                                   const currentFieldIndex = fields.findIndex(f => (f as any).name === item.title);
                                   const isChecked = currentFieldIndex > -1;
@@ -287,16 +280,18 @@ export function OnboardingStep4({ errorToHighlight }: OnboardingStep4Props) {
                                   )
                               })}
                               
-                              {/* Custom activities added to this group */}
-                              {(allActivities || []).filter(act => (act as any).source === 'custom' && (act as any).category === group.userCategory).map(activity => {
-                                  const index = fields.findIndex(f => (f as any).id === (activity as any).id);
+                              {/* Render custom activities for this category */}
+                              {(fields || []).map((field, index) => {
+                                  const activity = field as any;
+                                  if (activity.source !== 'custom' || activity.category !== group.userCategory) return null;
+                                  
                                   const hasError = errorToHighlight?.index === index;
-                                  if (index === -1) return null;
+
                                   return (
-                                      <div key={(activity as any).id} className="space-y-2">
+                                      <div key={field.id} className="space-y-2">
                                          <div className="flex items-center justify-between space-x-2 rounded-md border p-3 bg-primary/5">
                                             <Label className="flex-1 cursor-pointer flex items-center gap-2">
-                                                <span className="text-xl">✨</span>
+                                                <span className="text-xl">{activity.emoji || '✨'}</span>
                                                 {activity.name}
                                             </Label>
                                             <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => handleEditActivity(activity, index)}>
