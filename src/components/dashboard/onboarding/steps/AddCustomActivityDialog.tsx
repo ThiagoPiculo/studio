@@ -14,7 +14,8 @@ import { allWeekdays, weekdayLabels, type Weekday } from '@/lib/types';
 import { TimePicker } from "../../missions/TimePicker";
 import { Input } from '@/components/ui/input';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
-import { extraActivitySchema, type ActivityFormValues } from '../OnboardingForm';
+import { type ActivityFormValues } from '../OnboardingForm';
+import { extraActivitySchema } from './OnboardingStep4';
 
 interface AddCustomActivityDialogProps {
   isOpen: boolean;
@@ -82,7 +83,7 @@ export function AddCustomActivityDialog({ isOpen, onOpenChange, onSaveActivity, 
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{activityToEdit ? 'Editar Missão' : 'Adicionar Outra Missão'}</DialogTitle>
+                    <DialogTitle>{activityToEdit ? 'Editar Missão' : 'Outra Missão'}</DialogTitle>
                     <DialogDescription>
                         {activityToEdit ? 'Edite os detalhes desta missão personalizada.' : `Crie uma nova missão para a categoria "${category}".`}
                     </DialogDescription>
