@@ -1,5 +1,4 @@
 
-
 import type { MissionCategory, Weekday } from '@/lib/types';
 import { Home, HeartPulse, Smile, Users, Coins, Leaf, Bike, type LucideIcon, ListChecks, Palette, Languages, HandHelping, BrainCircuit, ShieldCheck, TowerControl, NotebookPen, Puzzle } from 'lucide-react';
 
@@ -41,6 +40,8 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Escovar os dentes (antes de dormir)', emoji: '🪥', suggestedAppCategory: 'essential_routines', starsReward: 5 },
       { title: 'Hora de dormir', emoji: '😴', suggestedAppCategory: 'essential_routines', starsReward: 5 },
       { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5 },
+      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15 },
+      { title: 'Organizar a mochila para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10 },
     ],
   },
   {
@@ -119,8 +120,6 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     icon: NotebookPen,
     description: 'Tarefas que ajudam a criar e manter uma rotina de estudos sólida e a desenvolver a responsabilidade acadêmica.',
     items: [
-      { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15 },
-      { title: 'Organizar a mochila para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10 },
       { title: 'Ler por 20 minutos', emoji: '📖', suggestedAppCategory: 'school', starsReward: 15 },
       { title: 'Estudar para uma prova', emoji: '📝', suggestedAppCategory: 'school', starsReward: 20 },
       { title: 'Revisar o conteúdo do dia', emoji: '🧐', suggestedAppCategory: 'school', starsReward: 15 },
