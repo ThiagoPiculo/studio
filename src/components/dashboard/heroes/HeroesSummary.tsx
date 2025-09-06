@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2 } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2, Camera } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -283,13 +283,17 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                                 </Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}`)}>
-                                                    <Contact className="mr-2 h-4 w-4" />
-                                                    <span>Perfil Completo</span>
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}&tab=edit`)}>
+                                                    <Camera className="mr-2 h-4 w-4" />
+                                                    <span>Trocar foto</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}&tab=edit`)}>
                                                     <Edit3 className="mr-2 h-4 w-4" />
                                                     <span>Editar Perfil</span>
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/mural?childId=${child.id}`)}>
+                                                    <Contact className="mr-2 h-4 w-4" />
+                                                    <span>Perfil Completo</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/progressos?childId=${child.id}`)}>
