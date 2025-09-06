@@ -273,7 +273,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
                                                     <CalendarDays className="mr-2 h-4 w-4" />
-                                                    <span>Rotina de Missões</span>
+                                                    <span>Rotina Semanal</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
                                                     <NotebookPen className="mr-2 h-4 w-4" />
@@ -402,28 +402,32 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     </TabsContent>
                                 </Tabs>
                             </CardContent>
-                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
+                            <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
-                                    <div className={cn(
-                                        "font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5",
-                                        isDayComplete ? 'text-green-600' : 'text-amber-600'
-                                    )}>
                                     {isDayComplete ? (
                                         <>
-                                            <BadgeCheck className="h-4 w-4" />
-                                            <span>Dia Completo!</span>
+                                            <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5 text-green-600">
+                                                <span>👍</span>
+                                                <span>Dia Completo!</span>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">+{todaysGains.stars}⭐ Ganhas Hoje</p>
                                         </>
-                                    ) : totalStarsToday > 0 ? (
-                                        <div className="flex items-center gap-1">
-                                            +{todaysGains.stars} / {totalStarsToday} <Star className="h-4 w-4 fill-current" />
-                                        </div>
                                     ) : (
-                                        <div className="flex items-center gap-1 text-muted-foreground">
-                                            -- <Star className="h-4 w-4" />
-                                        </div>
+                                        <>
+                                            <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5">
+                                                {totalStarsToday > 0 ? (
+                                                    <div className="flex items-center gap-1 text-amber-600">
+                                                        +{todaysGains.stars} / {totalStarsToday} <Star className="h-4 w-4 fill-current" />
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                                        -- <Star className="h-4 w-4" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
+                                        </>
                                     )}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
                                 </div>
                                 <Button asChild variant="ghost" size="sm" className="h-full flex-col gap-1">
                                     <Link href={`/dashboard/mural?childId=${child.id}&tab=rewards`}>
