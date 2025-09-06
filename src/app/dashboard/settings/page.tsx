@@ -23,7 +23,7 @@ import { Switch } from '@/components/ui/switch';
 const initialPages: { id: InitialPage | 'default'; label: string }[] = [
     { id: 'default', label: 'Padrão do App (Recomendado)' },
     { id: 'dashboard', label: 'Espaços com Mini Herois' },
-    { id: 'heroes', label: 'Resumo do Dia' },
+    { id: 'heroes', label: 'Rotina Hoje' },
     { id: 'progressos', label: 'Painel de Progressos' },
     { id: 'mural', label: 'Mural Completo' },
     { id: 'agenda', label: 'Rotina de Missões' },

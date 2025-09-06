@@ -68,7 +68,7 @@ const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: st
     const pathname = usePathname();
     const { isLoading: isFamilyLoading } = useFamily();
 
-    // The logic for `isActive` is now more specific for the 'Resumo do Dia' link.
+    // The logic for `isActive` is now more specific for the 'Rotina Hoje' link.
     // It is considered active if the path is exactly `/dashboard` OR `/dashboard/heroes`.
     // Other links are active if the path starts with their href.
     const isActive = !isFamilyLoading && (
@@ -111,7 +111,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <NavLink href="/dashboard/heroes" tooltip="Resumo do Dia" label="Resumo do Dia">
+                        <NavLink href="/dashboard/heroes" tooltip="Rotina Hoje" label="Rotina Hoje">
                             <Calendar1Icon className="text-chart-5"/>
                         </NavLink>
                     </SidebarMenuItem>

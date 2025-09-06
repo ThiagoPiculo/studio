@@ -73,7 +73,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const headerContent = {
     '/dashboard/heroes': {
-      title: 'Resumo do Dia',
+      title: 'Rotina Hoje',
       icon: Calendar1Icon,
       help: {
         title: 'Missões na palma da mão',
