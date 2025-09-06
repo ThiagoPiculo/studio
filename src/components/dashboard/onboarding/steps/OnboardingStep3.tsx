@@ -5,7 +5,7 @@ import { useFormContext } from "react-hook-form";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescription } from "@/components/ui/form";
 import { TimePicker } from "../../missions/TimePicker";
 import * as z from "zod";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { parseTime, formatTime } from "@/lib/calendar-utils";
 import type { SchoolShift } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -18,18 +18,21 @@ export const onboardingSchemaStep3 = z.object({
   sleepTime: z.string({ required_error: "O horário de dormir é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
 });
 
-const anchorTimeFields = [
-    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
-] as const;
-
 export function OnboardingStep3() {
   const { control, watch, setValue } = useFormContext();
   const schoolShift: SchoolShift = watch('schoolShift');
   const schoolShiftStart = watch('schoolShiftStart');
   const schoolShiftEnd = watch('schoolShiftEnd');
+
+  const anchorTimeFields = useMemo(() => {
+    const isFullTime = schoolShift === 'full_time';
+    return [
+        { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
+        { name: 'lunchTime', label: isFullTime ? 'Hora do Almoço na escola' : 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+        { name: 'dinnerTime', label: isFullTime ? 'Hora do Jantar na escola' : 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+        { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    ] as const;
+  }, [schoolShift]);
 
   useEffect(() => {
     const calculateAnchorTimes = () => {
@@ -55,11 +58,12 @@ export function OnboardingStep3() {
                 sleep = schoolEndMinutes + 4.5 * 60;
                 break;
             case 'full_time':
-                 wakeUp = schoolStartMinutes - 60;
-                 // Lunch and dinner are based on user checkbox, but we set a default here
-                 lunch = schoolEndMinutes + 30;
-                 dinner = schoolEndMinutes + 30; // Fallback, real logic is in the form
-                 sleep = 21 * 60; // Fixed suggestion
+                 // For full_time, we'll use a logic similar to weekend/not_applicable
+                 // but the UI labels will be different.
+                 lunch = parseTime('12:00');
+                 wakeUp = lunch - 4 * 60; // Wake up based on a standard lunch time
+                 dinner = lunch + 6 * 60;
+                 sleep = lunch + 10 * 60;
                  break;
             case 'not_applicable':
                 lunch = parseTime('12:00');
@@ -118,5 +122,3 @@ export function OnboardingStep3() {
     </div>
   );
 }
-
-    
