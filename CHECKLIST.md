@@ -1,5 +1,13 @@
 # Versão Estável Atual
 
+- **Commit:** `7e2b8f8`
+- **Data:** 2025-09-06 11:45
+- **Descrição:** Versão estável após ajustes de layout e terminologia ("Acesso do Herói" e "Agenda Escolar").
+
+---
+
+# Versão Anterior
+
 - **Commit:** `cfd8898`
 - **Data:** 2025-09-06 10:28
 - **Descrição:** Versão estável do produto a ser publicada.
