@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -45,10 +44,10 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
   return (
      <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm p-2">
+            <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm p-2 h-auto">
                 <div className="flex items-center gap-3 truncate">
                     {selectedHero ? (
-                        <Avatar className="h-7 w-7 ring-2 ring-offset-background ring-[var(--ring-color)]" style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}>
+                        <Avatar className="h-6 w-6 ring-2 ring-offset-background ring-[var(--ring-color)]" style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}>
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
                                 {getInitials(selectedHero.name)}
