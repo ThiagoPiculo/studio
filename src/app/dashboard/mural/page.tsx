@@ -918,7 +918,7 @@ function MuralCompletoPageContent() {
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><User className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Visão Geral</span></TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Target className="h-4 w-4 text-red-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Missões</span></TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Gift className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Recompensas</span></TabsTrigger>
-          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Rotina Escolar</span></TabsTrigger>
+          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Agenda Escolar</span></TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Medalhas</span></TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2" disabled={!canEdit}><Edit3 className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Editar Perfil</span></TabsTrigger>
         </TabsList>
@@ -1252,13 +1252,13 @@ function MuralCompletoPageContent() {
                     <CardHeader>
                         <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
                             <div>
-                                <CardTitle>Rotina Escolar de {child.name}</CardTitle>
+                                <CardTitle>Agenda Escolar de {child.name}</CardTitle>
                                 <CardDescription>Veja o horário de aulas da semana.</CardDescription>
                             </div>
                             <div className="flex gap-2 w-full sm:w-auto">
                                 <Button asChild variant="outline" className="w-full sm:w-auto flex-1">
                                     <Link href="/dashboard/school-schedule">
-                                        <ExternalLink className="mr-2 h-4 w-4" /> Ver Rotina Completa
+                                        <ExternalLink className="mr-2 h-4 w-4" /> Ver Agenda Completa
                                     </Link>
                                 </Button>
                                 {canEdit && (

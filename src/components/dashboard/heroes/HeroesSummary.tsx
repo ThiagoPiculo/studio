@@ -302,7 +302,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
                                                     <NotebookPen className="mr-2 h-4 w-4" />
-                                                    <span>Rotina Escolar</span>
+                                                    <span>Agenda Escolar</span>
                                                 </DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -340,7 +340,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                         </TabsTrigger>
                                         <TabsTrigger value="schedule" className="h-full text-xs sm:text-sm" onClick={() => handleExpandClick(child.id)}>
                                             <NotebookPen className="mr-2 h-4 w-4" />
-                                            Rotina Escolar
+                                            Agenda Escolar
                                         </TabsTrigger>
                                     </TabsList>
                                     <TabsContent value="today" className="mt-2 space-y-1.5 min-h-[200px] pr-2">
@@ -414,7 +414,16 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                         {isLoadingSchedules && expandedChildId === child.id ? (
                                             <div className="flex items-center justify-center h-full"><Loader2 className="h-5 w-5 animate-spin" /></div>
                                         ) : getTodaysSchedule(child.id).length === 0 ? (
-                                             <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">Nenhuma aula para hoje.</div>
+                                            <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic text-center p-2">
+                                                <NotebookPen className="h-8 w-8 mb-2 text-primary/50" />
+                                                <p className="font-semibold">A Agenda Escolar na Palma da Mão</p>
+                                                <p className="text-xs mt-1">Cadastre as aulas do seu herói para ter a agenda de matérias do dia sempre à mão.</p>
+                                                <Button asChild variant="secondary" size="sm" className="mt-3">
+                                                    <Link href={`/dashboard/school-schedule?childId=${child.id}`}>
+                                                        Criar Agenda Escolar
+                                                    </Link>
+                                                </Button>
+                                            </div>
                                         ) : (
                                             getTodaysSchedule(child.id).map(entry => (
                                                 <div key={entry.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-muted/40">

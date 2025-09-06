@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <p className="text-sm text-muted-foreground">Esta tela é o seu ponto de partida para a aventura! Aqui você tem uma visão rápida e poderosa de tudo o que está acontecendo com seus Mini Herois hoje.</p>
             <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-4">
               <li><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina Semanal" no menu lateral.</li>
-              <li><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Rotina Escolar" no menu lateral.</li>
+              <li><strong>Agenda Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Agenda Escolar" no menu lateral.</li>
               <li><strong>Progresso e Recompensas:</strong> Acompanhe as Estrelas (⭐) e o XP, e veja os prêmios que eles podem resgatar.</li>
             </ul>
             <p className="text-sm text-muted-foreground">Use esta página para dar aquele incentivo matinal e celebrar as conquistas no final do dia!</p>
@@ -144,12 +144,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
     },
     '/dashboard/school-schedule': {
-        title: 'Rotina Escolar',
+        title: 'Agenda Escolar',
         icon: NotebookPen,
         help: {
             title: 'O Quadro de Horários',
             content: (
-                <p className="text-sm text-muted-foreground">Use esta grade para visualizar a rotina escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
+                <p className="text-sm text-muted-foreground">Use esta grade para visualizar a agenda escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
             )
         }
     }

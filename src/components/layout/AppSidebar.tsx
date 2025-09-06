@@ -126,7 +126,7 @@ export function AppSidebar() {
                         </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <NavLink href="/dashboard/school-schedule" tooltip="Rotina Escolar" label="Rotina Escolar">
+                        <NavLink href="/dashboard/school-schedule" tooltip="Agenda Escolar" label="Agenda Escolar">
                             <NotebookPen className="text-chart-4" />
                         </NavLink>
                     </SidebarMenuItem>
