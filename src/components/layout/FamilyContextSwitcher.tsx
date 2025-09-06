@@ -29,11 +29,6 @@ export function FamilyContextSwitcher() {
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
   const isInitialLoad = searchParams.get('initial_load') === 'true';
 
-  // Refs and state for dynamic avatar calculation
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [visibleAvatars, setVisibleAvatars] = useState(0);
-
   useEffect(() => {
     if (!user || availableContexts.length === 0) {
       setIsLoadingChildren(false);
@@ -69,36 +64,6 @@ export function FamilyContextSwitcher() {
   const currentContextData = availableContexts.find(c => c.id === currentContext);
   const currentChildren = childrenByContext[currentContext] || [];
   
-  const calculateVisibleAvatars = useCallback(() => {
-    if (isLoadingChildren || !triggerRef.current || !contentRef.current) {
-        if(currentChildren.length > 0) setVisibleAvatars(currentChildren.length);
-        return;
-    };
-    
-    const GAP = 4; // gap-1 in flex = 4px
-    const AVATAR_WIDTH = 28; // h-7 w-7 = 28px
-    const COUNTER_WIDTH = 28; // width for the "+N" avatar
-
-    const triggerWidth = triggerRef.current.offsetWidth;
-    const contentWidth = contentRef.current.offsetWidth;
-    const availableSpace = triggerWidth - contentWidth - GAP;
-    
-    let maxAvatars = Math.floor(availableSpace / (AVATAR_WIDTH - 8)); // -8 for negative space-x-2 overlap
-    
-    if (currentChildren.length > maxAvatars) {
-        const spaceWithCounter = availableSpace - (COUNTER_WIDTH - 8);
-        maxAvatars = Math.floor(spaceWithCounter / (AVATAR_WIDTH - 8));
-    }
-    
-    setVisibleAvatars(Math.max(0, maxAvatars));
-  }, [isLoadingChildren, currentChildren.length]);
-
-  useEffect(() => {
-    calculateVisibleAvatars();
-    window.addEventListener('resize', calculateVisibleAvatars);
-    return () => window.removeEventListener('resize', calculateVisibleAvatars);
-  }, [calculateVisibleAvatars]);
-
   // Combined loading state
   const showSkeleton = isFamilyLoading || (isInitialLoad && isLoadingChildren);
 
@@ -120,36 +85,35 @@ export function FamilyContextSwitcher() {
   }
 
   const Icon = currentContext === 'my-space' ? CircleDot : LinkIcon;
-  const showCounter = currentChildren.length > visibleAvatars;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" ref={triggerRef} className="w-full max-w-[320px] h-10 justify-between p-2">
-            <div ref={contentRef} className="flex items-center gap-2 overflow-hidden">
+        <Button variant="secondary" className="w-full max-w-[320px] h-10 justify-between p-2">
+            <div className="flex items-center gap-2 overflow-hidden">
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-semibold truncate">{getDisplayName(currentContextData)}</span>
             </div>
             <div className="flex items-center gap-1">
-                <div className="flex items-center -space-x-2 min-w-0">
+                <div className="flex items-center -space-x-2 pl-2">
                     {isLoadingChildren ? (
                         <Skeleton className="h-7 w-20 rounded-full" />
                     ) : isContextSelected && currentChildren.length > 0 ? (
                         <>
-                            {currentChildren.slice(0, visibleAvatars).map(child => (
-                                <Avatar key={child.id} className="h-7 w-7 border-2 border-background">
+                            {currentChildren.slice(0, 5).map(child => (
+                                <Avatar key={child.id} className="h-7 w-7 border-2 border-background ring-2 ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
                                     <AvatarImage src={child.avatar} alt={child.name} />
                                     <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
                                 </Avatar>
                             ))}
-                             {showCounter && (
+                             {currentChildren.length > 5 && (
                                 <Avatar className="h-7 w-7 border-2 border-background">
-                                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{currentChildren.length - visibleAvatars}</AvatarFallback>
+                                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{currentChildren.length - 5}</AvatarFallback>
                                 </Avatar>
                             )}
                         </>
                     ) : (
-                        isContextSelected && <span className="text-xs text-muted-foreground italic pr-1">Nenhum Mini Heroi</span>
+                        isContextSelected && <span className="text-xs text-muted-foreground italic pr-1">Nenhum Herói</span>
                     )}
                 </div>
                 <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
@@ -173,14 +137,14 @@ export function FamilyContextSwitcher() {
                             {isSelected && <Check className="h-4 w-4 text-primary" />}
                         </div>
                         <div className="pl-6 flex items-center gap-2">
-                            <span className="text-xs text-muted-foreground whitespace-nowrap">Mini Herois:</span>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">Mini Heróis:</span>
                             {isLoadingChildren ? (
                                 <Skeleton className="h-6 w-20 rounded-full" />
                             ) : (
                                 <div className="flex -space-x-2">
                                 {childrenInContext && childrenInContext.length > 0 ? (
                                     childrenInContext.slice(0, 4).map(child => (
-                                        <Avatar key={child.id} className="h-6 w-6 border-2 border-background">
+                                        <Avatar key={child.id} className="h-6 w-6 border-2 border-background ring-2 ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
                                             <AvatarImage src={child.avatar} alt={child.name} />
                                             <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
                                         </Avatar>

@@ -48,17 +48,12 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
             <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm p-2">
                 <div className="flex items-center gap-3 truncate">
                     {selectedHero ? (
-                         <div 
-                            className="h-6 w-6 rounded-full ring-2 ring-offset-background ring-[var(--ring-color)]"
-                            style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}
-                         >
-                            <Avatar className="h-full w-full">
-                                <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
-                                <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
-                                    {getInitials(selectedHero.name)}
-                                </AvatarFallback>
-                            </Avatar>
-                        </div>
+                        <Avatar className="h-7 w-7 ring-2 ring-offset-background ring-[var(--ring-color)]" style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}>
+                            <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
+                            <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
+                                {getInitials(selectedHero.name)}
+                            </AvatarFallback>
+                        </Avatar>
                     ) : (
                         <Users className="h-5 w-5 text-muted-foreground" />
                     )}
@@ -88,17 +83,12 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
                  {heroes.map(hero => (
                     <DropdownMenuRadioItem key={hero.id} value={hero.id} className="cursor-pointer">
                         <div className="flex items-center gap-3">
-                            <div 
-                                className="h-6 w-6 rounded-full ring-2 ring-offset-background ring-[var(--ring-color)]"
-                                style={hero.color ? { '--ring-color': hero.color } as React.CSSProperties : {}}
-                            >
-                                <Avatar className="h-full w-full">
-                                    <AvatarImage src={hero.avatar} alt={hero.name} />
-                                    <AvatarFallback style={{ backgroundColor: hero.color }}>
-                                        {getInitials(hero.name)}
-                                    </AvatarFallback>
-                                </Avatar>
-                            </div>
+                            <Avatar className="h-6 w-6 ring-2 ring-offset-background ring-[var(--ring-color)]" style={hero.color ? { '--ring-color': hero.color } as React.CSSProperties : {}}>
+                                <AvatarImage src={hero.avatar} alt={hero.name} />
+                                <AvatarFallback style={{ backgroundColor: hero.color }}>
+                                    {getInitials(hero.name)}
+                                </AvatarFallback>
+                            </Avatar>
                             <span>{hero.name}</span>
                         </div>
                     </DropdownMenuRadioItem>
