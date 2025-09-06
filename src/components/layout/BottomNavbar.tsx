@@ -18,10 +18,14 @@ const navItems = [
 
 const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
     const pathname = usePathname();
-    const isActive = pathname.startsWith(href);
+    // More specific check for 'Hoje' to avoid it being active on other pages
+    const isActive = href === '/dashboard/heroes' 
+        ? (pathname === '/dashboard' || pathname === '/dashboard/heroes')
+        : pathname.startsWith(href);
     
     return (
-        <Link href={href} className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+        <Link href={href} className="relative inline-flex h-full flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+          <div className={cn("absolute top-0 h-0.5 w-10 rounded-b-full bg-primary transition-opacity", isActive ? "opacity-100" : "opacity-0")}></div>
           <Icon className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", isActive && color)} />
           <span className={cn("text-xs text-muted-foreground group-hover:text-primary", isActive && "text-primary font-semibold")}>
             {label}
@@ -33,6 +37,7 @@ const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
 export function BottomNavbar() {
   const pathname = usePathname();
   const { toggleSidebar } = useSidebar();
+  const settingsActive = pathname.startsWith('/dashboard/settings');
 
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background/80 border-t border-border backdrop-blur-sm">
@@ -40,7 +45,7 @@ export function BottomNavbar() {
         <button
           type="button"
           onClick={toggleSidebar}
-          className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group"
+          className="relative inline-flex h-full flex-col items-center justify-center px-2 hover:bg-muted/50 group"
         >
           <Menu className="w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary" />
           <span className="text-xs text-muted-foreground group-hover:text-primary">Mais</span>
@@ -48,9 +53,10 @@ export function BottomNavbar() {
         {navItems.map((item) => (
             <NavLink key={item.href} {...item} />
         ))}
-        <Link href="/dashboard/settings" className="inline-flex flex-col items-center justify-center px-2 hover:bg-muted/50 group">
-            <Settings className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && 'text-purple-500')} />
-            <span className={cn("text-xs text-muted-foreground group-hover:text-primary", pathname.startsWith('/dashboard/settings') && "text-primary font-semibold")}>
+        <Link href="/dashboard/settings" className="relative inline-flex h-full flex-col items-center justify-center px-2 hover:bg-muted/50 group">
+            <div className={cn("absolute top-0 h-0.5 w-10 rounded-b-full bg-primary transition-opacity", settingsActive ? "opacity-100" : "opacity-0")}></div>
+            <Settings className={cn("w-6 h-6 mb-1 text-muted-foreground group-hover:text-primary", settingsActive && 'text-purple-500')} />
+            <span className={cn("text-xs text-muted-foreground group-hover:text-primary", settingsActive && "text-primary font-semibold")}>
             Ajustes
             </span>
         </Link>
