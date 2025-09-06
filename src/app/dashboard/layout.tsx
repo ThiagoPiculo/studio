@@ -81,7 +81,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           <>
             <p className="text-sm text-muted-foreground">Esta tela é o seu ponto de partida para a aventura! Aqui você tem uma visão rápida e poderosa de tudo o que está acontecendo com seus Mini Herois hoje.</p>
             <ul className="text-sm text-muted-foreground space-y-2 list-disc pl-4">
-              <li><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina de Missões" no menu lateral.</li>
+              <li><strong>Missões do Dia:</strong> Veja as missões agendadas para hoje e o progresso de cada herói. Para ver a agenda completa de todos os dias, clique em "Painel de Progresso" no card do herói ou acesse a "Rotina Semanal" no menu lateral.</li>
               <li><strong>Rotina Escolar:</strong> Acompanhe os horários de aulas para planejar melhor o dia. Para visualizar ou alterar a grade completa, visite a "Rotina Escolar" no menu lateral.</li>
               <li><strong>Progresso e Recompensas:</strong> Acompanhe as Estrelas (⭐) e o XP, e veja os prêmios que eles podem resgatar.</li>
             </ul>
@@ -117,7 +117,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 <li><strong>Atribua aos Herois:</strong> Use o botão "Gerenciar" em cada card para atribuir a missão na rotina de um ou mais heróis.</li>
             </ul>
              <p className="text-sm text-muted-foreground">
-                Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina de Missões"</strong>, você as coloca em ação!
+                Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina Semanal"</strong>, você as coloca em ação!
              </p>
           </>
         )
@@ -134,7 +134,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         }
     },
      '/dashboard/agenda': {
-        title: 'Rotina de Missões',
+        title: 'Rotina Semanal',
         icon: CalendarDays,
         help: {
             title: 'O Comando da Rotina',

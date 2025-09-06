@@ -134,7 +134,6 @@ function MissionsHubContent() {
     queryParams.append('emoji', idea.emoji);
     queryParams.append('category', idea.suggestedAppCategory);
     queryParams.append('starsReward', String(idea.starsReward));
-    queryParams.append('xpReward', String(idea.xpReward));
     router.push(`/dashboard/missions/new?${queryParams.toString()}`);
   };
 
@@ -228,11 +227,14 @@ function MissionsHubContent() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Criadas por Você</CardTitle>
                         <CardDescription>
-                            Estas são as missões que você criou do zero. Clique em "Gerenciar" para atribuí-las.
+                            {customTemplates.length > 0
+                            ? "Estas são as missões que você criou do zero. Clique em \"Gerenciar\" para atribuí-las."
+                            : "Seu catálogo de missões personalizadas está vazio."
+                            }
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        {customTemplates.length > 0 ? (
+                    {customTemplates.length > 0 && (
+                        <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {customTemplates.map(template => {
                                     const categoryDetails = getCategoryDetails(template.category);
@@ -257,7 +259,7 @@ function MissionsHubContent() {
                                                   <Puzzle className="mr-1.5 h-3 w-3" />
                                                   Personalizada
                                                </Badge>
-                                               <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
+                                                       <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsReward}</Badge>
                                                <Badge variant={getStatusBadgeVariant(template.status)} className="capitalize">
                                                 {template.status === 'active' ? 'Ativa' : 'Arquivada'}
                                                </Badge>
@@ -291,15 +293,9 @@ function MissionsHubContent() {
                                     )
                                 })}
                             </div>
-                        ) : (
-                            <div className="text-center py-10 text-muted-foreground">
-                                <PackageSearch className="h-12 w-12 mx-auto mb-4 text-primary" />
-                                <p className="font-semibold">Nenhuma missão personalizada encontrada.</p>
-                                <p className="text-sm mt-1">Clique em "Criar Missão" para adicionar uma que não esteja nas ideias.</p>
-                            </div>
-                        )}
-                    </CardContent>
-                 </Card>
+                        </CardContent>
+                    )}
+                </Card>
             </TabsContent>
         </Tabs>
         
@@ -346,3 +342,5 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
+
+    

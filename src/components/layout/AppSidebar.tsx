@@ -116,7 +116,7 @@ export function AppSidebar() {
                         </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <NavLink href="/dashboard/agenda" tooltip="Rotina de Missões" label="Rotina de Missões">
+                        <NavLink href="/dashboard/agenda" tooltip="Rotina Semanal" label="Rotina Semanal">
                             <CalendarDays className="text-chart-5" />
                         </NavLink>
                     </SidebarMenuItem>

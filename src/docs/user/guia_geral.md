@@ -1,3 +1,4 @@
+
 # Guia de Início Rápido para Pais e Mães no Mini Herois
 
 Bem-vindo(a) à sua Central de Comando! O Mini Herois foi criado para ser seu parceiro na nobre, e às vezes desafiadora, missão de construir hábitos e rotinas saudáveis com seus filhos. Nossa abordagem transforma o dever em diversão, usando a linguagem que as crianças entendem: a da aventura e da conquista.
@@ -6,7 +7,7 @@ Bem-vindo(a) à sua Central de Comando! O Mini Herois foi criado para ser seu pa
 
 O coração do aplicativo é um ciclo simples e poderoso de 3 passos:
 
-1.  🎯 **Tarefas = Missões:** As tarefas do dia a dia, como "arrumar a cama", "fazer a lição de casa" ou "escovar os dentes", são transformadas em Missões. Você as cria no Quadro de Missões e depois as agenda na Rotina de Missões de cada criança. Não se preocupe, nosso Assistente vai fazer tudo por você de forma rápida e prática.
+1.  🎯 **Tarefas = Missões:** As tarefas do dia a dia, como "arrumar a cama", "fazer a lição de casa" ou "escovar os dentes", são transformadas em Missões. Você as cria no Quadro de Missões e depois as agenda na Rotina Semanal de cada criança. Não se preocupe, nosso Assistente vai fazer tudo por você de forma rápida e prática.
 
 2.  ⭐ **Missão completa = Estrelas:** Ao completar uma missão, seu Mini Heroi ganha Estrelas (⭐) e Pontos de Experiência (XP). As estrelas são a moeda do aplicativo, uma valorização imediata pelo esforço de completar cada missão. O XP faz o herói subir de nível, marcando seu progresso a longo prazo.
 
@@ -19,7 +20,7 @@ Este ciclo ensina de forma lúdica sobre causa e efeito, esforço, poupança e, 
 Para começar, concentre-se nestes quadros principais:
 
 -   **Quadro de Missões:** É o seu catálogo de todas as tarefas possíveis. Crie uma missão aqui uma vez (ex: "Tomar banho") e você poderá agendá-la para qualquer herói, a qualquer momento, com horários e repetições personalizadas.
--   **Rotina de Missões:** É o calendário onde a mágica acontece. Aqui você visualiza a agenda semanal de todos e atribui as missões do seu catálogo aos seus heróis.
+-   **Rotina Semanal:** É o calendário onde a mágica acontece. Aqui você visualiza a agenda semanal de todos e atribui as missões do seu catálogo aos seus heróis.
 -   **Quadro de Recompensas:** A "lojinha de tesouros" dos seus heróis. Cadastre aqui todos os prêmios que eles podem "comprar" com as estrelas que ganharam.
 
 ## Cuidar Solo ou em Aliança?

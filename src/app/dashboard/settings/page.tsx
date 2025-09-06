@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -26,7 +25,7 @@ const initialPages: { id: InitialPage | 'default'; label: string }[] = [
     { id: 'heroes', label: 'Rotina Hoje' },
     { id: 'progressos', label: 'Painel de Progressos' },
     { id: 'mural', label: 'Mural Completo' },
-    { id: 'agenda', label: 'Rotina de Missões' },
+    { id: 'agenda', label: 'Rotina Semanal' },
     { id: 'school-schedule', label: 'Rotina Escolar'},
     { id: 'missions', label: 'Quadro de Missões' },
     { id: 'rewards', label: 'Quadro de Recompensas' },

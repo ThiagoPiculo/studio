@@ -270,7 +270,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                                 <DropdownMenuSeparator />
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
                                                     <CalendarDays className="mr-2 h-4 w-4" />
-                                                    <span>Rotina de Missões</span>
+                                                    <span>Rotina Semanal</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
                                                     <NotebookPen className="mr-2 h-4 w-4" />
