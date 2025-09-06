@@ -211,17 +211,17 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               
               {showContextSwitcher && (
                  <div className="px-4 sm:px-6 py-2">
-                       <div className="flex flex-row items-center justify-start gap-2">
-                         <div className="flex-1 min-w-0">
-                            <FamilyContextSwitcher />
-                         </div>
-                        {showHeroSelector && (
-                            <div className="flex-1 min-w-0">
-                                <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                            </div>
-                        )}
+                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
+                          <div className="w-full md:max-w-xs">
+                              <FamilyContextSwitcher />
+                          </div>
+                          {showHeroSelector && (
+                              <div className="w-full md:max-w-xs">
+                                  <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                              </div>
+                          )}
                       </div>
-                </div>
+                  </div>
               )}
 
               <DashboardMainContent>{children}</DashboardMainContent>

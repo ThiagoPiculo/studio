@@ -44,17 +44,19 @@ export function HeroSelector({ heroes, selectedHeroId, onSelectHero, showAllOpti
   return (
      <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="w-full sm:w-[320px] justify-between shadow-sm p-2 h-auto">
+            <Button variant="outline" className="w-full justify-between shadow-sm p-2 h-10">
                 <div className="flex items-center gap-3 truncate">
                     {selectedHero ? (
-                        <Avatar className="h-6 w-6 ring-2 ring-offset-background ring-[var(--ring-color)]" style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}>
+                        <Avatar className="h-7 w-7 ring-2 ring-offset-1 ring-offset-background ring-[var(--ring-color)]" style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}>
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{ backgroundColor: selectedHero.color }}>
                                 {getInitials(selectedHero.name)}
                             </AvatarFallback>
                         </Avatar>
                     ) : (
-                        <Users className="h-5 w-5 text-muted-foreground" />
+                        <div className="h-7 w-7 rounded-full bg-muted flex items-center justify-center">
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        </div>
                     )}
                     <span className="truncate font-semibold">
                         {selectedHero ? selectedHero.name : 'Todos os Mini Herois'}

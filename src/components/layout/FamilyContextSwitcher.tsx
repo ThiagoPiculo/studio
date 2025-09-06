@@ -62,7 +62,6 @@ export function FamilyContextSwitcher() {
   };
   
   const currentContextData = availableContexts.find(c => c.id === currentContext);
-  const currentChildren = childrenByContext[currentContext] || [];
   
   // Combined loading state
   const showSkeleton = isFamilyLoading || (isInitialLoad && isLoadingChildren);
@@ -71,7 +70,7 @@ export function FamilyContextSwitcher() {
   
   if (showSkeleton) {
     return (
-      <Button variant="secondary" className="w-[240px] justify-start h-10 p-2" disabled>
+      <Button variant="secondary" className="w-full justify-start h-10 p-2" disabled>
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           Carregando...
       </Button>
@@ -89,7 +88,7 @@ export function FamilyContextSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="secondary" className="w-full max-w-[320px] h-10 justify-between p-2">
+        <Button variant="outline" className="w-full justify-between shadow-sm p-2 h-10">
             <div className="flex items-center gap-2 overflow-hidden">
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-semibold truncate">{getDisplayName(currentContextData)}</span>
