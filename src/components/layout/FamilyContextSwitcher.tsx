@@ -94,30 +94,7 @@ export function FamilyContextSwitcher() {
                 <Icon className="h-5 w-5 shrink-0" />
                 <span className="font-semibold truncate">{getDisplayName(currentContextData)}</span>
             </div>
-            <div className="flex items-center gap-1">
-                <div className="flex items-center -space-x-2 pl-2">
-                    {isLoadingChildren ? (
-                        <Skeleton className="h-7 w-20 rounded-full" />
-                    ) : isContextSelected && currentChildren.length > 0 ? (
-                        <>
-                            {currentChildren.slice(0, 5).map(child => (
-                                <Avatar key={child.id} className="h-7 w-7 border-2 border-background ring-2 ring-[var(--ring-color)]" style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}>
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                </Avatar>
-                            ))}
-                             {currentChildren.length > 5 && (
-                                <Avatar className="h-7 w-7 border-2 border-background">
-                                    <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{currentChildren.length - 5}</AvatarFallback>
-                                </Avatar>
-                            )}
-                        </>
-                    ) : (
-                        isContextSelected && <span className="text-xs text-muted-foreground italic pr-1">Nenhum Herói</span>
-                    )}
-                </div>
-                <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
-            </div>
+            <ChevronsUpDown className="h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-[var(--radix-dropdown-menu-trigger-width)]" align="start">
