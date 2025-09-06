@@ -24,15 +24,12 @@ export function OnboardingStep3() {
   const schoolShiftStart = watch('schoolShiftStart');
   const schoolShiftEnd = watch('schoolShiftEnd');
 
-  const anchorTimeFields = useMemo(() => {
-    const isFullTime = schoolShift === 'full_time';
-    return [
-        { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
-        { name: 'lunchTime', label: isFullTime ? 'Hora do Almoço na escola' : 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-        { name: 'dinnerTime', label: isFullTime ? 'Hora do Jantar na escola' : 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-        { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    ] as const;
-  }, [schoolShift]);
+  const anchorTimeFields = useMemo(() => [
+    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
+  ], []);
 
   useEffect(() => {
     const calculateAnchorTimes = () => {
