@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3 } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -271,9 +271,9 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <Link href={`/dashboard/progressos?childId=${child.id}`}>
+                                        <Link href={`/dashboard/agenda?childId=${child.id}`}>
                                             <Button variant="link" className="p-0 h-auto text-xs">
-                                                Progressos <ArrowRight className="ml-1 h-3 w-3" />
+                                                Rotina Semanal <ArrowRight className="ml-1 h-3 w-3" />
                                             </Button>
                                         </Link>
                                         <DropdownMenu>
@@ -292,9 +292,9 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                                     <span>Editar Perfil</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
-                                                    <CalendarDays className="mr-2 h-4 w-4" />
-                                                    <span>Rotina Semanal</span>
+                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/progressos?childId=${child.id}`)}>
+                                                    <CalendarCheck2 className="mr-2 h-4 w-4" />
+                                                    <span>Painel de progresso</span>
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => router.push(`/dashboard/school-schedule?childId=${child.id}`)}>
                                                     <NotebookPen className="mr-2 h-4 w-4" />
@@ -423,7 +423,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                     </TabsContent>
                                 </Tabs>
                             </CardContent>
-                            <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
+                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
                                     {isDayComplete ? (
                                         <>
