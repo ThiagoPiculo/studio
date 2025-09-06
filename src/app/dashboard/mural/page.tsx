@@ -581,8 +581,8 @@ function MuralCompletoPageContent() {
       const newAccessCode = await regenerateChildAccessCode(child.id, user);
       setChild(prev => prev ? { ...prev, accessCode: newAccessCode } : null);
       toast({
-        title: "Nova Chave Secreta Gerada!",
-        description: `A nova chave para ${child.name} é ${newAccessCode}. Guarde em um local seguro!`,
+        title: "Novo Código de Acesso Gerado!",
+        description: `O novo código para ${child.name} é ${newAccessCode}. Guarde em um local seguro!`,
         duration: 10000,
       });
     } catch (error) {

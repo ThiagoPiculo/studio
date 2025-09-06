@@ -266,7 +266,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                         <div className="min-w-0">
                                             <CardTitle className="text-2xl truncate">{child.name}</CardTitle>
                                             <CardDescription className="text-sm flex items-center gap-1">
-                                                Chave Secreta: <span className="font-mono">{child.accessCode}</span>
+                                                Acesso do Herói: <span className="font-mono">{child.accessCode}</span>
                                             </CardDescription>
                                         </div>
                                     </div>

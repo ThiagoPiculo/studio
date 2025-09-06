@@ -405,8 +405,8 @@ export const regenerateChildAccessCode = async (childId: string, actor: UserProf
           childId,
           {
               type: 'template_updated',
-              title: 'Código de Acesso Alterado',
-              description: `A chave secreta de ${child.name} foi alterada.`,
+              title: 'Acesso do Herói Alterado',
+              description: `O código de acesso de ${child.name} foi alterado.`,
               href: `/dashboard/mural?childId=${childId}&tab=edit`,
               relatedChildId: childId,
           },
@@ -1267,8 +1267,8 @@ export const updateRewardTemplate = async (actor: UserProfile, templateId: strin
 
 
 
-export const deleteRewardTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
-  const templateRef = doc(db, 'rewardTemplates', templateId);
+export const deleteRewardTemplate = async (actor: UserProfile, template: RewardTemplate): Promise<void> => {
+  const templateRef = doc(db, 'rewardTemplates', template.id);
   const templateSnap = await getDoc(templateRef);
   if (!templateSnap.exists()) return;
   const templateData = templateSnap.data();
