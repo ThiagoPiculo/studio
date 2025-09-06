@@ -222,6 +222,9 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                         return acc;
                     }, { stars: 0 });
 
+                    const totalStarsToday = todaysMissions.reduce((total, mission) => total + mission.starsReward, 0);
+                    const isDayComplete = totalStarsToday > 0 && todaysGains.stars === totalStarsToday;
+
                     const isExpanded = expandedChildId === child.id;
                     const displayActivities = isExpanded ? allTodaysActivities : allTodaysActivities.slice(0, 5);
                     const remainingCount = allTodaysActivities.length - 5;
@@ -399,12 +402,26 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                     </TabsContent>
                                 </Tabs>
                             </CardContent>
-                            <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
+                             <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
-                                    <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5">
-                                        <div className="flex items-center gap-1 text-amber-600">
-                                          +{todaysGains.stars} <Star className="h-4 w-4 fill-current" />
+                                    <div className={cn(
+                                        "font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5",
+                                        isDayComplete ? 'text-green-600' : 'text-amber-600'
+                                    )}>
+                                    {isDayComplete ? (
+                                        <>
+                                            <BadgeCheck className="h-4 w-4" />
+                                            <span>Dia Completo!</span>
+                                        </>
+                                    ) : totalStarsToday > 0 ? (
+                                        <div className="flex items-center gap-1">
+                                            +{todaysGains.stars} / {totalStarsToday} <Star className="h-4 w-4 fill-current" />
                                         </div>
+                                    ) : (
+                                        <div className="flex items-center gap-1 text-muted-foreground">
+                                            -- <Star className="h-4 w-4" />
+                                        </div>
+                                    )}
                                     </div>
                                     <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
                                 </div>
