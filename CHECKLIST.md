@@ -1,5 +1,13 @@
 # Versão Estável Atual
 
+- **Commit:** `cfd8898`
+- **Data:** 2025-09-06 10:28
+- **Descrição:** Versão estável do produto a ser publicada.
+
+---
+
+# Versão Anterior
+
 - **Commit:** `db6bbd1`
 - **Data:** 2024-07-30
 - **Descrição:** Versão estável após correções de capitalização, ordenação de blocos e melhorias de UX no assistente de criação de rotinas.
