@@ -100,6 +100,15 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Hora da escola
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
+    // Bloco: Rotina Hora do Almoço
+    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina Hora do Almoço' },
+    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Hora do Almoço' },
+    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Almoço' },
+    // Bloco: Rotina Lanche da tarde
+    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
+    // Bloco: Rotina Hora do Jantar
+    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
+    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
     // Bloco: Rotina Hora de Dormir
     { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
@@ -206,19 +215,56 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
     // 2. Process each day of the week
     for (const day of allWeekdays) {
         const isWeekend = day === 'SA' || day === 'SU';
-        // Use 'weekend' blueprint for weekends, otherwise use the selected school shift blueprint
-        const blueprint = isWeekend ? routineBlueprints.weekend : routineBlueprints[input.schoolShift];
-        
-        const anchors = {
-            wakeUp: parseTime(input.wakeUpTime),
-            schoolStart: parseTime(input.schoolShiftStart),
-            schoolEnd: parseTime(input.schoolShiftEnd),
-            lunch: parseTime(input.lunchTime),
-            dinner: parseTime(input.dinnerTime),
-            sleep: parseTime(input.sleepTime),
-        };
-        
-        const ruleMap = new Map(blueprint.map(rule => [rule.id, rule]));
+        let blueprint;
+        let anchors;
+
+        if (input.schoolShift === 'full_time') {
+            if (isWeekend) {
+                blueprint = routineBlueprints.weekend;
+                // Use fixed anchors for weekend full-time
+                anchors = {
+                    wakeUp: parseTime(input.wakeUpTime),
+                    schoolStart: 0, schoolEnd: 0, // Not used
+                    lunch: parseTime('12:00'),
+                    dinner: parseTime('18:00'),
+                    sleep: parseTime(input.sleepTime),
+                };
+            } else {
+                // Use simplified blueprint for full-time weekdays
+                blueprint = [
+                    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
+                    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+                    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+                    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
+                    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
+                    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
+                    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
+                    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
+                    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
+                    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
+                ];
+                anchors = {
+                    wakeUp: parseTime(input.wakeUpTime),
+                    schoolStart: parseTime(input.schoolShiftStart),
+                    schoolEnd: parseTime(input.schoolShiftEnd),
+                    lunch: parseTime(input.lunchTime), // From form but may not be used by blueprint
+                    dinner: parseTime(input.dinnerTime), // From form but may not be used by blueprint
+                    sleep: parseTime(input.sleepTime),
+                };
+            }
+        } else {
+            // Logic for other shifts
+            blueprint = isWeekend ? routineBlueprints.weekend : routineBlueprints[input.schoolShift];
+            anchors = {
+                wakeUp: parseTime(input.wakeUpTime),
+                schoolStart: parseTime(input.schoolShiftStart),
+                schoolEnd: parseTime(input.schoolShiftEnd),
+                lunch: parseTime(input.lunchTime),
+                dinner: parseTime(input.dinnerTime),
+                sleep: parseTime(input.sleepTime),
+            };
+        }
+
         let lastTaskEndTime = 0;
 
         for (const rule of blueprint) {
@@ -237,16 +283,15 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
 
             const details = findMissionDetails(rule.id);
             
-            // Include items with duration 0 like school entry/exit
             if (rule.id === 'Entrada na escola') {
-                 if (input.schoolShift !== 'not_applicable') {
+                 if (input.schoolShift !== 'not_applicable' && !isWeekend) {
                     finalScheduleByDay[day].push({
                         activity: rule.id, startTime: formatTime(resolvedStartTime), endTime: formatTime(endTime),
                         days: [day], type: 'school_entry', emoji: details.emoji, category: details.category, block: rule.block,
                     });
                 }
             } else if (rule.id === 'Saída da escola') {
-                if (input.schoolShift !== 'not_applicable') {
+                if (input.schoolShift !== 'not_applicable' && !isWeekend) {
                     finalScheduleByDay[day].push({
                         activity: rule.id, startTime: formatTime(resolvedStartTime), endTime: formatTime(endTime),
                         days: [day], type: 'school_exit', emoji: details.emoji, category: details.category, block: rule.block,
@@ -261,7 +306,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                     type: 'essential_routine',
                     emoji: details.emoji,
                     category: details.category,
-                    block: rule.block, // Add the block name here
+                    block: rule.block,
                 });
                 occupiedSlotsByDay[day].push({ start: resolvedStartTime, end: endTime });
                 occupiedSlotsByDay[day].sort((a, b) => a.start - b.start);
@@ -269,7 +314,7 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         }
     }
     
-    // 4. Flatten and sort the final schedule
+    // Flatten and sort the final schedule
     const finalSchedule = Object.values(finalScheduleByDay).flat();
 
     return {

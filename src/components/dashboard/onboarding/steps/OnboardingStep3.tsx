@@ -24,12 +24,15 @@ export function OnboardingStep3() {
   const schoolShiftStart = watch('schoolShiftStart');
   const schoolShiftEnd = watch('schoolShiftEnd');
 
-  const anchorTimeFields = useMemo(() => [
-    { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'lunchTime', label: 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'dinnerTime', label: 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-    { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
-  ], []);
+  const anchorTimeFields = useMemo(() => {
+    const isFullTime = schoolShift === 'full_time';
+    return [
+      { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
+      { name: 'lunchTime', label: isFullTime ? 'Hora do Almoço na escola' : 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+      { name: 'dinnerTime', label: isFullTime ? 'Hora do Jantar na escola' : 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+      { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
+    ];
+  }, [schoolShift]);
 
   useEffect(() => {
     const calculateAnchorTimes = () => {
@@ -55,12 +58,13 @@ export function OnboardingStep3() {
                 sleep = schoolEndMinutes + 4.5 * 60;
                 break;
             case 'full_time':
-                 // For full_time, we'll use a logic similar to weekend/not_applicable
-                 // but the UI labels will be different.
-                 lunch = parseTime('12:00');
-                 wakeUp = lunch - 4 * 60; // Wake up based on a standard lunch time
-                 dinner = lunch + 6 * 60;
-                 sleep = lunch + 10 * 60;
+                 // For full_time, we still need the anchor times for the weekend schedule.
+                 // We will use fixed times for lunch/dinner as per the new request.
+                 lunch = parseTime('12:00'); 
+                 dinner = lunch + 6 * 60; // 18:00
+                 // Wake up and sleep can be based on school start/end for weekdays.
+                 wakeUp = schoolStartMinutes - 60;
+                 sleep = schoolEndMinutes + 3 * 60;
                  break;
             case 'not_applicable':
                 lunch = parseTime('12:00');
