@@ -100,15 +100,6 @@ const routineBlueprints: Record<SchoolShift | 'weekend', RoutineRule[]> = {
     // Bloco: Rotina Hora da escola
     { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
     { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
-    // Bloco: Rotina Hora do Almoço
-    { id: 'Tomar banho pela Manhã', duration: 15, anchor: 'lunch', offset: -15, block: 'Rotina Hora do Almoço' },
-    { id: 'Almoçar', duration: 20, anchor: 'lunch', block: 'Rotina Hora do Almoço' },
-    { id: 'Escovar os dentes (após almoço)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Almoço' },
-    // Bloco: Rotina Lanche da tarde
-    { id: 'Lanche da tarde', duration: 15, anchor: 'lunch', offset: 150, block: 'Rotina Lanche da tarde' },
-    // Bloco: Rotina Hora do Jantar
-    { id: 'Hora do Jantar', duration: 20, anchor: 'dinner', block: 'Rotina Hora do Jantar' },
-    { id: 'Escovar os dentes (após jantar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora do Jantar' },
     // Bloco: Rotina Hora de Dormir
     { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
     { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
@@ -224,31 +215,21 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
                 // Use fixed anchors for weekend full-time
                 anchors = {
                     wakeUp: parseTime(input.wakeUpTime),
-                    schoolStart: 0, schoolEnd: 0, // Not used
+                    schoolStart: 0, // Not used
+                    schoolEnd: 0, // Not used
                     lunch: parseTime('12:00'),
                     dinner: parseTime('18:00'),
                     sleep: parseTime(input.sleepTime),
                 };
             } else {
                 // Use simplified blueprint for full-time weekdays
-                blueprint = [
-                    { id: 'Hora de acordar', duration: 10, anchor: 'wakeUp', block: 'Rotina Hora de Acordar' },
-                    { id: 'Arrumar a cama', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
-                    { id: 'Tomar café da manhã', duration: 15, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
-                    { id: 'Escovar os dentes (após acordar)', duration: 5, anchor: 'prevTask', block: 'Rotina Hora de Acordar' },
-                    { id: 'Sair para escola', duration: 20, anchor: 'schoolStart', offset: -20, block: 'Rotina Saindo para escola' },
-                    { id: 'Entrada na escola', duration: 0, anchor: 'schoolStart', block: 'Rotina Hora da Escola' },
-                    { id: 'Saída da escola', duration: 0, anchor: 'schoolEnd', block: 'Rotina Hora da Escola' },
-                    { id: 'Tomar banho a Noite', duration: 15, anchor: 'sleep', offset: -20, block: 'Rotina Hora de Dormir' },
-                    { id: 'Escovar os dentes (antes de dormir)', duration: 5, anchor: 'sleep', offset: -5, block: 'Rotina Hora de Dormir' },
-                    { id: 'Hora de dormir', duration: 600, anchor: 'sleep', block: 'Rotina Hora de Dormir' },
-                ];
+                blueprint = routineBlueprints.full_time;
                 anchors = {
                     wakeUp: parseTime(input.wakeUpTime),
                     schoolStart: parseTime(input.schoolShiftStart),
                     schoolEnd: parseTime(input.schoolShiftEnd),
                     lunch: parseTime(input.lunchTime), // From form but may not be used by blueprint
-                    dinner: parseTime(input.dinnerTime), // From form but may not be used by blueprint
+                    dinner: parseTime(input.schoolShiftEnd) - 30, // 30 minutes before school end
                     sleep: parseTime(input.sleepTime),
                 };
             }

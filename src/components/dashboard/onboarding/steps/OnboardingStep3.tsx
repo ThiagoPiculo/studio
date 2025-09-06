@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useFormContext } from "react-hook-form";
@@ -25,11 +26,10 @@ export function OnboardingStep3() {
   const schoolShiftEnd = watch('schoolShiftEnd');
 
   const anchorTimeFields = useMemo(() => {
-    const isFullTime = schoolShift === 'full_time';
     return [
       { name: 'wakeUpTime', label: 'Hora de Acordar', emoji: '⏰', microCopy: 'Sugestão calculada com base no horário escolar.' },
-      { name: 'lunchTime', label: isFullTime ? 'Hora do Almoço na escola' : 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
-      { name: 'dinnerTime', label: isFullTime ? 'Hora do Jantar na escola' : 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+      { name: 'lunchTime', label: schoolShift === 'full_time' ? 'Hora do Almoço na escola' : 'Hora do Almoço', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
+      { name: 'dinnerTime', label: schoolShift === 'full_time' ? 'Hora do Jantar na escola' : 'Hora do Jantar', emoji: '🍽️', microCopy: 'Sugestão calculada com base no horário escolar.' },
       { name: 'sleepTime', label: 'Hora de Dormir', emoji: '😴', microCopy: 'Sugestão calculada com base no horário escolar.' },
     ];
   }, [schoolShift]);
@@ -61,7 +61,7 @@ export function OnboardingStep3() {
                  // For full_time, we still need the anchor times for the weekend schedule.
                  // We will use fixed times for lunch/dinner as per the new request.
                  lunch = parseTime('12:00'); 
-                 dinner = lunch + 6 * 60; // 18:00
+                 dinner = schoolEndMinutes - 30; // 30 minutes before school ends.
                  // Wake up and sleep can be based on school start/end for weekdays.
                  wakeUp = schoolStartMinutes - 60;
                  sleep = schoolEndMinutes + 3 * 60;
