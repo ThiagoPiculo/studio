@@ -257,7 +257,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                <div className="flex items-start justify-between">
                                     <div className="flex items-center gap-4">
                                         <Avatar
-                                            className="h-16 w-16 text-2xl ring-4 ring-offset-background"
+                                            className="h-16 w-16 text-2xl ring-4 ring-offset-background ring-[var(--ring-color)]"
                                             style={{ '--ring-color': child.color } as React.CSSProperties}
                                         >
                                             <AvatarImage src={child.avatar} alt={child.name} />
