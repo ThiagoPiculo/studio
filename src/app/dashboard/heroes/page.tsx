@@ -18,41 +18,41 @@ function HeroesPageContent() {
     const [rewards, setRewards] = useState<RewardTemplate[] | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
-    const fetchData = useCallback(async () => {
-        if (!user) {
-            setChildren([]);
-            setMissions([]);
-            setRewards([]);
-            setIsLoadingData(false);
+    useEffect(() => {
+        if (!user || authLoading || isFamilyLoading) {
+            if (!authLoading && !isFamilyLoading) {
+                 setChildren([]);
+                 setMissions([]);
+                 setRewards([]);
+                 setIsLoadingData(false);
+            }
             return;
         }
+        
         setIsLoadingData(true);
-        try {
-            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-            const [childData, missionData, rewardData] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, currentContext),
-                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-            ]);
-            setChildren(childData);
-            setMissions(missionData);
-            setRewards(rewardData);
-        } catch (error) {
-            console.error("Error fetching heroes data:", error);
-            setChildren([]);
-            setMissions([]);
-            setRewards([]);
-        } finally {
-            setIsLoadingData(false);
-        }
-    }, [user, currentContext]);
+        const fetchData = async () => {
+            try {
+                const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+                const [childData, missionData, rewardData] = await Promise.all([
+                    getChildProfilesForAttribution(user.uid, currentContext),
+                    getMissionInstancesForContext(user.uid, currentContext),
+                    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+                ]);
+                setChildren(childData);
+                setMissions(missionData);
+                setRewards(rewardData);
+            } catch (error) {
+                console.error("Error fetching heroes data:", error);
+                setChildren([]);
+                setMissions([]);
+                setRewards([]);
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
 
-
-    useEffect(() => {
-        if (!authLoading && !isFamilyLoading) {
-            fetchData();
-        }
-    }, [authLoading, isFamilyLoading, fetchData, currentContext]);
+        fetchData();
+    }, [user, currentContext, authLoading, isFamilyLoading]);
 
 
     if (authLoading || isFamilyLoading || isLoadingData || children === null || missions === null || rewards === null) {
@@ -69,7 +69,7 @@ function HeroesPageContent() {
         );
     }
     
-    return <HeroesSummary children={children} missionInstances={missions} onDataRefresh={fetchData} />;
+    return <HeroesSummary initialChildren={children} initialMissionInstances={missions} />;
 }
 
 

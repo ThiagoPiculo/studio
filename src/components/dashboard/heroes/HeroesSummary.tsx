@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
@@ -42,35 +42,33 @@ interface ActivityItem {
 }
 
 interface HeroesSummaryProps {
-  children: ChildProfile[];
-  missionInstances: MissionInstance[];
-  onDataRefresh: () => void;
+  initialChildren: ChildProfile[];
+  initialMissionInstances: MissionInstance[];
 }
 
-export function HeroesSummary({ children: initialChildren, missionInstances: initialMissionInstances, onDataRefresh }: HeroesSummaryProps) {
+export function HeroesSummary({ initialChildren, initialMissionInstances }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
     const { selectedChildId, setSelectedChildId } = useFamily(); // Use global state
     
     const [children, setChildren] = useState(initialChildren);
+    const [missionInstances, setMissionInstances] = useState(initialMissionInstances);
+    
     const [expandedChildId, setExpandedChildId] = useState<string | null>(null);
     const [schoolSchedules, setSchoolSchedules] = useState<Record<string, SchoolScheduleEntry[]>>({});
     const [isLoadingSchedules, setIsLoadingSchedules] = useState(false);
     
-    const [missionInstances, setMissionInstances] = useState(initialMissionInstances);
     const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
     const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
     
     const [confirmingMission, setConfirmingMission] = useState<MissionInstance | null>(null);
-
-    useEffect(() => {
-        setMissionInstances(initialMissionInstances);
-    }, [initialMissionInstances]);
     
+    // Effect to update internal state if initial props change (e.g., due to context switch)
     useEffect(() => {
         setChildren(initialChildren);
-    }, [initialChildren]);
+        setMissionInstances(initialMissionInstances);
+    }, [initialChildren, initialMissionInstances]);
 
 
     const handleExpandClick = async (childId: string) => {
@@ -109,12 +107,34 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
 
         try {
             const actor = { id: user.uid, name: user.name };
-            const updatedChild = isCompleted
+            const updatedChildProfile = isCompleted
                 ? await reactivateMissionInstance(mission.id, date, actor)
                 : await completeMissionInstance(mission.id, date, actor);
             
-            if (updatedChild) {
-                onDataRefresh(); // Refresh data from parent
+            if (updatedChildProfile) {
+                // Optimistic local state update
+                const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
+                setMissionInstances(prevInstances =>
+                    prevInstances.map(inst => {
+                        if (inst.id === mission.id) {
+                            const newLog = { ...(inst.completionLog || {}) };
+                            if (isCompleted) {
+                                delete newLog[dateKey];
+                            } else {
+                                newLog[dateKey] = { completedAt: new Date() as any, stars: mission.starsReward };
+                            }
+                            return { ...inst, completionLog: newLog };
+                        }
+                        return inst;
+                    })
+                );
+                
+                setChildren(prevChildren =>
+                    prevChildren.map(c => 
+                        c.id === updatedChildProfile.id ? { ...c, ...updatedChildProfile } : c
+                    )
+                );
+
                 toast({
                     title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
                     description: `A missão "${mission.title}" foi atualizada.`
@@ -123,6 +143,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
         } catch (error) {
             console.error("Error toggling mission completion:", error);
             toast({ title: "Erro ao atualizar missão", variant: "destructive" });
+            // Consider refetching data on error to re-sync state
         } finally {
             setProcessingMissionId(null);
             setConfirmingMission(null);
@@ -223,7 +244,7 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                     }, { stars: 0 });
 
                     const totalStarsToday = todaysMissions.reduce((total, mission) => total + mission.starsReward, 0);
-                    const isDayComplete = totalStarsToday > 0 && todaysGains.stars === totalStarsToday;
+                    const isDayComplete = todaysMissions.length > 0 && completedMissions.length === todaysMissions.length;
 
                     const isExpanded = expandedChildId === child.id;
                     const displayActivities = isExpanded ? allTodaysActivities : allTodaysActivities.slice(0, 5);
@@ -406,24 +427,18 @@ export function HeroesSummary({ children: initialChildren, missionInstances: ini
                                 <div className="p-2 text-center space-y-1">
                                     {isDayComplete ? (
                                         <>
-                                            <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5 text-green-600">
+                                            <div className="font-semibold flex items-center justify-center gap-x-1.5 text-green-600">
                                                 <span>👍</span>
                                                 <span>Dia Completo!</span>
                                             </div>
-                                            <p className="text-xs text-muted-foreground">+{todaysGains.stars}⭐ Ganhas Hoje</p>
+                                            <p className="text-xs text-muted-foreground">+{todaysGains.stars} ⭐ Ganhas Hoje</p>
                                         </>
                                     ) : (
                                         <>
                                             <div className="font-semibold flex items-center justify-center gap-x-1 sm:gap-x-1.5">
-                                                {totalStarsToday > 0 ? (
-                                                    <div className="flex items-center gap-1 text-amber-600">
-                                                        +{todaysGains.stars} / {totalStarsToday} <Star className="h-4 w-4 fill-current" />
-                                                    </div>
-                                                ) : (
-                                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                                        -- <Star className="h-4 w-4" />
-                                                    </div>
-                                                )}
+                                                <div className="flex items-center gap-1 text-amber-600">
+                                                    +{todaysGains.stars} / {totalStarsToday} <Star className="h-4 w-4 fill-current" />
+                                                </div>
                                             </div>
                                             <p className="text-xs text-muted-foreground">Ganhos do Dia</p>
                                         </>
