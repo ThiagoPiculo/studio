@@ -147,7 +147,7 @@ function RewardsHubContent() {
     if (idea.isAdded) {
       const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
       if (existingTemplate) {
-        router.push(`/dashboard/rewards/edit-template/${existingTemplate.id}`);
+        handleOpenAssignDialog(existingTemplate);
       } else {
         toast({ title: "Recompensa já existe", description: "Esta recompensa já está no seu catálogo. Você pode editá-la lá." });
       }
@@ -222,7 +222,7 @@ function RewardsHubContent() {
                                                     </CardContent>
                                                     <CardFooter>
                                                         <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                            {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
+                                                            {idea.isAdded ? "Atribuir ao Herói" : "Usar esta Ideia"}
                                                         </Button>
                                                     </CardFooter>
                                                 </Card>
@@ -283,7 +283,7 @@ function RewardsHubContent() {
                                                         </CardContent>
                                                         <CardFooter className="flex items-center gap-2">
                                                         <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                                <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                                <Users className="mr-2 h-4 w-4" /> Atribuir ao Herói
                                                             </Button>
                                                             <TooltipProvider>
                                                                 <Tooltip><TooltipTrigger asChild>
