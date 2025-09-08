@@ -214,7 +214,22 @@ function RewardsHubContent() {
                                             {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
                                                 <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
                                                     <CardHeader>
-                                                        <CardTitle className="text-base">{idea.title}</CardTitle>
+                                                        <div className="flex items-start justify-between">
+                                                          <CardTitle className="text-base pr-2">{idea.title}</CardTitle>
+                                                          <Popover>
+                                                            <PopoverTrigger asChild>
+                                                              <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-muted-foreground">
+                                                                <Info className="h-4 w-4"/>
+                                                              </Button>
+                                                            </PopoverTrigger>
+                                                            <PopoverContent className="w-64 text-sm space-y-2">
+                                                              <h4 className="font-semibold text-foreground">Justificativa</h4>
+                                                              <p className="text-muted-foreground">{idea.justification || 'Sem justificativa.'}</p>
+                                                              <h4 className="font-semibold text-foreground border-t pt-2 mt-2">Dica para o Herói</h4>
+                                                              <p className="text-muted-foreground">{idea.tip || 'Complete suas missões para ganhar!'}</p>
+                                                            </PopoverContent>
+                                                          </Popover>
+                                                        </div>
                                                         {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
                                                     </CardHeader>
                                                     <CardContent className="flex-grow">
