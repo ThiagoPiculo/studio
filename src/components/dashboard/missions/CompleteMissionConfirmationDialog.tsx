@@ -56,15 +56,12 @@ export function CompleteMissionConfirmationDialog({
           </Label>
         </div>
         <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-             <AlertDialogAction 
-                onClick={() => onConfirm(dismissToday)}
-                className={cn(buttonVariants({ variant: "secondary" }), "w-full sm:w-auto")}
-            >
-                Continuar mesmo assim
-            </AlertDialogAction>
-            <AlertDialogCancel asChild>
-                <Button className="w-full sm:w-auto">Deixar para o herói marcar</Button>
+             <AlertDialogCancel asChild>
+                <Button variant="secondary" className="w-full sm:w-auto" onClick={() => onConfirm(dismissToday)}>Continuar mesmo assim</Button>
             </AlertDialogCancel>
+            <AlertDialogAction asChild>
+                <Button className="w-full sm:w-auto" onClick={() => onOpenChange(false)}>Deixar para o herói marcar</Button>
+            </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>
