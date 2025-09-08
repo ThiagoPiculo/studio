@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -68,6 +68,18 @@ function CreateRewardTemplatePageContent() {
     resolvedInitialIsMaterial = true;
   }
   
+  const form = useForm<RewardTemplateFormValues>({
+    resolver: zodResolver(rewardTemplateFormSchema),
+    defaultValues: {
+      title: initialTitle,
+      description: initialDescription,
+      category: resolvedInitialCategory, 
+      starsCost: initialStarsCost ? parseInt(initialStarsCost, 10) : 10,
+      isMaterial: resolvedInitialIsMaterial,
+      isUnique: false,
+    },
+  });
+
   const suggestedCost = useMemo(() => {
     const category = form.watch('category');
     if (!category) return null;
@@ -82,18 +94,6 @@ function CreateRewardTemplatePageContent() {
         default: return null;
     }
   }, [form.watch('category')]);
-
-  const form = useForm<RewardTemplateFormValues>({
-    resolver: zodResolver(rewardTemplateFormSchema),
-    defaultValues: {
-      title: initialTitle,
-      description: initialDescription,
-      category: resolvedInitialCategory, 
-      starsCost: initialStarsCost ? parseInt(initialStarsCost, 10) : 10,
-      isMaterial: resolvedInitialIsMaterial,
-      isUnique: false,
-    },
-  });
   
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
@@ -149,6 +149,8 @@ function CreateRewardTemplatePageContent() {
         isUnique: values.isUnique,
         familyId: currentContext === 'my-space' ? null : currentContext,
         source: isFromPredefined ? 'predefined' : 'custom',
+        justification: '', 
+        tip: '',
       };
       
       const createdTemplate = await addRewardTemplate(user, templateDataPayload);
