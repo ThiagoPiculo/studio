@@ -22,12 +22,11 @@ interface DashboardClientPageProps {
     initialData: {
         children: ChildProfile[];
         missions: MissionInstance[];
-        rewards: RewardTemplate[];
     }
 }
 
 export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
-  const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
+  const { children: allChildren, missions: missionInstances } = initialData;
   const { selectedChildId, setSelectedChildId } = useFamily();
 
   const filteredChildren = useMemo(() => {
@@ -51,7 +50,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childrenProfiles={filteredChildren} rewardTemplates={rewardTemplates} />
+          <UnlockedRewards childrenProfiles={filteredChildren} />
           <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>
