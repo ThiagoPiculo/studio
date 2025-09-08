@@ -73,6 +73,7 @@ export interface ChildProfile {
   level: number;
   accessCode: string; // 6-digit code for child login
   earnedBadgeIds?: string[];
+  favoriteRewardIds?: string[];
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }

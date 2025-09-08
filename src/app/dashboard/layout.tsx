@@ -124,7 +124,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       }
     },
     '/dashboard/rewards': {
-      title: 'Quadro de Recompensas',
+      title: 'Baú de Recompensas',
       icon: Gift,
       help: {
         title: 'A Lojinha de Tesouros do Herói',
