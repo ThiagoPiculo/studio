@@ -69,7 +69,6 @@ function CreateMissionTemplatePageContent() {
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
 
-
   let resolvedInitialCategory: MissionCategory | undefined = undefined;
   if (categoryParam && missionCategories.some(rc => rc.id === categoryParam)) {
     resolvedInitialCategory = categoryParam;

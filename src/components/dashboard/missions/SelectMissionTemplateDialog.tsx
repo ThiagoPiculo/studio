@@ -22,7 +22,7 @@ import {
   getChildProfilesForAttribution,
   getMissionInstancesForContext
 } from '@/lib/firebase/firestore';
-import { Loader2, PackageSearch, PlusCircle, Users } from 'lucide-react';
+import { Loader2, PackageSearch, PlusCircle, Users, Star } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -168,8 +168,8 @@ export function SelectMissionTemplateDialog({ isOpen, onOpenChange, onMissionSel
                                     </div>
                                 )}
                             </div>
-                            <p className="text-xs text-muted-foreground">
-                                {template.starsReward} ★ / {template.xpReward} XP
+                            <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                {template.starsReward} <Star className="h-3 w-3 text-yellow-400" />
                             </p>
                         </div>
                         <div className="border-t pt-2 mt-2 flex items-center gap-2">

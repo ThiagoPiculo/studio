@@ -9,7 +9,7 @@ import { Progress } from '@/components/ui/progress';
 
 interface LevelUpPathProps {
   currentLevel: number;
-  currentXp: number; // This will now be totalStars
+  currentTotalStars: number; 
 }
 
 const Milestone = ({
@@ -48,7 +48,7 @@ const Milestone = ({
   );
 };
 
-export function LevelUpPath({ currentLevel, currentXp: currentTotalStars }: LevelUpPathProps) {
+export function LevelUpPath({ currentLevel, currentTotalStars }: LevelUpPathProps) {
   const calculateLevelDetails = (level: number): { startStars: number, endStars: number } => {
       if (level <= 1) return { startStars: 0, endStars: 100 };
       let totalStarsForPreviousLevels = 0;

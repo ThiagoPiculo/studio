@@ -15,18 +15,14 @@ Esta seção apresenta um resumo das informações e progresso da criança no ap
 
 4.  **Nível (Ex: "Nível: 1")**:
     *   **O que é**: O **Nível** da criança dentro do sistema de gamificação do "Mini Herois".
-    *   **Detalhes**: As crianças geralmente começam no Nível 1 e progridem ao acumular Pontos de Experiência (XP) completando missões. Subir de nível pode desbloquear novas funcionalidades ou simplesmente marcar o progresso da criança.
+    *   **Detalhes**: As crianças geralmente começam no Nível 1 e progridem ao acumular **Estrelas** completando missões. Subir de nível pode desbloquear novas funcionalidades ou simplesmente marcar o progresso da criança.
 
 5.  **Estrelas (Ex: "⭐ 0")**:
     *   **O que é**: Representa a quantidade de **Estrelas** que a criança possui atualmente.
-    *   **Detalhes**: As estrelas funcionam como uma "moeda" no aplicativo. As crianças ganham estrelas ao completar missões e podem usá-las para "comprar" ou resgatar recompensas definidas pelos pais/responsáveis.
+    *   **Detalhes**: As estrelas funcionam como uma "moeda" no aplicativo. As crianças ganham estrelas ao completar missões e podem usá-las para "comprar" ou resgatar recompensas definidas pelos pais/responsáveis. Cada estrela também contribui para subir de nível.
 
-6.  **XP (Ex: "XP: 0")**:
-    *   **O que é**: Indica os **Pontos de Experiência (XP)** da criança.
-    *   **Detalhes**: Assim como em muitos jogos, XP é acumulado ao realizar certas ações, principalmente completar missões. Ao atingir uma certa quantidade de XP, a criança sobe de nível.
-
-7.  **Código de Acesso (Ex: "🛡️ Código de Acesso: 633640")**:
-    *   **O que é**: Este é o **Código de Acesso** de 6 dígitos, também chamado de "Chave Secreta de Heroi".
+6.  **Acesso do Herói (Ex: "🛡️ Acesso do Herói: 633640")**:
+    *   **O que é**: Este é o **Código de Acesso** de 6 dígitos para o login da criança.
     *   **Detalhes**: A criança usa este código para fazer login na interface infantil do aplicativo. O ícone de escudo 🛡️ reforça a ideia de ser algo seguro e pessoal. É através deste código que ela acessa suas missões, recompensas e acompanha seu progresso.
 
-Em resumo, este cabeçalho do perfil da criança é um painel visual que mostra suas informações básicas de identificação, seu progresso no sistema de gamificação (Nível, Estrelas, XP) e o código de acesso essencial para o login infantil.
+Em resumo, este cabeçalho do perfil da criança é um painel visual que mostra suas informações básicas de identificação, seu progresso no sistema de gamificação (Nível, Estrelas) e o código de acesso essencial para o login infantil.
