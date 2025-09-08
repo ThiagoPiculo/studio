@@ -24,7 +24,7 @@ import {
   deleteRewardTemplate,
   getChildProfilesForAttribution,
 } from '@/lib/firebase/firestore';
-import type { RewardTemplate, RewardCategoryDetails, ChildProfile, FamilyRole } from '@/lib/types';
+import type { RewardTemplate, RewardCategoryDetails, ChildProfile, FamilyRole, RewardCategory } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
@@ -36,20 +36,14 @@ import { cn, getInitials } from '@/lib/utils';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import type { PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import Loading from './loading';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { db } from '@/lib/firebase/config';
-import { doc, updateDoc } from 'firebase/firestore';
-import { Separator } from '@/components/ui/separator';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
 
 
 function RewardsHubContent() {
   const { user, loading: authLoading } = useAuth();
-  const { currentContext, availableContexts, currentRole, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -61,8 +55,6 @@ function RewardsHubContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
-
-  const rewardMode = user?.settings?.rewardMode || 'automatic';
   
    const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -100,46 +92,36 @@ function RewardsHubContent() {
   }, [authLoading, isFamilyLoading, refetchData]);
 
 
-  const handleRewardModeChange = async (newMode: 'automatic' | 'manual') => {
-      if (!user) return;
-      
-      const userDocRef = doc(db, 'users', user.uid);
-      try {
-          await updateDoc(userDocRef, {
-              'settings.rewardMode': newMode
-          });
-          toast({
-              title: "Modo de Estratégia Atualizado!",
-              description: `Você agora está no modo ${newMode === 'automatic' ? 'Automático' : 'Manual'}.`
-          });
-          // Optimistically update the state
-          const updatedUser = { ...user, settings: { ...user.settings, rewardMode: newMode } };
-          // This is a bit of a hack since we can't update the user context directly here
-          // A full page reload or context refresh would be ideal but this provides immediate UI feedback
-      } catch (error) {
-          console.error("Failed to update reward mode:", error);
-          toast({ title: "Erro ao salvar", description: "Não foi possível alterar sua estratégia de recompensas.", variant: "destructive"});
-      }
-  };
-  
-  const customTemplates = useMemo(() => {
-    return rewardTemplates.filter(template => template.source === 'custom');
+  const existingTemplateTitles = useMemo(() => {
+    return new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
   }, [rewardTemplates]);
 
-
   const allIdeasWithStatus = useMemo(() => {
-    const userTemplateTitles = new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
     return predefinedRewardGroups.flatMap(group => 
       group.items.map(idea => ({
         ...idea,
-        isAdded: userTemplateTitles.has(idea.title.toLowerCase().trim())
+        isAdded: existingTemplateTitles.has(idea.title.toLowerCase().trim())
       }))
     );
-  }, [rewardTemplates]);
+  }, [rewardTemplates, existingTemplateTitles]);
+  
+  const customTemplatesByCategory = useMemo(() => {
+    const grouped = rewardTemplates.reduce((acc, template) => {
+        if (!acc[template.category]) {
+            acc[template.category] = [];
+        }
+        acc[template.category].push(template);
+        return acc;
+    }, {} as Record<RewardCategory, RewardTemplate[]>);
 
-  const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
-    return rewardCategories.find(cat => cat.id === categoryId);
-  };
+    return rewardCategories
+        .map(catInfo => ({
+            ...catInfo,
+            items: grouped[catInfo.id] || []
+        }))
+        .filter(group => group.items.length > 0);
+
+  }, [rewardTemplates]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -147,7 +129,6 @@ function RewardsHubContent() {
     try {
       await deleteRewardTemplate(user, templateToDelete);
       toast({ title: "Recompensa Removida do Catálogo!", description: `A recompensa "${templateToDelete.title}" foi removida.` });
-      // Refetch templates after deletion
       refetchData();
     } catch (error) {
       console.error("Error deleting reward template:", error);
@@ -160,10 +141,11 @@ function RewardsHubContent() {
   
   const handleUseIdea = (idea: (typeof allIdeasWithStatus)[0]) => {
     if (idea.isAdded) {
-      toast({ title: "Recompensa já existe", description: "Esta recompensa já está no seu catálogo. Você pode editá-la lá." });
       const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
       if (existingTemplate) {
         router.push(`/dashboard/rewards/edit-template/${existingTemplate.id}`);
+      } else {
+        toast({ title: "Recompensa já existe", description: "Esta recompensa já está no seu catálogo. Você pode editá-la lá." });
       }
       return;
     }
@@ -181,11 +163,9 @@ function RewardsHubContent() {
     setIsAssignDialogOpen(true);
   };
   
-  const currentContextName = useMemo(() => {
-    if (currentContext === 'my-space') return 'Meu Catálogo Pessoal';
-    const contextData = availableContexts.find(c => c.id === currentContext);
-    return `Catálogo da Aliança: ${contextData?.name || ''}`;
-  }, [currentContext, availableContexts]);
+  const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
+    return rewardCategories.find(cat => cat.id === categoryId);
+  };
   
   if (isDataLoading || isFamilyLoading) {
     return <Loading />;
@@ -193,165 +173,138 @@ function RewardsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-2">
-                <Gift className="h-8 w-8 text-primary" />
-                <div className="flex-grow">
-                    <h2 className="text-3xl font-headline font-bold">Quadro de Recompensas</h2>
-                    <p className="text-muted-foreground">Inspire-se, crie e gerencie as recompensas para o seu espaço.</p>
-                </div>
-                <Popover>
-                    <PopoverTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                            <HelpCircle className="h-5 w-5" />
-                        </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-80">
-                         <div className="space-y-3">
-                            <h4 className="font-medium leading-none">A Lojinha de Tesouros do Herói</h4>
-                            <p className="text-sm text-muted-foreground">
-                                Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
-                            </p>
-                            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                                <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
-                                <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
-                            </ul>
-                            <PopoverClose asChild>
-                                <Button className="w-full">Entendi 👍</Button>
-                            </PopoverClose>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            </div>
-             <div className="flex w-full flex-row sm:w-auto items-center justify-end gap-2">
-                 <Link href="/dashboard/rewards/new">
-                    <Button className="w-full sm:w-auto" disabled={!canEdit}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
-                    </Button>
-                </Link>
-            </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <Gift className="h-8 w-8 text-primary" />
+          <div className="flex-grow">
+            <h2 className="text-3xl font-headline font-bold">Quadro de Recompensas</h2>
+          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+                <HelpCircle className="h-5 w-5" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="space-y-3">
+                <h4 className="font-medium leading-none">A Lojinha de Tesouros do Herói</h4>
+                <p className="text-sm text-muted-foreground">
+                  Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                  <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
+                  <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
+                </ul>
+                <PopoverClose asChild>
+                  <Button className="w-full">Entendi 👍</Button>
+                </PopoverClose>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
+        <div className="flex w-full flex-row sm:w-auto items-center justify-end gap-2">
+          <Link href="/dashboard/rewards/new">
+            <Button className="w-full sm:w-auto" disabled={!canEdit}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
+            </Button>
+          </Link>
+        </div>
+      </div>
 
-        <Tabs defaultValue="ideas" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ideas">
-                    <Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas
-                </TabsTrigger>
-                <TabsTrigger value="custom">
-                    <User className="mr-2 h-4 w-4"/>Personalizadas
-                </TabsTrigger>
-            </TabsList>
-            <TabsContent value="ideas" className="mt-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
-                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-6">
-                          {predefinedRewardGroups.map(group => (
-                            <section key={group.userCategory}>
-                              <h3 className="text-xl font-headline font-bold mb-3">{group.userCategory}</h3>
-                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
-                                  <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
-                                    <CardHeader>
-                                       <CardTitle className="text-base">{idea.title}</CardTitle>
-                                       {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
-                                    </CardHeader>
-                                    <CardContent className="flex-grow">
-                                      <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
-                                    </CardContent>
-                                    <CardFooter>
-                                       <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                            {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
-                                        </Button>
-                                    </CardFooter>
-                                  </Card>
-                                ))}
-                              </div>
-                            </section>
-                          ))}
-                        </div>
-                    </CardContent>
-                  </Card>
-            </TabsContent>
-            <TabsContent value="custom" className="mt-6">
-                 <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Criadas por Você</CardTitle>
-                        <CardDescription>
-                            {customTemplates.length > 0
-                            ? "Estas são as recompensas que você criou do zero. Elas aparecem na loja para seus heróis."
-                            : "Seu catálogo de recompensas personalizadas está vazio."
-                            }
-                        </CardDescription>
-                    </CardHeader>
-                    {customTemplates.length > 0 && (
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {customTemplates.map(template => {
-                                    const categoryDetails = getCategoryDetails(template.category);
-                                    return (
+      <Tabs defaultValue="ideas" className="w-full">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="ideas"><Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas</TabsTrigger>
+          <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Personalizadas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="ideas" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
+              <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Accordion type="multiple" className="w-full space-y-4">
+                {predefinedRewardGroups.map((group) => (
+                  <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
+                    <AccordionTrigger className="p-4 hover:no-underline">
+                      <div className="flex items-center gap-3">
+                        <group.icon className="h-6 w-6 text-primary" />
+                        <span className="text-lg font-semibold">{group.userCategory}</span>
+                      </div>
+                    </AccordionTrigger>
+                    <AccordionContent className="p-4 pt-0">
+                      <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
+                          <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
+                            <CardHeader>
+                              <CardTitle className="text-base">{idea.title}</CardTitle>
+                              {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
+                            </CardHeader>
+                            <CardContent className="flex-grow">
+                              <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
+                            </CardContent>
+                            <CardFooter>
+                              <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
+                              </Button>
+                            </CardFooter>
+                          </Card>
+                        ))}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
+                ))}
+              </Accordion>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="custom" className="mt-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
+              <CardDescription>Recompensas que você criou. Elas aparecem na loja para seus heróis.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {customTemplatesByCategory.length === 0 ? (
+                <p className="text-center text-muted-foreground py-6">Seu catálogo de recompensas personalizadas está vazio.</p>
+              ) : (
+                <Accordion type="multiple" className="w-full space-y-4">
+                  {customTemplatesByCategory.map((group) => {
+                    const CategoryIcon = group.icon;
+                    return (
+                        <AccordionItem value={group.id} key={group.id} className="border rounded-lg shadow-sm">
+                            <AccordionTrigger className="p-4 hover:no-underline">
+                                <div className="flex items-center gap-3">
+                                    {CategoryIcon && <CategoryIcon className={cn("h-6 w-6", group.colorClasses.split(" ")[1])} />}
+                                    <span className="text-lg font-semibold">{group.label}</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="p-4 pt-0">
+                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {group.items.map(template => (
                                         <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
                                             <CardHeader>
-                                                <div className="flex items-start gap-2">
-                                                    {categoryDetails?.icon && <categoryDetails.icon className="h-5 w-5 text-muted-foreground" />}
-                                                    <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
-                                                </div>
+                                                <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
                                             </CardHeader>
                                             <CardContent className="flex-grow pt-0 flex flex-col">
                                                  <div className="flex flex-wrap gap-2 items-center mb-3">
-                                                      {categoryDetails && (
-                                                          <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                                                              {categoryDetails.icon && <categoryDetails.icon className="mr-1.5 h-3 w-3" />}
-                                                              {categoryDetails.label}
-                                                          </Badge>
-                                                      )}
                                                       <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
                                                         <Puzzle className="mr-1.5 h-3 w-3" />
                                                         Personalizada
                                                       </Badge>
-                                                       <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                      <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                      <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                                        {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                                      </Badge>
                                                  </div>
                                                 <div className="flex-grow" />
                                                 <div className="pt-2">
-                                                    <Separator className="mb-3" />
-                                                    <div className="space-y-2">
-                                                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-1.5">
-                                                        <Users className="h-4 w-4" /> Desbloqueado por:
-                                                        </h4>
-                                                        <div className="flex items-center -space-x-2 min-h-[32px]">
-                                                        {isDataLoading ? (
-                                                            <div className="flex -space-x-2">
-                                                                <Skeleton className="h-8 w-8 rounded-full" />
-                                                            </div>
-                                                        ) : children.length > 0 ? (
-                                                            children.map(child => {
-                                                            const canAfford = child.stars >= template.starsCost;
-                                                            return (
-                                                                <TooltipProvider key={child.id} delayDuration={100}>
-                                                                    <Tooltip>
-                                                                        <TooltipTrigger>
-                                                                            <Avatar className={cn("h-8 w-8 border-2 border-card", !canAfford && "opacity-40")}>
-                                                                                <AvatarImage src={child.avatar} alt={child.name} />
-                                                                                <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
-                                                                            </Avatar>
-                                                                        </TooltipTrigger>
-                                                                        <TooltipContent><p>{child.name}: {child.stars}/{template.starsCost} estrelas</p></TooltipContent>
-                                                                    </Tooltip>
-                                                                </TooltipProvider>
-                                                            )
-                                                            })
-                                                        ) : (
-                                                        <p className="text-xs text-muted-foreground italic">Nenhum herói neste espaço.</p>
-                                                        )}
-                                                        </div>
-                                                    </div>
+                                                     <p className="text-xs text-muted-foreground">{template.description || "Sem descrição."}</p>
                                                 </div>
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
-                                                <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit}>
+                                               <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
                                                     <Users className="mr-2 h-4 w-4" /> Gerenciar
                                                 </Button>
                                                 <TooltipProvider>
@@ -370,47 +323,51 @@ function RewardsHubContent() {
                                                 </TooltipProvider>
                                             </CardFooter>
                                         </Card>
-                                    )
-                                })}
-                            </div>
-                        </CardContent>
-                    )}
-                </Card>
-            </TabsContent>
-        </Tabs>
+                                    ))}
+                                 </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )
+                  })}
+                </Accordion>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
         
-        {templateToDelete && (
-            <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                    <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
-                    </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                    <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
-                    <AlertDialogAction
-                        onClick={handleDeleteConfirm}
-                        className="bg-destructive hover:bg-destructive/90"
-                        disabled={isProcessingAction}
-                    >
-                        {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Sim, Excluir
-                    </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-        )}
+      {templateToDelete && (
+        <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteConfirm}
+                className="bg-destructive hover:bg-destructive/90"
+                disabled={isProcessingAction}
+              >
+                {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Sim, Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
 
-        {templateToAssign && (
-            <AssignRewardDialog
-                template={templateToAssign}
-                isOpen={isAssignDialogOpen}
-                onOpenChange={setIsAssignDialogOpen}
-                onAssigned={refetchData}
-            />
-        )}
+      {templateToAssign && (
+        <AssignRewardDialog
+          template={templateToAssign}
+          isOpen={isAssignDialogOpen}
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={refetchData}
+        />
+      )}
     </div>
   );
 }
