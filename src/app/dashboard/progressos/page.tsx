@@ -6,8 +6,8 @@ import { useSearchParams } from 'next/navigation';
 import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import type { ChildProfile, MissionInstance, RewardTemplate, ChildRewardInstance } from '@/lib/types';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getChildRewardInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { DashboardClientPage } from '@/components/dashboard/dashboard/DashboardClientPage';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 
@@ -21,22 +21,24 @@ function ProgressosPageContent() {
         children: ChildProfile[];
         missions: MissionInstance[];
         rewards: RewardTemplate[];
+        rewardInstances: ChildRewardInstance[];
     } | null>(null);
 
     const fetchData = useCallback(async () => {
         if (!user) {
-            setInitialData({ children: [], missions: [], rewards: [] });
+            setInitialData({ children: [], missions: [], rewards: [], rewardInstances: [] });
             return;
         }
         
         try {
             const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-            const [children, missions, rewards] = await Promise.all([
+            const [children, missions, rewards, rewardInstances] = await Promise.all([
                 getChildProfilesForAttribution(user.uid, currentContext),
                 getMissionInstancesForContext(user.uid, currentContext),
-                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
+                getChildRewardInstancesForContext(user.uid, familyIdToQuery)
             ]);
-            setInitialData({ children, missions, rewards });
+            setInitialData({ children, missions, rewards, rewardInstances });
 
             const childIdFromUrl = searchParams.get('childId');
             if (childIdFromUrl && children.some(c => c.id === childIdFromUrl)) {
@@ -45,7 +47,7 @@ function ProgressosPageContent() {
 
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
-            setInitialData({ children: [], missions: [], rewards: [] });
+            setInitialData({ children: [], missions: [], rewards: [], rewardInstances: [] });
         }
     }, [user, currentContext, searchParams, setSelectedChildId]);
   

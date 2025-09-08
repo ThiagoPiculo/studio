@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import type { ChildProfile, ChildRewardInstance, RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
-import { getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
-import { useAuth } from '@/contexts/AuthContext';
-import { useFamily } from '@/contexts/FamilyContext';
 import { Gift, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -19,24 +16,28 @@ import { Badge } from '@/components/ui/badge';
 
 interface UnlockedRewardsProps {
   childrenProfiles: ChildProfile[];
-  rewardTemplates: RewardTemplate[];
+  childRewardInstances: ChildRewardInstance[];
 }
 
 type GroupedReward = {
   category: RewardCategory;
-  rewards: RewardTemplate[];
+  rewards: ChildRewardInstance[];
 }
 
-export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedRewardsProps) {
+export function UnlockedRewards({ childrenProfiles, childRewardInstances }: UnlockedRewardsProps) {
   const { toast } = useToast();
   
   const unlockedRewardsByChild = useMemo(() => {
     return childrenProfiles.map(child => {
-      const affordableRewards = rewardTemplates
-        .filter(template => template.status === 'active' && child.stars >= template.starsCost)
+      const affordableAndActiveInstances = childRewardInstances
+        .filter(instance => 
+            instance.childId === child.id &&
+            instance.status === 'active' && 
+            child.stars >= instance.starsCost
+        )
         .sort((a, b) => a.starsCost - b.starsCost);
 
-      const groupedRewards = affordableRewards.reduce((acc, reward) => {
+      const groupedRewards = affordableAndActiveInstances.reduce((acc, reward) => {
         let group = acc.find(g => g.category === reward.category);
         if (!group) {
           group = { category: reward.category, rewards: [] };
@@ -57,7 +58,7 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
         groupedRewards,
       };
     }).filter(child => child.groupedRewards.length > 0);
-  }, [childrenProfiles, rewardTemplates]);
+  }, [childrenProfiles, childRewardInstances]);
   
   const handleRedeem = (childName: string, rewardTitle: string) => {
     toast({

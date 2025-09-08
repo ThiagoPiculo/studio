@@ -5,7 +5,7 @@ import { useState, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarCheck2, HelpCircle } from "lucide-react";
-import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
+import type { ChildProfile, MissionInstance, RewardTemplate, ChildRewardInstance } from '@/lib/types';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
@@ -23,11 +23,12 @@ interface DashboardClientPageProps {
         children: ChildProfile[];
         missions: MissionInstance[];
         rewards: RewardTemplate[];
+        rewardInstances: ChildRewardInstance[];
     }
 }
 
 export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
-  const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
+  const { children: allChildren, missions: missionInstances, rewards: rewardTemplates, rewardInstances } = initialData;
   const { selectedChildId, setSelectedChildId } = useFamily();
 
   const filteredChildren = useMemo(() => {
@@ -40,11 +41,10 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
     return missionInstances.filter(mission => mission.childId === selectedChildId);
   }, [missionInstances, selectedChildId]);
   
-  const filteredRewards = useMemo(() => {
-      // Rewards are not child-specific at the template level, but we pass the filtered children
-      // so the component knows which children to check against.
-      return rewardTemplates;
-  }, [rewardTemplates]);
+  const filteredRewardInstances = useMemo(() => {
+    if (!selectedChildId) return rewardInstances;
+    return rewardInstances.filter(instance => instance.childId === selectedChildId);
+  }, [rewardInstances, selectedChildId]);
 
 
   return (
@@ -58,7 +58,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childrenProfiles={filteredChildren} rewardTemplates={filteredRewards} />
+          <UnlockedRewards childRewardInstances={filteredRewardInstances} childrenProfiles={filteredChildren} />
           <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>
