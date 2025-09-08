@@ -105,36 +105,51 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         if (!user) return;
         setProcessingMissionId(mission.id);
 
+        const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
+        
+        // Optimistic UI Update
+        const originalInstances = missionInstances;
+        const originalChildren = children;
+
+        setMissionInstances(prevInstances =>
+            prevInstances.map(inst => {
+                if (inst.id === mission.id) {
+                    const newLog = { ...(inst.completionLog || {}) };
+                    if (isCompleted) {
+                        delete newLog[dateKey];
+                    } else {
+                        newLog[dateKey] = { completedAt: new Date() as any, stars: mission.starsReward, actorId: user.uid, actorName: user.name };
+                    }
+                    return { ...inst, completionLog: newLog };
+                }
+                return inst;
+            })
+        );
+        
+        setChildren(prevChildren => 
+            prevChildren.map(c => {
+                if (c.id === mission.childId) {
+                    const starsChange = isCompleted ? -mission.starsReward : mission.starsReward;
+                    return { ...c, stars: c.stars + starsChange };
+                }
+                return c;
+            })
+        );
+
+
         try {
             const actor = { id: user.uid, name: user.name };
             const updatedChildProfile = isCompleted
                 ? await reactivateMissionInstance(mission.id, date, actor)
                 : await completeMissionInstance(mission.id, date, actor);
             
+            // Sync with server state if successful
             if (updatedChildProfile) {
-                // Optimistic local state update
-                const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
-                setMissionInstances(prevInstances =>
-                    prevInstances.map(inst => {
-                        if (inst.id === mission.id) {
-                            const newLog = { ...(inst.completionLog || {}) };
-                            if (isCompleted) {
-                                delete newLog[dateKey];
-                            } else {
-                                newLog[dateKey] = { completedAt: new Date() as any, stars: mission.starsReward };
-                            }
-                            return { ...inst, completionLog: newLog };
-                        }
-                        return inst;
-                    })
-                );
-                
                 setChildren(prevChildren =>
                     prevChildren.map(c => 
                         c.id === updatedChildProfile.id ? { ...c, ...updatedChildProfile } : c
                     )
                 );
-
                 toast({
                     title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
                     description: `A missão "${mission.title}" foi atualizada.`
@@ -143,7 +158,9 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         } catch (error) {
             console.error("Error toggling mission completion:", error);
             toast({ title: "Erro ao atualizar missão", variant: "destructive" });
-            // Consider refetching data on error to re-sync state
+            // Revert on error
+            setMissionInstances(originalInstances);
+            setChildren(originalChildren);
         } finally {
             setProcessingMissionId(null);
             setConfirmingMission(null);
