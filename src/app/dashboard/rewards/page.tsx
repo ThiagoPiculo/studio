@@ -173,42 +173,12 @@ function RewardsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Gift className="h-8 w-8 text-primary" />
-          <div className="flex-grow">
-            <h2 className="text-3xl font-headline font-bold">Quadro de Recompensas</h2>
-          </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-                <HelpCircle className="h-5 w-5" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-80">
-              <div className="space-y-3">
-                <h4 className="font-medium leading-none">A Lojinha de Tesouros do Herói</h4>
-                <p className="text-sm text-muted-foreground">
-                  Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
-                </p>
-                <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                  <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
-                  <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
-                </ul>
-                <PopoverClose asChild>
-                  <Button className="w-full">Entendi 👍</Button>
-                </PopoverClose>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="flex w-full flex-row sm:w-auto items-center justify-end gap-2">
-          <Link href="/dashboard/rewards/new">
-            <Button className="w-full sm:w-auto" disabled={!canEdit}>
-              <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
-            </Button>
-          </Link>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
+        <Link href="/dashboard/rewards/new">
+          <Button className="w-full sm:w-auto" disabled={!canEdit}>
+            <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
+          </Button>
+        </Link>
       </div>
 
       <Tabs defaultValue="ideas" className="w-full">

@@ -5,7 +5,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -119,6 +119,24 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
              <p className="text-sm text-muted-foreground">
                 Em resumo, aqui você constrói seu arsenal de missões. Na <strong>"Rotina Semanal"</strong>, você as coloca em ação!
              </p>
+          </>
+        )
+      }
+    },
+    '/dashboard/rewards': {
+      title: 'Quadro de Recompensas',
+      icon: Gift,
+      help: {
+        title: 'A Lojinha de Tesouros do Herói',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">
+                Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
+            </p>
+            <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
+                <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
+                <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
+            </ul>
           </>
         )
       }
