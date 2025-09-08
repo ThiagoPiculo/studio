@@ -22,22 +22,17 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { 
   getRewardTemplatesByOwnerOrFamily, 
   deleteRewardTemplate,
-  getChildProfilesForAttribution,
 } from '@/lib/firebase/firestore';
 import type { RewardTemplate, RewardCategoryDetails, ChildProfile, FamilyRole, RewardCategory } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
 import { useRouter } from 'next/navigation';
-import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn, getInitials } from '@/lib/utils';
-import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
-import type { PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
+import { cn } from '@/lib/utils';
+import { predefinedRewardGroups, type PredefinedRewardIdea } from '@/lib/predefined-reward-ideas';
 import Loading from './loading';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
@@ -48,12 +43,9 @@ function RewardsHubContent() {
   const router = useRouter();
 
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
-  const [children, setChildren] = useState<ChildProfile[]>([]);
   const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
-  const [templateToAssign, setTemplateToAssign] = useState<RewardTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   
    const canEdit = useMemo(() => {
@@ -71,12 +63,8 @@ function RewardsHubContent() {
     setIsDataLoading(true);
     try {
         const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-        const [templates, childrenData] = await Promise.all([
-          getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery),
-          getChildProfilesForAttribution(user.uid, currentContext),
-        ]);
+        const templates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
         setRewardTemplates(templates);
-        setChildren(childrenData);
     } catch (err) {
       console.error("Error refetching rewards data:", err);
       toast({ title: "Erro ao atualizar dados", variant: 'destructive' });
@@ -95,15 +83,6 @@ function RewardsHubContent() {
   const existingTemplateTitles = useMemo(() => {
     return new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
   }, [rewardTemplates]);
-
-  const allIdeasWithStatus = useMemo(() => {
-    return predefinedRewardGroups.flatMap(group => 
-      group.items.map(idea => ({
-        ...idea,
-        isAdded: existingTemplateTitles.has(idea.title.toLowerCase().trim())
-      }))
-    );
-  }, [rewardTemplates, existingTemplateTitles]);
   
   const customTemplates = useMemo(() => {
     return rewardTemplates.filter(template => template.source === 'custom');
@@ -143,16 +122,7 @@ function RewardsHubContent() {
     }
   };
   
-  const handleUseIdea = (idea: (typeof allIdeasWithStatus)[0]) => {
-    if (idea.isAdded) {
-      const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
-      if (existingTemplate) {
-        handleOpenAssignDialog(existingTemplate);
-      } else {
-        toast({ title: "Recompensa já existe", description: "Esta recompensa já está no seu catálogo. Você pode editá-la lá." });
-      }
-      return;
-    }
+  const handleUseIdea = (idea: PredefinedRewardIdea) => {
     const queryParams = new URLSearchParams();
     queryParams.append('title', idea.title);
     if (idea.description) queryParams.append('description', idea.description);
@@ -160,11 +130,6 @@ function RewardsHubContent() {
     if (idea.starsCost) queryParams.append('starsCost', String(idea.starsCost));
     if (idea.isMaterialSuggestion) queryParams.append('isMaterial', 'true');
     router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
-  };
-
-  const handleOpenAssignDialog = (template: RewardTemplate) => {
-    setTemplateToAssign(template);
-    setIsAssignDialogOpen(true);
   };
   
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
@@ -196,7 +161,7 @@ function RewardsHubContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
-                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
+                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu Baú de Recompensas.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Accordion type="multiple" className="w-full space-y-4">
@@ -211,8 +176,8 @@ function RewardsHubContent() {
                                     <AccordionContent className="p-4 pt-0">
                                         <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
-                                                <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
+                                            {group.items.map((idea, idx) => (
+                                                <Card key={idx} className={cn("shadow-sm flex flex-col h-full", existingTemplateTitles.has(idea.title.toLowerCase().trim()) && "bg-muted/40")}>
                                                     <CardHeader>
                                                         <div className="flex items-start justify-between">
                                                           <CardTitle className="text-base pr-2">{idea.title}</CardTitle>
@@ -237,7 +202,7 @@ function RewardsHubContent() {
                                                     </CardContent>
                                                     <CardFooter>
                                                         <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                            {idea.isAdded ? "Atribuir ao Herói" : "Usar esta Ideia"}
+                                                            {existingTemplateTitles.has(idea.title.toLowerCase().trim()) ? "Ver no Catálogo" : "Usar esta Ideia"}
                                                         </Button>
                                                     </CardFooter>
                                                 </Card>
@@ -255,13 +220,14 @@ function RewardsHubContent() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Criadas por Você</CardTitle>
                         <CardDescription>
-                            Recompensas que você criou ou editou. Elas aparecem na loja para seus heróis.
+                            {customTemplates.length > 0
+                            ? "Estas são as recompensas que você criou do zero. Elas aparecem na loja para seus heróis."
+                            : "Seu catálogo de recompensas personalizadas está vazio."
+                            }
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        {customTemplatesByCategory.length === 0 ? (
-                            <p className="text-center text-muted-foreground py-6">Seu catálogo de recompensas personalizadas está vazio.</p>
-                        ) : (
+                    {customTemplates.length > 0 && (
+                        <CardContent>
                             <Accordion type="multiple" defaultValue={customTemplatesByCategory.map(g => g.id)} className="w-full space-y-4">
                             {customTemplatesByCategory.map((group) => {
                                 const CategoryIcon = group.icon;
@@ -297,16 +263,9 @@ function RewardsHubContent() {
                                                             </div>
                                                         </CardContent>
                                                         <CardFooter className="flex items-center gap-2">
-                                                        <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                                <Users className="mr-2 h-4 w-4" /> Atribuir ao Herói
+                                                            <Button variant="outline" size="sm" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
+                                                                <Edit3 className="mr-2 h-4 w-4" /> Editar
                                                             </Button>
-                                                            <TooltipProvider>
-                                                                <Tooltip><TooltipTrigger asChild>
-                                                                    <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
-                                                                        <Edit3 className="h-4 w-4" />
-                                                                    </Button>
-                                                                </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
-                                                            </TooltipProvider>
                                                             <TooltipProvider>
                                                                 <Tooltip><TooltipTrigger asChild>
                                                                     <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
@@ -333,9 +292,9 @@ function RewardsHubContent() {
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
+              <AlertDialogTitle>Excluir Recompensa do Baú</AlertDialogTitle>
               <AlertDialogDescription>
-                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa do catálogo e de todos os heróis para os quais ela estava ativa.
+                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa permanentemente do catálogo. Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -352,15 +311,6 @@ function RewardsHubContent() {
           </AlertDialogContent>
         </AlertDialog>
       )}
-
-      {templateToAssign && (
-        <AssignRewardDialog
-          template={templateToAssign}
-          isOpen={isAssignDialogOpen}
-          onOpenChange={setIsAssignDialogOpen}
-          onAssigned={refetchData}
-        />
-      )}
     </div>
   );
 }
@@ -372,5 +322,3 @@ export default function RewardsHubPageWrapper() {
         </Suspense>
     );
 }
-
-    

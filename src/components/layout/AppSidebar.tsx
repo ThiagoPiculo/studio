@@ -166,7 +166,7 @@ export function AppSidebar() {
                                     </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/rewards" tooltip="Quadro de Recompensas" label="Quadro de Recompensas">
+                                    <NavLink href="/dashboard/rewards" tooltip="Baú de Recompensas" label="Baú de Recompensas">
                                         <Gift className="text-chart-2" />
                                     </NavLink>
                                 </SidebarMenuItem>

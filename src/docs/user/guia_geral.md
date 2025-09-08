@@ -11,7 +11,7 @@ O coração do aplicativo é um ciclo simples e poderoso de 3 passos:
 
 2.  ⭐ **Missão completa = Estrelas:** Ao completar uma missão, seu Mini Heroi ganha **Estrelas (⭐)**. Cada estrela acumulada conta para o próximo nível, marcando o progresso a longo prazo, e também serve como moeda para recompensas.
 
-3.  🎁 **Juntos, Vocês Celebram as Recompensas:** Com as estrelas que acumularam, os heróis podem resgatar Recompensas do Quadro de Recompensas (vocês podem adicionar novas a hora que desejarem). Essas recompensas podem ser qualquer coisa: desde "30 minutos extras de videogame" até uma "tarde de cinema em família".
+3.  🎁 **Juntos, Vocês Celebram as Recompensas:** Com as estrelas que acumularam, os heróis podem resgatar Recompensas do Baú de Recompensas (vocês podem adicionar novas a hora que desejarem). Essas recompensas podem ser qualquer coisa: desde "30 minutos extras de videogame" até uma "tarde de cinema em família".
 
 Este ciclo ensina de forma lúdica sobre causa e efeito, esforço, poupança e, o mais importante, transforma a rotina em uma jornada de conquistas compartilhadas.
 
@@ -21,7 +21,7 @@ Para começar, concentre-se nestes quadros principais:
 
 -   **Quadro de Missões:** É o seu catálogo de todas as tarefas possíveis. Crie uma missão aqui uma vez (ex: "Tomar banho") e você poderá agendá-la para qualquer herói, a qualquer momento, com horários e repetições personalizadas.
 -   **Rotina Semanal:** É o calendário onde a mágica acontece. Aqui você visualiza a agenda semanal de todos e atribui as missões do seu catálogo aos seus heróis.
--   **Quadro de Recompensas:** A "lojinha de tesouros" dos seus heróis. Cadastre aqui todos os prêmios que eles podem "comprar" com as estrelas que ganharam.
+-   **Baú de Recompensas:** A "lojinha de tesouros" dos seus heróis. Cadastre aqui todos os prêmios que eles podem "comprar" com as estrelas que ganharam.
 
 ## Cuidar Solo ou em Aliança?
 

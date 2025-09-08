@@ -20,10 +20,7 @@ import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
-import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
-import Link from 'next/link';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
-
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -46,7 +43,6 @@ function CreateRewardTemplatePageContent() {
   const { currentContext } = useFamily();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<RewardTemplate | null>(null);
 
   // Ler parâmetros da URL para defaultValues
@@ -153,14 +149,12 @@ function CreateRewardTemplatePageContent() {
         tip: '',
       };
       
-      const createdTemplate = await addRewardTemplate(user, templateDataPayload);
+      await addRewardTemplate(user, templateDataPayload);
       toast({
         title: 'Tesouro Adicionado!',
-        description: `A recompensa "${createdTemplate.title}" foi adicionada ao catálogo de prêmios.`,
+        description: `A recompensa "${values.title}" foi adicionada ao Baú de Recompensas.`,
       });
-      setNewlyCreatedTemplate(createdTemplate);
-      setIsAssignDialogOpen(true);
-      form.reset(); 
+      router.push('/dashboard/rewards'); 
 
     } catch (error) {
       console.error('Error creating reward template:', error);
@@ -181,9 +175,9 @@ function CreateRewardTemplatePageContent() {
           <div className="flex items-center gap-3 mb-2">
             <Gift className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Criar Recompensa para Mini Herois</CardTitle>
+              <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Defina um novo item ou experiência para o catálogo. Depois você poderá atribuí-lo aos Mini Herois.
+                Defina um novo item ou experiência para o Baú de Recompensas.
               </CardDescription>
             </div>
           </div>
@@ -322,14 +316,14 @@ function CreateRewardTemplatePageContent() {
                 ) : (
                   <Gift className="mr-2 h-4 w-4" />
                 )}
-                Criar Recompensa
+                Adicionar ao Baú de Recompensas
               </Button>
             </form>
           </Form>
         </CardContent>
         <CardFooter className="flex-col items-start space-y-2">
             <p className="text-xs text-muted-foreground">
-                Recompensas são a base para os prêmios que seus Mini Herois poderão ganhar!
+                Esta recompensa ficará disponível para todos os heróis neste espaço de trabalho.
             </p>
             {form.getValues('category') === 'material_items' && (
                  <div className="p-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-700 text-xs flex items-start gap-2">
@@ -341,23 +335,6 @@ function CreateRewardTemplatePageContent() {
             )}
         </CardFooter>
       </Card>
-
-      {newlyCreatedTemplate && (
-        <AssignRewardDialog
-          template={newlyCreatedTemplate}
-          isOpen={isAssignDialogOpen}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) { 
-              setNewlyCreatedTemplate(null);
-              router.push('/dashboard/rewards'); 
-            }
-            setIsAssignDialogOpen(isOpen);
-          }}
-          onAssigned={() => {
-            toast({ title: "Recompensa Atribuída!", description: "A nova recompensa foi atribuída às crianças selecionadas."});
-          }}
-        />
-      )}
     </div>
   );
 }

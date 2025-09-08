@@ -9,7 +9,7 @@ O ciclo é simples e poderoso, desenhado para ensinar sobre valor e esforço de 
 
 1.  **Herois Cumprem Missões:** Ao realizar as tarefas diárias que você define (como "arrumar a cama" ou "fazer a lição"), a criança ganha **Estrelas (⭐)**.
 2.  **Estrelas são Moedas Heroicas:** As estrelas são a representação visual do trabalho bem feito. Elas se acumulam no perfil do heroi.
-3.  **Estrelas Desbloqueiam Tesouros:** Com as estrelas que juntou, a criança pode "comprar" ou "resgatar" as recompensas que você cadastrou no Catálogo de Recompensas.
+3.  **Estrelas Desbloqueiam Tesouros:** Com as estrelas que juntou, a criança pode "comprar" ou "resgatar" as recompensas que você cadastrou no Baú de Recompensas.
 
 ## Para Que Servem as Recompensas?
 
@@ -30,4 +30,4 @@ O sistema é totalmente flexível. Aqui estão algumas ideias para começar:
 
 **Dica de Mestre Heroi:** Equilibre os tipos de recompensas. As experiências e privilégios costumam ter um impacto emocional mais duradouro e fortalecem os laços familiares.
 
-Use o **Catálogo de Recompensas** para criar e gerenciar todos os tesouros que seus Mini Herois poderão conquistar. Boa jornada!
+Use o **Baú de Recompensas** para criar e gerenciar todos os tesouros que seus Mini Herois poderão conquistar. Boa jornada!

@@ -1278,7 +1278,7 @@ export const deleteRewardTemplate = async (actor: UserProfile, template: RewardT
    if (templateData.familyId) {
     await createAllianceNotification(templateData.familyId, actor, {
       type: 'template_deleted',
-      title: 'Recompensa Removida do Catálogo',
+      title: 'Recompensa Removida do Baú',
       description: `${actor.name} removeu a recompensa: "${templateData.title}".`,
       href: '/dashboard/rewards',
     });
@@ -1473,28 +1473,6 @@ export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: 
   }
 };
 
-export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
-    const q = query(
-        collection(db, 'childRewardInstances'),
-        where('templateId', '==', templateId),
-        where('childId', '==', childId)
-    );
-    const querySnapshot = await getDocs(q);
-    if (querySnapshot.empty) {
-        return;
-    }
-    const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
-     if (instanceData.familyId) {
-        const child = await getChildProfileById(instanceData.childId);
-        await createAllianceNotification(instanceData.familyId, actor, {
-            type: 'instance_unassigned',
-            title: 'Recompensa Desatribuída',
-            description: `${actor.name} removeu a atribuição de "${instanceData.title}" para ${child?.name || 'um herói'}.`,
-            href: `/dashboard/mural?childId=${instanceData.childId}&tab=rewards`,
-            relatedChildId: instanceData.childId
-        });
-    }
-};
 
 
 // --- Mission Templates (Catálogo de Missões) ---
@@ -1590,8 +1568,8 @@ export const updateMissionTemplate = async (actor: UserProfile, templateId: stri
 
 
 
-export const deleteMissionTemplate = async (actor: UserProfile, templateId: string): Promise<void> => {
-  const templateRef = doc(db, 'missionTemplates', templateId);
+export const deleteMissionTemplate = async (actor: UserProfile, template: MissionTemplate): Promise<void> => {
+  const templateRef = doc(db, 'missionTemplates', template.id);
   const templateSnap = await getDoc(templateRef);
   if (!templateSnap.exists()) return;
   const templateData = templateSnap.data();
