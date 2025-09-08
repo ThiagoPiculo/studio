@@ -105,8 +105,12 @@ function RewardsHubContent() {
     );
   }, [rewardTemplates, existingTemplateTitles]);
   
+  const customTemplates = useMemo(() => {
+    return rewardTemplates.filter(template => template.source === 'custom');
+  }, [rewardTemplates]);
+
   const customTemplatesByCategory = useMemo(() => {
-    const grouped = rewardTemplates.reduce((acc, template) => {
+    const grouped = customTemplates.reduce((acc, template) => {
         if (!acc[template.category]) {
             acc[template.category] = [];
         }
@@ -121,7 +125,7 @@ function RewardsHubContent() {
         }))
         .filter(group => group.items.length > 0);
 
-  }, [rewardTemplates]);
+  }, [customTemplates]);
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -173,138 +177,142 @@ function RewardsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
-        <Link href="/dashboard/rewards/new">
-          <Button className="w-full sm:w-auto" disabled={!canEdit}>
-            <PlusCircle className="mr-2 h-4 w-4" /> Criar Nova Recompensa
-          </Button>
-        </Link>
-      </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
+             <div className="flex w-full sm:w-auto gap-2">
+                <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
+                    <Link href="/dashboard/rewards/new">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa Personalizada
+                    </Link>
+                </Button>
+            </div>
+        </div>
 
-      <Tabs defaultValue="ideas" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="ideas"><Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas</TabsTrigger>
-          <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Personalizadas</TabsTrigger>
-        </TabsList>
-        <TabsContent value="ideas" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
-              <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="multiple" className="w-full space-y-4">
-                {predefinedRewardGroups.map((group) => (
-                  <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
-                    <AccordionTrigger className="p-4 hover:no-underline">
-                      <div className="flex items-center gap-3">
-                        <group.icon className="h-6 w-6 text-primary" />
-                        <span className="text-lg font-semibold">{group.userCategory}</span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="p-4 pt-0">
-                      <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
-                          <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
-                            <CardHeader>
-                              <CardTitle className="text-base">{idea.title}</CardTitle>
-                              {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
-                            </CardHeader>
-                            <CardContent className="flex-grow">
-                              <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
-                            </CardContent>
-                            <CardFooter>
-                              <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
-                              </Button>
-                            </CardFooter>
-                          </Card>
-                        ))}
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="custom" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
-              <CardDescription>Recompensas que você criou. Elas aparecem na loja para seus heróis.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {customTemplatesByCategory.length === 0 ? (
-                <p className="text-center text-muted-foreground py-6">Seu catálogo de recompensas personalizadas está vazio.</p>
-              ) : (
-                <Accordion type="multiple" className="w-full space-y-4">
-                  {customTemplatesByCategory.map((group) => {
-                    const CategoryIcon = group.icon;
-                    return (
-                        <AccordionItem value={group.id} key={group.id} className="border rounded-lg shadow-sm">
-                            <AccordionTrigger className="p-4 hover:no-underline">
-                                <div className="flex items-center gap-3">
-                                    {CategoryIcon && <CategoryIcon className={cn("h-6 w-6", group.colorClasses.split(" ")[1])} />}
-                                    <span className="text-lg font-semibold">{group.label}</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="p-4 pt-0">
-                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {group.items.map(template => (
-                                        <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
-                                            <CardHeader>
-                                                <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow pt-0 flex flex-col">
-                                                 <div className="flex flex-wrap gap-2 items-center mb-3">
-                                                      <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
-                                                        <Puzzle className="mr-1.5 h-3 w-3" />
-                                                        Personalizada
-                                                      </Badge>
-                                                      <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
-                                                      <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
-                                                        {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                                                      </Badge>
-                                                 </div>
-                                                <div className="flex-grow" />
-                                                <div className="pt-2">
-                                                     <p className="text-xs text-muted-foreground">{template.description || "Sem descrição."}</p>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex items-center gap-2">
-                                               <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                    <Users className="mr-2 h-4 w-4" /> Gerenciar
-                                                </Button>
-                                                <TooltipProvider>
-                                                    <Tooltip><TooltipTrigger asChild>
-                                                        <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
-                                                            <Edit3 className="h-4 w-4" />
+        <Tabs defaultValue="ideas" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="ideas"><Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas</TabsTrigger>
+                <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Personalizadas</TabsTrigger>
+            </TabsList>
+            <TabsContent value="ideas" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
+                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu catálogo de recompensas e poder atribuí-la aos seus heróis.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Accordion type="multiple" className="w-full space-y-4">
+                            {predefinedRewardGroups.map((group) => (
+                                <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
+                                    <AccordionTrigger className="p-4 hover:no-underline">
+                                        <div className="flex items-center gap-3">
+                                            <group.icon className="h-6 w-6 text-primary" />
+                                            <span className="text-lg font-semibold">{group.userCategory}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <AccordionContent className="p-4 pt-0">
+                                        <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                            {allIdeasWithStatus.filter(idea => idea.userCategory === group.userCategory).map((idea, idx) => (
+                                                <Card key={idx} className={cn("shadow-sm flex flex-col h-full", idea.isAdded && "bg-muted/40")}>
+                                                    <CardHeader>
+                                                        <CardTitle className="text-base">{idea.title}</CardTitle>
+                                                        {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
+                                                    </CardHeader>
+                                                    <CardContent className="flex-grow">
+                                                        <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
+                                                    </CardContent>
+                                                    <CardFooter>
+                                                        <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                            {idea.isAdded ? "Editar no Catálogo" : "Usar esta Ideia"}
                                                         </Button>
-                                                    </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
-                                                </TooltipProvider>
-                                                <TooltipProvider>
-                                                    <Tooltip><TooltipTrigger asChild>
-                                                        <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
-                                                </TooltipProvider>
-                                            </CardFooter>
-                                        </Card>
-                                    ))}
-                                 </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    )
-                  })}
-                </Accordion>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                                                    </CardFooter>
+                                                </Card>
+                                            ))}
+                                        </div>
+                                    </AccordionContent>
+                                </AccordionItem>
+                            ))}
+                        </Accordion>
+                    </CardContent>
+                </Card>
+            </TabsContent>
+            <TabsContent value="custom" className="mt-6">
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Criadas por Você</CardTitle>
+                        <CardDescription>
+                            Recompensas que você criou ou editou. Elas aparecem na loja para seus heróis.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {customTemplatesByCategory.length === 0 ? (
+                            <p className="text-center text-muted-foreground py-6">Seu catálogo de recompensas personalizadas está vazio.</p>
+                        ) : (
+                            <Accordion type="multiple" defaultValue={customTemplatesByCategory.map(g => g.id)} className="w-full space-y-4">
+                            {customTemplatesByCategory.map((group) => {
+                                const CategoryIcon = group.icon;
+                                return (
+                                    <AccordionItem value={group.id} key={group.id} className="border rounded-lg shadow-sm">
+                                        <AccordionTrigger className="p-4 hover:no-underline">
+                                            <div className="flex items-center gap-3">
+                                                {CategoryIcon && <CategoryIcon className={cn("h-6 w-6", group.colorClasses.split(" ")[1])} />}
+                                                <span className="text-lg font-semibold">{group.label}</span>
+                                            </div>
+                                        </AccordionTrigger>
+                                        <AccordionContent className="p-4 pt-0">
+                                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                                {group.items.map(template => (
+                                                    <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
+                                                        </CardHeader>
+                                                        <CardContent className="flex-grow pt-0 flex flex-col">
+                                                            <div className="flex flex-wrap gap-2 items-center mb-3">
+                                                                <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                                                    <Puzzle className="mr-1.5 h-3 w-3" />
+                                                                    Personalizada
+                                                                </Badge>
+                                                                <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                                <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                                                    {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                                                </Badge>
+                                                            </div>
+                                                            <div className="flex-grow" />
+                                                            <div className="pt-2">
+                                                                <p className="text-xs text-muted-foreground">{template.description || "Sem descrição."}</p>
+                                                            </div>
+                                                        </CardContent>
+                                                        <CardFooter className="flex items-center gap-2">
+                                                        <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
+                                                                <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                            </Button>
+                                                            <TooltipProvider>
+                                                                <Tooltip><TooltipTrigger asChild>
+                                                                    <Button variant="outline" size="icon" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit} className="flex-shrink-0">
+                                                                        <Edit3 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger><TooltipContent><p>Editar Recompensa</p></TooltipContent></Tooltip>
+                                                            </TooltipProvider>
+                                                            <TooltipProvider>
+                                                                <Tooltip><TooltipTrigger asChild>
+                                                                    <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                                        <Trash2 className="h-4 w-4" />
+                                                                    </Button>
+                                                                </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
+                                                            </TooltipProvider>
+                                                        </CardFooter>
+                                                    </Card>
+                                                ))}
+                                            </div>
+                                        </AccordionContent>
+                                    </AccordionItem>
+                                )
+                            })}
+                            </Accordion>
+                        )}
+                    </CardContent>
+                </Card>
+            </TabsContent>
+        </Tabs>
         
       {templateToDelete && (
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
