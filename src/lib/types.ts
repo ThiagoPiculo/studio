@@ -2,7 +2,7 @@
 
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, HeartPulse, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages, ListChecks } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, HeartPulse, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages, ListChecks, CakeSlice, Utensils, FerrisWheel, Trees, Plane } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
@@ -253,6 +253,8 @@ export interface RewardTemplate {
   updatedAt: Timestamp;
   status: 'active' | 'archived';
   source?: 'custom' | 'predefined';
+  justification?: string;
+  tip?: string;
 }
 
 export interface ChildRewardInstance {
