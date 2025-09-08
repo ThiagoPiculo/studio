@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import type { ChildProfile, ChildRewardInstance, RewardCategory } from '@/lib/types';
+import type { ChildProfile, ChildRewardInstance, RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { getChildRewardInstancesForContext } from '@/lib/firebase/firestore';
 import { useAuth } from '@/contexts/AuthContext';
@@ -19,54 +19,21 @@ import { Badge } from '@/components/ui/badge';
 
 interface UnlockedRewardsProps {
   childrenProfiles: ChildProfile[];
+  rewardTemplates: RewardTemplate[];
 }
 
 type GroupedReward = {
   category: RewardCategory;
-  rewards: ChildRewardInstance[];
+  rewards: RewardTemplate[];
 }
 
-export function UnlockedRewards({ childrenProfiles }: UnlockedRewardsProps) {
+export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedRewardsProps) {
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { currentContext } = useFamily();
-  const [rewardInstances, setRewardInstances] = useState<ChildRewardInstance[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    if (!user) {
-        setIsLoading(false);
-        return;
-    }
-    const fetchInstances = async () => {
-        setIsLoading(true);
-        try {
-            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-            const instances = await getChildRewardInstancesForContext(user.uid, familyIdToQuery);
-            setRewardInstances(instances);
-        } catch (error) {
-            console.error("Failed to fetch reward instances:", error);
-            toast({ title: "Erro ao buscar recompensas", variant: "destructive" });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    fetchInstances();
-  }, [user, currentContext, toast]);
   
   const unlockedRewardsByChild = useMemo(() => {
-    const uniqueChildrenMap = new Map<string, ChildProfile>();
-    childrenProfiles.forEach(child => {
-        if (!uniqueChildrenMap.has(child.id)) {
-            uniqueChildrenMap.set(child.id, child);
-        }
-    });
-    const uniqueChildren = Array.from(uniqueChildrenMap.values());
-
-    return uniqueChildren.map(child => {
-      const childInstances = rewardInstances.filter(inst => inst.childId === child.id);
-      const affordableRewards = childInstances
-        .filter(instance => instance.status === 'active' && child.stars >= instance.starsCost)
+    return childrenProfiles.map(child => {
+      const affordableRewards = rewardTemplates
+        .filter(template => template.status === 'active' && child.stars >= template.starsCost)
         .sort((a, b) => a.starsCost - b.starsCost);
 
       const groupedRewards = affordableRewards.reduce((acc, reward) => {
@@ -90,7 +57,7 @@ export function UnlockedRewards({ childrenProfiles }: UnlockedRewardsProps) {
         groupedRewards,
       };
     }).filter(child => child.groupedRewards.length > 0);
-  }, [childrenProfiles, rewardInstances]);
+  }, [childrenProfiles, rewardTemplates]);
   
   const handleRedeem = (childName: string, rewardTitle: string) => {
     toast({
@@ -109,10 +76,8 @@ export function UnlockedRewards({ childrenProfiles }: UnlockedRewardsProps) {
         <CardDescription>Prêmios que seus heróis já podem resgatar com as estrelas que ganharam.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {isLoading ? (
-            <p className="text-sm text-muted-foreground">Carregando recompensas...</p>
-        ) : unlockedRewardsByChild.length === 0 ? (
-             <p className="text-sm text-muted-foreground">Nenhum herói tem estrelas suficientes para resgatar uma recompensa no momento.</p>
+        {unlockedRewardsByChild.length === 0 ? (
+             <p className="text-sm text-muted-foreground text-center py-4">Nenhum herói tem estrelas suficientes para resgatar uma recompensa no momento.</p>
         ) : (
             <Accordion type="multiple" className="w-full space-y-4">
                 {unlockedRewardsByChild.map((childData) => (

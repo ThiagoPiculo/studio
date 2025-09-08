@@ -20,20 +20,23 @@ function ProgressosPageContent() {
     const [initialData, setInitialData] = useState<{
         children: ChildProfile[];
         missions: MissionInstance[];
+        rewards: RewardTemplate[];
     } | null>(null);
 
     const fetchData = useCallback(async () => {
         if (!user) {
-            setInitialData({ children: [], missions: [] });
+            setInitialData({ children: [], missions: [], rewards: [] });
             return;
         }
         
         try {
-            const [children, missions] = await Promise.all([
+            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+            const [children, missions, rewards] = await Promise.all([
                 getChildProfilesForAttribution(user.uid, currentContext),
                 getMissionInstancesForContext(user.uid, currentContext),
+                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
             ]);
-            setInitialData({ children, missions });
+            setInitialData({ children, missions, rewards });
 
             const childIdFromUrl = searchParams.get('childId');
             if (childIdFromUrl && children.some(c => c.id === childIdFromUrl)) {
@@ -42,7 +45,7 @@ function ProgressosPageContent() {
 
         } catch (error) {
             console.error("Error fetching dashboard data:", error);
-            setInitialData({ children: [], missions: [] });
+            setInitialData({ children: [], missions: [], rewards: [] });
         }
     }, [user, currentContext, searchParams, setSelectedChildId]);
   

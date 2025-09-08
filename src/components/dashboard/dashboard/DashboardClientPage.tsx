@@ -22,11 +22,12 @@ interface DashboardClientPageProps {
     initialData: {
         children: ChildProfile[];
         missions: MissionInstance[];
+        rewards: RewardTemplate[];
     }
 }
 
 export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
-  const { children: allChildren, missions: missionInstances } = initialData;
+  const { children: allChildren, missions: missionInstances, rewards: rewardTemplates } = initialData;
   const { selectedChildId, setSelectedChildId } = useFamily();
 
   const filteredChildren = useMemo(() => {
@@ -38,6 +39,13 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
     if (!selectedChildId) return missionInstances;
     return missionInstances.filter(mission => mission.childId === selectedChildId);
   }, [missionInstances, selectedChildId]);
+  
+  const filteredRewards = useMemo(() => {
+      // Rewards are not child-specific at the template level, but we pass the filtered children
+      // so the component knows which children to check against.
+      return rewardTemplates;
+  }, [rewardTemplates]);
+
 
   return (
     <div className="space-y-8">
@@ -50,7 +58,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childrenProfiles={filteredChildren} />
+          <UnlockedRewards childrenProfiles={filteredChildren} rewardTemplates={filteredRewards} />
           <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>
