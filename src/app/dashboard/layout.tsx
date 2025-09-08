@@ -66,7 +66,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help'].includes(pathname) &&
+  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help', '/dashboard/missions', '/dashboard/rewards'].includes(pathname) &&
                                !pathname.startsWith('/dashboard/missions/edit') &&
                                !pathname.startsWith('/dashboard/rewards/edit-template') &&
                                !pathname.startsWith('/dashboard/missions/new');
@@ -176,7 +176,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
   
   const showHeroSelector = isClient &&
-    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule', '/dashboard/missions'].includes(pathname) &&
+    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&
     childrenInContext.length > 1;
 
 
@@ -227,12 +227,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               
-              {showContextSwitcher && (
+              {(showContextSwitcher || showHeroSelector) && (
                  <div className="px-4 sm:px-6 py-2">
                       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
-                          <div className="w-full md:max-w-xs">
-                              <FamilyContextSwitcher />
-                          </div>
+                          {showContextSwitcher && (
+                            <div className="w-full md:max-w-xs">
+                                <FamilyContextSwitcher />
+                            </div>
+                          )}
                           {showHeroSelector && (
                               <div className="w-full md:max-w-xs">
                                   <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
