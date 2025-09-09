@@ -34,6 +34,7 @@ const rewardTemplateFormSchema = z.object({
   isMaterial: z.boolean().default(false),
   isUnique: z.boolean().default(false),
   status: z.enum(['active', 'archived']).default('active'),
+  source: z.enum(['custom', 'predefined']).default('custom'),
 });
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
@@ -68,6 +69,7 @@ export default function EditRewardTemplatePage() {
       isMaterial: false,
       isUnique: false,
       status: 'active',
+      source: 'custom'
     },
   });
   
@@ -93,6 +95,7 @@ export default function EditRewardTemplatePage() {
           isMaterial: fetchedTemplate.isMaterial,
           isUnique: fetchedTemplate.isUnique,
           status: fetchedTemplate.status,
+          source: fetchedTemplate.source,
         });
       } else {
         toast({ title: "Recompensa não encontrada", variant: "destructive" });
@@ -352,10 +355,7 @@ export default function EditRewardTemplatePage() {
                 />
                 
                 {canEdit && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setIsAssignDialogOpen(true)}>
-                       <Users className="mr-2 h-4 w-4" /> Gerenciar para os Heróis
-                    </Button>
+                  <div className="flex flex-col sm:flex-row-reverse gap-2">
                     <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
                       {isLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -363,6 +363,9 @@ export default function EditRewardTemplatePage() {
                         <Save className="mr-2 h-4 w-4" />
                       )}
                       Salvar Alterações na Recompensa
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.push('/dashboard/rewards')}>
+                       Cancelar
                     </Button>
                   </div>
                 )}
