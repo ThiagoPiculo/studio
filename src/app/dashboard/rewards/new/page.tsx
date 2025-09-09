@@ -160,7 +160,7 @@ function CreateRewardTemplatePageContent() {
             <div>
               <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
               <CardDescription className="text-md">
-                Defina um novo item ou experiência para o Baú de Recompensas.
+                Crie recompensas incríveis para incentivar seu herói a conquistar as estrelas necessárias para o resgate.
               </CardDescription>
             </div>
           </div>
