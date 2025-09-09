@@ -431,14 +431,19 @@ function CreateRewardTemplatePageContent() {
                 )}
               />
               
-              <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Gift className="mr-2 h-4 w-4" />
-                )}
-                Criar recompensa personalizada
-              </Button>
+              <div className="flex items-center justify-end gap-2 mt-8">
+                  <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Gift className="mr-2 h-4 w-4" />
+                    )}
+                    Criar recompensa personalizada
+                  </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
