@@ -203,7 +203,7 @@ function RewardsHubContent() {
                                                             <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
                                                         </CardContent>
                                                         <CardFooter>
-                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit || isAdded}>
                                                                 {isAdded ? "Já está no seu Baú" : "Usar esta Ideia"}
                                                             </Button>
                                                         </CardFooter>
@@ -224,7 +224,7 @@ function RewardsHubContent() {
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Seu Baú de Recompensas</CardTitle>
                         <CardDescription>
                             {rewardTemplates.length > 0
-                            ? "Estas são as recompensas que você criou. Elas aparecem na loja para seus heróis."
+                            ? "Estas são as recompensas que você criou ou adicionou das ideias. Elas estão disponíveis para serem resgatadas pelos heróis."
                             : "Seu baú de recompensas está vazio. Crie uma recompensa personalizada ou use uma ideia para começar."
                             }
                         </CardDescription>
@@ -247,6 +247,12 @@ function RewardsHubContent() {
                                                           {categoryDetails.label}
                                                         </Badge>
                                                     )}
+                                                   {template.source === 'custom' && (
+                                                       <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                                          <Puzzle className="mr-1.5 h-3 w-3" />
+                                                          Personalizada
+                                                       </Badge>
+                                                   )}
                                                    <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
                                                    <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
                                                     {template.status === 'active' ? 'Ativa' : 'Arquivada'}

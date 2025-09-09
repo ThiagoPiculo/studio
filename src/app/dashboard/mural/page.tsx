@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -36,7 +35,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { PopoverClose } from '@radix-ui/react-popover';
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
@@ -731,7 +729,7 @@ function MuralCompletoPageContent() {
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><User className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Visão Geral</span></TabsTrigger>
           <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Target className="h-4 w-4 text-red-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Missões</span></TabsTrigger>
           <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Gift className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Recompensas</span></TabsTrigger>
-          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Rotina Escolar</span></TabsTrigger>
+          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Agenda Escolar</span></TabsTrigger>
           <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Medalhas</span></TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2" disabled={!canEdit}><Edit3 className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Editar Perfil</span></TabsTrigger>
         </TabsList>
@@ -838,14 +836,6 @@ function MuralCompletoPageContent() {
                                                     {canAfford ? <CheckCircle className="mr-1.5 h-4 w-4" /> : <Lock className="mr-1.5 h-4 w-4" />}
                                                     {canAfford ? 'Pode Resgatar!' : 'Junte Estrelas!'}
                                                  </Badge>
-                                                 {categoryDetails && (
-                                                    <div className="flex items-center pt-2">
-                                                        <span className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
-                                                            {CategoryIconComponent && <CategoryIconComponent className="h-4 w-4" />}
-                                                            {categoryDetails.label}
-                                                        </span>
-                                                    </div>
-                                                )}
                                             </CardContent>
                                             <CardFooter className="flex flex-col items-start gap-2 border-t pt-3 pb-3">
                                                  <div className="flex items-center justify-between w-full">
@@ -1291,4 +1281,3 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
-

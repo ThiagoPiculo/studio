@@ -21,6 +21,7 @@ import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
+import { cn } from '@/lib/utils';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -43,8 +44,7 @@ function CreateRewardTemplatePageContent() {
   const { currentContext } = useFamily();
 
   const [isLoading, setIsLoading] = useState(false);
-  const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<RewardTemplate | null>(null);
-
+  
   // Ler parâmetros da URL para defaultValues
   const initialTitle = searchParams.get('title') || '';
   const initialDescription = searchParams.get('description') || '';
@@ -104,27 +104,10 @@ function CreateRewardTemplatePageContent() {
                  form.setValue('isMaterial', false, { shouldValidate: true });
              }
         }
-        
-        if (isCategoryMaterial) {
-            toast({
-                title: "Dica de Mestre Heroi",
-                description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
-                variant: "default", 
-                duration: 10000,
-            });
-        }
       }
     });
-    if (form.getValues('category') === 'material_items') {
-        toast({
-            title: "Dica de Mestre Heroi",
-            description: "Lembre-se que recompensas materiais são 'extras' divertidos, e não itens essenciais como comida ou material escolar obrigatório.",
-            variant: "default",
-            duration: 10000,
-        });
-    }
     return () => subscription.unsubscribe();
-  }, [form, toast, isMaterialParam]);
+  }, [form, isMaterialParam]);
 
 
   const onSubmit = async (values: RewardTemplateFormValues) => {
@@ -215,8 +198,8 @@ function CreateRewardTemplatePageContent() {
                           {rewardCategories.map((category) => (
                             <SelectItem key={category.id} value={category.id}>
                                <div className="flex items-center">
-                                 {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
-                                <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                                 {category.icon && <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />}
+                                <span className={cn("px-2 py-0.5 rounded-full text-xs border", category.colorClasses)}>
                                   {category.label}
                                 </span>
                               </div>
@@ -325,14 +308,6 @@ function CreateRewardTemplatePageContent() {
             <p className="text-xs text-muted-foreground">
                 Esta recompensa ficará disponível para todos os heróis neste espaço de trabalho.
             </p>
-            {form.getValues('category') === 'material_items' && (
-                 <div className="p-3 rounded-md border border-yellow-500/50 bg-yellow-500/10 text-yellow-700 text-xs flex items-start gap-2">
-                    <AlertTriangle className="h-4 w-4 mt-0.5 text-yellow-600 flex-shrink-0" />
-                    <span>
-                        <strong>Atenção:</strong> Recompensas materiais devem ser extras e não itens essenciais (como roupas básicas, material escolar obrigatório ou comida).
-                    </span>
-                </div>
-            )}
         </CardFooter>
       </Card>
     </div>
