@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -242,12 +243,10 @@ function MuralCompletoPageContent() {
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [allChildrenInContext, setAllChildrenInContext] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
-  const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
   const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
-  const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
-
+  
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -276,10 +275,9 @@ function MuralCompletoPageContent() {
   const [missionToDelete, setMissionToDelete] = useState<MissionInstance | null>(null);
 
   // Reward-specific states
-  const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
-  const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
-  
+  const [templateToRedeem, setTemplateToRedeem] = useState<RewardTemplate | null>(null);
+
   // School Schedule States
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<SchoolScheduleEntry | null>(null);
@@ -317,22 +315,18 @@ function MuralCompletoPageContent() {
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
         
-        const [childData, missions, rewards, schedule, collaborators, memberships, templates] = await Promise.all([
+        const [childData, missions, schedule, collaborators, templates] = await Promise.all([
             getChildProfileById(childIdToFetch),
             getMissionInstancesByChild(childIdToFetch),
-            getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
             familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
-            familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
             getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
         ]);
         
         setChild(childData);
         setMissionInstances(missions);
-        setChildRewards(rewards);
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
         setCollaborators(collaborators);
-        setMemberships(memberships);
         setRewardTemplates(templates);
 
     } catch (error) {
@@ -463,99 +457,7 @@ function MuralCompletoPageContent() {
 
     setIsCalculatingProgress(false);
   }, [missionInstances]);
-
-  // Derived data using useMemo for reactivity and performance
-  const stats = useMemo(() => {
-    if (!child || !missionInstances || !childRewards) {
-      return { completedMissions: 0, starsEarned: 0, rewardsRedeemed: 0, pendingMissions: 0, availableRewards: 0, earnedBadges: 0 };
-    }
-
-    let totalCompletedOccurrences = 0;
-    let totalStarsEarned = 0;
-
-    missionInstances.forEach(m => {
-        if (m.completionLog) {
-            Object.values(m.completionLog).forEach(logEntry => {
-                totalCompletedOccurrences++;
-                totalStarsEarned += logEntry.stars || 0;
-            });
-        }
-    });
-
-    const pendingMissionsCount = missionInstances.filter(m => m.status === 'pending').length;
-    const redeemedRewardsCount = childRewards.filter(r => r.status === 'redeemed').length;
-    const availableRewardsCount = childRewards.filter(r => r.status === 'active').length;
-    const earnedBadgesCount = child.earnedBadgeIds?.length || 0;
-
-    return {
-      completedMissions: totalCompletedOccurrences,
-      starsEarned: child.totalStars,
-      rewardsRedeemed: redeemedRewardsCount,
-      pendingMissions: pendingMissionsCount,
-      availableRewards: availableRewardsCount,
-      earnedBadges: earnedBadgesCount,
-    };
-  }, [child, missionInstances, childRewards]);
-
-  const collaboratorsMap = useMemo(() => {
-    const map = new Map(collaborators.map(c => [c.uid, c]));
-    if (user && !map.has(user.uid)) {
-        map.set(user.uid, user as UserProfile);
-    }
-    return map;
-  }, [collaborators, user]);
-
-  const getMissionTypeLabel = (mission: MissionInstance): string => {
-    if (!mission.isRecurring) return "única";
-    if (mission.recurrenceRule?.freq === 'DAILY') return "diária";
-    if (mission.recurrenceRule?.freq === 'WEEKLY') return "semanal";
-    return "recorrente";
-  };
-
-
-  const activities = useMemo((): Activity[] => {
-    if (!missionInstances || !childRewards) return [];
-
-    const redeemedRewards: Activity[] = childRewards
-      .filter(r => r.status === 'redeemed' && r.redeemedAt)
-      .map(r => ({
-          ...r,
-          type: 'reward' as const,
-          completedAt: r.redeemedAt!,
-          actorId: r.actorId,
-          actorName: r.actorId ? collaboratorsMap.get(r.actorId)?.name : child?.name
-      }));
-
-    const completedMissions: Activity[] = missionInstances.flatMap(m =>
-      Object.entries(m.completionLog || {}).map(([dateStr, logEntry]) => ({
-        ...m,
-        type: 'mission' as const,
-        scheduledFor: parse(dateStr, 'yyyy-MM-dd', new Date()),
-        missionTypeLabel: getMissionTypeLabel(m),
-        completionLogEntry: {
-          ...logEntry,
-          actorId: logEntry.actorId,
-          actorName: logEntry.actorId ? collaboratorsMap.get(logEntry.actorId)?.name : child?.name
-        }
-      }))
-    );
-
-    const allActivities: Activity[] = [...redeemedRewards, ...completedMissions];
-
-    allActivities.sort((a, b) => {
-        const timeA = a.type === 'mission' ? a.completionLogEntry?.completedAt : a.completedAt;
-        const timeB = b.type === 'mission' ? b.completionLogEntry?.completedAt : b.completedAt;
-
-        const dateA = timeA ? new Date(timeA as any).getTime() : 0;
-        const dateB = timeB ? new Date(timeB as any).getTime() : 0;
-
-        return dateB - dateA;
-    });
-
-    return allActivities.slice(0, 10);
-  }, [missionInstances, childRewards, collaboratorsMap, child?.name]);
-
-
+  
   const calculateAge = (birthDateString?: string): number | null => {
     if (!birthDateString) return null;
     const birthDate = new Date(birthDateString);
@@ -672,50 +574,34 @@ function MuralCompletoPageContent() {
     if (!name) return "MH";
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
-
-  const getCategoryDetails = (categoryId: ChildRewardInstance['category']): RewardCategoryDetails | undefined => {
-    return rewardCategories.find(cat => cat.id === categoryId);
-  };
-
-
-  const handleMarkAsRedeemed = async (template: RewardTemplate) => {
-      if (!child || !user) return;
-      
-      const hasEnoughStars = child.stars >= template.starsCost;
-      if (!hasEnoughStars) {
-          toast({ title: "Estrelas Insuficientes!", description: `${child.name} ainda não pode resgatar esta recompensa.`, variant: 'destructive' });
-          return;
-      }
-      
-      const instance: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt'> = {
-          templateId: template.id,
-          childId: child.id,
-          ownerId: child.ownerId,
-          familyId: child.familyId || null,
-          title: template.title,
-          description: template.description || '',
-          category: template.category,
-          starsCost: template.starsCost,
-          isMaterial: template.isMaterial,
-          status: 'redeemed',
-          isRedeemed: true,
-          redeemedAt: new Date() as any, 
-          actorId: user.uid,
-      }
-
-      setIsDeleting(true); // Using isDeleting as a generic processing state
+  
+  const handleConfirmRedeem = async () => {
+      if (!templateToRedeem || !child || !user) return;
+      setIsDeleting(true); // Re-use deleting state for processing
       try {
-          // This will create the instance and deduct stars atomically
-          await redeemChildRewardInstance(instance as any, child.id, { id: user.uid, name: user.name });
-
-          toast({ title: "Recompensa Resgatada!", description: `"${template.title}" foi resgatada por ${child.name}. Que incrível!` });
+          const actor = { id: user.uid, name: user.name };
+          await redeemChildRewardInstance(templateToRedeem, child.id, actor);
+          toast({ title: "Recompensa Resgatada!", description: `"${templateToRedeem.title}" foi resgatada por ${child.name}. Que incrível!` });
           fetchDataForChild(child.id); // Re-fetch all data to ensure UI is up-to-date
       } catch (error: any) {
           console.error("Error redeeming reward:", error);
           toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível resgatar a recompensa.", variant: "destructive" });
       } finally {
           setIsDeleting(false);
+          setIsRedeemConfirmOpen(false);
+          setTemplateToRedeem(null);
       }
+  };
+  
+  const handleRedeemClick = (template: RewardTemplate) => {
+    if (!child) return;
+    const hasEnoughStars = child.stars >= template.starsCost;
+    if (!hasEnoughStars) {
+        toast({ title: "Estrelas Insuficientes!", description: `${child.name} ainda não pode resgatar esta recompensa.`, variant: 'destructive' });
+        return;
+    }
+    setTemplateToRedeem(template);
+    setIsRedeemConfirmOpen(true);
   };
 
   const handleEditEntry = (entry: SchoolScheduleEntry) => {
@@ -938,7 +824,7 @@ function MuralCompletoPageContent() {
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {rewardTemplates.filter(t => t.status === 'active').map((template) => {
                                     const canAfford = child.stars >= template.starsCost;
-                                    const categoryDetails = getCategoryDetails(template.category);
+                                    const categoryDetails = rewardCategories.find(c => c.id === template.category);
                                     const CategoryIconComponent = categoryDetails?.icon;
                                     
                                     return (
@@ -972,7 +858,7 @@ function MuralCompletoPageContent() {
                                                      size="sm" 
                                                      className="w-full mt-2" 
                                                      disabled={!canAfford || !canEdit || isDeleting}
-                                                     onClick={() => handleMarkAsRedeemed(template)}
+                                                     onClick={() => handleRedeemClick(template)}
                                                  >
                                                     {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
                                                     Confirmar Resgate
@@ -1339,24 +1225,22 @@ function MuralCompletoPageContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Redeem Confirmation Dialog - Now handles templates */}
-      {instanceToManage && isRedeemConfirmOpen && child && (
-        <AlertDialog open={isRedeemConfirmOpen} onOpenChange={setIsRedeemConfirmOpen}>
+      <AlertDialog open={isRedeemConfirmOpen} onOpenChange={setIsRedeemConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Resgate de Recompensa</AlertDialogTitle>
               <AlertDialogDescription>
-                Você tem certeza que deseja resgatar a recompensa "{instanceToManage.title}" por {instanceToManage.starsCost} estrelas para {child.name}?
+                Você tem certeza que deseja resgatar a recompensa "{templateToRedeem?.title}" por {templateToRedeem?.starsCost} estrelas para {child.name}?
                 <br/>
-                Saldo atual de estrelas de {child.stars}: {child.stars}.
+                Saldo atual de estrelas de {child.name}: {child.stars}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => handleMarkAsRedeemed(instanceToManage as any)}
+                onClick={handleConfirmRedeem}
                 className="bg-green-600 hover:bg-green-700"
-                disabled={isDeleting || child.stars < instanceToManage.starsCost}
+                disabled={isDeleting || (child && templateToRedeem && child.stars < templateToRedeem.starsCost)}
               >
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
                 Sim, Resgatar
@@ -1364,7 +1248,6 @@ function MuralCompletoPageContent() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      )}
 
       <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
         <AlertDialogContent>
@@ -1409,5 +1292,3 @@ export default function MuralCompleto() {
     )
 }
 
-
-    

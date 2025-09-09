@@ -1392,53 +1392,54 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
   });
 };
 
-export const redeemChildRewardInstance = async (instanceId: string, childId: string, actor: { id: string; name: string | null }): Promise<void> => {
-  const instanceRef = doc(db, 'childRewardInstances', instanceId);
+export const redeemChildRewardInstance = async (
+  rewardTemplate: RewardTemplate,
+  childId: string,
+  actor: { id: string; name: string | null }
+): Promise<void> => {
   const childRef = doc(db, 'children', childId);
 
   await runTransaction(db, async (transaction) => {
-      const instanceSnap = await transaction.get(instanceRef);
-      const childSnap = await transaction.get(childRef);
+    const childSnap = await transaction.get(childRef);
+    if (!childSnap.exists()) {
+      throw new Error("Perfil da criança não encontrado.");
+    }
+    const childData = childSnap.data() as ChildProfile;
 
-      if (!instanceSnap.exists() || !childSnap.exists()) {
-          throw new Error("Recompensa ou perfil da criança não encontrado.");
-      }
+    if (childData.stars < rewardTemplate.starsCost) {
+      throw new Error("Estrelas insuficientes para resgatar esta recompensa.");
+    }
+    
+    transaction.update(childRef, {
+      stars: childData.stars - rewardTemplate.starsCost,
+      updatedAt: serverTimestamp(),
+    });
 
-      const instanceData = instanceSnap.data() as ChildRewardInstance;
-      const childData = childSnap.data() as ChildProfile;
-
-      if (childData.stars < instanceData.starsCost) {
-          throw new Error("Estrelas insuficientes para resgatar esta recompensa.");
-      }
-      if (instanceData.status === 'redeemed') {
-          throw new Error("Esta recompensa já foi resgatada.");
-      }
-
-      transaction.update(childRef, {
-          stars: childData.stars - instanceData.starsCost,
-          updatedAt: serverTimestamp(),
-      });
-
-      transaction.update(instanceRef, {
-          status: 'redeemed',
-          isRedeemed: true,
-          redeemedAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          actorId: actor.id,
-          actorName: actor.name,
-      });
+    const newInstanceRef = doc(collection(db, 'childRewardInstances'));
+    const newInstance: Omit<ChildRewardInstance, 'id'> = {
+      templateId: rewardTemplate.id,
+      childId: childId,
+      ownerId: childData.ownerId,
+      familyId: childData.familyId || null,
+      title: rewardTemplate.title,
+      description: rewardTemplate.description,
+      category: rewardTemplate.category,
+      starsCost: rewardTemplate.starsCost,
+      isMaterial: rewardTemplate.isMaterial,
+      status: 'redeemed',
+      isRedeemed: true,
+      redeemedAt: serverTimestamp() as Timestamp,
+      assignedAt: serverTimestamp() as Timestamp,
+      updatedAt: serverTimestamp() as Timestamp,
+      actorId: actor.id,
+    };
+    transaction.set(newInstanceRef, newInstance);
   });
   
-  const finalInstanceSnap = await getDoc(instanceRef);
-  const finalChildSnap = await getDoc(childRef);
-  if (!finalInstanceSnap.exists() || !finalChildSnap.exists()) return;
-
-  const instanceData = finalInstanceSnap.data() as ChildRewardInstance;
-  const childData = finalChildSnap.data() as ChildProfile;
-  
+  const childData = (await getDoc(childRef)).data() as ChildProfile;
   const description = actor.id === childId 
-      ? `${childData.name} resgatou: "${instanceData.title}".` 
-      : `${actor.name || 'Um responsável'} resgatou "${instanceData.title}" para ${childData.name}.`;
+      ? `${childData.name} resgatou: "${rewardTemplate.title}".` 
+      : `${actor.name || 'Um responsável'} confirmou o resgate de "${rewardTemplate.title}" para ${childData.name}.`;
 
   await createAndDispatchNotifications(
     childId, 
@@ -1452,6 +1453,7 @@ export const redeemChildRewardInstance = async (instanceId: string, childId: str
     actor
   );
 };
+
 
 export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: string): Promise<void> => {
   const instanceRef = doc(db, 'childRewardInstances', instanceId);
@@ -2455,3 +2457,4 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 };
 
     
+
