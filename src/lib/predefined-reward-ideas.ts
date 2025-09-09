@@ -1,3 +1,4 @@
+
 import type { RewardCategory } from '@/lib/types';
 import { Crown, PartyPopper, ShoppingBag, GraduationCap, HeartHandshake, type LucideIcon, CakeSlice, Utensils, FerrisWheel, Plane } from 'lucide-react';
 
