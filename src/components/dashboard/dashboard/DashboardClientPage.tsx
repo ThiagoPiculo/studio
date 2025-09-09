@@ -15,6 +15,7 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import { Button } from '@/components/ui/button';
 import { RecentActivities } from './RecentActivities';
 import { useFamily } from '@/contexts/FamilyContext';
+import { UnlockedRewards } from './UnlockedRewards';
 
 
 interface DashboardClientPageProps {
@@ -44,6 +45,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         <div className="space-y-6">
           <ProgressAnalysis childrenProfiles={filteredChildren} missionInstances={filteredMissions} />
+          <UnlockedRewards childrenProfiles={filteredChildren} rewardTemplates={rewardTemplates} />
           <RecentActivities
             childrenProfiles={filteredChildren}
             missionInstances={filteredMissions}

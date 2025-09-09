@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { ChildProfile, MissionInstance, RewardTemplate, ChildRewardInstance } from '@/lib/types';
+import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { DashboardClientPage } from '@/components/dashboard/dashboard/DashboardClientPage';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
