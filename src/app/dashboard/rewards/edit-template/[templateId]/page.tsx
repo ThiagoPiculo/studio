@@ -49,6 +49,7 @@ export default function EditRewardTemplatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -185,15 +186,10 @@ export default function EditRewardTemplatePage() {
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <Card className="shadow-xl">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <Gift className="h-10 w-10 text-primary" />
-            <div>
-              <CardTitle className="text-3xl font-headline">Personalizar Recompensa</CardTitle>
-              <CardDescription className="text-md">
-                Modifique os detalhes desta recompensa.
-              </CardDescription>
-            </div>
-          </div>
+          <CardTitle className="text-3xl font-headline">Personalizar Recompensa</CardTitle>
+          <CardDescription className="text-md">
+            Modifique os detalhes desta recompensa.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>

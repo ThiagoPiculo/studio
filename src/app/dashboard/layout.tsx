@@ -66,10 +66,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help', '/dashboard/missions', '/dashboard/rewards', '/dashboard/rewards/new'].includes(pathname) &&
-                               !pathname.startsWith('/dashboard/missions/edit') &&
-                               !pathname.startsWith('/dashboard/rewards/edit-template') &&
-                               !pathname.startsWith('/dashboard/missions/new');
+  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help'].includes(pathname);
 
   const headerContent = {
     '/dashboard/heroes': {
@@ -173,7 +170,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     }
   }
 
-  const currentHeader = isClient ? headerContent[pathname as keyof typeof headerContent] : undefined;
+  const getHeaderForPath = (path: string) => {
+    if (!isClient) return undefined;
+    if (path.startsWith('/dashboard/rewards')) return headerContent['/dashboard/rewards'];
+    if (path.startsWith('/dashboard/missions')) return headerContent['/dashboard/missions'];
+    return headerContent[path as keyof typeof headerContent];
+  };
+
+  const currentHeader = getHeaderForPath(pathname);
   
   const showHeroSelector = isClient &&
     ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&

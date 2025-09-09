@@ -256,15 +256,10 @@ function CreateRewardTemplatePageContent() {
 
       <Card className="shadow-xl">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <Gift className="h-10 w-10 text-primary" />
-            <div>
-              <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
-              <CardDescription className="text-md">
-                Crie recompensas incríveis para incentivar seu herói a conquistar as estrelas necessárias para o resgate.
-              </CardDescription>
-            </div>
-          </div>
+          <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
+          <CardDescription className="text-md">
+            Defina um novo item ou experiência para o Baú de Recompensas.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
