@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
-import type { ChildProfile, ChildRewardInstance, RewardCategory } from '@/lib/types';
+import type { ChildProfile, RewardTemplate, RewardCategory } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import { Gift, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -16,28 +16,27 @@ import { Badge } from '@/components/ui/badge';
 
 interface UnlockedRewardsProps {
   childrenProfiles: ChildProfile[];
-  childRewardInstances: ChildRewardInstance[];
+  rewardTemplates: RewardTemplate[];
 }
 
 type GroupedReward = {
   category: RewardCategory;
-  rewards: ChildRewardInstance[];
+  rewards: RewardTemplate[];
 }
 
-export function UnlockedRewards({ childrenProfiles, childRewardInstances }: UnlockedRewardsProps) {
+export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedRewardsProps) {
   const { toast } = useToast();
   
   const unlockedRewardsByChild = useMemo(() => {
     return childrenProfiles.map(child => {
-      const affordableAndActiveInstances = childRewardInstances
-        .filter(instance => 
-            instance.childId === child.id &&
-            instance.status === 'active' && 
-            child.stars >= instance.starsCost
+      const affordableAndActiveTemplates = rewardTemplates
+        .filter(template => 
+            template.status === 'active' && 
+            child.stars >= template.starsCost
         )
         .sort((a, b) => a.starsCost - b.starsCost);
 
-      const groupedRewards = affordableAndActiveInstances.reduce((acc, reward) => {
+      const groupedRewards = affordableAndActiveTemplates.reduce((acc, reward) => {
         let group = acc.find(g => g.category === reward.category);
         if (!group) {
           const categoryInfo = rewardCategories.find(c => c.id === reward.category);
@@ -45,7 +44,7 @@ export function UnlockedRewards({ childrenProfiles, childRewardInstances }: Unlo
             group = { category: reward.category, rewards: [] };
             acc.push(group);
           } else {
-            return acc; // Skip if category info not found
+            return acc;
           }
         }
         group.rewards.push(reward);
@@ -63,7 +62,7 @@ export function UnlockedRewards({ childrenProfiles, childRewardInstances }: Unlo
         groupedRewards,
       };
     }).filter(child => child.groupedRewards.length > 0);
-  }, [childrenProfiles, childRewardInstances]);
+  }, [childrenProfiles, rewardTemplates]);
   
   const handleRedeem = (childName: string, rewardTitle: string) => {
     toast({
