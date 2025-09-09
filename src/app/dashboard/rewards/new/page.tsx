@@ -298,7 +298,7 @@ function CreateRewardTemplatePageContent() {
                                                             <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
                                                                 <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
                                                                 {idea.title}
-                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
                                                             </CommandItem>
                                                         )
                                                     })}
@@ -363,7 +363,7 @@ function CreateRewardTemplatePageContent() {
                         <Sparkles className="h-4 w-4 text-primary" />
                         <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
                         <AlertDescription className="text-primary/90">
-                           Sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
+                           Para esta categoria, sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
                         </AlertDescription>
                     </Alert>
                   )}
