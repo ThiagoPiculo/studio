@@ -16,14 +16,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addRewardBlueprint } from '@/lib/firebase/firestore';
-import type { RewardCategory, RewardBlueprint } from '@/lib/types';
+import { addRewardTemplate } from '@/lib/firebase/firestore';
+import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { cn } from '@/lib/utils';
 
-const rewardBlueprintFormSchema = z.object({
+const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional().default(''),
   category: z.custom<RewardCategory>((val) => rewardCategories.map(rc => rc.id).includes(val as RewardCategory) , {
@@ -34,9 +34,9 @@ const rewardBlueprintFormSchema = z.object({
   isUnique: z.boolean().default(false),
 });
 
-type RewardBlueprintFormValues = z.infer<typeof rewardBlueprintFormSchema>;
+type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-function CreateRewardBlueprintPageContent() {
+function CreateRewardTemplatePageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,8 +64,8 @@ function CreateRewardBlueprintPageContent() {
     resolvedInitialIsMaterial = true;
   }
   
-  const form = useForm<RewardBlueprintFormValues>({
-    resolver: zodResolver(rewardBlueprintFormSchema),
+  const form = useForm<RewardTemplateFormValues>({
+    resolver: zodResolver(rewardTemplateFormSchema),
     defaultValues: {
       title: initialTitle,
       description: initialDescription,
@@ -110,7 +110,7 @@ function CreateRewardBlueprintPageContent() {
   }, [form, isMaterialParam]);
 
 
-  const onSubmit = async (values: RewardBlueprintFormValues) => {
+  const onSubmit = async (values: RewardTemplateFormValues) => {
     if (!user) {
       toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
       return;
@@ -118,7 +118,7 @@ function CreateRewardBlueprintPageContent() {
     setIsLoading(true);
     try {
       const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
-      const blueprintDataPayload: Omit<RewardBlueprint, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+      const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
         ownerId: user.uid,
         title: values.title,
         description: values.description,
@@ -132,7 +132,7 @@ function CreateRewardBlueprintPageContent() {
         tip: '',
       };
       
-      await addRewardBlueprint(user, blueprintDataPayload);
+      await addRewardTemplate(user, templateDataPayload);
       toast({
         title: 'Tesouro Adicionado!',
         description: `A recompensa "${values.title}" foi adicionada ao Baú de Recompensas.`,
@@ -317,7 +317,7 @@ function CreateRewardBlueprintPageContent() {
 export default function CreateRewardPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
-      <CreateRewardBlueprintPageContent />
+      <CreateRewardTemplatePageContent />
     </Suspense>
   )
 }

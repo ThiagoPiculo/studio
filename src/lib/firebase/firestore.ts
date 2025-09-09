@@ -2457,31 +2457,39 @@ export const deleteSchoolScheduleEntry = async (entryId: string, actor: UserProf
 };
 
 /**
- * Populates the initial set of reward templates for a new user.
- * It checks for existing templates by title to avoid duplicates and
- * can also be used to sync/update costs of predefined rewards.
+ * Populates the initial set of reward templates for a new user if the collection is empty.
+ * This runs on user login to ensure a fresh start or to set up a new account.
  */
 export const populateInitialRewardTemplates = async (userId: string, familyId: string | null = null): Promise<void> => {
   const now = serverTimestamp();
   
   const allPredefinedRewards = predefinedRewardGroups.flatMap(group => group.items);
 
-  const existingTemplatesQuery = query(
-    collection(db, 'rewardTemplates'),
+  const templatesCollectionRef = collection(db, 'rewardTemplates');
+  const q = query(
+    templatesCollectionRef,
     where('ownerId', '==', userId),
     where('familyId', '==', familyId)
   );
-  
-  const existingTemplatesSnapshot = await getDocs(existingTemplatesQuery);
-  const existingTemplatesMap = new Map(
-    existingTemplatesSnapshot.docs.map(doc => [doc.data().title, { id: doc.id, ...doc.data() } as RewardTemplate])
-  );
+
+  const existingTemplatesSnapshot = await getDocs(q);
+
+  // ONLY run this if the user has NO predefined rewards in this context.
+  if (!existingTemplatesSnapshot.empty) {
+      // Check if any of the existing ones are predefined. If so, assume population already ran.
+      const hasPredefined = existingTemplatesSnapshot.docs.some(doc => doc.data().source === 'predefined');
+      if (hasPredefined) {
+        console.log("Reward templates already exist for this context. Skipping population.");
+        return;
+      }
+  }
+
+  console.log("No predefined reward templates found. Populating for the first time...");
 
   const batch = writeBatch(db);
 
   for (const idea of allPredefinedRewards) {
-    const existingTemplate = existingTemplatesMap.get(idea.title);
-
+    const newTemplateRef = doc(templatesCollectionRef);
     const templateData = {
       ownerId: userId,
       familyId: familyId,
@@ -2490,29 +2498,15 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
       category: idea.suggestedAppCategory,
       starsCost: idea.starsCost || 50,
       isMaterial: idea.isMaterialSuggestion || false,
-      isUnique: false, // Defaulting to not unique
+      isUnique: false,
       status: 'active',
       source: 'predefined',
       justification: idea.justification || '',
       tip: idea.tip || '',
+      createdAt: now,
       updatedAt: now,
     };
-    
-    if (existingTemplate) {
-        // If it's a predefined reward, update its cost to the rebalanced value.
-        // We don't touch user-created rewards.
-        if (existingTemplate.source === 'predefined') {
-             const templateRef = doc(db, 'rewardTemplates', existingTemplate.id);
-             batch.update(templateRef, {
-                starsCost: templateData.starsCost,
-                updatedAt: now,
-             });
-        }
-    } else {
-        // If it doesn't exist at all, create it.
-        const newTemplateRef = doc(collection(db, 'rewardTemplates'));
-        batch.set(newTemplateRef, { ...templateData, createdAt: now });
-    }
+    batch.set(newTemplateRef, templateData);
   }
 
   await batch.commit();

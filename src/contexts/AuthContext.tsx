@@ -77,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setChildProfile(null);
             
             // Run the sync function for the user
-            await populateInitialRewardTemplates(firebaseUser.uid);
+            await populateInitialRewardTemplates(firebaseUser.uid, null);
             setLoading(false);
           },
           (error) => {
@@ -135,14 +135,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
         };
         await setDoc(userDocRef, userProfile);
-        await populateInitialRewardTemplates(googleUser.uid);
+        await populateInitialRewardTemplates(googleUser.uid, null);
       } else {
         // If user exists but is missing avatar, update it.
         const userData = userDocSnap.data();
         if (!userData.avatarUrl && googleUser.photoURL) {
           await updateDoc(userDocRef, { avatarUrl: googleUser.photoURL });
         }
-        await populateInitialRewardTemplates(googleUser.uid);
+        await populateInitialRewardTemplates(googleUser.uid, null);
       }
 
     } catch (error: any) {
