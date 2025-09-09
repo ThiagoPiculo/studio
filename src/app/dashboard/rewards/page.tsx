@@ -139,9 +139,17 @@ function RewardsHubContent() {
         </div>
 
         <Tabs defaultValue="ideas" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ideas"><Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas</TabsTrigger>
-                <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Recompensas Personalizadas</TabsTrigger>
+             <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="ideas">
+                    <Lightbulb className="mr-2 h-4 w-4"/>
+                    <span className="sm:hidden">Ideias</span>
+                    <span className="hidden sm:inline">Ideias de Recompensas</span>
+                </TabsTrigger>
+                <TabsTrigger value="custom">
+                    <User className="mr-2 h-4 w-4"/>
+                    <span className="sm:hidden">Seu Baú</span>
+                    <span className="hidden sm:inline">Recompensas Personalizadas</span>
+                </TabsTrigger>
             </TabsList>
             <TabsContent value="ideas" className="mt-6">
                 <Card>
@@ -212,7 +220,7 @@ function RewardsHubContent() {
                         <CardDescription>
                             {customTemplates.length > 0
                             ? "Estas são as recompensas que você criou do zero ou personalizou."
-                            : "Seu baú de recompensas personalizadas está vazio."
+                            : "Seu catálogo de recompensas personalizadas está vazio."
                             }
                         </CardDescription>
                     </CardHeader>
