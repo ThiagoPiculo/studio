@@ -155,7 +155,7 @@ function RewardsHubContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
-                        <CardDescription>Clique em "Usar Ideia" para adicioná-la ao seu Baú e poder atribuí-la.</CardDescription>
+                        <CardDescription>Inspire-se com nossas sugestões. Você pode personalizar uma ideia para adicioná-la ao seu catálogo ou editar as recompensas que você já criou.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Accordion type="multiple" className="w-full space-y-4">
