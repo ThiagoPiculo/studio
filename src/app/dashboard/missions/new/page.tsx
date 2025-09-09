@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -47,7 +47,7 @@ function CreateMissionTemplatePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
@@ -192,6 +192,12 @@ function CreateMissionTemplatePageContent() {
     setIsDuplicateDialogOpen(false);
     // User can now edit and submit again
   };
+
+  const contextName = useMemo(() => {
+    const context = availableContexts.find(c => c.id === currentContext);
+    if (!context) return 'seu espaço atual';
+    return context.id === 'my-space' ? 'seu espaço de "Cuidar Solo"' : `a aliança "${context.name}"`;
+  }, [currentContext, availableContexts]);
 
 
   return (
@@ -359,6 +365,11 @@ function CreateMissionTemplatePageContent() {
               </form>
             </Form>
           </CardContent>
+           <CardFooter>
+            <p className="text-xs text-muted-foreground">
+              Esta missão será adicionada ao catálogo para {contextName}.
+            </p>
+          </CardFooter>
         </Card>
       </div>
 

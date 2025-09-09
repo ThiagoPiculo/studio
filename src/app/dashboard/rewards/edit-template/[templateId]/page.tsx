@@ -185,13 +185,7 @@ export default function EditRewardTemplatePage() {
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
       <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Personalizar Recompensa</CardTitle>
-          <CardDescription className="text-md">
-            Modifique os detalhes desta recompensa.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <fieldset disabled={!canEdit} className="space-y-8">

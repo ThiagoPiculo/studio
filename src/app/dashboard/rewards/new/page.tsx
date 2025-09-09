@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -45,7 +45,7 @@ function CreateRewardTemplatePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
 
   const [isLoading, setIsLoading] = useState(false);
   const [userTemplates, setUserTemplates] = useState<RewardTemplate[]>([]);
@@ -221,7 +221,7 @@ function CreateRewardTemplatePageContent() {
       router.push('/dashboard/rewards'); 
 
     } catch (error) {
-      console.error('Error creating reward blueprint:', error);
+      console.error('Error creating reward template:', error);
       toast({
         title: 'Erro ao Criar Recompensa',
         description: 'Não foi possível criar a recompensa. Tente novamente.',
@@ -231,6 +231,13 @@ function CreateRewardTemplatePageContent() {
       setIsLoading(false);
     }
   };
+  
+  const contextName = useMemo(() => {
+    const context = availableContexts.find(c => c.id === currentContext);
+    if (!context) return 'seu espaço atual';
+    return context.id === 'my-space' ? 'seu espaço de "Cuidar Solo"' : `a aliança "${context.name}"`;
+  }, [currentContext, availableContexts]);
+
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
@@ -255,13 +262,7 @@ function CreateRewardTemplatePageContent() {
       </AlertDialog>
 
       <Card className="shadow-xl">
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
-          <CardDescription className="text-md">
-            Defina um novo item ou experiência para o Baú de Recompensas.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -436,12 +437,17 @@ function CreateRewardTemplatePageContent() {
                     ) : (
                       <Gift className="mr-2 h-4 w-4" />
                     )}
-                    Criar recompensa personalizada
+                    Adicionar ao Baú de Recompensas
                   </Button>
               </div>
             </form>
           </Form>
         </CardContent>
+        <CardFooter>
+            <p className="text-xs text-muted-foreground">
+                Esta recompensa será adicionada ao catálogo para {contextName}.
+            </p>
+        </CardFooter>
       </Card>
     </div>
   );
