@@ -1,3 +1,4 @@
+
 "use client";
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -59,16 +60,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               } else {
                 setUser({ uid: docSnap.id, ...userData });
               }
-              setIsChildAuthenticated(false);
-              setChildProfile(null);
-              
-              // Run the sync function for the user
-              await populateInitialRewardTemplates(firebaseUser.uid);
-
             } else {
               // This case might happen if a user was created but firestore doc failed.
               // The `loginWithGoogle` function handles creation, this is a fallback.
-              const newUserProfile = {
+              const newUserProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
                 name: firebaseUser.displayName,
@@ -76,10 +71,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 createdAt: firebaseUser.metadata.creationTime ? (new Date(firebaseUser.metadata.creationTime).toISOString() as any) : (new Date().toISOString() as any),
               };
               setUser(newUserProfile);
-              await populateInitialRewardTemplates(firebaseUser.uid);
-              setIsChildAuthenticated(false);
-              setChildProfile(null);
             }
+            
+            setIsChildAuthenticated(false);
+            setChildProfile(null);
+            
+            // Run the sync function for the user
+            await populateInitialRewardTemplates(firebaseUser.uid);
             setLoading(false);
           },
           (error) => {
