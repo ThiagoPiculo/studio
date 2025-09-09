@@ -1,4 +1,3 @@
-
 # Arquitetura e Visão de Produto: O Sistema de "Aliança"
 
 Este documento detalha as decisões técnicas e de produto por trás do sistema de colaboração, agora chamado "Aliança".

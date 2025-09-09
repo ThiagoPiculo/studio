@@ -15,15 +15,15 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRewardTemplateById, updateRewardTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
-import type { RewardCategory, RewardTemplate, ChildProfile, FamilyRole } from '@/lib/types';
+import { getRewardBlueprintById, updateRewardBlueprint, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import type { RewardCategory, RewardBlueprint, ChildProfile, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from '@/lib/utils';
 
-const rewardTemplateFormSchema = z.object({
+const rewardBlueprintFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional(),
   category: z.custom<RewardCategory>((val) => rewardCategories.map(rc => rc.id).includes(val as RewardCategory) , {
@@ -35,19 +35,19 @@ const rewardTemplateFormSchema = z.object({
   status: z.enum(['active', 'archived']).default('active'),
 });
 
-type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
+type RewardBlueprintFormValues = z.infer<typeof rewardBlueprintFormSchema>;
 
-export default function EditRewardTemplatePage() {
+export default function EditRewardBlueprintPage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const templateId = params.templateId as string;
+  const blueprintId = params.templateId as string;
   const { user } = useAuth();
   const { currentContext, currentRole } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
-  const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
+  const [rewardBlueprint, setRewardBlueprint] = useState<RewardBlueprint | null>(null);
 
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -56,8 +56,8 @@ export default function EditRewardTemplatePage() {
     return editableRoles.includes(currentRole as FamilyRole);
   }, [currentContext, currentRole]);
 
-  const form = useForm<RewardTemplateFormValues>({
-    resolver: zodResolver(rewardTemplateFormSchema),
+  const form = useForm<RewardBlueprintFormValues>({
+    resolver: zodResolver(rewardBlueprintFormSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -69,8 +69,8 @@ export default function EditRewardTemplatePage() {
     },
   });
 
-  const fetchRewardTemplateData = async () => {
-    if (!templateId || !user) {
+  const fetchRewardBlueprintData = async () => {
+    if (!blueprintId || !user) {
       setIsFetchingData(false);
       if(!user) router.push('/auth/login');
       else router.push('/dashboard/rewards');
@@ -79,25 +79,25 @@ export default function EditRewardTemplatePage() {
 
     setIsFetchingData(true);
     try {
-      const fetchedTemplate = await getRewardTemplateById(templateId);
+      const fetchedBlueprint = await getRewardBlueprintById(blueprintId);
 
-      if (fetchedTemplate) {
-        setRewardTemplate(fetchedTemplate);
+      if (fetchedBlueprint) {
+        setRewardBlueprint(fetchedBlueprint);
         form.reset({
-          title: fetchedTemplate.title,
-          description: fetchedTemplate.description || '',
-          category: fetchedTemplate.category,
-          starsCost: fetchedTemplate.starsCost,
-          isMaterial: fetchedTemplate.isMaterial,
-          isUnique: fetchedTemplate.isUnique,
-          status: fetchedTemplate.status,
+          title: fetchedBlueprint.title,
+          description: fetchedBlueprint.description || '',
+          category: fetchedBlueprint.category,
+          starsCost: fetchedBlueprint.starsCost,
+          isMaterial: fetchedBlueprint.isMaterial,
+          isUnique: fetchedBlueprint.isUnique,
+          status: fetchedBlueprint.status,
         });
       } else {
         toast({ title: "Recompensa não encontrada", variant: "destructive" });
         router.push('/dashboard/rewards');
       }
     } catch (error) {
-      console.error("Error fetching reward template:", error);
+      console.error("Error fetching reward blueprint:", error);
       toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
       router.push('/dashboard/rewards');
     } finally {
@@ -106,8 +106,8 @@ export default function EditRewardTemplatePage() {
   };
 
   useEffect(() => {
-    fetchRewardTemplateData();
-  }, [templateId, user, router, toast, form, currentContext]);
+    fetchRewardBlueprintData();
+  }, [blueprintId, user, router, toast, form, currentContext]);
 
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
@@ -118,15 +118,15 @@ export default function EditRewardTemplatePage() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  const onSubmit = async (values: RewardTemplateFormValues) => {
-    if (!user || !rewardTemplate) {
+  const onSubmit = async (values: RewardBlueprintFormValues) => {
+    if (!user || !rewardBlueprint) {
       toast({ title: "Erro de Autenticação ou Dados", description: "Não foi possível salvar.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
-      const originalStatus = rewardTemplate.status;
-      const updatePayload: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
+      const originalStatus = rewardBlueprint.status;
+      const updatePayload: Partial<Omit<RewardBlueprint, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
         title: values.title,
         description: values.description,
         category: values.category,
@@ -136,7 +136,7 @@ export default function EditRewardTemplatePage() {
         status: values.status,
       };
       
-      await updateRewardTemplate(user, rewardTemplate.id, updatePayload);
+      await updateRewardBlueprint(user, rewardBlueprint.id, updatePayload);
 
       let toastDescription = `A recompensa "${values.title}" foi atualizada com sucesso.`;
       if (originalStatus === 'archived' && values.status === 'active') {
@@ -149,7 +149,7 @@ export default function EditRewardTemplatePage() {
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
-      console.error('Error updating reward template:', error);
+      console.error('Error updating reward blueprint:', error);
       toast({
         title: 'Erro ao Atualizar Recompensa',
         description: 'Não foi possível salvar as alterações. Tente novamente.',
@@ -169,7 +169,7 @@ export default function EditRewardTemplatePage() {
     );
   }
 
-  if (!rewardTemplate) {
+  if (!rewardBlueprint) {
      return (
       <div className="flex flex-col justify-center items-center min-h-screen">
         <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
