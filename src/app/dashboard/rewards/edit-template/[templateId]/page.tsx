@@ -15,15 +15,16 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
-import { getRewardBlueprintById, updateRewardBlueprint, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
-import type { RewardCategory, RewardBlueprint, ChildProfile, FamilyRole } from '@/lib/types';
+import { getRewardTemplateById, updateRewardTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import type { RewardCategory, RewardTemplate, ChildProfile, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
 import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getInitials } from '@/lib/utils';
+import { getInitials, cn } from '@/lib/utils';
+import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 
-const rewardBlueprintFormSchema = z.object({
+const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   description: z.string().max(500, { message: "A descrição não deve exceder 500 caracteres." }).optional(),
   category: z.custom<RewardCategory>((val) => rewardCategories.map(rc => rc.id).includes(val as RewardCategory) , {
@@ -35,19 +36,20 @@ const rewardBlueprintFormSchema = z.object({
   status: z.enum(['active', 'archived']).default('active'),
 });
 
-type RewardBlueprintFormValues = z.infer<typeof rewardBlueprintFormSchema>;
+type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-export default function EditRewardBlueprintPage() {
+export default function EditRewardTemplatePage() {
   const { toast } = useToast();
   const router = useRouter();
   const params = useParams();
-  const blueprintId = params.templateId as string;
+  const templateId = params.templateId as string;
   const { user } = useAuth();
   const { currentContext, currentRole } = useFamily();
   
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
-  const [rewardBlueprint, setRewardBlueprint] = useState<RewardBlueprint | null>(null);
+  const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
+  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -56,8 +58,8 @@ export default function EditRewardBlueprintPage() {
     return editableRoles.includes(currentRole as FamilyRole);
   }, [currentContext, currentRole]);
 
-  const form = useForm<RewardBlueprintFormValues>({
-    resolver: zodResolver(rewardBlueprintFormSchema),
+  const form = useForm<RewardTemplateFormValues>({
+    resolver: zodResolver(rewardTemplateFormSchema),
     defaultValues: {
       title: '',
       description: '',
@@ -68,9 +70,9 @@ export default function EditRewardBlueprintPage() {
       status: 'active',
     },
   });
-
-  const fetchRewardBlueprintData = async () => {
-    if (!blueprintId || !user) {
+  
+  const fetchRewardTemplateData = async () => {
+    if (!templateId || !user) {
       setIsFetchingData(false);
       if(!user) router.push('/auth/login');
       else router.push('/dashboard/rewards');
@@ -79,25 +81,25 @@ export default function EditRewardBlueprintPage() {
 
     setIsFetchingData(true);
     try {
-      const fetchedBlueprint = await getRewardBlueprintById(blueprintId);
+      const fetchedTemplate = await getRewardTemplateById(templateId);
 
-      if (fetchedBlueprint) {
-        setRewardBlueprint(fetchedBlueprint);
+      if (fetchedTemplate) {
+        setRewardTemplate(fetchedTemplate);
         form.reset({
-          title: fetchedBlueprint.title,
-          description: fetchedBlueprint.description || '',
-          category: fetchedBlueprint.category,
-          starsCost: fetchedBlueprint.starsCost,
-          isMaterial: fetchedBlueprint.isMaterial,
-          isUnique: fetchedBlueprint.isUnique,
-          status: fetchedBlueprint.status,
+          title: fetchedTemplate.title,
+          description: fetchedTemplate.description || '',
+          category: fetchedTemplate.category,
+          starsCost: fetchedTemplate.starsCost,
+          isMaterial: fetchedTemplate.isMaterial,
+          isUnique: fetchedTemplate.isUnique,
+          status: fetchedTemplate.status,
         });
       } else {
         toast({ title: "Recompensa não encontrada", variant: "destructive" });
         router.push('/dashboard/rewards');
       }
     } catch (error) {
-      console.error("Error fetching reward blueprint:", error);
+      console.error("Error fetching reward template:", error);
       toast({ title: "Erro ao carregar recompensa", variant: "destructive" });
       router.push('/dashboard/rewards');
     } finally {
@@ -106,8 +108,9 @@ export default function EditRewardBlueprintPage() {
   };
 
   useEffect(() => {
-    fetchRewardBlueprintData();
-  }, [blueprintId, user, router, toast, form, currentContext]);
+    fetchRewardTemplateData();
+  }, [templateId, user]);
+
 
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
@@ -118,15 +121,15 @@ export default function EditRewardBlueprintPage() {
     return () => subscription.unsubscribe();
   }, [form]);
 
-  const onSubmit = async (values: RewardBlueprintFormValues) => {
-    if (!user || !rewardBlueprint) {
+  const onSubmit = async (values: RewardTemplateFormValues) => {
+    if (!user || !rewardTemplate) {
       toast({ title: "Erro de Autenticação ou Dados", description: "Não foi possível salvar.", variant: "destructive" });
       return;
     }
     setIsLoading(true);
     try {
-      const originalStatus = rewardBlueprint.status;
-      const updatePayload: Partial<Omit<RewardBlueprint, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
+      const originalStatus = rewardTemplate.status;
+      const updatePayload: Partial<Omit<RewardTemplate, 'id' | 'createdAt' | 'ownerId' | 'familyId'>> = {
         title: values.title,
         description: values.description,
         category: values.category,
@@ -136,7 +139,7 @@ export default function EditRewardBlueprintPage() {
         status: values.status,
       };
       
-      await updateRewardBlueprint(user, rewardBlueprint.id, updatePayload);
+      await updateRewardTemplate(user, rewardTemplate.id, updatePayload);
 
       let toastDescription = `A recompensa "${values.title}" foi atualizada com sucesso.`;
       if (originalStatus === 'archived' && values.status === 'active') {
@@ -149,7 +152,7 @@ export default function EditRewardBlueprintPage() {
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
-      console.error('Error updating reward blueprint:', error);
+      console.error('Error updating reward template:', error);
       toast({
         title: 'Erro ao Atualizar Recompensa',
         description: 'Não foi possível salvar as alterações. Tente novamente.',
@@ -169,7 +172,7 @@ export default function EditRewardBlueprintPage() {
     );
   }
 
-  if (!rewardBlueprint) {
+  if (!rewardTemplate) {
      return (
       <div className="flex flex-col justify-center items-center min-h-screen">
         <p className="text-lg text-destructive mb-4">Recompensa não encontrada.</p>
@@ -226,8 +229,8 @@ export default function EditRewardBlueprintPage() {
                             {rewardCategories.map((category) => (
                               <SelectItem key={category.id} value={category.id}>
                                 <div className="flex items-center">
-                                  {category.icon && <category.icon className={`mr-2 h-4 w-4 ${category.colorClasses.split(" ")[1]}`} />}
-                                  <span className={`px-2 py-0.5 rounded-full text-xs border ${category.colorClasses}`}>
+                                  {category.icon && <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />}
+                                  <span className={cn("px-2 py-0.5 rounded-full text-xs border", category.colorClasses)}>
                                     {category.label}
                                   </span>
                                 </div>
@@ -348,20 +351,33 @@ export default function EditRewardBlueprintPage() {
                 />
                 
                 {canEdit && (
-                  <Button type="submit" className="w-full md:w-auto" disabled={isLoading || isFetchingData}>
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    Salvar Alterações na Recompensa
-                  </Button>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setIsAssignDialogOpen(true)}>
+                       <Users className="mr-2 h-4 w-4" /> Gerenciar para os Heróis
+                    </Button>
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
+                      {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      Salvar Alterações na Recompensa
+                    </Button>
+                  </div>
                 )}
               </fieldset>
             </form>
           </Form>
         </CardContent>
       </Card>
+      {rewardTemplate && (
+        <AssignRewardDialog
+            template={rewardTemplate}
+            isOpen={isAssignDialogOpen}
+            onOpenChange={setIsAssignDialogOpen}
+            onAssigned={fetchRewardTemplateData}
+        />
+      )}
     </div>
   );
 }

@@ -83,28 +83,6 @@ function RewardsHubContent() {
   const existingTemplateTitles = useMemo(() => {
     return new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
   }, [rewardTemplates]);
-  
-  const customTemplates = useMemo(() => {
-    return rewardTemplates.filter(template => template.source === 'custom');
-  }, [rewardTemplates]);
-
-  const customTemplatesByCategory = useMemo(() => {
-    const grouped = customTemplates.reduce((acc, template) => {
-        if (!acc[template.category]) {
-            acc[template.category] = [];
-        }
-        acc[template.category].push(template);
-        return acc;
-    }, {} as Record<RewardCategory, RewardTemplate[]>);
-
-    return rewardCategories
-        .map(catInfo => ({
-            ...catInfo,
-            items: grouped[catInfo.id] || []
-        }))
-        .filter(group => group.items.length > 0);
-  }, [customTemplates]);
-
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -264,8 +242,8 @@ function RewardsHubContent() {
                                                 </div>
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
-                                               <Button variant="outline" size="sm" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
-                                                    <Edit3 className="mr-2 h-4 w-4" /> Editar
+                                                <Button variant="secondary" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
+                                                    <Edit3 className="mr-2 h-4 w-4" /> Gerenciar
                                                 </Button>
                                                 <TooltipProvider>
                                                     <Tooltip><TooltipTrigger asChild>
