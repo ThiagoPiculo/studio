@@ -16,13 +16,16 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addRewardTemplate } from '@/lib/firebase/firestore';
+import { addRewardTemplate, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon } from 'lucide-react';
+import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon, Edit3, ChevronsUpDown, Check } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -45,6 +48,14 @@ function CreateRewardTemplatePageContent() {
   const { currentContext } = useFamily();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [userTemplates, setUserTemplates] = useState<RewardTemplate[]>([]);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(true);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [duplicateReward, setDuplicateReward] = useState<RewardTemplate | null>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
+
+  const allRewardIdeas = useMemo(() => predefinedRewardGroups, []);
   
   // Ler parâmetros da URL para defaultValues
   const initialTitle = searchParams.get('title') || '';
@@ -76,6 +87,59 @@ function CreateRewardTemplatePageContent() {
       isUnique: false,
     },
   });
+  
+  const existingTemplatesMap = useMemo(() => {
+    const map = new Map<string, RewardTemplate>();
+    userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
+    return map;
+  }, [userTemplates]);
+
+  useEffect(() => {
+    if (!user) {
+      setIsCheckingDuplicates(false);
+      return;
+    }
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+      .then(setUserTemplates)
+      .catch(console.error)
+      .finally(() => setIsCheckingDuplicates(false));
+  }, [user, currentContext]);
+
+
+  const handleIdeaSelection = (idea: any) => {
+    const existingTemplate = existingTemplatesMap.get(idea.title.trim().toLowerCase());
+    if (existingTemplate) {
+        setDuplicateReward(existingTemplate);
+        setIdeaForDuplicate(idea);
+        setIsDuplicateDialogOpen(true);
+    } else {
+        form.setValue("title", idea.title);
+        form.setValue("description", idea.description || '');
+        form.setValue("category", idea.suggestedAppCategory);
+        form.setValue("starsCost", idea.starsCost || 50);
+        form.setValue("isMaterial", idea.isMaterialSuggestion || false);
+        setIsPopoverOpen(false);
+    }
+  };
+
+  const handleEditDuplicate = () => {
+    if (duplicateReward) {
+      router.push(`/dashboard/rewards/edit-template/${duplicateReward.id}`);
+    }
+    setIsDuplicateDialogOpen(false);
+  };
+
+  const handleCreateAnyway = () => {
+    if (ideaForDuplicate) {
+        form.setValue("title", ideaForDuplicate.title);
+        form.setValue("description", ideaForDuplicate.description || '');
+        form.setValue("category", ideaForDuplicate.suggestedAppCategory);
+        form.setValue("starsCost", ideaForDuplicate.starsCost || 50);
+        form.setValue("isMaterial", ideaForDuplicate.isMaterialSuggestion || false);
+    }
+    setIsDuplicateDialogOpen(false);
+  };
 
   const suggestedCost = useMemo(() => {
     const category = form.watch('category');
@@ -124,6 +188,14 @@ function CreateRewardTemplatePageContent() {
       toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
       return;
     }
+
+    const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
+    if (existingTemplate) {
+        setDuplicateReward(existingTemplate);
+        setIsDuplicateDialogOpen(true);
+        return;
+    }
+
     setIsLoading(true);
     try {
       const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
@@ -162,6 +234,26 @@ function CreateRewardTemplatePageContent() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
+      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Recompensa Já Existe</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Você já tem uma recompensa chamada "{duplicateReward?.title}". O que você gostaria de fazer?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
+                    Criar mesmo assim
+                </Button>
+                <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Editar a existente
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="shadow-xl">
         <CardHeader>
           <div className="flex items-center gap-3 mb-2">
@@ -178,18 +270,47 @@ function CreateRewardTemplatePageContent() {
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título da Recompensa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Uma tarde de jogos" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                 <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Título da Recompensa</FormLabel>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
+                                            {field.value || "Selecione ou digite um nome"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Buscar ideia de recompensa..." onValueChange={(value) => form.setValue("title", value)} value={field.value} />
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                            {allRewardIdeas.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
+                                                        return (
+                                                            <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
                 <FormField
                   control={form.control}
@@ -321,8 +442,6 @@ function CreateRewardTemplatePageContent() {
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex-col items-start space-y-2">
-        </CardFooter>
       </Card>
     </div>
   );
