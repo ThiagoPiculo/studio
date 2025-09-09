@@ -66,10 +66,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   const isRootDashboard = pathname === '/dashboard';
 
-  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help', '/dashboard/missions', '/dashboard/rewards'].includes(pathname) &&
+  const showContextSwitcher = isClient && !['/dashboard/profile', '/dashboard/settings', '/dashboard/family', '/dashboard/cuidando-solo', '/dashboard/alliances', '/dashboard/novo-heroi', '/dashboard/assistente', '/dashboard/help', '/dashboard/missions', '/dashboard/rewards', '/dashboard/rewards/new'].includes(pathname) &&
                                !pathname.startsWith('/dashboard/missions/edit') &&
                                !pathname.startsWith('/dashboard/rewards/edit-template') &&
-                               !pathname.startsWith('/dashboard/rewards/new') &&
                                !pathname.startsWith('/dashboard/missions/new');
 
   const headerContent = {
@@ -128,14 +127,14 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       title: 'Baú de Recompensas',
       icon: Gift,
       help: {
-        title: 'A Lojinha de Tesouros do Herói',
+        title: 'A Vitrine de Recompensas do Herói',
         content: (
           <>
             <p className="text-sm text-muted-foreground">
-                Este é o seu catálogo de prêmios. Crie os "tesouros" que seus heróis poderão "comprar" com as estrelas que ganham.
+                Este é o seu catálogo, onde você cria os "tesouros" que seus heróis podem conquistar com estrelas.
             </p>
             <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-4">
-                <li><strong>Como funciona?</strong> Primeiro, crie a recompensa aqui (ex: "Uma tarde de jogos"). Depois, vá até o perfil do herói no "Mural Completo" para atribuir essa recompensa a ele.</li>
+                <li><strong>Como funciona?</strong> Nós disponibilizamos várias ideias de recompensas. Você pode usá-las como estão, personalizá-las ou criar novas. Os Mini Heróis terão a visão das recompensas em seu perfil e poderão "solicitar o resgate" para sua aprovação.</li>
                 <li><strong>Dica:</strong> Equilibre recompensas de experiências (um passeio, uma história extra) com itens materiais. As experiências fortalecem laços e criam memórias duradouras!</li>
             </ul>
           </>
