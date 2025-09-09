@@ -27,14 +27,11 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
   const { toast } = useToast();
   
   const unlockedRewardsByChild = useMemo(() => {
-    // Ensure we have the necessary data.
     if (!childrenProfiles || !rewardTemplates) {
         return [];
     }
 
     return childrenProfiles.map(child => {
-        // Filter the main reward catalog based on the child's stars.
-        // This is the single source of truth now.
         const affordableAndActiveTemplates = rewardTemplates
           .filter(template => 
               template.status === 'active' && 
@@ -42,7 +39,6 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
           )
           .sort((a, b) => a.starsCost - b.starsCost);
 
-        // Group these affordable rewards by category
         const groupedRewards = affordableAndActiveTemplates.reduce((acc, reward) => {
           const categoryInfo = rewardCategories.find(c => c.id === reward.category);
           if(categoryInfo) {
@@ -56,7 +52,6 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
           return acc;
         }, [] as GroupedReward[]);
 
-        // Sort the groups based on the predefined category order
         groupedRewards.sort((a, b) => {
           const indexA = rewardCategories.findIndex(rc => rc.id === a.category);
           const indexB = rewardCategories.findIndex(rc => rc.id === b.category);
