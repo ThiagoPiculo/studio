@@ -141,7 +141,7 @@ function RewardsHubContent() {
         <Tabs defaultValue="ideas" className="w-full">
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="ideas"><Lightbulb className="mr-2 h-4 w-4"/>Ideias de Recompensas</TabsTrigger>
-                <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Seu Baú de Recompensas</TabsTrigger>
+                <TabsTrigger value="custom"><User className="mr-2 h-4 w-4"/>Recompensas Personalizadas</TabsTrigger>
             </TabsList>
             <TabsContent value="ideas" className="mt-6">
                 <Card>
@@ -163,7 +163,8 @@ function RewardsHubContent() {
                                         <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                             {group.items.map((idea, idx) => {
-                                                const isAdded = existingTemplateTitles.has(idea.title.toLowerCase().trim());
+                                                const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
+                                                const isAdded = !!existingTemplate;
                                                 return (
                                                     <Card key={idx} className={cn("shadow-sm flex flex-col h-full", isAdded && "bg-muted/40")}>
                                                         <CardHeader>
@@ -207,11 +208,11 @@ function RewardsHubContent() {
             <TabsContent value="custom" className="mt-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Seu Baú de Recompensas</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
                         <CardDescription>
                             {customTemplates.length > 0
-                            ? "Estas são as recompensas que você criou ou personalizou. Clique em \"Gerenciar\" para atribuí-las."
-                            : "Seu baú de recompensas personalizadas está vazio."
+                            ? "Estas são as recompensas que você criou do zero ou editou. Clique em \"Gerenciar\" para atribuí-las."
+                            : "Seu catálogo de recompensas personalizadas está vazio."
                             }
                         </CardDescription>
                     </CardHeader>
@@ -250,7 +251,7 @@ function RewardsHubContent() {
                                                 </div>
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
-                                                <Button variant="secondary" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
+                                               <Button variant="secondary" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
                                                     <Edit3 className="mr-2 h-4 w-4" /> Gerenciar
                                                 </Button>
                                                 <TooltipProvider>
