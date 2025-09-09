@@ -49,7 +49,6 @@ export default function EditRewardTemplatePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [isFetchingData, setIsFetchingData] = useState(true);
   const [rewardTemplate, setRewardTemplate] = useState<RewardTemplate | null>(null);
-  const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
 
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -137,6 +136,7 @@ export default function EditRewardTemplatePage() {
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
         status: values.status,
+        source: 'custom',
       };
       
       await updateRewardTemplate(user, rewardTemplate.id, updatePayload);
@@ -147,14 +147,14 @@ export default function EditRewardTemplatePage() {
       }
 
       toast({
-        title: 'Recompensa Atualizada!',
+        title: 'Recompensa Personalizada!',
         description: toastDescription,
       });
       router.push('/dashboard/rewards'); 
     } catch (error) {
       console.error('Error updating reward template:', error);
       toast({
-        title: 'Erro ao Atualizar Recompensa',
+        title: 'Erro ao Personalizar Recompensa',
         description: 'Não foi possível salvar as alterações. Tente novamente.',
         variant: 'destructive',
       });
@@ -351,18 +351,18 @@ export default function EditRewardTemplatePage() {
                 />
                 
                 {canEdit && (
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setIsAssignDialogOpen(true)}>
-                       <Users className="mr-2 h-4 w-4" /> Gerenciar Atribuições
-                    </Button>
-                    <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
-                      {isLoading ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Save className="mr-2 h-4 w-4" />
-                      )}
-                      Salvar Personalização
-                    </Button>
+                  <div className="flex items-center justify-end gap-2 mt-8 pt-6 border-t">
+                     <Button type="button" variant="outline" onClick={() => router.push('/dashboard/rewards')} disabled={isLoading}>
+                       Cancelar
+                     </Button>
+                     <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
+                        {isLoading ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-4 w-4" />
+                        )}
+                        Salvar Personalização
+                      </Button>
                   </div>
                 )}
               </fieldset>
@@ -370,14 +370,6 @@ export default function EditRewardTemplatePage() {
           </Form>
         </CardContent>
       </Card>
-      {rewardTemplate && (
-        <AssignRewardDialog
-            template={rewardTemplate}
-            isOpen={isAssignDialogOpen}
-            onOpenChange={setIsAssignDialogOpen}
-            onAssigned={fetchRewardTemplateData}
-        />
-      )}
     </div>
   );
 }
