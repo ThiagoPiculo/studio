@@ -192,7 +192,7 @@ export default function EditRewardTemplatePage() {
           <div className="flex items-center gap-3 mb-2">
             <Gift className="h-10 w-10 text-primary" />
             <div>
-              <CardTitle className="text-3xl font-headline">Editar Recompensa</CardTitle>
+              <CardTitle className="text-3xl font-headline">Personalizar Recompensa</CardTitle>
               <CardDescription className="text-md">
                 Modifique os detalhes desta recompensa.
               </CardDescription>
@@ -362,7 +362,7 @@ export default function EditRewardTemplatePage() {
                       ) : (
                         <Save className="mr-2 h-4 w-4" />
                       )}
-                      Salvar Alterações na Recompensa
+                      Salvar Personalização
                     </Button>
                     <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.push('/dashboard/rewards')}>
                        Cancelar
