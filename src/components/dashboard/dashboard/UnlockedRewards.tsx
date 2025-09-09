@@ -27,8 +27,14 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
   const { toast } = useToast();
   
   const unlockedRewardsByChild = useMemo(() => {
+    // Ensure we have the necessary data.
+    if (!childrenProfiles || !rewardTemplates) {
+        return [];
+    }
+
     return childrenProfiles.map(child => {
-        // Filter the main reward catalog based on the child's stars
+        // Filter the main reward catalog based on the child's stars.
+        // This is the single source of truth now.
         const affordableAndActiveTemplates = rewardTemplates
           .filter(template => 
               template.status === 'active' && 
