@@ -137,6 +137,7 @@ export default function EditRewardTemplatePage() {
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
         status: values.status,
+        source: 'custom', // Mark as custom on any edit
       };
       
       await updateRewardTemplate(user, rewardTemplate.id, updatePayload);

@@ -79,6 +79,9 @@ function RewardsHubContent() {
     }
   }, [authLoading, isFamilyLoading, refetchData]);
 
+  const customTemplates = useMemo(() => {
+    return rewardTemplates.filter(template => template.source === 'custom');
+  }, [rewardTemplates]);
 
   const existingTemplateTitles = useMemo(() => {
     return new Set(rewardTemplates.map(t => t.title.toLowerCase().trim()));
@@ -201,16 +204,16 @@ function RewardsHubContent() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Seu Baú de Recompensas</CardTitle>
                         <CardDescription>
-                            {rewardTemplates.length > 0
+                            {customTemplates.length > 0
                             ? "Estas são as recompensas que você criou ou adicionou das ideias. Elas estão disponíveis para serem resgatadas pelos heróis."
                             : "Seu baú de recompensas está vazio. Crie uma recompensa personalizada ou use uma ideia para começar."
                             }
                         </CardDescription>
                     </CardHeader>
-                    {rewardTemplates.length > 0 && (
+                    {customTemplates.length > 0 && (
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {rewardTemplates.map(template => {
+                                {customTemplates.map(template => {
                                     const categoryDetails = getCategoryDetails(template.category);
                                     return (
                                         <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
