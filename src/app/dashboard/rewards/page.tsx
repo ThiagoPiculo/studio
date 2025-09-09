@@ -147,7 +147,7 @@ function RewardsHubContent() {
                 </TabsTrigger>
                 <TabsTrigger value="custom">
                     <User className="mr-2 h-4 w-4"/>
-                    <span className="sm:hidden">Seu Baú</span>
+                    <span className="sm:hidden">Personalizadas</span>
                     <span className="hidden sm:inline">Recompensas Personalizadas</span>
                 </TabsTrigger>
             </TabsList>
