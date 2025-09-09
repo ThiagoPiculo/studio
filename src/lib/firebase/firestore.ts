@@ -1475,6 +1475,37 @@ export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: 
   }
 };
 
+export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
+  const q = query(
+    collection(db, "childRewardInstances"),
+    where("templateId", "==", templateId),
+    where("childId", "==", childId),
+    where("status", "==", "active") // Only delete active ones
+  );
+  const querySnapshot = await getDocs(q);
+  if (querySnapshot.empty) {
+    return;
+  }
+
+  const batch = writeBatch(db);
+  querySnapshot.forEach(doc => {
+    batch.delete(doc.ref);
+  });
+  await batch.commit();
+
+  const child = await getChildProfileById(childId);
+  if (child?.familyId) {
+    const template = await getRewardTemplateById(templateId);
+    await createAllianceNotification(child.familyId, actor, {
+      type: "instance_unassigned",
+      title: "Recompensa Desatribuída",
+      description: `${actor.name} removeu a recompensa "${template?.title}" de ${child.name}.`,
+      href: `/dashboard/mural?childId=${childId}&tab=rewards`,
+      relatedChildId: childId,
+    });
+  }
+};
+
 
 
 // --- Mission Templates (Catálogo de Missões) ---
@@ -2511,3 +2542,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
   await batch.commit();
 };
+
+    
+
+    
