@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -280,8 +279,7 @@ function MuralCompletoPageContent() {
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
-  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
-
+  
   // School Schedule States
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
   const [entryToEdit, setEntryToEdit] = useState<SchoolScheduleEntry | null>(null);
@@ -331,15 +329,7 @@ function MuralCompletoPageContent() {
         
         setChild(childData);
         setMissionInstances(missions);
-        setChildRewards(rewards.sort((a, b) => {
-            if (a.status === 'active' && b.status !== 'active') return -1;
-            if (a.status !== 'active' && b.status === 'active') return 1;
-            if (a.status === 'disabled' && b.status === 'redeemed') return -1;
-            if (a.status === 'redeemed' && b.status === 'disabled') return 1;
-            const timeA = a.assignedAt ? new Date(a.assignedAt).getTime() : 0;
-            const timeB = b.assignedAt ? new Date(b.assignedAt).getTime() : 0;
-            return timeB - timeA;
-        }));
+        setChildRewards(rewards);
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
         setCollaborators(collaborators);
         setMemberships(memberships);
@@ -687,105 +677,45 @@ function MuralCompletoPageContent() {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
 
-  const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
-    return missionCategories.find(cat => cat.id === categoryId);
-  };
 
-
-  const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
-    switch (status) {
-      case 'active': return 'default';
-      case 'redeemed': return 'secondary';
-      case 'disabled': return 'outline';
-      default: return 'outline';
-    }
-  };
-
-  const getRewardStatusText = (status: ChildRewardInstance['status']): string => {
-    switch (status) {
-      case 'active': return 'Ativa';
-      case 'redeemed': return 'Resgatada';
-      case 'disabled': return `Inativa para ${child?.name || 'esta criança'}`;
-      default: return 'Desconhecido';
-    }
-  };
-
-  const getMissionStatusBadgeVariant = (status: MissionInstance['status']): "default" | "secondary" | "destructive" => {
-    switch (status) {
-        case 'pending': return 'default';
-        case 'completed': return 'secondary';
-        case 'expired': return 'destructive';
-        default: return 'secondary';
-    }
-  };
-
-  const getMissionStatusText = (status: MissionInstance['status']): string => {
-      switch (status) {
-          case 'pending': return 'Pendente';
-          case 'completed': return 'Concluída';
-          case 'expired': return 'Expirada';
-          default: return 'Desconhecido';
-      }
-  };
-
-
-  const handleMarkAsRedeemed = async () => {
-    if (!instanceToManage || !child || !user) return;
-    setIsDeleting(true);
-    try {
-      const actor = { id: user.uid, name: user.name };
-      await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
+  const handleMarkAsRedeemed = async (template: RewardTemplate) => {
+      if (!child || !user) return;
       
-      // Optimistic update
-      setChild(prev => prev ? { ...prev, stars: prev.stars - instanceToManage.starsCost } : null);
-      setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? { ...r, status: 'redeemed', redeemedAt: new Date().toISOString() as any } : r));
+      const hasEnoughStars = child.stars >= template.starsCost;
+      if (!hasEnoughStars) {
+          toast({ title: "Estrelas Insuficientes!", description: `${child.name} ainda não pode resgatar esta recompensa.`, variant: 'destructive' });
+          return;
+      }
+      
+      const instance: Omit<ChildRewardInstance, 'id' | 'assignedAt' | 'updatedAt'> = {
+          templateId: template.id,
+          childId: child.id,
+          ownerId: child.ownerId,
+          familyId: child.familyId || null,
+          title: template.title,
+          description: template.description || '',
+          category: template.category,
+          starsCost: template.starsCost,
+          isMaterial: template.isMaterial,
+          status: 'redeemed',
+          isRedeemed: true,
+          redeemedAt: new Date() as any, 
+          actorId: user.uid,
+      }
 
-      toast({ title: "Recompensa Resgatada!", description: `"${instanceToManage.title}" foi resgatada por ${child.name}. Que incrível!` });
-    } catch (error: any) {
-      console.error("Error marking reward as redeemed:", error);
-      toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível marcar a recompensa como resgatada.", variant: "destructive" });
-      if (child) await fetchDataForChild(child.id); // Revert on error
-    } finally {
-      setIsDeleting(false);
-      setIsRedeemConfirmOpen(false);
-      setInstanceToManage(null);
-    }
-  };
+      setIsDeleting(true); // Using isDeleting as a generic processing state
+      try {
+          // This will create the instance and deduct stars atomically
+          await redeemChildRewardInstance(instance as any, child.id, { id: user.uid, name: user.name });
 
-  const handleToggleInstanceStatus = async (instance: ChildRewardInstance, newStatus: 'active' | 'disabled') => {
-    setIsDeleting(true);
-    try {
-      await updateChildRewardInstance(instance.id, { status: newStatus });
-      setChildRewards(prev => prev.map(r => r.id === instance.id ? { ...r, status: newStatus } : r)); // Optimistic update
-      toast({
-        title: "Status da Recompensa Atualizado",
-        description: `A recompensa "${instance.title}" agora está ${newStatus === 'active' ? 'disponível' : 'indisponível'} para ${child?.name}.`
-      });
-    } catch (error) {
-      console.error(`Error toggling reward instance status:`, error);
-      toast({ title: "Erro ao Atualizar Status", description: "Não foi possível alterar o status da recompensa.", variant: "destructive" });
-      if (child) await fetchDataForChild(child.id); // Revert on error
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleDeleteInstance = async () => {
-    if (!instanceToManage || !user) return;
-    setIsDeleting(true);
-    try {
-      await deleteChildRewardInstance(user, instanceToManage.id);
-      setChildRewards(prev => prev.filter(r => r.id !== instanceToManage.id)); // Optimistic update
-      toast({ title: "Recompensa Removida", description: `A recompensa "${instanceToManage.title}" foi retirada da lista de ${child?.name}.` });
-    } catch (error) {
-      console.error("Error deleting reward instance:", error);
-      toast({ title: "Erro ao Remover Atribuição", description: "Não foi possível remover a recompensa.", variant: "destructive" });
-      if (child) await fetchDataForChild(child.id); // Revert on error
-    } finally {
-      setIsDeleting(false);
-      setIsDeleteInstanceConfirmOpen(false);
-      setInstanceToManage(null);
-    }
+          toast({ title: "Recompensa Resgatada!", description: `"${template.title}" foi resgatada por ${child.name}. Que incrível!` });
+          fetchDataForChild(child.id); // Re-fetch all data to ensure UI is up-to-date
+      } catch (error: any) {
+          console.error("Error redeeming reward:", error);
+          toast({ title: "Erro ao Resgatar", description: error.message || "Não foi possível resgatar a recompensa.", variant: "destructive" });
+      } finally {
+          setIsDeleting(false);
+      }
   };
 
   const handleEditEntry = (entry: SchoolScheduleEntry) => {
@@ -810,13 +740,6 @@ function MuralCompletoPageContent() {
       setIsEntryDialogOpen(false); // Close edit dialog if delete is triggered from there
     }
   };
-
-  const filteredChildRewards = useMemo(() => {
-    if (instanceStatusFilter === 'all') {
-      return childRewards;
-    }
-    return childRewards.filter(reward => reward.status === instanceStatusFilter);
-  }, [childRewards, instanceStatusFilter]);
 
   const filteredMissions = useMemo(() => {
     if (!missionInstances) return [];
@@ -920,10 +843,10 @@ function MuralCompletoPageContent() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 h-auto lg:h-auto bg-muted/50 p-1 rounded-lg">
           <TabsTrigger value="overview" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><User className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Visão Geral</span></TabsTrigger>
-          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Target className="h-4 w-4 text-red-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Missões</span></TabsTrigger>
-          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Gift className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Recompensas</span></TabsTrigger>
-          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Agenda Escolar</span></TabsTrigger>
-          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Quadro de Medalhas</span></TabsTrigger>
+          <TabsTrigger value="missions" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Target className="h-4 w-4 text-red-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Missões</span></TabsTrigger>
+          <TabsTrigger value="rewards" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Gift className="h-4 w-4 text-blue-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Recompensas</span></TabsTrigger>
+          <TabsTrigger value="school-schedule" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><NotebookPen className="h-4 w-4 text-chart-5 lg:h-5 lg:w-5 lg:mb-1" /><span>Rotina Escolar</span></TabsTrigger>
+          <TabsTrigger value="badges" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2"><Medal className="h-4 w-4 text-purple-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Medalhas</span></TabsTrigger>
           <TabsTrigger value="edit" className="text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md lg:flex-col lg:h-auto lg:gap-1 lg:p-2" disabled={!canEdit}><Edit3 className="h-4 w-4 text-orange-500 lg:h-5 lg:w-5 lg:mb-1" /><span>Editar Perfil</span></TabsTrigger>
         </TabsList>
 
@@ -937,7 +860,7 @@ function MuralCompletoPageContent() {
           ) : (
             <>
                 <TabsContent value="overview" className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <UnlockedRewards childProfile={child} rewardTemplates={rewardTemplates} />
                     </div>
                 </TabsContent>
@@ -996,146 +919,73 @@ function MuralCompletoPageContent() {
                 </TabsContent>
 
                 <TabsContent value="rewards">
-                <Card className="shadow-md">
-                <CardHeader>
-                    <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
-                    <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
-                    <div className="pt-4">
-                    <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
-                    <RadioGroup
-                        value={instanceStatusFilter}
-                        onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'redeemed' | 'disabled')}
-                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
-                    >
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="all" id={`instance-filter-all-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-all-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="active" id={`instance-filter-active-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-active-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-redeemed-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-disabled-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
-                        </div>
-                    </RadioGroup>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
-                    <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Recompensas
-                    </Button>
-                    {filteredChildRewards.length === 0 ? (
-                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                        <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                        <p className="text-lg text-muted-foreground">
-                        {childRewards.length === 0
-                            ? `${child.name} ainda não tem recompensas atribuídas.`
-                            : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
-                        }
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                        {childRewards.length === 0
-                            ? 'Vá ao catálogo para atribuir algumas!'
-                            : 'Tente um filtro diferente ou verifique o catálogo.'
-                        }
-                        </p>
-                    </div>
-                    ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {filteredChildRewards.map((instance) => {
-                        const categoryDetails = getCategoryDetails(instance.category);
-                        const CategoryIconComponent = categoryDetails?.icon;
-                        return (
-                            <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                <CardTitle className="text-lg">{instance.title}</CardTitle>
-                                <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
-                                    {getRewardStatusText(instance.status)}
-                                </Badge>
-                                </div>
-                                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
-                            </CardHeader>
-                            <CardContent className="space-y-2 flex-grow text-sm">
-                                {categoryDetails && (
-                                <div className="flex items-center">
-                                    <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                                    {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                                    </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                                    {categoryDetails.label}
-                                    </span>
-                                </div>
-                                )}
-                                <div className="flex items-center text-muted-foreground">
-                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                                Custo: {instance.starsCost} estrelas
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
-                                </p>
-                                {instance.status === 'redeemed' && instance.redeemedAt && (
-                                <p className="text-xs text-green-600 font-medium">
-                                    Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
-                                </p>
-                                )}
-                            </CardContent>
-                            <CardFooter>
-                                {instance.status !== 'redeemed' && canEdit ? (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
-                                        <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {instance.status === 'active' && (
-                                        <>
-                                        <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting}>
-                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
-                                            <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
-                                        </DropdownMenuItem>
-                                        </>
-                                    )}
-                                    {instance.status === 'disabled' && (
-                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
-                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
-                                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                                        disabled={isDeleting}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
-                                    </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                ) : (
-                                <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
-                                    <CheckCircle className="mr-2 h-4 w-4" /> {instance.status === 'redeemed' ? 'Recompensa Já Resgatada' : 'Ações Indisponíveis'}
-                                </Button>
-                                )}
-                            </CardFooter>
-                            </Card>
-                        );
-                        })}
-                    </div>
-                    )}
-                </CardContent>
-                </Card>
-            </TabsContent>
+                  <Card className="shadow-md">
+                    <CardHeader>
+                        <CardTitle>Baú de Recompensas de {child.name}</CardTitle>
+                        <CardDescription>Esta é a vitrine de todas as recompensas que {child.name} pode conquistar. As que ele(a) pode resgatar agora com suas <span className="font-bold text-amber-500">{child.stars} estrelas</span> estão destacadas!</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
+                            <ExternalLink className="mr-2 h-4 w-4" /> Ver e Editar o Catálogo do Baú
+                        </Button>
+                        {rewardTemplates.filter(t => t.status === 'active').length === 0 ? (
+                            <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                                <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                                <p className="text-lg text-muted-foreground">O Baú de Recompensas está vazio.</p>
+                                <p className="text-sm text-muted-foreground mt-1">Vá ao catálogo para criar os tesouros que seus heróis poderão conquistar!</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {rewardTemplates.filter(t => t.status === 'active').map((template) => {
+                                    const canAfford = child.stars >= template.starsCost;
+                                    const categoryDetails = getCategoryDetails(template.category);
+                                    const CategoryIconComponent = categoryDetails?.icon;
+                                    
+                                    return (
+                                        <Card key={template.id} className={cn("shadow-sm hover:shadow-md transition-shadow flex flex-col", !canAfford && "bg-muted/30")}>
+                                            <CardHeader>
+                                                <CardTitle className="text-lg">{template.title}</CardTitle>
+                                                {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
+                                            </CardHeader>
+                                            <CardContent className="flex-grow space-y-2">
+                                                 <Badge variant={canAfford ? 'default' : 'secondary'} className={cn("font-semibold", canAfford && "bg-green-600 hover:bg-green-700")}>
+                                                    {canAfford ? <CheckCircle className="mr-1.5 h-4 w-4" /> : <Lock className="mr-1.5 h-4 w-4" />}
+                                                    {canAfford ? 'Pode Resgatar!' : 'Junte Estrelas!'}
+                                                 </Badge>
+                                                 {categoryDetails && (
+                                                    <div className="flex items-center pt-2">
+                                                        <span className="text-xs font-semibold flex items-center gap-1.5 text-muted-foreground">
+                                                            {CategoryIconComponent && <CategoryIconComponent className="h-4 w-4" />}
+                                                            {categoryDetails.label}
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </CardContent>
+                                            <CardFooter className="flex flex-col items-start gap-2 border-t pt-3 pb-3">
+                                                 <div className="flex items-center justify-between w-full">
+                                                    <span className="text-sm font-semibold text-muted-foreground">Custo:</span>
+                                                    <Badge variant="outline" className="text-base">
+                                                        {template.starsCost} <StarIcon className="ml-1.5 h-4 w-4 text-yellow-400 fill-yellow-400" />
+                                                    </Badge>
+                                                 </div>
+                                                 <Button 
+                                                     size="sm" 
+                                                     className="w-full mt-2" 
+                                                     disabled={!canAfford || !canEdit || isDeleting}
+                                                     onClick={() => handleMarkAsRedeemed(template)}
+                                                 >
+                                                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CheckCircle className="mr-2 h-4 w-4" />}
+                                                    Confirmar Resgate
+                                                 </Button>
+                                            </CardFooter>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
             <TabsContent value="school-schedule">
                 <Card className="shadow-md">
                     <CardHeader>
@@ -1489,48 +1339,27 @@ function MuralCompletoPageContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Redeem Confirmation Dialog */}
+      {/* Redeem Confirmation Dialog - Now handles templates */}
       {instanceToManage && isRedeemConfirmOpen && child && (
         <AlertDialog open={isRedeemConfirmOpen} onOpenChange={setIsRedeemConfirmOpen}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Resgate de Recompensa</AlertDialogTitle>
               <AlertDialogDescription>
-                Você tem certeza que deseja marcar a recompensa "{instanceToManage.title}" ({instanceToManage.starsCost} estrelas) como resgatada por {child.name}? Isso deduzirá as estrelas do saldo de {child.name}.
+                Você tem certeza que deseja resgatar a recompensa "{instanceToManage.title}" por {instanceToManage.starsCost} estrelas para {child.name}?
                 <br/>
-                Saldo atual de estrelas de {child.name}: {child.stars}.
+                Saldo atual de estrelas de {child.stars}: {child.stars}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel onClick={() => setIsRedeemConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
               <AlertDialogAction
-                onClick={handleMarkAsRedeemed}
+                onClick={() => handleMarkAsRedeemed(instanceToManage as any)}
                 className="bg-green-600 hover:bg-green-700"
                 disabled={isDeleting || child.stars < instanceToManage.starsCost}
               >
                 {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                Sim, Marcar como Resgatada
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-
-      {/* Delete Instance Confirmation Dialog */}
-      {instanceToManage && isDeleteInstanceConfirmOpen && (
-         <AlertDialog open={isDeleteInstanceConfirmOpen} onOpenChange={setIsDeleteInstanceConfirmOpen}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Confirmar Remoção da Atribuição</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja remover a atribuição da recompensa "{instanceToManage.title}" para {child?.name}? Esta ação não pode ser desfeita para esta criança específica.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setIsDeleteInstanceConfirmOpen(false)} disabled={isDeleting}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDeleteInstance} className="bg-destructive hover:bg-destructive/90" disabled={isDeleting}>
-                {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                Sim, Remover Atribuição
+                Sim, Resgatar
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -1579,3 +1408,6 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+
+    
