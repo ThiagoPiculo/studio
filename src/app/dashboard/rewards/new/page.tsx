@@ -322,9 +322,6 @@ function CreateRewardTemplatePageContent() {
           </Form>
         </CardContent>
         <CardFooter className="flex-col items-start space-y-2">
-            <p className="text-xs text-muted-foreground">
-                Esta recompensa ficará disponível para todos os heróis neste espaço de trabalho.
-            </p>
         </CardFooter>
       </Card>
     </div>
