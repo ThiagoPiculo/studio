@@ -316,7 +316,7 @@ function CreateRewardTemplatePageContent() {
                 ) : (
                   <Gift className="mr-2 h-4 w-4" />
                 )}
-                Adicionar ao Baú de Recompensas
+                Criar recompensa personalizada
               </Button>
             </form>
           </Form>
