@@ -374,14 +374,6 @@ export default function EditRewardTemplatePage() {
           </Form>
         </CardContent>
       </Card>
-      {rewardTemplate && (
-        <AssignRewardDialog
-            template={rewardTemplate}
-            isOpen={isAssignDialogOpen}
-            onOpenChange={setIsAssignDialogOpen}
-            onAssigned={fetchRewardTemplateData}
-        />
-      )}
     </div>
   );
 }

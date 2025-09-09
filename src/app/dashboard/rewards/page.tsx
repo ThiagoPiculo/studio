@@ -191,7 +191,7 @@ function RewardsHubContent() {
                                                         </CardContent>
                                                         <CardFooter>
                                                             <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                                {isAdded ? "Gerenciar Recompensa" : "Usar esta Ideia"}
+                                                                {isAdded ? "Personalizar" : "Usar esta Ideia"}
                                                             </Button>
                                                         </CardFooter>
                                                     </Card>
@@ -211,8 +211,8 @@ function RewardsHubContent() {
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
                         <CardDescription>
                             {customTemplates.length > 0
-                            ? "Estas são as recompensas que você criou do zero ou editou. Clique em \"Gerenciar\" para atribuí-las."
-                            : "Seu catálogo de recompensas personalizadas está vazio."
+                            ? "Estas são as recompensas que você criou do zero ou personalizou."
+                            : "Seu baú de recompensas personalizadas está vazio."
                             }
                         </CardDescription>
                     </CardHeader>
@@ -252,7 +252,7 @@ function RewardsHubContent() {
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
                                                <Button variant="secondary" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
-                                                    <Edit3 className="mr-2 h-4 w-4" /> Gerenciar
+                                                    <Edit3 className="mr-2 h-4 w-4" /> Personalizar
                                                 </Button>
                                                 <TooltipProvider>
                                                     <Tooltip><TooltipTrigger asChild>
