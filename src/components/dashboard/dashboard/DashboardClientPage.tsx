@@ -8,7 +8,6 @@ import { CalendarCheck2, HelpCircle } from "lucide-react";
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { ProgressAnalysis } from '@/components/dashboard/dashboard/ProgressAnalysis';
-import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import { Reports } from '@/components/dashboard/dashboard/Reports';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -51,7 +50,6 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards rewardTemplates={rewardTemplates} childrenProfiles={filteredChildren} />
           <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>

@@ -4,8 +4,8 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships } from '@/lib/firebase/firestore';
-import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole } from '@/lib/types';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole, RewardTemplate } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -59,6 +59,7 @@ import { LevelUpPath } from '@/components/dashboard/LevelUpPath';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
+import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 
 type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
@@ -243,6 +244,7 @@ function MuralCompletoPageContent() {
   const [allChildrenInContext, setAllChildrenInContext] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
+  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
@@ -317,13 +319,14 @@ function MuralCompletoPageContent() {
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
         
-        const [childData, missions, rewards, schedule, collaborators, memberships] = await Promise.all([
+        const [childData, missions, rewards, schedule, collaborators, memberships, templates] = await Promise.all([
             getChildProfileById(childIdToFetch),
             getMissionInstancesByChild(childIdToFetch),
             getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
             familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
             familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
+            getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
         ]);
         
         setChild(childData);
@@ -340,6 +343,7 @@ function MuralCompletoPageContent() {
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
         setCollaborators(collaborators);
         setMemberships(memberships);
+        setRewardTemplates(templates);
 
     } catch (error) {
         console.error("Error fetching secondary child data:", error);
@@ -907,7 +911,7 @@ function MuralCompletoPageContent() {
 
             <div className="mt-4 flex flex-col gap-4 font-semibold">
                 <div className="w-full">
-                    <LevelUpPath currentLevel={child.level} currentXp={child.totalStars} />
+                    <LevelUpPath currentLevel={child.level} currentTotalStars={child.totalStars} />
                 </div>
             </div>
         </div>
@@ -933,124 +937,9 @@ function MuralCompletoPageContent() {
           ) : (
             <>
                 <TabsContent value="overview" className="space-y-6">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                    <Card className="shadow-sm flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Missões Concluídas</CardTitle>
-                        <CheckSquare className="h-5 w-5 text-green-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.completedMissions}</div>
-                        <p className="text-xs text-muted-foreground">Total de missões finalizadas</p>
-                    </CardContent>
-                    </Card>
-                    <Card className="shadow-sm flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total de Estrelas Ganhas</CardTitle>
-                        <StarIcon className="h-5 w-5 text-yellow-400 fill-yellow-400" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.starsEarned}</div>
-                        <p className="text-xs text-muted-foreground">Acumuladas com missões</p>
-                    </CardContent>
-                    </Card>
-                    <Card className="shadow-sm flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Recompensas Resgatadas</CardTitle>
-                        <Trophy className="h-5 w-5 text-orange-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.rewardsRedeemed}</div>
-                        <p className="text-xs text-muted-foreground">Total de prêmios conquistados</p>
-                    </CardContent>
-                    </Card>
-                    <Card className="shadow-sm flex flex-col">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Medalhas Desbloqueadas</CardTitle>
-                        <Medal className="h-5 w-5 text-blue-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.earnedBadges}</div>
-                        <p className="text-xs text-muted-foreground">Total de medalhas ganhas</p>
-                    </CardContent>
-                    </Card>
-                </div>
-
-                <Card className="shadow-md">
-                    <CardHeader>
-                        <CardTitle>Atividades Recentes</CardTitle>
-                        <CardDescription>O histórico das últimas conquistas de {child.name}.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        {activities.length === 0 ? (
-                            <div className="text-center py-6 text-muted-foreground">
-                                <Clock className="h-10 w-10 mx-auto mb-2" />
-                                Nenhuma atividade recente registrada.
-                            </div>
-                        ) : (
-                            <ul className="space-y-4">
-                                {activities.map((activity, index) => {
-                                    const completedDate = getDateObject(activity.type === 'mission' ? activity.completionLogEntry?.completedAt : activity.completedAt) || new Date();
-                                    const timeAgo = formatDistanceToNowStrict(completedDate, { locale: ptBR, addSuffix: true });
-                                    const isActorTheChild = activity.actorId === child.id;
-
-                                    let actorRoleLabel = '';
-                                    if (!isActorTheChild && activity.actorId) {
-                                        const membership = memberships.find(m => m.userId === activity.actorId);
-                                        if(membership) {
-                                            actorRoleLabel = `(${familyRoles.find(r => r.id === membership.role)?.label || 'Membro'})`;
-                                        }
-                                    }
-
-                                    const actorDisplayName = isActorTheChild
-                                        ? `pelo próprio ${child.name}!`
-                                        : `${activity.actorName || 'um responsável'} ${actorRoleLabel}`;
-
-                                    return (
-                                    <Fragment key={`${activity.id}-${completedDate.getTime()}-${index}`}>
-                                        <li className="flex items-start gap-4">
-                                            <div className={`p-2.5 rounded-full mt-1 ${activity.type === 'mission' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-yellow-100 dark:bg-yellow-800/30'}`}>
-                                                {activity.type === 'mission' ? (
-                                                <CheckCircle className="h-6 w-6 text-green-600 dark:text-green-400" />
-                                                ) : (
-                                                <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
-                                                )}
-                                            </div>
-                                            <div className="flex-grow text-sm space-y-1">
-                                                {activity.type === 'mission' ? (
-                                                    <>
-                                                        <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                                            <span>{child.name.toUpperCase()} - Missão {activity.missionTypeLabel} Cumprida</span>
-                                                            <span className="font-bold text-green-600 text-xs flex items-center gap-1.5 whitespace-nowrap">
-                                                                (+{activity.completionLogEntry.stars} <StarIcon className="h-3.5 w-3.5 fill-current" />)
-                                                            </span>
-                                                        </p>
-                                                        <p className="font-medium text-foreground/80">- {activity.title} (ref. ao dia {format(activity.scheduledFor, 'dd/MM/yyyy')})</p>
-                                                        <p className="text-xs text-muted-foreground">Concluída por {actorDisplayName}</p>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <p className="font-semibold text-foreground/90 flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                                                            <span>{child.name.toUpperCase()} - Recompensa Resgatada</span>
-                                                            <span className="font-bold text-destructive text-xs flex items-center gap-1.5 whitespace-nowrap">
-                                                                (-{activity.starsCost} <StarIcon className="h-3.5 w-3.5 fill-current" />)
-                                                            </span>
-                                                        </p>
-                                                        <p className="font-medium text-foreground/80">- {activity.title}</p>
-                                                        <p className="text-xs text-muted-foreground">Resgatada por {actorDisplayName}</p>
-                                                    </>
-                                                )}
-                                                <p className="text-xs text-muted-foreground capitalize pt-1">{timeAgo}</p>
-                                            </div>
-                                        </li>
-                                        {index < activities.length - 1 && <Separator />}
-                                    </Fragment>
-                                    );
-                                })}
-                            </ul>
-                        )}
-                    </CardContent>
-                </Card>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <UnlockedRewards childProfile={child} rewardTemplates={rewardTemplates} />
+                    </div>
                 </TabsContent>
                 <TabsContent value="missions">
                 <Card className="shadow-md">
