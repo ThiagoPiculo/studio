@@ -22,6 +22,7 @@ import { rewardCategories } from '@/lib/types';
 import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -90,7 +91,15 @@ function CreateRewardTemplatePageContent() {
         default: return null;
     }
   }, [form.watch('category')]);
-  
+
+  const getEffortText = (cost: number | null): string => {
+    if (cost === null) return "";
+    if (cost <= 75) return "de um dia de esforço";
+    if (cost <= 150) return "de 1 a 2 dias de missões";
+    if (cost <= 300) return "de 2 a 3 dias de missões";
+    return "de uma semana de missões";
+  }
+
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
@@ -214,22 +223,30 @@ function CreateRewardTemplatePageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="starsCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ex: 50" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        {suggestedCost ? `Sugestão para esta categoria: ${suggestedCost} estrelas.` : 'Quantas estrelas serão necessárias.'}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="starsCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ex: 50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {suggestedCost && (
+                     <Alert variant="default" className="border-primary/20 bg-primary/5 text-sm">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
+                        <AlertDescription className="text-primary/90">
+                           Sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
+                        </AlertDescription>
+                    </Alert>
                   )}
-                />
+                </div>
                 <div className="space-y-4">
                     <FormField
                     control={form.control}
@@ -321,5 +338,3 @@ export default function CreateRewardPage() {
     </Suspense>
   )
 }
-
-    
