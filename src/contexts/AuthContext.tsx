@@ -1,5 +1,3 @@
-
-
 "use client";
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
@@ -9,6 +7,7 @@ import { auth, db } from '@/lib/firebase/config';
 import type { UserProfile, ChildProfile, AuthContextType } from '@/lib/types';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
+import { populateInitialRewardTemplates } from '@/lib/firebase/firestore';
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -62,16 +61,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               }
               setIsChildAuthenticated(false);
               setChildProfile(null);
+              
+              // Run the sync function for the user
+              await populateInitialRewardTemplates(firebaseUser.uid);
+
             } else {
               // This case might happen if a user was created but firestore doc failed.
               // The `loginWithGoogle` function handles creation, this is a fallback.
-              setUser({
+              const newUserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
                 name: firebaseUser.displayName,
                 avatarUrl: firebaseUser.photoURL,
                 createdAt: firebaseUser.metadata.creationTime ? (new Date(firebaseUser.metadata.creationTime).toISOString() as any) : (new Date().toISOString() as any),
-              });
+              };
+              setUser(newUserProfile);
+              await populateInitialRewardTemplates(firebaseUser.uid);
               setIsChildAuthenticated(false);
               setChildProfile(null);
             }
@@ -132,12 +137,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           },
         };
         await setDoc(userDocRef, userProfile);
+        await populateInitialRewardTemplates(googleUser.uid);
       } else {
         // If user exists but is missing avatar, update it.
         const userData = userDocSnap.data();
         if (!userData.avatarUrl && googleUser.photoURL) {
           await updateDoc(userDocRef, { avatarUrl: googleUser.photoURL });
         }
+        await populateInitialRewardTemplates(googleUser.uid);
       }
 
     } catch (error: any) {
