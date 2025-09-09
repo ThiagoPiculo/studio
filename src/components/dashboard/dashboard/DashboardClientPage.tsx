@@ -41,12 +41,6 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
     return missionInstances.filter(mission => mission.childId === selectedChildId);
   }, [missionInstances, selectedChildId]);
   
-  const filteredRewardInstances = useMemo(() => {
-    if (!selectedChildId) return rewardInstances;
-    return rewardInstances.filter(instance => instance.childId === selectedChildId);
-  }, [rewardInstances, selectedChildId]);
-
-
   return (
     <div className="space-y-8">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -58,7 +52,7 @@ export function DashboardClientPage({ initialData }: DashboardClientPageProps) {
           />
         </div>
         <div className="space-y-6">
-          <UnlockedRewards childRewardInstances={filteredRewardInstances} childrenProfiles={filteredChildren} />
+          <UnlockedRewards rewardTemplates={rewardTemplates} childrenProfiles={filteredChildren} />
           <RecentMedals childrenProfiles={filteredChildren} />
           <Reports />
         </div>
