@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getRewardTemplateById, updateRewardTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate, ChildProfile, FamilyRole } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react';
+import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight, Star as StarIcon } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials, cn } from '@/lib/utils';
@@ -34,7 +34,6 @@ const rewardTemplateFormSchema = z.object({
   isMaterial: z.boolean().default(false),
   isUnique: z.boolean().default(false),
   status: z.enum(['active', 'archived']).default('active'),
-  source: z.enum(['custom', 'predefined']).default('custom'),
 });
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
@@ -69,7 +68,6 @@ export default function EditRewardTemplatePage() {
       isMaterial: false,
       isUnique: false,
       status: 'active',
-      source: 'custom'
     },
   });
   
@@ -95,7 +93,6 @@ export default function EditRewardTemplatePage() {
           isMaterial: fetchedTemplate.isMaterial,
           isUnique: fetchedTemplate.isUnique,
           status: fetchedTemplate.status,
-          source: fetchedTemplate.source,
         });
       } else {
         toast({ title: "Recompensa não encontrada", variant: "destructive" });
@@ -140,7 +137,6 @@ export default function EditRewardTemplatePage() {
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
         status: values.status,
-        source: 'custom', // Mark as custom on any edit
       };
       
       await updateRewardTemplate(user, rewardTemplate.id, updatePayload);
@@ -254,7 +250,7 @@ export default function EditRewardTemplatePage() {
                     name="starsCost"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Custo em Estrelas</FormLabel>
+                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
                         <FormControl>
                           <Input type="number" placeholder="Ex: 50" {...field} />
                         </FormControl>
@@ -355,7 +351,10 @@ export default function EditRewardTemplatePage() {
                 />
                 
                 {canEdit && (
-                  <div className="flex flex-col sm:flex-row-reverse gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <Button type="button" variant="secondary" className="w-full sm:w-auto" onClick={() => setIsAssignDialogOpen(true)}>
+                       <Users className="mr-2 h-4 w-4" /> Gerenciar Atribuições
+                    </Button>
                     <Button type="submit" className="w-full sm:w-auto" disabled={isLoading || isFetchingData}>
                       {isLoading ? (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -364,9 +363,6 @@ export default function EditRewardTemplatePage() {
                       )}
                       Salvar Personalização
                     </Button>
-                    <Button type="button" variant="outline" className="w-full sm:w-auto" onClick={() => router.push('/dashboard/rewards')}>
-                       Cancelar
-                    </Button>
                   </div>
                 )}
               </fieldset>
@@ -374,6 +370,14 @@ export default function EditRewardTemplatePage() {
           </Form>
         </CardContent>
       </Card>
+      {rewardTemplate && (
+        <AssignRewardDialog
+            template={rewardTemplate}
+            isOpen={isAssignDialogOpen}
+            onOpenChange={setIsAssignDialogOpen}
+            onAssigned={fetchRewardTemplateData}
+        />
+      )}
     </div>
   );
 }

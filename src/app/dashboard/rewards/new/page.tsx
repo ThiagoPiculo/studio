@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addRewardTemplate } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { cn } from '@/lib/utils';
 
@@ -219,7 +219,7 @@ function CreateRewardTemplatePageContent() {
                   name="starsCost"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Custo em Estrelas</FormLabel>
+                      <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
                       <FormControl>
                         <Input type="number" placeholder="Ex: 50" {...field} />
                       </FormControl>
