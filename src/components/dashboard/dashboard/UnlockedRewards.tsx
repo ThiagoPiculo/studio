@@ -29,6 +29,7 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
   
   const unlockedRewardsByChild = useMemo(() => {
     return childrenProfiles.map(child => {
+      // Filter the main reward catalog based on the child's stars
       const affordableAndActiveTemplates = rewardTemplates
         .filter(template => 
             template.status === 'active' && 
@@ -36,21 +37,21 @@ export function UnlockedRewards({ childrenProfiles, rewardTemplates }: UnlockedR
         )
         .sort((a, b) => a.starsCost - b.starsCost);
 
+      // Group these affordable rewards by category
       const groupedRewards = affordableAndActiveTemplates.reduce((acc, reward) => {
-        let group = acc.find(g => g.category === reward.category);
-        if (!group) {
-          const categoryInfo = rewardCategories.find(c => c.id === reward.category);
-          if(categoryInfo) {
-            group = { category: reward.category, rewards: [] };
-            acc.push(group);
-          } else {
-            return acc;
-          }
+        const categoryInfo = rewardCategories.find(c => c.id === reward.category);
+        if(categoryInfo) {
+            let group = acc.find(g => g.category === reward.category);
+            if (!group) {
+              group = { category: reward.category, rewards: [] };
+              acc.push(group);
+            }
+            group.rewards.push(reward);
         }
-        group.rewards.push(reward);
         return acc;
       }, [] as GroupedReward[]);
 
+      // Sort the groups based on the predefined category order
       groupedRewards.sort((a, b) => {
         const indexA = rewardCategories.findIndex(rc => rc.id === a.category);
         const indexB = rewardCategories.findIndex(rc => rc.id === b.category);
