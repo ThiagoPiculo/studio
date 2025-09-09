@@ -104,6 +104,11 @@ function RewardsHubContent() {
   };
   
   const handleUseIdea = (idea: PredefinedRewardIdea) => {
+    const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
+    if (existingTemplate) {
+      router.push(`/dashboard/rewards/edit-template/${existingTemplate.id}`);
+      return;
+    }
     const queryParams = new URLSearchParams();
     queryParams.append('title', idea.title);
     if (idea.description) queryParams.append('description', idea.description);
@@ -184,8 +189,8 @@ function RewardsHubContent() {
                                                             <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
                                                         </CardContent>
                                                         <CardFooter>
-                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit || isAdded}>
-                                                                {isAdded ? "Já está no seu Baú" : "Usar esta Ideia"}
+                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                                {isAdded ? "Gerenciar Recompensa" : "Usar esta Ideia"}
                                                             </Button>
                                                         </CardFooter>
                                                     </Card>
@@ -205,8 +210,8 @@ function RewardsHubContent() {
                         <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Seu Baú de Recompensas</CardTitle>
                         <CardDescription>
                             {customTemplates.length > 0
-                            ? "Estas são as recompensas que você criou ou adicionou das ideias. Elas estão disponíveis para serem resgatadas pelos heróis."
-                            : "Seu baú de recompensas está vazio. Crie uma recompensa personalizada ou use uma ideia para começar."
+                            ? "Estas são as recompensas que você criou ou personalizou. Clique em \"Gerenciar\" para atribuí-las."
+                            : "Seu baú de recompensas personalizadas está vazio."
                             }
                         </CardDescription>
                     </CardHeader>
