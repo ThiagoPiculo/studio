@@ -103,8 +103,8 @@ function RewardsHubContent() {
             items: grouped[catInfo.id] || []
         }))
         .filter(group => group.items.length > 0);
-
   }, [customTemplates]);
+
 
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
@@ -202,7 +202,7 @@ function RewardsHubContent() {
                                                     </CardContent>
                                                     <CardFooter>
                                                         <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                            {existingTemplateTitles.has(idea.title.toLowerCase().trim()) ? "Ver no Catálogo" : "Usar esta Ideia"}
+                                                            Usar esta Ideia
                                                         </Button>
                                                     </CardFooter>
                                                 </Card>
@@ -282,8 +282,8 @@ function RewardsHubContent() {
                                 )
                             })}
                             </Accordion>
-                        )}
-                    </CardContent>
+                        </CardContent>
+                    )}
                 </Card>
             </TabsContent>
         </Tabs>
@@ -292,7 +292,7 @@ function RewardsHubContent() {
         <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Recompensa do Baú</AlertDialogTitle>
+              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
               <AlertDialogDescription>
                 Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa permanentemente do catálogo. Esta ação não pode ser desfeita.
               </AlertDialogDescription>
