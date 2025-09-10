@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb, Share2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -39,6 +39,7 @@ import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
 
 
 function MissionsHubContent() {
@@ -57,6 +58,8 @@ function MissionsHubContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [templateToShare, setTemplateToShare] = useState<MissionTemplate | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -165,6 +168,11 @@ function MissionsHubContent() {
     queryParams.append('starsReward', String(idea.starsReward));
     router.push(`/dashboard/missions/new?${queryParams.toString()}`);
   };
+
+  const handleShareClick = (template: MissionTemplate) => {
+    setTemplateToShare(template);
+    setIsShareDialogOpen(true);
+  }
 
   const getStatusBadgeVariant = (status: MissionTemplate['status']): "default" | "secondary" | "outline" => {
     switch (status) {
@@ -298,6 +306,13 @@ function MissionsHubContent() {
                                                     </Tooltip>
                                                 </TooltipProvider>
                                                 <TooltipProvider>
+                                                    <Tooltip><TooltipTrigger asChild>
+                                                        <Button variant="outline" size="icon" onClick={() => handleShareClick(template)} disabled={!canEdit} className="flex-shrink-0">
+                                                            <Share2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger><TooltipContent><p>Compartilhar com outros espaços</p></TooltipContent></Tooltip>
+                                                </TooltipProvider>
+                                                <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
                                                             <Button variant="outline" size="icon" onClick={() => handleDeleteClick(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
@@ -355,6 +370,15 @@ function MissionsHubContent() {
                 isOpen={isAssignDialogOpen}
                 onOpenChange={setIsAssignDialogOpen}
                 onAssigned={refetchData}
+            />
+        )}
+
+        {templateToShare && (
+            <ShareMissionDialog
+                template={templateToShare}
+                isOpen={isShareDialogOpen}
+                onOpenChange={setIsShareDialogOpen}
+                onShared={refetchData}
             />
         )}
     </div>
