@@ -34,6 +34,7 @@ import { predefinedRewardGroups, type PredefinedRewardIdea } from '@/lib/predefi
 import Loading from './loading';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShareRewardDialog } from '@/components/dashboard/rewards/ShareRewardDialog';
 
 
 function RewardsHubContent() {
@@ -46,6 +47,8 @@ function RewardsHubContent() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<RewardTemplate | null>(null);
+  const [templateToShare, setTemplateToShare] = useState<RewardTemplate | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   
    const canEdit = useMemo(() => {
@@ -118,12 +121,9 @@ function RewardsHubContent() {
     router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
   };
 
-  const handleShare = (template: RewardTemplate) => {
-    // Placeholder for future functionality
-    toast({
-        title: 'Compartilhar Recompensa (Em Breve)',
-        description: 'Esta função permitirá que você copie esta recompensa para outros espaços de trabalho.'
-    });
+  const handleShareClick = (template: RewardTemplate) => {
+    setTemplateToShare(template);
+    setIsShareDialogOpen(true);
   }
   
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
@@ -135,180 +135,189 @@ function RewardsHubContent() {
   }
 
   return (
-    <div className="space-y-8 pb-10">
-        <Tabs defaultValue="ideas" className="w-full">
-             <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ideas">
-                    <Lightbulb className="mr-2 h-4 w-4"/>
-                    <span className="sm:hidden">Ideias</span>
-                    <span className="hidden sm:inline">Ideias de Recompensas</span>
-                </TabsTrigger>
-                <TabsTrigger value="custom">
-                    <User className="mr-2 h-4 w-4"/>
-                    <span className="sm:hidden">Personalizadas</span>
-                    <span className="hidden sm:inline">Recompensas Personalizadas</span>
-                </TabsTrigger>
-            </TabsList>
-            <TabsContent value="ideas" className="mt-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
-                        <CardDescription>Inspire-se com nossas sugestões. Você pode personalizar uma ideia para adicioná-la ao seu catálogo ou editar as recompensas que você já criou.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <Accordion type="multiple" className="w-full space-y-4">
-                            {predefinedRewardGroups.map((group) => (
-                                <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
-                                    <AccordionTrigger className="p-4 hover:no-underline">
-                                        <div className="flex items-center gap-3">
-                                            <group.icon className="h-6 w-6 text-primary" />
-                                            <span className="text-lg font-semibold">{group.userCategory}</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <AccordionContent className="p-4 pt-0">
-                                        <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {group.items.map((idea, idx) => {
-                                                const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
-                                                const isAdded = !!existingTemplate;
-                                                return (
-                                                    <Card key={idx} className={cn("shadow-sm flex flex-col h-full", isAdded && "bg-muted/40")}>
-                                                        <CardHeader>
-                                                            <div className="flex items-start justify-between">
-                                                              <CardTitle className="text-base pr-2">{idea.title}</CardTitle>
-                                                              <Popover>
-                                                                <PopoverTrigger asChild>
-                                                                  <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-muted-foreground">
-                                                                    <Info className="h-4 w-4"/>
-                                                                  </Button>
-                                                                </PopoverTrigger>
-                                                                <PopoverContent className="w-64 text-sm space-y-2">
-                                                                  <h4 className="font-semibold text-foreground">Justificativa</h4>
-                                                                  <p className="text-muted-foreground">{idea.justification || 'Sem justificativa.'}</p>
-                                                                  <h4 className="font-semibold text-foreground border-t pt-2 mt-2">Dica para o Herói</h4>
-                                                                  <p className="text-muted-foreground">{idea.tip || 'Complete suas missões para ganhar!'}</p>
-                                                                </PopoverContent>
-                                                              </Popover>
-                                                            </div>
-                                                            {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
-                                                        </CardHeader>
-                                                        <CardContent className="flex-grow">
-                                                            <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
-                                                        </CardContent>
-                                                        <CardFooter>
-                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                                {isAdded ? "Personalizar" : "Usar esta Ideia"}
-                                                            </Button>
-                                                        </CardFooter>
-                                                    </Card>
-                                                )
-                                            })}
-                                        </div>
-                                    </AccordionContent>
-                                </AccordionItem>
-                            ))}
-                        </Accordion>
-                    </CardContent>
-                </Card>
-            </TabsContent>
-            <TabsContent value="custom" className="mt-6">
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
-                        <CardDescription>
-                            {customTemplates.length > 0
-                            ? "Estas são as recompensas que você criou do zero ou personalizou."
-                            : "Seu catálogo de recompensas personalizadas está vazio."
-                            }
-                        </CardDescription>
-                    </CardHeader>
-                    {customTemplates.length > 0 && (
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {customTemplates.map(template => {
-                                    const categoryDetails = getCategoryDetails(template.category);
-                                    return (
-                                        <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
-                                            <CardHeader>
-                                                <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="flex-grow pt-0 flex flex-col">
-                                                <div className="flex flex-wrap gap-2 items-center mb-3">
-                                                   {categoryDetails && (
-                                                        <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
-                                                          {categoryDetails.icon && <categoryDetails.icon className="mr-1.5 h-3 w-3" />}
-                                                          {categoryDetails.label}
+    <>
+      <div className="space-y-8 pb-10">
+          <Tabs defaultValue="ideas" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="ideas">
+                      <Lightbulb className="mr-2 h-4 w-4"/>
+                      <span className="sm:hidden">Ideias</span>
+                      <span className="hidden sm:inline">Ideias de Recompensas</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="custom">
+                      <User className="mr-2 h-4 w-4"/>
+                      <span className="sm:hidden">Personalizadas</span>
+                      <span className="hidden sm:inline">Recompensas Personalizadas</span>
+                  </TabsTrigger>
+              </TabsList>
+              <TabsContent value="ideas" className="mt-6">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Inspire-se para Novas Aventuras</CardTitle>
+                          <CardDescription>Inspire-se com nossas sugestões. Você pode personalizar uma ideia para adicioná-la ao seu catálogo ou editar as recompensas que você já criou.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <Accordion type="multiple" className="w-full space-y-4">
+                              {predefinedRewardGroups.map((group) => (
+                                  <AccordionItem value={group.userCategory} key={group.userCategory} className="border rounded-lg shadow-sm">
+                                      <AccordionTrigger className="p-4 hover:no-underline">
+                                          <div className="flex items-center gap-3">
+                                              <group.icon className="h-6 w-6 text-primary" />
+                                              <span className="text-lg font-semibold">{group.userCategory}</span>
+                                          </div>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="p-4 pt-0">
+                                          <p className="text-sm text-muted-foreground mb-4">{group.description}</p>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                              {group.items.map((idea, idx) => {
+                                                  const existingTemplate = rewardTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
+                                                  const isAdded = !!existingTemplate;
+                                                  return (
+                                                      <Card key={idx} className={cn("shadow-sm flex flex-col h-full", isAdded && "bg-muted/40")}>
+                                                          <CardHeader>
+                                                              <div className="flex items-start justify-between">
+                                                                <CardTitle className="text-base pr-2">{idea.title}</CardTitle>
+                                                                <Popover>
+                                                                  <PopoverTrigger asChild>
+                                                                    <Button variant="ghost" size="icon" className="h-6 w-6 flex-shrink-0 text-muted-foreground">
+                                                                      <Info className="h-4 w-4"/>
+                                                                    </Button>
+                                                                  </PopoverTrigger>
+                                                                  <PopoverContent className="w-64 text-sm space-y-2">
+                                                                    <h4 className="font-semibold text-foreground">Justificativa</h4>
+                                                                    <p className="text-muted-foreground">{idea.justification || 'Sem justificativa.'}</p>
+                                                                    <h4 className="font-semibold text-foreground border-t pt-2 mt-2">Dica para o Herói</h4>
+                                                                    <p className="text-muted-foreground">{idea.tip || 'Complete suas missões para ganhar!'}</p>
+                                                                  </PopoverContent>
+                                                                </Popover>
+                                                              </div>
+                                                              {idea.description && <CardDescription className="text-xs pt-1">{idea.description}</CardDescription>}
+                                                          </CardHeader>
+                                                          <CardContent className="flex-grow">
+                                                              <Badge variant="secondary" className="font-semibold"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsCost}</Badge>
+                                                          </CardContent>
+                                                          <CardFooter>
+                                                              <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                                  {isAdded ? "Personalizar" : "Usar esta Ideia"}
+                                                              </Button>
+                                                          </CardFooter>
+                                                      </Card>
+                                                  )
+                                              })}
+                                          </div>
+                                      </AccordionContent>
+                                  </AccordionItem>
+                              ))}
+                          </Accordion>
+                      </CardContent>
+                  </Card>
+              </TabsContent>
+              <TabsContent value="custom" className="mt-6">
+                  <Card>
+                      <CardHeader>
+                          <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Recompensas Personalizadas</CardTitle>
+                          <CardDescription>
+                              {customTemplates.length > 0
+                              ? "Estas são as recompensas que você criou do zero ou personalizou."
+                              : "Seu catálogo de recompensas personalizadas está vazio."
+                              }
+                          </CardDescription>
+                      </CardHeader>
+                      {customTemplates.length > 0 && (
+                          <CardContent>
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                  {customTemplates.map(template => {
+                                      const categoryDetails = getCategoryDetails(template.category);
+                                      return (
+                                          <Card key={template.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col bg-card h-full">
+                                              <CardHeader>
+                                                  <CardTitle className="text-base line-clamp-2">{template.title}</CardTitle>
+                                              </CardHeader>
+                                              <CardContent className="flex-grow pt-0 flex flex-col">
+                                                  <div className="flex flex-wrap gap-2 items-center mb-3">
+                                                    {categoryDetails && (
+                                                          <Badge variant="outline" className={cn("text-xs", categoryDetails.colorClasses)}>
+                                                            {categoryDetails.icon && <categoryDetails.icon className="mr-1.5 h-3 w-3" />}
+                                                            {categoryDetails.label}
+                                                          </Badge>
+                                                      )}
+                                                    {template.source === 'custom' && (
+                                                        <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
+                                                            <Puzzle className="mr-1.5 h-3 w-3" />
+                                                            Personalizada
                                                         </Badge>
                                                     )}
-                                                   {template.source === 'custom' && (
-                                                       <Badge variant="outline" className="text-purple-700 border-purple-500/30 bg-purple-500/10">
-                                                          <Puzzle className="mr-1.5 h-3 w-3" />
-                                                          Personalizada
-                                                       </Badge>
-                                                   )}
-                                                   <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
-                                                   <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
-                                                    {template.status === 'active' ? 'Ativa' : 'Arquivada'}
-                                                   </Badge>
-                                                </div>
-                                                <div className="flex-grow" />
-                                                <div className="pt-2">
-                                                    <p className="text-xs text-muted-foreground">{template.description || "Sem descrição."}</p>
-                                                </div>
-                                            </CardContent>
-                                            <CardFooter className="flex items-center gap-2">
-                                               <Button variant="secondary" className="flex-grow" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
-                                                    <Edit3 className="mr-2 h-4 w-4" /> Personalizar
-                                                </Button>
-                                                <TooltipProvider>
-                                                    <Tooltip><TooltipTrigger asChild>
-                                                        <Button variant="outline" size="icon" onClick={() => handleShare(template)} disabled={!canEdit} className="flex-shrink-0">
-                                                            <Share2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger><TooltipContent><p>Compartilhar com outros espaços</p></TooltipContent></Tooltip>
-                                                </TooltipProvider>
-                                                <TooltipProvider>
-                                                    <Tooltip><TooltipTrigger asChild>
-                                                        <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
-                                                </TooltipProvider>
-                                            </CardFooter>
-                                        </Card>
-                                    )
-                                })}
-                            </div>
-                        </CardContent>
-                    )}
-                </Card>
-            </TabsContent>
-        </Tabs>
-        
-      {templateToDelete && (
-        <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
-              <AlertDialogDescription>
-                Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa permanentemente do catálogo. Esta ação não pode ser desfeita.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive hover:bg-destructive/90"
-                disabled={isProcessingAction}
-              >
-                {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Sim, Excluir
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </div>
+                                                            <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {template.starsCost}</Badge>
+                                                    <Badge variant={template.status === 'active' ? 'default' : 'secondary'} className="capitalize">
+                                                      {template.status === 'active' ? 'Ativa' : 'Arquivada'}
+                                                    </Badge>
+                                                  </div>
+                                                  <div className="flex-grow" />
+                                                  <div className="pt-2">
+                                                      <p className="text-xs text-muted-foreground">{template.description || "Sem descrição."}</p>
+                                                  </div>
+                                              </CardContent>
+                                              <CardFooter className="flex items-center gap-2">
+                                                <Button variant="secondary" className="flex-grow" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
+                                                      <Edit3 className="mr-2 h-4 w-4" /> Personalizar
+                                                  </Button>
+                                                  <TooltipProvider>
+                                                      <Tooltip><TooltipTrigger asChild>
+                                                          <Button variant="outline" size="icon" onClick={() => handleShareClick(template)} disabled={!canEdit} className="flex-shrink-0">
+                                                              <Share2 className="h-4 w-4" />
+                                                          </Button>
+                                                      </TooltipTrigger><TooltipContent><p>Compartilhar com outros espaços</p></TooltipContent></Tooltip>
+                                                  </TooltipProvider>
+                                                  <TooltipProvider>
+                                                      <Tooltip><TooltipTrigger asChild>
+                                                          <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                              <Trash2 className="h-4 w-4" />
+                                                          </Button>
+                                                      </TooltipTrigger><TooltipContent><p>Excluir Recompensa</p></TooltipContent></Tooltip>
+                                                  </TooltipProvider>
+                                              </CardFooter>
+                                          </Card>
+                                      )
+                                  })}
+                              </div>
+                          </CardContent>
+                      )}
+                  </Card>
+              </TabsContent>
+          </Tabs>
+          
+        {templateToDelete && (
+          <AlertDialog open={!!templateToDelete} onOpenChange={() => setTemplateToDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Excluir Recompensa do Catálogo</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tem certeza que deseja remover a recompensa "{templateToDelete.title}"? Esta ação removerá a recompensa permanentemente do catálogo. Esta ação não pode ser desfeita.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeleteConfirm}
+                  className="bg-destructive hover:bg-destructive/90"
+                  disabled={isProcessingAction}
+                >
+                  {isProcessingAction ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  Sim, Excluir
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      <ShareRewardDialog
+          template={templateToShare}
+          isOpen={isShareDialogOpen}
+          onOpenChange={setIsShareDialogOpen}
+          onShared={refetchData}
+      />
+    </>
   );
 }
 

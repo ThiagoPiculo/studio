@@ -1169,51 +1169,10 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
     });
 };
 
-// --- Feature Votes ---
-export const getFeatureVoteCount = async (featureId: string): Promise<number> => {
-    const docRef = doc(db, 'featureVotes', featureId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-        return docSnap.data().count || 0;
-    }
-    return 0;
-};
-
-export const getUserFeatureVote = async (userId: string, featureId: string): Promise<boolean> => {
-    const docRef = doc(db, 'featureVotes', featureId, 'votes', userId);
-    const docSnap = await getDoc(docRef);
-    return docSnap.exists();
-};
-
-export const toggleUserFeatureVote = async (userId: string, featureId: string): Promise<void> => {
-    const voteDocRef = doc(db, 'featureVotes', featureId, 'votes', userId);
-    const featureDocRef = doc(db, 'featureVotes', featureId);
-
-    await runTransaction(db, async (transaction) => {
-        const voteDoc = await transaction.get(voteDocRef);
-        const featureDoc = await transaction.get(featureDocRef);
-
-        let newCount = (featureDoc.data()?.count || 0) as number;
-
-        if (voteDoc.exists()) {
-            // User has voted, so we remove the vote
-            transaction.delete(voteDocRef);
-            newCount = Math.max(0, newCount - 1);
-        } else {
-            // User has not voted, so we add the vote
-            transaction.set(voteDocRef, { votedAt: serverTimestamp() });
-            newCount += 1;
-        }
-
-        transaction.set(featureDocRef, { count: newCount }, { merge: true });
-    });
-};
-
-
 // --- Reward Templates (Catálogo de Recompensas) ---
 export const addRewardTemplate = async (
   actor: UserProfile,
-  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'>,
+  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>,
   targetContexts: string[]
 ): Promise<void> => {
   if (!targetContexts || targetContexts.length === 0) {
