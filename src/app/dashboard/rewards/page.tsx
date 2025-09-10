@@ -128,14 +128,12 @@ function RewardsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-4">
-             <div className="flex w-full sm:w-auto gap-2">
-                <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
-                    <Link href="/dashboard/rewards/new">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa Personalizada
-                    </Link>
-                </Button>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
+            <Button asChild className="w-full sm:w-auto" disabled={!canEdit}>
+                <Link href="/dashboard/rewards/new">
+                    <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa Personalizada
+                </Link>
+            </Button>
         </div>
 
         <Tabs defaultValue="ideas" className="w-full">
