@@ -43,7 +43,7 @@ const rewardTemplateFormSchema = z.object({
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-function CreateRewardTemplatePageContent() {
+function CreateRewardPageContent() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -222,7 +222,7 @@ function CreateRewardTemplatePageContent() {
     setIsLoading(true);
     try {
       const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
-      const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+      const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
         ownerId: user.uid,
         title: values.title,
         description: values.description,
@@ -230,7 +230,6 @@ function CreateRewardTemplatePageContent() {
         starsCost: values.starsCost,
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
-        familyId: null, // This will be set inside the function for each context
         source: isFromPredefined ? 'predefined' : 'custom',
         justification: '', 
         tip: '',
@@ -529,9 +528,9 @@ function CreateRewardTemplatePageContent() {
 }
 
 export default function CreateRewardPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
-      <CreateRewardPageContent />
-    </Suspense>
-  )
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
+            <CreateRewardPageContent />
+        </Suspense>
+    )
 }
