@@ -112,7 +112,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   }, [currentContext, currentRole]);
   const { toast } = useToast();
 
-  const [effectiveTemplate, setEffectiveTemplate] = useState<MissionTemplate | MissionInstance | null>(template || instanceToEdit);
+  const [effectiveTemplate, setEffectiveTemplate] = useState<MissionTemplate | null>(template);
 
   const [view, setView] = useState<'list' | 'schedule'>('list');
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
@@ -152,19 +152,18 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     let startDate = getDateObject(source.startDate);
     let dueDate = getDateObject(source.dueDate);
 
-    // If it's a new assignment, set sensible defaults
     if (!instance) {
       const today = new Date();
       startDate = source.isRecurring ? today : null;
       dueDate = !source.isRecurring ? today : new Date();
-    } else if (!startDate && !dueDate) { // Fallback for old instances without dates
+    } else if (!startDate && !dueDate) {
         dueDate = new Date();
     }
     
     const initialValues: AssignmentFormValues = {
       isRecurring: !!source.isRecurring,
       startDate: startDate,
-      dueDate: dueDate || new Date(), // Default due date for form validity
+      dueDate: dueDate || new Date(),
       recurrenceRule: null,
     };
 
@@ -175,7 +174,6 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
             endDate: getDateObject(rule.endDate) 
         };
     } else if (source.isRecurring) {
-        // Provide a default recurrence rule if none exists for a recurring mission
         initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
     }
 
@@ -183,13 +181,12 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   }, [form, effectiveTemplate]);
   
   const fetchDataForList = useCallback(async () => {
-    if (!user || !effectiveTemplate) return;
+    if (!user || !template) return;
     setIsLoading(true);
     try {
-      const templateId = 'templateId' in effectiveTemplate ? effectiveTemplate.templateId : effectiveTemplate.id;
       const [fetchedChildren, activeInstances] = await Promise.all([
         getChildProfilesForAttribution(user.uid, currentContext),
-        getActiveMissionInstancesByTemplate(user.uid, templateId, currentContext)
+        getActiveMissionInstancesByTemplate(user.uid, template.id, currentContext)
       ]);
       setChildren(fetchedChildren);
       const assignmentsMap = activeInstances.reduce((acc, instance) => {
@@ -203,7 +200,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     } finally {
       setIsLoading(false);
     }
-  }, [user, effectiveTemplate, currentContext, toast]);
+  }, [user, template, currentContext, toast]);
   
    useEffect(() => {
     if (!isOpen) {
@@ -215,24 +212,23 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
         setIsLoading(true);
         if (instanceToEdit) {
             try {
-                const fetchedChild = await getChildProfileById(instanceToEdit.childId);
-                if (!fetchedChild) {
-                    toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
+                const [childProfile, missionTemplate] = await Promise.all([
+                    getChildProfileById(instanceToEdit.childId),
+                    getMissionTemplateById(instanceToEdit.templateId)
+                ]);
+
+                if (!childProfile || !missionTemplate) {
+                    toast({ title: "Erro", description: "Dados da missão ou do herói não encontrados.", variant: 'destructive' });
                     onOpenChange(false);
                     return;
                 }
-                const templateId = instanceToEdit.templateId;
-                const fetchedTemplate = await getMissionTemplateById(templateId);
-                 if (!fetchedTemplate) {
-                    toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
-                    onOpenChange(false);
-                    return;
-                }
-                setEffectiveTemplate(fetchedTemplate);
-                setChildren([fetchedChild]);
-                setSelectedChild(fetchedChild);
+                
+                setEffectiveTemplate(missionTemplate);
+                setChildren([childProfile]);
+                setSelectedChild(childProfile);
                 prepareScheduleForm(instanceToEdit);
                 setView('schedule');
+
             } catch (error) {
                 console.error("Error initializing edit dialog:", error);
                 toast({ title: "Erro ao carregar dados da edição", variant: 'destructive' });
@@ -259,12 +255,11 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   };
   
   const handleUnassign = async () => {
-    if (!user || !effectiveTemplate || !selectedChild) return;
-    const templateId = 'templateId' in effectiveTemplate ? effectiveTemplate.templateId : effectiveTemplate.id;
+    if (!user || !template || !selectedChild) return;
     setIsProcessing(true);
     try {
-      await deleteMissionInstancesByTemplateAndChild(user, templateId, selectedChild.id);
-      toast({ title: "Missão Desatribuída", description: `${effectiveTemplate.title} foi removida de ${selectedChild.name}.` });
+      await deleteMissionInstancesByTemplateAndChild(user, template.id, selectedChild.id);
+      toast({ title: "Missão Desatribuída", description: `${template.title} foi removida de ${selectedChild.name}.` });
       fetchDataForList();
       resetDialogState();
     } catch (error) {
@@ -281,13 +276,11 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     setIsProcessing(true);
     
     try {
-      const existingInstance = instanceToEdit || existingAssignments[selectedChild.id];
-
-      if (existingInstance && recurrenceEditMode) {
-          const editDate = occurrenceDate || getDateObject(existingInstance.startDate) || getDateObject(existingInstance.dueDate);
+      if (instanceToEdit && recurrenceEditMode) {
+          const editDate = occurrenceDate || getDateObject(instanceToEdit.startDate) || getDateObject(instanceToEdit.dueDate);
           if (!editDate) throw new Error("Data da ocorrência não encontrada para edição.");
           
-          await updateRecurringMissionInstance(existingInstance.id, recurrenceEditMode, data, editDate);
+          await updateRecurringMissionInstance(instanceToEdit.id, recurrenceEditMode, data, editDate);
           toast({ title: "Agendamento Atualizado!" });
       } else {
           if (!('ownerId' in effectiveTemplate)) throw new Error("Cannot assign from an instance.");
@@ -420,7 +413,10 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           </DialogHeader>
 
           {isLoading ? (
-            <div className="flex items-center justify-center h-40"><Loader2 className="h-6 w-6 animate-spin text-primary" /></div>
+            <div className="flex flex-col items-center justify-center h-40">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                <p className="text-sm text-muted-foreground mt-2">Carregando dados da missão...</p>
+            </div>
           ) : view === 'list' ? (
              <ScrollArea className="max-h-[50vh] mt-2 pr-3">
               {children.length > 0 ? renderChildList() : (

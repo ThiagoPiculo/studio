@@ -215,14 +215,12 @@ function AgendaPageContent() {
   };
 
   const handleEditClick = (instance: MissionInstance, date: Date) => {
-    setActivePopover(null);
+    setActivePopover(null); // Close popover on action
     setInstanceToEdit(instance);
     setOccurrenceDate(date);
-    setTemplateToAssign(null); // Ensure we are in edit mode
     if (instance.isRecurring) {
         setIsRecurrenceEditOpen(true);
     } else {
-        setRecurrenceEditMode(null); // Not a recurring edit
         setIsAssignDialogOpen(true);
     }
   };
