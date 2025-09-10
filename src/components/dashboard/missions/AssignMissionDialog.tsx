@@ -436,7 +436,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           {view === 'list' && (
             <DialogFooter>
                 <DialogClose asChild>
-                  <Button variant="outline">Fechar</Button>
+                  <Button variant="outline">Agendar Depois</Button>
                 </DialogClose>
             </DialogFooter>
           )}
