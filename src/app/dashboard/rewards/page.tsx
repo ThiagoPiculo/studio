@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, User, Lightbulb, Puzzle } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, User, Lightbulb, Puzzle, Share2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -117,6 +117,14 @@ function RewardsHubContent() {
     if (idea.isMaterialSuggestion) queryParams.append('isMaterial', 'true');
     router.push(`/dashboard/rewards/new?${queryParams.toString()}`);
   };
+
+  const handleShare = (template: RewardTemplate) => {
+    // Placeholder for future functionality
+    toast({
+        title: 'Compartilhar Recompensa (Em Breve)',
+        description: 'Esta função permitirá que você copie esta recompensa para outros espaços de trabalho.'
+    });
+  }
   
   const getCategoryDetails = (categoryId: RewardTemplate['category']): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
@@ -249,9 +257,16 @@ function RewardsHubContent() {
                                                 </div>
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
-                                               <Button variant="secondary" className="w-full" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
+                                               <Button variant="secondary" className="flex-grow" onClick={() => router.push(`/dashboard/rewards/edit-template/${template.id}`)} disabled={!canEdit}>
                                                     <Edit3 className="mr-2 h-4 w-4" /> Personalizar
                                                 </Button>
+                                                <TooltipProvider>
+                                                    <Tooltip><TooltipTrigger asChild>
+                                                        <Button variant="outline" size="icon" onClick={() => handleShare(template)} disabled={!canEdit} className="flex-shrink-0">
+                                                            <Share2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger><TooltipContent><p>Compartilhar com outros espaços</p></TooltipContent></Tooltip>
+                                                </TooltipProvider>
                                                 <TooltipProvider>
                                                     <Tooltip><TooltipTrigger asChild>
                                                         <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
