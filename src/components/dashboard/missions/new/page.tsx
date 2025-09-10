@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -32,6 +31,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
+import { PostAssignmentSuccessDialog } from '../PostAssignmentSuccessDialog';
 
 
 const missionTemplateFormSchema = z.object({
@@ -68,6 +68,10 @@ function CreateMissionTemplatePageContent() {
   
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  // State for success dialog
+  const [successDialogData, setSuccessDialogData] = useState<{ child: ChildProfile; template: MissionTemplate } | null>(null);
+
 
   useEffect(() => {
     if (!user || availableContexts.length === 0) {
@@ -216,16 +220,15 @@ function CreateMissionTemplatePageContent() {
       };
       
       const createdTemplate = await addMissionTemplate(user, templateDataPayload, values.targetContexts);
-
-      toast({
-        title: 'Missão(ões) Adicionada(s) ao Catálogo!',
-        description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
-      });
       
       if (createdTemplate) {
           setNewlyCreatedTemplate(createdTemplate);
           setIsAssignDialogOpen(true);
       } else {
+          toast({
+            title: 'Missão(ões) Adicionada(s) ao Catálogo!',
+            description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
+          });
           router.push('/dashboard/missions?tab=custom');
       }
 
@@ -512,7 +515,7 @@ function CreateMissionTemplatePageContent() {
                     ) : (
                       <Target className="mr-2 h-4 w-4" />
                     )}
-                    Criar e Atribuir Missão
+                    Criar e Agendar Missão
                   </Button>
                 </div>
               </form>
@@ -545,17 +548,21 @@ function CreateMissionTemplatePageContent() {
         <AssignMissionDialog
           template={newlyCreatedTemplate}
           isOpen={isAssignDialogOpen}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) { 
-              setNewlyCreatedTemplate(null);
-              router.push('/dashboard/missions?tab=custom');
-            }
-            setIsAssignDialogOpen(isOpen);
-          }}
-          onAssigned={() => {
-            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+          onOpenChange={setIsAssignDialogOpen}
+          onAssigned={(child, template) => {
+              setSuccessDialogData({ child, template });
+              setIsAssignDialogOpen(false); // Close the assignment dialog
           }}
         />
+      )}
+
+      {successDialogData && (
+          <PostAssignmentSuccessDialog
+            isOpen={!!successDialogData}
+            onDone={() => setSuccessDialogData(null)}
+            child={successDialogData.child}
+            template={successDialogData.template}
+          />
       )}
     </>
   );
@@ -568,5 +575,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
-    
