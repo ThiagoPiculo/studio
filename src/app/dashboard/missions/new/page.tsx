@@ -514,7 +514,7 @@ function CreateMissionTemplatePageContent() {
                     ) : (
                       <Target className="mr-2 h-4 w-4" />
                     )}
-                    Criar e Atribuir Missão
+                    Criar e Agendar Missão
                   </Button>
                 </div>
               </form>
@@ -555,7 +555,7 @@ function CreateMissionTemplatePageContent() {
             setIsAssignDialogOpen(isOpen);
           }}
           onAssigned={() => {
-            toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+            toast({ title: "Missões Agendadas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
           }}
         />
       )}
@@ -572,6 +572,7 @@ export default function CreateMissionPage() {
 }
 
     
+
 
 
 

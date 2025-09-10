@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -94,7 +95,7 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
       .filter((t): t is MissionTemplate => !!t);
 
     if (templatesToAssign.length === 0) {
-      toast({ title: "Nenhuma Missão Selecionada", description: "Por favor, escolha pelo menos uma missão para atribuir.", variant: "default" });
+      toast({ title: "Nenhuma Missão Selecionada", description: "Por favor, escolha pelo menos uma missão para agendar.", variant: "default" });
       return;
     }
 
@@ -112,14 +113,14 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
 
       await Promise.all(assignmentPromises);
       toast({
-        title: "Missões Atribuídas!",
-        description: `${templatesToAssign.length} ${templatesToAssign.length === 1 ? "nova missão foi atribuída" : "novas missões foram atribuídas"} para ${child.name}.`,
+        title: "Missões Agendadas!",
+        description: `${templatesToAssign.length} ${templatesToAssign.length === 1 ? "nova missão foi agendada" : "novas missões foram agendadas"} para ${child.name}.`,
       });
       onMissionAdded?.();
       onOpenChange(false);
     } catch (error) {
       console.error("Error assigning missions:", error);
-      toast({ title: "Erro ao Atribuir", description: "Não foi possível atribuir as missões. Tente novamente.", variant: "destructive" });
+      toast({ title: "Erro ao Agendar", description: "Não foi possível agendar as missões. Tente novamente.", variant: "destructive" });
     } finally {
       setIsAssigning(false);
     }
@@ -131,8 +132,8 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Atribuir Missões a {child.name}</DialogTitle>
-          <DialogDescription>Selecione as missões do catálogo para adicionar à lista de {child.name}.</DialogDescription>
+          <DialogTitle className="text-2xl">Agendar Missões para {child.name}</DialogTitle>
+          <DialogDescription>Selecione as missões do catálogo para adicionar à agenda de {child.name}.</DialogDescription>
         </DialogHeader>
 
         {isLoading ? (
@@ -194,7 +195,7 @@ export function AddMissionDialog({ child, isOpen, onOpenChange, onMissionAdded }
             disabled={isAssigning || isLoading || missionTemplates.length === 0 || Object.values(selectedTemplates).every(v => !v)}
           >
             {isAssigning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-            Atribuir Selecionadas
+            Agendar Selecionadas
           </Button>
         </DialogFooter>
       </DialogContent>

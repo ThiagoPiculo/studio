@@ -434,7 +434,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
               {children.length > 0 ? renderChildList() : (
                  <div className="text-center py-6 text-muted-foreground">
                     <AlertCircle className="h-10 w-10 mx-auto mb-2 text-primary" />
-                    Nenhum herói encontrado para atribuição.
+                    Nenhum herói encontrado para agendamento.
                   </div>
               )}
             </ScrollArea>
