@@ -25,7 +25,6 @@ import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
-import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Loader2 } from 'lucide-react';
@@ -39,6 +38,7 @@ import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger, } from "@/components/ui/accordion";
 import { Switch } from '@/components/ui/switch';
 import { CompleteMissionConfirmationDialog } from '@/components/dashboard/missions/CompleteMissionConfirmationDialog';
+import Link from 'next/link';
 
 export type DateRangeFilter = 'day' | '3days' | 'week' | 'workweek' | 'month';
 export type TimePeriod = 'all' | 'morning' | 'afternoon' | 'night';
@@ -98,7 +98,6 @@ function AgendaPageContent() {
   const [isProcessingAction, setIsProcessingAction] = useState<string | null>(null);
 
   // States for the add/edit mission flow
-  const [isSelectMissionDialogOpen, setIsSelectMissionDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   
@@ -207,13 +206,6 @@ function AgendaPageContent() {
 
     loadDataForContext();
   }, [user, currentContext, toast, selectedChildId, setSelectedChildId]);
-  
-  const handleMissionSelected = (template: MissionTemplate) => {
-    setTemplateToAssign(template);
-    setInstanceToEdit(null);
-    setIsSelectMissionDialogOpen(false);
-    setIsAssignDialogOpen(true);
-  };
 
   const handleEditClick = (instance: MissionInstance, date: Date) => {
     setActivePopover(null); // Close popover on action
@@ -1157,10 +1149,11 @@ function AgendaPageContent() {
                    <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5"><Heart className="h-4 w-4 text-pink-500" /> Visão da Criança</Label>
                  </div>
                  {canEdit && (
-                  <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0 sm:flex-grow-0">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Nova Missão
-                  </Button>
+                    <Button asChild className="flex-grow-0 sm:flex-grow-0">
+                      <Link href={`/dashboard/missions/new?childId=${selectedChildId || ''}`}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Nova Missão
+                      </Link>
+                    </Button>
                 )}
                </div>
             </div>
@@ -1182,12 +1175,6 @@ function AgendaPageContent() {
           }}
         />
       )}
-
-      <SelectMissionTemplateDialog
-        isOpen={isSelectMissionDialogOpen}
-        onOpenChange={setIsSelectMissionDialogOpen}
-        onMissionSelected={handleMissionSelected}
-      />
       
       <AssignMissionDialog
         template={templateToAssign}
