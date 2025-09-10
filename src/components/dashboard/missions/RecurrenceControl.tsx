@@ -107,22 +107,25 @@ export function RecurrenceControl() {
                 <Switch
                     checked={field.value}
                     onCheckedChange={(checked) => {
-                    field.onChange(checked);
-                    const newPeriod = getPeriodFromDate(checked ? currentStartDate : currentDueDate);
-                    const defaultTime = periodTimeRanges[newPeriod].default;
-                    const newDate = new Date();
-                    const [hour, minute] = defaultTime.split(':').map(Number);
-                    newDate.setHours(hour, minute, 0, 0);
+                      const oldDateField = checked ? 'dueDate' : 'startDate';
+                      const oldDateValue = getValues(oldDateField) as Date | null;
+                      const preservedTime = oldDateValue ? format(oldDateValue, 'HH:mm') : periodTimeRanges[selectedPeriod].default;
+                      const [hour, minute] = preservedTime.split(':').map(Number);
 
-                    if (checked) {
-                        setValue('dueDate', null, { shouldValidate: true });
-                        setValue('startDate', newDate, { shouldValidate: true });
-                        setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
-                    } else {
-                        setValue('startDate', null, { shouldValidate: true });
-                        setValue('recurrenceRule', null, { shouldValidate: true });
-                        setValue('dueDate', newDate, { shouldValidate: true });
-                    }
+                      const newDate = new Date();
+                      newDate.setHours(hour, minute, 0, 0);
+                      
+                      field.onChange(checked);
+                      
+                      if (checked) {
+                          setValue('dueDate', null, { shouldValidate: true });
+                          setValue('startDate', newDate, { shouldValidate: true });
+                          setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
+                      } else {
+                          setValue('startDate', null, { shouldValidate: true });
+                          setValue('recurrenceRule', null, { shouldValidate: true });
+                          setValue('dueDate', newDate, { shouldValidate: true });
+                      }
                     }}
                 />
                 </FormControl>
@@ -158,7 +161,7 @@ export function RecurrenceControl() {
                 render={({ field }) => (
                     <FormItem>
                         <FormLabel>{dateLabel}</FormLabel>
-                         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_120px] gap-2 items-center">
+                         <div className="grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_130px] gap-2 items-center">
                             <Popover>
                                 <PopoverTrigger asChild>
                                     <FormControl>

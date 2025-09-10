@@ -43,9 +43,9 @@ export function TimePicker({ value, onChange, className, minHour, maxHour, minut
 
 
   return (
-    <div className={cn("grid grid-cols-2 gap-2", className)}>
+    <div className={cn("flex items-center gap-1", className)}>
       <Select value={hour} onValueChange={handleHourChange}>
-        <SelectTrigger className="w-full h-10">
+        <SelectTrigger className="w-full h-10 px-2 justify-center">
           <SelectValue placeholder="Hora" />
         </SelectTrigger>
         <SelectContent>
@@ -54,8 +54,9 @@ export function TimePicker({ value, onChange, className, minHour, maxHour, minut
           ))}
         </SelectContent>
       </Select>
+      <span className="font-semibold text-muted-foreground">:</span>
       <Select value={minute} onValueChange={handleMinuteChange}>
-        <SelectTrigger className="w-full h-10">
+        <SelectTrigger className="w-full h-10 px-2 justify-center">
           <SelectValue placeholder="Min." />
         </SelectTrigger>
         <SelectContent>
