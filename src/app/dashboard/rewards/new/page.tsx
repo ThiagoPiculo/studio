@@ -43,7 +43,7 @@ const rewardTemplateFormSchema = z.object({
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
 
-function CreateRewardPage() {
+export default function CreateRewardPage() {
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -231,6 +231,8 @@ function CreateRewardPage() {
         isMaterial: values.isMaterial,
         isUnique: values.isUnique,
         source: isFromPredefined ? 'predefined' : 'custom',
+        justification: '',
+        tip: '',
       }, values.targetContexts);
       
       toast({
@@ -534,5 +536,3 @@ function CreateRewardPage() {
     </Suspense>
   );
 }
-
-export default CreateRewardPage;

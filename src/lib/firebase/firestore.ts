@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import {
@@ -1172,8 +1171,8 @@ export const requestAllianceOwnership = async (familyId: string, requesterId: st
 // --- Reward Templates (Catálogo de Recompensas) ---
 export const addRewardTemplate = async (
   actor: UserProfile,
-  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>,
-  targetContexts: string[]
+  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'>,
+  targetContexts?: string[] | null
 ): Promise<void> => {
   if (!targetContexts || targetContexts.length === 0) {
     throw new Error("Pelo menos um espaço de trabalho deve ser selecionado.");
@@ -1489,11 +1488,15 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
 export const addMissionTemplate = async (
   actor: UserProfile,
   templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'>,
-  targetContexts: string[]
+  targetContexts?: string[] | null,
 ): Promise<MissionTemplate | null> => {
   const now = serverTimestamp();
   let firstCreatedTemplate: MissionTemplate | null = null;
   const currentContextId = actor.settings?.initialContext || 'my-space';
+
+  if (!targetContexts || targetContexts.length === 0) {
+    throw new Error("Pelo menos um espaço de trabalho deve ser selecionado.");
+  }
 
   const createPromises = targetContexts.map(async (contextId) => {
     const newTemplateRef = doc(collection(db, 'missionTemplates'));
@@ -1508,11 +1511,9 @@ export const addMissionTemplate = async (
     };
     await setDoc(newTemplateRef, templateDataWithContext);
     
-    // Set the template for the *current* context as the one to return for the dialog.
     if (contextId === currentContextId) {
       firstCreatedTemplate = convertTimestampsInObject({ id: newTemplateRef.id, ...templateDataWithContext });
     } else if (!firstCreatedTemplate) {
-      // Fallback to the very first one if current context wasn't selected
       firstCreatedTemplate = convertTimestampsInObject({ id: newTemplateRef.id, ...templateDataWithContext });
     }
   });

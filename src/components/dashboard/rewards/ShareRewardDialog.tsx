@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -19,9 +19,9 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { RewardTemplate } from '@/lib/types';
-import { addRewardTemplate } from '@/lib/firebase/firestore';
+import { addRewardTemplate, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { Loader2, Share2, CircleDot, Link as LinkIcon } from 'lucide-react';
-import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 interface ShareRewardDialogProps {
   template: RewardTemplate | null;
@@ -37,6 +37,8 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
 
   const [selectedContexts, setSelectedContexts] = useState<string[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [existingTemplatesMap, setExistingTemplatesMap] = useState<Map<string, boolean>>(new Map());
+  const [isLoadingData, setIsLoadingData] = useState(true);
 
   const shareableContexts = useMemo(() => {
     if (!template) return [];
@@ -44,6 +46,32 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
     return availableContexts.filter(c => c.id !== sourceContextId);
   }, [availableContexts, template]);
   
+  useEffect(() => {
+    if (isOpen && user && template) {
+        setIsLoadingData(true);
+        const fetchAllTemplates = async () => {
+            try {
+                const templatesMap = new Map<string, boolean>();
+                for (const context of shareableContexts) {
+                    const familyIdToQuery = context.id === 'my-space' ? null : context.id;
+                    const templates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+                    const hasExisting = templates.some(t => t.title.trim().toLowerCase() === template.title.trim().toLowerCase());
+                    templatesMap.set(context.id, hasExisting);
+                }
+                setExistingTemplatesMap(templatesMap);
+            } catch (error) {
+                console.error("Error checking for existing templates:", error);
+                toast({ title: "Erro ao verificar recompensas", variant: "destructive" });
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+        fetchAllTemplates();
+    } else {
+        setSelectedContexts([]); // Reset selection when dialog closes
+    }
+  }, [isOpen, user, template, shareableContexts, toast]);
+
   const getContextName = (contextId: string) => {
     if (contextId === 'my-space') return "Seu Espaço (Cuidar Solo)";
     const context = availableContexts.find(c => c.id === contextId);
@@ -69,7 +97,7 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
     setIsProcessing(true);
     try {
       const templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
-        ownerId: template.ownerId,
+        ownerId: user.uid, // The user sharing becomes the owner in the new context
         title: template.title,
         description: template.description,
         category: template.category,
@@ -109,7 +137,11 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
           </DialogDescription>
         </DialogHeader>
         
-        {shareableContexts.length === 0 ? (
+        {isLoadingData ? (
+             <div className="flex items-center justify-center h-40">
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+             </div>
+        ) : shareableContexts.length === 0 ? (
             <div className="py-6 text-center text-muted-foreground">
                 Você não tem outros espaços de trabalho para compartilhar esta recompensa.
             </div>
@@ -117,22 +149,32 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
             <div className="space-y-3 py-2">
                 <Label>Selecione os destinos:</Label>
                 <ScrollArea className="h-40 w-full rounded-md border p-2">
-                   {shareableContexts.map(context => (
-                      <div 
-                        key={context.id}
-                        className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
-                      >
-                         <Label htmlFor={`share-context-${context.id}`} className="flex-1 cursor-pointer flex items-center gap-2">
-                            <IconForContext contextId={context.id} />
-                            {getContextName(context.id)}
-                         </Label>
-                         <Checkbox
-                            id={`share-context-${context.id}`}
-                            checked={selectedContexts.includes(context.id)}
-                            onCheckedChange={(checked) => handleContextSelection(context.id, !!checked)}
-                         />
-                      </div>
-                   ))}
+                   {shareableContexts.map(context => {
+                      const alreadyExists = existingTemplatesMap.get(context.id);
+                      return (
+                        <div 
+                          key={context.id}
+                          className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50"
+                        >
+                           <Label 
+                                htmlFor={`share-context-${context.id}`} 
+                                className="flex-1 cursor-pointer flex items-center gap-2"
+                            >
+                              <IconForContext contextId={context.id} />
+                              {getContextName(context.id)}
+                           </Label>
+                           {alreadyExists ? (
+                             <Badge variant="outline">Já existe</Badge>
+                           ) : (
+                             <Checkbox
+                                id={`share-context-${context.id}`}
+                                checked={selectedContexts.includes(context.id)}
+                                onCheckedChange={(checked) => handleContextSelection(context.id, !!checked)}
+                             />
+                           )}
+                        </div>
+                      )
+                   })}
                 </ScrollArea>
             </div>
         )}
@@ -141,7 +183,7 @@ export function ShareRewardDialog({ template, isOpen, onOpenChange, onShared }: 
           <DialogClose asChild>
             <Button variant="outline" disabled={isProcessing}>Cancelar</Button>
           </DialogClose>
-          <Button onClick={handleShare} disabled={isProcessing || selectedContexts.length === 0}>
+          <Button onClick={handleShare} disabled={isProcessing || selectedContexts.length === 0 || isLoadingData}>
             {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Share2 className="mr-2 h-4 w-4" />}
             Confirmar Cópia
           </Button>
