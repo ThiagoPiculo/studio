@@ -300,52 +300,50 @@ function CreateMissionTemplatePageContent() {
                       <FormItem className="flex flex-col">
                         <FormLabel>Título da Missão</FormLabel>
                         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              {/* This is just a div now to control the popover's position */}
-                              <div>
-                                 <CommandInput
-                                    placeholder="Digite um nome ou busque uma ideia..."
-                                    value={field.value}
-                                    onValueChange={field.onChange}
-                                    onFocus={() => setIsPopoverOpen(true)}
-                                    onBlur={() => setIsPopoverOpen(false)}
-                                    onKeyDown={(e) => {
-                                      if (e.key === "Enter") {
-                                        e.preventDefault();
-                                        setIsPopoverOpen(false);
-                                        // You can optionally move focus to the next field here
-                                      }
-                                    }}
-                                  />
-                              </div>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 mt-2" onOpenAutoFocus={(e) => e.preventDefault()}>
-                            <Command>
-                              <CommandList>
-                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                {predefinedMissionGroups.map((group) => (
-                                  <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                    {group.items.map(idea => {
-                                      const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                      return (
-                                        <CommandItem
-                                          value={idea.title}
-                                          key={idea.title}
-                                          onSelect={() => handleIdeaSelection(idea)}
-                                        >
-                                          <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                          {idea.title}
-                                          {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
-                                        </CommandItem>
-                                      )
-                                    })}
-                                  </CommandGroup>
-                                ))}
-                              </CommandList>
+                            <Command shouldFilter={false} className="overflow-visible bg-transparent">
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <div>
+                                        <CommandInput
+                                            placeholder="Digite um nome ou busque uma ideia..."
+                                            value={field.value}
+                                            onValueChange={field.onChange}
+                                            onFocus={() => setIsPopoverOpen(true)}
+                                            onBlur={() => setIsPopoverOpen(false)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") {
+                                                  e.preventDefault();
+                                                  setIsPopoverOpen(false);
+                                                }
+                                              }}
+                                        />
+                                      </div>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0 mt-2" onOpenAutoFocus={(e) => e.preventDefault()}>
+                                    <CommandList>
+                                        <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                        {predefinedMissionGroups.map((group) => (
+                                        <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                            {group.items.map(idea => {
+                                            const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                            return (
+                                                <CommandItem
+                                                value={idea.title}
+                                                key={idea.title}
+                                                onSelect={() => handleIdeaSelection(idea)}
+                                                >
+                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                {idea.title}
+                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
+                                                </CommandItem>
+                                            )
+                                            })}
+                                        </CommandGroup>
+                                        ))}
+                                    </CommandList>
+                                </PopoverContent>
                             </Command>
-                          </PopoverContent>
                         </Popover>
                         <FormMessage />
                       </FormItem>
@@ -578,4 +576,5 @@ export default function CreateMissionPage() {
 }
 
     
+
 
