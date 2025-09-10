@@ -42,6 +42,7 @@ import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { getDateObject } from '@/lib/calendar-utils';
+import { useRouter } from 'next/navigation';
 
 
 const recurrenceRuleSchema = z.object({
@@ -104,6 +105,7 @@ const schoolShiftMap: Record<SchoolShift, string> = {
 
 export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const { currentContext, availableContexts, currentRole } = useFamily();
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
@@ -311,6 +313,15 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
       setIsProcessing(false);
     }
   };
+
+  const handleDoneClick = () => {
+    onOpenChange(false);
+    if (onAssigned) {
+      onAssigned();
+    } else {
+      router.push('/dashboard/missions?tab=custom');
+    }
+  };
   
   const renderChildList = () => (
     <div className="space-y-4">
@@ -367,7 +378,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
                       Turno Escolar: <strong>{shiftLabel} ({selectedChild.schoolShiftStart} - {selectedChild.schoolShiftEnd})</strong>
                   </p>
               ) : (
-                   <Link href={`/dashboard/child/${selectedChild?.id}/manage?tab=edit`} className="hover:underline text-primary font-semibold">
+                   <Link href={`/dashboard/mural?childId=${selectedChild?.id}&tab=edit`} className="hover:underline text-primary font-semibold">
                       Lembrete: defina o turno escolar do herói →
                    </Link>
               )}
@@ -433,7 +444,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
           {view === 'list' && (
             <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between sm:items-center w-full pt-4">
-                <Button variant="secondary" onClick={() => onOpenChange(false)}>
+                <Button variant="secondary" onClick={handleDoneClick}>
                   Agendar Depois
                 </Button>
                 <DialogClose asChild>

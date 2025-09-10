@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { Suspense, useState, useEffect, useMemo } from 'react';
@@ -18,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate, ChildProfile } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon, User } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
@@ -225,7 +226,7 @@ function CreateMissionTemplatePageContent() {
           setNewlyCreatedTemplate(createdTemplate);
           setIsAssignDialogOpen(true);
       } else {
-          router.push('/dashboard/missions');
+          router.push('/dashboard/missions?tab=custom');
       }
 
       form.reset();
@@ -547,12 +548,12 @@ function CreateMissionTemplatePageContent() {
           onOpenChange={(isOpen) => {
             if (!isOpen) { 
               setNewlyCreatedTemplate(null);
-              router.push('/dashboard/missions');
             }
             setIsAssignDialogOpen(isOpen);
           }}
           onAssigned={() => {
             toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+            router.push('/dashboard/missions?tab=custom');
           }}
         />
       )}
