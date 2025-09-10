@@ -1213,9 +1213,12 @@ export const toggleUserFeatureVote = async (userId: string, featureId: string): 
 // --- Reward Templates (Catálogo de Recompensas) ---
 export const addRewardTemplate = async (
   actor: UserProfile,
-  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>,
+  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'>,
   targetContexts: string[]
 ): Promise<void> => {
+  if (!targetContexts || targetContexts.length === 0) {
+    throw new Error("Pelo menos um espaço de trabalho deve ser selecionado.");
+  }
   const now = serverTimestamp();
 
   const createPromises = targetContexts.map(contextId => {
@@ -1499,19 +1502,22 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
     return;
   }
 
+  const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
+  const familyId = instanceData.familyId;
+
   const batch = writeBatch(db);
   querySnapshot.forEach(doc => {
     batch.delete(doc.ref);
   });
   await batch.commit();
 
-  const child = await getChildProfileById(childId);
-  if (child?.familyId) {
+  if (familyId) {
+    const child = await getChildProfileById(childId);
     const template = await getRewardTemplateById(templateId);
-    await createAllianceNotification(child.familyId, actor, {
+    await createAllianceNotification(familyId, actor, {
       type: "instance_unassigned",
       title: "Recompensa Desatribuída",
-      description: `${actor.name} removeu a recompensa "${template?.title}" de ${child.name}.`,
+      description: `${actor.name} removeu a recompensa "${template?.title}" de ${child?.name}.`,
       href: `/dashboard/mural?childId=${childId}&tab=rewards`,
       relatedChildId: childId,
     });
@@ -2578,3 +2584,4 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
