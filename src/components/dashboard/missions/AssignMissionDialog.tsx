@@ -37,7 +37,7 @@ import * as z from 'zod';
 import { useForm, FormProvider } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { RecurrenceControl } from './RecurrenceControl';
-import { EditRecurrenceDialog } from './EditRecurrenceDialog';
+import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceDialog';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -123,7 +123,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const [isProcessing, setIsProcessing] = useState(false);
 
   const [isRecurrenceEditModalOpen, setIsRecurrenceEditModalOpen] = useState(false);
-  const [recurrenceEditMode, setRecurrenceEditMode] = useState<'single' | 'forward' | 'all'>('all');
+  const [recurrenceEditMode, setRecurrenceEditMode] = useState<EditRecurrenceMode>('all');
   
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
@@ -267,7 +267,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     }
   };
   
-  const handleRecurrenceEditSelect = (mode: 'single' | 'forward' | 'all') => {
+  const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
       setIsRecurrenceEditModalOpen(false);
       setRecurrenceEditMode(mode);
       prepareScheduleForm(existingAssignments[selectedChild!.id]);
