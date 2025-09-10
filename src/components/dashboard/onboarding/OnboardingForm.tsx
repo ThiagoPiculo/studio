@@ -262,7 +262,6 @@ export function OnboardingForm() {
                  if (customActivity) {
                      source = 'custom';
                      emoji = customActivity.emoji || '✨';
-                     // Note: custom activities don't have a direct category from the predefined list, so we default
                      category = 'hobbies';
                  } else if (predefinedMission) {
                      emoji = predefinedMission.emoji;
@@ -271,7 +270,6 @@ export function OnboardingForm() {
                  } else {
                      console.warn(`Could not find details for: "${item.activity}". Using defaults.`);
                  }
-
 
                  const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
                     ownerId: user.uid,
@@ -291,7 +289,9 @@ export function OnboardingForm() {
                     source: source,
                 };
                 
-                 allMissionPromises.push(addMissionTemplate(user, templatePayload).then(async (template) => {
+                 allMissionPromises.push(addMissionTemplate(user, templatePayload, [values.contextId]).then(async (template) => {
+                    if (!template) return;
+                    
                     const [hour, minute] = item.startTime.split(':').map(Number);
                     const startDateWithTime = new Date(template.startDate as string);
                     startDateWithTime.setHours(hour, minute);
