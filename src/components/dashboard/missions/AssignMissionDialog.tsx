@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -27,7 +28,7 @@ import {
   getChildProfileById,
   getActiveMissionInstancesByTemplate
 } from '@/lib/firebase/firestore';
-import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle, NotebookPen, Info, CircleDot, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Users, AlertCircle, Target, Edit, CalendarDays, Save, ArrowLeft, XCircle, NotebookPen, Info, CircleDot, Link as LinkIcon, Clock } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 
@@ -431,16 +432,13 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           )}
 
           {view === 'list' && (
-            <DialogFooter className="mt-4 flex-col gap-2 text-left">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
-                    <Info className="h-4 w-4 shrink-0" />
-                    <p>
-                        Para escolher outros heróis, feche a tela e troque o espaço de trabalho no topo da página.
-                    </p>
-                </div>
-                <div className="self-end">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-                </div>
+            <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between sm:items-center w-full pt-4">
+                <Button variant="secondary" onClick={() => onOpenChange(false)}>
+                  Agendar Depois
+                </Button>
+                <DialogClose asChild>
+                  <Button variant="outline">Fechar</Button>
+                </DialogClose>
             </DialogFooter>
           )}
 

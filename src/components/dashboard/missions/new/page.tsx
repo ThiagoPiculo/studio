@@ -16,8 +16,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate } from '@/lib/types';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import type { MissionCategory, MissionTemplate, ChildProfile } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
 import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
@@ -25,8 +25,13 @@ import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescriptio
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Label } from '@/components/ui/label';
 
 
 const missionTemplateFormSchema = z.object({
@@ -60,12 +65,35 @@ function CreateMissionTemplatePageContent() {
   const [duplicateMission, setDuplicateMission] = useState<MissionTemplate | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
+  
+  const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  useEffect(() => {
+    if (!user || availableContexts.length === 0) {
+      setIsLoadingChildren(false);
+      return;
+    }
+    
+    setIsLoadingChildren(true);
+    const fetchChildren = async () => {
+      const childrenMap: Record<string, ChildProfile[]> = {};
+      const promises = availableContexts.map(async (context) => {
+          const children = await getChildProfilesForAttribution(user.uid, context.id);
+          childrenMap[context.id] = children;
+      });
+      await Promise.all(promises);
+      setChildrenByContext(childrenMap);
+      setIsLoadingChildren(false);
+    };
+    fetchChildren();
+  }, [user, availableContexts]);
 
 
   const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(g => g.items), []);
 
   const initialTitle = searchParams.get('title') || '';
-  const initialEmoji = searchParams.get('emoji') || '';
+  const initialEmoji = searchParams.get('emoji') || '✨';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
 
@@ -171,12 +199,12 @@ function CreateMissionTemplatePageContent() {
     setIsLoading(true);
 
     try {
-      const isFromPredefined = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
+      const isFromPredefined = allMissionIdeas.some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
 
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
         ownerId: user.uid,
         title: values.title,
-        emoji: values.emoji,
+        emoji: values.emoji || '✨',
         description: values.description,
         category: values.category,
         starsReward: values.starsReward,
@@ -198,7 +226,7 @@ function CreateMissionTemplatePageContent() {
           setNewlyCreatedTemplate(createdTemplate);
           setIsAssignDialogOpen(true);
       } else {
-          router.push('/dashboard/missions');
+          router.push('/dashboard/missions?tab=custom');
       }
 
       form.reset();
@@ -251,12 +279,72 @@ function CreateMissionTemplatePageContent() {
                 <ArrowLeft className="mr-1 h-4 w-4" />
                 Voltar para o Quadro de Missões
             </Link>
+            <div className="flex items-center gap-3">
+                <Target className="h-10 w-10 text-primary" />
+                <div>
+                    <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
+                    <CardDescription className="text-md">
+                        Crie um modelo de missão que poderá ser agendado para um ou mais heróis.
+                    </CardDescription>
+                </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 items-end">
+                 <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col flex-grow">
+                            <FormLabel>Título da Missão</FormLabel>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                        >
+                                            {field.value || "Selecione ou digite o nome da missão"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                     <Command>
+                                        <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                            {predefinedMissionGroups.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                                        return (
+                                                            <CommandItem
+                                                                value={idea.title}
+                                                                key={idea.title}
+                                                                onSelect={() => handleIdeaSelection(idea)}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+
+                <div className="grid grid-cols-3 gap-4 items-end">
                     <FormField
                       control={form.control}
                       name="emoji"
@@ -270,100 +358,46 @@ function CreateMissionTemplatePageContent() {
                         </FormItem>
                       )}
                     />
-                     <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col flex-grow">
-                                <FormLabel>Título da Missão</FormLabel>
-                                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                                            >
-                                                {field.value || "Selecione ou digite o nome da missão"}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                         <Command>
-                                            <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
-                                            <CommandList>
-                                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                                {predefinedMissionGroups.map((group) => (
-                                                    <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                                        {group.items.map(idea => {
-                                                            const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                                            return (
-                                                                <CommandItem
-                                                                    value={idea.title}
-                                                                    key={idea.title}
-                                                                    onSelect={() => handleIdeaSelection(idea)}
-                                                                >
-                                                                    <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                                    {idea.title}
-                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
-                                                                </CommandItem>
-                                                            )
-                                                        })}
-                                                    </CommandGroup>
-                                                ))}
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {missionCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  <div className="flex items-center">
+                                    <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
+                                    <span>{category.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
                     />
-                </div>
-
-                <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                    <FormField
+                      control={form.control}
+                      name="starsReward"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Estrelas</FormLabel>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
+                            <Input type="number" placeholder="Ex: 5" {...field} />
                           </FormControl>
-                          <SelectContent>
-                            {missionCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex items-center">
-                                  <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
-                                  <span>{category.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="starsReward"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Recompensa em Estrelas</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Ex: 5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                 </div>
                 
                 <FormField
@@ -391,44 +425,77 @@ function CreateMissionTemplatePageContent() {
                          <div className="mb-4">
                             <FormLabel className="text-base font-semibold">Publicar Missão Em:</FormLabel>
                             <FormDescription>
-                                Escolha em quais dos seus espaços de trabalho esta missão estará disponível.
+                                Qual espaços de trabalho está o Herói que você quer usar essa Missão?
                             </FormDescription>
                         </div>
                         <div className="space-y-2">
-                          {availableContexts.map((context) => (
-                            <FormField
-                              key={context.id}
-                              control={form.control}
-                              name="targetContexts"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={context.id}
-                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(context.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), context.id])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== context.id
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                     <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
-                                        <IconForContext contextId={context.id} />
-                                        {getContextName(context.id)}
-                                    </FormLabel>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          ))}
+                          {availableContexts.map((context) => {
+                            const childrenInCtx = childrenByContext[context.id] || [];
+                            return (
+                                <FormField
+                                  key={context.id}
+                                  control={form.control}
+                                  name="targetContexts"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={context.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(context.id)}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...(field.value || []), context.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value) => value !== context.id
+                                                    )
+                                                  )
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none w-full">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="font-normal flex-1 cursor-pointer flex items-center gap-2">
+                                                    <IconForContext contextId={context.id} />
+                                                    {getContextName(context.id)}
+                                                </Label>
+                                                {isLoadingChildren ? (
+                                                     <Skeleton className="h-6 w-20 rounded-full" />
+                                                ) : childrenInCtx.length > 0 ? (
+                                                    <div className="flex -space-x-2">
+                                                        {childrenInCtx.slice(0, 4).map(child => (
+                                                            <TooltipProvider key={child.id} delayDuration={100}>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Avatar className="h-6 w-6 border-2 border-background">
+                                                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                                                            <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                                        </Avatar>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>{child.name}</p></TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        ))}
+                                                        {childrenInCtx.length > 4 && (
+                                                            <Avatar className="h-6 w-6 border-2 border-background">
+                                                                <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{childrenInCtx.length - 4}</AvatarFallback>
+                                                            </Avatar>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">Nenhum herói</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                      </FormItem>
+                                    )
+                                  }}
+                                />
+                              )
+                          })}
                         </div>
                         <FormMessage />
                       </FormItem>
@@ -481,7 +548,7 @@ function CreateMissionTemplatePageContent() {
           onOpenChange={(isOpen) => {
             if (!isOpen) { 
               setNewlyCreatedTemplate(null);
-              router.push('/dashboard/missions');
+              router.push('/dashboard/missions?tab=custom');
             }
             setIsAssignDialogOpen(isOpen);
           }}
@@ -501,3 +568,5 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
+    
