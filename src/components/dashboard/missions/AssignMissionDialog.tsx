@@ -95,7 +95,7 @@ interface AssignMissionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
-  onDone?: () => void; // New prop
+  onDone?: () => void;
 }
 
 const schoolShiftMap: Record<SchoolShift, string> = {
@@ -210,7 +210,13 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   
    useEffect(() => {
     if (!isOpen) {
+      // Reset state completely when the dialog is not open
+      // to avoid stale data between openings.
       resetDialogState();
+      setEffectiveTemplate(null);
+      setChildren([]);
+      setExistingAssignments({});
+      setIsLoading(true);
       return;
     }
     
@@ -250,7 +256,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     };
 
     initialize();
-}, [isOpen, instanceToEdit, template, fetchDataForList, onOpenChange, prepareScheduleForm, toast]);
+  }, [isOpen, instanceToEdit, template, fetchDataForList, onOpenChange, prepareScheduleForm, toast, resetDialogState]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
@@ -317,11 +323,12 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
   const handleSuccessDialogDone = () => {
     setIsSuccessDialogOpen(false);
+    // Let the parent component decide if it should close the main dialog
     if(onDone) {
         onDone();
     } else {
-        fetchDataForList();
-        resetDialogState();
+       // Default behavior if onDone is not provided
+        onOpenChange(false);
     }
   };
   

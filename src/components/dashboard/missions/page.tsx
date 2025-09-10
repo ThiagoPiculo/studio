@@ -381,7 +381,10 @@ function MissionsHubContent() {
                 isOpen={isAssignDialogOpen}
                 onOpenChange={setIsAssignDialogOpen}
                 onAssigned={refetchData}
-                onDone={refetchData}
+                onDone={() => { // Adicionado
+                  setIsAssignDialogOpen(false);
+                  refetchData();
+                }}
             />
         )}
 
