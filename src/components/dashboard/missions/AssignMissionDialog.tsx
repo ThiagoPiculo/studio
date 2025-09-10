@@ -43,6 +43,7 @@ import { format } from 'date-fns';
 import Link from 'next/link';
 import { getDateObject } from '@/lib/calendar-utils';
 import { useRouter } from 'next/navigation';
+import { PostAssignmentSuccessDialog } from './PostAssignmentSuccessDialog';
 
 
 const recurrenceRuleSchema = z.object({
@@ -94,6 +95,7 @@ interface AssignMissionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: () => void;
+  onDone?: () => void; // New prop
 }
 
 const schoolShiftMap: Record<SchoolShift, string> = {
@@ -103,7 +105,7 @@ const schoolShiftMap: Record<SchoolShift, string> = {
     not_applicable: 'Não se aplica'
 };
 
-export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned, onDone }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const router = useRouter();
   const { currentContext, availableContexts, currentRole } = useFamily();
@@ -124,6 +126,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   const [existingAssignments, setExistingAssignments] = useState<Record<string, MissionInstance>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
 
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
@@ -284,7 +287,6 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           if (!editDate) throw new Error("Data da ocorrência não encontrada para edição.");
           
           await updateRecurringMissionInstance(instanceToEdit.id, recurrenceEditMode, data, editDate);
-          toast({ title: "Agendamento Atualizado!" });
       } else {
           if (!('ownerId' in effectiveTemplate)) throw new Error("Cannot assign from an instance.");
 
@@ -296,15 +298,14 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           };
           const finalSchedulePayload = { ...effectiveTemplate, ...data };
           await addMissionInstance(user, instanceData, finalSchedulePayload);
-          toast({ title: "Missão Agendada!", description: `${effectiveTemplate.title} foi agendada para ${selectedChild.name}.` });
       }
       onAssigned?.();
       
       if(instanceToEdit){
          onOpenChange(false);
+         toast({ title: "Agendamento Atualizado!" });
       } else {
-        fetchDataForList();
-        resetDialogState();
+         setIsSuccessDialogOpen(true);
       }
     } catch (error) {
       console.error("Error saving assignment:", error);
@@ -314,12 +315,13 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     }
   };
 
-  const handleDoneClick = () => {
-    onOpenChange(false);
-    if (onAssigned) {
-      onAssigned();
+  const handleSuccessDialogDone = () => {
+    setIsSuccessDialogOpen(false);
+    if(onDone) {
+        onDone();
     } else {
-      router.push('/dashboard/missions?tab=custom');
+        fetchDataForList();
+        resetDialogState();
     }
   };
   
@@ -409,7 +411,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen && !isSuccessDialogOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
@@ -443,10 +445,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           )}
 
           {view === 'list' && (
-            <DialogFooter className="flex-col gap-2 sm:flex-row sm:justify-between sm:items-center w-full pt-4">
-                <Button variant="secondary" onClick={handleDoneClick}>
-                  Agendar Depois
-                </Button>
+            <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">Fechar</Button>
                 </DialogClose>
@@ -455,6 +454,12 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
         </DialogContent>
       </Dialog>
+      <PostAssignmentSuccessDialog 
+        isOpen={isSuccessDialogOpen}
+        onDone={handleSuccessDialogDone}
+        child={selectedChild}
+        template={effectiveTemplate}
+      />
     </>
   );
 }

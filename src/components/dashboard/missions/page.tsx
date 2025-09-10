@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
@@ -16,7 +17,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb, Share2, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -29,7 +30,7 @@ import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole,
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -39,6 +40,7 @@ import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
 
 
 function MissionsHubContent() {
@@ -46,6 +48,8 @@ function MissionsHubContent() {
   const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
@@ -57,7 +61,17 @@ function MissionsHubContent() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
+  const [templateToShare, setTemplateToShare] = useState<MissionTemplate | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
+  const activeTab = searchParams.get('tab') || 'ideas';
+
+  const handleTabChange = (value: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('tab', value);
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
     if (!currentRole) return false;
@@ -128,13 +142,18 @@ function MissionsHubContent() {
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
+    
+    // Optimistic UI Update
+    const originalTemplates = [...missionTemplates];
+    setMissionTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
+
     try {
       await deleteMissionTemplateAndInstances(user, templateToDelete.id);
       toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
-      refetchData();
     } catch (error) {
       console.error("Error deleting mission template:", error);
-      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
+      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão. A lista foi restaurada.", variant: "destructive" });
+      setMissionTemplates(originalTemplates); // Revert on error
     } finally {
       setTemplateToDelete(null);
       setAffectedChildrenNames([]);
@@ -161,6 +180,11 @@ function MissionsHubContent() {
     router.push(`/dashboard/missions/new?${queryParams.toString()}`);
   };
 
+  const handleShareClick = (template: MissionTemplate) => {
+    setTemplateToShare(template);
+    setIsShareDialogOpen(true);
+  }
+
   const getStatusBadgeVariant = (status: MissionTemplate['status']): "default" | "secondary" | "outline" => {
     switch (status) {
       case 'active': return 'default';
@@ -179,7 +203,7 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-        <Tabs defaultValue="ideas" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="ideas">
                     <Lightbulb className="mr-2 h-4 w-4"/>Ideias de Missões
@@ -280,7 +304,7 @@ function MissionsHubContent() {
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
                                                <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                    <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                    <CalendarDays className="mr-2 h-4 w-4" /> Agendar
                                                 </Button>
                                                 <TooltipProvider>
                                                     <Tooltip>
@@ -291,6 +315,13 @@ function MissionsHubContent() {
                                                         </TooltipTrigger>
                                                         <TooltipContent><p>Editar Missão</p></TooltipContent>
                                                     </Tooltip>
+                                                </TooltipProvider>
+                                                <TooltipProvider>
+                                                    <Tooltip><TooltipTrigger asChild>
+                                                        <Button variant="outline" size="icon" onClick={() => handleShareClick(template)} disabled={!canEdit} className="flex-shrink-0">
+                                                            <Share2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </TooltipTrigger><TooltipContent><p>Compartilhar com outros espaços</p></TooltipContent></Tooltip>
                                                 </TooltipProvider>
                                                 <TooltipProvider>
                                                     <Tooltip>
@@ -350,6 +381,16 @@ function MissionsHubContent() {
                 isOpen={isAssignDialogOpen}
                 onOpenChange={setIsAssignDialogOpen}
                 onAssigned={refetchData}
+                onDone={refetchData}
+            />
+        )}
+
+        {templateToShare && (
+            <ShareMissionDialog
+                template={templateToShare}
+                isOpen={isShareDialogOpen}
+                onOpenChange={setIsShareDialogOpen}
+                onShared={refetchData}
             />
         )}
     </div>

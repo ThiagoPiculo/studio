@@ -216,16 +216,15 @@ function CreateMissionTemplatePageContent() {
       };
       
       const createdTemplate = await addMissionTemplate(user, templateDataPayload, values.targetContexts);
-
-      toast({
-        title: 'Missão(ões) Adicionada(s) ao Catálogo!',
-        description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
-      });
       
       if (createdTemplate) {
           setNewlyCreatedTemplate(createdTemplate);
           setIsAssignDialogOpen(true);
       } else {
+          toast({
+            title: 'Missão(ões) Adicionada(s) ao Catálogo!',
+            description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
+          });
           router.push('/dashboard/missions?tab=custom');
       }
 
@@ -297,54 +296,52 @@ function CreateMissionTemplatePageContent() {
                     control={form.control}
                     name="title"
                     render={({ field }) => (
-                      <FormItem className="flex flex-col">
-                        <FormLabel>Título da Missão</FormLabel>
-                        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                          <PopoverTrigger asChild>
-                             <FormControl>
-                                <Input
-                                  placeholder="Digite um nome ou busque uma ideia..."
-                                  className="w-full"
-                                  {...field}
-                                  onFocus={() => setIsPopoverOpen(true)}
-                                />
-                              </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0" align="start">
-                            <Command shouldFilter={false}>
-                              <CommandInput
-                                placeholder="Filtrar ideias..."
-                                value={field.value}
-                                onValueChange={field.onChange}
-                              />
-                              <CommandList>
-                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                {predefinedMissionGroups.map((group) => (
-                                  <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                    {group.items.filter(item => item.title.toLowerCase().includes(field.value.toLowerCase())).map(idea => {
-                                      const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                      return (
-                                        <CommandItem
-                                          value={idea.title}
-                                          key={idea.title}
-                                          onSelect={() => handleIdeaSelection(idea)}
+                        <FormItem className="flex flex-col flex-grow">
+                            <FormLabel>Título da Missão</FormLabel>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
                                         >
-                                          <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                          {idea.title}
-                                          {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
-                                        </CommandItem>
-                                      )
-                                    })}
-                                  </CommandGroup>
-                                ))}
-                              </CommandList>
-                            </Command>
-                          </PopoverContent>
-                        </Popover>
-                        <FormMessage />
-                      </FormItem>
+                                            {field.value || "Selecione ou digite o nome da missão"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                     <Command>
+                                        <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                            {predefinedMissionGroups.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                                        return (
+                                                            <CommandItem
+                                                                value={idea.title}
+                                                                key={idea.title}
+                                                                onSelect={() => handleIdeaSelection(idea)}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
                     )}
-                  />
+                />
 
                 <div className="grid grid-cols-3 gap-4 items-end">
                     <FormField
@@ -547,15 +544,14 @@ function CreateMissionTemplatePageContent() {
         <AssignMissionDialog
           template={newlyCreatedTemplate}
           isOpen={isAssignDialogOpen}
-          onOpenChange={(isOpen) => {
-            if (!isOpen) { 
-              setNewlyCreatedTemplate(null);
-              router.push('/dashboard/missions?tab=custom');
-            }
-            setIsAssignDialogOpen(isOpen);
-          }}
+          onOpenChange={setIsAssignDialogOpen}
           onAssigned={() => {
-            toast({ title: "Missões Agendadas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
+            // No longer pushes to a specific tab, the success dialog will handle navigation
+          }}
+          onDone={() => {
+            setNewlyCreatedTemplate(null);
+            setIsAssignDialogOpen(false);
+            router.push('/dashboard/missions?tab=custom');
           }}
         />
       )}
@@ -570,9 +566,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
-    
-
-
-
-
