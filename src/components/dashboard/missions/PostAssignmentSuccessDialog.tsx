@@ -10,11 +10,12 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionTemplate } from '@/lib/types';
-import { Calendar, CalendarCheck2, ArrowRight } from 'lucide-react';
+import { CalendarDays, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
+import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 
 interface PostAssignmentSuccessDialogProps {
   isOpen: boolean;
@@ -51,7 +52,7 @@ export function PostAssignmentSuccessDialog({ isOpen, onDone, child, template }:
             >
                 <CardHeader className="flex flex-row items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                        <CalendarCheck2 className="h-6 w-6 text-primary" />
+                        <Calendar1Icon className="h-6 w-6 text-chart-5" />
                         <div>
                             <CardTitle className="text-base">Ver Rotina Hoje</CardTitle>
                             <p className="text-xs text-muted-foreground">Missões de {child.name} para hoje, {format(today, 'dd/MM')}.</p>
@@ -66,7 +67,7 @@ export function PostAssignmentSuccessDialog({ isOpen, onDone, child, template }:
             >
                  <CardHeader className="flex flex-row items-center justify-between p-4">
                     <div className="flex items-center gap-3">
-                        <Calendar className="h-6 w-6 text-primary" />
+                        <CalendarDays className="h-6 w-6 text-chart-5" />
                         <div>
                             <CardTitle className="text-base">Ver Rotina Semanal</CardTitle>
                             <p className="text-xs text-muted-foreground">Agenda completa de missões para {child.name}.</p>
