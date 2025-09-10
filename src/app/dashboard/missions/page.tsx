@@ -41,7 +41,7 @@ import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
-import { PostAssignmentSuccessDialog } from './PostAssignmentSuccessDialog';
+import { PostAssignmentSuccessDialog } from '@/components/dashboard/missions/PostAssignmentSuccessDialog';
 
 
 function MissionsHubContent() {
@@ -173,7 +173,7 @@ function MissionsHubContent() {
   const handleUseIdea = (idea: PredefinedMissionIdea) => {
     const existingTemplate = missionTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
     if (existingTemplate) {
-      router.push(`/dashboard/missions/edit/${existingTemplate.id}`);
+      handleOpenAssignDialog(existingTemplate);
       return;
     }
     const queryParams = new URLSearchParams();
@@ -220,7 +220,7 @@ function MissionsHubContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Ideias de Missões</CardTitle>
-                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicionar a missão ao seu catálogo de missões personalizadas e poder atribuí-la aos seus heróis.</CardDescription>
+                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Missão" para adicionar a missão ao seu catálogo de missões personalizadas e poder atribuí-la aos seus heróis.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Accordion type="multiple" className="w-full space-y-4">
@@ -240,12 +240,9 @@ function MissionsHubContent() {
                                                 return (
                                                     <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
                                                         <CardHeader>
-                                                            <CardTitle className="text-base flex items-center justify-between gap-2">
-                                                                <div className="flex items-center gap-2">
-                                                                  <span className="text-2xl">{idea.emoji}</span>
-                                                                  {idea.title}
-                                                                </div>
-                                                                {isAdded && <Badge variant="secondary">Em uso</Badge>}
+                                                            <CardTitle className="text-base flex items-center gap-2">
+                                                                <span className="text-2xl">{idea.emoji}</span>
+                                                                {idea.title}
                                                             </CardTitle>
                                                         </CardHeader>
                                                         <CardContent className="flex-grow">
