@@ -222,23 +222,18 @@ function CreateRewardTemplatePageContent() {
     setIsLoading(true);
     try {
       const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
-      
-      for (const contextId of values.targetContexts) {
-          const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-            ownerId: user.uid,
-            title: values.title,
-            description: values.description,
-            category: values.category,
-            starsCost: values.starsCost,
-            isMaterial: values.isMaterial,
-            isUnique: values.isUnique,
-            familyId: contextId === 'my-space' ? null : contextId,
-            source: isFromPredefined ? 'predefined' : 'custom',
-            justification: '', 
-            tip: '',
-          };
-          await addRewardTemplate(user, templateDataPayload);
-      }
+      await addRewardTemplate(user, {
+        ownerId: user.uid,
+        title: values.title,
+        description: values.description,
+        category: values.category,
+        starsCost: values.starsCost,
+        isMaterial: values.isMaterial,
+        isUnique: values.isUnique,
+        source: isFromPredefined ? 'predefined' : 'custom',
+        justification: '',
+        tip: '',
+      }, values.targetContexts);
       
       toast({
         title: 'Tesouro(s) Adicionado(s)!',
@@ -268,272 +263,284 @@ function CreateRewardTemplatePageContent() {
     return contextId === 'my-space' ? <CircleDot className="h-4 w-4 text-chart-2" /> : <LinkIcon className="h-4 w-4 text-chart-4" />;
   };
 
-
   return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-10">
-      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Recompensa Já Existe</AlertDialogTitle>
-                <AlertDialogDescription>
-                    Você já tem uma recompensa chamada "{duplicateReward?.title}" em um dos espaços selecionados. O que você gostaria de fazer?
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-                <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
-                    Mudar o nome e criar
-                </Button>
-                <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
-                    <Edit3 className="mr-2 h-4 w-4" />
-                    Gerenciar a existente
-                </Button>
-            </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
+        <div className="space-y-6 max-w-2xl mx-auto pb-10">
+        <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Recompensa Já Existe</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Você já tem uma recompensa chamada "{duplicateReward?.title}" em um dos espaços selecionados. O que você gostaria de fazer?
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                    <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
+                        Mudar o nome e criar
+                    </Button>
+                    <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
+                        <Edit3 className="mr-2 h-4 w-4" />
+                        Gerenciar a existente
+                    </Button>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
 
-      <Card className="shadow-xl">
-        <CardContent className="pt-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                 <FormField
+        <Card className="shadow-xl">
+            <CardHeader>
+                <div className="flex items-center gap-3 mb-2">
+                <Gift className="h-10 w-10 text-primary" />
+                <div>
+                    <CardTitle className="text-3xl font-headline">Criar Recompensa Personalizada</CardTitle>
+                    <CardDescription className="text-md">
+                    Defina uma nova recompensa para o catálogo do seu Baú.
+                    </CardDescription>
+                </div>
+                </div>
+            </CardHeader>
+            <CardContent className="pt-6">
+            <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                                <FormLabel>Título da Recompensa</FormLabel>
+                                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                    <PopoverTrigger asChild>
+                                        <FormControl>
+                                            <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
+                                                {field.value || "Selecione ou digite um nome"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            </Button>
+                                        </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                        <Command>
+                                            <CommandInput placeholder="Buscar ideia de recompensa..." onValueChange={(value) => form.setValue("title", value)} value={field.value} />
+                                            <CommandList>
+                                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                                {allRewardIdeas.map((group) => (
+                                                    <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                        {group.items.map(idea => {
+                                                            const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                                            return (
+                                                                <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
+                                                                    <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                    {idea.title}
+                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
+                                                                </CommandItem>
+                                                            )
+                                                        })}
+                                                    </CommandGroup>
+                                                ))}
+                                            </CommandList>
+                                        </Command>
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
                     control={form.control}
-                    name="title"
+                    name="category"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                            <FormLabel>Título da Recompensa</FormLabel>
-                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
-                                            {field.value || "Selecione ou digite um nome"}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                    <Command>
-                                        <CommandInput placeholder="Buscar ideia de recompensa..." onValueChange={(value) => form.setValue("title", value)} value={field.value} />
-                                        <CommandList>
-                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                            {allRewardIdeas.map((group) => (
-                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                                    {group.items.map(idea => {
-                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                                        return (
-                                                            <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
-                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                                {idea.title}
-                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
-                                                            </CommandItem>
-                                                        )
-                                                    })}
-                                                </CommandGroup>
-                                            ))}
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
+                        <FormItem>
+                        <FormLabel>Categoria</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                            <SelectTrigger>
+                                <SelectValue placeholder="Selecione uma categoria..." />
+                            </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                            {rewardCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                <div className="flex items-center">
+                                    {category.icon && <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />}
+                                    <span className={cn("px-2 py-0.5 rounded-full text-xs border", category.colorClasses)}>
+                                    {category.label}
+                                    </span>
+                                </div>
+                                </SelectItem>
+                            ))}
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                        </FormItem>
+                    )}
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                    <FormField
+                        control={form.control}
+                        name="starsCost"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
+                            <FormControl>
+                            <Input type="number" placeholder="Ex: 50" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
+                    {suggestedCost && (
+                         <Alert variant="default" className="border-primary/20 bg-primary/5 text-sm">
+                            <Sparkles className="h-4 w-4 text-primary" />
+                            <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
+                            <AlertDescription className="text-primary/90">
+                               Para esta categoria, sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                    </div>
+                    <div className="space-y-4">
+                        <FormField
+                        control={form.control}
+                        name="isMaterial"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                            <div className="space-y-0.5">
+                                <FormLabel>Item material?</FormLabel>
+                                <FormDescription>
+                                É um objeto físico?
+                                </FormDescription>
+                            </div>
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                disabled={form.getValues('category') === 'material_items'}
+                                />
+                            </FormControl>
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name="isUnique"
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
+                            <div className="space-y-0.5">
+                                <FormLabel>Resgate Único?</FormLabel>
+                                <FormDescription>
+                                Pode ser resgatado só uma vez.
+                                </FormDescription>
+                            </div>
+                            <FormControl>
+                                <Switch
+                                checked={field.value}
+                                onCheckedChange={field.onChange}
+                                />
+                            </FormControl>
+                            </FormItem>
+                        )}
+                        />
+                    </div>
+                </div>
+
+                <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Descrição (Opcional)</FormLabel>
+                        <FormControl>
+                        <Textarea
+                            placeholder="Detalhes sobre a recompensa."
+                            className="resize-none"
+                            {...field}
+                        />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                
+                <FormField
+                    control={form.control}
+                    name="targetContexts"
+                    render={() => (
+                        <FormItem>
+                            <div className="mb-4">
+                            <FormLabel className="text-base font-semibold">Publicar Recompensa Em:</FormLabel>
+                            <FormDescription>
+                                Escolha em quais dos seus espaços de trabalho esta recompensa estará disponível.
+                            </FormDescription>
+                            </div>
+                            <div className="space-y-2">
+                            {availableContexts.map((context) => (
+                                <FormField
+                                key={context.id}
+                                control={form.control}
+                                name="targetContexts"
+                                render={({ field }) => {
+                                    return (
+                                    <FormItem
+                                        key={context.id}
+                                        className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
+                                    >
+                                        <FormControl>
+                                        <Checkbox
+                                            checked={field.value?.includes(context.id)}
+                                            onCheckedChange={(checked) => {
+                                            return checked
+                                                ? field.onChange([...(field.value || []), context.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                    (value) => value !== context.id
+                                                    )
+                                                )
+                                            }}
+                                        />
+                                        </FormControl>
+                                        <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
+                                            <IconForContext contextId={context.id} />
+                                            {getContextName(context.id)}
+                                        </FormLabel>
+                                    </FormItem>
+                                    )
+                                }}
+                                />
+                            ))}
+                            </div>
                             <FormMessage />
                         </FormItem>
                     )}
                 />
-                <FormField
-                  control={form.control}
-                  name="category"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Categoria</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma categoria..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {rewardCategories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                               <div className="flex items-center">
-                                 {category.icon && <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />}
-                                <span className={cn("px-2 py-0.5 rounded-full text-xs border", category.colorClasses)}>
-                                  {category.label}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <FormField
-                    control={form.control}
-                    name="starsCost"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Ex: 50" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {suggestedCost && (
-                     <Alert variant="default" className="border-primary/20 bg-primary/5 text-sm">
-                        <Sparkles className="h-4 w-4 text-primary" />
-                        <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
-                        <AlertDescription className="text-primary/90">
-                           Para esta categoria, sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
-                        </AlertDescription>
-                    </Alert>
-                  )}
+                
+                <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
+                    <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+                        Cancelar
+                    </Button>
+                    <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
+                        {isLoading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                        <Gift className="mr-2 h-4 w-4" />
+                        )}
+                        Adicionar ao Baú
+                    </Button>
                 </div>
-                <div className="space-y-4">
-                    <FormField
-                    control={form.control}
-                    name="isMaterial"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
-                        <div className="space-y-0.5">
-                            <FormLabel>Item material?</FormLabel>
-                            <FormDescription>
-                            É um objeto físico?
-                            </FormDescription>
-                        </div>
-                        <FormControl>
-                            <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            disabled={form.getValues('category') === 'material_items'}
-                            />
-                        </FormControl>
-                        </FormItem>
-                    )}
-                    />
-                    <FormField
-                    control={form.control}
-                    name="isUnique"
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30 h-[calc(50%-0.5rem)]">
-                        <div className="space-y-0.5">
-                            <FormLabel>Resgate Único?</FormLabel>
-                            <FormDescription>
-                            Pode ser resgatado só uma vez.
-                            </FormDescription>
-                        </div>
-                        <FormControl>
-                            <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                            />
-                        </FormControl>
-                        </FormItem>
-                    )}
-                    />
-                </div>
-              </div>
-
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Descrição (Opcional)</FormLabel>
-                    <FormControl>
-                      <Textarea
-                        placeholder="Detalhes sobre a recompensa."
-                        className="resize-none"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              
-              <FormField
-                  control={form.control}
-                  name="targetContexts"
-                  render={() => (
-                    <FormItem>
-                        <div className="mb-4">
-                          <FormLabel className="text-base font-semibold">Publicar Recompensa Em:</FormLabel>
-                          <FormDescription>
-                            Escolha em quais dos seus espaços de trabalho esta recompensa estará disponível.
-                          </FormDescription>
-                        </div>
-                        <div className="space-y-2">
-                          {availableContexts.map((context) => (
-                            <FormField
-                              key={context.id}
-                              control={form.control}
-                              name="targetContexts"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={context.id}
-                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(context.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), context.id])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== context.id
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                    <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
-                                        <IconForContext contextId={context.id} />
-                                        {getContextName(context.id)}
-                                    </FormLabel>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          ))}
-                        </div>
-                        <FormMessage />
-                    </FormItem>
-                  )}
-              />
-              
-              <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
-                  <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
-                    {isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Gift className="mr-2 h-4 w-4" />
-                    )}
-                    Adicionar ao Baú
-                  </Button>
-              </div>
-            </form>
-          </Form>
+              </form>
+            </Form>
         </CardContent>
       </Card>
     </div>
+    </Suspense>
   );
 }
 
 export default function CreateRewardPage() {
-  return (
-    <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
-      <CreateRewardPageContent />
-    </Suspense>
-  )
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
+            <CreateRewardTemplatePageContent />
+        </Suspense>
+    )
 }

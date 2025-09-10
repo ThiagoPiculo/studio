@@ -95,7 +95,7 @@ function MissionsHubContent() {
   }, [authLoading, isFamilyLoading, refetchData]);
   
   const customTemplates = useMemo(() => {
-    return missionTemplates.filter(template => template.source === 'custom');
+    return missionTemplates.filter(template => template.source === 'custom').sort((a, b) => a.title.localeCompare(b.title));
   }, [missionTemplates]);
 
   const existingTemplateTitles = useMemo(() => {
@@ -168,7 +168,7 @@ function MissionsHubContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Ideias de Missões</CardTitle>
-                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicioná-la ao seu catálogo e poder atribuí-la.</CardDescription>
+                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicionar a missão ao seu catálogo de missões personalizadas e poder atribuí-la aos seus heróis.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Accordion type="multiple" className="w-full space-y-4">
@@ -215,10 +215,10 @@ function MissionsHubContent() {
             <TabsContent value="custom" className="mt-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Criadas por Você</CardTitle>
+                        <CardTitle className="flex items-center gap-2"><User className="h-5 w-5 text-primary"/>Missões Personalizadas</CardTitle>
                         <CardDescription>
                             {customTemplates.length > 0
-                            ? "Estas são as missões que você criou do zero. Clique em \"Gerenciar\" para atribuí-las."
+                            ? "Estas são as missões que você criou do zero ou personalizou a partir de uma ideia."
                             : "Seu catálogo de missões personalizadas está vazio."
                             }
                         </CardDescription>
