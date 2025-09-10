@@ -16,18 +16,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
-import type { MissionCategory, MissionTemplate } from '@/lib/types';
+import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate, getChildProfilesForAttribution } from '@/lib/firebase/firestore';
+import type { MissionCategory, MissionTemplate, ChildProfile } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon, User } from 'lucide-react';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 import Link from 'next/link';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const missionTemplateFormSchema = z.object({
@@ -61,6 +64,29 @@ function CreateMissionTemplatePageContent() {
   const [duplicateMission, setDuplicateMission] = useState<MissionTemplate | null>(null);
   const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
   const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
+  
+  const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
+  const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  useEffect(() => {
+    if (!user || availableContexts.length === 0) {
+      setIsLoadingChildren(false);
+      return;
+    }
+    
+    setIsLoadingChildren(true);
+    const fetchChildren = async () => {
+      const childrenMap: Record<string, ChildProfile[]> = {};
+      const promises = availableContexts.map(async (context) => {
+          const children = await getChildProfilesForAttribution(user.uid, context.id);
+          childrenMap[context.id] = children;
+      });
+      await Promise.all(promises);
+      setChildrenByContext(childrenMap);
+      setIsLoadingChildren(false);
+    };
+    fetchChildren();
+  }, [user, availableContexts]);
 
 
   const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(g => g.items), []);
@@ -398,44 +424,77 @@ function CreateMissionTemplatePageContent() {
                          <div className="mb-4">
                             <FormLabel className="text-base font-semibold">Publicar Missão Em:</FormLabel>
                             <FormDescription>
-                                Escolha em quais dos seus espaços de trabalho esta missão estará disponível.
+                                Qual espaços de trabalho está o Herói que você quer usar essa Missão?
                             </FormDescription>
                         </div>
                         <div className="space-y-2">
-                          {availableContexts.map((context) => (
-                            <FormField
-                              key={context.id}
-                              control={form.control}
-                              name="targetContexts"
-                              render={({ field }) => {
-                                return (
-                                  <FormItem
-                                    key={context.id}
-                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
-                                  >
-                                    <FormControl>
-                                      <Checkbox
-                                        checked={field.value?.includes(context.id)}
-                                        onCheckedChange={(checked) => {
-                                          return checked
-                                            ? field.onChange([...(field.value || []), context.id])
-                                            : field.onChange(
-                                                field.value?.filter(
-                                                  (value) => value !== context.id
-                                                )
-                                              )
-                                        }}
-                                      />
-                                    </FormControl>
-                                     <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
-                                        <IconForContext contextId={context.id} />
-                                        {getContextName(context.id)}
-                                    </FormLabel>
-                                  </FormItem>
-                                )
-                              }}
-                            />
-                          ))}
+                          {availableContexts.map((context) => {
+                            const childrenInCtx = childrenByContext[context.id] || [];
+                            return (
+                                <FormField
+                                  key={context.id}
+                                  control={form.control}
+                                  name="targetContexts"
+                                  render={({ field }) => {
+                                    return (
+                                      <FormItem
+                                        key={context.id}
+                                        className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
+                                      >
+                                        <FormControl>
+                                          <Checkbox
+                                            checked={field.value?.includes(context.id)}
+                                            onCheckedChange={(checked) => {
+                                              return checked
+                                                ? field.onChange([...(field.value || []), context.id])
+                                                : field.onChange(
+                                                    field.value?.filter(
+                                                      (value) => value !== context.id
+                                                    )
+                                                  )
+                                            }}
+                                          />
+                                        </FormControl>
+                                        <div className="space-y-1 leading-none w-full">
+                                            <div className="flex items-center justify-between">
+                                                <Label className="font-normal flex-1 cursor-pointer flex items-center gap-2">
+                                                    <IconForContext contextId={context.id} />
+                                                    {getContextName(context.id)}
+                                                </Label>
+                                                {isLoadingChildren ? (
+                                                     <Skeleton className="h-6 w-20 rounded-full" />
+                                                ) : childrenInCtx.length > 0 ? (
+                                                    <div className="flex -space-x-2">
+                                                        {childrenInCtx.slice(0, 4).map(child => (
+                                                            <TooltipProvider key={child.id} delayDuration={100}>
+                                                                <Tooltip>
+                                                                    <TooltipTrigger asChild>
+                                                                        <Avatar className="h-6 w-6 border-2 border-background">
+                                                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                                                            <AvatarFallback style={{backgroundColor: child.color}} className="text-xs">{getInitials(child.name)}</AvatarFallback>
+                                                                        </Avatar>
+                                                                    </TooltipTrigger>
+                                                                    <TooltipContent><p>{child.name}</p></TooltipContent>
+                                                                </Tooltip>
+                                                            </TooltipProvider>
+                                                        ))}
+                                                        {childrenInCtx.length > 4 && (
+                                                            <Avatar className="h-6 w-6 border-2 border-background">
+                                                                <AvatarFallback className="text-xs bg-muted text-muted-foreground">+{childrenInCtx.length - 4}</AvatarFallback>
+                                                            </Avatar>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground italic">Nenhum herói</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                      </FormItem>
+                                    )
+                                  }}
+                                />
+                              )
+                          })}
                         </div>
                         <FormMessage />
                       </FormItem>
