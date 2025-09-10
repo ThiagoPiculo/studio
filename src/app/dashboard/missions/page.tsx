@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb, Share2 } from 'lucide-react';
+import { Gift, PlusCircle, Star as StarIcon, PackageSearch, Loader2, MoreHorizontal, Edit3, Trash2, Users, Info, Sparkles, HelpCircle, Target, User, Puzzle, Lightbulb, Share2, CalendarDays } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { 
@@ -303,7 +303,7 @@ function MissionsHubContent() {
                                             </CardContent>
                                             <CardFooter className="flex items-center gap-2">
                                                <Button variant="default" className="w-full" onClick={() => handleOpenAssignDialog(template)} disabled={!canEdit || template.status === 'archived'}>
-                                                    <Users className="mr-2 h-4 w-4" /> Gerenciar
+                                                    <CalendarDays className="mr-2 h-4 w-4" /> Agendar
                                                 </Button>
                                                 <TooltipProvider>
                                                     <Tooltip>
