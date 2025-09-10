@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3 } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon, Info } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
@@ -27,6 +27,7 @@ import { predefinedMissionGroups } from '@/lib/predefined-missions';
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 // Schema simplified to remove all scheduling fields
@@ -38,6 +39,7 @@ const missionTemplateFormSchema = z.object({
     message: "Selecione uma categoria válida.",
   }),
   starsReward: z.coerce.number().min(0, { message: "A recompensa não pode ser negativa." }).max(1000, {message: "A recompensa não pode ser superior a 1000 estrelas."}),
+  targetContexts: z.array(z.string()).min(1, { message: "Selecione pelo menos um espaço de trabalho para salvar." }),
 });
 
 type MissionTemplateFormValues = z.infer<typeof missionTemplateFormSchema>;
@@ -47,7 +49,7 @@ function CreateMissionTemplatePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
   const [isLoading, setIsLoading] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [newlyCreatedTemplate, setNewlyCreatedTemplate] = useState<MissionTemplate | null>(null);
@@ -82,6 +84,7 @@ function CreateMissionTemplatePageContent() {
       description: '',
       category: resolvedInitialCategory, 
       starsReward: starsParam ? parseInt(starsParam, 10) : 5,
+      targetContexts: [currentContext],
     },
   });
   
@@ -128,7 +131,7 @@ function CreateMissionTemplatePageContent() {
     
     // Check for exact title match again on submit, in case user manually typed it
     const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
-    if (existingTemplate) {
+    if (existingTemplate && values.targetContexts.includes(existingTemplate.familyId || 'my-space')) {
         setDuplicateMission(existingTemplate);
         setIsDuplicateDialogOpen(true);
         return;
@@ -139,28 +142,37 @@ function CreateMissionTemplatePageContent() {
     try {
       const isFromPredefined = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
 
-      const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-        ownerId: user.uid,
-        familyId: currentContext === 'my-space' ? null : currentContext,
-        title: values.title,
-        emoji: values.emoji,
-        description: values.description,
-        category: values.category,
-        starsReward: values.starsReward,
-        isRecurring: false,
-        startDate: null,
-        dueDate: null,
-        recurrenceRule: null,
-        source: isFromPredefined ? 'predefined' : 'custom',
-      };
-      
-      const createdTemplate = await addMissionTemplate(user, templateDataPayload);
+      let firstCreatedTemplate: MissionTemplate | null = null;
+      for (const contextId of values.targetContexts) {
+          const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+            ownerId: user.uid,
+            familyId: contextId === 'my-space' ? null : contextId,
+            title: values.title,
+            emoji: values.emoji,
+            description: values.description,
+            category: values.category,
+            starsReward: values.starsReward,
+            isRecurring: false,
+            startDate: null,
+            dueDate: null,
+            recurrenceRule: null,
+            source: isFromPredefined ? 'predefined' : 'custom',
+          };
+          const createdTemplate = await addMissionTemplate(user, templateDataPayload);
+          if (!firstCreatedTemplate) {
+            firstCreatedTemplate = createdTemplate;
+          }
+      }
       toast({
-        title: 'Missão Adicionada ao Catálogo!',
-        description: `A missão "${createdTemplate.title}" está pronta para ser atribuída.`,
+        title: 'Missão(ões) Adicionada(s) ao Catálogo!',
+        description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
       });
-      setNewlyCreatedTemplate(createdTemplate);
-      setIsAssignDialogOpen(true);
+      if(firstCreatedTemplate){
+        setNewlyCreatedTemplate(firstCreatedTemplate);
+        setIsAssignDialogOpen(true);
+      } else {
+        router.push('/dashboard/missions');
+      }
       form.reset();
 
     } catch (error) {
@@ -193,23 +205,25 @@ function CreateMissionTemplatePageContent() {
     // User can now edit and submit again
   };
 
+  const getContextName = (contextId: string) => {
+    if (contextId === 'my-space') return "No seu Espaço (Cuidar Solo)";
+    const context = availableContexts.find(c => c.id === contextId);
+    return context ? `Na Aliança: "${context.name}"` : 'Espaço Desconhecido';
+  };
+
+  const IconForContext = ({ contextId }: { contextId: string }) => {
+    return contextId === 'my-space' ? <CircleDot className="h-4 w-4 text-chart-2" /> : <LinkIcon className="h-4 w-4 text-chart-4" />;
+  };
 
   return (
     <>
       <div className="space-y-6 max-w-2xl mx-auto pb-10">
         <Card className="shadow-xl">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-              <div className="flex items-center gap-3">
-                  <Target className="h-10 w-10 text-primary" />
-                  <div>
-                  <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
-                  <CardDescription className="text-md">
-                      Defina uma nova missão para o catálogo.
-                  </CardDescription>
-                  </div>
-              </div>
-            </div>
+             <Link href="/dashboard/missions" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
+                <ArrowLeft className="mr-1 h-4 w-4" />
+                Voltar para o Quadro de Missões
+            </Link>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -265,7 +279,7 @@ function CreateMissionTemplatePageContent() {
                                                                 >
                                                                     <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
                                                                     {idea.title}
-                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Já existe)</span>}
+                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
                                                                 </CommandItem>
                                                             )
                                                         })}
@@ -342,6 +356,57 @@ function CreateMissionTemplatePageContent() {
                     </FormItem>
                   )}
                 />
+                 <FormField
+                    control={form.control}
+                    name="targetContexts"
+                    render={() => (
+                      <FormItem>
+                         <div className="mb-4">
+                            <FormLabel className="text-base font-semibold">Publicar Missão Em:</FormLabel>
+                            <FormDescription>
+                                Escolha em quais dos seus espaços de trabalho esta missão estará disponível.
+                            </FormDescription>
+                        </div>
+                        <div className="space-y-2">
+                          {availableContexts.map((context) => (
+                            <FormField
+                              key={context.id}
+                              control={form.control}
+                              name="targetContexts"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={context.id}
+                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(context.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...field.value, context.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== context.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                     <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
+                                        <IconForContext contextId={context.id} />
+                                        {getContextName(context.id)}
+                                    </FormLabel>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 
                 <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
                   <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>

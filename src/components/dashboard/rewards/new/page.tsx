@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, Suspense, useMemo } from 'react';
@@ -16,11 +17,17 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { addRewardTemplate } from '@/lib/firebase/firestore';
+import { addRewardTemplate, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { RewardCategory, RewardTemplate } from '@/lib/types';
 import { rewardCategories } from '@/lib/types'; 
-import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles } from 'lucide-react';
+import { Loader2, Gift, ArrowLeft, AlertTriangle, Sparkles, Star as StarIcon, Edit3, ChevronsUpDown, Check, CircleDot, Link as LinkIcon } from 'lucide-react';
 import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertDialog, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
@@ -31,6 +38,7 @@ const rewardTemplateFormSchema = z.object({
   starsCost: z.coerce.number().min(1, { message: "O custo deve ser de pelo menos 1 estrela." }).max(10000, {message: "O custo não pode ser superior a 10.000 estrelas."}),
   isMaterial: z.boolean().default(false),
   isUnique: z.boolean().default(false),
+  targetContexts: z.array(z.string()).min(1, { message: "Selecione pelo menos um espaço de trabalho para salvar." }),
 });
 
 type RewardTemplateFormValues = z.infer<typeof rewardTemplateFormSchema>;
@@ -40,11 +48,18 @@ function CreateRewardTemplatePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
-  const { currentContext } = useFamily();
+  const { currentContext, availableContexts } = useFamily();
 
   const [isLoading, setIsLoading] = useState(false);
+  const [userTemplates, setUserTemplates] = useState<RewardTemplate[]>([]);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(true);
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+  const [duplicateReward, setDuplicateReward] = useState<RewardTemplate | null>(null);
+  const [isDuplicateDialogOpen, setIsDuplicateDialogOpen] = useState(false);
+  const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
+
+  const allRewardIdeas = useMemo(() => predefinedRewardGroups, []);
   
-  // Ler parâmetros da URL para defaultValues
   const initialTitle = searchParams.get('title') || '';
   const initialDescription = searchParams.get('description') || '';
   const categoryParam = searchParams.get('category') as RewardCategory | null;
@@ -72,14 +87,67 @@ function CreateRewardTemplatePageContent() {
       starsCost: initialStarsCost ? parseInt(initialStarsCost, 10) : 10,
       isMaterial: resolvedInitialIsMaterial,
       isUnique: false,
+      targetContexts: [currentContext],
     },
   });
+  
+  const existingTemplatesMap = useMemo(() => {
+    const map = new Map<string, RewardTemplate>();
+    userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
+    return map;
+  }, [userTemplates]);
+
+  useEffect(() => {
+    if (!user) {
+      setIsCheckingDuplicates(false);
+      return;
+    }
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+      .then(setUserTemplates)
+      .catch(console.error)
+      .finally(() => setIsCheckingDuplicates(false));
+  }, [user, currentContext]);
+
+
+  const handleIdeaSelection = (idea: any) => {
+    const existingTemplate = existingTemplatesMap.get(idea.title.trim().toLowerCase());
+    if (existingTemplate) {
+        setDuplicateReward(existingTemplate);
+        setIdeaForDuplicate(idea);
+        setIsDuplicateDialogOpen(true);
+    } else {
+        form.setValue("title", idea.title);
+        form.setValue("description", idea.description || '');
+        form.setValue("category", idea.suggestedAppCategory);
+        form.setValue("starsCost", idea.starsCost || 50);
+        form.setValue("isMaterial", idea.isMaterialSuggestion || false);
+        setIsPopoverOpen(false);
+    }
+  };
+
+  const handleEditDuplicate = () => {
+    if (duplicateReward) {
+      router.push(`/dashboard/rewards/edit-template/${duplicateReward.id}`);
+    }
+    setIsDuplicateDialogOpen(false);
+  };
+
+  const handleCreateAnyway = () => {
+    if (ideaForDuplicate) {
+        form.setValue("title", ideaForDuplicate.title);
+        form.setValue("description", ideaForDuplicate.description || '');
+        form.setValue("category", ideaForDuplicate.suggestedAppCategory);
+        form.setValue("starsCost", ideaForDuplicate.starsCost || 50);
+        form.setValue("isMaterial", ideaForDuplicate.isMaterialSuggestion || false);
+    }
+    setIsDuplicateDialogOpen(false);
+  };
 
   const suggestedCost = useMemo(() => {
     const category = form.watch('category');
     if (!category) return null;
     
-    // Simple logic to suggest a price based on category. Could be more complex.
     switch (category) {
         case 'privileges': return 75;
         case 'experiences': return 150;
@@ -89,7 +157,15 @@ function CreateRewardTemplatePageContent() {
         default: return null;
     }
   }, [form.watch('category')]);
-  
+
+  const getEffortText = (cost: number | null): string => {
+    if (cost === null) return "";
+    if (cost <= 75) return "de um dia de esforço";
+    if (cost <= 150) return "de 1 a 2 dias de missões";
+    if (cost <= 300) return "de 2 a 3 dias de missões";
+    return "de uma semana de missões";
+  }
+
   useEffect(() => {
     const subscription = form.watch((value, { name, type }) => {
       if (name === 'category') {
@@ -114,27 +190,38 @@ function CreateRewardTemplatePageContent() {
       toast({ title: "Erro de Autenticação", description: "Você precisa estar logado.", variant: "destructive" });
       return;
     }
+
+    const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
+    if (existingTemplate && values.targetContexts.includes(existingTemplate.familyId || 'my-space')) {
+        setDuplicateReward(existingTemplate);
+        setIsDuplicateDialogOpen(true);
+        return;
+    }
+
     setIsLoading(true);
     try {
       const isFromPredefined = predefinedRewardGroups.flatMap(g => g.items).some(item => item.title === values.title && item.suggestedAppCategory === values.category);
-      const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-        ownerId: user.uid,
-        title: values.title,
-        description: values.description,
-        category: values.category,
-        starsCost: values.starsCost,
-        isMaterial: values.isMaterial,
-        isUnique: values.isUnique,
-        familyId: currentContext === 'my-space' ? null : currentContext,
-        source: isFromPredefined ? 'predefined' : 'custom',
-        justification: '', 
-        tip: '',
-      };
       
-      await addRewardTemplate(user, templateDataPayload);
+      for (const contextId of values.targetContexts) {
+          const templateDataPayload: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
+            ownerId: user.uid,
+            title: values.title,
+            description: values.description,
+            category: values.category,
+            starsCost: values.starsCost,
+            isMaterial: values.isMaterial,
+            isUnique: values.isUnique,
+            familyId: contextId === 'my-space' ? null : contextId,
+            source: isFromPredefined ? 'predefined' : 'custom',
+            justification: '', 
+            tip: '',
+          };
+          await addRewardTemplate(user, templateDataPayload);
+      }
+      
       toast({
-        title: 'Tesouro Adicionado!',
-        description: `A recompensa "${values.title}" foi adicionada ao Baú de Recompensas.`,
+        title: 'Tesouro(s) Adicionado(s)!',
+        description: `A recompensa "${values.title}" foi adicionada aos catálogos selecionados.`,
       });
       router.push('/dashboard/rewards'); 
 
@@ -149,37 +236,92 @@ function CreateRewardTemplatePageContent() {
       setIsLoading(false);
     }
   };
+  
+    const getContextName = (contextId: string) => {
+    if (contextId === 'my-space') return "No seu Espaço (Cuidar Solo)";
+    const context = availableContexts.find(c => c.id === contextId);
+    return context ? `Na Aliança: "${context.name}"` : 'Espaço Desconhecido';
+  };
+
+  const IconForContext = ({ contextId }: { contextId: string }) => {
+    return contextId === 'my-space' ? <CircleDot className="h-4 w-4 text-chart-2" /> : <LinkIcon className="h-4 w-4 text-chart-4" />;
+  };
+
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-10">
+      <AlertDialog open={isDuplicateDialogOpen} onOpenChange={setIsDuplicateDialogOpen}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Recompensa Já Existe</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Você já tem uma recompensa chamada "{duplicateReward?.title}". O que você gostaria de fazer?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-col sm:flex-row gap-2">
+                <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
+                    Criar mesmo assim
+                </Button>
+                <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
+                    <Edit3 className="mr-2 h-4 w-4" />
+                    Editar a existente
+                </Button>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Card className="shadow-xl">
         <CardHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <Gift className="h-10 w-10 text-primary" />
-            <div>
-              <CardTitle className="text-3xl font-headline">Criar Recompensa</CardTitle>
-              <CardDescription className="text-md">
-                Defina um novo item ou experiência para o Baú de Recompensas.
-              </CardDescription>
-            </div>
-          </div>
+           <Button variant="ghost" onClick={() => router.back()} className="w-fit p-0 h-auto mb-4 text-muted-foreground hover:text-primary">
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar para o Baú de Recompensas
+           </Button>
         </CardHeader>
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="title"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Título da Recompensa</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Uma tarde de jogos" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
+                 <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                        <FormItem className="flex flex-col">
+                            <FormLabel>Título da Recompensa</FormLabel>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant="outline" role="combobox" className={cn("w-full justify-between", !field.value && "text-muted-foreground")}>
+                                            {field.value || "Selecione ou digite um nome"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                        <CommandInput placeholder="Buscar ideia de recompensa..." onValueChange={(value) => form.setValue("title", value)} value={field.value} />
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                            {allRewardIdeas.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
+                                                        return (
+                                                            <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
+                    )}
                 />
                 <FormField
                   control={form.control}
@@ -213,22 +355,30 @@ function CreateRewardTemplatePageContent() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="starsCost"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Custo em Estrelas</FormLabel>
-                      <FormControl>
-                        <Input type="number" placeholder="Ex: 50" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        {suggestedCost ? `Sugestão para esta categoria: ${suggestedCost} estrelas.` : 'Quantas estrelas serão necessárias.'}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2">
+                  <FormField
+                    control={form.control}
+                    name="starsCost"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Custo em Estrelas</FormLabel>
+                        <FormControl>
+                          <Input type="number" placeholder="Ex: 50" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {suggestedCost && (
+                     <Alert variant="default" className="border-primary/20 bg-primary/5 text-sm">
+                        <Sparkles className="h-4 w-4 text-primary" />
+                        <AlertTitle className="font-semibold text-primary">Dica de Mestre!</AlertTitle>
+                        <AlertDescription className="text-primary/90">
+                           Para esta categoria, sugerimos um custo de <strong>{suggestedCost} estrelas</strong>. Isso equivale ao esforço de cerca {getEffortText(suggestedCost)}.
+                        </AlertDescription>
+                    </Alert>
                   )}
-                />
+                </div>
                 <div className="space-y-4">
                     <FormField
                     control={form.control}
@@ -292,22 +442,74 @@ function CreateRewardTemplatePageContent() {
                 )}
               />
               
-              <Button type="submit" className="w-full md:w-auto" disabled={isLoading}>
-                {isLoading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Gift className="mr-2 h-4 w-4" />
-                )}
-                Adicionar ao Baú de Recompensas
-              </Button>
+              <FormField
+                  control={form.control}
+                  name="targetContexts"
+                  render={() => (
+                    <FormItem>
+                        <div className="mb-4">
+                          <FormLabel className="text-base font-semibold">Publicar Recompensa Em:</FormLabel>
+                          <FormDescription>
+                            Escolha em quais dos seus espaços de trabalho esta recompensa estará disponível.
+                          </FormDescription>
+                        </div>
+                        <div className="space-y-2">
+                          {availableContexts.map((context) => (
+                            <FormField
+                              key={context.id}
+                              control={form.control}
+                              name="targetContexts"
+                              render={({ field }) => {
+                                return (
+                                  <FormItem
+                                    key={context.id}
+                                    className="flex flex-row items-center space-x-3 space-y-0 rounded-md border p-3 hover:bg-accent/50 has-[:checked]:bg-primary/10 has-[:checked]:border-primary/50 transition-colors"
+                                  >
+                                    <FormControl>
+                                      <Checkbox
+                                        checked={field.value?.includes(context.id)}
+                                        onCheckedChange={(checked) => {
+                                          return checked
+                                            ? field.onChange([...(field.value || []), context.id])
+                                            : field.onChange(
+                                                field.value?.filter(
+                                                  (value) => value !== context.id
+                                                )
+                                              )
+                                        }}
+                                      />
+                                    </FormControl>
+                                    <FormLabel className="font-normal flex-1 cursor-pointer flex items-center gap-2">
+                                        <IconForContext contextId={context.id} />
+                                        {getContextName(context.id)}
+                                    </FormLabel>
+                                  </FormItem>
+                                )
+                              }}
+                            />
+                          ))}
+                        </div>
+                        <FormMessage />
+                    </FormItem>
+                  )}
+              />
+              
+              <div className="flex items-center justify-end gap-2 mt-8">
+                  <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" className="w-full sm:w-auto" disabled={isLoading}>
+                    {isLoading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Gift className="mr-2 h-4 w-4" />
+                    )}
+                    Adicionar ao Baú
+                  </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
-        <CardFooter className="flex-col items-start space-y-2">
-            <p className="text-xs text-muted-foreground">
-                Esta recompensa ficará disponível para todos os heróis neste espaço de trabalho.
-            </p>
-        </CardFooter>
       </Card>
     </div>
   );
