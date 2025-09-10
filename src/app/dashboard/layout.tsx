@@ -75,6 +75,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     '/dashboard/novo-heroi', 
     '/dashboard/assistente', 
     '/dashboard/help',
+    '/dashboard/rewards',
+    '/dashboard/rewards/new',
+    '/dashboard/rewards/edit-template'
   ].some(p => pathname.startsWith(p));
 
 
@@ -193,6 +196,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&
     childrenInContext.length > 1;
 
+  const showRewardsHeaderActions = isClient && pathname.startsWith('/dashboard/rewards');
+
 
   return (
     <>
@@ -241,18 +246,30 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               
-              {(showContextSwitcher || showHeroSelector) && (
+              {(showContextSwitcher || showHeroSelector || showRewardsHeaderActions) && (
                  <div className="px-4 sm:px-6 py-2">
-                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
-                          {showContextSwitcher && (
-                            <div className="w-full md:max-w-xs">
+                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+                         <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
+                            {showContextSwitcher && (
+                                <div className="w-full md:max-w-xs">
+                                    <FamilyContextSwitcher />
+                                </div>
+                            )}
+                            {showHeroSelector && (
+                                <div className="w-full md:max-w-xs">
+                                    <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
+                                </div>
+                            )}
+                         </div>
+                          {showRewardsHeaderActions && (
+                            <div className="flex items-center gap-2 w-full md:w-auto">
                                 <FamilyContextSwitcher />
+                                <Button asChild className="flex-grow">
+                                    <Link href="/dashboard/rewards/new">
+                                        <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa
+                                    </Link>
+                                </Button>
                             </div>
-                          )}
-                          {showHeroSelector && (
-                              <div className="w-full md:max-w-xs">
-                                  <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                              </div>
                           )}
                       </div>
                   </div>
