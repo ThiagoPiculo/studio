@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -183,7 +182,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     form.reset(initialValues);
   }, [form, effectiveTemplate]);
   
-  const fetchData = useCallback(async () => {
+  const fetchDataForList = useCallback(async () => {
     if (!user || !effectiveTemplate) return;
     setIsLoading(true);
     try {
@@ -216,22 +215,19 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
         setIsLoading(true);
         if (instanceToEdit) {
             try {
-                const [fetchedTemplate, fetchedChild] = await Promise.all([
-                    getMissionTemplateById(instanceToEdit.templateId),
-                    getChildProfileById(instanceToEdit.childId)
-                ]);
-
-                if (!fetchedTemplate) {
-                    toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
-                    onOpenChange(false);
-                    return;
-                }
+                const fetchedChild = await getChildProfileById(instanceToEdit.childId);
                 if (!fetchedChild) {
                     toast({ title: "Erro", description: "Herói não encontrado para esta missão.", variant: 'destructive' });
                     onOpenChange(false);
                     return;
                 }
-
+                const templateId = instanceToEdit.templateId;
+                const fetchedTemplate = await getMissionTemplateById(templateId);
+                 if (!fetchedTemplate) {
+                    toast({ title: "Erro", description: "O modelo desta missão não foi encontrado ou foi arquivado.", variant: 'destructive' });
+                    onOpenChange(false);
+                    return;
+                }
                 setEffectiveTemplate(fetchedTemplate);
                 setChildren([fetchedChild]);
                 setSelectedChild(fetchedChild);
@@ -246,13 +242,13 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
             }
         } else if (template) {
             setEffectiveTemplate(template);
-            await fetchData();
+            await fetchDataForList();
             setView('list');
         }
     };
 
     initialize();
-}, [isOpen, instanceToEdit, template, fetchData, onOpenChange, prepareScheduleForm, toast]);
+}, [isOpen, instanceToEdit, template, fetchDataForList, onOpenChange, prepareScheduleForm, toast]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
@@ -269,7 +265,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     try {
       await deleteMissionInstancesByTemplateAndChild(user, templateId, selectedChild.id);
       toast({ title: "Missão Desatribuída", description: `${effectiveTemplate.title} foi removida de ${selectedChild.name}.` });
-      fetchData();
+      fetchDataForList();
       resetDialogState();
     } catch (error) {
       console.error("Error unassigning mission:", error);
@@ -311,7 +307,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
       if(instanceToEdit){
          onOpenChange(false);
       } else {
-        fetchData();
+        fetchDataForList();
         resetDialogState();
       }
     } catch (error) {
@@ -438,17 +434,19 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
             renderScheduleView()
           )}
 
-          <DialogFooter className="mt-4 flex-col gap-2 text-left">
-             <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
-                <Info className="h-4 w-4 shrink-0" />
-                 <p>
-                    Para escolher outros heróis, feche a tela e troque o espaço de trabalho no topo da página.
-                 </p>
-             </div>
-             <div className="self-end">
-                <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
-             </div>
-          </DialogFooter>
+          {view === 'list' && (
+            <DialogFooter className="mt-4 flex-col gap-2 text-left">
+                <div className="flex items-center gap-2 text-xs text-muted-foreground w-full">
+                    <Info className="h-4 w-4 shrink-0" />
+                    <p>
+                        Para escolher outros heróis, feche a tela e troque o espaço de trabalho no topo da página.
+                    </p>
+                </div>
+                <div className="self-end">
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Fechar</Button>
+                </div>
+            </DialogFooter>
+          )}
 
         </DialogContent>
       </Dialog>
