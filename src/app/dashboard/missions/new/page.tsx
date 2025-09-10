@@ -66,7 +66,7 @@ function CreateMissionTemplatePageContent() {
   const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(g => g.items), []);
 
   const initialTitle = searchParams.get('title') || '';
-  const initialEmoji = searchParams.get('emoji') || '';
+  const initialEmoji = searchParams.get('emoji') || '✨';
   const categoryParam = searchParams.get('category') as MissionCategory | null;
   const starsParam = searchParams.get('starsReward');
 
@@ -177,7 +177,7 @@ function CreateMissionTemplatePageContent() {
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
         ownerId: user.uid,
         title: values.title,
-        emoji: values.emoji,
+        emoji: values.emoji || '✨',
         description: values.description,
         category: values.category,
         starsReward: values.starsReward,
@@ -257,114 +257,114 @@ function CreateMissionTemplatePageContent() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-[auto,1fr] gap-4 items-end">
-                    <FormField
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+                  <div className="grid grid-cols-[auto,1fr] gap-4 items-end">
+                      <FormField
+                        control={form.control}
+                        name="emoji"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Emoji</FormLabel>
+                            <FormControl>
+                              <Input className="w-16 h-10 text-center text-xl p-0" maxLength={4} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="starsReward"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Estrelas</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="Ex: 5" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                  </div>
+
+                  <FormField
                       control={form.control}
-                      name="emoji"
+                      name="category"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Emoji</FormLabel>
-                          <FormControl>
-                            <Input className="w-16 h-10 text-center text-xl p-0" maxLength={4} {...field} />
-                          </FormControl>
+                          <FormLabel>Categoria</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {missionCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  <div className="flex items-center">
+                                    <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
+                                    <span>{category.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                     <FormField
-                        control={form.control}
-                        name="title"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col flex-grow">
-                                <FormLabel>Título da Missão</FormLabel>
-                                <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                    <PopoverTrigger asChild>
-                                        <FormControl>
-                                            <Button
-                                                variant="outline"
-                                                role="combobox"
-                                                className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
-                                            >
-                                                {field.value || "Selecione ou digite o nome da missão"}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                            </Button>
-                                        </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                         <Command>
-                                            <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
-                                            <CommandList>
-                                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                                {predefinedMissionGroups.map((group) => (
-                                                    <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                                        {group.items.map(idea => {
-                                                            const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                                            return (
-                                                                <CommandItem
-                                                                    value={idea.title}
-                                                                    key={idea.title}
-                                                                    onSelect={() => handleIdeaSelection(idea)}
-                                                                >
-                                                                    <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                                    {idea.title}
-                                                                    {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
-                                                                </CommandItem>
-                                                            )
-                                                        })}
-                                                    </CommandGroup>
-                                                ))}
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
                 </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <FormField
+                 <FormField
                     control={form.control}
-                    name="starsReward"
+                    name="title"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Recompensa em Estrelas</FormLabel>
-                        <FormControl>
-                          <Input type="number" placeholder="Ex: 5" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
+                        <FormItem className="flex flex-col flex-grow">
+                            <FormLabel>Título da Missão</FormLabel>
+                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                                <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button
+                                            variant="outline"
+                                            role="combobox"
+                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                                        >
+                                            {field.value || "Selecione ou digite o nome da missão"}
+                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                     <Command>
+                                        <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
+                                        <CommandList>
+                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                            {predefinedMissionGroups.map((group) => (
+                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                                    {group.items.map(idea => {
+                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                                        return (
+                                                            <CommandItem
+                                                                value={idea.title}
+                                                                key={idea.title}
+                                                                onSelect={() => handleIdeaSelection(idea)}
+                                                            >
+                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                                                {idea.title}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
+                                                            </CommandItem>
+                                                        )
+                                                    })}
+                                                </CommandGroup>
+                                            ))}
+                                        </CommandList>
+                                    </Command>
+                                </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                        </FormItem>
                     )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Categoria</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Selecione..." />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {missionCategories.map((category) => (
-                              <SelectItem key={category.id} value={category.id}>
-                                <div className="flex items-center">
-                                  <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
-                                  <span>{category.label}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                />
                 
                 <FormField
                   control={form.control}
