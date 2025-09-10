@@ -302,23 +302,27 @@ function CreateMissionTemplatePageContent() {
                         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
                           <PopoverTrigger asChild>
                             <FormControl>
-                              {/* This input is now directly part of the form */}
-                              <Input
-                                placeholder="Digite um nome ou busque uma ideia..."
-                                className="w-full justify-between"
-                                {...field}
-                                onFocus={() => setIsPopoverOpen(true)}
-                              />
+                              {/* This is just a div now to control the popover's position */}
+                              <div>
+                                 <CommandInput
+                                    placeholder="Digite um nome ou busque uma ideia..."
+                                    value={field.value}
+                                    onValueChange={field.onChange}
+                                    onFocus={() => setIsPopoverOpen(true)}
+                                    onBlur={() => setIsPopoverOpen(false)}
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        setIsPopoverOpen(false);
+                                        // You can optionally move focus to the next field here
+                                      }
+                                    }}
+                                  />
+                              </div>
                             </FormControl>
                           </PopoverTrigger>
-                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0 mt-2" onOpenAutoFocus={(e) => e.preventDefault()}>
                             <Command>
-                              {/* The CommandInput uses the form field's value and updates it */}
-                              <CommandInput
-                                placeholder="Buscar ideia de missão..."
-                                value={field.value}
-                                onValueChange={field.onChange}
-                              />
                               <CommandList>
                                 <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
                                 {predefinedMissionGroups.map((group) => (
@@ -490,7 +494,7 @@ function CreateMissionTemplatePageContent() {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs italic text-muted-foreground">Nenhum herói</span>
+                                                    <span className="text-xs text-muted-foreground italic">Nenhum herói</span>
                                                 )}
                                             </div>
                                         </div>
@@ -552,12 +556,12 @@ function CreateMissionTemplatePageContent() {
           onOpenChange={(isOpen) => {
             if (!isOpen) { 
               setNewlyCreatedTemplate(null);
+              router.push('/dashboard/missions?tab=custom');
             }
             setIsAssignDialogOpen(isOpen);
           }}
           onAssigned={() => {
             toast({ title: "Missões Atribuídas!", description: "As novas missões foram adicionadas para as crianças selecionadas."});
-            router.push('/dashboard/missions?tab=custom');
           }}
         />
       )}
@@ -574,3 +578,4 @@ export default function CreateMissionPage() {
 }
 
     
+
