@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
@@ -94,8 +93,7 @@ interface AssignMissionDialogProps {
   occurrenceDate?: Date | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  onAssigned?: () => void;
-  onDone?: () => void;
+  onAssigned?: (child: ChildProfile, template: MissionTemplate) => void;
 }
 
 const schoolShiftMap: Record<SchoolShift, string> = {
@@ -105,7 +103,7 @@ const schoolShiftMap: Record<SchoolShift, string> = {
     not_applicable: 'Não se aplica'
 };
 
-export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned, onDone }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const router = useRouter();
   const { currentContext, availableContexts, currentRole } = useFamily();
@@ -126,8 +124,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
   const [existingAssignments, setExistingAssignments] = useState<Record<string, MissionInstance>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
-
+  
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
   });
@@ -305,30 +302,15 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
           const finalSchedulePayload = { ...effectiveTemplate, ...data };
           await addMissionInstance(user, instanceData, finalSchedulePayload);
       }
-      onAssigned?.();
       
-      if(instanceToEdit){
-         onOpenChange(false);
-         toast({ title: "Agendamento Atualizado!" });
-      } else {
-         setIsSuccessDialogOpen(true);
-      }
+      onAssigned?.(selectedChild, effectiveTemplate);
+      onOpenChange(false);
+      
     } catch (error) {
       console.error("Error saving assignment:", error);
       toast({ title: "Erro ao salvar agendamento", variant: "destructive" });
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleSuccessDialogDone = () => {
-    setIsSuccessDialogOpen(false);
-    // Let the parent component decide if it should close the main dialog
-    if(onDone) {
-        onDone();
-    } else {
-       // Default behavior if onDone is not provided
-        onOpenChange(false);
     }
   };
   
@@ -418,7 +400,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
   return (
     <>
-      <Dialog open={isOpen && !isSuccessDialogOpen} onOpenChange={onOpenChange}>
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl flex items-center gap-2">
@@ -461,12 +443,6 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
         </DialogContent>
       </Dialog>
-      <PostAssignmentSuccessDialog 
-        isOpen={isSuccessDialogOpen}
-        onDone={handleSuccessDialogDone}
-        child={selectedChild}
-        template={effectiveTemplate}
-      />
     </>
   );
 }

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
@@ -41,6 +40,7 @@ import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
+import { PostAssignmentSuccessDialog } from './PostAssignmentSuccessDialog';
 
 
 function MissionsHubContent() {
@@ -63,6 +63,9 @@ function MissionsHubContent() {
   const [isProcessingAction, setIsProcessingAction] = useState(false);
   const [templateToShare, setTemplateToShare] = useState<MissionTemplate | null>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+
+  // State for the success dialog
+  const [successDialogData, setSuccessDialogData] = useState<{ child: ChildProfile; template: MissionTemplate } | null>(null);
   
   const activeTab = searchParams.get('tab') || 'ideas';
 
@@ -380,12 +383,20 @@ function MissionsHubContent() {
                 template={templateToAssign}
                 isOpen={isAssignDialogOpen}
                 onOpenChange={setIsAssignDialogOpen}
-                onAssigned={refetchData}
-                onDone={() => { // Adicionado
-                  setIsAssignDialogOpen(false);
-                  refetchData();
+                onAssigned={(child, template) => {
+                    refetchData();
+                    setSuccessDialogData({ child, template });
                 }}
             />
+        )}
+        
+        {successDialogData && (
+          <PostAssignmentSuccessDialog
+            isOpen={!!successDialogData}
+            onDone={() => setSuccessDialogData(null)}
+            child={successDialogData.child}
+            template={successDialogData.template}
+          />
         )}
 
         {templateToShare && (
