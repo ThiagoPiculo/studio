@@ -248,7 +248,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               
               {(showContextSwitcher || showHeroSelector || showRewardsHeaderActions) && (
                  <div className="px-4 sm:px-6 py-2">
-                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-2">
+                      <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
                          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
                             {showContextSwitcher && (
                                 <div className="w-full md:max-w-xs">
