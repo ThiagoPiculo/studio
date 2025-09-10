@@ -20,7 +20,6 @@ import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTe
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
 import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
-import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
@@ -63,7 +62,7 @@ function CreateMissionTemplatePageContent() {
   const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
 
 
-  const allMissionIdeas = useMemo(() => predefinedMissionGroups, []);
+  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(g => g.items), []);
 
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
@@ -87,6 +86,20 @@ function CreateMissionTemplatePageContent() {
     },
   });
   
+  const watchedTitle = form.watch('title');
+  useEffect(() => {
+    if (!watchedTitle) {
+      form.setValue('emoji', '');
+      return;
+    }
+    const matchedIdea = allMissionIdeas.find(idea => idea.title.toLowerCase().trim() === watchedTitle.toLowerCase().trim());
+    if (matchedIdea) {
+      form.setValue('emoji', matchedIdea.emoji);
+    } else {
+      form.setValue('emoji', '✨');
+    }
+  }, [watchedTitle, form, allMissionIdeas]);
+
   const existingTemplatesMap = useMemo(() => {
     const map = new Map<string, MissionTemplate>();
     userTemplates.forEach(t => {
@@ -123,6 +136,7 @@ function CreateMissionTemplatePageContent() {
   const handleIdeaSelection = (idea: any) => {
     const key = `${currentContext}-${idea.title.trim().toLowerCase()}`;
     const existingTemplate = existingTemplatesMap.get(key);
+
     if (existingTemplate) {
         setDuplicateMission(existingTemplate);
         setIdeaForDuplicate(idea);
@@ -280,7 +294,7 @@ function CreateMissionTemplatePageContent() {
                                             <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
                                             <CommandList>
                                                 <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                                {allMissionIdeas.map((group) => (
+                                                {predefinedMissionGroups.map((group) => (
                                                     <CommandGroup key={group.userCategory} heading={group.userCategory}>
                                                         {group.items.map(idea => {
                                                             const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
@@ -397,7 +411,7 @@ function CreateMissionTemplatePageContent() {
                                         checked={field.value?.includes(context.id)}
                                         onCheckedChange={(checked) => {
                                           return checked
-                                            ? field.onChange([...field.value, context.id])
+                                            ? field.onChange([...(field.value || []), context.id])
                                             : field.onChange(
                                                 field.value?.filter(
                                                   (value) => value !== context.id
@@ -445,7 +459,7 @@ function CreateMissionTemplatePageContent() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Missão Já Existe no Catálogo</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Você já tem uma missão chamada "{duplicateMission?.title}" no espaço de trabalho selecionado. O que você gostaria de fazer?
+                        Você já tem uma missão chamada "{duplicateMission?.title}" em um dos espaços selecionados. O que você gostaria de fazer?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col sm:flex-row gap-2">

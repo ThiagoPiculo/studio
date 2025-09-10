@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3 } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
@@ -62,7 +62,7 @@ function CreateMissionTemplatePageContent() {
   const [ideaForDuplicate, setIdeaForDuplicate] = useState<any>(null);
 
 
-  const allMissionIdeas = useMemo(() => predefinedMissionGroups, []);
+  const allMissionIdeas = useMemo(() => predefinedMissionGroups.flatMap(g => g.items), []);
 
   const initialTitle = searchParams.get('title') || '';
   const initialEmoji = searchParams.get('emoji') || '';
@@ -85,6 +85,20 @@ function CreateMissionTemplatePageContent() {
     },
   });
   
+  const watchedTitle = form.watch('title');
+  useEffect(() => {
+    if (!watchedTitle) {
+      form.setValue('emoji', '');
+      return;
+    }
+    const matchedIdea = allMissionIdeas.find(idea => idea.title.toLowerCase().trim() === watchedTitle.toLowerCase().trim());
+    if (matchedIdea) {
+      form.setValue('emoji', matchedIdea.emoji);
+    } else {
+      form.setValue('emoji', '✨');
+    }
+  }, [watchedTitle, form, allMissionIdeas]);
+
   const existingTemplatesMap = useMemo(() => {
     const map = new Map<string, MissionTemplate>();
     userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
@@ -259,7 +273,7 @@ function CreateMissionTemplatePageContent() {
                                             <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
                                             <CommandList>
                                                 <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                                {allMissionIdeas.map((group) => (
+                                                {predefinedMissionGroups.map((group) => (
                                                     <CommandGroup key={group.userCategory} heading={group.userCategory}>
                                                         {group.items.map(idea => {
                                                             const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
@@ -420,3 +434,4 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
