@@ -252,6 +252,15 @@ function CreateMissionTemplatePageContent() {
                 <ArrowLeft className="mr-1 h-4 w-4" />
                 Voltar para o Quadro de Missões
             </Link>
+            <div className="flex items-center gap-3">
+                <Target className="h-10 w-10 text-primary" />
+                <div>
+                    <CardTitle className="text-3xl font-headline">Criar Nova Missão</CardTitle>
+                    <CardDescription className="text-md">
+                        Crie um modelo de missão que poderá ser agendado para um ou mais heróis.
+                    </CardDescription>
+                </div>
+            </div>
           </CardHeader>
           <CardContent>
             <Form {...form}>
@@ -499,4 +508,3 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
-
