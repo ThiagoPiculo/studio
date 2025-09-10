@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     '/dashboard/novo-heroi', 
     '/dashboard/assistente', 
     '/dashboard/help'
-  ].includes(pathname) && !pathname.startsWith('/dashboard/rewards');
+  ].includes(pathname);
 
 
   const headerContent = {
