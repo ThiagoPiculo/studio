@@ -53,6 +53,7 @@ function MissionsHubContent() {
   const [isDataLoading, setIsDataLoading] = useState(true);
   
   const [templateToDelete, setTemplateToDelete] = useState<MissionTemplate | null>(null);
+  const [affectedChildrenNames, setAffectedChildrenNames] = useState<string[]>([]);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   const [isProcessingAction, setIsProcessingAction] = useState(false);
@@ -102,6 +103,28 @@ function MissionsHubContent() {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
   }, [missionTemplates]);
 
+  const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
+
+  const assignmentsByTemplate = useMemo(() => {
+    const assignments = new Map<string, ChildProfile[]>();
+    missionInstances.forEach(instance => {
+      const child = childrenMap.get(instance.childId);
+      if (child) {
+        const existing = assignments.get(instance.templateId) || [];
+        if (!existing.find(c => c.id === child.id)) {
+          assignments.set(instance.templateId, [...existing, child]);
+        }
+      }
+    });
+    return assignments;
+  }, [missionInstances, childrenMap]);
+
+  const handleDeleteClick = (template: MissionTemplate) => {
+    const children = assignmentsByTemplate.get(template.id) || [];
+    setAffectedChildrenNames(children.map(c => c.name));
+    setTemplateToDelete(template);
+  };
+
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
@@ -114,6 +137,7 @@ function MissionsHubContent() {
       toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
     } finally {
       setTemplateToDelete(null);
+      setAffectedChildrenNames([]);
       setIsProcessingAction(false);
     }
   };
@@ -271,7 +295,7 @@ function MissionsHubContent() {
                                                 <TooltipProvider>
                                                     <Tooltip>
                                                         <TooltipTrigger asChild>
-                                                            <Button variant="outline" size="icon" onClick={() => setTemplateToDelete(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                                            <Button variant="outline" size="icon" onClick={() => handleDeleteClick(template)} disabled={isProcessingAction || !canEdit} className="flex-shrink-0 text-destructive hover:bg-destructive/10 hover:text-destructive">
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
                                                         </TooltipTrigger>
@@ -295,7 +319,14 @@ function MissionsHubContent() {
                     <AlertDialogHeader>
                     <AlertDialogTitle>Excluir Missão do Catálogo</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Tem certeza que deseja remover a missão "{templateToDelete.title}"? Isso removerá a missão do catálogo e de TODAS as agendas em que ela foi atribuída. Esta ação não pode ser desfeita.
+                        Tem certeza que deseja remover a missão "{templateToDelete.title}"? Isso removerá a missão do catálogo e de TODAS as agendas em que ela foi atribuída.
+                        {affectedChildrenNames.length > 0 && (
+                            <span className="block mt-2 font-semibold text-foreground">
+                                Herois afetados: {affectedChildrenNames.join(', ')}.
+                            </span>
+                        )}
+                        <br/>
+                        Esta ação não pode ser desfeita.
                     </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -332,5 +363,3 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
-
-    
