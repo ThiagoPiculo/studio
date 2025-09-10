@@ -172,7 +172,7 @@ function CreateMissionTemplatePageContent() {
     setIsLoading(true);
 
     try {
-      const isFromPredefined = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
+      const isFromPredefined = allMissionIdeas.some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
 
       const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
         ownerId: user.uid,
@@ -293,7 +293,7 @@ function CreateMissionTemplatePageContent() {
                                                             >
                                                                 <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
                                                                 {idea.title}
-                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(Adicionada)</span>}
+                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
                                                             </CommandItem>
                                                         )
                                                     })}
@@ -499,3 +499,4 @@ export default function CreateMissionPage() {
         </Suspense>
     )
 }
+
