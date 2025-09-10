@@ -60,6 +60,7 @@ function CreateRewardTemplatePageContent() {
 
   const allRewardIdeas = useMemo(() => predefinedRewardGroups, []);
   
+  // Ler parâmetros da URL para defaultValues
   const initialTitle = searchParams.get('title') || '';
   const initialDescription = searchParams.get('description') || '';
   const categoryParam = searchParams.get('category') as RewardCategory | null;
@@ -93,7 +94,10 @@ function CreateRewardTemplatePageContent() {
   
   const existingTemplatesMap = useMemo(() => {
     const map = new Map<string, RewardTemplate>();
-    userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
+    userTemplates.forEach(t => {
+       const key = `${(t.familyId || 'my-space')}-${t.title.trim().toLowerCase()}`;
+       map.set(key, t);
+    });
     return map;
   }, [userTemplates]);
 
@@ -102,16 +106,29 @@ function CreateRewardTemplatePageContent() {
       setIsCheckingDuplicates(false);
       return;
     }
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-      .then(setUserTemplates)
-      .catch(console.error)
-      .finally(() => setIsCheckingDuplicates(false));
-  }, [user, currentContext]);
+    const fetchAllUserTemplates = async () => {
+        try {
+            const allTemplates: RewardTemplate[] = [];
+            for (const context of availableContexts) {
+                const familyIdToQuery = context.id === 'my-space' ? null : context.id;
+                const templates = await getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+                allTemplates.push(...templates);
+            }
+            setUserTemplates(allTemplates);
+        } catch (error) {
+            console.error("Error fetching all user templates:", error);
+        } finally {
+            setIsCheckingDuplicates(false);
+        }
+    }
+    fetchAllUserTemplates();
+  }, [user, availableContexts]);
 
 
   const handleIdeaSelection = (idea: any) => {
-    const existingTemplate = existingTemplatesMap.get(idea.title.trim().toLowerCase());
+    const key = `${currentContext}-${idea.title.trim().toLowerCase()}`;
+    const existingTemplate = existingTemplatesMap.get(key);
+
     if (existingTemplate) {
         setDuplicateReward(existingTemplate);
         setIdeaForDuplicate(idea);
@@ -191,12 +208,16 @@ function CreateRewardTemplatePageContent() {
       return;
     }
 
-    const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
-    if (existingTemplate && values.targetContexts.includes(existingTemplate.familyId || 'my-space')) {
-        setDuplicateReward(existingTemplate);
-        setIsDuplicateDialogOpen(true);
-        return;
+    for (const contextId of values.targetContexts) {
+      const key = `${contextId}-${values.title.trim().toLowerCase()}`;
+      const existingTemplate = existingTemplatesMap.get(key);
+      if (existingTemplate) {
+          setDuplicateReward(existingTemplate);
+          setIsDuplicateDialogOpen(true);
+          return;
+      }
     }
+
 
     setIsLoading(true);
     try {
@@ -255,29 +276,23 @@ function CreateRewardTemplatePageContent() {
             <AlertDialogHeader>
                 <AlertDialogTitle>Recompensa Já Existe</AlertDialogTitle>
                 <AlertDialogDescription>
-                    Você já tem uma recompensa chamada "{duplicateReward?.title}". O que você gostaria de fazer?
+                    Você já tem uma recompensa chamada "{duplicateReward?.title}" em um dos espaços selecionados. O que você gostaria de fazer?
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                 <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
-                    Criar mesmo assim
+                    Mudar o nome e criar
                 </Button>
                 <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
                     <Edit3 className="mr-2 h-4 w-4" />
-                    Editar a existente
+                    Gerenciar a existente
                 </Button>
             </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Card className="shadow-xl">
-        <CardHeader>
-           <Button variant="ghost" onClick={() => router.back()} className="w-fit p-0 h-auto mb-4 text-muted-foreground hover:text-primary">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar para o Baú de Recompensas
-           </Button>
-        </CardHeader>
-        <CardContent>
+        <CardContent className="pt-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -304,7 +319,7 @@ function CreateRewardTemplatePageContent() {
                                             {allRewardIdeas.map((group) => (
                                                 <CommandGroup key={group.userCategory} heading={group.userCategory}>
                                                     {group.items.map(idea => {
-                                                        const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
+                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
                                                         return (
                                                             <CommandItem value={idea.title} key={idea.title} onSelect={() => handleIdeaSelection(idea)}>
                                                                 <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
@@ -494,7 +509,7 @@ function CreateRewardTemplatePageContent() {
                   )}
               />
               
-              <div className="flex items-center justify-end gap-2 mt-8">
+              <div className="flex items-center justify-end gap-2 mt-8 border-t pt-6">
                   <Button type="button" variant="outline" onClick={() => router.back()} disabled={isLoading}>
                     Cancelar
                   </Button>
@@ -518,7 +533,7 @@ function CreateRewardTemplatePageContent() {
 export default function CreateRewardPage() {
   return (
     <Suspense fallback={<div className="flex justify-center items-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /><p className="ml-3">Carregando...</p></div>}>
-      <CreateRewardTemplatePageContent />
+      <CreateRewardPageContent />
     </Suspense>
   )
 }

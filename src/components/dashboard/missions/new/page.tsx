@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon, Info } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
 import Link from 'next/link';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
@@ -30,7 +30,6 @@ import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
 
 
-// Schema simplified to remove all scheduling fields
 const missionTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
   emoji: z.string().max(4, { message: "O emoji deve ter no máximo 4 caracteres." }).optional().default(''),
@@ -90,7 +89,10 @@ function CreateMissionTemplatePageContent() {
   
   const existingTemplatesMap = useMemo(() => {
     const map = new Map<string, MissionTemplate>();
-    userTemplates.forEach(t => map.set(t.title.trim().toLowerCase(), t));
+    userTemplates.forEach(t => {
+      const key = `${(t.familyId || 'my-space')}-${t.title.trim().toLowerCase()}`;
+      map.set(key, t);
+    });
     return map;
   }, [userTemplates]);
 
@@ -100,15 +102,27 @@ function CreateMissionTemplatePageContent() {
       setIsCheckingDuplicates(false);
       return;
     }
-    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-    getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-      .then(setUserTemplates)
-      .catch(console.error)
-      .finally(() => setIsCheckingDuplicates(false));
-  }, [user, currentContext]);
+    const fetchAllUserTemplates = async () => {
+        try {
+            const allTemplates: MissionTemplate[] = [];
+            for (const context of availableContexts) {
+                const familyIdToQuery = context.id === 'my-space' ? null : context.id;
+                const templates = await getMissionTemplatesByOwnerOrFamily(user.uid, familyIdToQuery);
+                allTemplates.push(...templates);
+            }
+            setUserTemplates(allTemplates);
+        } catch (error) {
+            console.error("Error fetching all user templates:", error);
+        } finally {
+            setIsCheckingDuplicates(false);
+        }
+    }
+    fetchAllUserTemplates();
+  }, [user, availableContexts]);
   
   const handleIdeaSelection = (idea: any) => {
-    const existingTemplate = existingTemplatesMap.get(idea.title.trim().toLowerCase());
+    const key = `${currentContext}-${idea.title.trim().toLowerCase()}`;
+    const existingTemplate = existingTemplatesMap.get(key);
     if (existingTemplate) {
         setDuplicateMission(existingTemplate);
         setIdeaForDuplicate(idea);
@@ -129,12 +143,15 @@ function CreateMissionTemplatePageContent() {
       return;
     }
     
-    // Check for exact title match again on submit, in case user manually typed it
-    const existingTemplate = existingTemplatesMap.get(values.title.trim().toLowerCase());
-    if (existingTemplate && values.targetContexts.includes(existingTemplate.familyId || 'my-space')) {
-        setDuplicateMission(existingTemplate);
-        setIsDuplicateDialogOpen(true);
-        return;
+    // Check for duplicates only in the selected contexts
+    for (const contextId of values.targetContexts) {
+        const key = `${contextId}-${values.title.trim().toLowerCase()}`;
+        const existingTemplate = existingTemplatesMap.get(key);
+        if (existingTemplate) {
+            setDuplicateMission(existingTemplate);
+            setIsDuplicateDialogOpen(true);
+            return;
+        }
     }
 
     setIsLoading(true);
@@ -142,37 +159,34 @@ function CreateMissionTemplatePageContent() {
     try {
       const isFromPredefined = allMissionIdeas.flatMap(g => g.items).some(item => item.title === values.title && item.emoji === values.emoji && item.starsReward === values.starsReward);
 
-      let firstCreatedTemplate: MissionTemplate | null = null;
-      for (const contextId of values.targetContexts) {
-          const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
-            ownerId: user.uid,
-            familyId: contextId === 'my-space' ? null : contextId,
-            title: values.title,
-            emoji: values.emoji,
-            description: values.description,
-            category: values.category,
-            starsReward: values.starsReward,
-            isRecurring: false,
-            startDate: null,
-            dueDate: null,
-            recurrenceRule: null,
-            source: isFromPredefined ? 'predefined' : 'custom',
-          };
-          const createdTemplate = await addMissionTemplate(user, templateDataPayload);
-          if (!firstCreatedTemplate) {
-            firstCreatedTemplate = createdTemplate;
-          }
-      }
+      const templateDataPayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'> = {
+        ownerId: user.uid,
+        title: values.title,
+        emoji: values.emoji,
+        description: values.description,
+        category: values.category,
+        starsReward: values.starsReward,
+        isRecurring: false,
+        startDate: null,
+        dueDate: null,
+        recurrenceRule: null,
+        source: isFromPredefined ? 'predefined' : 'custom',
+      };
+      
+      const createdTemplate = await addMissionTemplate(user, templateDataPayload, values.targetContexts);
+
       toast({
         title: 'Missão(ões) Adicionada(s) ao Catálogo!',
         description: `A missão "${values.title}" foi salva nos espaços selecionados.`,
       });
-      if(firstCreatedTemplate){
-        setNewlyCreatedTemplate(firstCreatedTemplate);
-        setIsAssignDialogOpen(true);
+      
+      if (createdTemplate) {
+          setNewlyCreatedTemplate(createdTemplate);
+          setIsAssignDialogOpen(true);
       } else {
-        router.push('/dashboard/missions');
+          router.push('/dashboard/missions');
       }
+
       form.reset();
 
     } catch (error) {
@@ -202,10 +216,9 @@ function CreateMissionTemplatePageContent() {
         form.setValue("starsReward", ideaForDuplicate.starsReward);
     }
     setIsDuplicateDialogOpen(false);
-    // User can now edit and submit again
   };
 
-  const getContextName = (contextId: string) => {
+   const getContextName = (contextId: string) => {
     if (contextId === 'my-space') return "No seu Espaço (Cuidar Solo)";
     const context = availableContexts.find(c => c.id === contextId);
     return context ? `Na Aliança: "${context.name}"` : 'Espaço Desconhecido';
@@ -219,7 +232,7 @@ function CreateMissionTemplatePageContent() {
     <>
       <div className="space-y-6 max-w-2xl mx-auto pb-10">
         <Card className="shadow-xl">
-          <CardHeader>
+           <CardHeader>
              <Link href="/dashboard/missions" className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors mb-4">
                 <ArrowLeft className="mr-1 h-4 w-4" />
                 Voltar para o Quadro de Missões
@@ -270,7 +283,7 @@ function CreateMissionTemplatePageContent() {
                                                 {allMissionIdeas.map((group) => (
                                                     <CommandGroup key={group.userCategory} heading={group.userCategory}>
                                                         {group.items.map(idea => {
-                                                            const isAdded = existingTemplatesMap.has(idea.title.trim().toLowerCase());
+                                                            const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
                                                             return (
                                                                 <CommandItem
                                                                     value={idea.title}
@@ -432,12 +445,12 @@ function CreateMissionTemplatePageContent() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Missão Já Existe no Catálogo</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Você já tem uma missão chamada "{duplicateMission?.title}". O que você gostaria de fazer?
+                        Você já tem uma missão chamada "{duplicateMission?.title}" no espaço de trabalho selecionado. O que você gostaria de fazer?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter className="flex-col sm:flex-row gap-2">
                     <Button variant="outline" onClick={handleCreateAnyway} className="w-full sm:w-auto">
-                        Criar uma nova versão
+                        Mudar o nome e criar
                     </Button>
                     <Button onClick={handleEditDuplicate} className="w-full sm:w-auto">
                         <Edit3 className="mr-2 h-4 w-4" />

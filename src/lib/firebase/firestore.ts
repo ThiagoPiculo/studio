@@ -1211,28 +1211,39 @@ export const toggleUserFeatureVote = async (userId: string, featureId: string): 
 
 
 // --- Reward Templates (Catálogo de Recompensas) ---
-export const addRewardTemplate = async (actor: UserProfile, templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<RewardTemplate> => {
-  const newTemplateRef = doc(collection(db, 'rewardTemplates'));
-  const now = serverTimestamp() as Timestamp;
-  const newTemplate: RewardTemplate = {
-    id: newTemplateRef.id,
-    ...templateData,
-    status: 'active',
-    createdAt: now,
-    updatedAt: now,
-  };
-  await setDoc(newTemplateRef, newTemplate);
+export const addRewardTemplate = async (
+  actor: UserProfile,
+  templateData: Omit<RewardTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>,
+  targetContexts: string[]
+): Promise<void> => {
+  const now = serverTimestamp();
 
-  if (templateData.familyId) {
-    await createAllianceNotification(templateData.familyId, actor, {
-      type: 'template_created',
-      title: 'Nova Recompensa no Catálogo!',
-      description: `${actor.name} adicionou a recompensa: "${newTemplate.title}".`,
-      href: '/dashboard/rewards',
-    });
+  const createPromises = targetContexts.map(contextId => {
+    const newTemplateRef = doc(collection(db, 'rewardTemplates'));
+    const newTemplateData: Omit<RewardTemplate, 'id'> = {
+      ...templateData,
+      status: 'active',
+      familyId: contextId === 'my-space' ? null : contextId,
+      createdAt: now as Timestamp,
+      updatedAt: now as Timestamp,
+    };
+    return setDoc(newTemplateRef, newTemplateData);
+  });
+  
+  await Promise.all(createPromises);
+
+  const familyContexts = targetContexts.filter(id => id !== 'my-space');
+  if (familyContexts.length > 0) {
+    const notificationPromises = familyContexts.map(familyId => 
+      createAllianceNotification(familyId, actor, {
+        type: 'template_created',
+        title: 'Nova Recompensa no Catálogo!',
+        description: `${actor.name} adicionou a recompensa: "${templateData.title}".`,
+        href: '/dashboard/rewards',
+      })
+    );
+    await Promise.all(notificationPromises);
   }
-
-  return convertTimestampsInObject(newTemplate);
 };
 
 export const getRewardTemplateById = async (templateId: string): Promise<RewardTemplate | null> => {
@@ -1393,7 +1404,7 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
 };
 
 export const redeemChildRewardInstance = async (
-  rewardTemplate: RewardTemplate,
+  rewardTemplate: RewardTemplate | ChildRewardInstance,
   childId: string,
   actor: { id: string; name: string | null }
 ): Promise<void> => {
@@ -1414,10 +1425,11 @@ export const redeemChildRewardInstance = async (
       stars: childData.stars - rewardTemplate.starsCost,
       updatedAt: serverTimestamp(),
     });
-
+    
+    // In the new model, we just create a new "redeemed" entry instead of updating one.
     const newInstanceRef = doc(collection(db, 'childRewardInstances'));
     const newInstance: Omit<ChildRewardInstance, 'id'> = {
-      templateId: rewardTemplate.id,
+      templateId: 'templateId' in rewardTemplate ? rewardTemplate.templateId : rewardTemplate.id,
       childId: childId,
       ownerId: childData.ownerId,
       familyId: childData.familyId || null,
@@ -1509,33 +1521,53 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
 
 
 // --- Mission Templates (Catálogo de Missões) ---
-export const addMissionTemplate = async (actor: UserProfile, templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'>): Promise<MissionTemplate> => {
-  const newTemplateRef = doc(collection(db, 'missionTemplates'));
+export const addMissionTemplate = async (
+  actor: UserProfile,
+  templateData: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status' | 'familyId'>,
+  targetContexts: string[]
+): Promise<MissionTemplate | null> => {
   const now = serverTimestamp();
+  let firstCreatedTemplate: MissionTemplate | null = null;
+  const currentContextId = actor.settings?.initialContext || 'my-space';
 
-  // Convert dates from ISO strings to Timestamps before saving
-  const newTemplate: Omit<MissionTemplate, 'id'> = {
-    ...templateData,
-    startDate: templateData.startDate ? Timestamp.fromDate(new Date(templateData.startDate as string)) : null,
-    dueDate: templateData.dueDate ? Timestamp.fromDate(new Date(templateData.dueDate as string)) : null,
-    status: 'active',
-    createdAt: now as Timestamp,
-    updatedAt: now as Timestamp,
-  };
+  const createPromises = targetContexts.map(async (contextId) => {
+    const newTemplateRef = doc(collection(db, 'missionTemplates'));
+    const templateDataWithContext: Omit<MissionTemplate, 'id'> = {
+        ...templateData,
+        familyId: contextId === 'my-space' ? null : contextId,
+        startDate: templateData.startDate ? Timestamp.fromDate(new Date(templateData.startDate as string)) : null,
+        dueDate: templateData.dueDate ? Timestamp.fromDate(new Date(templateData.dueDate as string)) : null,
+        status: 'active',
+        createdAt: now as Timestamp,
+        updatedAt: now as Timestamp,
+    };
+    await setDoc(newTemplateRef, templateDataWithContext);
+    
+    // Set the template for the *current* context as the one to return for the dialog.
+    if (contextId === currentContextId) {
+      firstCreatedTemplate = convertTimestampsInObject({ id: newTemplateRef.id, ...templateDataWithContext });
+    } else if (!firstCreatedTemplate) {
+      // Fallback to the very first one if current context wasn't selected
+      firstCreatedTemplate = convertTimestampsInObject({ id: newTemplateRef.id, ...templateDataWithContext });
+    }
+  });
 
-  await setDoc(newTemplateRef, newTemplate);
+  await Promise.all(createPromises);
 
-  if (templateData.familyId) {
-    await createAllianceNotification(templateData.familyId, actor, {
+  const familyContexts = targetContexts.filter(id => id !== 'my-space');
+  if (familyContexts.length > 0) {
+    const notificationPromises = familyContexts.map(familyId =>
+      createAllianceNotification(familyId, actor, {
         type: 'template_created',
         title: 'Nova Missão no Catálogo!',
-        description: `${actor.name} adicionou a missão: "${newTemplate.title}".`,
+        description: `${actor.name} adicionou a missão: "${templateData.title}".`,
         href: '/dashboard/missions',
-    });
+      })
+    );
+    await Promise.all(notificationPromises);
   }
 
-  // Return the created template with ID, converting Timestamps to ISO strings for client use
-  return convertTimestampsInObject({ id: newTemplateRef.id, ...newTemplate });
+  return firstCreatedTemplate;
 };
 
 export const getMissionTemplateById = async (templateId: string): Promise<MissionTemplate | null> => {
@@ -1683,7 +1715,7 @@ export const addMissionInstance = async (
   const newInstanceRef = doc(collection(db, 'missionInstances'));
   const now = serverTimestamp();
 
-  // Convert date strings back to Timestamps before saving
+  // Convert dates from ISO strings back to Timestamps before saving
   const newInstance: Omit<MissionInstance, 'id'> = {
     templateId: instanceData.templateId,
     childId: instanceData.childId,
