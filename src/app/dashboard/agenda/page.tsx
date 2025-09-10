@@ -103,6 +103,7 @@ function AgendaPageContent() {
   const [templateToAssign, setTemplateToAssign] = useState<MissionTemplate | null>(null);
   
   const [instanceToEdit, setInstanceToEdit] = useState<MissionInstance | null>(null);
+  const [recurrenceEditMode, setRecurrenceEditMode] = useState<EditRecurrenceMode | null>(null);
   const [occurrenceDate, setOccurrenceDate] = useState<Date | null>(null);
   
   const [activePopover, setActivePopover] = useState<string | null>(null);
@@ -217,10 +218,11 @@ function AgendaPageContent() {
     setActivePopover(null);
     setInstanceToEdit(instance);
     setOccurrenceDate(date);
-    setTemplateToAssign(null);
+    setTemplateToAssign(null); // Ensure we are in edit mode
     if (instance.isRecurring) {
         setIsRecurrenceEditOpen(true);
     } else {
+        setRecurrenceEditMode(null); // Not a recurring edit
         setIsAssignDialogOpen(true);
     }
   };
@@ -1191,12 +1193,14 @@ function AgendaPageContent() {
       <AssignMissionDialog
         template={templateToAssign}
         instanceToEdit={instanceToEdit}
+        recurrenceEditMode={recurrenceEditMode}
         occurrenceDate={occurrenceDate}
         isOpen={isAssignDialogOpen}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
             setTemplateToAssign(null);
             setInstanceToEdit(null);
+            setRecurrenceEditMode(null);
             setOccurrenceDate(null);
           }
           setIsAssignDialogOpen(isOpen);
@@ -1210,6 +1214,7 @@ function AgendaPageContent() {
             onOpenChange={setIsRecurrenceEditOpen}
             onSelect={(mode) => {
                 setIsRecurrenceEditOpen(false);
+                setRecurrenceEditMode(mode);
                 setIsAssignDialogOpen(true);
             }}
             missionInstance={instanceToEdit}

@@ -37,7 +37,7 @@ import * as z from 'zod';
 import { useForm, FormProvider } from 'react-hook-form';
 import { Form } from '@/components/ui/form';
 import { RecurrenceControl } from './RecurrenceControl';
-import { EditRecurrenceDialog, type EditRecurrenceMode } from './EditRecurrenceDialog';
+import type { EditRecurrenceMode } from './EditRecurrenceDialog';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import Link from 'next/link';
@@ -68,9 +68,9 @@ const assignmentFormSchema = z.object({
         }
         if (data.recurrenceRule?.endDate && data.startDate && data.recurrenceRule.endDate < data.startDate) {
             ctx.addIssue({
-                code: z.ZodIssueCode.custom,
-                message: "A data de fim da recorrência não pode ser anterior à data de início.",
+                code: 'custom',
                 path: ['recurrenceRule.endDate'],
+                message: "A data de fim da recorrência não pode ser anterior à data de início.",
             });
         }
     } else {
@@ -88,6 +88,7 @@ export type AssignmentFormValues = z.infer<typeof assignmentFormSchema>;
 interface AssignMissionDialogProps {
   template: MissionTemplate | null;
   instanceToEdit?: MissionInstance | null;
+  recurrenceEditMode?: EditRecurrenceMode | null;
   occurrenceDate?: Date | null;
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -101,7 +102,7 @@ const schoolShiftMap: Record<SchoolShift, string> = {
     not_applicable: 'Não se aplica'
 };
 
-export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const { currentContext, availableContexts, currentRole } = useFamily();
   const canEdit = useMemo(() => {
@@ -122,9 +123,6 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const [isRecurrenceEditModalOpen, setIsRecurrenceEditModalOpen] = useState(false);
-  const [recurrenceEditMode, setRecurrenceEditMode] = useState<EditRecurrenceMode>('all');
-  
   const form = useForm<AssignmentFormValues>({
     resolver: zodResolver(assignmentFormSchema),
   });
@@ -155,18 +153,19 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     let startDate = getDateObject(source.startDate);
     let dueDate = getDateObject(source.dueDate);
 
+    // If it's a new assignment, set sensible defaults
     if (!instance) {
       const today = new Date();
       startDate = source.isRecurring ? today : null;
       dueDate = !source.isRecurring ? today : new Date();
-    } else if (!startDate && !dueDate) {
+    } else if (!startDate && !dueDate) { // Fallback for old instances without dates
         dueDate = new Date();
     }
     
     const initialValues: AssignmentFormValues = {
       isRecurring: !!source.isRecurring,
       startDate: startDate,
-      dueDate: dueDate || new Date(),
+      dueDate: dueDate || new Date(), // Default due date for form validity
       recurrenceRule: null,
     };
 
@@ -177,6 +176,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
             endDate: getDateObject(rule.endDate) 
         };
     } else if (source.isRecurring) {
+        // Provide a default recurrence rule if none exists for a recurring mission
         initialValues.recurrenceRule = { freq: 'DAILY', interval: 1 };
     }
 
@@ -252,26 +252,14 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     };
 
     initialize();
-}, [isOpen, instanceToEdit, template]);
+}, [isOpen, instanceToEdit, template, fetchData, onOpenChange, prepareScheduleForm, toast]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
     const existingInstance = existingAssignments[child.id];
     setSelectedChild(child);
-    
-    if (existingInstance && existingInstance.isRecurring) {
-        setIsRecurrenceEditModalOpen(true);
-    } else {
-        prepareScheduleForm(existingInstance || null);
-        setView('schedule');
-    }
-  };
-  
-  const handleRecurrenceEditSelect = (mode: EditRecurrenceMode) => {
-      setIsRecurrenceEditModalOpen(false);
-      setRecurrenceEditMode(mode);
-      prepareScheduleForm(existingAssignments[selectedChild!.id]);
-      setView('schedule');
+    prepareScheduleForm(existingInstance || null);
+    setView('schedule');
   };
   
   const handleUnassign = async () => {
@@ -299,7 +287,7 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
     try {
       const existingInstance = instanceToEdit || existingAssignments[selectedChild.id];
 
-      if (existingInstance) {
+      if (existingInstance && recurrenceEditMode) {
           const editDate = occurrenceDate || getDateObject(existingInstance.startDate) || getDateObject(existingInstance.dueDate);
           if (!editDate) throw new Error("Data da ocorrência não encontrada para edição.");
           
@@ -464,16 +452,6 @@ export function AssignMissionDialog({ template, instanceToEdit, occurrenceDate, 
 
         </DialogContent>
       </Dialog>
-      
-      {selectedChild && existingAssignments[selectedChild.id] && (
-         <EditRecurrenceDialog 
-            isOpen={isRecurrenceEditModalOpen}
-            onOpenChange={setIsRecurrenceEditModalOpen}
-            onSelect={handleRecurrenceEditSelect}
-            missionInstance={existingAssignments[selectedChild.id]}
-            occurrenceDate={occurrenceDate || getDateObject(existingAssignments[selectedChild.id].startDate) || new Date()}
-         />
-      )}
     </>
   );
 }
