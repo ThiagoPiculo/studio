@@ -257,64 +257,6 @@ function CreateMissionTemplatePageContent() {
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
-                  <div className="grid grid-cols-[auto,1fr] gap-4 items-end">
-                      <FormField
-                        control={form.control}
-                        name="emoji"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Emoji</FormLabel>
-                            <FormControl>
-                              <Input className="w-16 h-10 text-center text-xl p-0" maxLength={4} {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="starsReward"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Estrelas</FormLabel>
-                            <FormControl>
-                              <Input type="number" placeholder="Ex: 5" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                  </div>
-
-                  <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Categoria</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Selecione..." />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {missionCategories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  <div className="flex items-center">
-                                    <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
-                                    <span>{category.label}</span>
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                </div>
                  <FormField
                     control={form.control}
                     name="title"
@@ -365,6 +307,62 @@ function CreateMissionTemplatePageContent() {
                         </FormItem>
                     )}
                 />
+
+                <div className="grid grid-cols-3 gap-4 items-end">
+                    <FormField
+                      control={form.control}
+                      name="emoji"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Emoji</FormLabel>
+                          <FormControl>
+                            <Input className="w-16 h-10 text-center text-xl p-0" maxLength={4} {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="category"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Categoria</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Selecione..." />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {missionCategories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  <div className="flex items-center">
+                                    <category.icon className={cn("mr-2 h-4 w-4", category.colorClasses.split(" ")[1])} />
+                                    <span>{category.label}</span>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="starsReward"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="flex items-center gap-1.5"><StarIcon className="text-yellow-500"/> Estrelas</FormLabel>
+                          <FormControl>
+                            <Input type="number" placeholder="Ex: 5" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                </div>
                 
                 <FormField
                   control={form.control}
