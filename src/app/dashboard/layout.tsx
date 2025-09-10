@@ -12,7 +12,7 @@ import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
@@ -78,8 +78,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     '/dashboard/novo-heroi', 
     '/dashboard/assistente', 
     '/dashboard/help',
-    '/dashboard/rewards', // handled by showRewardsHeaderActions
-    '/dashboard/missions' // handled by showMissionsHeaderActions
   ].some(p => pathname.startsWith(p));
 
 
@@ -245,7 +243,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 </div>
               </header>
               
-              {(showContextSwitcher || showHeroSelector || showRewardsHeaderActions || showMissionsHeaderActions) && (
+              {(showContextSwitcher || showMissionsHeaderActions || showRewardsHeaderActions) && (
                  <div className="px-4 sm:px-6 py-2">
                       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-start gap-2">
                          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2">
@@ -260,26 +258,22 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 </div>
                             )}
                          </div>
-                          {showRewardsHeaderActions && (
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                                <FamilyContextSwitcher />
+                          <div className="flex items-center gap-2 w-full md:w-auto">
+                            {showRewardsHeaderActions && (
                                 <Button asChild className="flex-grow">
                                     <Link href="/dashboard/rewards/new">
                                         <PlusCircle className="mr-2 h-4 w-4" /> Criar Recompensa
                                     </Link>
                                 </Button>
-                            </div>
-                          )}
-                          {showMissionsHeaderActions && (
-                            <div className="flex items-center gap-2 w-full md:w-auto">
-                                <FamilyContextSwitcher />
+                            )}
+                            {showMissionsHeaderActions && (
                                 <Button asChild className="flex-grow">
                                     <Link href="/dashboard/missions/new">
                                         <PlusCircle className="mr-2 h-4 w-4" /> Criar Missão
                                     </Link>
                                 </Button>
-                            </div>
-                          )}
+                            )}
+                          </div>
                       </div>
                   </div>
               )}
