@@ -297,52 +297,56 @@ function CreateMissionTemplatePageContent() {
                     control={form.control}
                     name="title"
                     render={({ field }) => (
-                        <FormItem className="flex flex-col flex-grow">
-                            <FormLabel>Título da Missão</FormLabel>
-                            <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                            variant="outline"
-                                            role="combobox"
-                                            className={cn("w-full justify-between", !field.value && "text-muted-foreground")}
+                      <FormItem className="flex flex-col">
+                        <FormLabel>Título da Missão</FormLabel>
+                        <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              {/* This input is now directly part of the form */}
+                              <Input
+                                placeholder="Digite um nome ou busque uma ideia..."
+                                className="w-full justify-between"
+                                {...field}
+                                onFocus={() => setIsPopoverOpen(true)}
+                              />
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                            <Command>
+                              {/* The CommandInput uses the form field's value and updates it */}
+                              <CommandInput
+                                placeholder="Buscar ideia de missão..."
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              />
+                              <CommandList>
+                                <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
+                                {predefinedMissionGroups.map((group) => (
+                                  <CommandGroup key={group.userCategory} heading={group.userCategory}>
+                                    {group.items.map(idea => {
+                                      const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
+                                      return (
+                                        <CommandItem
+                                          value={idea.title}
+                                          key={idea.title}
+                                          onSelect={() => handleIdeaSelection(idea)}
                                         >
-                                            {field.value || "Selecione ou digite o nome da missão"}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                     <Command>
-                                        <CommandInput placeholder="Buscar ideia de missão..." onValueChange={(value) => form.setValue("title", value)} value={field.value}/>
-                                        <CommandList>
-                                            <CommandEmpty>Nenhuma ideia encontrada.</CommandEmpty>
-                                            {predefinedMissionGroups.map((group) => (
-                                                <CommandGroup key={group.userCategory} heading={group.userCategory}>
-                                                    {group.items.map(idea => {
-                                                        const isAdded = existingTemplatesMap.has(`${currentContext}-${idea.title.trim().toLowerCase()}`);
-                                                        return (
-                                                            <CommandItem
-                                                                value={idea.title}
-                                                                key={idea.title}
-                                                                onSelect={() => handleIdeaSelection(idea)}
-                                                            >
-                                                                <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
-                                                                {idea.title}
-                                                                {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
-                                                            </CommandItem>
-                                                        )
-                                                    })}
-                                                </CommandGroup>
-                                            ))}
-                                        </CommandList>
-                                    </Command>
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
+                                          <Check className={cn("mr-2 h-4 w-4", field.value === idea.title ? "opacity-100" : "opacity-0")} />
+                                          {idea.title}
+                                          {isAdded && <span className="ml-auto text-xs text-muted-foreground">(No catálogo)</span>}
+                                        </CommandItem>
+                                      )
+                                    })}
+                                  </CommandGroup>
+                                ))}
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
                     )}
-                />
+                  />
 
                 <div className="grid grid-cols-3 gap-4 items-end">
                     <FormField
@@ -486,7 +490,7 @@ function CreateMissionTemplatePageContent() {
                                                         )}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-xs text-muted-foreground italic">Nenhum herói</span>
+                                                    <span className="text-xs italic text-muted-foreground">Nenhum herói</span>
                                                 )}
                                             </div>
                                         </div>
