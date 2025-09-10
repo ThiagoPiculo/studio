@@ -41,7 +41,7 @@ import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
-import { PostAssignmentSuccessDialog } from '@/components/dashboard/missions/PostAssignmentSuccessDialog';
+import { PostAssignmentSuccessDialog } from './PostAssignmentSuccessDialog';
 
 
 function MissionsHubContent() {
@@ -240,9 +240,12 @@ function MissionsHubContent() {
                                                 return (
                                                     <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
                                                         <CardHeader>
-                                                            <CardTitle className="text-base flex items-center gap-2">
-                                                                <span className="text-2xl">{idea.emoji}</span>
-                                                                {idea.title}
+                                                            <CardTitle className="text-base flex items-center justify-between gap-2">
+                                                                <div className="flex items-center gap-2">
+                                                                  <span className="text-2xl">{idea.emoji}</span>
+                                                                  {idea.title}
+                                                                </div>
+                                                                {isAdded && <Badge variant="secondary">Em uso</Badge>}
                                                             </CardTitle>
                                                         </CardHeader>
                                                         <CardContent className="flex-grow">
@@ -250,7 +253,7 @@ function MissionsHubContent() {
                                                         </CardContent>
                                                         <CardFooter>
                                                             <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                                {isAdded ? "Personalizar Missão" : "Usar esta Ideia"}
+                                                                {isAdded ? "Editar" : "Usar Missão"}
                                                             </Button>
                                                         </CardFooter>
                                                     </Card>
