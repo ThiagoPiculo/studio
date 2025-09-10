@@ -8,7 +8,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -19,7 +19,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { addMissionTemplate, getMissionTemplatesByOwnerOrFamily, updateMissionTemplate } from '@/lib/firebase/firestore';
 import type { MissionCategory, MissionTemplate } from '@/lib/types';
 import { missionCategories } from '@/lib/types'; 
-import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon, Sparkles } from 'lucide-react';
+import { Loader2, Target, ArrowLeft, Star as StarIcon, BadgeCheck, Lightbulb, Check, ChevronsUpDown, Edit3, CircleDot, Link as LinkIcon } from 'lucide-react';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { AlertDialog, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel, AlertDialogContent } from '@/components/ui/alert-dialog';
 import { predefinedMissionGroups } from '@/lib/predefined-missions';
@@ -27,6 +27,7 @@ import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover
 import { Command, CommandInput, CommandEmpty, CommandList, CommandGroup, CommandItem, CommandSeparator } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Checkbox } from '@/components/ui/checkbox';
+import Link from 'next/link';
 
 
 const missionTemplateFormSchema = z.object({
