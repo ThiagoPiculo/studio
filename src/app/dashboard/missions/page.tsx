@@ -128,13 +128,18 @@ function MissionsHubContent() {
   const handleDeleteConfirm = async () => {
     if (!templateToDelete || !user) return;
     setIsProcessingAction(true);
+    
+    // Optimistic UI Update
+    const originalTemplates = [...missionTemplates];
+    setMissionTemplates(prev => prev.filter(t => t.id !== templateToDelete.id));
+
     try {
       await deleteMissionTemplateAndInstances(user, templateToDelete.id);
       toast({ title: "Missão e Agendamentos Removidos!", description: `A missão "${templateToDelete.title}" e suas atribuições foram removidas.` });
-      refetchData();
     } catch (error) {
       console.error("Error deleting mission template:", error);
-      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão.", variant: "destructive" });
+      toast({ title: "Erro ao Excluir Missão", description: "Não foi possível remover a missão. A lista foi restaurada.", variant: "destructive" });
+      setMissionTemplates(originalTemplates); // Revert on error
     } finally {
       setTemplateToDelete(null);
       setAffectedChildrenNames([]);
@@ -222,7 +227,7 @@ function MissionsHubContent() {
                                                         </CardContent>
                                                         <CardFooter>
                                                             <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                                {isAdded ? "Gerenciar Missão" : "Usar esta Ideia"}
+                                                                {isAdded ? "Personalizar Missão" : "Usar esta Ideia"}
                                                             </Button>
                                                         </CardFooter>
                                                     </Card>
