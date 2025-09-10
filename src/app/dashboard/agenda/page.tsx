@@ -211,6 +211,7 @@ function AgendaPageContent() {
   const handleMissionSelected = (template: MissionTemplate) => {
     setTemplateToAssign(template);
     setInstanceToEdit(null);
+    setIsSelectMissionDialogOpen(false);
     setIsAssignDialogOpen(true);
   };
 
@@ -1158,7 +1159,7 @@ function AgendaPageContent() {
                  {canEdit && (
                   <Button onClick={() => setIsSelectMissionDialogOpen(true)} className="flex-grow-0 sm:flex-grow-0">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      Criar Missão
+                      Nova Missão
                   </Button>
                 )}
                </div>
@@ -1204,6 +1205,7 @@ function AgendaPageContent() {
           setIsAssignDialogOpen(isOpen);
         }}
         onAssigned={handleAssignmentComplete}
+        preselectedChildId={selectedChildId}
       />
 
        {instanceToEdit && (

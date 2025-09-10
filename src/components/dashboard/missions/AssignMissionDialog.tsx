@@ -94,6 +94,7 @@ interface AssignMissionDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onAssigned?: (child: ChildProfile, template: MissionTemplate) => void;
+  preselectedChildId?: string | null;
 }
 
 const schoolShiftMap: Record<SchoolShift, string> = {
@@ -103,7 +104,7 @@ const schoolShiftMap: Record<SchoolShift, string> = {
     not_applicable: 'Não se aplica'
 };
 
-export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned }: AssignMissionDialogProps) {
+export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMode, occurrenceDate, isOpen, onOpenChange, onAssigned, preselectedChildId }: AssignMissionDialogProps) {
   const { user } = useAuth();
   const router = useRouter();
   const { currentContext, availableContexts, currentRole } = useFamily();
@@ -219,7 +220,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
     
     const initialize = async () => {
         setIsLoading(true);
-        if (instanceToEdit) {
+        if (instanceToEdit) { // Editing an existing mission instance
             try {
                 const [childProfile, missionTemplate] = await Promise.all([
                     getChildProfileById(instanceToEdit.childId),
@@ -245,15 +246,23 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
             } finally {
                 setIsLoading(false);
             }
-        } else if (template) {
+        } else if (template) { // Assigning a new mission
             setEffectiveTemplate(template);
-            await fetchDataForList();
-            setView('list');
+            const fetchedChildren = await getChildProfilesForAttribution(user!.uid, currentContext);
+            setChildren(fetchedChildren);
+            
+            const preselectedChild = preselectedChildId ? fetchedChildren.find(c => c.id === preselectedChildId) : null;
+            if(preselectedChild) {
+                handleSelectChild(preselectedChild);
+            } else {
+                 await fetchDataForList();
+                 setView('list');
+            }
         }
     };
 
     initialize();
-  }, [isOpen, instanceToEdit, template, fetchDataForList, onOpenChange, prepareScheduleForm, toast, resetDialogState]);
+  }, [isOpen, instanceToEdit, template, fetchDataForList, onOpenChange, prepareScheduleForm, toast, resetDialogState, preselectedChildId, user, currentContext]);
 
 
   const handleSelectChild = (child: ChildProfile) => {
@@ -384,8 +393,8 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
                 )}
               </div>
               <div className="flex flex-col-reverse sm:flex-row sm:space-x-2 gap-2 sm:gap-0">
-                  <Button type="button" variant="outline" onClick={() => instanceToEdit ? onOpenChange(false) : setView('list')}>
-                    {instanceToEdit ? 'Cancelar' : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
+                  <Button type="button" variant="outline" onClick={() => instanceToEdit || preselectedChildId ? onOpenChange(false) : setView('list')}>
+                    {instanceToEdit || preselectedChildId ? 'Cancelar' : <><ArrowLeft className="mr-2 h-4 w-4" /> Voltar</>}
                   </Button>
                   <Button type="submit" disabled={isProcessing || !canEdit}>
                       {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
@@ -435,9 +444,7 @@ export function AssignMissionDialog({ template, instanceToEdit, recurrenceEditMo
 
           {view === 'list' && (
             <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Agendar Depois</Button>
-                </DialogClose>
+                <Button variant="outline" onClick={() => onOpenChange(false)}>Agendar Depois</Button>
             </DialogFooter>
           )}
 
