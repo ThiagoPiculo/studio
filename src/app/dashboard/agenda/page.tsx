@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
@@ -25,12 +24,12 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
-import { AssignMissionDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/AssignMissionDialog';
+import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { SelectMissionTemplateDialog } from '@/components/dashboard/missions/SelectMissionTemplateDialog';
 import { Popover, PopoverContent, PopoverTrigger, PopoverClose } from '@/components/ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Loader2 } from 'lucide-react';
-import { EditRecurrenceDialog } from '@/components/dashboard/missions/EditRecurrenceDialog';
+import { EditRecurrenceDialog, type EditRecurrenceMode } from '@/components/dashboard/missions/EditRecurrenceDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { DeleteRecurrenceDialog } from '@/components/dashboard/missions/DeleteRecurrenceDialog';
@@ -113,6 +112,7 @@ function AgendaPageContent() {
   const [instanceToDeleteInfo, setInstanceToDeleteInfo] = useState<{ instance: MissionInstance; date: Date } | null>(null);
   const [isDeleteRecurrenceDialogOpen, setIsDeleteRecurrenceDialogOpen] = useState(false);
   const [isConfirmSimpleDeleteOpen, setIsConfirmSimpleDeleteOpen] = useState(false);
+  const [isRecurrenceEditOpen, setIsRecurrenceEditOpen] = useState(false);
 
   // States for filters, initialized from URL
   const [dateRangeFilter, setDateRangeFilter] = useState<DateRangeFilter>(
@@ -218,7 +218,11 @@ function AgendaPageContent() {
     setInstanceToEdit(instance);
     setOccurrenceDate(date);
     setTemplateToAssign(null);
-    setIsAssignDialogOpen(true);
+    if (instance.isRecurring) {
+        setIsRecurrenceEditOpen(true);
+    } else {
+        setIsAssignDialogOpen(true);
+    }
   };
   
   const handleEditTemplateClick = (instance: MissionInstance) => {
@@ -1199,6 +1203,19 @@ function AgendaPageContent() {
         }}
         onAssigned={handleAssignmentComplete}
       />
+
+       {instanceToEdit && (
+        <EditRecurrenceDialog
+            isOpen={isRecurrenceEditOpen}
+            onOpenChange={setIsRecurrenceEditOpen}
+            onSelect={(mode) => {
+                setIsRecurrenceEditOpen(false);
+                setIsAssignDialogOpen(true);
+            }}
+            missionInstance={instanceToEdit}
+            occurrenceDate={occurrenceDate}
+        />
+       )}
 
       <DeleteRecurrenceDialog
         isOpen={isDeleteRecurrenceDialogOpen}
