@@ -528,11 +528,11 @@ function CreateRewardTemplatePageContent() {
                         Adicionar ao Baú
                     </Button>
                 </div>
-              </form>
+                </form>
             </Form>
-        </CardContent>
-      </Card>
-    </div>
+            </CardContent>
+        </Card>
+        </div>
     </Suspense>
   );
 }

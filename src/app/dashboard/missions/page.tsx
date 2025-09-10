@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState, useMemo, useCallback, Suspense } from 'react';
@@ -172,7 +173,7 @@ function MissionsHubContent() {
   const handleUseIdea = (idea: PredefinedMissionIdea) => {
     const existingTemplate = missionTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
     if (existingTemplate) {
-      handleOpenAssignDialog(existingTemplate);
+      router.push(`/dashboard/missions/edit/${existingTemplate.id}`);
       return;
     }
     const queryParams = new URLSearchParams();
