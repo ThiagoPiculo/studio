@@ -29,7 +29,7 @@ import type { MissionTemplate, MissionCategoryDetails, ChildProfile, FamilyRole,
 import { missionCategories } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { AssignMissionDialog } from '@/components/dashboard/missions/AssignMissionDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -47,6 +47,8 @@ function MissionsHubContent() {
   const { currentContext, currentRole, isLoading: isFamilyLoading } = useFamily();
   const { toast } = useToast();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
   const [missionTemplates, setMissionTemplates] = useState<MissionTemplate[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
@@ -61,6 +63,14 @@ function MissionsHubContent() {
   const [templateToShare, setTemplateToShare] = useState<MissionTemplate | null>(null);
   const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
   
+  const activeTab = searchParams.get('tab') || 'ideas';
+
+  const handleTabChange = (value: string) => {
+    const newParams = new URLSearchParams(searchParams.toString());
+    newParams.set('tab', value);
+    router.replace(`${pathname}?${newParams.toString()}`);
+  };
+
   const canEdit = useMemo(() => {
     if (currentContext === 'my-space') return true;
     if (!currentRole) return false;
@@ -192,7 +202,7 @@ function MissionsHubContent() {
 
   return (
     <div className="space-y-8 pb-10">
-        <Tabs defaultValue="ideas" className="w-full">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="ideas">
                     <Lightbulb className="mr-2 h-4 w-4"/>Ideias de Missões
