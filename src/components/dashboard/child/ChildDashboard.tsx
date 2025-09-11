@@ -243,7 +243,7 @@ export function ChildDashboard() {
             isOpen={!!confirmingMission}
             onOpenChange={() => setConfirmingMission(null)}
             onConfirm={(dismiss) => {
-                triggerToggleCompletion(confirmingMission.instance, confirmingMission.date, false);
+                triggerToggleCompletion(confirmingMission.instance, false);
             }}
           />
       )}
@@ -252,4 +252,3 @@ export function ChildDashboard() {
     </div>
   );
 }
-
