@@ -1,4 +1,7 @@
-
+// NOTA: Este arquivo define o layout para o grupo de rotas '(parent)'.
+// Qualquer página dentro do diretório /dashboard/(parent)/... herdará esta
+// interface com a barra lateral, cabeçalho e rodapé. O nome '(parent)' é
+// omitido da URL final.
 "use client";
 import type { ReactNode } from 'react';
 import React, { useEffect, useState } from 'react';
