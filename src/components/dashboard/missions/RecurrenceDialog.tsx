@@ -155,7 +155,10 @@ export function RecurrenceDialog({ isOpen, onOpenChange, onSave, initialRule }: 
                   <ToggleGroupItem
                     key={day}
                     value={day}
-                    className={cn("h-9 w-9 p-0", (day === 'SA' || day === 'SU') && "bg-muted/50")}
+                    className={cn(
+                      "h-9 w-9 p-0 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+                      (day === 'SA' || day === 'SU') && "bg-muted/50"
+                    )}
                     aria-label={weekdayLabels[day].long}
                   >
                     {weekdayLabels[day].short}
