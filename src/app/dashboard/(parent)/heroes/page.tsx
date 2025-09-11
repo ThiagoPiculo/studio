@@ -13,9 +13,9 @@ import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide'
 function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
     const { currentContext, isLoading: isFamilyLoading } = useFamily();
-    const [children, setChildren] = useState<ChildProfile[]>([]);
-    const [missions, setMissions] = useState<MissionInstance[]>([]);
-    const [rewards, setRewards] = useState<RewardTemplate[]>([]);
+    const [children, setChildren] = useState<ChildProfile[] | null>(null);
+    const [missions, setMissions] = useState<MissionInstance[] | null>(null);
+    const [rewards, setRewards] = useState<RewardTemplate[] | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
     const fetchData = useCallback(async () => {
@@ -52,7 +52,7 @@ function HeroesPageContent() {
     }, [user, currentContext, authLoading, isFamilyLoading, fetchData]);
 
 
-    if (authLoading || isFamilyLoading || isLoadingData) {
+    if (authLoading || isFamilyLoading || isLoadingData || children === null || missions === null || rewards === null) {
         return <Loading />;
     }
     
@@ -77,3 +77,5 @@ export default function HeroesPage() {
         </Suspense>
     )
 }
+
+    
