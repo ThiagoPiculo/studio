@@ -28,10 +28,8 @@ export default function RootLayout({
       </head>
       <body className={cn("min-h-screen bg-background font-body antialiased", "bg-background text-foreground")} suppressHydrationWarning>
         <AuthProvider>
-          <FamilyProvider>
-            {children}
-            <Toaster />
-          </FamilyProvider>
+          {children}
+          <Toaster />
         </AuthProvider>
       </body>
     </html>
