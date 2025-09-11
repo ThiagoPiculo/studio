@@ -32,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Label } from '@/components/ui/label';
+import { PostAssignmentSuccessDialog } from '../PostAssignmentSuccessDialog';
 
 
 const missionTemplateFormSchema = z.object({
@@ -68,6 +69,10 @@ function CreateMissionTemplatePageContent() {
   
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  // State for success dialog
+  const [successDialogData, setSuccessDialogData] = useState<{ child: ChildProfile; template: MissionTemplate } | null>(null);
+
 
   useEffect(() => {
     if (!user || availableContexts.length === 0) {
@@ -545,15 +550,20 @@ function CreateMissionTemplatePageContent() {
           template={newlyCreatedTemplate}
           isOpen={isAssignDialogOpen}
           onOpenChange={setIsAssignDialogOpen}
-          onAssigned={() => {
-            // No longer pushes to a specific tab, the success dialog will handle navigation
-          }}
-          onDone={() => {
-            setNewlyCreatedTemplate(null);
-            setIsAssignDialogOpen(false);
-            router.push('/dashboard/missions?tab=custom');
+          onAssigned={(child, template) => {
+              setSuccessDialogData({ child, template });
+              setIsAssignDialogOpen(false); // Close the assignment dialog
           }}
         />
+      )}
+
+      {successDialogData && (
+          <PostAssignmentSuccessDialog
+            isOpen={!!successDialogData}
+            onDone={() => setSuccessDialogData(null)}
+            child={successDialogData.child}
+            template={successDialogData.template}
+          />
       )}
     </>
   );

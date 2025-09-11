@@ -172,7 +172,7 @@ function MissionsHubContent() {
   const handleUseIdea = (idea: PredefinedMissionIdea) => {
     const existingTemplate = missionTemplates.find(t => t.title.toLowerCase().trim() === idea.title.toLowerCase().trim());
     if (existingTemplate) {
-      router.push(`/dashboard/missions/edit/${existingTemplate.id}`);
+      handleOpenAssignDialog(existingTemplate);
       return;
     }
     const queryParams = new URLSearchParams();
@@ -219,7 +219,7 @@ function MissionsHubContent() {
                 <Card>
                     <CardHeader>
                         <CardTitle>Ideias de Missões</CardTitle>
-                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Missão" para adicionar ao seu catálogo e poder atribuí-la aos seus heróis.</CardDescription>
+                        <CardDescription>Inspire-se com estas sugestões. Clique em "Usar Ideia" para adicionar a missão ao seu catálogo de missões personalizadas e poder atribuí-la aos seus heróis.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <Accordion type="multiple" className="w-full space-y-4">
@@ -238,19 +238,18 @@ function MissionsHubContent() {
                                                 const isAdded = existingTemplateTitles.has(idea.title.toLowerCase().trim());
                                                 return (
                                                     <Card key={idea.title} className={cn("flex flex-col", isAdded && "bg-muted/40")}>
-                                                        <CardHeader className="flex-grow">
-                                                            <CardTitle className="text-base flex items-start gap-2">
-                                                                <span className="text-2xl mt-1">{idea.emoji}</span>
-                                                                <span className="flex-1">{idea.title}</span>
+                                                        <CardHeader>
+                                                            <CardTitle className="text-base flex items-center gap-2">
+                                                                <span className="text-2xl">{idea.emoji}</span>
+                                                                {idea.title}
                                                             </CardTitle>
                                                         </CardHeader>
-                                                        <CardFooter className="flex items-center justify-between">
-                                                            <div className="flex items-center gap-2">
-                                                              <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsReward}</Badge>
-                                                              {isAdded && <Badge variant="outline" className="text-xs">Em uso</Badge>}
-                                                            </div>
-                                                            <Button size="sm" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
-                                                                {isAdded ? "Editar" : "Usar Missão"}
+                                                        <CardContent className="flex-grow">
+                                                            <Badge variant="secondary" className="font-semibold text-xs"><StarIcon className="h-3 w-3 mr-1.5 text-yellow-400 fill-yellow-400" /> {idea.starsReward}</Badge>
+                                                        </CardContent>
+                                                        <CardFooter>
+                                                            <Button size="sm" className="w-full" onClick={() => handleUseIdea(idea)} disabled={!canEdit}>
+                                                                {isAdded ? "Personalizar Missão" : "Usar esta Ideia"}
                                                             </Button>
                                                         </CardFooter>
                                                     </Card>

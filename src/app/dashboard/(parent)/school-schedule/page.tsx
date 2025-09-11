@@ -498,7 +498,7 @@ function SchoolSchedulePageClient() {
     <div className="space-y-6">
         <Card>
              <CardHeader>
-                 <div className="flex flex-col sm:flex-row items-center justify-end gap-2">
+                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-2">
                     <Popover>
                         <PopoverTrigger asChild>
                             <Button variant="outline" size="icon">
