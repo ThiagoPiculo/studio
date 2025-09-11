@@ -1,6 +1,5 @@
 
-
-// src/app/dashboard/dashboard/page.tsx
+// src/app/dashboard/progressos/page.tsx
 "use client";
 
 import { Suspense, useEffect, useState, useCallback } from 'react';
@@ -66,8 +65,8 @@ function ProgressosPageContent() {
         return (
              <GettingStartedGuide 
                 hasChildren={false}
-                hasMissions={false} 
-                hasRewards={false}
+                hasMissions={initialData.missions.length > 0} 
+                hasRewards={initialData.rewards.length > 0}
             />
         )
     }
