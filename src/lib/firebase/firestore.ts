@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -232,6 +233,52 @@ export const deleteAvatar = async (profileId: string, userId: string, isUserAvat
     try { await deleteObject(originalRef); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.error(e); }
     try { await deleteObject(resizedRef); } catch (e: any) { if (e.code !== 'storage/object-not-found') console.error(e); }
 };
+
+// --- Feature Votes ---
+export const getFeatureVoteCount = async (featureId: string): Promise<number> => {
+  const docRef = doc(db, 'feature_votes', featureId);
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    return docSnap.data().count || 0;
+  }
+  return 0;
+};
+
+export const getUserFeatureVote = async (userId: string, featureId: string): Promise<boolean> => {
+  const docRef = doc(db, 'feature_votes', featureId, 'votes', userId);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists();
+};
+
+export const toggleUserFeatureVote = async (userId: string, featureId: string): Promise<void> => {
+  const featureRef = doc(db, 'feature_votes', featureId);
+  const userVoteRef = doc(db, 'feature_votes', featureId, 'votes', userId);
+
+  await runTransaction(db, async (transaction) => {
+    const featureDoc = await transaction.get(featureRef);
+    const userVoteDoc = await transaction.get(userVoteRef);
+    
+    let newCount = (featureDoc.data()?.count || 0) as number;
+
+    if (userVoteDoc.exists()) {
+      // User is un-voting
+      transaction.delete(userVoteRef);
+      newCount = Math.max(0, newCount - 1);
+    } else {
+      // User is voting
+      transaction.set(userVoteRef, { votedAt: serverTimestamp() });
+      newCount += 1;
+    }
+    
+    if (featureDoc.exists()) {
+        transaction.update(featureRef, { count: newCount });
+    } else {
+        transaction.set(featureRef, { count: newCount });
+    }
+  });
+};
+
+
 
 // --- Child Profile ---
 export const addChildProfile = async (
@@ -1884,12 +1931,13 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
     
     if (familyId) {
         const child = await getChildProfileById(childId);
+        const template = await getMissionTemplateById(templateId);
         await createAllianceNotification(familyId, actor, {
             type: 'instance_unassigned',
             title: 'Missão Desatribuída',
-            description: `${actor.name} removeu a missão "${instanceData.title}" de ${child?.name || 'um herói'}.`,
-            href: `/dashboard/mural?childId=${instanceData.childId}&tab=missions`,
-            relatedChildId: instanceData.childId,
+            description: `${actor.name} removeu a missão "${template?.title}" de ${child?.name || 'um herói'}.`,
+            href: `/dashboard/mural?childId=${childId}&tab=missions`,
+            relatedChildId: childId,
         });
     }
 };
@@ -2544,4 +2592,6 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
+
 
