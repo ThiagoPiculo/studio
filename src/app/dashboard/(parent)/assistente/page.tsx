@@ -1,3 +1,4 @@
+
 "use client";
 
 import { OnboardingForm } from '@/components/dashboard/onboarding/OnboardingForm';

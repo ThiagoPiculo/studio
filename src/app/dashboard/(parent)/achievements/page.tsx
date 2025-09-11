@@ -136,7 +136,7 @@ export default function AchievementsPage() {
                       currentPerfectStreak++;
                   } else {
                       if (currentPerfectStreak > longestPerfectStreak) {
-                          longestPerfectStreak = currentPerfectStreak;
+                          longestPerfectStreak = longestPerfectStreak;
                       }
                       currentPerfectStreak = 0;
                   }

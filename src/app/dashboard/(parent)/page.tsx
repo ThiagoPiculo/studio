@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { Suspense } from 'react';
-import Loading from "./(parent)/loading";
+import Loading from "./loading";
 import SpaceSelector from "@/components/dashboard/SpaceSelector";
 import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';

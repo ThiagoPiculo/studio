@@ -3,7 +3,7 @@
 
 import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
-import Loading from '@/app/dashboard/loading';
+import Loading from '@/app/dashboard/(parent)/loading';
 import { getChildProfilesByOwner, getChildProfilesByFamily } from '@/lib/firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef, useCallback } from 'react';

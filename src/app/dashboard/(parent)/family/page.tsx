@@ -1477,7 +1477,7 @@ function FamilyPageContent() {
                         </AlertDialogContent>
                     </AlertDialog>
                 </div>
-                <CardDescription>Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista.</CardDescription>
+                 <CardDescription>Crie uma aliança para gerenciar os Mini Herois em conjunto com outro pai, mãe, responsável, especialista.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreateFamily}>
               <CardContent>
