@@ -17,7 +17,7 @@ import { FormField, FormItem, FormLabel, FormControl, FormMessage, FormDescripti
 import { RecurrenceDialog } from './RecurrenceDialog';
 import { formatRecurrenceSummary } from "@/lib/calendar-utils";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { TimePicker } from "./TimePicker"
+import { TimePicker } from "../school-schedule/TimePicker"
 
 const periodTimeRanges = {
     morning: { start: 6, end: 11, default: '09:00', label: 'Manhã (06:00 - 11:59)' },
@@ -92,47 +92,6 @@ export function RecurrenceControl() {
 
   return (
     <div className="space-y-6 rounded-lg border p-4">
-        <FormField
-            control={control}
-            name="isRecurring"
-            render={({ field }) => (
-            <FormItem className="flex flex-row items-center justify-between">
-                <div className='space-y-1'>
-                    <FormLabel>Repetir Missão</FormLabel>
-                    <FormDescription className="text-xs">
-                        Defina se a missão ocorre uma única vez ou se repete.
-                    </FormDescription>
-                </div>
-                <FormControl>
-                <Switch
-                    checked={field.value}
-                    onCheckedChange={(checked) => {
-                      const oldDateField = checked ? 'dueDate' : 'startDate';
-                      const oldDateValue = getValues(oldDateField) as Date | null;
-                      const preservedTime = oldDateValue ? format(oldDateValue, 'HH:mm') : periodTimeRanges[selectedPeriod].default;
-                      const [hour, minute] = preservedTime.split(':').map(Number);
-
-                      const newDate = new Date();
-                      newDate.setHours(hour, minute, 0, 0);
-                      
-                      field.onChange(checked);
-                      
-                      if (checked) {
-                          setValue('dueDate', null, { shouldValidate: true });
-                          setValue('startDate', newDate, { shouldValidate: true });
-                          setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
-                      } else {
-                          setValue('startDate', null, { shouldValidate: true });
-                          setValue('recurrenceRule', null, { shouldValidate: true });
-                          setValue('dueDate', newDate, { shouldValidate: true });
-                      }
-                    }}
-                />
-                </FormControl>
-            </FormItem>
-            )}
-        />
-        
         <div className="space-y-2">
             <Label>Período do Dia</Label>
             <ToggleGroup
@@ -183,6 +142,47 @@ export function RecurrenceControl() {
             />
         </div>
         
+        <FormField
+            control={control}
+            name="isRecurring"
+            render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between">
+                <div className='space-y-1'>
+                    <FormLabel>Repetir Missão</FormLabel>
+                    <FormDescription className="text-xs">
+                        Defina se a missão ocorre uma única vez ou se repete.
+                    </FormDescription>
+                </div>
+                <FormControl>
+                <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      const oldDateField = checked ? 'dueDate' : 'startDate';
+                      const oldDateValue = getValues(oldDateField) as Date | null;
+                      const preservedTime = oldDateValue ? format(oldDateValue, 'HH:mm') : periodTimeRanges[selectedPeriod].default;
+                      const [hour, minute] = preservedTime.split(':').map(Number);
+
+                      const newDate = new Date();
+                      newDate.setHours(hour, minute, 0, 0);
+                      
+                      field.onChange(checked);
+                      
+                      if (checked) {
+                          setValue('dueDate', null, { shouldValidate: true });
+                          setValue('startDate', newDate, { shouldValidate: true });
+                          setValue('recurrenceRule', { freq: 'DAILY', interval: 1 }, { shouldValidate: true });
+                      } else {
+                          setValue('startDate', null, { shouldValidate: true });
+                          setValue('recurrenceRule', null, { shouldValidate: true });
+                          setValue('dueDate', newDate, { shouldValidate: true });
+                      }
+                    }}
+                />
+                </FormControl>
+            </FormItem>
+            )}
+        />
+
         {isRecurring && (
             <div className="space-y-2 animate-in fade-in duration-300">
                 <Label>Regra de Repetição</Label>
