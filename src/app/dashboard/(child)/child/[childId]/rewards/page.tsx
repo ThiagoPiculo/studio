@@ -68,7 +68,7 @@ export default function ChildRewardsPage() {
     setIsProcessing(true);
     try {
       const actor = { id: child.id, name: child.name };
-      await redeemChildRewardInstance(rewardToRedeem.id, child.id, actor);
+      await redeemChildRewardInstance(rewardToRedeem, child.id, actor);
       
       // Optimistic Update
       setChild(prev => prev ? { ...prev, stars: prev.stars - rewardToRedeem.starsCost } : null);
