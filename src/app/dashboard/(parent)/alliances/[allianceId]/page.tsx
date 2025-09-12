@@ -19,6 +19,7 @@ import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { InviteMemberDialog } from '@/components/dashboard/family/InviteMemberDialog';
 import { MemberSettings } from '@/components/dashboard/family/MemberSettings';
+import { Badge } from '@/components/ui/badge';
 
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
