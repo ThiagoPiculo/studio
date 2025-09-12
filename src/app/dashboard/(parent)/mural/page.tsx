@@ -460,9 +460,9 @@ function MuralCompletoPageContent() {
                 }
             }
         }
-        if (currentPerfectStreak > longestPerfectStreak) {
-            longestPerfectStreak = longestPerfectStreak;
-        }
+    }
+    if (currentPerfectStreak > longestPerfectStreak) {
+        longestPerfectStreak = longestPerfectStreak;
     }
 
     setBadgeProgress({
@@ -938,7 +938,7 @@ function MuralCompletoPageContent() {
             <>
                 <TabsContent value="overview" className="space-y-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <UnlockedRewards childProfile={child} rewardTemplates={rewardTemplates} />
+                        <UnlockedRewards childrenProfiles={[child]} rewardTemplates={rewardTemplates} />
                     </div>
                 </TabsContent>
                 <TabsContent value="missions">
