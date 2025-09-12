@@ -30,6 +30,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Badge } from "@/components/ui/badge";
 
 interface MemberSettingsProps {
     member: UserProfile;
@@ -171,4 +172,3 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
       </>
     );
 }
-
