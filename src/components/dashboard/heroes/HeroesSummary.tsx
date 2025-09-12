@@ -29,6 +29,7 @@ import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CompleteMissionConfirmationDialog } from '../missions/CompleteMissionConfirmationDialog';
+import { missionToBlockMap } from '@/lib/mission-block-mapping';
 
 interface ActivityItem {
     id: string;
@@ -38,13 +39,27 @@ interface ActivityItem {
     emoji?: string;
     isCompleted?: boolean;
     data: MissionInstance | { startTime: string };
-    period: 'Manhã' | 'Tarde' | 'Noite' | null;
+    block: string;
 }
 
 interface HeroesSummaryProps {
   initialChildren: ChildProfile[];
   initialMissionInstances: MissionInstance[];
 }
+
+const blockOrder = [
+    'Rotina Hora de Acordar',
+    'Rotina Saindo para escola',
+    'Rotina Hora da Escola',
+    'Rotina Hora do Almoço',
+    'Rotina Tarefas Escolares',
+    'Atividades Extras',
+    'Rotina Lanche da tarde',
+    'Rotina Hora do Jantar',
+    'Rotina Hora de Dormir',
+    'Outras Atividades'
+];
+
 
 export function HeroesSummary({ initialChildren, initialMissionInstances }: HeroesSummaryProps) {
     const router = useRouter();
@@ -223,7 +238,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                     time: child.schoolShiftStart,
                                     title: 'Entrada na Escola',
                                     data: { startTime: child.schoolShiftStart },
-                                    period: getPeriodOfDay(parseTime(child.schoolShiftStart)),
+                                    block: 'Rotina Hora da Escola',
                                 });
                             }
                             if (child.schoolShiftEnd) {
@@ -233,13 +248,14 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                     time: child.schoolShiftEnd,
                                     title: 'Saída da Escola',
                                     data: { startTime: child.schoolShiftEnd },
-                                    period: getPeriodOfDay(parseTime(child.schoolShiftEnd)),
+                                    block: 'Rotina Hora da Escola',
                                 });
                             }
                         }
         
                         const missionActivities: ActivityItem[] = todaysMissions.map(m => {
                             const missionTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date();
+                            const block = missionToBlockMap[m.title] || (m.category === 'hobbies' ? 'Atividades Extras' : 'Outras Atividades');
                             return {
                                 id: m.id,
                                 type: 'mission',
@@ -248,7 +264,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                 emoji: m.emoji,
                                 isCompleted: isMissionCompletedForDate(m, today),
                                 data: m,
-                                period: getPeriodOfDay(missionTime),
+                                block: block,
                             };
                         });
                         
@@ -272,13 +288,22 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                     const isDayComplete = totalMissions > 0 && completedMissions.length === totalMissions;
 
                     const isExpanded = expandedChildId === child.id;
-                    const activitiesByPeriod = {
-                        Manhã: allTodaysActivities.filter(a => a.period === 'Manhã'),
-                        Tarde: allTodaysActivities.filter(a => a.period === 'Tarde'),
-                        Noite: allTodaysActivities.filter(a => a.period === 'Noite'),
-                    };
-                    const periodOrder: Array<'Manhã' | 'Tarde' | 'Noite'> = ['Manhã', 'Tarde', 'Noite'];
-                    const periodIcons = { Manhã: Sun, Tarde: CloudSun, Noite: Moon };
+                    const activitiesByBlock = allTodaysActivities.reduce((acc, activity) => {
+                        const blockName = activity.block || 'Outras Atividades';
+                        if (!acc[blockName]) {
+                            acc[blockName] = [];
+                        }
+                        acc[blockName].push(activity);
+                        return acc;
+                    }, {} as Record<string, ActivityItem[]>);
+
+                    const sortedBlockNames = Object.keys(activitiesByBlock).sort((a, b) => {
+                        const indexA = blockOrder.indexOf(a);
+                        const indexB = blockOrder.indexOf(b);
+                        if (indexA === -1) return 1;
+                        if (indexB === -1) return -1;
+                        return indexA - indexB;
+                    });
                     
 
                     return (
@@ -370,19 +395,12 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                      </div>
                                 ) : (
                                     <div className="space-y-3 min-h-[200px]">
-                                        {periodOrder.map(period => {
-                                            const activities = activitiesByPeriod[period];
-                                            if (activities.length === 0) return null;
-                                            const PeriodIcon = periodIcons[period];
-
+                                        {sortedBlockNames.map(blockName => {
+                                            const activities = activitiesByBlock[blockName];
                                             return (
-                                                <div key={period}>
-                                                    <h4 className={cn("flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider mb-1.5",
-                                                      period === 'Manhã' && "text-yellow-600",
-                                                      period === 'Tarde' && "text-orange-600",
-                                                      period === 'Noite' && "text-indigo-600",
-                                                    )}>
-                                                        <PeriodIcon className="h-4 w-4" /> {period}
+                                                <div key={blockName}>
+                                                    <h4 className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider mb-1.5 text-muted-foreground">
+                                                        {blockName}
                                                     </h4>
                                                     <div className="space-y-1.5">
                                                         {activities.map(item => {
@@ -440,7 +458,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                                         })}
                                                     </div>
                                                 </div>
-                                            )
+                                            );
                                         })}
                                     </div>
                                 )}
@@ -525,5 +543,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
 
     
 
+
+    
 
     
