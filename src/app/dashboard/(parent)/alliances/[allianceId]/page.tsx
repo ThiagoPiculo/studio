@@ -22,6 +22,7 @@ import { MemberSettings } from '@/components/dashboard/family/MemberSettings';
 import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 function AllianceManagementPage() {
@@ -148,22 +149,26 @@ function AllianceManagementPage() {
                                 <PopoverTrigger asChild>
                                     <Button variant="link" size="sm" className="p-0 h-auto text-sm">O que são os papéis?</Button>
                                 </PopoverTrigger>
-                                <PopoverContent className="w-80">
-                                    <div className="space-y-4">
-                                        <h4 className="font-medium leading-none">Papéis na Aliança</h4>
-                                        <p className="text-sm text-muted-foreground">
-                                          Em uma Aliança, existem diferentes papéis, cada um com permissões específicas para garantir que a colaboração seja organizada e segura.
-                                        </p>
-                                        <ul className="text-sm text-muted-foreground space-y-3">
-                                          <li><strong>👑 Proprietário (Owner)</strong>: O fundador da Aliança. Tem controle total, podendo convidar/remover qualquer membro e gerenciar os papéis de todos.</li>
-                                          <li><strong>🛡️ Co-Proprietário (Co-Owner)</strong>: O braço direito do proprietário. Pode gerenciar outros membros, exceto o proprietário e outros co-proprietários.</li>
-                                          <li><strong>❤️ Guardião (Guardian)</strong>: O colaborador do dia a dia. Este é o papel padrão para novos membros e permite criar, editar e gerenciar missões e recompensas.</li>
-                                          <li><strong>🧑‍🏫 Mentor</strong>: Um papel com acesso de "leitura". Ideal para um irmão mais velho ou parente que queira acompanhar e incentivar, mas sem poder de edição.</li>
-                                          <li><strong>🧐 Especialista (Specialist)</strong>: Também um papel de "leitura", focado em análise. Perfeito para terapeutas ou psicopedagogos que precisam ver o progresso, mas sem fazer alterações.</li>
-                                        </ul>
-                                        <p className="text-sm text-muted-foreground pt-2">
-                                            Essa estrutura permite que você convide diferentes pessoas para ajudar, cada uma com o nível de acesso apropriado para sua função no time de apoio do Mini Heroi.
-                                        </p>
+                                <PopoverContent className="w-80 p-0">
+                                    <ScrollArea className="max-h-[60vh] p-4">
+                                        <div className="space-y-4">
+                                            <h4 className="font-medium leading-none">Papéis na Aliança</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                              Em uma Aliança, existem diferentes papéis, cada um com permissões específicas para garantir que a colaboração seja organizada e segura.
+                                            </p>
+                                            <ul className="text-sm text-muted-foreground space-y-3">
+                                              <li><strong>👑 Proprietário (Owner)</strong>: O fundador da Aliança. Tem controle total, podendo convidar/remover qualquer membro e gerenciar os papéis de todos.</li>
+                                              <li><strong>🛡️ Co-Proprietário (Co-Owner)</strong>: O braço direito do proprietário. Pode gerenciar outros membros, exceto o proprietário e outros co-proprietários.</li>
+                                              <li><strong>❤️ Guardião (Guardian)</strong>: O colaborador do dia a dia. Este é o papel padrão para novos membros e permite criar, editar e gerenciar missões e recompensas.</li>
+                                              <li><strong>🧑‍🏫 Mentor</strong>: Um papel com acesso de "leitura". Ideal para um irmão mais velho ou parente que queira acompanhar e incentivar, mas sem poder de edição.</li>
+                                              <li><strong>🧐 Especialista (Specialist)</strong>: Também um papel de "leitura", focado em análise. Perfeito para terapeutas ou psicopedagogos que precisam ver o progresso, mas sem fazer alterações.</li>
+                                            </ul>
+                                            <p className="text-sm text-muted-foreground pt-2">
+                                                Essa estrutura permite que você convide diferentes pessoas para ajudar, cada uma com o nível de acesso apropriado para sua função no time de apoio do Mini Heroi.
+                                            </p>
+                                        </div>
+                                    </ScrollArea>
+                                    <div className="p-4 border-t">
                                         <PopoverClose asChild>
                                             <Button className="w-full">Entendi 👍</Button>
                                         </PopoverClose>
