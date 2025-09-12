@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button";
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2, Camera } from "lucide-react";
+import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2, Camera, Sun, CloudSun, Moon } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
@@ -17,7 +17,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { getTodaysMissions, getSchoolScheduleForChild, completeMissionInstance, reactivateMissionInstance, deleteMissionInstance } from '@/lib/firebase/firestore';
 import { Progress } from '@/components/ui/progress';
-import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday, getDateObject, parseTime } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, getDayToWeekday, getDateObject, parseTime, getPeriodOfDay } from '@/lib/calendar-utils';
 import { getDay, startOfDay, format as formatDateFns } from 'date-fns';
 import { HeroSelector } from '@/components/dashboard/dashboard/HeroSelector';
 import { weekdayLabels } from '@/lib/types';
@@ -38,6 +38,7 @@ interface ActivityItem {
     emoji?: string;
     isCompleted?: boolean;
     data: MissionInstance | { startTime: string };
+    period: 'Manhã' | 'Tarde' | 'Noite' | null;
 }
 
 interface HeroesSummaryProps {
@@ -63,7 +64,6 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
     
     const [confirmingMission, setConfirmingMission] = useState<MissionInstance | null>(null);
     
-    // Effect to update internal state if initial props change (e.g., due to context switch)
     useEffect(() => {
         setChildren(initialChildren);
         setMissionInstances(initialMissionInstances);
@@ -106,7 +106,6 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
 
         const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
         
-        // Optimistic UI Update
         const originalInstances = missionInstances;
         const originalChildren = children;
 
@@ -142,7 +141,6 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                 ? await reactivateMissionInstance(mission.id, date, actor)
                 : await completeMissionInstance(mission.id, date, actor);
             
-            // Sync with server state if successful
             if (updatedChildProfile) {
                 setChildren(prevChildren =>
                     prevChildren.map(c => 
@@ -157,7 +155,6 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         } catch (error) {
             console.error("Error toggling mission completion:", error);
             toast({ title: "Erro ao atualizar missão", variant: "destructive" });
-            // Revert on error
             setMissionInstances(originalInstances);
             setChildren(originalChildren);
         } finally {
@@ -212,59 +209,76 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                 {filteredChildren.map(child => {
                     const today = startOfDay(new Date());
 
-                    const todaysMissions = missionInstances
-                        .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
-
-                    const schoolActivities: ActivityItem[] = [];
-                    const isWeekday = getDay(today) >= 1 && getDay(today) <= 5;
-                    if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable') {
-                        if (child.schoolShiftStart) {
-                            schoolActivities.push({
-                                id: 'school-start',
-                                type: 'school',
-                                time: child.schoolShiftStart,
-                                title: 'Entrada na Escola',
-                                data: { startTime: child.schoolShiftStart }
-                            });
+                    const allTodaysActivities: ActivityItem[] = useMemo(() => {
+                        const todaysMissions = missionInstances
+                          .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
+        
+                        const schoolActivities: ActivityItem[] = [];
+                        const isWeekday = getDay(today) >= 1 && getDay(today) <= 5;
+                        if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable') {
+                            if (child.schoolShiftStart) {
+                                schoolActivities.push({
+                                    id: 'school-start',
+                                    type: 'school',
+                                    time: child.schoolShiftStart,
+                                    title: 'Entrada na Escola',
+                                    data: { startTime: child.schoolShiftStart },
+                                    period: getPeriodOfDay(parseTime(child.schoolShiftStart)),
+                                });
+                            }
+                            if (child.schoolShiftEnd) {
+                                 schoolActivities.push({
+                                    id: 'school-end',
+                                    type: 'school',
+                                    time: child.schoolShiftEnd,
+                                    title: 'Saída da Escola',
+                                    data: { startTime: child.schoolShiftEnd },
+                                    period: getPeriodOfDay(parseTime(child.schoolShiftEnd)),
+                                });
+                            }
                         }
-                        if (child.schoolShiftEnd) {
-                             schoolActivities.push({
-                                id: 'school-end',
-                                type: 'school',
-                                time: child.schoolShiftEnd,
-                                title: 'Saída da Escola',
-                                data: { startTime: child.schoolShiftEnd }
-                            });
-                        }
-                    }
+        
+                        const missionActivities: ActivityItem[] = todaysMissions.map(m => {
+                            const missionTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date();
+                            return {
+                                id: m.id,
+                                type: 'mission',
+                                time: formatDateFns(missionTime, 'HH:mm'),
+                                title: m.title,
+                                emoji: m.emoji,
+                                isCompleted: isMissionCompletedForDate(m, today),
+                                data: m,
+                                period: getPeriodOfDay(missionTime),
+                            };
+                        });
+                        
+                        return [...missionActivities, ...schoolActivities].sort((a, b) => a.time.localeCompare(b.time));
 
-                    const allTodaysActivities = [
-                        ...todaysMissions.map(m => ({
-                            id: m.id,
-                            type: 'mission',
-                            time: formatDateFns(getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date(), 'HH:mm'),
-                            title: m.title,
-                            emoji: m.emoji,
-                            isCompleted: isMissionCompletedForDate(m, today),
-                            data: m,
-                        }) as ActivityItem),
-                        ...schoolActivities
-                    ].sort((a, b) => a.time.localeCompare(b.time));
+                    }, [missionInstances, child, today]);
 
-                    const completedMissions = todaysMissions.filter(m => isMissionCompletedForDate(m, today));
-                    const progress = todaysMissions.length > 0 ? (completedMissions.length / todaysMissions.length) * 100 : 0;
+                    const completedMissions = allTodaysActivities.filter(a => a.type === 'mission' && a.isCompleted);
+                    const totalMissions = allTodaysActivities.filter(a => a.type === 'mission').length;
+                    const progress = totalMissions > 0 ? (completedMissions.length / totalMissions) * 100 : 0;
                     
                     const todaysGains = completedMissions.reduce((acc, mission) => {
-                        acc.stars += mission.starsReward;
+                        acc.stars += (mission.data as MissionInstance).starsReward;
                         return acc;
                     }, { stars: 0 });
 
-                    const totalStarsToday = todaysMissions.reduce((total, mission) => total + mission.starsReward, 0);
-                    const isDayComplete = todaysMissions.length > 0 && completedMissions.length === todaysMissions.length;
+                    const totalStarsToday = allTodaysActivities
+                        .filter(a => a.type === 'mission')
+                        .reduce((total, mission) => total + (mission.data as MissionInstance).starsReward, 0);
+
+                    const isDayComplete = totalMissions > 0 && completedMissions.length === totalMissions;
 
                     const isExpanded = expandedChildId === child.id;
-                    const displayActivities = isExpanded ? allTodaysActivities : allTodaysActivities.slice(0, 5);
-                    const remainingCount = allTodaysActivities.length - 5;
+                    const activitiesByPeriod = {
+                        Manhã: allTodaysActivities.filter(a => a.period === 'Manhã'),
+                        Tarde: allTodaysActivities.filter(a => a.period === 'Tarde'),
+                        Noite: allTodaysActivities.filter(a => a.period === 'Noite'),
+                    };
+                    const periodOrder: Array<'Manhã' | 'Tarde' | 'Noite'> = ['Manhã', 'Tarde', 'Noite'];
+                    const periodIcons = { Manhã: Sun, Tarde: CloudSun, Noite: Moon };
                     
 
                     return (
@@ -341,116 +355,95 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                         </Badge>
                                     </div>
                                     <div className="space-y-1">
-                                        <Label className="text-xs text-muted-foreground">Missões de Hoje: {completedMissions.length} de {todaysMissions.length}</Label>
+                                        <Label className="text-xs text-muted-foreground">Missões de Hoje: {completedMissions.length} de {totalMissions}</Label>
                                         <Progress value={progress} className="h-2" />
                                     </div>
                                 </div>
                             </CardContent>
 
                             <CardContent className="p-4 pt-0 flex-grow">
-                                <Tabs defaultValue="today" className="w-full">
-                                    <TabsList className="grid w-full grid-cols-2 h-9">
-                                        <TabsTrigger value="today" className="h-full text-xs sm:text-sm">
-                                            <Target className="mr-2 h-4 w-4" />
-                                            Missões de Hoje
-                                        </TabsTrigger>
-                                        <TabsTrigger value="schedule" className="h-full text-xs sm:text-sm" onClick={() => handleExpandClick(child.id)}>
-                                            <NotebookPen className="mr-2 h-4 w-4" />
-                                            Agenda Escolar
-                                        </TabsTrigger>
-                                    </TabsList>
-                                    <TabsContent value="today" className="mt-2 space-y-1.5 min-h-[200px] pr-2">
-                                        {allTodaysActivities.length === 0 ? (
-                                            <div className="flex items-center justify-center h-full text-sm text-muted-foreground italic">Nenhuma atividade agendada para hoje.</div>
-                                        ) : (
-                                            <>
-                                                {displayActivities.map(item => {
-                                                    if(item.type === 'school') {
-                                                         return (
-                                                            <div key={item.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
-                                                                <div className="text-indigo-700 font-mono text-xs w-10 text-center">{item.time}</div>
-                                                                <NotebookPen className="h-4 w-4 text-indigo-600" />
-                                                                <span className="font-semibold text-indigo-800">{item.title}</span>
-                                                            </div>
-                                                        );
-                                                    }
-                                                    
-                                                    const mission = item.data as MissionInstance;
-                                                    
-                                                    return (
-                                                        <div key={mission.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", item.isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
-                                                            <div className="flex items-center gap-2 flex-grow min-w-0">
-                                                                <div className="text-muted-foreground font-mono text-xs w-10 text-center">{item.time}</div>
-                                                                <span className="text-xl shrink-0 w-5 text-center">{item.emoji || '🎯'}</span>
-                                                                <span className={cn("truncate font-medium", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-1 flex-shrink-0">
-                                                                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, today, !!item.isCompleted)} disabled={processingMissionId === mission.id}>
-                                                                    {processingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : item.isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
-                                                                </Button>
-                                                                <DropdownMenu>
-                                                                    <DropdownMenuTrigger asChild>
-                                                                        <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                            <MoreVertical className="h-4 w-4" />
+                                {allTodaysActivities.length === 0 ? (
+                                     <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic text-center p-4 border-2 border-dashed rounded-lg min-h-[200px]">
+                                        <Smile className="h-8 w-8 mb-2 text-primary/50" />
+                                        <p className="font-semibold">Nenhuma missão para hoje!</p>
+                                        <p>Aproveite o dia livre ou adicione uma nova missão.</p>
+                                     </div>
+                                ) : (
+                                    <div className="space-y-3 min-h-[200px]">
+                                        {periodOrder.map(period => {
+                                            const activities = activitiesByPeriod[period];
+                                            if (activities.length === 0) return null;
+                                            const PeriodIcon = periodIcons[period];
+
+                                            return (
+                                                <div key={period}>
+                                                    <h4 className={cn("flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider mb-1.5",
+                                                      period === 'Manhã' && "text-yellow-600",
+                                                      period === 'Tarde' && "text-orange-600",
+                                                      period === 'Noite' && "text-indigo-600",
+                                                    )}>
+                                                        <PeriodIcon className="h-4 w-4" /> {period}
+                                                    </h4>
+                                                    <div className="space-y-1.5">
+                                                        {activities.map(item => {
+                                                             if(item.type === 'school') {
+                                                                return (
+                                                                    <div key={item.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-indigo-500/10 border-l-4 border-indigo-500">
+                                                                        <div className="text-indigo-700 font-mono text-xs w-10 text-center">{item.time}</div>
+                                                                        <NotebookPen className="h-4 w-4 text-indigo-600" />
+                                                                        <span className="font-semibold text-indigo-800">{item.title}</span>
+                                                                    </div>
+                                                                );
+                                                            }
+                                                            
+                                                            const mission = item.data as MissionInstance;
+                                                            
+                                                            return (
+                                                                <div key={mission.id} className={cn("p-1.5 rounded-md text-sm flex items-center gap-2", item.isCompleted ? 'bg-green-500/10' : 'bg-muted/40')}>
+                                                                    <div className="flex items-center gap-2 flex-grow min-w-0">
+                                                                        <div className="text-muted-foreground font-mono text-xs w-10 text-center">{item.time}</div>
+                                                                        <span className="text-xl shrink-0 w-5 text-center">{item.emoji || '🎯'}</span>
+                                                                        <span className={cn("truncate font-medium", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-1 flex-shrink-0">
+                                                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, today, !!item.isCompleted)} disabled={processingMissionId === mission.id}>
+                                                                            {processingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : item.isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
                                                                         </Button>
-                                                                    </DropdownMenuTrigger>
-                                                                    <DropdownMenuContent align="end">
-                                                                        <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                                                                            <div className="flex items-center justify-between gap-4">
-                                                                                <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{mission.starsReward}</span>
-                                                                            </div>
-                                                                        </DropdownMenuLabel>
-                                                                        <DropdownMenuSeparator />
-                                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
-                                                                            Ver na Agenda
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${mission.templateId}`)}>
-                                                                            Editar Missão
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuSeparator />
-                                                                        <DropdownMenuItem onSelect={() => setMissionToDelete(mission)} className="text-destructive">
-                                                                            Remover Atribuição
-                                                                        </DropdownMenuItem>
-                                                                    </DropdownMenuContent>
-                                                                </DropdownMenu>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                                {remainingCount > 0 && (
-                                                    <Button variant="link" size="sm" className="w-full text-xs h-auto py-1" onClick={() => handleExpandClick(child.id)}>
-                                                        {isExpanded ? "Mostrar menos" : `Ver +${remainingCount} atividades`}
-                                                        {isExpanded ? <ChevronUp className="ml-1 h-3 w-3" /> : <ChevronDown className="ml-1 h-3 w-3" />}
-                                                    </Button>
-                                                )}
-                                            </>
-                                        )}
-                                    </TabsContent>
-                                    <TabsContent value="schedule" className="mt-2 space-y-1.5 h-[145px] overflow-y-auto pr-2">
-                                        {isLoadingSchedules && expandedChildId === child.id ? (
-                                            <div className="flex items-center justify-center h-full"><Loader2 className="h-5 w-5 animate-spin" /></div>
-                                        ) : getTodaysSchedule(child.id).length === 0 ? (
-                                            <div className="flex flex-col items-center justify-center h-full text-sm text-muted-foreground italic text-center p-2">
-                                                <NotebookPen className="h-8 w-8 mb-2 text-primary/50" />
-                                                <p className="font-semibold">A Agenda Escolar na Palma da Mão</p>
-                                                <p className="text-xs mt-1">Cadastre as aulas do seu herói para ter a agenda de matérias do dia sempre à mão.</p>
-                                                <Button asChild variant="secondary" size="sm" className="mt-3">
-                                                    <Link href={`/dashboard/school-schedule?childId=${child.id}`}>
-                                                        Criar Agenda Escolar
-                                                    </Link>
-                                                </Button>
-                                            </div>
-                                        ) : (
-                                            getTodaysSchedule(child.id).map(entry => (
-                                                <div key={entry.id} className="p-1.5 rounded-md text-sm flex items-center gap-2 bg-muted/40">
-                                                    <div className="text-muted-foreground font-mono text-xs w-10 text-center">{entry.startTime}</div>
-                                                    <div className="h-4 w-4 flex items-center justify-center" style={{ color: entry.color }}>•</div>
-                                                    <span className="truncate">{entry.subject}</span>
+                                                                        <DropdownMenu>
+                                                                            <DropdownMenuTrigger asChild>
+                                                                                <Button variant="ghost" size="icon" className="h-6 w-6">
+                                                                                    <MoreVertical className="h-4 w-4" />
+                                                                                </Button>
+                                                                            </DropdownMenuTrigger>
+                                                                            <DropdownMenuContent align="end">
+                                                                                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                                                                                    <div className="flex items-center justify-between gap-4">
+                                                                                        <span className="flex items-center gap-1.5 text-amber-600"><Star className="h-3.5 w-3.5" /> +{mission.starsReward}</span>
+                                                                                    </div>
+                                                                                </DropdownMenuLabel>
+                                                                                <DropdownMenuSeparator />
+                                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/agenda?childId=${child.id}`)}>
+                                                                                    Ver na Agenda
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuItem onSelect={() => router.push(`/dashboard/missions/edit/${mission.templateId}`)}>
+                                                                                    Editar Missão
+                                                                                </DropdownMenuItem>
+                                                                                <DropdownMenuSeparator />
+                                                                                <DropdownMenuItem onSelect={() => setMissionToDelete(mission)} className="text-destructive">
+                                                                                    Remover Atribuição
+                                                                                </DropdownMenuItem>
+                                                                            </DropdownMenuContent>
+                                                                        </DropdownMenu>
+                                                                    </div>
+                                                                </div>
+                                                            )
+                                                        })}
+                                                    </div>
                                                 </div>
-                                            ))
-                                        )}
-                                    </TabsContent>
-                                </Tabs>
+                                            )
+                                        })}
+                                    </div>
+                                )}
                             </CardContent>
                              <CardFooter className="grid grid-cols-3 gap-1 p-1 border-t bg-muted/20 mt-auto">
                                 <div className="p-2 text-center space-y-1">
@@ -529,5 +522,8 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         </div>
     );
 }
+
+    
+
 
     
