@@ -11,7 +11,7 @@ import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2 } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -20,6 +20,9 @@ import { useToast } from '@/hooks/use-toast';
 import { InviteMemberDialog } from '@/components/dashboard/family/InviteMemberDialog';
 import { MemberSettings } from '@/components/dashboard/family/MemberSettings';
 import { Badge } from '@/components/ui/badge';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { PopoverClose } from '@radix-ui/react-popover';
+
 
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
@@ -139,7 +142,33 @@ function AllianceManagementPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Membros da Aliança ({members.length})</CardTitle>
+                        <div className="flex items-center gap-2">
+                            <CardTitle>Membros da Aliança ({members.length})</CardTitle>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <Button variant="link" size="sm" className="p-0 h-auto text-sm">O que são os papéis?</Button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-80">
+                                    <div className="space-y-4">
+                                        <h4 className="font-medium leading-none">Papéis na Aliança</h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          Em uma Aliança, existem diferentes papéis, cada um com permissões específicas para garantir que a colaboração seja organizada e segura.
+                                        </p>
+                                        <ul className="text-sm text-muted-foreground space-y-3">
+                                          <li><strong>👑 Proprietário (Owner)</strong>: O fundador da Aliança. Tem controle total, podendo convidar/remover qualquer membro e gerenciar os papéis de todos.</li>
+                                          <li><strong>🛡️ Co-Proprietário (Co-Owner)</strong>: O braço direito do proprietário. Pode gerenciar outros membros, exceto o proprietário e outros co-proprietários.</li>
+                                          <li><strong>❤️ Guardião (Guardian)</strong>: O colaborador do dia a dia. Este é o papel padrão para novos membros e permite criar, editar e gerenciar missões e recompensas.</li>
+                                          <li><strong>🧑‍🏫 Mentor</strong>: Um papel com acesso de "leitura". Ideal para um irmão mais velho ou parente que queira acompanhar e incentivar, mas sem poder de edição.</li>
+                                          <li><strong>🧐 Especialista (Specialist)</strong>: Também um papel de "leitura", focado em análise. Perfeito para terapeutas ou psicopedagogos que precisam ver o progresso, mas sem fazer alterações.</li>
+                                        </ul>
+                                        <p className="text-sm text-muted-foreground pt-2">
+                                            Essa estrutura permite que você convide diferentes pessoas para ajudar, cada uma com o nível de acesso apropriado para sua função no time de apoio do Mini Heroi.
+                                        </p>
+                                        <PopoverClose asChild><Button className="w-full">Entendi</Button></PopoverClose>
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </div>
                         <CardDescription>Gerencie os papéis e o acesso dos colaboradores.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
@@ -192,5 +221,3 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
-
-    
