@@ -49,7 +49,7 @@ export default function WelcomePage() {
                 <CardDescription className="text-base text-muted-foreground mb-6">
                     Complete missões, ganhe estrelas e desbloqueie recompensas. Sua jornada de heroi começa aqui.
                 </CardDescription>
-                <Link href="/child-login" passHref>
+                <Link href="/dashboard/child-login" passHref>
                     <Button size="lg" className="w-full rounded-xl text-lg shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                         Começar Jornada
                     </Button>

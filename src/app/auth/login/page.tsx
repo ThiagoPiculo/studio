@@ -102,7 +102,7 @@ export default function LoginPage() {
             </p>
             <p>
                 É um Mini Heroi?{' '}
-                <Link href="/child-login" className="font-medium text-primary hover:underline">
+                <Link href="/dashboard/child-login" className="font-medium text-primary hover:underline">
                     Entre e complete missões
                 </Link>
             </p>

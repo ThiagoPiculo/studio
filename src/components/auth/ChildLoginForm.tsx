@@ -47,7 +47,7 @@ export function ChildLoginForm() {
       if (childProfile) {
         setChildAuthenticatedState(childProfile);
         toast({ title: "Portal Desbloqueado!", description: `Bem-vindo(a) à aventura, ${childProfile.name}!` });
-        router.push(`/dashboard/child/${childProfile.id}`);
+        router.push(`/dashboard/${childProfile.id}`);
       } else {
         toast({
           title: "Ops! Código Mágico Errado",
