@@ -8,7 +8,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { getFamilyMembers, getChildProfilesByFamily, getFamilyById, getPendingJoinRequestsForFamily } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2 } from 'lucide-react';
