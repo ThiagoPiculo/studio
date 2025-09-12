@@ -5,8 +5,8 @@ import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getChildProfilesByFamily, getFamilyById, getPendingJoinRequestsForFamily } from '@/lib/firebase/firestore';
-import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation } from '@/lib/types';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships } from '@/lib/firebase/firestore';
+import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -31,7 +31,7 @@ function AllianceManagementPage() {
 
     const [alliance, setAlliance] = useState<Family | null>(null);
     const [members, setMembers] = useState<UserProfile[]>([]);
-    const [children, setChildren] = useState<ChildProfile[]>([]);
+    const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
     const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -39,7 +39,7 @@ function AllianceManagementPage() {
 
     const isOwner = useMemo(() => currentRole === 'Owner', [currentRole]);
 
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         if (!allianceId || !user) {
             router.push('/dashboard/alliances');
             return;
@@ -47,10 +47,10 @@ function AllianceManagementPage() {
 
         setIsLoading(true);
         try {
-            const [allianceData, membersData, childrenData, requestsData] = await Promise.all([
+            const [allianceData, membersData, membershipsData, requestsData] = await Promise.all([
                 getFamilyById(allianceId),
                 getFamilyMembers(allianceId),
-                getChildProfilesByFamily(allianceId),
+                getFamilyMemberships(allianceId),
                 isOwner ? getPendingJoinRequestsForFamily(allianceId) : Promise.resolve([]),
             ]);
 
@@ -62,7 +62,7 @@ function AllianceManagementPage() {
 
             setAlliance(allianceData);
             setMembers(membersData);
-            setChildren(childrenData);
+            setMemberships(membershipsData);
             setJoinRequests(requestsData);
 
         } catch (error) {
@@ -72,11 +72,11 @@ function AllianceManagementPage() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [allianceId, user, router, toast, isOwner]);
     
     useEffect(() => {
         fetchData();
-    }, [allianceId, user]);
+    }, [fetchData]);
     
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code);
@@ -90,9 +90,17 @@ function AllianceManagementPage() {
     if (!alliance) {
         return <div>Aliança não encontrada.</div>;
     }
+    
+    const membersWithRoles = members.map(member => {
+        const membership = memberships.find(m => m.userId === member.uid);
+        return {
+            ...member,
+            role: membership?.role || 'Guardian' // Default to Guardian if somehow missing
+        };
+    });
 
-    const owner = members.find(m => m.uid === alliance.ownerId);
-    const otherMembers = members.filter(m => m.uid !== alliance.ownerId);
+    const owner = membersWithRoles.find(m => m.uid === alliance.ownerId);
+    const otherMembers = membersWithRoles.filter(m => m.uid !== alliance.ownerId);
 
     return (
         <>
@@ -153,26 +161,6 @@ function AllianceManagementPage() {
                     </CardFooter>
                 </Card>
 
-                 <Card>
-                    <CardHeader>
-                        <CardTitle>Mini Herois Gerenciados ({children.length})</CardTitle>
-                        <CardDescription>Estes são os heróis sob a responsabilidade desta aliança.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {children.map(child => (
-                           <Link key={child.id} href={`/dashboard/mural?childId=${child.id}`}>
-                             <div className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/30 transition-colors">
-                                <Avatar className="h-10 w-10 ring-2 ring-offset-background ring-[var(--ring-color)]" style={{'--ring-color': child.color} as React.CSSProperties}>
-                                    <AvatarImage src={child.avatar} alt={child.name} />
-                                    <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
-                                </Avatar>
-                                <span className="font-semibold">{child.name}</span>
-                             </div>
-                           </Link>
-                        ))}
-                    </CardContent>
-                </Card>
-
             </div>
             
             <InviteMemberDialog
@@ -194,3 +182,5 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
+
+    
