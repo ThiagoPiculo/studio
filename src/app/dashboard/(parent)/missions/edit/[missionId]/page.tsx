@@ -268,7 +268,7 @@ export default function EditMissionTemplatePage() {
                           <FormControl>
                             <Input placeholder="Ex: Arrumar a cama" {...field} />
                           </FormControl>
-                          <FormMessage />
+                          <FormMessage/>
                         </FormItem>
                       )}
                     />
