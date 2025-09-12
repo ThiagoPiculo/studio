@@ -40,7 +40,7 @@ import type { PredefinedMissionIdea } from '@/lib/predefined-missions';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ShareMissionDialog } from '@/components/dashboard/missions/ShareMissionDialog';
-import { PostAssignmentSuccessDialog } from '../missions/PostAssignmentSuccessDialog';
+import { PostAssignmentSuccessDialog } from '@/components/dashboard/missions/PostAssignmentSuccessDialog';
 
 
 function MissionsHubContent() {
