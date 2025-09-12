@@ -55,13 +55,13 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
     : '/dashboard/achievements';
 
   return (
-    <Card className="flex flex-col">
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Medal className="text-chart-5" />
-          Medalhas Conquistadas
+          Medalhas em Destaque
         </CardTitle>
-        <CardDescription>As últimas medalhas desbloqueadas pelos seus heróis.</CardDescription>
+        {singleChildProfile && <CardDescription>As últimas medalhas do herói.</CardDescription>}
       </CardHeader>
       <CardContent className="flex-grow">
         {recentMedals.length === 0 ? (
