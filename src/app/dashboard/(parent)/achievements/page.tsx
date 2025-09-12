@@ -109,13 +109,13 @@ function AchievementsPageContent() {
              {selectedBadge && (
                 <DialogContent>
                     <DialogHeader className="items-center text-center">
-                    <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
-                        <selectedBadge.icon className="h-12 w-12 text-white" />
-                    </div>
-                    <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
-                    <DialogDescription className="text-base text-muted-foreground pt-2">
-                        {selectedBadge.description}
-                    </DialogDescription>
+                        <div className="p-4 rounded-full mb-4" style={{ backgroundColor: selectedBadge.color }}>
+                            <selectedBadge.icon className="h-12 w-12 text-white" />
+                        </div>
+                        <DialogTitle className="text-2xl font-headline">{selectedBadge.title}</DialogTitle>
+                        <DialogDescription className="text-base text-muted-foreground pt-2">
+                            {selectedBadge.description}
+                        </DialogDescription>
                     </DialogHeader>
                     
                     <div className="text-center pt-2">
