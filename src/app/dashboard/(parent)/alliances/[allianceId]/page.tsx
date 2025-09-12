@@ -99,8 +99,10 @@ function AllianceManagementPage() {
         };
     });
 
-    const owner = membersWithRoles.find(m => m.uid === alliance.ownerId);
-    const otherMembers = membersWithRoles.filter(m => m.uid !== alliance.ownerId);
+    const currentUserAsMember = membersWithRoles.find(m => m.uid === user?.uid);
+    const owner = membersWithRoles.find(m => m.uid === alliance.ownerId && m.uid !== user?.uid);
+    const otherMembers = membersWithRoles.filter(m => m.uid !== alliance.ownerId && m.uid !== user?.uid);
+
 
     return (
         <>
@@ -132,13 +134,6 @@ function AllianceManagementPage() {
                                 </Button>
                             </div>
                         </div>
-                        <div className="flex items-center justify-between gap-2 p-3 rounded-md bg-muted border">
-                            <span className="text-sm font-semibold">Seu Papel:</span>
-                             <Badge variant="secondary" className="text-base">
-                                <Shield className="mr-2 h-4 w-4" />
-                                {familyRoles.find(r => r.id === currentRole)?.label || 'Não definido'}
-                            </Badge>
-                        </div>
                     </CardContent>
                 </Card>
 
@@ -148,8 +143,23 @@ function AllianceManagementPage() {
                         <CardDescription>Gerencie os papéis e o acesso dos colaboradores.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {owner && <MemberSettings member={owner} isOwner={true} />}
-                        {otherMembers.length > 0 && <Separator />}
+                        {currentUserAsMember && (
+                            <>
+                                <h3 className="text-sm font-semibold text-muted-foreground">Seu Perfil</h3>
+                                <MemberSettings member={currentUserAsMember} isOwner={currentUserAsMember.uid === alliance.ownerId} />
+                                <Separator className="my-6"/>
+                            </>
+                        )}
+                        
+                        {owner && (
+                            <>
+                                <h3 className="text-sm font-semibold text-muted-foreground">Proprietário</h3>
+                                <MemberSettings member={owner} isOwner={true} />
+                                <Separator className="my-6"/>
+                            </>
+                        )}
+                        
+                        {otherMembers.length > 0 && <h3 className="text-sm font-semibold text-muted-foreground">Colaboradores</h3>}
                         {otherMembers.map(member => (
                             <MemberSettings key={member.uid} member={member} isOwner={false} />
                         ))}
@@ -182,3 +192,5 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
+
+    
