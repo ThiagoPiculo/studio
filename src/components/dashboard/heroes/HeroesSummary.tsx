@@ -47,20 +47,6 @@ interface HeroesSummaryProps {
   initialMissionInstances: MissionInstance[];
 }
 
-const blockOrder = [
-    'Rotina Hora de Acordar',
-    'Rotina Saindo para escola',
-    'Rotina Hora da Escola',
-    'Rotina Hora do Almoço',
-    'Rotina Tarefas Escolares',
-    'Atividades Extras',
-    'Rotina Lanche da tarde',
-    'Rotina Hora do Jantar',
-    'Rotina Hora de Dormir',
-    'Outras Atividades'
-];
-
-
 export function HeroesSummary({ initialChildren, initialMissionInstances }: HeroesSummaryProps) {
     const router = useRouter();
     const { user } = useAuth();
@@ -238,7 +224,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                     time: child.schoolShiftStart,
                                     title: 'Entrada na Escola',
                                     data: { startTime: child.schoolShiftStart },
-                                    block: 'Rotina Hora da Escola',
+                                    block: 'Hora da Escola',
                                 });
                             }
                             if (child.schoolShiftEnd) {
@@ -248,14 +234,14 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                     time: child.schoolShiftEnd,
                                     title: 'Saída da Escola',
                                     data: { startTime: child.schoolShiftEnd },
-                                    block: 'Rotina Hora da Escola',
+                                    block: 'Hora da Escola',
                                 });
                             }
                         }
         
                         const missionActivities: ActivityItem[] = todaysMissions.map(m => {
                             const missionTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date();
-                            const block = missionToBlockMap[m.title] || (m.category === 'hobbies' ? 'Atividades Extras' : 'Outras Atividades');
+                            const block = (missionToBlockMap[m.title] || (m.category === 'hobbies' ? 'Atividades Extras' : 'Outras Atividades')).replace('Rotina ', '');
                             return {
                                 id: m.id,
                                 type: 'mission',
@@ -298,14 +284,11 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                     }, {} as Record<string, ActivityItem[]>);
 
                     const sortedBlockNames = Object.keys(activitiesByBlock).sort((a, b) => {
-                        const indexA = blockOrder.indexOf(a);
-                        const indexB = blockOrder.indexOf(b);
-                        if (indexA === -1) return 1;
-                        if (indexB === -1) return -1;
-                        return indexA - indexB;
+                        const firstActivityTimeA = activitiesByBlock[a][0]?.time || '23:59';
+                        const firstActivityTimeB = activitiesByBlock[b][0]?.time || '23:59';
+                        return firstActivityTimeA.localeCompare(firstActivityTimeB);
                     });
                     
-
                     return (
                         <Card key={child.id} className="shadow-lg hover:shadow-xl transition-shadow flex flex-col">
                              <CardHeader className="p-4">
