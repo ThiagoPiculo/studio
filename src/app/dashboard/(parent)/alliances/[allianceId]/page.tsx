@@ -164,7 +164,9 @@ function AllianceManagementPage() {
                                         <p className="text-sm text-muted-foreground pt-2">
                                             Essa estrutura permite que você convide diferentes pessoas para ajudar, cada uma com o nível de acesso apropriado para sua função no time de apoio do Mini Heroi.
                                         </p>
-                                        <PopoverClose asChild><Button className="w-full">Entendi</Button></PopoverClose>
+                                        <PopoverClose asChild>
+                                            <Button className="w-full">Entendi 👍</Button>
+                                        </PopoverClose>
                                     </div>
                                 </PopoverContent>
                             </Popover>
