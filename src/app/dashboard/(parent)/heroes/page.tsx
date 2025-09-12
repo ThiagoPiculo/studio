@@ -21,6 +21,9 @@ function HeroesPageContent() {
     const fetchData = useCallback(async () => {
         if (!user) {
             setIsLoadingData(false);
+            setChildren([]);
+            setMissions([]);
+            setRewards([]);
             return;
         }
         
@@ -51,11 +54,12 @@ function HeroesPageContent() {
         }
     }, [user, currentContext, authLoading, isFamilyLoading, fetchData]);
 
-
+    // This consolidated check ensures hooks are always called in the same order.
     if (authLoading || isFamilyLoading || isLoadingData || children === null || missions === null || rewards === null) {
         return <Loading />;
     }
     
+    // After loading, we can safely decide what to render.
     if (children.length === 0) {
         return (
             <GettingStartedGuide 
