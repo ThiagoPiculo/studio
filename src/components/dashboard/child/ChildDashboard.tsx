@@ -39,7 +39,6 @@ export function ChildDashboard() {
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
-  const [confirmingMission, setConfirmingMission] = useState<{ instance: MissionInstance; date: Date } | null>(null);
 
   useEffect(() => {
     // Redirect if not the correct child or not authenticated
@@ -78,10 +77,11 @@ export function ChildDashboard() {
       });
   }, [missionInstances]);
   
-  const triggerToggleCompletion = async (mission: MissionInstance, isCompleted: boolean) => {
+  const handleToggleCompletion = async (mission: MissionInstance) => {
     if (!child) return;
     setProcessingMissionId(mission.id);
 
+    const isCompleted = isMissionCompletedForDate(mission, new Date());
     const today = startOfDay(new Date());
     const dateKey = formatDateFns(today, 'yyyy-MM-dd');
     
@@ -93,6 +93,7 @@ export function ChildDashboard() {
           if (isCompleted) {
             delete newLog[dateKey];
           } else {
+            // The child is the actor
             newLog[dateKey] = { completedAt: new Date() as any, stars: mission.starsReward, actorId: child.id, actorName: child.name };
           }
           return { ...inst, completionLog: newLog };
@@ -103,6 +104,7 @@ export function ChildDashboard() {
      setChild(prev => prev ? ({ ...prev, stars: prev.stars + (isCompleted ? -mission.starsReward : mission.starsReward) }) : null);
 
     try {
+        // The child is always the actor in this view
         const actor = { id: child.id, name: child.name };
         isCompleted
             ? await reactivateMissionInstance(mission.id, today, actor)
@@ -115,19 +117,9 @@ export function ChildDashboard() {
         setChild(child);
     } finally {
         setProcessingMissionId(null);
-        setConfirmingMission(null);
     }
   };
 
-  const handleToggleCompletion = async (mission: MissionInstance) => {
-    const isCompleted = isMissionCompletedForDate(mission, new Date());
-    if (isCompleted) {
-      await triggerToggleCompletion(mission, true);
-    } else {
-      setConfirmingMission({ instance: mission, date: new Date() });
-    }
-  };
-  
 
   if (isLoading || authLoading) {
     return <Loading />;
@@ -237,16 +229,6 @@ export function ChildDashboard() {
           })
         )}
       </div>
-      
-      {confirmingMission && (
-          <CompleteMissionConfirmationDialog 
-            isOpen={!!confirmingMission}
-            onOpenChange={() => setConfirmingMission(null)}
-            onConfirm={(dismiss) => {
-                triggerToggleCompletion(confirmingMission.instance, false);
-            }}
-          />
-      )}
 
       <ChildBottomNavbar childId={child.id} />
     </div>
