@@ -19,7 +19,6 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Star, Circle, CheckCircle, Sun, Moon, CloudSun, LogOut } from 'lucide-react';
 import { ChildBottomNavbar } from './ChildBottomNavbar';
 import { cn, getInitials } from '@/lib/utils';
-import { CompleteMissionConfirmationDialog } from '../missions/CompleteMissionConfirmationDialog';
 import { ptBR } from 'date-fns/locale';
 
 const periodIcons = {
