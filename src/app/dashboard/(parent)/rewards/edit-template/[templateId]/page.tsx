@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo } from 'react';
@@ -22,7 +23,7 @@ import { Loader2, Gift, Save, ArrowLeft, Users, ArrowRight } from 'lucide-react'
 import { useFamily } from '@/contexts/FamilyContext';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials, cn } from '@/lib/utils';
-import { AssignRewardDialog } from '../AssignRewardDialog';
+import { AssignRewardDialog } from '@/components/dashboard/rewards/AssignRewardDialog';
 
 const rewardTemplateFormSchema = z.object({
   title: z.string().min(3, { message: "O título deve ter pelo menos 3 caracteres." }).max(100, { message: "O título não deve exceder 100 caracteres." }),
