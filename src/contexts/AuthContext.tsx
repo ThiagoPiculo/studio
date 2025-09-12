@@ -89,15 +89,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfileUnsubscribe(() => newProfileUnsubscribe);
       } else {
         // No Firebase user
+        const storedChildProfile = sessionStorage.getItem('childProfile');
+        if (storedChildProfile) {
+          try {
+              const profile = JSON.parse(storedChildProfile);
+              setChildProfile(profile);
+              setIsChildAuthenticated(true);
+          } catch(e) {
+              sessionStorage.removeItem('childProfile');
+              setIsChildAuthenticated(false);
+          }
+        } else {
+          setChildProfile(null);
+          setIsChildAuthenticated(false);
+        }
         setUser(null);
-        setChildProfile(null);
-        setIsChildAuthenticated(false);
         setLoading(false);
 
-        // If no user and not on a public page, redirect to login
-        const publicPaths = ['/', '/auth/login', '/auth/register', '/child-login'];
-        if (!publicPaths.includes(pathname)) {
+        const isChildDashboard = pathname.startsWith('/dashboard/child/');
+        const publicPaths = ['/', '/auth/login', '/auth/register', '/dashboard/child-login'];
+        const isPublic = publicPaths.some(p => pathname.startsWith(p));
+        
+        if (!isChildAuthenticated && !isPublic && !isChildDashboard) {
             router.replace('/auth/login');
+        } else if (!isChildAuthenticated && isChildDashboard) {
+             router.replace('/dashboard/child-login');
         }
       }
     });
@@ -156,9 +172,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
+      if (isChildAuthenticated) {
+        sessionStorage.removeItem('childProfile');
+        setChildProfile(null);
+        setIsChildAuthenticated(false);
+      }
       await signOut(auth);
-      // The onAuthStateChanged listener will handle setting user to null.
-      // Explicitly push to ensure the user lands on the homepage, preventing any flashes of content.
       router.push('/');
     } catch (error) {
       console.error("Error signing out:", error);
@@ -170,9 +189,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       profileUnsubscribe();
       setProfileUnsubscribe(null);
     }
-    setChildProfile(convertTimestampsInObject(profile));
+    const safeProfile = convertTimestampsInObject(profile);
+    setChildProfile(safeProfile);
     setUser(null); 
     setIsChildAuthenticated(true);
+    sessionStorage.setItem('childProfile', JSON.stringify(safeProfile));
     setLoading(false);
   };
 

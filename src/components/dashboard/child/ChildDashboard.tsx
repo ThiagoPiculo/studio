@@ -7,7 +7,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getChildProfileById, getMissionInstancesByChild, completeMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
-import Loading from '@/app/dashboard/(child)/child/[childId]/loading';
+import Loading from '@/app/dashboard/(child)/loading';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
 import { startOfDay, format as formatDateFns } from 'date-fns';
 
@@ -40,10 +40,12 @@ export function ChildDashboard() {
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
 
   useEffect(() => {
-    // Redirect if not the correct child or not authenticated
-    if (!authLoading && (!isChildAuthenticated || childProfile?.id !== childId)) {
-      logout(); // Force logout for security
-      router.replace('/child-login');
+    if (!authLoading && (!isChildAuthenticated || !childProfile)) {
+        logout(); // Force logout for security if state is inconsistent
+        router.replace('/dashboard/child-login');
+    } else if (childProfile && childProfile.id !== childId) {
+        // Logged in as a different child, redirect to their correct page
+        router.replace(`/dashboard/child/${childProfile.id}`);
     }
   }, [childId, childProfile, isChildAuthenticated, authLoading, router, logout]);
 
@@ -76,7 +78,7 @@ export function ChildDashboard() {
       });
   }, [missionInstances]);
   
-  const handleToggleCompletion = async (mission: MissionInstance) => {
+ const handleToggleCompletion = async (mission: MissionInstance) => {
     if (!child) return;
     setProcessingMissionId(mission.id);
 
@@ -103,11 +105,12 @@ export function ChildDashboard() {
      setChild(prev => prev ? ({ ...prev, stars: prev.stars + (isCompleted ? -mission.starsReward : mission.starsReward) }) : null);
 
     try {
-        // The child is always the actor in this view
         const actor = { id: child.id, name: child.name };
-        isCompleted
-            ? await reactivateMissionInstance(mission.id, today, actor)
-            : await completeMissionInstance(mission.id, today, actor);
+        if (isCompleted) {
+            await reactivateMissionInstance(mission.id, today, actor);
+        } else {
+            await completeMissionInstance(mission.id, today, actor);
+        }
     } catch (error) {
         console.error("Error toggling mission completion:", error);
         toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
@@ -128,7 +131,7 @@ export function ChildDashboard() {
     return (
         <div className="p-4 text-center">
             <p className="text-destructive">Não foi possível carregar o perfil do herói.</p>
-            <Button onClick={() => router.push('/child-login')}>Voltar ao Login</Button>
+            <Button onClick={() => router.push('/dashboard/child-login')}>Voltar ao Login</Button>
         </div>
     );
   }
