@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, Suspense, useMemo } from 'react';
+import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
@@ -182,5 +182,3 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
-
-    
