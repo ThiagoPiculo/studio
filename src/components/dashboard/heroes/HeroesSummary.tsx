@@ -193,6 +193,68 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         }
     }
     
+    const allTodaysActivitiesByChild = useMemo(() => {
+        const today = startOfDay(new Date());
+        const result: Record<string, ActivityItem[]> = {};
+
+        for (const child of children) {
+            const todaysMissions = missionInstances.filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
+            const schoolActivities: ActivityItem[] = [];
+            const isWeekday = getDay(today) >= 1 && getDay(today) <= 5;
+            
+            if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable') {
+                if (child.schoolShiftStart) {
+                    schoolActivities.push({
+                        id: `${child.id}-school-start`,
+                        type: 'school',
+                        time: child.schoolShiftStart,
+                        title: 'Entrada na Escola',
+                        data: { startTime: child.schoolShiftStart },
+                        block: 'Hora da Escola',
+                    });
+                }
+                if (child.schoolShiftEnd) {
+                     schoolActivities.push({
+                        id: `${child.id}-school-end`,
+                        type: 'school',
+                        time: child.schoolShiftEnd,
+                        title: 'Saída da Escola',
+                        data: { startTime: child.schoolShiftEnd },
+                        block: 'Hora da Escola',
+                    });
+                }
+            }
+
+            const missionActivities: ActivityItem[] = todaysMissions.map(m => {
+                const missionTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date();
+                
+                let block = missionToBlockMap[m.title.trim()];
+                if (!block) {
+                  const period = getPeriodOfDay(missionTime);
+                  block = `Atividades ${period ? `da ${period}` : 'Extras'}`;
+                } else {
+                  block = block.replace('Rotina ', '');
+                }
+
+                return {
+                    id: m.id,
+                    type: 'mission',
+                    time: formatDateFns(missionTime, 'HH:mm'),
+                    title: m.title,
+                    emoji: m.emoji,
+                    isCompleted: isMissionCompletedForDate(m, today),
+                    data: m,
+                    block: block,
+                };
+            });
+            
+            result[child.id] = [...missionActivities, ...schoolActivities].sort((a, b) => a.time.localeCompare(b.time));
+        }
+
+        return result;
+    }, [missionInstances, children]);
+
+
     const containerClasses = filteredChildren.length === 1
         ? "max-w-2xl mx-auto"
         : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6";
@@ -208,56 +270,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
             </div>
             <div className={containerClasses}>
                 {filteredChildren.map(child => {
-                    const today = startOfDay(new Date());
-
-                    const allTodaysActivities: ActivityItem[] = useMemo(() => {
-                        const todaysMissions = missionInstances
-                          .filter(m => m.childId === child.id && isMissionScheduledForDate(m, today));
-        
-                        const schoolActivities: ActivityItem[] = [];
-                        const isWeekday = getDay(today) >= 1 && getDay(today) <= 5;
-                        if (isWeekday && child.schoolShift && child.schoolShift !== 'not_applicable') {
-                            if (child.schoolShiftStart) {
-                                schoolActivities.push({
-                                    id: 'school-start',
-                                    type: 'school',
-                                    time: child.schoolShiftStart,
-                                    title: 'Entrada na Escola',
-                                    data: { startTime: child.schoolShiftStart },
-                                    block: 'Hora da Escola',
-                                });
-                            }
-                            if (child.schoolShiftEnd) {
-                                 schoolActivities.push({
-                                    id: 'school-end',
-                                    type: 'school',
-                                    time: child.schoolShiftEnd,
-                                    title: 'Saída da Escola',
-                                    data: { startTime: child.schoolShiftEnd },
-                                    block: 'Hora da Escola',
-                                });
-                            }
-                        }
-        
-                        const missionActivities: ActivityItem[] = todaysMissions.map(m => {
-                            const missionTime = getDateObject(m.isRecurring ? m.startDate : m.dueDate) || getDateObject(m.startDate) || new Date();
-                            const block = (missionToBlockMap[m.title] || (m.category === 'hobbies' ? 'Atividades Extras' : 'Outras Atividades')).replace('Rotina ', '');
-                            return {
-                                id: m.id,
-                                type: 'mission',
-                                time: formatDateFns(missionTime, 'HH:mm'),
-                                title: m.title,
-                                emoji: m.emoji,
-                                isCompleted: isMissionCompletedForDate(m, today),
-                                data: m,
-                                block: block,
-                            };
-                        });
-                        
-                        return [...missionActivities, ...schoolActivities].sort((a, b) => a.time.localeCompare(b.time));
-
-                    }, [missionInstances, child, today]);
-
+                    const allTodaysActivities = allTodaysActivitiesByChild[child.id] || [];
                     const completedMissions = allTodaysActivities.filter(a => a.type === 'mission' && a.isCompleted);
                     const totalMissions = allTodaysActivities.filter(a => a.type === 'mission').length;
                     const progress = totalMissions > 0 ? (completedMissions.length / totalMissions) * 100 : 0;
@@ -274,8 +287,9 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                     const isDayComplete = totalMissions > 0 && completedMissions.length === totalMissions;
 
                     const isExpanded = expandedChildId === child.id;
+
                     const activitiesByBlock = allTodaysActivities.reduce((acc, activity) => {
-                        const blockName = activity.block || 'Outras Atividades';
+                        const blockName = activity.block || 'Atividades Extras';
                         if (!acc[blockName]) {
                             acc[blockName] = [];
                         }
@@ -407,7 +421,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                                                                         <span className={cn("truncate font-medium", item.isCompleted && "line-through text-muted-foreground")}>{item.title}</span>
                                                                     </div>
                                                                     <div className="flex items-center gap-1 flex-shrink-0">
-                                                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, today, !!item.isCompleted)} disabled={processingMissionId === mission.id}>
+                                                                        <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => handleToggleCompletion(mission, startOfDay(new Date()), !!item.isCompleted)} disabled={processingMissionId === mission.id}>
                                                                             {processingMissionId === mission.id ? <Loader2 className="h-4 w-4 animate-spin" /> : item.isCompleted ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Circle className="h-4 w-4 text-primary" />}
                                                                         </Button>
                                                                         <DropdownMenu>
@@ -530,4 +544,5 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
     
 
     
+
 
