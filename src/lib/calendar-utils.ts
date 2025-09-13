@@ -43,6 +43,30 @@ export const getDateObject = (dateInput: Timestamp | Date | string | null | unde
     return null;
 }
 
+export const convertTimestampsInObject = (obj: any): any => {
+    if (!obj) return obj;
+
+    if (Array.isArray(obj)) {
+        return obj.map(item => convertTimestampsInObject(item));
+    }
+    
+    const newObj: { [key: string]: any } = {};
+    for (const key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key)) {
+            const value = obj[key];
+            if (value instanceof Timestamp) {
+                newObj[key] = value.toDate().toISOString();
+            } else if (value && typeof value === 'object' && !Array.isArray(value)) {
+                newObj[key] = convertTimestampsInObject(value);
+            } else {
+                newObj[key] = value;
+            }
+        }
+    }
+    return newObj;
+};
+
+
 export const getPeriodOfDay = (dateInput: Date | Timestamp | string | null | undefined): 'Manhã' | 'Tarde' | 'Noite' | null => {
     const date = getDateObject(dateInput);
     if (!date) return null;

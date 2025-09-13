@@ -7,8 +7,11 @@ import { HeroesSummary } from "@/components/dashboard/heroes/HeroesSummary";
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { getChildProfilesForAttribution, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+import { onSnapshot, query, collection, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { convertTimestampsInObject } from '@/lib/utils';
 
 function HeroesPageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -18,48 +21,61 @@ function HeroesPageContent() {
     const [rewards, setRewards] = useState<RewardTemplate[] | null>(null);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
-    const fetchData = useCallback(async () => {
-        if (!user) {
-            setIsLoadingData(false);
-            setChildren([]);
-            setMissions([]);
-            setRewards([]);
+    useEffect(() => {
+        if (authLoading || isFamilyLoading || !user) {
+            if (!user && !authLoading) {
+                setIsLoadingData(false);
+                setChildren([]);
+                setMissions([]);
+                setRewards([]);
+            }
             return;
         }
-        
+
         setIsLoadingData(true);
-        try {
-            const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
-            const [childData, missionData, rewardData] = await Promise.all([
-                getChildProfilesForAttribution(user.uid, currentContext),
-                getMissionInstancesForContext(user.uid, currentContext),
-                getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
-            ]);
-            setChildren(childData);
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+
+        const fetchStaticData = async () => {
+            try {
+                const [childData, rewardData] = await Promise.all([
+                    getChildProfilesForAttribution(user.uid, currentContext),
+                    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+                ]);
+                setChildren(childData);
+                setRewards(rewardData);
+            } catch (error) {
+                console.error("Error fetching static data for heroes page:", error);
+                setChildren([]);
+                setRewards([]);
+            }
+        };
+
+        fetchStaticData();
+
+        let missionsQuery;
+        if (familyIdToQuery) {
+            missionsQuery = query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery));
+        } else {
+            missionsQuery = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
+        }
+
+        const unsubscribe = onSnapshot(missionsQuery, (snapshot) => {
+            const missionData = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
             setMissions(missionData);
-            setRewards(rewardData);
-        } catch (error) {
-            console.error("Error fetching heroes data:", error);
-            setChildren([]);
+            if(isLoadingData) setIsLoadingData(false);
+        }, (error) => {
+            console.error("Error fetching real-time missions:", error);
             setMissions([]);
-            setRewards([]);
-        } finally {
             setIsLoadingData(false);
-        }
-    }, [user, currentContext]);
+        });
 
-    useEffect(() => {
-        if (!authLoading && !isFamilyLoading) {
-            fetchData();
-        }
-    }, [user, currentContext, authLoading, isFamilyLoading, fetchData]);
+        return () => unsubscribe();
+    }, [user, currentContext, authLoading, isFamilyLoading]);
 
-    // This consolidated check ensures hooks are always called in the same order.
     if (authLoading || isFamilyLoading || isLoadingData || children === null || missions === null || rewards === null) {
         return <Loading />;
     }
     
-    // After loading, we can safely decide what to render.
     if (children.length === 0) {
         return (
             <GettingStartedGuide 
@@ -81,5 +97,3 @@ export default function HeroesPage() {
         </Suspense>
     )
 }
-
-    

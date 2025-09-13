@@ -6,11 +6,13 @@ import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isToday, addDays, subDays, eachDayOfInterval, startOfDay, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { ChevronLeft, ChevronRight, Users, CalendarIcon, ListOrdered, User, X, PlusCircle, MoreHorizontal, CheckSquare, Square, Edit, Undo2, Sun, CloudSun, Moon, Star as StarIcon, BadgeCheck, Trash2, Target, Filter, ArrowLeft, NotebookPen, Edit3, Repeat, FileText, CalendarDays, HelpCircle, ExternalLink, View, Sparkles, MoreVertical, Circle, CheckCircle, Heart } from 'lucide-react';
+import { onSnapshot, query, collection, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getMissionTemplateById, completeMissionInstance, reactivateMissionInstance, excludeMissionInstanceOccurrence, updateRecurringMissionInstance, deleteMissionInstance, deleteFutureOccurrences } from '@/lib/firebase/firestore';
-import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary, getDateObject } from '@/lib/calendar-utils';
+import { isMissionScheduledForDate, isMissionCompletedForDate, formatRecurrenceSummary, getDateObject, convertTimestampsInObject } from '@/lib/calendar-utils';
 import type { ChildProfile, MissionInstance, MissionTemplate, MissionCategoryDetails, FamilyRole } from '@/lib/types';
 import { missionCategories, weekdays, familyRoles } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
@@ -160,72 +162,54 @@ function AgendaPageContent() {
     }
   }, [searchParams]);
 
-
-  const refetchData = useCallback(async () => {
-    if (!user) return;
-    try {
-      const instances = await getMissionInstancesForContext(user.uid, currentContext);
-      setMissionInstances(instances);
-    } catch (error) {
-      console.error("Error refetching mission instances:", error);
-      toast({ title: 'Erro ao atualizar missões', variant: 'destructive' });
-    }
-  }, [user, currentContext, toast]);
-
-
+  // Real-time data fetching
   useEffect(() => {
-    if (!user) {
+    if (!user || isFamilyLoading) {
       setIsLoading(false);
       return;
     }
 
-    const loadDataForContext = async () => {
-      setIsLoading(true);
-      try {
-        const [fetchedChildren, fetchedInstances] = await Promise.all([
-            getChildProfilesForAttribution(user.uid, currentContext),
-            getMissionInstancesForContext(user.uid, currentContext)
-        ]);
-        
-        setChildren(fetchedChildren);
-        setMissionInstances(fetchedInstances);
-        
-        if (selectedChildId && !fetchedChildren.some(c => c.id === selectedChildId)) {
-            setSelectedChildId(null);
-        } else if (!selectedChildId && fetchedChildren.length === 1) {
-            setSelectedChildId(fetchedChildren[0].id);
-        }
+    setIsLoading(true);
 
-      } catch (error) {
-        console.error("Error fetching agenda data for new context:", error);
-        toast({ title: 'Erro ao carregar agenda', variant: 'destructive' });
-      } finally {
-        setIsLoading(false);
-      }
+    const fetchInitialData = async () => {
+        try {
+            const fetchedChildren = await getChildProfilesForAttribution(user.uid, currentContext);
+            setChildren(fetchedChildren);
+
+            if (selectedChildId && !fetchedChildren.some(c => c.id === selectedChildId)) {
+                setSelectedChildId(null);
+            } else if (!selectedChildId && fetchedChildren.length === 1) {
+                setSelectedChildId(fetchedChildren[0].id);
+            }
+        } catch (error) {
+            console.error("Error fetching children data:", error);
+            toast({ title: 'Erro ao carregar heróis', variant: 'destructive' });
+        }
     };
 
-    loadDataForContext();
-  }, [user, currentContext, toast, selectedChildId, setSelectedChildId]);
-
-  const handleEditClick = (instance: MissionInstance, date: Date) => {
-    setActivePopover(null); // Close popover on action
-    setInstanceToEdit(instance);
-    setOccurrenceDate(date);
-    if (instance.isRecurring) {
-        setIsRecurrenceEditOpen(true);
+    fetchInitialData();
+    
+    const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+    let q;
+    if (familyIdToQuery) {
+        q = query(collection(db, 'missionInstances'), where('familyId', '==', familyIdToQuery));
     } else {
-        setIsAssignDialogOpen(true);
+        q = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
     }
-  };
-  
-  const handleEditTemplateClick = (instance: MissionInstance) => {
-    const redirectUrl = `${pathname}?${searchParams.toString()}`;
-    router.push(`/dashboard/missions/edit/${instance.templateId}?redirect=${encodeURIComponent(redirectUrl)}`);
-  };
 
-  const handleAssignmentComplete = () => {
-    refetchData();
-  };
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const instances = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
+        setMissionInstances(instances);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching mission instances in real-time:", error);
+        toast({ title: 'Erro ao atualizar missões', variant: 'destructive' });
+        setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [user, currentContext, toast, isFamilyLoading, selectedChildId, setSelectedChildId]);
+
 
   const childrenMap = useMemo(() => new Map(children.map(child => [child.id, child])), [children]);
   const categoryMap = useMemo(() => new Map(missionCategories.map(cat => [cat.id, cat])), []);
@@ -406,11 +390,10 @@ function AgendaPageContent() {
             await completeMissionInstance(missionInstance.id, date, actor);
             toast({ title: 'Missão Cumprida!', description: `"${missionInstance.title}" foi concluída.` });
         }
-        await refetchData();
+        // No need to refetch, onSnapshot will handle it.
     } catch (error: any) {
         console.error("Error toggling completion:", error);
         toast({ title: 'Erro ao atualizar', description: error.message || 'Um erro inesperado ocorreu.', variant: 'destructive' });
-        await refetchData();
     } finally {
         setIsProcessingAction(null);
         setConfirmingMission(null);
@@ -447,7 +430,7 @@ function AgendaPageContent() {
     try {
       await excludeMissionInstanceOccurrence(instanceToExclude.instance.id, instanceToExclude.date);
       toast({ title: 'Ocorrência Removida!', description: `A missão não aparecerá mais neste dia.` });
-      refetchData();
+      // No need to refetch, onSnapshot will handle it.
     } catch (error) {
       console.error("Error excluding mission occurrence:", error);
       toast({ title: 'Erro ao remover', variant: 'destructive' });
@@ -485,7 +468,7 @@ function AgendaPageContent() {
               await deleteMissionInstance(user, instance.id);
               toast({ title: 'Série de Missões Removida!', description: 'Toda a série de missões recorrentes foi removida.' });
           }
-          await refetchData();
+          // No need to refetch, onSnapshot will handle it.
       } catch (error: any) {
           console.error("Error deleting recurring mission:", error);
           toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
@@ -504,7 +487,7 @@ function AgendaPageContent() {
       try {
           await deleteMissionInstance(user, instance.id);
           toast({ title: 'Missão Removida!', description: 'A missão foi removida da agenda.' });
-          await refetchData();
+          // No need to refetch, onSnapshot will handle it.
       } catch (error: any) {
           console.error("Error deleting simple mission:", error);
           toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
@@ -1191,7 +1174,7 @@ function AgendaPageContent() {
           }
           setIsAssignDialogOpen(isOpen);
         }}
-        onAssigned={handleAssignmentComplete}
+        onAssigned={() => {}}
         preselectedChildId={selectedChildId}
       />
 
