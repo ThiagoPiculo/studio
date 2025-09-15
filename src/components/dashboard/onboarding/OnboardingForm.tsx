@@ -180,7 +180,13 @@ const stepFields: (keyof OnboardingFormValues)[][] = [
 const goToNextStep = async () => {
     if (step >= TOTAL_STEPS) return;
 
-    const fieldsToValidate = stepFields[step] || [];
+    // Skip validation for the first introductory step
+    if (step === 1) {
+        setStep(prev => prev + 1);
+        return;
+    }
+
+    const fieldsToValidate = stepFields[step -1] || [];
     const isStepValid = fieldsToValidate.length > 0 ? await methods.trigger(fieldsToValidate) : true;
 
     if (isStepValid) {
