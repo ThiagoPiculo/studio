@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import type { MissionInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Star, CheckCircle } from 'lucide-react';
@@ -39,10 +39,11 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
       {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={300} />}
       <Dialog open={!!data} onOpenChange={(isOpen) => !isOpen && onDone()}>
         <DialogContent className="sm:max-w-md bg-gradient-to-br from-background to-primary/5">
-            <div className="p-6 text-center space-y-4">
-              <h2 className="text-3xl font-bold font-headline text-primary">Missões da {data.period} Concluídas!</h2>
-              <p className="text-muted-foreground">Você é um verdadeiro herói! Veja suas conquistas:</p>
-              
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-3xl font-bold font-headline text-primary">Missões da {data.period} Concluídas!</DialogTitle>
+              <DialogDescription className="text-muted-foreground pt-2">Você é um verdadeiro herói! Veja suas conquistas:</DialogDescription>
+            </DialogHeader>
+            <div className="p-6 pt-0 text-center space-y-4">
               <div className="space-y-2 text-left max-h-48 overflow-y-auto pr-2">
                 {data.missions.map(mission => (
                   <div key={mission.id} className="flex items-center gap-2 p-2 rounded-md bg-green-500/10">
