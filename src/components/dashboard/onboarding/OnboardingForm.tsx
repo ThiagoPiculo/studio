@@ -47,11 +47,11 @@ const scheduleItemSchema = z.object({
 
 // Unified schema for the entire onboarding flow
 const combinedSchema = onboardingSchemaStep1
-  .extend(onboardingSchemaStep2.shape)
-  .extend(onboardingSchemaStep3.shape)
-  .extend(onboardingSchemaStep4.shape)
-  .extend(onboardingSchemaStep5.shape)
-  .extend(z.object({
+  .merge(onboardingSchemaStep2)
+  .merge(onboardingSchemaStep3)
+  .merge(onboardingSchemaStep4)
+  .merge(onboardingSchemaStep5)
+  .merge(z.object({
     schedule: z.array(scheduleItemSchema).optional(),
   }));
 
@@ -76,6 +76,16 @@ function OnboardingFormSkeleton() {
         </div>
     );
 }
+
+const stepSchemas: z.ZodType<any, any>[] = [
+  z.object({}), // Intro step, no validation
+  onboardingSchemaStep1,
+  onboardingSchemaStep2,
+  onboardingSchemaStep3,
+  onboardingSchemaStep4,
+  onboardingSchemaStep5,
+  z.object({ schedule: z.array(scheduleItemSchema).optional() }),
+];
 
 const OnboardingStep0 = dynamic(() => import('./steps/OnboardingStep0').then(mod => mod.OnboardingStep0), { loading: () => <OnboardingFormSkeleton /> });
 
@@ -139,63 +149,41 @@ export function OnboardingForm() {
   };
   
   const goToNextStep = async () => {
-    let fieldsToValidate: (keyof OnboardingFormValues)[] | undefined = undefined;
+    if (step >= TOTAL_STEPS) return;
 
-    switch (step) {
-        case 2: fieldsToValidate = ['name', 'birthDate', 'gender', 'contextId']; break;
-        case 3: fieldsToValidate = ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd', 'mealsAtSchool']; break;
-        case 4: fieldsToValidate = ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime']; break;
-        case 5: fieldsToValidate = ['extraActivities']; break;
-    }
+    const currentStepSchema = stepSchemas[step];
+    const result = currentStepSchema.safeParse(methods.getValues());
     
-    // Step 1 is the intro, so no validation needed
-    if (step === 1) {
-        setStep(prev => prev + 1);
-        return;
-    }
-    
-    // Step 6 is the final review, handled by another button
-    if (step === 6) return;
+    if (result.success) {
+      if (step === 4) { // Check for conflicts before moving from extra activities
+        const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
+        const conflicts = (extraActivities || []).filter(activity => {
+          if (schoolShift === 'not_applicable' || !activity.startTime) return false;
+          const activityMinutes = parseTime(activity.startTime);
+          const startMinutes = parseTime(schoolShiftStart!);
+          const endMinutes = parseTime(schoolShiftEnd!);
+          return activityMinutes >= startMinutes && activityMinutes < endMinutes;
+        }).map(a => a.name);
 
-
-    const isStepValid = fieldsToValidate ? await methods.trigger(fieldsToValidate) : true;
-    
-    if (isStepValid) {
-        if (step === 4) { // Check for conflicts before moving from extra activities
-          const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
-          const conflicts = (extraActivities || []).filter(activity => {
-            if (schoolShift === 'not_applicable' || !activity.startTime) return false;
-            const activityMinutes = parseTime(activity.startTime);
-            const startMinutes = parseTime(schoolShiftStart!);
-            const endMinutes = parseTime(schoolShiftEnd!);
-            return activityMinutes >= startMinutes && activityMinutes < endMinutes;
-          }).map(a => a.name);
-
-          if (conflicts.length > 0) {
-            setConflictingActivities(conflicts);
-            setIsConflictDialogOpen(true);
-            return;
-          }
+        if (conflicts.length > 0) {
+          setConflictingActivities(conflicts);
+          setIsConflictDialogOpen(true);
+          return;
         }
-        proceedToNextStep();
+      }
+      proceedToNextStep();
     } else {
-        const errors = methods.formState.errors;
-        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
+        const errors = result.error.flatten().fieldErrors;
+        methods.trigger(); // Trigger manual validation to show errors
         
+        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
+
         if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
-            const errorArray = errors.extraActivities as FieldErrors<ActivityFormValues>[];
-            const errorIndex = errorArray.findIndex(e => e && (e.days || e.startTime || e.endTime));
-
+            const errorIndex = (errors.extraActivities as string[]).findIndex(e => e);
             if (errorIndex !== -1) {
-                const errorField = errors.extraActivities?.[errorIndex];
-                const fieldName = errorField?.days ? 'dias da semana' : 'horário';
-                const activityName = methods.getValues(`extraActivities.${errorIndex}.name`);
-
-                setErrorToHighlight({ index: errorIndex, field: fieldName === 'dias da semana' ? 'days' : 'startTime' });
-                
-                toast({
-                    title: `Pendência em '${activityName}'`,
-                    description: `Faltou preencher os ${fieldName}. O painel foi aberto para você.`,
+                 toast({
+                    title: `Pendência em uma Atividade Extra`,
+                    description: `Parece que há um erro na configuração de uma de suas atividades. Por favor, verifique.`,
                     variant: "destructive"
                 });
                 return;
@@ -209,6 +197,7 @@ export function OnboardingForm() {
         });
     }
   };
+
 
   const goToPreviousStep = () => {
     if (step > 1) {
