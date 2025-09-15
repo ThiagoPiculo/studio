@@ -53,11 +53,8 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
             <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
             <div className="relative p-6 pt-12 flex flex-col items-center justify-center text-center space-y-4">
               
-              <div className="relative p-4 bg-amber-400/20 rounded-full shadow-lg border-4 border-white dark:border-slate-800">
+              <div className="p-4 bg-amber-400/20 rounded-full shadow-lg border-4 border-white dark:border-slate-800">
                 <Trophy className="h-16 w-16 text-amber-500" strokeWidth={1.5} />
-                <div className="absolute inset-0 flex items-center justify-center text-amber-600 font-bold text-2xl">
-                    +{data.stars}
-                </div>
               </div>
 
               <DialogHeader>
