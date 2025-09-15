@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useMemo } from 'react';
@@ -73,7 +74,7 @@ export function RecentMedals({ childrenProfiles }: RecentMedalsProps) {
                 return (
                     <div key={badge.id} className="flex flex-col items-center gap-2">
                         <div className="p-3 rounded-full shadow-inner" style={{ backgroundColor: `${badge.color}20` }}>
-                            <badge.icon className="h-8 w-8" style={{ color: badge.color }} />
+                            <badge.icon className="h-8 w-8 text-primary" style={{ color: badge.color }} />
                         </div>
                         <div className="h-12 flex flex-col justify-start">
                            <p className="text-xs font-semibold leading-tight">{badge.title}</p>

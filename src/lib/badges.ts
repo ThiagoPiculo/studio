@@ -3,7 +3,6 @@
 import { Award, BedDouble, Compass, Crown, Gem, Puzzle, Repeat, Smile, Sparkles, Star, Stars, TrendingUp, Trophy, type LucideIcon, HandHelping, BrainCircuit, ShieldCheck, TowerControl, Bike, Leaf } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { LucideProps } from 'lucide-react';
-import { GuardiaoDoDescansoIcon } from '@/components/icons/GuardiãoDoDescansoIcon';
 
 export interface Badge {
   id: string;
@@ -26,7 +25,7 @@ export const predefinedBadgeCategories: BadgeCategory[] = [
         items: [
             { id: 'hero_novato', title: 'Heroi Novato', description: 'Conclua sua primeira missão de qualquer tipo.', icon: Sparkles, color: '#FFD700' },
             { id: 'defensor_sorriso', title: 'Defensor do Sorriso', description: 'Complete a missão "Escovar os dentes".', icon: Smile, color: '#60a5fa' },
-            { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama".', icon: GuardiaoDoDescansoIcon, color: '#a78bfa' },
+            { id: 'guardiao_descanso', title: 'Guardião do Descanso', description: 'Complete a missão "Arrumar a cama".', icon: BedDouble, color: '#a78bfa' },
             { id: 'maozinha_amiga', title: 'Mãozinha Amiga', description: 'Ajude a pôr ou tirar a mesa pela primeira vez.', icon: HandHelping, color: '#34d399' },
             { id: 'mente_brilhante', title: 'Mente Brilhante', description: 'Complete a missão "Fazer lição de casa" pela primeira vez.', icon: BrainCircuit, color: '#60a5fa' },
         ]
