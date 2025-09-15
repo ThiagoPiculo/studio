@@ -41,6 +41,7 @@ export function ChildDashboard() {
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
 
   const [victoryData, setVictoryData] = useState<{
+    child: ChildProfile;
     period: 'Manhã' | 'Tarde' | 'Noite';
     missions: MissionInstance[];
     stars: number;
@@ -149,6 +150,7 @@ export function ChildDashboard() {
             const starsForPeriod = periodMissions.reduce((sum, m) => sum + m.starsReward, 0);
             setTimeout(() => {
               setVictoryData({
+                child: updatedChild,
                 period: missionPeriod,
                 missions: periodMissions,
                 stars: starsForPeriod,

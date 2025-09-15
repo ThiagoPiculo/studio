@@ -2,17 +2,19 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import type { MissionInstance } from '@/lib/types';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Star, Trophy, Sun, CloudSun, Moon } from 'lucide-react';
 import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { cn } from '@/lib/utils';
+import { cn, getInitials } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface VictoryParadeProps {
   data: {
+    child: ChildProfile;
     period: 'Manhã' | 'Tarde' | 'Noite';
     missions: MissionInstance[];
     stars: number;
@@ -48,49 +50,46 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   return (
     <>
       {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={400} gravity={0.1} colors={['#FFD700', '#FF33F6', '#33D4FF', '#34D399', '#FF5733']} />}
-      <Dialog open={!!data} onOpenChange={(isOpen) => !isOpen && onDone()}>
-        <DialogContent className="sm:max-w-md bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 border-0 shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
-            <div className="relative p-6 pt-12 flex flex-col items-center justify-center text-center space-y-4">
-              
-              <div className="p-4 bg-amber-400/20 rounded-full shadow-lg border-4 border-white dark:border-slate-800">
-                <Trophy className="h-16 w-16 text-amber-500" strokeWidth={1.5} />
-              </div>
-
-              <DialogHeader>
-                <DialogTitle className="text-3xl font-bold font-headline text-primary flex items-center justify-center gap-2">
-                    <PeriodIcon className={cn("h-8 w-8", periodColor)} />
-                    Missões da {data.period} Concluídas!
-                </DialogTitle>
-                <DialogDescription className="text-muted-foreground pt-1">Você é um verdadeiro herói! Veja suas conquistas:</DialogDescription>
-              </DialogHeader>
-
-              <ScrollArea className="max-h-40 w-full bg-white/50 dark:bg-slate-900/50 rounded-lg border p-2">
-                <div className="space-y-2 text-left">
-                  {data.missions.map(mission => (
-                    <div key={mission.id} className="flex items-center gap-3 p-2 rounded-md bg-green-500/10 text-sm">
-                      <span className="text-xl">{mission.emoji || '🎯'}</span>
-                      <span className="flex-grow font-medium line-through text-muted-foreground">{mission.title}</span>
-                      <span className="font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                        +{mission.starsReward} <Star className="h-4 w-4 fill-amber-400" />
-                      </span>
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-in fade-in duration-300">
+        <Card className="w-full max-w-sm bg-gradient-to-br from-card to-primary/5 border-primary/20 shadow-2xl overflow-hidden text-center">
+            <CardHeader className="items-center space-y-3 pt-6">
+                 <Avatar className="h-20 w-20 text-3xl border-4 shadow-lg" style={{ borderColor: data.child.color }}>
+                    <AvatarImage src={data.child.avatar} alt={data.child.name} />
+                    <AvatarFallback style={{ backgroundColor: data.child.color }} className="font-bold">{getInitials(data.child.name)}</AvatarFallback>
+                </Avatar>
+                <div className="space-y-1">
+                    <CardTitle className="text-2xl font-headline">Parabéns, {data.child.name}!</CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-2">
+                        <PeriodIcon className={cn("h-5 w-5", periodColor)} />
+                        Você completou as missões da <strong>{data.period}</strong>!
+                    </CardDescription>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <ScrollArea className="max-h-32 w-full bg-background/50 rounded-lg border p-2">
+                    <div className="space-y-2 text-left">
+                    {data.missions.map(mission => (
+                        <div key={mission.id} className="flex items-center gap-3 p-2 rounded-md bg-green-500/10 text-sm">
+                        <span className="text-xl">{mission.emoji || '🎯'}</span>
+                        <span className="flex-grow font-medium line-through text-muted-foreground">{mission.title}</span>
+                        </div>
+                    ))}
                     </div>
-                  ))}
+                </ScrollArea>
+                
+                <div className="space-y-1">
+                    <p className="text-sm font-semibold">Total de estrelas ganhas:</p>
+                    <div className="flex items-center justify-center gap-2 text-amber-500 text-4xl font-bold [text-shadow:0_1px_2px_rgba(0,0,0,0.1)]">
+                        +{data.stars} <Star className="h-9 w-9 fill-current" />
+                    </div>
                 </div>
-              </ScrollArea>
               
-              <div className="pt-4 space-y-2">
-                <p className="text-lg font-semibold">Total de estrelas ganhas neste período:</p>
-                <div className="flex items-center justify-center gap-2 text-amber-500 text-5xl font-bold [text-shadow:0_2px_4px_rgba(255,255,255,0.5)]">
-                    <Star className="h-12 w-12 fill-current" />
-                    <span>{data.stars}</span>
-                </div>
-              </div>
-              
-              <Button onClick={onDone} className="w-full mt-4" size="lg">Continuar Jornada!</Button>
+            </CardContent>
+             <div className="p-6 pt-0">
+                <Button onClick={onDone} className="w-full" size="lg">Continuar Jornada!</Button>
             </div>
-        </DialogContent>
-      </Dialog>
+        </Card>
+      </div>
     </>
   );
 }
