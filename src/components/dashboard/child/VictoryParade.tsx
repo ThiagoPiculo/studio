@@ -66,17 +66,6 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
                 </div>
             </CardHeader>
             <CardContent className="space-y-4">
-                <ScrollArea className="max-h-32 w-full bg-background/50 rounded-lg border p-2">
-                    <div className="space-y-2 text-left">
-                    {data.missions.map(mission => (
-                        <div key={mission.id} className="flex items-center gap-3 p-2 rounded-md bg-green-500/10 text-sm">
-                        <span className="text-xl">{mission.emoji || '🎯'}</span>
-                        <span className="flex-grow font-medium line-through text-muted-foreground">{mission.title}</span>
-                        </div>
-                    ))}
-                    </div>
-                </ScrollArea>
-                
                 <div className="space-y-1">
                     <p className="text-sm font-semibold">Total de estrelas ganhas:</p>
                     <div className="flex items-center justify-center gap-2 text-amber-500 text-4xl font-bold [text-shadow:0_1px_2px_rgba(0,0,0,0.1)]">
@@ -85,7 +74,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
                 </div>
               
             </CardContent>
-             <div className="p-6 pt-0">
+             <div className="p-6 pt-2">
                 <Button onClick={onDone} className="w-full" size="lg">Continuar Jornada!</Button>
             </div>
         </Card>
