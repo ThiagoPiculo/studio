@@ -196,6 +196,33 @@ export async function generateSchedule(input: OnboardingFormValues): Promise<{ s
         }
     });
 
+    // Add screen time as fixed slots
+    if (input.screenTime1) {
+        const start = parseTime(input.screenTime1);
+        const end = start + 60;
+        const details = findMissionDetails('Hora da Tela');
+        allWeekdays.forEach(day => {
+            occupiedSlotsByDay[day].push({ start, end });
+            finalScheduleByDay[day].push({
+                activity: 'Hora da Tela', startTime: formatTime(start), endTime: formatTime(end),
+                days: [day], type: 'extra_activity', emoji: details.emoji, category: details.category, block: 'Atividades Extras'
+            });
+        });
+    }
+    if (input.screenTime2) {
+        const start = parseTime(input.screenTime2);
+        const end = start + 60;
+        const details = findMissionDetails('Hora da Tela');
+        allWeekdays.forEach(day => {
+            occupiedSlotsByDay[day].push({ start, end });
+            finalScheduleByDay[day].push({
+                activity: 'Hora da Tela', startTime: formatTime(start), endTime: formatTime(end),
+                days: [day], type: 'extra_activity', emoji: details.emoji, category: details.category, block: 'Atividades Extras'
+            });
+        });
+    }
+
+
     // Sort occupied slots
     for (const day in occupiedSlotsByDay) {
         occupiedSlotsByDay[day as Weekday].sort((a, b) => a.start - b.start);
