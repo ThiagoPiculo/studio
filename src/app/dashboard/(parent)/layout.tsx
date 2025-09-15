@@ -8,7 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift, Medal } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -183,6 +183,20 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                 <p className="text-sm text-muted-foreground">Use esta grade para visualizar a agenda escolar de cada herói. Isso ajuda a identificar os melhores horários para agendar missões e a evitar sobrecarga de atividades.</p>
             )
         }
+    },
+    '/dashboard/achievements': {
+      title: 'Quadro de Medalhas',
+      icon: Medal,
+      help: {
+        title: 'O Quadro de Honra dos Herois',
+        content: (
+          <>
+            <p className="text-sm text-muted-foreground">
+                Este é o seu centro de comando para todas as medalhas e conquistas. Explore as categorias, veja quais heróis se destacaram e use o filtro no topo para analisar o progresso individualmente ou de toda a equipe.
+            </p>
+          </>
+        )
+      }
     }
   }
 
@@ -196,7 +210,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   const currentHeader = getHeaderForPath(pathname);
   
   const showHeroSelector = isClient &&
-    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule'].includes(pathname) &&
+    ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule', '/dashboard/achievements'].includes(pathname) &&
     childrenInContext.length > 1;
 
   return (
