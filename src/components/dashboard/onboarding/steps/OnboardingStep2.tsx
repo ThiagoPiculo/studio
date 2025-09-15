@@ -16,24 +16,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { TimePicker } from "../../missions/TimePicker";
 import { addMinutes, format, parse } from "date-fns";
 
-export const onboardingSchemaStep2 = z.object({
-  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
-  schoolShiftStart: z.string().optional(),
-  schoolShiftEnd: z.string().optional(),
-  mealsAtSchool: z.object({
-    lunch: z.boolean().default(false),
-    dinner: z.boolean().default(false),
-  }),
-}).superRefine((data, ctx) => {
-    if (data.schoolShift !== 'not_applicable') {
-        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
-        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
-        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
-            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
-        }
-    }
-});
-
 const shiftDetails = {
     morning: { icon: Sun, color: 'text-yellow-500' },
     afternoon: { icon: CloudSun, color: 'text-orange-500' },

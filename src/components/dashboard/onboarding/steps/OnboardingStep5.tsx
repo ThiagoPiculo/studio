@@ -12,10 +12,6 @@ import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
 import * as z from "zod";
 
-export const onboardingSchemaStep5 = z.object({
-  essentialRoutines: z.array(z.string()).optional(),
-});
-
 
 const essentialRoutinesGroup = predefinedMissionGroups.find(g => g.userCategory === 'Rotinas Essencial (diárias)');
 const essentialRoutines = essentialRoutinesGroup ? essentialRoutinesGroup.items.map(item => ({ id: item.title, label: item.title, emoji: item.emoji })) : [];

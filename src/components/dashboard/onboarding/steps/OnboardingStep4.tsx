@@ -33,10 +33,6 @@ export const extraActivitySchema = z.object({
     path: ["endTime"],
 });
 
-export const onboardingSchemaStep4 = z.object({
-  extraActivities: z.array(extraActivitySchema).optional(),
-});
-
 
 function ActivityScheduler({ activityIndex, remove, hasError }: { activityIndex: number, remove: (index: number) => void, hasError: boolean }) {
     const { control, watch, setValue } = useFormContext();

@@ -24,11 +24,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { parseTime } from "@/lib/calendar-utils";
 import dynamic from 'next/dynamic';
 import { Skeleton } from "@/components/ui/skeleton";
-import { OnboardingStep1, onboardingSchemaStep1 } from "./steps/OnboardingStep1";
-import { OnboardingStep2, onboardingSchemaStep2 } from "./steps/OnboardingStep2";
-import { OnboardingStep3, onboardingSchemaStep3 } from "./steps/OnboardingStep3";
-import { OnboardingStep4, onboardingSchemaStep4, extraActivitySchema } from "./steps/OnboardingStep4";
-import { OnboardingStep5, onboardingSchemaStep5 } from "./steps/OnboardingStep5";
+import { OnboardingStep1 } from "./steps/OnboardingStep1";
+import { OnboardingStep2 } from "./steps/OnboardingStep2";
+import { OnboardingStep3 } from "./steps/OnboardingStep3";
+import { OnboardingStep4, extraActivitySchema } from "./steps/OnboardingStep4";
+import { OnboardingStep5 } from "./steps/OnboardingStep5";
 import { OnboardingStep6 } from "./steps/OnboardingStep6";
 
 const TOTAL_STEPS = 6;
@@ -46,16 +46,45 @@ const scheduleItemSchema = z.object({
 });
 
 // Unified schema for the entire onboarding flow
-const combinedSchema = onboardingSchemaStep1
-  .merge(onboardingSchemaStep2)
-  .merge(onboardingSchemaStep3)
-  .merge(onboardingSchemaStep4)
-  .merge(onboardingSchemaStep5)
-  .merge(z.object({
-    schedule: z.array(scheduleItemSchema).optional(),
-  }));
+const onboardingSchema = z.object({
+  // Step 1
+  name: z.string().min(2, { message: "O nome precisa ter pelo menos 2 caracteres." }),
+  birthDate: z.string({ required_error: "A data de nascimento é obrigatória." }).refine(val => val && isValid(parse(val, 'yyyy-MM-dd', new Date())), {
+    message: "Data inválida."
+  }),
+  gender: z.enum(['boy', 'girl', 'not-informed']),
+  contextId: z.string(),
+  // Step 2
+  schoolShift: z.enum(['morning', 'afternoon', 'full_time', 'not_applicable']),
+  schoolShiftStart: z.string().optional(),
+  schoolShiftEnd: z.string().optional(),
+  mealsAtSchool: z.object({
+    lunch: z.boolean().default(false),
+    dinner: z.boolean().default(false),
+  }),
+  // Step 3
+  wakeUpTime: z.string({ required_error: "O horário de acordar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  lunchTime: z.string({ required_error: "O horário do almoço é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  dinnerTime: z.string({ required_error: "O horário do jantar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  sleepTime: z.string({ required_error: "O horário de dormir é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  // Step 4
+  extraActivities: z.array(extraActivitySchema).optional(),
+  // Step 5
+  essentialRoutines: z.array(z.string()).optional(),
+  // Step 6 (Final data)
+  schedule: z.array(scheduleItemSchema).optional(),
+}).superRefine((data, ctx) => { // For cross-field validation from Step 2
+    if (data.schoolShift !== 'not_applicable') {
+        if (!data.schoolShiftStart) ctx.addIssue({ code: "custom", path: ["schoolShiftStart"], message: "Horário de início é obrigatório." });
+        if (!data.schoolShiftEnd) ctx.addIssue({ code: "custom", path: ["schoolShiftEnd"], message: "Horário de fim é obrigatório." });
+        if (data.schoolShiftStart && data.schoolShiftEnd && data.schoolShiftEnd <= data.schoolShiftStart) {
+            ctx.addIssue({ code: 'custom', path: ['schoolShiftEnd'], message: "O horário final deve ser depois do inicial." });
+        }
+    }
+});
 
-export type OnboardingFormValues = z.infer<typeof combinedSchema>;
+
+export type OnboardingFormValues = z.infer<typeof onboardingSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
 
 // Extract essential routine names for default values
@@ -94,7 +123,7 @@ export function OnboardingForm() {
   const [errorToHighlight, setErrorToHighlight] = useState<any | null>(null);
 
   const methods = useForm<OnboardingFormValues>({
-    resolver: zodResolver(combinedSchema),
+    resolver: zodResolver(onboardingSchema),
     mode: 'onChange',
     defaultValues: {
       name: "",
@@ -139,14 +168,14 @@ export function OnboardingForm() {
   };
   
 const stepFields: (keyof OnboardingFormValues)[][] = [
-    [], // Step 1 (Intro)
-    ['name', 'birthDate', 'gender', 'contextId'], // Step 2
-    ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'], // Step 3
-    ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'], // Step 4
-    ['extraActivities'], // Step 5
-    ['essentialRoutines'], // Step 6
-    ['schedule'], // Step 7 (Final Review)
+    [], // Step 1 is the intro, no fields.
+    ['name', 'birthDate', 'gender', 'contextId'], // Step 2 fields
+    ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'], // Step 3 fields
+    ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'], // Step 4 fields
+    ['extraActivities'], // Step 5 fields
+    ['essentialRoutines'], // Step 6 fields
 ];
+
 
 const goToNextStep = async () => {
     if (step >= TOTAL_STEPS) return;
