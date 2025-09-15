@@ -67,22 +67,6 @@ function AchievementsPageContent() {
     
     return (
       <div className="space-y-6">
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Medal className="h-6 w-6 text-primary" />
-                    Quadro de Medalhas Geral
-                </CardTitle>
-            </CardHeader>
-            {childrenInContext.length > 1 && (
-                <CardContent>
-                    <div className="max-w-xs">
-                       <HeroSelector heroes={childrenInContext} selectedHeroId={selectedChildId} onSelectHero={setSelectedChildId} showAllOption={true} />
-                    </div>
-                </CardContent>
-            )}
-        </Card>
-        
         <Accordion type="multiple" defaultValue={predefinedBadgeCategories.map(c => c.title)} className="w-full space-y-4">
           {predefinedBadgeCategories.map(category => (
             <AccordionItem key={category.title} value={category.title} className="border rounded-lg bg-card text-card-foreground shadow-sm">
