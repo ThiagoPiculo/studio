@@ -9,7 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
 import { addMissionTemplate, addMissionInstance, addChildProfile } from "@/lib/firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle } from "lucide-react";
+import { Loader2, UserPlus, ArrowRight, ArrowLeft, Wand2, AlertTriangle, Tv } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { useRouter } from "next/navigation";
@@ -67,6 +67,8 @@ const onboardingSchema = z.object({
   lunchTime: z.string({ required_error: "O horário do almoço é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
   dinnerTime: z.string({ required_error: "O horário do jantar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
   sleepTime: z.string({ required_error: "O horário de dormir é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  screenTime1: z.string().optional(),
+  screenTime2: z.string().optional(),
   // Step 4
   extraActivities: z.array(extraActivitySchema).optional(),
   // Step 5
@@ -137,6 +139,8 @@ export function OnboardingForm() {
       lunchTime: '12:15',
       dinnerTime: '18:00',
       sleepTime: '22:00',
+      screenTime1: '',
+      screenTime2: '',
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
@@ -171,7 +175,7 @@ const stepFields: (keyof OnboardingFormValues)[][] = [
     [], // Step 1 is the intro, no fields.
     ['name', 'birthDate', 'gender', 'contextId'], // Step 2 fields
     ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'], // Step 3 fields
-    ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'], // Step 4 fields
+    ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime', 'screenTime1', 'screenTime2'], // Step 4 fields
     ['extraActivities'], // Step 5 fields
     ['essentialRoutines'], // Step 6 fields
 ];
@@ -180,7 +184,6 @@ const stepFields: (keyof OnboardingFormValues)[][] = [
 const goToNextStep = async () => {
     if (step >= TOTAL_STEPS) return;
 
-    // Skip validation for the first introductory step
     if (step === 1) {
         setStep(prev => prev + 1);
         return;
@@ -469,3 +472,5 @@ const goToNextStep = async () => {
     </FormProvider>
   );
 }
+
+    
