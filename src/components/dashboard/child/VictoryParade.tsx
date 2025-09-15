@@ -49,7 +49,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   return (
     <>
       {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={500} gravity={0.15} colors={['#FFD700', '#FF33F6', '#33D4FF', '#34D399', '#FF5733']} />}
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <Card className="w-full max-w-sm bg-gradient-to-br from-card to-primary/5 border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500">
             <CardHeader className="items-center space-y-3 pt-6">
                  <Avatar className="h-20 w-20 text-3xl border-4 shadow-lg" style={{ borderColor: data.child.color }}>
