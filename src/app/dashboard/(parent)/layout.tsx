@@ -192,7 +192,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
         content: (
           <>
             <p className="text-sm text-muted-foreground">
-                Este é o seu centro de comando para todas as medalhas e conquistas. Explore as categorias, veja quais heróis se destacaram e use o filtro no topo para analisar o progresso individualmente ou de toda a equipe.
+              Este é o quadro de honra que celebra cada conquista! As medalhas são desbloqueadas automaticamente quando seus heróis concluem missões importantes, mantêm a consistência em suas rotinas ou alcançam novos níveis. Use esta tela para visualizar todas as conquistas possíveis e celebrar o progresso de cada um.
             </p>
           </>
         )

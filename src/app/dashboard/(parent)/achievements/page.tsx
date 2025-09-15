@@ -30,8 +30,8 @@ function BadgeCard({ badge, childrenProfiles }: { badge: BadgeType, childrenProf
               <Medal className="absolute top-1.5 right-1.5 h-8 w-8 drop-shadow-lg" style={{ color: badge.color }} />
           )}
           <div className="flex-grow flex flex-col items-center gap-3">
-              <div className={cn("w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative flex-shrink-0", !isEarned && 'bg-gray-400 dark:bg-gray-700')} style={isEarned ? { backgroundColor: badge.color } : {}}>
-                  <badge.icon className={cn("h-9 w-9 text-white", !isEarned && "opacity-30")} />
+              <div className={cn("w-16 h-16 rounded-full flex items-center justify-center shadow-inner relative flex-shrink-0", !isEarned && 'bg-gray-400 dark:bg-gray-700')} style={isEarned ? { backgroundColor: `${badge.color}20` } : {}}>
+                  <badge.icon className={cn("h-9 w-9", isEarned ? 'text-primary' : "opacity-30")} style={isEarned ? { color: badge.color } : {}}/>
               </div>
               <div className="flex-grow flex flex-col justify-start">
                   <p className={cn("text-sm font-semibold leading-tight", isEarned ? 'text-foreground' : 'text-muted-foreground')}>{badge.title}</p>
@@ -73,9 +73,6 @@ function AchievementsPageContent() {
                     <Medal className="h-6 w-6 text-primary" />
                     Quadro de Medalhas Geral
                 </CardTitle>
-                <CardDescription>
-                    Explore todas as medalhas e veja quais heróis já as desbloquearam.
-                </CardDescription>
             </CardHeader>
             {childrenInContext.length > 1 && (
                 <CardContent>
