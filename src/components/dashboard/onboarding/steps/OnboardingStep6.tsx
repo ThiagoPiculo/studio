@@ -35,17 +35,10 @@ const DayScheduleTab = ({ day, control }: { day: Weekday, control: any }) => {
     return acc;
   }, {} as Record<string, any[]>);
   
-  const blockOrder = [
-    'Atividades Extras', 'Rotina Hora de Acordar', 'Rotina Saindo para escola',
-    'Rotina Hora da Escola', 'Rotina Hora do Almoço', 'Rotina Tarefas Escolares',
-    'Rotina Lanche da tarde', 'Rotina Hora do Jantar', 'Rotina Hora de Dormir', 'Outras Atividades'
-  ];
-
   const sortedBlockNames = Object.keys(blocks).sort((a, b) => {
-    const indexA = blockOrder.indexOf(a);
-    const indexB = blockOrder.indexOf(b);
-    if (indexA === -1) return 1; if (indexB === -1) return -1;
-    return indexA - indexB;
+    const firstActivityTimeA = blocks[a][0]?.startTime || '23:59';
+    const firstActivityTimeB = blocks[b][0]?.startTime || '23:59';
+    return firstActivityTimeA.localeCompare(firstActivityTimeB);
   });
 
   if(itemsForDay.length === 0) {
