@@ -77,16 +77,6 @@ function OnboardingFormSkeleton() {
     );
 }
 
-const stepSchemas: z.ZodType<any, any>[] = [
-  z.object({}), // Intro step, no validation
-  onboardingSchemaStep1,
-  onboardingSchemaStep2,
-  onboardingSchemaStep3,
-  onboardingSchemaStep4,
-  onboardingSchemaStep5,
-  z.object({ schedule: z.array(scheduleItemSchema).optional() }),
-];
-
 const OnboardingStep0 = dynamic(() => import('./steps/OnboardingStep0').then(mod => mod.OnboardingStep0), { loading: () => <OnboardingFormSkeleton /> });
 
 
@@ -148,55 +138,48 @@ export function OnboardingForm() {
     setErrorToHighlight(null);
   };
   
-  const goToNextStep = async () => {
+const stepFields: (keyof OnboardingFormValues)[][] = [
+    [], // Step 1 (Intro)
+    ['name', 'birthDate', 'gender', 'contextId'], // Step 2
+    ['schoolShift', 'schoolShiftStart', 'schoolShiftEnd'], // Step 3
+    ['wakeUpTime', 'lunchTime', 'dinnerTime', 'sleepTime'], // Step 4
+    ['extraActivities'], // Step 5
+    ['essentialRoutines'], // Step 6
+    ['schedule'], // Step 7 (Final Review)
+];
+
+const goToNextStep = async () => {
     if (step >= TOTAL_STEPS) return;
 
-    const currentStepSchema = stepSchemas[step];
-    const result = currentStepSchema.safeParse(methods.getValues());
-    
-    if (result.success) {
-      if (step === 4) { // Check for conflicts before moving from extra activities
-        const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
-        const conflicts = (extraActivities || []).filter(activity => {
-          if (schoolShift === 'not_applicable' || !activity.startTime) return false;
-          const activityMinutes = parseTime(activity.startTime);
-          const startMinutes = parseTime(schoolShiftStart!);
-          const endMinutes = parseTime(schoolShiftEnd!);
-          return activityMinutes >= startMinutes && activityMinutes < endMinutes;
-        }).map(a => a.name);
+    const fieldsToValidate = stepFields[step] || [];
+    const isStepValid = fieldsToValidate.length > 0 ? await methods.trigger(fieldsToValidate) : true;
 
-        if (conflicts.length > 0) {
-          setConflictingActivities(conflicts);
-          setIsConflictDialogOpen(true);
-          return;
-        }
-      }
-      proceedToNextStep();
-    } else {
-        const errors = result.error.flatten().fieldErrors;
-        methods.trigger(); // Trigger manual validation to show errors
-        
-        const firstErrorKey = Object.keys(errors)[0] as keyof OnboardingFormValues;
+    if (isStepValid) {
+        if (step === 5) { // Check for conflicts before moving from extra activities
+            const { extraActivities, schoolShift, schoolShiftStart, schoolShiftEnd } = methods.getValues();
+            const conflicts = (extraActivities || []).filter(activity => {
+                if (schoolShift === 'not_applicable' || !activity.startTime) return false;
+                const activityMinutes = parseTime(activity.startTime);
+                const startMinutes = parseTime(schoolShiftStart!);
+                const endMinutes = parseTime(schoolShiftEnd!);
+                return activityMinutes >= startMinutes && activityMinutes < endMinutes;
+            }).map(a => a.name);
 
-        if (firstErrorKey === 'extraActivities' && Array.isArray(errors.extraActivities)) {
-            const errorIndex = (errors.extraActivities as string[]).findIndex(e => e);
-            if (errorIndex !== -1) {
-                 toast({
-                    title: `Pendência em uma Atividade Extra`,
-                    description: `Parece que há um erro na configuração de uma de suas atividades. Por favor, verifique.`,
-                    variant: "destructive"
-                });
+            if (conflicts.length > 0) {
+                setConflictingActivities(conflicts);
+                setIsConflictDialogOpen(true);
                 return;
             }
         }
-
+        proceedToNextStep();
+    } else {
         toast({
             title: "Ops! Faltam alguns detalhes.",
             description: "Por favor, corrija os campos marcados antes de continuar.",
             variant: "destructive"
         });
     }
-  };
+};
 
 
   const goToPreviousStep = () => {
