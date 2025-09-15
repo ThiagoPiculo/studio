@@ -34,12 +34,26 @@ import { OnboardingStep6 } from "./steps/OnboardingStep6";
 const TOTAL_STEPS = 6;
 const DISPLAY_TOTAL_STEPS = TOTAL_STEPS - 1;
 
+const scheduleItemSchema = z.object({
+    activity: z.string(),
+    startTime: z.string(),
+    endTime: z.string(),
+    days: z.array(z.string()),
+    type: z.enum(['essential_routine', 'extra_activity', 'school_entry', 'school_exit']),
+    emoji: z.string(),
+    category: z.string(),
+    block: z.string().optional(),
+});
+
 // Unified schema for the entire onboarding flow
 const combinedSchema = onboardingSchemaStep1
   .extend(onboardingSchemaStep2.shape)
   .extend(onboardingSchemaStep3.shape)
   .extend(onboardingSchemaStep4.shape)
-  .extend(onboardingSchemaStep5.shape);
+  .extend(onboardingSchemaStep5.shape)
+  .extend(z.object({
+    schedule: z.array(scheduleItemSchema).optional(),
+  }));
 
 export type OnboardingFormValues = z.infer<typeof combinedSchema>;
 export type ActivityFormValues = z.infer<typeof extraActivitySchema>;
@@ -74,7 +88,6 @@ export function OnboardingForm() {
 
   const [step, setStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
-  const [generatedSchedule, setGeneratedSchedule] = useState<{schedule: ScheduleItem[]} | null>(null);
   
   const [isConflictDialogOpen, setIsConflictDialogOpen] = useState(false);
   const [conflictingActivities, setConflictingActivities] = useState<string[]>([]);
@@ -98,6 +111,7 @@ export function OnboardingForm() {
       mealsAtSchool: { lunch: false, dinner: false },
       extraActivities: [],
       essentialRoutines: essentialRoutinesDefault,
+      schedule: [],
     },
   });
   
@@ -208,8 +222,8 @@ export function OnboardingForm() {
       const values = methods.getValues();
 
       try {
-          const schedule = await generateSchedule(values);
-          setGeneratedSchedule(schedule);
+          const scheduleData = await generateSchedule(values);
+          methods.setValue('schedule', scheduleData.schedule as any);
           setStep(prev => prev + 1);
       } catch (error: any) {
           console.error("Error generating schedule:", error);
@@ -228,12 +242,15 @@ export function OnboardingForm() {
         toast({ title: "Erro de Autenticação", variant: "destructive" });
         return;
     }
+    
+    const values = methods.getValues();
+    const generatedSchedule = values.schedule;
+
     if (!generatedSchedule) {
         toast({ title: "Rotina não gerada", description: "A rotina precisa ser gerada antes de finalizar.", variant: "destructive" });
         return;
     }
     setIsLoading(true);
-    const values = methods.getValues();
 
     try {
         const newChild = await addChildProfile(user.uid, {
@@ -247,8 +264,8 @@ export function OnboardingForm() {
         
         const allMissionPromises = [];
 
-        if (generatedSchedule && generatedSchedule.schedule) {
-            for (const item of generatedSchedule.schedule) {
+        if (generatedSchedule && generatedSchedule.length > 0) {
+            for (const item of generatedSchedule) {
                  if (item.type === 'school_entry' || item.type === 'school_exit') continue;
                  
                  const predefinedMission = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
@@ -284,7 +301,7 @@ export function OnboardingForm() {
                     recurrenceRule: {
                         freq: 'WEEKLY',
                         interval: 1,
-                        byDay: item.days,
+                        byDay: item.days as Weekday[],
                     },
                     source: source,
                 };
@@ -360,7 +377,7 @@ export function OnboardingForm() {
                 {step === 3 && <OnboardingStep2 />}
                 {step === 4 && <OnboardingStep3 />}
                 {step === 5 && <OnboardingStep4 errorToHighlight={errorToHighlight} />}
-                {step === 6 && <OnboardingStep6 isLoading={isLoading} generatedSchedule={generatedSchedule} />}
+                {step === 6 && <OnboardingStep6 isLoading={isLoading} />}
             </div>
         </CardContent>
         <CardFooter className="flex justify-between items-center p-6 border-t">
@@ -405,7 +422,7 @@ export function OnboardingForm() {
                 </Button>
               )}
               {step === TOTAL_STEPS && (
-                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !generatedSchedule} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
+                <Button type="button" onClick={handleFinalSubmit} disabled={isLoading || !methods.getValues('schedule')} className="shadow-clay hover:shadow-clay-hover active:shadow-clay-inset">
                   {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Confirmar e Iniciar! 🚀
                 </Button>

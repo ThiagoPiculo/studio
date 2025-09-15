@@ -1,56 +1,59 @@
 
-
 "use client";
 
 import React from 'react';
-import type { ScheduleItem } from "@/lib/types";
+import { useFormContext, useFieldArray } from 'react-hook-form';
+import type { ScheduleItem, OnboardingFormValues } from "@/lib/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from '@/components/ui/badge';
 import { weekdayLabels, allWeekdays, type Weekday } from "@/lib/types";
 import { Loader2, Wand2, BrainCircuit, Sparkles } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { TimePicker } from '../../missions/TimePicker';
+import { FormField, FormItem, FormControl, FormLabel, FormMessage } from '@/components/ui/form';
 
-const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] }) => {
-  const sortedItems = [...items].sort((a,b) => a.startTime.localeCompare(b.startTime));
+const DayScheduleTab = ({ day, control }: { day: Weekday, control: any }) => {
+  const { fields } = useFieldArray({
+      control,
+      name: "schedule",
+  });
+
+  const itemsForDay = React.useMemo(() => {
+    return fields
+        .map((field, index) => ({ ...field, originalIndex: index }))
+        .filter(item => (item as any).days.includes(day))
+        .sort((a,b) => (a as any).startTime.localeCompare((b as any).startTime));
+  }, [fields, day]);
   
-  const blocks = sortedItems.reduce((acc, item) => {
-    const blockName = item.type === 'extra_activity' ? 'Atividades Extras' : (item.block || 'Outras Atividades');
+  const blocks = itemsForDay.reduce((acc, item) => {
+    const blockName = (item as any).type === 'extra_activity' ? 'Atividades Extras' : ((item as any).block || 'Outras Atividades');
     if (!acc[blockName]) {
       acc[blockName] = [];
     }
     acc[blockName].push(item);
     return acc;
-  }, {} as Record<string, ScheduleItem[]>);
+  }, {} as Record<string, any[]>);
   
   const blockOrder = [
-    'Atividades Extras',
-    'Rotina Hora de Acordar',
-    'Rotina Saindo para escola',
-    'Rotina Hora da Escola',
-    'Rotina Hora do Almoço',
-    'Rotina Tarefas Escolares',
-    'Rotina Lanche da tarde',
-    'Rotina Hora do Jantar',
-    'Rotina Hora de Dormir',
-    'Outras Atividades'
+    'Atividades Extras', 'Rotina Hora de Acordar', 'Rotina Saindo para escola',
+    'Rotina Hora da Escola', 'Rotina Hora do Almoço', 'Rotina Tarefas Escolares',
+    'Rotina Lanche da tarde', 'Rotina Hora do Jantar', 'Rotina Hora de Dormir', 'Outras Atividades'
   ];
 
   const sortedBlockNames = Object.keys(blocks).sort((a, b) => {
     const indexA = blockOrder.indexOf(a);
     const indexB = blockOrder.indexOf(b);
-    if (indexA === -1) return 1;
-    if (indexB === -1) return -1;
+    if (indexA === -1) return 1; if (indexB === -1) return -1;
     return indexA - indexB;
   });
 
-
-  if(items.length === 0) {
+  if(itemsForDay.length === 0) {
     return <div className="text-center text-muted-foreground p-8">Nenhuma atividade neste dia.</div>
   }
 
   return (
-    <Accordion type="multiple" defaultValue={[]} className="w-full space-y-2">
+    <Accordion type="multiple" defaultValue={sortedBlockNames} className="w-full space-y-2">
       {sortedBlockNames.map(blockName => {
         const isExtraActivityBlock = blockName === 'Atividades Extras';
         const isSchoolBlock = blockName === 'Rotina Hora da Escola';
@@ -67,14 +70,22 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
               </AccordionTrigger>
               <AccordionContent className="pt-2">
                 <div className="space-y-2">
-                  {blocks[blockName].map((item, index) => (
+                  {blocks[blockName].map((item: any, index) => (
                     <div 
-                        key={`${item.activity}-${index}`} 
-                        className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${isExtraActivityBlock ? 'bg-primary/10 border border-primary/20' : isSchoolBlock ? 'bg-indigo-500/10 border border-indigo-500/20' : 'bg-background'}`}
+                        key={item.id} 
+                        className={`flex items-center gap-2 sm:gap-3 text-sm p-3 rounded-md ${isExtraActivityBlock ? 'bg-primary/10' : isSchoolBlock ? 'bg-indigo-500/10' : 'bg-background'}`}
                       >
-                        <div className="text-xs text-muted-foreground font-mono bg-card px-2 py-1 rounded-md shrink-0 w-14 text-center">
-                            {item.startTime}
-                        </div>
+                        <FormField
+                            control={control}
+                            name={`schedule.${item.originalIndex}.startTime`}
+                            render={({ field }) => (
+                                <FormItem className="w-28 shrink-0">
+                                    <FormControl>
+                                        <TimePicker {...field} />
+                                    </FormControl>
+                                </FormItem>
+                            )}
+                        />
                         <div className="flex-grow flex items-center gap-2">
                             <span className="text-xl">{item.emoji}</span>
                             <div className="flex flex-col">
@@ -94,38 +105,22 @@ const DayScheduleTab = ({ day, items }: { day: Weekday, items: ScheduleItem[] })
 
 interface OnboardingStep6Props {
   isLoading: boolean;
-  generatedSchedule: { schedule: ScheduleItem[] } | null;
 }
 
-export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep6Props) {
-  
-  const scheduleByDay = React.useMemo(() => {
-    if (!generatedSchedule || !generatedSchedule.schedule) {
-        return {} as Record<Weekday, ScheduleItem[]>;
-    }
-    const grouped = generatedSchedule.schedule.reduce((acc, item) => {
-        (item.days || []).forEach(day => {
-            if (!acc[day]) {
-                acc[day] = [];
-            }
-            acc[day].push(item);
-        });
-        return acc;
-    }, {} as Record<Weekday, ScheduleItem[]>);
-
-    return grouped;
-  }, [generatedSchedule]);
+export function OnboardingStep6({ isLoading }: OnboardingStep6Props) {
+  const { control, watch } = useFormContext<OnboardingFormValues>();
+  const schedule = watch('schedule');
 
   const scheduleCountsByDay = React.useMemo(() => {
       const counts: Record<Weekday, number> = { MO: 0, TU: 0, WE: 0, TH: 0, FR: 0, SA: 0, SU: 0 };
-      if (!generatedSchedule?.schedule) return counts;
-      generatedSchedule.schedule.forEach(item => {
+      if (!schedule) return counts;
+      schedule.forEach(item => {
           (item.days || []).forEach(day => {
-              counts[day] = (counts[day] || 0) + 1;
+              counts[day as Weekday] = (counts[day as Weekday] || 0) + 1;
           });
       });
       return counts;
-  }, [generatedSchedule]);
+  }, [schedule]);
 
 
   if (isLoading) {
@@ -144,7 +139,7 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
     );
   }
 
-  if (!generatedSchedule || !generatedSchedule.schedule || generatedSchedule.schedule.length === 0) {
+  if (!schedule || schedule.length === 0) {
     return (
       <div className="text-center">
         <h2 className="text-2xl font-bold font-headline">Revisão da Rotina</h2>
@@ -177,7 +172,7 @@ export function OnboardingStep6({ isLoading, generatedSchedule }: OnboardingStep
              <div className="mt-4">
                 {allWeekdays.map(day => (
                     <TabsContent key={day} value={day}>
-                        <DayScheduleTab day={day} items={scheduleByDay[day] || []} />
+                        <DayScheduleTab day={day} control={control} />
                     </TabsContent>
                 ))}
              </div>
