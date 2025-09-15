@@ -42,7 +42,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
       { title: 'Hora livre para brincar', emoji: '🧩', suggestedAppCategory: 'hobbies', starsReward: 5 },
       { title: 'Fazer a lição de casa', emoji: '✍️', suggestedAppCategory: 'school', starsReward: 15 },
       { title: 'Organizar a mochila para escola', emoji: '🎒', suggestedAppCategory: 'school', starsReward: 10 },
-      { title: 'Hora da Tela', emoji: '📺', suggestedAppCategory: 'hobbies', starsReward: 0 },
+      { title: 'Hora da Tela', emoji: '📱', suggestedAppCategory: 'hobbies', starsReward: 0 },
     ],
   },
   {
@@ -241,5 +241,7 @@ export const predefinedMissionGroups: PredefinedMissionGroup[] = [
     ],
   },
 ];
+
+    
 
     

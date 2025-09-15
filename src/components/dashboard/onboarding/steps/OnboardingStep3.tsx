@@ -9,7 +9,7 @@ import { useEffect, useMemo } from "react";
 import { parseTime, formatTime } from "@/lib/calendar-utils";
 import type { SchoolShift } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info, Tv } from "lucide-react";
+import { Info } from "lucide-react";
 
 
 export function OnboardingStep3() {
@@ -137,7 +137,7 @@ export function OnboardingStep3() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel className="flex items-center gap-2">
-                    <Tv className="text-2xl text-primary"/>
+                    <span className="text-2xl">📱</span>
                     <span className="font-semibold">{screenTimeLabels.label1}</span>
                 </FormLabel>
                 <FormControl>
@@ -156,7 +156,7 @@ export function OnboardingStep3() {
                 render={({ field }) => (
                 <FormItem>
                     <FormLabel className="flex items-center gap-2">
-                        <Tv className="text-2xl text-primary"/>
+                        <span className="text-2xl">📱</span>
                         <span className="font-semibold">{screenTimeLabels.label2}</span>
                     </FormLabel>
                     <FormControl>
@@ -179,3 +179,5 @@ export function OnboardingStep3() {
     </div>
   );
 }
+
+    
