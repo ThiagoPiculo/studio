@@ -9,7 +9,8 @@ import { useEffect, useMemo } from "react";
 import { parseTime, formatTime } from "@/lib/calendar-utils";
 import type { SchoolShift } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, Tv } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 
 export function OnboardingStep3() {
@@ -17,6 +18,7 @@ export function OnboardingStep3() {
   const schoolShift: SchoolShift = watch('schoolShift');
   const schoolShiftStart = watch('schoolShiftStart');
   const schoolShiftEnd = watch('schoolShiftEnd');
+  const includeScreenTime = watch('includeScreenTime');
 
   const anchorTimeFields = useMemo(() => {
     return [
@@ -130,45 +132,71 @@ export function OnboardingStep3() {
             )}
           />
         ))}
-
+      </div>
+      <div className="space-y-4 pt-4 border-t">
         <FormField
             control={control}
-            name="screenTime1"
+            name="includeScreenTime"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="flex items-center gap-2">
-                    <span className="text-2xl">📱</span>
-                    <span className="font-semibold">{screenTimeLabels.label1}</span>
-                </FormLabel>
-                <FormControl>
-                  <TimePicker {...field} />
-                </FormControl>
-                 <FormDescription className="text-xs">Primeiro período de 1 hora de tela.</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-        {screenTimeLabels.label2 && (
-             <FormField
-                control={control}
-                name="screenTime2"
-                render={({ field }) => (
-                <FormItem>
-                    <FormLabel className="flex items-center gap-2">
-                        <span className="text-2xl">📱</span>
-                        <span className="font-semibold">{screenTimeLabels.label2}</span>
-                    </FormLabel>
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm bg-muted/30">
+                    <div className="space-y-0.5">
+                        <FormLabel>Incluir tempo de tela na rotina?</FormLabel>
+                        <FormDescription>
+                            Adicione horários definidos para o uso de telas.
+                        </FormDescription>
+                    </div>
                     <FormControl>
-                    <TimePicker {...field} />
+                        <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                        />
                     </FormControl>
-                    <FormDescription className="text-xs">Segundo período de 1 hora de tela.</FormDescription>
-                    <FormMessage />
                 </FormItem>
+            )}
+        />
+        {includeScreenTime && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8 animate-in fade-in duration-300">
+                <FormField
+                    control={control}
+                    name="screenTime1"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center gap-2">
+                            <span className="text-2xl">📱</span>
+                            <span className="font-semibold">{screenTimeLabels.label1}</span>
+                        </FormLabel>
+                        <FormControl>
+                          <TimePicker {...field} />
+                        </FormControl>
+                         <FormDescription className="text-xs">Primeiro período de 1 hora de tela.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                />
+
+                {screenTimeLabels.label2 && (
+                     <FormField
+                        control={control}
+                        name="screenTime2"
+                        render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="flex items-center gap-2">
+                                <span className="text-2xl">📱</span>
+                                <span className="font-semibold">{screenTimeLabels.label2}</span>
+                            </FormLabel>
+                            <FormControl>
+                            <TimePicker {...field} />
+                            </FormControl>
+                            <FormDescription className="text-xs">Segundo período de 1 hora de tela.</FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                        )}
+                    />
                 )}
-            />
+            </div>
         )}
       </div>
+
        <Alert variant="default" className="border-primary/20 bg-primary/5 mt-6">
           <Info className="h-4 w-4 text-primary" />
           <AlertTitle className="font-semibold text-primary">Dica do Assistente</AlertTitle>

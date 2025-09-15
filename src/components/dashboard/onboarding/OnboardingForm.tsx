@@ -67,6 +67,7 @@ const onboardingSchema = z.object({
   lunchTime: z.string({ required_error: "O horário do almoço é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
   dinnerTime: z.string({ required_error: "O horário do jantar é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
   sleepTime: z.string({ required_error: "O horário de dormir é obrigatório." }).regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Horário inválido."),
+  includeScreenTime: z.boolean().default(true),
   screenTime1: z.string().optional(),
   screenTime2: z.string().optional(),
   // Step 4
@@ -139,6 +140,7 @@ export function OnboardingForm() {
       lunchTime: '12:15',
       dinnerTime: '18:00',
       sleepTime: '22:00',
+      includeScreenTime: true,
       screenTime1: '',
       screenTime2: '',
       mealsAtSchool: { lunch: false, dinner: false },
