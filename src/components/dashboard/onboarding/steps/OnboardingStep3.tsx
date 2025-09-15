@@ -9,7 +9,7 @@ import { useEffect, useMemo } from "react";
 import { parseTime, formatTime } from "@/lib/calendar-utils";
 import type { SchoolShift } from "@/lib/types";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Info } from "lucide-react";
+import { Info, Tv } from "lucide-react";
 
 
 export function OnboardingStep3() {
@@ -27,12 +27,30 @@ export function OnboardingStep3() {
     ];
   }, [schoolShift]);
 
+  const screenTimeLabels = useMemo(() => {
+    switch (schoolShift) {
+      case 'morning':
+        return { label1: 'Tempo de Tela (tarde)', label2: 'Tempo de Tela (noite)' };
+      case 'afternoon':
+        return { label1: 'Tempo de Tela (manhã)', label2: 'Tempo de Tela (após escola)' };
+      case 'full_time':
+        return { label1: 'Tempo de Tela (noite)', label2: null };
+      case 'not_applicable':
+        return { label1: 'Tempo de Tela (manhã)', label2: 'Tempo de Tela (tarde)' };
+      default:
+        return { label1: 'Tempo de Tela 1', label2: 'Tempo de Tela 2' };
+    }
+  }, [schoolShift]);
+
+
   useEffect(() => {
     const calculateAnchorTimes = () => {
         let wakeUp = parseTime('07:00');
         let lunch = parseTime('12:00');
         let dinner = parseTime('18:00');
         let sleep = parseTime('21:00');
+        let screenTime1, screenTime2;
+
 
         const schoolStartMinutes = parseTime(schoolShiftStart);
         const schoolEndMinutes = parseTime(schoolShiftEnd);
@@ -43,27 +61,32 @@ export function OnboardingStep3() {
                 lunch = schoolEndMinutes + 30;
                 dinner = schoolEndMinutes + 6 * 60;
                 sleep = schoolEndMinutes + 9 * 60;
+                screenTime1 = lunch + 90; // after lunch/homework
+                screenTime2 = dinner + 30; // after dinner
                 break;
             case 'afternoon':
                 wakeUp = schoolStartMinutes - 5 * 60;
                 lunch = schoolStartMinutes - 45;
                 dinner = schoolEndMinutes + 30;
                 sleep = schoolEndMinutes + 4.5 * 60;
+                screenTime1 = wakeUp + 120; // after morning routine/homework
+                screenTime2 = dinner + 30; // after dinner
                 break;
             case 'full_time':
-                 // For full_time, we still need the anchor times for the weekend schedule.
-                 // We will use fixed times for lunch/dinner as per the new request.
                  lunch = parseTime('12:00'); 
-                 dinner = schoolEndMinutes - 30; // 30 minutes before school ends.
-                 // Wake up and sleep can be based on school start/end for weekdays.
+                 dinner = schoolEndMinutes - 30;
                  wakeUp = schoolStartMinutes - 60;
                  sleep = schoolEndMinutes + 3 * 60;
+                 screenTime1 = dinner + 30; // Only one slot after dinner
+                 screenTime2 = null;
                  break;
             case 'not_applicable':
                 lunch = parseTime('12:00');
                 wakeUp = lunch - 4 * 60;
                 dinner = lunch + 6 * 60;
                 sleep = lunch + 10 * 60;
+                screenTime1 = lunch - 60; // Before lunch
+                screenTime2 = dinner + 30; // After dinner
                 break;
         }
 
@@ -71,6 +94,8 @@ export function OnboardingStep3() {
         setValue('lunchTime', formatTime(lunch));
         setValue('dinnerTime', formatTime(dinner));
         setValue('sleepTime', formatTime(sleep));
+        setValue('screenTime1', screenTime1 ? formatTime(screenTime1) : '');
+        setValue('screenTime2', screenTime2 ? formatTime(screenTime2) : '');
     };
     
     if (schoolShift) {
@@ -84,7 +109,7 @@ export function OnboardingStep3() {
         <div className="text-center">
             <p className="text-muted-foreground">Defina os horários essenciais que servem de base para toda a rotina. Nossas sugestões são calculadas a partir do turno escolar que você informou.</p>
         </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-8">
         {anchorTimeFields.map(item => (
            <FormField
             key={item.name}
@@ -105,6 +130,44 @@ export function OnboardingStep3() {
             )}
           />
         ))}
+
+        <FormField
+            control={control}
+            name="screenTime1"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="flex items-center gap-2">
+                    <Tv className="text-2xl text-primary"/>
+                    <span className="font-semibold">{screenTimeLabels.label1}</span>
+                </FormLabel>
+                <FormControl>
+                  <TimePicker {...field} />
+                </FormControl>
+                 <FormDescription className="text-xs">Primeiro período de 1 hora de tela.</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+        {screenTimeLabels.label2 && (
+             <FormField
+                control={control}
+                name="screenTime2"
+                render={({ field }) => (
+                <FormItem>
+                    <FormLabel className="flex items-center gap-2">
+                        <Tv className="text-2xl text-primary"/>
+                        <span className="font-semibold">{screenTimeLabels.label2}</span>
+                    </FormLabel>
+                    <FormControl>
+                    <TimePicker {...field} />
+                    </FormControl>
+                    <FormDescription className="text-xs">Segundo período de 1 hora de tela.</FormDescription>
+                    <FormMessage />
+                </FormItem>
+                )}
+            />
+        )}
       </div>
        <Alert variant="default" className="border-primary/20 bg-primary/5 mt-6">
           <Info className="h-4 w-4 text-primary" />
