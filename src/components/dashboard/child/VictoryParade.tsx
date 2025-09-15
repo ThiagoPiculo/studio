@@ -37,7 +37,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
 
   return (
     <>
-      {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={400} gravity={0.1} />}
+      {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={400} gravity={0.1} colors={['#FFD700', '#FF33F6', '#33D4FF', '#34D399', '#FF5733']} />}
       <Dialog open={!!data} onOpenChange={(isOpen) => !isOpen && onDone()}>
         <DialogContent className="sm:max-w-md bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/50 dark:to-purple-900/50 border-0 shadow-2xl overflow-hidden">
             <div className="absolute inset-0 bg-grid-slate-100 [mask-image:linear-gradient(0deg,#fff,rgba(255,255,255,0.6))] dark:bg-grid-slate-700/25 dark:[mask-image:linear-gradient(0deg,rgba(255,255,255,0.1),rgba(255,255,255,0.5))]"></div>
