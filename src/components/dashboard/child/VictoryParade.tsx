@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -32,9 +31,10 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [confettiSource, setConfettiSource] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [confettiKey, setConfettiKey] = useState(0);
   const animationFrameId = useRef<number>();
 
-  const updateConfettiSource = () => {
+  const updateConfettiSource = useCallback(() => {
     if (cardRef.current) {
       const rect = cardRef.current.getBoundingClientRect();
       setConfettiSource({
@@ -43,16 +43,27 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
         w: rect.width,
         h: rect.height,
       });
+      // Increment the key to force re-render of the Confetti component
+      setConfettiKey(prevKey => prevKey + 1);
     }
-    animationFrameId.current = requestAnimationFrame(updateConfettiSource);
-  };
+    // Continue the loop only if the component is still supposed to show confetti
+    if (showConfetti) {
+       animationFrameId.current = requestAnimationFrame(updateConfettiSource);
+    }
+  }, [showConfetti]);
 
   useEffect(() => {
     if (data) {
       setShowConfetti(true);
-      const timer = setTimeout(() => setShowConfetti(false), 7000);
-      
-      // Start continuously updating the position
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+        // Ensure the animation loop stops when confetti is no longer shown
+        if (animationFrameId.current) {
+          cancelAnimationFrame(animationFrameId.current);
+        }
+      }, 7000);
+
+      // Start the animation loop
       animationFrameId.current = requestAnimationFrame(updateConfettiSource);
 
       return () => {
@@ -62,12 +73,12 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
         }
       };
     } else {
-      if (animationFrameId.current) {
+       setShowConfetti(false);
+       if (animationFrameId.current) {
         cancelAnimationFrame(animationFrameId.current);
       }
-      setConfettiSource(null);
     }
-  }, [data]);
+  }, [data, updateConfettiSource]);
 
   if (!data) return null;
 
@@ -78,10 +89,11 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
     <>
       {showConfetti && confettiSource && (
          <Confetti
+          key={confettiKey} // Force re-mount on key change
           width={width}
           height={height}
           recycle={false}
-          numberOfPieces={400}
+          numberOfPieces={250} // Reduced for performance with frequent re-renders
           gravity={0.15}
           initialVelocityX={{ min: -10, max: 10 }}
           initialVelocityY={{ min: -20, max: 5 }}
@@ -94,7 +106,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
       >
         <Card 
             ref={cardRef} 
-            className="w-full max-w-sm bg-gradient-to-br from-card to-muted border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
+            className="w-full max-w-sm bg-gradient-to-br from-card to-primary/10 border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
             onClick={(e) => e.stopPropagation()}
         >
             <CardHeader className="items-center space-y-3 pt-6">
