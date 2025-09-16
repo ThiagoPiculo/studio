@@ -1987,10 +1987,10 @@ export const recalculateAndSyncBadges = async (childId: string): Promise<void> =
         if (completions.length > 0) {
             completedCategories.add(instance.category);
             const missionTitle = instance.title.toLowerCase().trim();
-            if (missionTitle === 'escovar os dentes') finalBadgeSet.add('defensor_sorriso');
-            if (missionTitle === 'arrumar a cama') finalBadgeSet.add('guardiao_descanso');
-            if (missionTitle === 'fazer lição de casa') finalBadgeSet.add('mente_brilhante');
-            if (missionTitle.includes('ajudar a p')) finalBadgeSet.add('maozinha_amiga');
+            if (missionTitle.includes('escovar os dentes')) finalBadgeSet.add('defensor_sorriso');
+            if (missionTitle.includes('arrumar a cama')) finalBadgeSet.add('guardiao_descanso');
+            if (missionTitle.includes('fazer lição de casa')) finalBadgeSet.add('mente_brilhante');
+            if (missionTitle.includes('ajudar a pôr') || missionTitle.includes('ajudar a tirar')) finalBadgeSet.add('maozinha_amiga');
             if (instance.category === 'social' || instance.category === 'environmental') hasCompletedSocialOrEnv = true;
             if (instance.category === 'sports') hasCompletedSports = true;
         }
@@ -2601,6 +2601,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 
