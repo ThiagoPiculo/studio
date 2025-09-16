@@ -5,13 +5,13 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, deleteChildProfile, moveChildToNewContext } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -23,11 +23,13 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
-    const { currentRole, isLoading: isFamilyLoading } = useFamily();
+    const { currentRole, isLoading: isFamilyLoading, availableContexts, setCurrentContext } = useFamily();
     const params = useParams();
     const allianceId = params.allianceId as string;
     const { toast } = useToast();
@@ -37,9 +39,16 @@ function AllianceManagementPage() {
     const [members, setMembers] = useState<UserProfile[]>([]);
     const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
     const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
+    const [children, setChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+    
+    const [childToDelete, setChildToDelete] = useState<ChildProfile | null>(null);
+    const [childToMove, setChildToMove] = useState<ChildProfile | null>(null);
+    const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
+    const [isActionProcessing, setIsActionProcessing] = useState<string | null>(null);
 
     const isOwner = useMemo(() => currentRole === 'Owner', [currentRole]);
 
@@ -51,11 +60,12 @@ function AllianceManagementPage() {
 
         setIsLoading(true);
         try {
-            const [allianceData, membersData, membershipsData, requestsData] = await Promise.all([
+            const [allianceData, membersData, membershipsData, requestsData, childrenData] = await Promise.all([
                 getFamilyById(allianceId),
                 getFamilyMembers(allianceId),
                 getFamilyMemberships(allianceId),
                 isOwner ? getPendingJoinRequestsForFamily(allianceId) : Promise.resolve([]),
+                getChildProfilesByFamily(allianceId),
             ]);
 
             if (!allianceData || !membersData.some(m => m.uid === user.uid)) {
@@ -68,6 +78,7 @@ function AllianceManagementPage() {
             setMembers(membersData);
             setMemberships(membershipsData);
             setJoinRequests(requestsData);
+            setChildren(childrenData);
 
         } catch (error) {
             console.error("Failed to fetch alliance data:", error);
@@ -86,6 +97,51 @@ function AllianceManagementPage() {
         navigator.clipboard.writeText(code);
         toast({ title: "Código Copiado!", description: "Pronto para chamar reforços!" });
     };
+
+    const handleDeleteProfile = async () => {
+        if (!childToDelete || !user) return;
+        setIsActionProcessing(childToDelete.id);
+        try {
+            await deleteChildProfile(childToDelete.id, user);
+            toast({ title: "Perfil de Herói Removido", description: `O perfil de ${childToDelete.name} foi excluído com sucesso.` });
+            setChildren(prev => prev.filter(c => c.id !== childToDelete.id));
+        } catch (error: any) {
+            console.error("Error deleting child profile:", error);
+            toast({ title: "Erro ao Excluir", description: error.message || "Não foi possível excluir o perfil do herói.", variant: "destructive" });
+        } finally {
+            setIsActionProcessing(null);
+            setChildToDelete(null);
+        }
+    };
+    
+    const handleMoveHeroi = async () => {
+        if (!user || !childToMove || !selectedMoveContext) {
+          toast({ title: 'Erro', description: 'Dados insuficientes para mover o heroi.', variant: 'destructive' });
+          return;
+        }
+        setIsActionProcessing(childToMove.id);
+        try {
+          await moveChildToNewContext(childToMove.id, selectedMoveContext, user);
+    
+          toast({
+            title: 'Herói Movido com Sucesso!',
+            description: `${childToMove.name} agora pertence a uma nova aliança.`,
+          });
+          setChildren(prev => prev.filter(c => c.id !== childToMove.id));
+        } catch (error: any) {
+          console.error("Error moving child profile:", error);
+          toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
+        } finally {
+          setIsActionProcessing(null);
+          setIsMoveDialogOpen(false);
+          setChildToMove(null);
+        }
+    };
+    
+    const moveTargetContexts = useMemo(() => {
+        return availableContexts.filter(c => c.id !== allianceId);
+    }, [availableContexts, allianceId]);
+
 
     if (isLoading || authLoading || isFamilyLoading) {
         return <Loading />;
@@ -139,6 +195,65 @@ function AllianceManagementPage() {
                             </div>
                         </div>
                     </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Mini Heróis na Aliança ({children.length})</CardTitle>
+                        <CardDescription>
+                            Estes são os heróis gerenciados por esta aliança. Use os controles para gerenciar o perfil de cada um.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        {children.length > 0 ? (
+                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {children.map(child => {
+                                    const canManage = user?.uid === child.ownerId;
+                                    return (
+                                        <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
+                                            <div className="flex items-center gap-4 min-w-0">
+                                                <Avatar
+                                                    className="h-10 w-10 text-lg ring-2 ring-offset-background ring-[var(--ring-color)] flex-shrink-0"
+                                                    style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                                >
+                                                    <AvatarImage src={child.avatar} alt={child.name} />
+                                                    <AvatarFallback style={child.color ? { backgroundColor: child.color } : {}}>
+                                                        {getInitials(child.name)}
+                                                    </AvatarFallback>
+                                                </Avatar>
+                                                <div className="min-w-0">
+                                                    <span className="font-semibold truncate block">{child.name}</span>
+                                                    <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-1 flex-shrink-0">
+                                              <Link href={`/dashboard/mural?childId=${child.id}`}>
+                                                  <Button variant="outline" size="icon" className="h-8 w-8">
+                                                      <Settings className="h-4 w-4" />
+                                                  </Button>
+                                              </Link>
+                                              <Button variant="outline" size="icon" className="h-8 w-8" disabled={!canManage} onClick={() => { setChildToMove(child); setIsMoveDialogOpen(true); }}>
+                                                    <Move className="h-4 w-4" />
+                                              </Button>
+                                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" disabled={!canManage} onClick={() => setChildToDelete(child)}>
+                                                <Trash2 className="h-4 w-4" />
+                                              </Button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <p className="text-sm text-muted-foreground text-center py-4">Nenhum Mini Herói nesta aliança ainda.</p>
+                        )}
+                    </CardContent>
+                    <CardFooter>
+                         <Button asChild>
+                           <Link href="/dashboard/novo-heroi">
+                             <UserPlus className="mr-2 h-4 w-4" /> Adicionar Novo Herói
+                           </Link>
+                         </Button>
+                    </CardFooter>
                 </Card>
 
                 <Card>
@@ -217,6 +332,60 @@ function AllianceManagementPage() {
                 inviteCode={alliance.inviteCode}
                 onInvitationSent={fetchData}
             />
+
+            {childToDelete && (
+                 <AlertDialog open={!!childToDelete} onOpenChange={() => setChildToDelete(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir {childToDelete.name}?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil e todos os dados associados (missões, recompensas, progresso, etc.).
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel disabled={isActionProcessing === childToDelete.id}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isActionProcessing === childToDelete.id}>
+                                {isActionProcessing === childToDelete.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Sim, Excluir Perfil
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+
+            {childToMove && (
+                 <AlertDialog open={isMoveDialogOpen} onOpenChange={setIsMoveDialogOpen}>
+                    <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Mover {childToMove.name} para outro espaço</AlertDialogTitle>
+                        <AlertDialogDescription>
+                        Ao mover, todas as missões, recompensas, progresso e agenda escolar do Mini Heroi serão movidos juntos. Selecione o novo espaço que irá gerenciar este perfil.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Select onValueChange={setSelectedMoveContext} value={selectedMoveContext}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Selecione um destino..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {moveTargetContexts.map(context => (
+                            <SelectItem key={context.id} value={context.id}>
+                                {context.id === 'my-space' ? 'Meu Espaço (Cuidar Solo)' : `Aliança: ${context.name}`}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                        </Select>
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isActionProcessing === childToMove.id}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleMoveHeroi} disabled={isActionProcessing === childToMove.id || !selectedMoveContext}>
+                            {isActionProcessing === childToMove.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Confirmar Movimentação
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </>
     );
 }
