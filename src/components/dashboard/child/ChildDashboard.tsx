@@ -207,7 +207,7 @@ export function ChildDashboard() {
   return (
     <>
       <VictoryParade data={victoryData} onDone={() => setVictoryData(null)} />
-      <div className="pb-24">
+      <div className="flex flex-col h-screen">
         <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm p-4 space-y-4">
             <header className="flex items-center gap-4">
               <Avatar className="h-20 w-20 text-3xl border-4" style={{ borderColor: child.color }}>
@@ -241,61 +241,63 @@ export function ChildDashboard() {
              <h2 className="text-xl font-bold font-headline capitalize text-center">{todayLabel}</h2>
         </div>
 
-        <div className="space-y-3 px-4 mt-4">
-          {todaysMissions.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              <p className="font-semibold">Nenhuma missão para hoje!</p>
-              <p className="text-sm">Aproveite seu dia de folga, herói!</p>
-            </div>
-          ) : (
-            todaysMissions.map(mission => {
-              const isCompleted = isMissionCompletedForDate(mission, new Date());
-              const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
-              const period = missionTime ? getPeriodOfDay(missionTime) : null;
-              const PeriodIcon = period ? periodIcons[period] : null;
+        <div className="overflow-y-auto flex-1 pb-24">
+            <div className="space-y-3 px-4 mt-4">
+            {todaysMissions.length === 0 ? (
+                <div className="text-center py-10 text-muted-foreground">
+                <p className="font-semibold">Nenhuma missão para hoje!</p>
+                <p className="text-sm">Aproveite seu dia de folga, herói!</p>
+                </div>
+            ) : (
+                todaysMissions.map(mission => {
+                const isCompleted = isMissionCompletedForDate(mission, new Date());
+                const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
+                const period = missionTime ? getPeriodOfDay(missionTime) : null;
+                const PeriodIcon = period ? periodIcons[period] : null;
 
-              return (
-                <Card 
-                  key={mission.id} 
-                  className={cn("p-4 transition-all", isCompleted && "bg-green-500/10 border-green-500/30")}
-                >
-                    <div className="flex items-center gap-4">
-                        <div className="text-5xl">{mission.emoji || '🎯'}</div>
-                        <div className="flex-grow space-y-1">
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                              {missionTime && <p className="font-mono">{formatDateFns(missionTime, 'HH:mm')}</p>}
-                              {PeriodIcon && (
-                                <div className={cn("flex items-center gap-1 font-semibold", 
-                                  period === 'Manhã' && 'text-yellow-600', 
-                                  period === 'Tarde' && 'text-orange-600', 
-                                  period === 'Noite' && 'text-indigo-600'
-                                )}>
-                                  <PeriodIcon className="h-4 w-4" /> {period}
-                                </div>
-                              )}
-                          </div>
-                          <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>{mission.title}</p>
-                          <div className="flex items-center gap-1 font-bold text-amber-600">
-                            +{mission.starsReward} <Star className="h-4 w-4 fill-current" />
-                          </div>
+                return (
+                    <Card 
+                    key={mission.id} 
+                    className={cn("p-4 transition-all", isCompleted && "bg-green-500/10 border-green-500/30")}
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="text-5xl">{mission.emoji || '🎯'}</div>
+                            <div className="flex-grow space-y-1">
+                            <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                {missionTime && <p className="font-mono">{formatDateFns(missionTime, 'HH:mm')}</p>}
+                                {PeriodIcon && (
+                                    <div className={cn("flex items-center gap-1 font-semibold", 
+                                    period === 'Manhã' && 'text-yellow-600', 
+                                    period === 'Tarde' && 'text-orange-600', 
+                                    period === 'Noite' && 'text-indigo-600'
+                                    )}>
+                                    <PeriodIcon className="h-4 w-4" /> {period}
+                                    </div>
+                                )}
+                            </div>
+                            <p className={cn("font-semibold text-lg leading-tight", isCompleted && "line-through text-muted-foreground")}>{mission.title}</p>
+                            <div className="flex items-center gap-1 font-bold text-amber-600">
+                                +{mission.starsReward} <Star className="h-4 w-4 fill-current" />
+                            </div>
+                            </div>
+                            <Button 
+                            variant="ghost" 
+                            className="h-16 w-16 rounded-full" 
+                            onClick={() => handleToggleCompletion(mission)}
+                            disabled={processingMissionId === mission.id}
+                            >
+                            {processingMissionId === mission.id 
+                                ? <Loader2 className="h-8 w-8 animate-spin" /> 
+                                : isCompleted 
+                                ? <CheckCircle className="h-12 w-12 text-green-500" /> 
+                                : <Circle className="h-12 w-12 text-primary" />}
+                            </Button>
                         </div>
-                        <Button 
-                          variant="ghost" 
-                          className="h-16 w-16 rounded-full" 
-                          onClick={() => handleToggleCompletion(mission)}
-                          disabled={processingMissionId === mission.id}
-                        >
-                          {processingMissionId === mission.id 
-                            ? <Loader2 className="h-8 w-8 animate-spin" /> 
-                            : isCompleted 
-                              ? <CheckCircle className="h-12 w-12 text-green-500" /> 
-                              : <Circle className="h-12 w-12 text-primary" />}
-                        </Button>
-                    </div>
-                </Card>
-              )
-            })
-          )}
+                    </Card>
+                )
+                })
+            )}
+            </div>
         </div>
 
         <ChildBottomNavbar childId={child.id} />
