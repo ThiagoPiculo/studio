@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Circle, CheckCircle, Sun, Moon, CloudSun, LogOut } from 'lucide-react';
+import { Loader2, Star, Circle, CheckCircle, Sun, Moon, CloudSun, LogOut, Trophy } from 'lucide-react';
 import { ChildBottomNavbar } from './ChildBottomNavbar';
 import { cn, getInitials } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
@@ -102,74 +102,85 @@ export function ChildDashboard() {
     return byPeriod;
   }, [todaysMissions]);
   
- const handleToggleCompletion = async (mission: MissionInstance) => {
+  const handleToggleCompletion = async (mission: MissionInstance) => {
     if (!child) return;
     setProcessingMissionId(mission.id);
-
+  
     const isCompleted = isMissionCompletedForDate(mission, new Date());
-    if (isCompleted) { // Undoing a mission doesn't trigger celebration
-        try {
-            await reactivateMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
-            // Re-fetch data to ensure consistency after undoing
-            const [profile, missions] = await Promise.all([getChildProfileById(childId), getMissionInstancesByChild(childId)]);
-            setChild(profile);
-            setMissionInstances(missions);
-        } catch (error) {
-            console.error("Error undoing mission completion:", error);
-            toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
-        } finally {
-            setProcessingMissionId(null);
-        }
-        return;
-    }
-    
-    // Optimistic update for completing a mission
     const dateKey = formatDateFns(new Date(), 'yyyy-MM-dd');
-    const updatedMissionInstances = missionInstances.map(inst =>
-        inst.id === mission.id
-            ? { ...inst, completionLog: { ...inst.completionLog, [dateKey]: { completedAt: new Date() as any, stars: mission.starsReward } } }
-            : inst
-    );
+  
+    // Store original state for potential rollback
+    const originalMissions = [...missionInstances];
+    const originalChild = { ...child };
+  
+    if (isCompleted) {
+      // --- Optimistic Update for UNDO ---
+      const updatedChild = { ...child, stars: Math.max(0, child.stars - mission.starsReward) };
+      const updatedMissions = missionInstances.map(inst => {
+        if (inst.id === mission.id) {
+          const newLog = { ...inst.completionLog };
+          delete newLog[dateKey];
+          return { ...inst, completionLog: newLog };
+        }
+        return inst;
+      });
+      setChild(updatedChild);
+      setMissionInstances(updatedMissions);
+  
+      try {
+        await reactivateMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+      } catch (error) {
+        console.error("Error undoing mission completion:", error);
+        toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
+        // Rollback on error
+        setChild(originalChild);
+        setMissionInstances(originalMissions);
+      } finally {
+        setProcessingMissionId(null);
+      }
+      return;
+    }
+  
+    // --- Optimistic Update for COMPLETE ---
     const updatedChild = { ...child, stars: child.stars + mission.starsReward };
-
-    setMissionInstances(updatedMissionInstances);
+    const updatedMissions = missionInstances.map(inst =>
+      inst.id === mission.id
+        ? { ...inst, completionLog: { ...inst.completionLog, [dateKey]: { completedAt: new Date() as any, stars: mission.starsReward } } }
+        : inst
+    );
     setChild(updatedChild);
-    
+    setMissionInstances(updatedMissions);
+  
     // --- Victory Parade Logic ---
     const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
     const missionPeriod = getPeriodOfDay(missionTime);
-
     if (missionPeriod) {
-        const periodMissions = missionsByPeriod[missionPeriod];
-        // Check if ALL missions in this period are now complete (including the one just checked)
-        const allInPeriodComplete = periodMissions.every(m => 
-            m.id === mission.id || isMissionCompletedForDate(m, new Date())
-        );
-
-        if (allInPeriodComplete && periodMissions.length > 0) {
-            const starsForPeriod = periodMissions.reduce((sum, m) => sum + m.starsReward, 0);
-            setTimeout(() => {
-              setVictoryData({
-                child: updatedChild,
-                period: missionPeriod,
-                missions: periodMissions,
-                stars: starsForPeriod,
-              });
-            }, 500); // Small delay for the checkmark animation
-        }
+      const allInPeriodComplete = missionsByPeriod[missionPeriod].every(m => 
+        m.id === mission.id || isMissionCompletedForDate(m, new Date())
+      );
+      if (allInPeriodComplete && missionsByPeriod[missionPeriod].length > 0) {
+        const starsForPeriod = missionsByPeriod[missionPeriod].reduce((sum, m) => sum + m.starsReward, 0);
+        setTimeout(() => {
+          setVictoryData({
+            child: updatedChild,
+            period: missionPeriod,
+            missions: missionsByPeriod[missionPeriod],
+            stars: starsForPeriod,
+          });
+        }, 500);
+      }
     }
-    // --- End Victory Parade Logic ---
-
+  
     try {
-        await completeMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+      await completeMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
     } catch (error) {
-        console.error("Error toggling mission completion:", error);
-        toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
-        // Revert optimistic update on error
-        setMissionInstances(missionInstances);
-        setChild(child);
+      console.error("Error toggling mission completion:", error);
+      toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
+      // Rollback on error
+      setChild(originalChild);
+      setMissionInstances(originalMissions);
     } finally {
-        setProcessingMissionId(null);
+      setProcessingMissionId(null);
     }
   };
 
