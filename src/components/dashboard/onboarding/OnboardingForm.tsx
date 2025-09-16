@@ -282,20 +282,23 @@ const goToNextStep = async () => {
                  
                  const predefinedMission = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
                  const customActivity = values.extraActivities?.find(a => a.name === item.activity);
-
+                 
                  let source: 'predefined' | 'custom' = 'predefined';
+                 if (customActivity && customActivity.source === 'custom') {
+                    source = 'custom';
+                 }
+
                  let emoji = '✨';
                  let category: MissionCategory = 'essential_routines';
                  let starsReward = 5;
 
-                 if (customActivity) {
-                     source = 'custom';
-                     emoji = customActivity.emoji || '✨';
-                     category = 'hobbies';
-                 } else if (predefinedMission) {
+                 if (predefinedMission) {
                      emoji = predefinedMission.emoji;
                      category = predefinedMission.suggestedAppCategory;
                      starsReward = predefinedMission.starsReward;
+                 } else if (customActivity) {
+                     emoji = customActivity.emoji || '✨';
+                     category = 'hobbies';
                  } else {
                      console.warn(`Could not find details for: "${item.activity}". Using defaults.`);
                  }
@@ -474,5 +477,3 @@ const goToNextStep = async () => {
     </FormProvider>
   );
 }
-
-    
