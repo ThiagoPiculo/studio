@@ -17,32 +17,36 @@ const Milestone = ({
   isCurrent,
   isCompleted,
   progressPercentage,
+  isLast,
 }: {
   label: string;
   starGoal: number;
   isCurrent: boolean;
   isCompleted: boolean;
   progressPercentage: number;
+  isLast: boolean;
 }) => {
   return (
-    <div className="flex flex-col items-start flex-1 min-w-0">
+    <div className="flex flex-col items-center flex-1 min-w-0">
       <div className="relative w-full flex items-center mb-1">
         <Progress value={isCompleted ? 100 : isCurrent ? progressPercentage : 0} className="h-2.5 w-full" />
-        <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md"
-        )}>
-             <Star
-                className={cn(
-                    "h-5 w-5 sm:h-6 sm:w-6 transition-all",
-                    isCompleted ? 'text-yellow-500 fill-yellow-500/20' : 
-                    isCurrent ? 'text-yellow-600' : 
-                    'text-muted-foreground/50'
-                )}
-            />
-        </div>
+        {!isLast && (
+             <div className={cn(
+                "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md"
+            )}>
+                <Star
+                    className={cn(
+                        "h-5 w-5 sm:h-6 sm:w-6 transition-all",
+                        isCompleted ? 'text-yellow-500 fill-yellow-500/20' : 
+                        isCurrent ? 'text-yellow-600' : 
+                        'text-muted-foreground/50'
+                    )}
+                />
+            </div>
+        )}
       </div>
-      <span className="text-xs font-semibold text-foreground">{label}</span>
-      <span className="text-xs text-muted-foreground">{starGoal} ★</span>
+      <span className="text-xs font-semibold text-foreground text-center">{label}</span>
+      <span className="text-xs text-muted-foreground text-center">{starGoal} ★</span>
     </div>
   );
 };
@@ -90,7 +94,7 @@ export function LevelUpPath({ currentLevel, currentTotalStars }: LevelUpPathProp
   return (
     <div className="w-full">
         <div className="flex items-start justify-between gap-2 sm:gap-4">
-            {levelData.map((data) => (
+            {levelData.map((data, index) => (
                  <Milestone
                     key={data.level}
                     label={data.label}
@@ -98,6 +102,7 @@ export function LevelUpPath({ currentLevel, currentTotalStars }: LevelUpPathProp
                     isCompleted={data.isCompleted}
                     isCurrent={data.isCurrent}
                     progressPercentage={data.progressPercentage}
+                    isLast={index === levelData.length - 1}
                 />
             ))}
         </div>
