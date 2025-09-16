@@ -275,17 +275,17 @@ const goToNextStep = async () => {
         }, values.contextId);
         
         const allMissionPromises = [];
+        const allPredefinedMissions = predefinedMissionGroups.flatMap(g => g.items);
 
         if (generatedSchedule && generatedSchedule.length > 0) {
             for (const item of generatedSchedule) {
                  if (item.type === 'school_entry' || item.type === 'school_exit') continue;
                  
-                 const predefinedMission = predefinedMissionGroups.flatMap(g => g.items).find(i => i.title === item.activity);
-                 const customActivity = values.extraActivities?.find(a => a.name === item.activity);
+                 const predefinedMission = allPredefinedMissions.find(i => i.title === item.activity);
                  
-                 let source: 'predefined' | 'custom' = 'predefined';
-                 if (customActivity && customActivity.source === 'custom') {
-                    source = 'custom';
+                 let source: 'predefined' | 'custom' = 'custom';
+                 if (predefinedMission) {
+                    source = 'predefined';
                  }
 
                  let emoji = '✨';
@@ -296,11 +296,12 @@ const goToNextStep = async () => {
                      emoji = predefinedMission.emoji;
                      category = predefinedMission.suggestedAppCategory;
                      starsReward = predefinedMission.starsReward;
-                 } else if (customActivity) {
-                     emoji = customActivity.emoji || '✨';
-                     category = 'hobbies';
                  } else {
-                     console.warn(`Could not find details for: "${item.activity}". Using defaults.`);
+                     const customActivity = values.extraActivities?.find(a => a.name === item.activity);
+                     if (customActivity) {
+                        emoji = customActivity.emoji || '✨';
+                        category = 'hobbies';
+                     }
                  }
 
                  const templatePayload: Omit<MissionTemplate, 'id' | 'createdAt' | 'updatedAt' | 'status'> = {
