@@ -26,10 +26,10 @@ const Milestone = ({
 }) => {
   return (
     <div className="flex flex-col items-start flex-1 min-w-0">
-      <div className="relative w-full flex items-center mb-1 isolate">
+      <div className="relative w-full flex items-center mb-1">
         <Progress value={isCompleted ? 100 : isCurrent ? progressPercentage : 0} className="h-2.5 w-full" />
         <div className={cn(
-            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md z-10 bg-background"
+            "absolute -right-3 sm:-right-4 w-10 h-10 sm:w-11 sm:h-11 rounded-full flex items-center justify-center border-4 border-background shadow-md"
         )}>
              <Star
                 className={cn(
