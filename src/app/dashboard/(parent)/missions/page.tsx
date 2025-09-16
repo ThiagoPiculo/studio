@@ -82,6 +82,10 @@ function MissionsHubContent() {
     return editableRoles.includes(currentRole as FamilyRole);
   }, [currentContext, currentRole]);
   
+  const allPredefinedMissionTitles = useMemo(() => 
+    new Set(predefinedMissionGroups.flatMap(g => g.items.map(i => i.title.toLowerCase().trim())))
+  , []);
+  
   const refetchData = useCallback(async () => {
     if (!user) {
         setIsDataLoading(false);
@@ -113,8 +117,12 @@ function MissionsHubContent() {
   }, [authLoading, isFamilyLoading, refetchData]);
   
   const customTemplates = useMemo(() => {
-    return missionTemplates.filter(template => template.source === 'custom').sort((a, b) => a.title.localeCompare(b.title));
-  }, [missionTemplates]);
+    return missionTemplates.filter(template => {
+      const isCustomSource = template.source === 'custom';
+      const isNotInPredefined = !allPredefinedMissionTitles.has(template.title.toLowerCase().trim());
+      return isCustomSource && isNotInPredefined;
+    }).sort((a, b) => a.title.localeCompare(b.title));
+  }, [missionTemplates, allPredefinedMissionTitles]);
 
   const existingTemplateTitles = useMemo(() => {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
