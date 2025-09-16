@@ -640,7 +640,7 @@ export const moveChildToNewContext = async (childId: string, newFamilyId: string
   if (oldFamilyId !== 'my-space') {
       await createAllianceNotification(oldFamilyId, actor, {
           type: 'instance_unassigned',
-          title: 'Herói Movido',
+          title: 'Herói Removido',
           description: `${actor.name} moveu ${childName} para fora desta aliança.`,
           href: '/dashboard/heroes',
       });
@@ -1293,7 +1293,7 @@ export const deleteRewardTemplate = async (actor: UserProfile, template: RewardT
   const templateData = templateSnap.data();
   
   await deleteDoc(templateRef);
-
+  
    if (templateData.familyId) {
     await createAllianceNotification(templateData.familyId, actor, {
       type: 'template_deleted',
@@ -2592,6 +2592,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 

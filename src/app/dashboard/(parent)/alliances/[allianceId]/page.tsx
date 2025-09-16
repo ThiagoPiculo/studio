@@ -5,13 +5,13 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, deleteChildProfile, moveChildToNewContext } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings, UserX } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -44,7 +44,7 @@ function AllianceManagementPage() {
 
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     
-    const [childToDelete, setChildToDelete] = useState<ChildProfile | null>(null);
+    const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
     const [childToMove, setChildToMove] = useState<ChildProfile | null>(null);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
     const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
@@ -98,19 +98,20 @@ function AllianceManagementPage() {
         toast({ title: "Código Copiado!", description: "Pronto para chamar reforços!" });
     };
 
-    const handleDeleteProfile = async () => {
-        if (!childToDelete || !user) return;
-        setIsActionProcessing(childToDelete.id);
+    const handleRemoveFromAlliance = async () => {
+        if (!childToRemove || !user) return;
+        setIsActionProcessing(childToRemove.id);
         try {
-            await deleteChildProfile(childToDelete.id, user);
-            toast({ title: "Perfil de Herói Removido", description: `O perfil de ${childToDelete.name} foi excluído com sucesso.` });
-            setChildren(prev => prev.filter(c => c.id !== childToDelete.id));
+            // Move child to their owner's personal space (familyId: null)
+            await moveChildToNewContext(childToRemove.id, null, user);
+            toast({ title: "Herói Removido da Aliança", description: `${childToRemove.name} agora está no espaço pessoal de seu criador.` });
+            setChildren(prev => prev.filter(c => c.id !== childToRemove.id));
         } catch (error: any) {
-            console.error("Error deleting child profile:", error);
-            toast({ title: "Erro ao Excluir", description: error.message || "Não foi possível excluir o perfil do herói.", variant: "destructive" });
+            console.error("Error removing child from alliance:", error);
+            toast({ title: "Erro ao Remover", description: error.message || "Não foi possível remover o herói da aliança.", variant: "destructive" });
         } finally {
             setIsActionProcessing(null);
-            setChildToDelete(null);
+            setChildToRemove(null);
         }
     };
     
@@ -235,8 +236,8 @@ function AllianceManagementPage() {
                                               <Button variant="outline" size="icon" className="h-8 w-8" disabled={!canManage} onClick={() => { setChildToMove(child); setIsMoveDialogOpen(true); }}>
                                                     <Move className="h-4 w-4" />
                                               </Button>
-                                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" disabled={!canManage} onClick={() => setChildToDelete(child)}>
-                                                <Trash2 className="h-4 w-4" />
+                                              <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" disabled={!canManage} onClick={() => setChildToRemove(child)}>
+                                                <UserX className="h-4 w-4" />
                                               </Button>
                                             </div>
                                         </div>
@@ -333,20 +334,20 @@ function AllianceManagementPage() {
                 onInvitationSent={fetchData}
             />
 
-            {childToDelete && (
-                 <AlertDialog open={!!childToDelete} onOpenChange={() => setChildToDelete(null)}>
+            {childToRemove && (
+                 <AlertDialog open={!!childToRemove} onOpenChange={() => setChildToRemove(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>
-                            <AlertDialogTitle>Excluir {childToDelete.name}?</AlertDialogTitle>
+                            <AlertDialogTitle>Remover {childToRemove.name} da Aliança?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação não pode ser desfeita. Isso excluirá permanentemente o perfil e todos os dados associados (missões, recompensas, progresso, etc.).
+                                Esta ação irá remover o herói do gerenciamento compartilhado desta aliança, retornando-o ao espaço "Cuidar Solo" de seu criador. Nenhum progresso será perdido.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
-                            <AlertDialogCancel disabled={isActionProcessing === childToDelete.id}>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDeleteProfile} className="bg-destructive hover:bg-destructive/90" disabled={isActionProcessing === childToDelete.id}>
-                                {isActionProcessing === childToDelete.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                Sim, Excluir Perfil
+                            <AlertDialogCancel disabled={isActionProcessing === childToRemove.id}>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleRemoveFromAlliance} className="bg-destructive hover:bg-destructive/90" disabled={isActionProcessing === childToRemove.id}>
+                                {isActionProcessing === childToRemove.id && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Sim, Remover da Aliança
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
