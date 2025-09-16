@@ -22,6 +22,7 @@ import { cn, getInitials } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
 import { VictoryParade } from './VictoryParade';
 import { Separator } from '@/components/ui/separator';
+import { LevelUpPath } from '../LevelUpPath';
 
 const periodIcons = {
     Manhã: Sun,
@@ -198,10 +199,6 @@ export function ChildDashboard() {
         </div>
     );
   }
-
-  const completedCount = todaysMissions.filter(m => isMissionCompletedForDate(m, new Date())).length;
-  const totalCount = todaysMissions.length;
-  const progress = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
   
   const todayLabel = formatDateFns(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
 
@@ -209,7 +206,7 @@ export function ChildDashboard() {
     <>
       <VictoryParade data={victoryData} onDone={() => setVictoryData(null)} />
       <div className="flex flex-col h-screen">
-        <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm p-4 space-y-4">
+        <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm p-4 pt-4 pb-4 space-y-4">
             <header className="flex items-center justify-between gap-4">
               <div className="flex items-center gap-4">
                 <Avatar className="h-20 w-20 text-3xl border-4" style={{ borderColor: child.color }}>
@@ -224,19 +221,21 @@ export function ChildDashboard() {
                 </div>
               </div>
               
-              <div className="flex flex-col items-center gap-2">
-                <div className="flex items-center justify-center gap-2 text-amber-500">
+              <div className="flex flex-col items-end gap-2">
+                 <div className="flex items-center justify-center gap-2 text-amber-500">
                     <Star className="h-7 w-7 fill-current" />
                     <span className="text-3xl font-bold">{child.stars}</span>
-                </div>
-                <div className="w-24 text-center">
-                  <Progress value={progress} className="h-2" />
-                  <p className="text-xs text-muted-foreground mt-1">{completedCount}/{totalCount} hoje</p>
                 </div>
               </div>
 
               <Button onClick={logout} variant="ghost" size="icon" className="text-muted-foreground self-start"><LogOut className="h-5 w-5"/></Button>
             </header>
+            
+            <div className="flex flex-col gap-4 font-semibold">
+                <div className="w-full">
+                    <LevelUpPath currentLevel={child.level} currentTotalStars={child.totalStars} />
+                </div>
+            </div>
 
             <h2 className="text-xl font-bold font-headline capitalize text-center">{todayLabel}</h2>
         </div>
