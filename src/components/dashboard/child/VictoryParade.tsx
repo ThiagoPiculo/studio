@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -101,12 +102,12 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
         />
       )}
       <div 
-         className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+         className="fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center p-4"
          onClick={onDone}
       >
         <Card 
             ref={cardRef} 
-            className="w-full max-w-sm bg-gradient-to-br from-card to-primary/10 border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
+            className="w-full max-w-sm bg-gradient-to-br from-card to-background border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
             onClick={(e) => e.stopPropagation()}
         >
             <CardHeader className="items-center space-y-3 pt-6">
