@@ -207,39 +207,41 @@ export function ChildDashboard() {
   return (
     <>
       <VictoryParade data={victoryData} onDone={() => setVictoryData(null)} />
-      <div className="p-4 pb-24 space-y-6">
-        <header className="flex items-center gap-4">
-          <Avatar className="h-20 w-20 text-3xl border-4" style={{ borderColor: child.color }}>
-              <AvatarImage src={child.avatar} alt={child.name} />
-              <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
-          </Avatar>
-          <div className="space-y-1">
-              <h1 className="text-2xl font-bold font-headline text-primary">{child.name}</h1>
-              <Badge variant="secondary" className="font-semibold text-base" style={{ backgroundColor: `${child.color}30`, color: child.color }}>
-                  Nível {child.level}
-              </Badge>
-          </div>
-          <Button onClick={logout} variant="ghost" size="icon" className="ml-auto text-muted-foreground"><LogOut className="h-5 w-5"/></Button>
-        </header>
-        
-        <div className="grid grid-cols-2 gap-4 text-center">
-          <Card className="p-3">
-              <div className="flex items-center justify-center gap-2 text-amber-500">
-                  <Star className="h-8 w-8 fill-current" />
-                  <span className="text-3xl font-bold">{child.stars}</span>
+      <div className="pb-24">
+        <div className="sticky top-0 z-10 bg-background/90 backdrop-blur-sm p-4 space-y-4">
+            <header className="flex items-center gap-4">
+              <Avatar className="h-20 w-20 text-3xl border-4" style={{ borderColor: child.color }}>
+                  <AvatarImage src={child.avatar} alt={child.name} />
+                  <AvatarFallback style={{ backgroundColor: child.color }} className="font-bold">{getInitials(child.name)}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                  <h1 className="text-2xl font-bold font-headline text-primary">{child.name}</h1>
+                  <Badge variant="secondary" className="font-semibold text-base" style={{ backgroundColor: `${child.color}30`, color: child.color }}>
+                      Nível {child.level}
+                  </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">Estrelas</p>
-          </Card>
-          <Card className="p-3">
-              <div className="flex flex-col items-center justify-center">
-                  <Progress value={progress} className="h-2 w-full" />
-                  <p className="text-xs text-muted-foreground mt-2">{completedCount}/{totalCount} missões hoje</p>
-              </div>
-          </Card>
+              <Button onClick={logout} variant="ghost" size="icon" className="ml-auto text-muted-foreground"><LogOut className="h-5 w-5"/></Button>
+            </header>
+            
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <Card className="p-3">
+                  <div className="flex items-center justify-center gap-2 text-amber-500">
+                      <Star className="h-8 w-8 fill-current" />
+                      <span className="text-3xl font-bold">{child.stars}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">Estrelas</p>
+              </Card>
+              <Card className="p-3">
+                  <div className="flex flex-col items-center justify-center">
+                      <Progress value={progress} className="h-2 w-full" />
+                      <p className="text-xs text-muted-foreground mt-2">{completedCount}/{totalCount} missões hoje</p>
+                  </div>
+              </Card>
+            </div>
+             <h2 className="text-xl font-bold font-headline capitalize text-center">{todayLabel}</h2>
         </div>
 
-        <div className="space-y-3">
-          <h2 className="text-xl font-bold font-headline capitalize">{todayLabel}</h2>
+        <div className="space-y-3 px-4 mt-4">
           {todaysMissions.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               <p className="font-semibold">Nenhuma missão para hoje!</p>
