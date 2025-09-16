@@ -10,6 +10,7 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { cn, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { textToSpeech } from '@/ai/flows/tts';
 
 interface VictoryParadeProps {
   data: {
@@ -32,6 +33,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [confettiSource, setConfettiSource] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
 
   const updateConfettiSource = useCallback(() => {
     if (cardRef.current) {
@@ -53,6 +55,8 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
       }, 7000);
       
       updateConfettiSource();
+
+      textToSpeech("Tadaa!").then(setAudioDataUri).catch(console.error);
       
       window.addEventListener('resize', updateConfettiSource);
 
@@ -84,13 +88,16 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
           confettiSource={confettiSource}
         />
       )}
+       {audioDataUri && (
+        <audio autoPlay src={audioDataUri} />
+      )}
       <div 
          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
          onClick={onDone}
       >
         <Card 
             ref={cardRef} 
-            className="w-full max-w-sm bg-gradient-to-br from-card to-background border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
+            className="w-full max-w-sm border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500 from-card to-background"
             onClick={(e) => e.stopPropagation()}
         >
             <CardContent className="p-6 pt-8 flex flex-col items-center justify-center space-y-4">
