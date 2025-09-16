@@ -72,7 +72,7 @@ function MissionsHubContent() {
   const handleTabChange = (value: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.set('tab', value);
-    router.replace(`${pathname}?${newParams.toString()}`);
+    router.replace(`${pathname}?${newParams.toString()}`, { scroll: false });
   };
 
   const canEdit = useMemo(() => {
@@ -114,15 +114,16 @@ function MissionsHubContent() {
     if (!authLoading && !isFamilyLoading) {
       refetchData();
     }
-  }, [authLoading, isFamilyLoading, refetchData]);
+  }, [authLoading, isFamilyLoading, refetchData, activeTab]);
   
   const customTemplates = useMemo(() => {
+    const predefinedTitles = new Set(predefinedMissionGroups.flatMap(g => g.items).map(i => i.title.toLowerCase().trim()));
     return missionTemplates.filter(template => {
-      const isCustomSource = template.source === 'custom';
-      const isNotInPredefined = !allPredefinedMissionTitles.has(template.title.toLowerCase().trim());
-      return isCustomSource && isNotInPredefined;
+        const isCustomSource = template.source === 'custom';
+        const isNotInPredefined = !predefinedTitles.has(template.title.toLowerCase().trim());
+        return isCustomSource && isNotInPredefined;
     }).sort((a, b) => a.title.localeCompare(b.title));
-  }, [missionTemplates, allPredefinedMissionTitles]);
+  }, [missionTemplates]);
 
   const existingTemplateTitles = useMemo(() => {
     return new Set(missionTemplates.map(t => t.title.toLowerCase().trim()));
@@ -426,3 +427,5 @@ export default function MissionsHubPageWrapper() {
         </Suspense>
     );
 }
+
+    
