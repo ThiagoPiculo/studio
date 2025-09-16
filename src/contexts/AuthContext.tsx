@@ -3,14 +3,14 @@
 import type { User } from 'firebase/auth';
 import { onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import type { ReactNode } from 'react';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React from 'react';
 import { auth, db } from '@/lib/firebase/config';
 import type { UserProfile, ChildProfile, AuthContextType } from '@/lib/types';
 import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc } from 'firebase/firestore';
 import { useRouter, usePathname } from 'next/navigation';
 import { populateInitialRewardTemplates } from '@/lib/firebase/firestore';
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 const convertTimestampsInObject = (obj: any): any => {
     if (!obj) return obj;
@@ -31,15 +31,15 @@ const convertTimestampsInObject = (obj: any): any => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [childProfile, setChildProfile] = useState<ChildProfile | null>(null);
-  const [isChildAuthenticated, setIsChildAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = React.useState<UserProfile | null>(null);
+  const [childProfile, setChildProfile] = React.useState<ChildProfile | null>(null);
+  const [isChildAuthenticated, setIsChildAuthenticated] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const router = useRouter();
   const pathname = usePathname();
-  const [profileUnsubscribe, setProfileUnsubscribe] = useState<(() => void) | null>(null);
+  const [profileUnsubscribe, setProfileUnsubscribe] = React.useState<(() => void) | null>(null);
 
-  useEffect(() => {
+  React.useEffect(() => {
     const authUnsubscribe = onAuthStateChanged(auth, (firebaseUser: User | null) => {
       if (profileUnsubscribe) {
         profileUnsubscribe();
@@ -206,7 +206,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
+  const context = React.useContext(AuthContext);
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
