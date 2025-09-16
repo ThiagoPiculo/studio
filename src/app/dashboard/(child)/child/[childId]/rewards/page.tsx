@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -47,8 +48,8 @@ export default function ChildRewardsPage() {
   }, [childId, toast]);
 
   const { availableRewards, goalRewards, redeemedRewards } = useMemo(() => {
-    const available = rewards.filter(r => r.status === 'active' && child && child.stars >= r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
-    const goals = rewards.filter(r => r.status === 'active' && child && child.stars < r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    const available = rewards.filter(r => r.status === 'active' && child && child.stars >= r.starsCost && !r.redeemedAt).sort((a,b) => a.starsCost - b.starsCost);
+    const goals = rewards.filter(r => r.status === 'active' && child && child.stars < r.starsCost && !r.redeemedAt).sort((a,b) => a.starsCost - b.starsCost);
     const redeemed = rewards.filter(r => r.status === 'redeemed').sort((a,b) => (b.redeemedAt as any) - (a.redeemedAt as any));
     return { availableRewards: available, goalRewards: goals, redeemedRewards: redeemed };
   }, [rewards, child]);
