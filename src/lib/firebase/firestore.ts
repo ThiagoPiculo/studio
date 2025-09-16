@@ -1524,7 +1524,7 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
     batch.delete(doc.ref);
   });
   await batch.commit();
-
+  
   if (familyId) {
     const child = await getChildProfileById(childId);
     const template = await getRewardTemplateById(templateId);
@@ -2601,6 +2601,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 
