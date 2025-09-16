@@ -21,6 +21,7 @@ import { ChildBottomNavbar } from './ChildBottomNavbar';
 import { cn, getInitials } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
 import { VictoryParade } from './VictoryParade';
+import { Separator } from '@/components/ui/separator';
 
 const periodIcons = {
     Manhã: Sun,
@@ -223,21 +224,24 @@ export function ChildDashboard() {
               <Button onClick={logout} variant="ghost" size="icon" className="ml-auto text-muted-foreground"><LogOut className="h-5 w-5"/></Button>
             </header>
             
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <Card className="p-3">
-                  <div className="flex items-center justify-center gap-2 text-amber-500">
-                      <Star className="h-8 w-8 fill-current" />
-                      <span className="text-3xl font-bold">{child.stars}</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Estrelas</p>
-              </Card>
-              <Card className="p-3">
-                  <div className="flex flex-col items-center justify-center">
-                      <Progress value={progress} className="h-2 w-full" />
-                      <p className="text-xs text-muted-foreground mt-2">{completedCount}/{totalCount} missões hoje</p>
-                  </div>
-              </Card>
-            </div>
+            <Card className="p-0">
+                <div className="grid grid-cols-2 items-center">
+                    <div className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-2 text-amber-500">
+                            <Star className="h-8 w-8 fill-current" />
+                            <span className="text-3xl font-bold">{child.stars}</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Estrelas</p>
+                    </div>
+                    <div className="p-3 text-center border-l">
+                         <div className="flex flex-col items-center justify-center h-full">
+                            <Progress value={progress} className="h-2 w-full" />
+                            <p className="text-xs text-muted-foreground mt-2">{completedCount}/{totalCount} missões hoje</p>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
              <h2 className="text-xl font-bold font-headline capitalize text-center">{todayLabel}</h2>
         </div>
 
