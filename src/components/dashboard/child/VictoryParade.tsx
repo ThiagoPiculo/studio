@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -10,7 +9,6 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { cn, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { textToSpeech } from '@/ai/flows/tts';
 
 interface VictoryParadeProps {
   data: {
@@ -33,7 +31,6 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [confettiSource, setConfettiSource] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [audioDataUri, setAudioDataUri] = useState<string | null>(null);
 
   const updateConfettiSource = useCallback(() => {
     if (cardRef.current) {
@@ -55,8 +52,6 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
       }, 7000);
       
       updateConfettiSource();
-
-      textToSpeech("Tadaa!").then(setAudioDataUri).catch(console.error);
       
       window.addEventListener('resize', updateConfettiSource);
 
@@ -88,11 +83,8 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
           confettiSource={confettiSource}
         />
       )}
-       {audioDataUri && (
-        <audio autoPlay src={audioDataUri} />
-      )}
       <div 
-         className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
          onClick={onDone}
       >
         <Card 
