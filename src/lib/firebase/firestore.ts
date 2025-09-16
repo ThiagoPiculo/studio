@@ -881,26 +881,35 @@ export const leaveFamily = async (userId: string, familyId: string): Promise<voi
   await batch.commit();
 };
 
-export const deleteFamily = async (familyId: string): Promise<void> => {
+export const deleteFamily = async (familyId: string, actor: UserProfile): Promise<void> => {
+  const familyRef = doc(db, 'families', familyId);
+  const familySnap = await getDoc(familyRef);
+  if (!familySnap.exists() || familySnap.data().ownerId !== actor.uid) {
+    throw new Error("Apenas o proprietário pode excluir a aliança.");
+  }
+
   const batch = writeBatch(db);
 
-  const familyRef = doc(db, 'families', familyId);
-  batch.delete(familyRef);
-
-  const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
-  const membershipsSnapshot = await getDocs(membershipsQuery);
-  membershipsSnapshot.forEach(membershipDoc => {
-    batch.delete(membershipDoc.ref);
-  });
-
+  // Mark all children in the family as having no family
   const childrenQuery = query(collection(db, 'children'), where('familyId', '==', familyId));
   const childrenSnapshot = await getDocs(childrenQuery);
   childrenSnapshot.forEach(childDoc => {
     batch.update(childDoc.ref, { familyId: null, updatedAt: serverTimestamp() });
   });
   
+  // Delete all memberships for the family
+  const membershipsQuery = query(collection(db, 'familyMemberships'), where('familyId', '==', familyId));
+  const membershipsSnapshot = await getDocs(membershipsQuery);
+  membershipsSnapshot.forEach(membershipDoc => {
+    batch.delete(membershipDoc.ref);
+  });
+  
+  // Finally, delete the family document itself
+  batch.delete(familyRef);
+
   await batch.commit();
 };
+
 
 export const updateFamilyName = async (familyId: string, ownerId: string, newName: string): Promise<void> => {
   const familyRef = doc(db, 'families', familyId);
@@ -2592,6 +2601,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 

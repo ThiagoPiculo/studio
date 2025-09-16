@@ -5,13 +5,13 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings, UserX } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings, UserX, Edit, AlertTriangle } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -23,9 +23,10 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
@@ -49,6 +50,15 @@ function AllianceManagementPage() {
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
     const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
     const [isActionProcessing, setIsActionProcessing] = useState<string | null>(null);
+
+    const [isEditNameOpen, setIsEditNameOpen] = useState(false);
+    const [newAllianceName, setNewAllianceName] = useState('');
+    const [isSavingName, setIsSavingName] = useState(false);
+    
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
+    const [isDeletingAlliance, setIsDeletingAlliance] = useState(false);
+
 
     const isOwner = useMemo(() => currentRole === 'Owner', [currentRole]);
 
@@ -75,6 +85,7 @@ function AllianceManagementPage() {
             }
 
             setAlliance(allianceData);
+            setNewAllianceName(allianceData.name);
             setMembers(membersData);
             setMemberships(membershipsData);
             setJoinRequests(requestsData);
@@ -139,6 +150,38 @@ function AllianceManagementPage() {
         }
     };
     
+     const handleUpdateName = async () => {
+        if (!alliance || !user || !newAllianceName.trim()) return;
+        setIsSavingName(true);
+        try {
+            await updateFamilyName(alliance.id, user.uid, newAllianceName.trim());
+            setAlliance(prev => prev ? { ...prev, name: newAllianceName.trim() } : null);
+            toast({ title: 'Nome da Aliança Atualizado!' });
+            setIsEditNameOpen(false);
+        } catch (error: any) {
+            toast({ title: 'Erro ao Atualizar', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsSavingName(false);
+        }
+    };
+
+    const handleDeleteAlliance = async () => {
+        if (!alliance || !user || deleteConfirmationInput !== alliance.name) {
+            toast({ title: 'Confirmação Incorreta', description: 'Você deve digitar o nome exato da aliança para confirmar.', variant: 'destructive' });
+            return;
+        }
+        setIsDeletingAlliance(true);
+        try {
+            await deleteFamily(alliance.id, user);
+            toast({ title: 'Aliança Excluída', description: 'A aliança e todas as suas associações foram removidas.' });
+            router.push('/dashboard/alliances');
+        } catch (error: any) {
+            toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
+            setIsDeletingAlliance(false);
+        }
+    };
+
+    
     const moveTargetContexts = useMemo(() => {
         return availableContexts.filter(c => c.id !== allianceId);
     }, [availableContexts, allianceId]);
@@ -168,11 +211,20 @@ function AllianceManagementPage() {
     return (
         <>
             <div className="space-y-8">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row gap-2 items-start justify-between">
                     <div className="flex items-center gap-3">
                         <LinkIcon className="h-8 w-8 text-primary" />
                         <div>
-                            <h2 className="text-3xl font-headline font-bold">{alliance.name}</h2>
+                            <h2 className="text-3xl font-headline font-bold flex items-center gap-2">
+                                {alliance.name}
+                                {isOwner && (
+                                     <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditNameOpen(true)}>
+                                            <Edit className="h-4 w-4" />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                )}
+                            </h2>
                             <p className="text-muted-foreground">Gerencie sua equipe de heróis e colaboradores.</p>
                         </div>
                     </div>
@@ -323,6 +375,21 @@ function AllianceManagementPage() {
                     </CardFooter>
                 </Card>
 
+                 {isOwner && (
+                    <Card className="border-destructive/50">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle/> Zona de Perigo</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                             <AlertDialogTrigger asChild>
+                                <Button variant="destructive" onClick={() => setIsDeleteConfirmOpen(true)}>
+                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Aliança
+                                </Button>
+                             </AlertDialogTrigger>
+                        </CardContent>
+                    </Card>
+                )}
+
             </div>
             
             <InviteMemberDialog
@@ -387,6 +454,61 @@ function AllianceManagementPage() {
                     </AlertDialogContent>
                 </AlertDialog>
             )}
+
+             <AlertDialog open={isEditNameOpen} onOpenChange={setIsEditNameOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Editar Nome da Aliança</AlertDialogTitle>
+                        <AlertDialogDescription>Escolha um novo nome para sua aliança.</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-4">
+                        <Label htmlFor="alliance-name-input">Novo Nome</Label>
+                        <Input
+                            id="alliance-name-input"
+                            value={newAllianceName}
+                            onChange={(e) => setNewAllianceName(e.target.value)}
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isSavingName}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleUpdateName} disabled={isSavingName || !newAllianceName.trim()}>
+                            {isSavingName && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Salvar Nome
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <AlertDialog open={isDeleteConfirmOpen} onOpenChange={setIsDeleteConfirmOpen}>
+                 <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Excluir Aliança "{alliance.name}"?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta ação é <strong>permanente e irreversível</strong>. Todos os membros serão removidos e os heróis desta aliança retornarão aos seus espaços "Cuidar Solo". Para confirmar, digite o nome exato da aliança abaixo.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <div className="py-2">
+                        <Label htmlFor="delete-confirm-input" className="font-semibold">{alliance.name}</Label>
+                        <Input
+                            id="delete-confirm-input"
+                            placeholder="Digite o nome da aliança para confirmar"
+                            value={deleteConfirmationInput}
+                            onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                        />
+                    </div>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeletingAlliance}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteAlliance}
+                            className="bg-destructive hover:bg-destructive/90"
+                            disabled={isDeletingAlliance || deleteConfirmationInput !== alliance.name}
+                        >
+                            {isDeletingAlliance ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            Sim, Excluir Aliança
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 }
