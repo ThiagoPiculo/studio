@@ -9,6 +9,7 @@ import Confetti from 'react-confetti';
 import { useWindowSize } from 'react-use';
 import { cn, getInitials } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { tts } from '@/ai/flows/tts';
 
 interface VictoryParadeProps {
   data: {
@@ -84,7 +85,7 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
         />
       )}
       <div 
-         className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm"
+         className="fixed inset-0 z-[100] flex items-center justify-center p-4"
          onClick={onDone}
       >
         <Card 
