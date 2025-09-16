@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -30,6 +30,9 @@ const periodDetails = {
 export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   const { width, height } = useWindowSize();
   const [showConfetti, setShowConfetti] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [confettiSource, setConfettiSource] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
+
 
   useEffect(() => {
     if (data) {
@@ -37,7 +40,26 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
       const timer = setTimeout(() => {
         setShowConfetti(false);
       }, 7000); 
-      return () => clearTimeout(timer);
+
+      // Get card dimensions for confetti source
+      const cardRenderTimer = setTimeout(() => {
+        if (cardRef.current) {
+          const rect = cardRef.current.getBoundingClientRect();
+          setConfettiSource({
+            x: rect.left,
+            y: rect.top,
+            w: rect.width,
+            h: rect.height
+          });
+        }
+      }, 100); // Small delay to ensure card is rendered
+
+      return () => {
+        clearTimeout(timer);
+        clearTimeout(cardRenderTimer);
+      }
+    } else {
+      setConfettiSource(null);
     }
   }, [data]);
 
@@ -48,14 +70,38 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
 
   return (
     <>
-      {showConfetti && <Confetti width={width} height={height} recycle={false} numberOfPieces={500} gravity={0.15} colors={['#FFD700', '#FF33F6', '#33D4FF', '#34D399', '#FF5733']} />}
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <Card className="w-full max-w-sm bg-gradient-to-br from-card to-muted border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500">
+      {showConfetti && (
+         <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.15}
+          initialVelocityX={{ min: -10, max: 10 }}
+          initialVelocityY={{ min: -20, max: 5 }}
+          confettiSource={confettiSource || undefined}
+          colors={['#FFD700', '#FF33F6', '#33D4FF', '#34D399', '#FF5733']}
+        />
+      )}
+      <div 
+         ref={cardRef} 
+         className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+         onClick={onDone} // Allow closing by clicking background
+      >
+        <Card 
+            className="w-full max-w-sm bg-gradient-to-br from-card to-muted border-primary/20 shadow-2xl overflow-hidden text-center animate-in fade-in zoom-in-95 duration-500"
+            onClick={(e) => e.stopPropagation()} // Prevent card click from closing
+        >
             <CardHeader className="items-center space-y-3 pt-6">
-                 <Avatar className="h-20 w-20 text-3xl border-4 shadow-lg" style={{ borderColor: data.child.color }}>
-                    <AvatarImage src={data.child.avatar} alt={data.child.name} />
-                    <AvatarFallback style={{ backgroundColor: data.child.color }} className="font-bold">{getInitials(data.child.name)}</AvatarFallback>
-                </Avatar>
+                 <div className="flex items-center gap-4">
+                    <Avatar className="h-20 w-20 text-3xl border-4 shadow-lg" style={{ borderColor: data.child.color }}>
+                        <AvatarImage src={data.child.avatar} alt={data.child.name} />
+                        <AvatarFallback style={{ backgroundColor: data.child.color }} className="font-bold">{getInitials(data.child.name)}</AvatarFallback>
+                    </Avatar>
+                     <div className="p-3 bg-amber-400/20 rounded-full shadow-inner">
+                        <Trophy className="h-12 w-12 text-amber-500 filter drop-shadow-md" />
+                     </div>
+                 </div>
                 <div className="space-y-1">
                     <CardTitle className="text-2xl font-headline">Parabéns, {data.child.name}!</CardTitle>
                     <CardDescription className="flex items-center justify-center gap-2">
