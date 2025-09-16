@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
@@ -32,8 +31,6 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
   const [showConfetti, setShowConfetti] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
   const [confettiSource, setConfettiSource] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [confettiKey, setConfettiKey] = useState(0);
-  const animationFrameId = useRef<number>();
 
   const updateConfettiSource = useCallback(() => {
     if (cardRef.current) {
@@ -44,40 +41,28 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
         w: rect.width,
         h: rect.height,
       });
-      // Increment the key to force re-render of the Confetti component
-      setConfettiKey(prevKey => prevKey + 1);
     }
-    // Continue the loop only if the component is still supposed to show confetti
-    if (showConfetti) {
-       animationFrameId.current = requestAnimationFrame(updateConfettiSource);
-    }
-  }, [showConfetti]);
+  }, []);
 
   useEffect(() => {
     if (data) {
       setShowConfetti(true);
       const timer = setTimeout(() => {
         setShowConfetti(false);
-        // Ensure the animation loop stops when confetti is no longer shown
-        if (animationFrameId.current) {
-          cancelAnimationFrame(animationFrameId.current);
-        }
       }, 7000);
-
-      // Start the animation loop
-      animationFrameId.current = requestAnimationFrame(updateConfettiSource);
+      
+      // Initial position calculation
+      updateConfettiSource();
+      
+      // Update on resize
+      window.addEventListener('resize', updateConfettiSource);
 
       return () => {
         clearTimeout(timer);
-        if (animationFrameId.current) {
-          cancelAnimationFrame(animationFrameId.current);
-        }
+        window.removeEventListener('resize', updateConfettiSource);
       };
     } else {
        setShowConfetti(false);
-       if (animationFrameId.current) {
-        cancelAnimationFrame(animationFrameId.current);
-      }
     }
   }, [data, updateConfettiSource]);
 
@@ -90,11 +75,10 @@ export function VictoryParade({ data, onDone }: VictoryParadeProps) {
     <>
       {showConfetti && confettiSource && (
          <Confetti
-          key={confettiKey} // Force re-mount on key change
           width={width}
           height={height}
           recycle={false}
-          numberOfPieces={250} // Reduced for performance with frequent re-renders
+          numberOfPieces={250}
           gravity={0.15}
           initialVelocityX={{ min: -10, max: 10 }}
           initialVelocityY={{ min: -20, max: 5 }}
