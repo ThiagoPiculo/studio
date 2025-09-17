@@ -5,13 +5,13 @@ import { Suspense, useEffect, useState, useMemo } from 'react';
 import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import type { ChildProfile, SchoolScheduleEntry } from '@/lib/types';
-import { getChildProfilesForAttribution, getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
+import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
+import { getSchoolScheduleForContext } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { PlusCircle, Edit, Trash2, Info, Loader2 } from 'lucide-react';
+import { PlusCircle, Edit, Trash2, Info, Loader2, Filter } from 'lucide-react';
 import { weekdays, weekdayLabels } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
@@ -26,6 +26,10 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+
 
 function SchoolSchedulePageContent() {
     const { user, loading: authLoading } = useAuth();
@@ -39,6 +43,10 @@ function SchoolSchedulePageContent() {
     const [selectedChildForNewEntry, setSelectedChildForNewEntry] = useState<ChildProfile | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    
+    const [selectedDays, setSelectedDays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
+    const [showColors, setShowColors] = useState<boolean>(true);
+
 
     const fetchData = async () => {
         if (!user) {
@@ -109,6 +117,11 @@ function SchoolSchedulePageContent() {
             setEntryToDelete(null);
         }
     };
+    
+    const visibleDays = useMemo(() => {
+        return weekdays.filter(day => selectedDays.includes(day));
+    }, [selectedDays]);
+
 
     if (authLoading || isFamilyLoading) {
         return <Loading />;
@@ -137,6 +150,29 @@ function SchoolSchedulePageContent() {
                     </AlertDescription>
                 </Alert>
             )}
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2"><Filter className="h-5 w-5 text-primary"/> Filtros de Visualização</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col md:flex-row gap-6 md:items-center md:justify-between">
+                    <div className="space-y-2">
+                        <Label>Dias da Semana</Label>
+                        <ToggleGroup type="multiple" value={selectedDays} onValueChange={(v) => setSelectedDays(v as Weekday[])} variant="outline" className="flex-wrap justify-start">
+                            {weekdays.map(day => (
+                                <ToggleGroupItem key={day} value={day} aria-label={weekdayLabels[day].long} className="h-9 px-3">
+                                    {weekdayLabels[day].short}
+                                </ToggleGroupItem>
+                            ))}
+                        </ToggleGroup>
+                    </div>
+                     <div className="flex items-center space-x-2">
+                        <Switch id="color-switch" checked={showColors} onCheckedChange={setShowColors} />
+                        <Label htmlFor="color-switch">Exibir Cores</Label>
+                    </div>
+                </CardContent>
+            </Card>
+
             <div className="space-y-8">
                 {childrenInContext.map(child => (
                     <Card key={child.id} className="shadow-md">
@@ -161,14 +197,17 @@ function SchoolSchedulePageContent() {
                         </CardHeader>
                         <CardContent>
                             <div className="overflow-x-auto">
-                                <div className="grid grid-cols-5 gap-4 min-w-[700px] md:min-w-full">
-                                    {weekdays.filter(d => d !== 'SA' && d !== 'SU').map(day => (
+                                <div className={cn(
+                                    "grid gap-4 min-w-[700px] md:min-w-full",
+                                    `grid-cols-${visibleDays.length || 1}`
+                                )}>
+                                    {visibleDays.map(day => (
                                         <div key={day} className="space-y-3 p-2 rounded-lg bg-muted/30">
                                             <h3 className="font-semibold text-center">{weekdayLabels[day].long}</h3>
                                             <div className="space-y-2">
                                                 {(scheduleByChildAndDay[child.id]?.[day] || []).length > 0 ? (
                                                     scheduleByChildAndDay[child.id][day].map(entry => (
-                                                        <div key={entry.id} className="group p-2 rounded-md" style={{ backgroundColor: `${entry.color}30`, borderLeft: `4px solid ${entry.color}`}}>
+                                                        <div key={entry.id} className="group p-2 rounded-md" style={showColors ? { backgroundColor: `${entry.color}30`, borderLeft: `4px solid ${entry.color}` } : { borderLeft: `4px solid hsl(var(--border))`}}>
                                                             <div className="flex justify-between items-start">
                                                                 <p className="font-semibold text-sm">{entry.subject}</p>
                                                                 <div className="flex opacity-0 group-hover:opacity-100 transition-opacity">
