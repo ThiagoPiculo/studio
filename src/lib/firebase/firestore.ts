@@ -1374,6 +1374,58 @@ export const addChildRewardInstance = async (
   return convertTimestampsInObject(newInstance);
 };
 
+export const requestRewardRedemption = async (
+  rewardTemplate: RewardTemplate,
+  childId: string
+): Promise<void> => {
+  const child = await getChildProfileById(childId);
+  if (!child) {
+    throw new Error("Herói não encontrado.");
+  }
+
+  const existingRequestQuery = query(
+    collection(db, 'childRewardInstances'),
+    where('templateId', '==', rewardTemplate.id),
+    where('childId', '==', childId),
+    where('status', '==', 'pending_approval')
+  );
+  const existingRequestSnapshot = await getDocs(existingRequestQuery);
+  if (!existingRequestSnapshot.empty) {
+    throw new Error("Você já solicitou esta recompensa. Aguarde a aprovação.");
+  }
+
+  const newInstanceRef = doc(collection(db, 'childRewardInstances'));
+  const now = serverTimestamp() as Timestamp;
+
+  const newInstance: Omit<ChildRewardInstance, 'id'> = {
+    templateId: rewardTemplate.id,
+    childId: childId,
+    ownerId: child.ownerId,
+    familyId: child.familyId || null,
+    title: rewardTemplate.title,
+    description: rewardTemplate.description,
+    category: rewardTemplate.category,
+    starsCost: rewardTemplate.starsCost,
+    isMaterial: rewardTemplate.isMaterial,
+    status: 'pending_approval',
+    isRedeemed: false,
+    assignedAt: now,
+    updatedAt: now,
+  };
+  await setDoc(newInstanceRef, newInstance);
+
+  await createAndDispatchNotifications(
+    childId,
+    {
+      type: 'reward_redeemed', // This type might need to be more specific, like 'reward_redemption_request'
+      title: 'Pedido de Resgate de Recompensa!',
+      description: `${child.name} quer resgatar a recompensa: "${rewardTemplate.title}".`,
+      href: `/dashboard/mural?childId=${childId}&tab=rewards`,
+      relatedChildId: childId,
+    },
+    child
+  );
+};
 
 export const getActiveChildRewardInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<ChildRewardInstance[]> => {
   const q = query(
@@ -1421,11 +1473,12 @@ export const updateChildRewardInstance = async (instanceId: string, updates: Par
 };
 
 export const redeemChildRewardInstance = async (
-  rewardTemplate: RewardTemplate | ChildRewardInstance,
+  rewardInstance: ChildRewardInstance,
   childId: string,
   actor: { id: string; name: string | null }
 ): Promise<void> => {
   const childRef = doc(db, 'children', childId);
+  const rewardInstanceRef = doc(db, 'childRewardInstances', rewardInstance.id);
 
   await runTransaction(db, async (transaction) => {
     const childSnap = await transaction.get(childRef);
@@ -1434,41 +1487,25 @@ export const redeemChildRewardInstance = async (
     }
     const childData = childSnap.data() as ChildProfile;
 
-    if (childData.stars < rewardTemplate.starsCost) {
+    if (childData.stars < rewardInstance.starsCost) {
       throw new Error("Estrelas insuficientes para resgatar esta recompensa.");
     }
     
     transaction.update(childRef, {
-      stars: childData.stars - rewardTemplate.starsCost,
+      stars: childData.stars - rewardInstance.starsCost,
       updatedAt: serverTimestamp(),
     });
     
-    // In the new model, we just create a new "redeemed" entry instead of updating one.
-    const newInstanceRef = doc(collection(db, 'childRewardInstances'));
-    const newInstance: Omit<ChildRewardInstance, 'id'> = {
-      templateId: 'templateId' in rewardTemplate ? rewardTemplate.templateId : rewardTemplate.id,
-      childId: childId,
-      ownerId: childData.ownerId,
-      familyId: childData.familyId || null,
-      title: rewardTemplate.title,
-      description: rewardTemplate.description,
-      category: rewardTemplate.category,
-      starsCost: rewardTemplate.starsCost,
-      isMaterial: rewardTemplate.isMaterial,
+    transaction.update(rewardInstanceRef, {
       status: 'redeemed',
       isRedeemed: true,
-      redeemedAt: serverTimestamp() as Timestamp,
-      assignedAt: serverTimestamp() as Timestamp,
-      updatedAt: serverTimestamp() as Timestamp,
+      redeemedAt: serverTimestamp(),
       actorId: actor.id,
-    };
-    transaction.set(newInstanceRef, newInstance);
+    });
   });
   
   const childData = (await getDoc(childRef)).data() as ChildProfile;
-  const description = actor.id === childId 
-      ? `${childData.name} resgatou: "${rewardTemplate.title}".` 
-      : `${actor.name || 'Um responsável'} confirmou o resgate de "${rewardTemplate.title}" para ${childData.name}.`;
+  const description = `${actor.name || 'Um responsável'} confirmou o resgate de "${rewardInstance.title}" para ${childData.name}.`;
 
   await createAndDispatchNotifications(
     childId, 
@@ -2601,6 +2638,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 
