@@ -101,7 +101,7 @@ export function ChildDashboard() {
         missionsUnsubscribe();
       };
     }
-  }, [childId, isChildAuthenticated, toast, logout, isLoading]);
+  }, [childId, isChildAuthenticated, toast, logout]);
 
   const missionsByPeriod = useMemo(() => {
     const byPeriod: { Manhã: MissionInstance[], Tarde: MissionInstance[], Noite: MissionInstance[] } = {
