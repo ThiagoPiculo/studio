@@ -1,15 +1,23 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { getChildProfileById, getMissionInstancesByChild, completeMissionInstance, reactivateMissionInstance } from '@/lib/firebase/firestore';
+import {
+  getChildProfileById,
+  getMissionInstancesByChild,
+  completeMissionInstance,
+  reactivateMissionInstance
+} from '@/lib/firebase/firestore';
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import Loading from '@/app/dashboard/(child)/loading';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
 import { startOfDay, format as formatDateFns } from 'date-fns';
+import { onSnapshot, doc, query, collection, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
+import { convertTimestampsInObject } from '@/lib/utils';
+
 
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -33,11 +41,11 @@ const periodIcons = {
 export function ChildDashboard() {
   const params = useParams();
   const router = useRouter();
-  const { childProfile, isChildAuthenticated, loading: authLoading, logout } = useAuth();
+  const { childProfile: authChildProfile, isChildAuthenticated, loading: authLoading, logout } = useAuth();
   const { toast } = useToast();
 
   const childId = params.childId as string;
-  const [child, setChild] = useState<ChildProfile | null>(childProfile);
+  const [child, setChild] = useState<ChildProfile | null>(authChildProfile);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
@@ -50,32 +58,43 @@ export function ChildDashboard() {
   } | null>(null);
 
   useEffect(() => {
-    if (!authLoading && (!isChildAuthenticated || !childProfile)) {
+    if (!authLoading && (!isChildAuthenticated || !authChildProfile)) {
         logout(); // Force logout for security if state is inconsistent
         router.replace('/dashboard/child-login');
-    } else if (childProfile && childProfile.id !== childId) {
+    } else if (authChildProfile && authChildProfile.id !== childId) {
         // Logged in as a different child, redirect to their correct page
-        router.replace(`/dashboard/child/${childProfile.id}`);
+        router.replace(`/dashboard/child/${authChildProfile.id}`);
     }
-  }, [childId, childProfile, isChildAuthenticated, authLoading, router, logout]);
+  }, [childId, authChildProfile, isChildAuthenticated, authLoading, router, logout]);
 
   useEffect(() => {
     if (isChildAuthenticated && childId) {
       setIsLoading(true);
-      Promise.all([
-        getChildProfileById(childId),
-        getMissionInstancesByChild(childId)
-      ]).then(([profile, missions]) => {
-        setChild(profile);
-        setMissionInstances(missions);
-      }).catch(err => {
-        console.error("Error fetching child data:", err);
-        toast({ title: 'Erro ao carregar seus dados, herói!', variant: 'destructive' });
-      }).finally(() => {
-        setIsLoading(false);
+
+      const childDocRef = doc(db, 'children', childId);
+      const childUnsubscribe = onSnapshot(childDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          setChild(convertTimestampsInObject({ id: docSnap.id, ...docSnap.data() }) as ChildProfile);
+        } else {
+           toast({ title: 'Erro ao carregar perfil', variant: 'destructive' });
+           logout();
+        }
+        if (isLoading) setIsLoading(false);
       });
+      
+      const missionsQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
+      const missionsUnsubscribe = onSnapshot(missionsQuery, (snapshot) => {
+          const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
+          setMissionInstances(missions);
+          if (isLoading) setIsLoading(false);
+      });
+
+      return () => {
+        childUnsubscribe();
+        missionsUnsubscribe();
+      };
     }
-  }, [childId, isChildAuthenticated, toast]);
+  }, [childId, isChildAuthenticated, toast, logout, isLoading]);
   
   const todaysMissions = useMemo(() => {
     const today = startOfDay(new Date());
@@ -110,94 +129,47 @@ export function ChildDashboard() {
   
     const isCompleted = isMissionCompletedForDate(mission, new Date());
     const dateKey = formatDateFns(new Date(), 'yyyy-MM-dd');
-  
-    // Store original state for potential rollback
-    const originalMissions = [...missionInstances];
-    const originalChild = { ...child };
-  
-    if (isCompleted) {
-      // --- Optimistic Update for UNDO ---
-      const updatedChild = { ...child, stars: Math.max(0, child.stars - mission.starsReward) };
-      const updatedMissions = missionInstances.map(inst => {
-        if (inst.id === mission.id) {
-          const newLog = { ...inst.completionLog };
-          delete newLog[dateKey];
-          return { ...inst, completionLog: newLog };
-        }
-        return inst;
-      });
-      setChild(updatedChild);
-      setMissionInstances(updatedMissions);
-  
-      try {
-        await reactivateMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
-      } catch (error) {
-        console.error("Error undoing mission completion:", error);
-        toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
-        // Rollback on error
-        setChild(originalChild);
-        setMissionInstances(originalMissions);
-      } finally {
-        setProcessingMissionId(null);
-      }
-      return;
-    }
-  
-    // --- Optimistic Update for COMPLETE ---
-    const updatedChild = { ...child, stars: child.stars + mission.starsReward };
-    const updatedMissions = missionInstances.map(inst =>
-      inst.id === mission.id
-        ? { ...inst, completionLog: { ...inst.completionLog, [dateKey]: { completedAt: new Date() as any, stars: mission.starsReward } } }
-        : inst
-    );
-    setChild(updatedChild);
-    setMissionInstances(updatedMissions);
-  
-    // --- Victory Parade Logic ---
-    const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
-    const missionPeriod = getPeriodOfDay(missionTime);
-    if (missionPeriod) {
-      const allInPeriodComplete = missionsByPeriod[missionPeriod].every(m => 
-        m.id === mission.id || isMissionCompletedForDate(m, new Date())
-      );
-      if (allInPeriodComplete && missionsByPeriod[missionPeriod].length > 0) {
-        const starsForPeriod = missionsByPeriod[missionPeriod].reduce((sum, m) => sum + m.starsReward, 0);
-        setTimeout(() => {
-          setVictoryData({
-            child: updatedChild,
-            period: missionPeriod,
-            missions: missionsByPeriod[missionPeriod],
-            stars: starsForPeriod,
-          });
-        }, 500);
-      }
-    }
-  
+
     try {
-      await completeMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+        if (isCompleted) {
+             await reactivateMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+        } else {
+            const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
+            const missionPeriod = getPeriodOfDay(missionTime);
+            
+            const updatedChild = await completeMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+            
+            // Victory Parade Logic
+            // We need to check against the *new state* of missionInstances after completion.
+            const allInPeriodComplete = missionsByPeriod[missionPeriod!].every(m => {
+                 const isThisMission = m.id === mission.id;
+                 const wasAlreadyCompleted = isMissionCompletedForDate(m, new Date());
+                 return isThisMission || wasAlreadyCompleted;
+            });
+            
+            if (missionPeriod && allInPeriodComplete && missionsByPeriod[missionPeriod].length > 0 && updatedChild) {
+                const starsForPeriod = missionsByPeriod[missionPeriod].reduce((sum, m) => sum + m.starsReward, 0);
+                setTimeout(() => {
+                  setVictoryData({
+                    child: updatedChild,
+                    period: missionPeriod,
+                    missions: missionsByPeriod[missionPeriod],
+                    stars: starsForPeriod,
+                  });
+                }, 500);
+            }
+        }
     } catch (error) {
-      console.error("Error toggling mission completion:", error);
-      toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
-      // Rollback on error
-      setChild(originalChild);
-      setMissionInstances(originalMissions);
+        console.error("Error toggling mission completion:", error);
+        toast({ title: 'Ops! Ocorreu um erro mágico.', variant: 'destructive' });
     } finally {
-      setProcessingMissionId(null);
+        setProcessingMissionId(null);
     }
   };
 
 
-  if (isLoading || authLoading) {
+  if (isLoading || authLoading || !child) {
     return <Loading />;
-  }
-
-  if (!child) {
-    return (
-        <div className="p-4 text-center">
-            <p className="text-destructive">Não foi possível carregar o perfil do herói.</p>
-            <Button onClick={() => router.push('/dashboard/child-login')}>Voltar ao Login</Button>
-        </div>
-    );
   }
   
   const todayLabel = formatDateFns(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });

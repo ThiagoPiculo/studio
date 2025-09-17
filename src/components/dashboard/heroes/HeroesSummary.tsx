@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -9,7 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { PlusCircle, Smile, Loader2, Settings, Gift, ListChecks, NotebookPen, Medal, CheckCircle, Target, ArrowRight, Circle, Info, BadgeCheck, RefreshCw, ChevronDown, ChevronUp, Clock, CalendarDays, ExternalLink, LayoutGrid, Home, Star, HelpCircle, Lightbulb, MoreVertical, Contact, Edit3, CalendarCheck2, Camera, Sun, CloudSun, Moon } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import type { ChildProfile, MissionInstance, SchoolScheduleEntry } from "@/lib/types";
-import { cn, getInitials } from "@/lib/utils";
+import { cn, getInitials, convertTimestampsInObject } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,6 +29,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { CompleteMissionConfirmationDialog } from '../missions/CompleteMissionConfirmationDialog';
 import { missionToBlockMap } from '@/lib/mission-block-mapping';
+import { onSnapshot, query, collection, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 interface ActivityItem {
     id: string;
@@ -51,7 +52,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
     const router = useRouter();
     const { user } = useAuth();
     const { toast } = useToast();
-    const { selectedChildId, setSelectedChildId } = useFamily(); // Use global state
+    const { currentContext, selectedChildId, setSelectedChildId } = useFamily();
     
     const [children, setChildren] = useState(initialChildren);
     const [missionInstances, setMissionInstances] = useState(initialMissionInstances);
@@ -64,10 +65,44 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
     
     const [confirmingMission, setConfirmingMission] = useState<MissionInstance | null>(null);
     
+    // Real-time listener for mission instances
     useEffect(() => {
-        setChildren(initialChildren);
-        setMissionInstances(initialMissionInstances);
-    }, [initialChildren, initialMissionInstances]);
+        if (!user) return;
+        
+        let q;
+        if(currentContext === 'my-space') {
+            q = query(collection(db, 'missionInstances'), where('ownerId', '==', user.uid), where('familyId', '==', null));
+        } else {
+            q = query(collection(db, 'missionInstances'), where('familyId', '==', currentContext));
+        }
+        
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
+            setMissionInstances(missions);
+        });
+
+        return () => unsubscribe();
+    }, [user, currentContext]);
+    
+    // Real-time listener for children profiles
+    useEffect(() => {
+        if (!user) return;
+        
+        let q;
+        if(currentContext === 'my-space') {
+            q = query(collection(db, 'children'), where('ownerId', '==', user.uid), where('familyId', '==', null));
+        } else {
+            q = query(collection(db, 'children'), where('familyId', '==', currentContext));
+        }
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const childrenProfiles = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildProfile);
+            setChildren(childrenProfiles);
+        });
+        
+        return () => unsubscribe();
+    }, [user, currentContext]);
+
 
     useEffect(() => {
         setIsLoadingSchedules(true);
@@ -104,59 +139,18 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         if (!user) return;
         setProcessingMissionId(mission.id);
 
-        const dateKey = formatDateFns(startOfDay(date), 'yyyy-MM-dd');
-        
-        const originalInstances = missionInstances;
-        const originalChildren = children;
-
-        setMissionInstances(prevInstances =>
-            prevInstances.map(inst => {
-                if (inst.id === mission.id) {
-                    const newLog = { ...(inst.completionLog || {}) };
-                    if (isCompleted) {
-                        delete newLog[dateKey];
-                    } else {
-                        newLog[dateKey] = { completedAt: new Date() as any, stars: mission.starsReward, actorId: user.uid, actorName: user.name };
-                    }
-                    return { ...inst, completionLog: newLog };
-                }
-                return inst;
-            })
-        );
-        
-        setChildren(prevChildren => 
-            prevChildren.map(c => {
-                if (c.id === mission.childId) {
-                    const starsChange = isCompleted ? -mission.starsReward : mission.starsReward;
-                    return { ...c, stars: c.stars + starsChange };
-                }
-                return c;
-            })
-        );
-
-
         try {
             const actor = { id: user.uid, name: user.name };
-            const updatedChildProfile = isCompleted
-                ? await reactivateMissionInstance(mission.id, date, actor)
-                : await completeMissionInstance(mission.id, date, actor);
-            
-            if (updatedChildProfile) {
-                setChildren(prevChildren =>
-                    prevChildren.map(c => 
-                        c.id === updatedChildProfile.id ? { ...c, ...updatedChildProfile } : c
-                    )
-                );
-                toast({
-                    title: isCompleted ? "Ação Desfeita" : "Missão Cumprida!",
-                    description: `A missão "${mission.title}" foi atualizada.`
-                });
+            if (isCompleted) {
+                await reactivateMissionInstance(mission.id, date, actor);
+                toast({ title: "Ação Desfeita", description: `A missão "${mission.title}" foi reativada.` });
+            } else {
+                await completeMissionInstance(mission.id, date, actor);
+                 toast({ title: "Missão Cumprida!", description: `Você marcou "${mission.title}" como concluída.` });
             }
         } catch (error) {
             console.error("Error toggling mission completion:", error);
             toast({ title: "Erro ao atualizar missão", variant: "destructive" });
-            setMissionInstances(originalInstances);
-            setChildren(originalChildren);
         } finally {
             setProcessingMissionId(null);
             setConfirmingMission(null);
@@ -181,7 +175,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         setProcessingMissionId(missionToDelete.id);
         try {
             await deleteMissionInstance(user, missionToDelete.id);
-            setMissionInstances(prev => prev.filter(m => m.id !== missionToDelete.id));
+            // onSnapshot will handle the update
             toast({ title: "Atribuição Removida", description: "A missão foi removida da lista deste herói."});
         } catch (error) {
             console.error("Error deleting mission instance", error);
