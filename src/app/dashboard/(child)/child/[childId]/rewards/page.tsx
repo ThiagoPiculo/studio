@@ -4,8 +4,8 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getChildRewardInstancesByChild, getChildProfileById, redeemChildRewardInstance } from '@/lib/firebase/firestore';
-import type { ChildRewardInstance, ChildProfile } from '@/lib/types';
+import { getChildRewardInstancesByChild, getChildProfileById, redeemChildRewardInstance, getRewardTemplatesByOwnerOrFamily, getUserProfile } from '@/lib/firebase/firestore';
+import type { ChildRewardInstance, ChildProfile, RewardTemplate, UserProfile } from '@/lib/types';
 import Loading from '../loading';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,41 +20,63 @@ export default function ChildRewardsPage() {
   const params = useParams();
   const childId = params.childId as string;
   const { toast } = useToast();
+  const { user: authUser } = useAuth();
 
-  const [rewards, setRewards] = useState<ChildRewardInstance[]>([]);
+  const [rewards, setRewards] = useState<(ChildRewardInstance | RewardTemplate)[]>([]);
   const [child, setChild] = useState<ChildProfile | null>(null);
+  const [owner, setOwner] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [rewardToRedeem, setRewardToRedeem] = useState<ChildRewardInstance | null>(null);
+  const [rewardToRedeem, setRewardToRedeem] = useState<ChildRewardInstance | RewardTemplate | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (childId) {
       setIsLoading(true);
-      Promise.all([
-        getChildRewardInstancesByChild(childId),
-        getChildProfileById(childId)
-      ]).then(([rewardInstances, childProfile]) => {
-        // Only show active rewards
-        setRewards(rewardInstances.filter(r => r.status === 'active' || r.status === 'redeemed'));
-        setChild(childProfile);
-      }).catch(error => {
-        console.error("Error fetching child rewards:", error);
-        toast({ title: 'Erro ao buscar recompensas', variant: 'destructive' });
-      }).finally(() => {
-        setIsLoading(false);
-      });
+      getChildProfileById(childId)
+        .then(async (childProfile) => {
+          if (!childProfile) {
+            throw new Error("Perfil do herói não encontrado.");
+          }
+          setChild(childProfile);
+          
+          const ownerProfile = await getUserProfile(childProfile.ownerId);
+          setOwner(ownerProfile);
+          const rewardMode = ownerProfile?.settings?.rewardMode || 'automatic';
+
+          let rewardData: (ChildRewardInstance | RewardTemplate)[] = [];
+          if (rewardMode === 'automatic') {
+             const familyIdToQuery = childProfile.familyId || null;
+             rewardData = await getRewardTemplatesByOwnerOrFamily(childProfile.ownerId, familyIdToQuery);
+          } else {
+             rewardData = await getChildRewardInstancesByChild(childId);
+          }
+          
+          setRewards(rewardData.filter(r => ('status' in r ? (r.status === 'active' || r.status === 'redeemed') : r.status === 'active')));
+
+        }).catch(error => {
+          console.error("Error fetching child rewards data:", error);
+          toast({ title: 'Erro ao buscar recompensas', variant: 'destructive' });
+        }).finally(() => {
+          setIsLoading(false);
+        });
     }
   }, [childId, toast]);
+  
+  const rewardMode = owner?.settings?.rewardMode || 'automatic';
 
   const { availableRewards, goalRewards, redeemedRewards } = useMemo(() => {
-    const available = rewards.filter(r => r.status === 'active' && child && child.stars >= r.starsCost && !r.redeemedAt).sort((a,b) => a.starsCost - b.starsCost);
-    const goals = rewards.filter(r => r.status === 'active' && child && child.stars < r.starsCost && !r.redeemedAt).sort((a,b) => a.starsCost - b.starsCost);
-    const redeemed = rewards.filter(r => r.status === 'redeemed').sort((a,b) => (b.redeemedAt as any) - (a.redeemedAt as any));
-    return { availableRewards: available, goalRewards: goals, redeemedRewards: redeemed };
-  }, [rewards, child]);
+    const allActiveRewards = rewards.filter(r => rewardMode === 'automatic' ? r.status === 'active' : ('status' in r && r.status === 'active'));
+    const allRedeemedRewards = rewardMode === 'manual' ? rewards.filter(r => 'redeemedAt' in r && r.redeemedAt) : [];
 
-  const handleRedeemClick = (reward: ChildRewardInstance) => {
+    const available = allActiveRewards.filter(r => child && child.stars >= r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    const goals = allActiveRewards.filter(r => child && child.stars < r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    const redeemed = allRedeemedRewards.sort((a,b) => (b.redeemedAt as any) - (a.redeemedAt as any));
+    
+    return { availableRewards: available, goalRewards: goals, redeemedRewards: redeemed };
+  }, [rewards, child, rewardMode]);
+
+  const handleRedeemClick = (reward: ChildRewardInstance | RewardTemplate) => {
     if (child && child.stars >= reward.starsCost) {
       setRewardToRedeem(reward);
     }
@@ -69,7 +91,13 @@ export default function ChildRewardsPage() {
       await redeemChildRewardInstance(rewardToRedeem, child.id, actor);
       
       setChild(prev => prev ? { ...prev, stars: prev.stars - rewardToRedeem.starsCost } : null);
-      setRewards(prev => prev.map(r => r.id === rewardToRedeem.id ? { ...r, status: 'redeemed' } : r));
+      
+      // Optimistic UI update: move from available to redeemed
+      if (rewardMode === 'automatic') {
+         setRewards(prev => prev.filter(r => r.id !== rewardToRedeem.id));
+      } else {
+         setRewards(prev => prev.map(r => r.id === rewardToRedeem.id ? { ...r, status: 'redeemed' } : r));
+      }
 
       toast({
         title: "Pedido de Resgate Enviado!",
@@ -152,28 +180,28 @@ export default function ChildRewardsPage() {
         )}
       </section>
       
-      <Separator />
+      {rewardMode === 'manual' && redeemedRewards.length > 0 && (
+          <>
+            <Separator />
+            <section>
+              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-gray-500"/>Recompensas Já Conquistadas</h2>
+              <div className="space-y-3">
+                {redeemedRewards.map(reward => (
+                  <Card key={reward.id} className="bg-muted/30 border-dashed">
+                    <CardHeader className="flex flex-row items-center justify-between p-4">
+                        <div>
+                            <CardTitle className="text-base line-through text-muted-foreground">{reward.title}</CardTitle>
+                            <p className="text-xs text-muted-foreground">Resgatada em {new Date((reward as ChildRewardInstance).redeemedAt as any).toLocaleDateString('pt-BR')}</p>
+                        </div>
+                        <CheckCircle className="h-6 w-6 text-muted-foreground/50" />
+                    </CardHeader>
+                  </Card>
+                ))}
+              </div>
+            </section>
+          </>
+      )}
 
-      <section>
-        <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-gray-500"/>Recompensas Já Conquistadas</h2>
-        {redeemedRewards.length > 0 ? (
-          <div className="space-y-3">
-            {redeemedRewards.map(reward => (
-              <Card key={reward.id} className="bg-muted/30 border-dashed">
-                <CardHeader className="flex flex-row items-center justify-between p-4">
-                    <div>
-                        <CardTitle className="text-base line-through text-muted-foreground">{reward.title}</CardTitle>
-                        <p className="text-xs text-muted-foreground">Resgatada em {new Date(reward.redeemedAt as any).toLocaleDateString('pt-BR')}</p>
-                    </div>
-                    <CheckCircle className="h-6 w-6 text-muted-foreground/50" />
-                </CardHeader>
-              </Card>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-center text-muted-foreground py-6">Sua jornada de conquistas está apenas começando!</p>
-        )}
-      </section>
 
        {rewardToRedeem && (
         <AlertDialog open={!!rewardToRedeem} onOpenChange={() => setRewardToRedeem(null)}>
