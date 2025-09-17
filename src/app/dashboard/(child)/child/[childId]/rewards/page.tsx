@@ -133,16 +133,18 @@ export default function ChildRewardsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {availableRewards.map(reward => (
               <Card key={reward.id} className="bg-green-500/5 border-green-500/20 shadow-sm">
-                <CardHeader>
-                  <CardTitle>{reward.title}</CardTitle>
-                  {reward.description && <CardDescription>{reward.description}</CardDescription>}
-                </CardHeader>
-                <CardFooter className="flex justify-between items-center">
-                  <Badge variant="secondary" className="text-base border-amber-500/20">
-                    {reward.starsCost} <Star className="ml-1.5 h-4 w-4 fill-yellow-400 text-yellow-500" />
-                  </Badge>
-                  <Button onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
-                </CardFooter>
+                 <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex-grow text-center sm:text-left">
+                        <p className="font-semibold text-lg">{reward.title}</p>
+                        {reward.description && <p className="text-xs text-muted-foreground line-clamp-2">{reward.description}</p>}
+                    </div>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Badge variant="secondary" className="text-base font-semibold border-amber-500/20 h-9">
+                        {reward.starsCost} <Star className="ml-1.5 h-4 w-4 fill-yellow-400 text-yellow-500" />
+                      </Badge>
+                      <Button size="sm" className="h-9" onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
+                    </div>
+                </CardContent>
               </Card>
             ))}
           </div>
@@ -159,16 +161,15 @@ export default function ChildRewardsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {goalRewards.map(reward => (
                 <Card key={reward.id} className="relative overflow-hidden bg-muted/40">
-                    <CardHeader>
-                        <CardTitle className="text-muted-foreground">{reward.title}</CardTitle>
-                        {reward.description && <CardDescription>{reward.description}</CardDescription>}
-                    </CardHeader>
-                    <CardFooter className="flex justify-between items-center">
-                        <Badge variant="outline" className="text-base">
+                    <CardContent className="p-4 flex items-center justify-between gap-4">
+                        <div className="flex-grow">
+                            <p className="font-semibold text-muted-foreground">{reward.title}</p>
+                            <div className="text-xs font-semibold text-primary mt-1">Faltam {reward.starsCost - child.stars} estrelas!</div>
+                        </div>
+                        <Badge variant="outline" className="text-base font-semibold h-9 flex-shrink-0">
                             {reward.starsCost} <Star className="ml-1.5 h-4 w-4 text-muted-foreground/50"/>
                         </Badge>
-                        <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - child.stars} estrelas!</div>
-                    </CardFooter>
+                    </CardContent>
                     <div className="absolute inset-0 bg-background/20 backdrop-blur-sm flex items-center justify-center">
                         <Lock className="h-8 w-8 text-muted-foreground/50"/>
                     </div>
