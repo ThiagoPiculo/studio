@@ -272,7 +272,7 @@ export interface ChildRewardInstance {
   starsCost: number;
   isMaterial: boolean;
 
-  status: 'active' | 'redeemed' | 'disabled'; // Status desta instância específica para esta criança
+  status: 'active' | 'pending_approval' | 'redeemed' | 'disabled';
   isRedeemed: boolean; // Pode ser usado para UI, mas 'status' é a fonte da verdade
   redeemedAt?: Timestamp; // Quando foi resgatada
   actorId?: string; // Who redeemed it

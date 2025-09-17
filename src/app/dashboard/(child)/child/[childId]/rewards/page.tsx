@@ -4,14 +4,15 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { getChildRewardInstancesByChild, getChildProfileById, redeemChildRewardInstance, getRewardTemplatesByOwnerOrFamily, getUserProfile } from '@/lib/firebase/firestore';
+import { requestRewardRedemption, getChildProfileById, getUserProfile } from '@/lib/firebase/firestore';
+import { getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
 import type { ChildRewardInstance, ChildProfile, RewardTemplate, UserProfile } from '@/lib/types';
 import Loading from '../loading';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { Star, CheckCircle, Loader2, Gift, Lock, Sparkles } from 'lucide-react';
+import { Star, CheckCircle, Loader2, Gift, Lock, Sparkles, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
@@ -20,14 +21,13 @@ export default function ChildRewardsPage() {
   const params = useParams();
   const childId = params.childId as string;
   const { toast } = useToast();
-  const { user: authUser } = useAuth();
 
-  const [rewards, setRewards] = useState<(ChildRewardInstance | RewardTemplate)[]>([]);
+  const [allRewards, setAllRewards] = useState<(RewardTemplate | ChildRewardInstance)[]>([]);
   const [child, setChild] = useState<ChildProfile | null>(null);
   const [owner, setOwner] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  const [rewardToRedeem, setRewardToRedeem] = useState<ChildRewardInstance | RewardTemplate | null>(null);
+  const [rewardToRedeem, setRewardToRedeem] = useState<RewardTemplate | ChildRewardInstance | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
@@ -43,16 +43,12 @@ export default function ChildRewardsPage() {
           const ownerProfile = await getUserProfile(childProfile.ownerId);
           setOwner(ownerProfile);
           const rewardMode = ownerProfile?.settings?.rewardMode || 'automatic';
-
-          let rewardData: (ChildRewardInstance | RewardTemplate)[] = [];
-          if (rewardMode === 'automatic') {
-             const familyIdToQuery = childProfile.familyId || null;
-             rewardData = await getRewardTemplatesByOwnerOrFamily(childProfile.ownerId, familyIdToQuery);
-          } else {
-             rewardData = await getChildRewardInstancesByChild(childId);
-          }
           
-          setRewards(rewardData.filter(r => ('status' in r ? (r.status === 'active' || r.status === 'redeemed') : r.status === 'active')));
+          // Always fetch from the main catalog now
+          const familyIdToQuery = childProfile.familyId || null;
+          const rewardData = await getRewardTemplatesByOwnerOrFamily(childProfile.ownerId, familyIdToQuery);
+          
+          setAllRewards(rewardData.filter(r => r.status === 'active'));
 
         }).catch(error => {
           console.error("Error fetching child rewards data:", error);
@@ -65,18 +61,21 @@ export default function ChildRewardsPage() {
   
   const rewardMode = owner?.settings?.rewardMode || 'automatic';
 
-  const { availableRewards, goalRewards, redeemedRewards } = useMemo(() => {
-    const allActiveRewards = rewards.filter(r => rewardMode === 'automatic' ? r.status === 'active' : ('status' in r && r.status === 'active'));
-    const allRedeemedRewards = rewardMode === 'manual' ? rewards.filter(r => 'redeemedAt' in r && r.redeemedAt) : [];
-
-    const available = allActiveRewards.filter(r => child && child.stars >= r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
-    const goals = allActiveRewards.filter(r => child && child.stars < r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
-    const redeemed = allRedeemedRewards.sort((a,b) => (b.redeemedAt as any) - (a.redeemedAt as any));
+  const { availableRewards, goalRewards, pendingRewards, redeemedRewards } = useMemo(() => {
+    if (!child) return { availableRewards: [], goalRewards: [], pendingRewards: [], redeemedRewards: [] };
     
-    return { availableRewards: available, goalRewards: goals, redeemedRewards: redeemed };
-  }, [rewards, child, rewardMode]);
+    // NOTE: This logic assumes manual mode is phased out and we always show from catalog.
+    // A more robust solution would handle both cases if needed.
+    const available = allRewards.filter(r => child.stars >= r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    const goals = allRewards.filter(r => child.stars < r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    
+    // `pending` and `redeemed` would need to be fetched from `childRewardInstances` if we want to show history.
+    // For now, let's keep it simple and not show them on the child's side after request.
+    return { availableRewards: available, goalRewards: goals, pendingRewards: [], redeemedRewards: [] };
 
-  const handleRedeemClick = (reward: ChildRewardInstance | RewardTemplate) => {
+  }, [allRewards, child, rewardMode]);
+
+  const handleRedeemClick = (reward: RewardTemplate | ChildRewardInstance) => {
     if (child && child.stars >= reward.starsCost) {
       setRewardToRedeem(reward);
     }
@@ -87,24 +86,18 @@ export default function ChildRewardsPage() {
 
     setIsProcessing(true);
     try {
-      const actor = { id: child.id, name: child.name };
-      await redeemChildRewardInstance(rewardToRedeem, child.id, actor);
+      await requestRewardRedemption(rewardToRedeem as RewardTemplate, child.id);
       
-      setChild(prev => prev ? { ...prev, stars: prev.stars - rewardToRedeem.starsCost } : null);
-      
-      // Optimistic UI update: move from available to redeemed
-      if (rewardMode === 'automatic') {
-         setRewards(prev => prev.filter(r => r.id !== rewardToRedeem.id));
-      } else {
-         setRewards(prev => prev.map(r => r.id === rewardToRedeem.id ? { ...r, status: 'redeemed' } : r));
-      }
+      // Optimistic UI update: Remove from available list.
+      // A better approach might be to move it to a "pending" section.
+      setAllRewards(prev => prev.filter(r => r.id !== rewardToRedeem.id));
 
       toast({
         title: "Pedido de Resgate Enviado!",
         description: `Seu pedido para "${rewardToRedeem.title}" foi enviado para aprovação!`,
       });
     } catch (error: any) {
-      console.error("Error redeeming reward:", error);
+      console.error("Error requesting reward redemption:", error);
       toast({ title: 'Ops! Algo deu errado.', description: error.message, variant: 'destructive' });
     } finally {
       setIsProcessing(false);
@@ -130,18 +123,18 @@ export default function ChildRewardsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Sparkles className="h-5 w-5 text-green-500"/>Disponíveis para Resgate</h2>
         {availableRewards.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {availableRewards.map(reward => (
-              <Card key={reward.id} className="bg-green-500/5 border-green-500/20 shadow-sm">
-                 <CardContent className="p-3 flex items-center justify-between gap-3">
-                    <div className="flex-grow min-w-0">
-                        <p className="font-semibold truncate">{reward.title}</p>
-                        <Badge variant="secondary" className="mt-1 font-semibold border-amber-500/20 h-6 text-xs">
-                           {reward.starsCost} <Star className="ml-1.5 h-3 w-3 fill-yellow-400 text-yellow-500" />
-                        </Badge>
-                    </div>
-                    <Button size="sm" className="h-8 px-3 text-xs flex-shrink-0" onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
+              <Card key={reward.id} className="bg-green-500/5 border-green-500/20 shadow-sm flex flex-col">
+                 <CardContent className="p-3 flex-grow">
+                    <p className="font-semibold text-sm leading-tight line-clamp-2">{reward.title}</p>
+                    <Badge variant="secondary" className="mt-2 font-semibold border-amber-500/20 h-6 text-xs">
+                       {reward.starsCost} <Star className="ml-1.5 h-3 w-3 fill-yellow-400 text-yellow-500" />
+                    </Badge>
                 </CardContent>
+                <div className="p-2 border-t">
+                  <Button size="sm" className="w-full h-8 text-xs" onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
+                </div>
               </Card>
             ))}
           </div>
@@ -149,6 +142,27 @@ export default function ChildRewardsPage() {
           <p className="text-sm text-center text-muted-foreground py-6">Continue juntando estrelas! Suas próximas recompensas aparecerão aqui.</p>
         )}
       </section>
+
+      {pendingRewards.length > 0 && (
+         <>
+            <Separator />
+             <section>
+                <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Clock className="h-5 w-5 text-blue-500"/>Aguardando Aprovação</h2>
+                <div className="grid grid-cols-2 gap-3">
+                   {pendingRewards.map(reward => (
+                     <Card key={reward.id} className="relative overflow-hidden bg-blue-500/5 border-blue-500/20">
+                         <CardContent className="p-3">
+                             <p className="font-semibold text-sm text-blue-800 line-clamp-2 pr-4">{reward.title}</p>
+                             <Badge variant="outline" className="text-xs font-semibold h-6 mt-2">
+                                {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
+                            </Badge>
+                         </CardContent>
+                     </Card>
+                   ))}
+                </div>
+            </section>
+         </>
+      )}
       
       <Separator />
 
@@ -157,19 +171,19 @@ export default function ChildRewardsPage() {
          {goalRewards.length > 0 ? (
           <div className="grid grid-cols-2 gap-3">
             {goalRewards.map(reward => (
-                <Card key={reward.id} className="relative overflow-hidden bg-muted/40">
-                    <CardContent className="p-3">
+                <Card key={reward.id} className="relative overflow-hidden bg-muted/40 flex flex-col">
+                    <CardContent className="p-3 flex-grow">
                         <div className="flex items-start justify-between">
-                            <p className="font-semibold text-sm text-muted-foreground line-clamp-2 pr-4">{reward.title}</p>
+                            <p className="font-semibold text-sm text-foreground line-clamp-2 pr-4">{reward.title}</p>
                             <Lock className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
                         </div>
-                        <div className="flex items-center justify-between mt-2">
-                             <Badge variant="outline" className="text-xs font-semibold h-6">
-                                {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
-                            </Badge>
-                             <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - child.stars}!</div>
-                        </div>
                     </CardContent>
+                    <div className="p-2 border-t flex items-center justify-between">
+                         <Badge variant="outline" className="text-xs font-semibold h-6">
+                            {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
+                        </Badge>
+                         <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - child.stars}!</div>
+                    </div>
                 </Card>
             ))}
           </div>
@@ -178,43 +192,20 @@ export default function ChildRewardsPage() {
         )}
       </section>
       
-      {rewardMode === 'manual' && redeemedRewards.length > 0 && (
-          <>
-            <Separator />
-            <section>
-              <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><CheckCircle className="h-5 w-5 text-gray-500"/>Recompensas Já Conquistadas</h2>
-              <div className="space-y-3">
-                {redeemedRewards.map(reward => (
-                  <Card key={reward.id} className="bg-muted/30 border-dashed">
-                    <CardHeader className="flex flex-row items-center justify-between p-4">
-                        <div>
-                            <CardTitle className="text-base line-through text-muted-foreground">{reward.title}</CardTitle>
-                            <p className="text-xs text-muted-foreground">Resgatada em {new Date((reward as ChildRewardInstance).redeemedAt as any).toLocaleDateString('pt-BR')}</p>
-                        </div>
-                        <CheckCircle className="h-6 w-6 text-muted-foreground/50" />
-                    </CardHeader>
-                  </Card>
-                ))}
-              </div>
-            </section>
-          </>
-      )}
-
-
        {rewardToRedeem && (
         <AlertDialog open={!!rewardToRedeem} onOpenChange={() => setRewardToRedeem(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Pedido de Resgate?</AlertDialogTitle>
               <AlertDialogDescription>
-                Você tem certeza que quer usar {rewardToRedeem.starsCost} estrelas para resgatar "{rewardToRedeem.title}"? Um adulto precisará confirmar depois.
+                Você tem certeza que quer usar {rewardToRedeem.starsCost} estrelas para pedir a recompensa "{rewardToRedeem.title}"? Um adulto precisará confirmar depois.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
               <AlertDialogAction onClick={confirmRedemption} disabled={isProcessing}>
                 {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                Sim, quero resgatar!
+                Sim, pedir resgate!
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

@@ -38,8 +38,7 @@ export const signUpAdmin = async (name: string, email: string, password: string)
   await setDoc(doc(db, 'users', user.uid), userProfile);
   
   // Pre-populate the reward templates for the new user
-  // This is no longer needed with the new architecture
-  // await populateInitialRewardTemplates(user.uid);
+  await populateInitialRewardTemplates(user.uid, null);
 
   return userProfile;
 };

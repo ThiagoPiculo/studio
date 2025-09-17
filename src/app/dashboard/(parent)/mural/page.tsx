@@ -463,6 +463,7 @@ function MuralCompletoPageContent() {
       case 'active': return 'default';
       case 'redeemed': return 'secondary';
       case 'disabled': return 'outline';
+      case 'pending_approval': return 'outline';
       default: return 'outline';
     }
   };
@@ -470,6 +471,7 @@ function MuralCompletoPageContent() {
   const getRewardStatusText = (status: ChildRewardInstance['status']): string => {
     switch (status) {
       case 'active': return 'Ativa';
+      case 'pending_approval': return 'Aguardando Aprovação';
       case 'redeemed': return 'Resgatada';
       case 'disabled': return `Inativa para ${child?.name || 'esta criança'}`;
       default: return 'Desconhecido';
@@ -500,7 +502,7 @@ function MuralCompletoPageContent() {
     setIsDeleting(true);
     try {
       const actor = { id: user.uid, name: user.name };
-      await redeemChildRewardInstance(instanceToManage.id, child.id, actor);
+      await redeemChildRewardInstance(instanceToManage, child.id, actor);
       
       // Optimistic update
       setChild(prev => prev ? { ...prev, stars: prev.stars - instanceToManage.starsCost } : null);
