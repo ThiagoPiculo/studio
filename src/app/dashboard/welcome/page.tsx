@@ -108,7 +108,7 @@ function WelcomePageContent() {
                         {slide.buttonText}
                     </CarouselNext>
                   ) : (
-                    <Button onClick={() => router.push('/dashboard/novo-heroi')} size="lg" className="mt-4">
+                    <Button onClick={() => router.push('/dashboard/assistente')} size="lg" className="mt-4">
                         {slide.buttonText}
                     </Button>
                   )}
