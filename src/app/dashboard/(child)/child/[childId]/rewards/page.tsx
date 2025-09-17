@@ -133,17 +133,14 @@ export default function ChildRewardsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {availableRewards.map(reward => (
               <Card key={reward.id} className="bg-green-500/5 border-green-500/20 shadow-sm">
-                 <CardContent className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <div className="flex-grow text-center sm:text-left">
-                        <p className="font-semibold text-lg">{reward.title}</p>
-                        {reward.description && <p className="text-xs text-muted-foreground line-clamp-2">{reward.description}</p>}
+                 <CardContent className="p-3 flex items-center justify-between gap-3">
+                    <div className="flex-grow min-w-0">
+                        <p className="font-semibold truncate">{reward.title}</p>
+                        <Badge variant="secondary" className="mt-1 font-semibold border-amber-500/20 h-6 text-xs">
+                           {reward.starsCost} <Star className="ml-1.5 h-3 w-3 fill-yellow-400 text-yellow-500" />
+                        </Badge>
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <Badge variant="secondary" className="text-base font-semibold border-amber-500/20 h-9">
-                        {reward.starsCost} <Star className="ml-1.5 h-4 w-4 fill-yellow-400 text-yellow-500" />
-                      </Badge>
-                      <Button size="sm" className="h-9" onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
-                    </div>
+                    <Button size="sm" className="h-8 px-3 text-xs flex-shrink-0" onClick={() => handleRedeemClick(reward)}>Resgatar!</Button>
                 </CardContent>
               </Card>
             ))}
@@ -158,21 +155,21 @@ export default function ChildRewardsPage() {
       <section>
         <h2 className="text-lg font-semibold mb-3 flex items-center gap-2"><Gift className="h-5 w-5 text-primary"/>Próximas Metas</h2>
          {goalRewards.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-3">
             {goalRewards.map(reward => (
                 <Card key={reward.id} className="relative overflow-hidden bg-muted/40">
-                    <CardContent className="p-4 flex items-center justify-between gap-4">
-                        <div className="flex-grow">
-                            <p className="font-semibold text-muted-foreground">{reward.title}</p>
-                            <div className="text-xs font-semibold text-primary mt-1">Faltam {reward.starsCost - child.stars} estrelas!</div>
+                    <CardContent className="p-3">
+                        <div className="flex items-start justify-between">
+                            <p className="font-semibold text-sm text-muted-foreground line-clamp-2 pr-4">{reward.title}</p>
+                            <Lock className="h-4 w-4 text-muted-foreground/50 flex-shrink-0" />
                         </div>
-                        <Badge variant="outline" className="text-base font-semibold h-9 flex-shrink-0">
-                            {reward.starsCost} <Star className="ml-1.5 h-4 w-4 text-muted-foreground/50"/>
-                        </Badge>
+                        <div className="flex items-center justify-between mt-2">
+                             <Badge variant="outline" className="text-xs font-semibold h-6">
+                                {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
+                            </Badge>
+                             <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - child.stars}!</div>
+                        </div>
                     </CardContent>
-                    <div className="absolute inset-0 bg-background/20 backdrop-blur-sm flex items-center justify-center">
-                        <Lock className="h-8 w-8 text-muted-foreground/50"/>
-                    </div>
                 </Card>
             ))}
           </div>
