@@ -46,7 +46,7 @@ export function ChildDashboard() {
 
   const childId = params.childId as string;
   const [child, setChild] = useState<ChildProfile | null>(authChildProfile);
-  const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
+  const [todaysMissions, setTodaysMissions] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
 
@@ -79,13 +79,20 @@ export function ChildDashboard() {
            toast({ title: 'Erro ao carregar perfil', variant: 'destructive' });
            logout();
         }
-        if (isLoading) setIsLoading(false);
       });
       
       const missionsQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
       const missionsUnsubscribe = onSnapshot(missionsQuery, (snapshot) => {
           const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-          setMissionInstances(missions);
+          const today = startOfDay(new Date());
+          const filteredMissions = missions
+            .filter(m => isMissionScheduledForDate(m, today) && m.status === 'pending')
+            .sort((a, b) => {
+                const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
+                const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
+                return timeA.getTime() - timeB.getTime();
+            });
+          setTodaysMissions(filteredMissions);
           if (isLoading) setIsLoading(false);
       });
 
@@ -95,18 +102,7 @@ export function ChildDashboard() {
       };
     }
   }, [childId, isChildAuthenticated, toast, logout, isLoading]);
-  
-  const todaysMissions = useMemo(() => {
-    const today = startOfDay(new Date());
-    return missionInstances
-      .filter(m => isMissionScheduledForDate(m, today) && m.status === 'pending')
-      .sort((a, b) => {
-          const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
-          const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
-          return timeA.getTime() - timeB.getTime();
-      });
-  }, [missionInstances]);
-  
+
   const missionsByPeriod = useMemo(() => {
     const byPeriod: { Manhã: MissionInstance[], Tarde: MissionInstance[], Noite: MissionInstance[] } = {
         Manhã: [],
