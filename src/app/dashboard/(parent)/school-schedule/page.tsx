@@ -6,13 +6,13 @@ import Loading from './loading';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile, SchoolScheduleEntry, Weekday } from '@/lib/types';
-import { getSchoolScheduleForContext } from '@/lib/firebase/firestore';
+import { getSchoolScheduleForContext, deleteSchoolScheduleEntry } from '@/lib/firebase/firestore';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { PlusCircle, Edit, Trash2, Info, Loader2, Filter } from 'lucide-react';
-import { weekdays, weekdayLabels } from '@/lib/types';
+import { allWeekdays, weekdayLabels } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials, cn } from '@/lib/utils';
 import { EditScheduleEntryDialog } from '@/components/dashboard/school-schedule/EditScheduleEntryDialog';
@@ -29,6 +29,7 @@ import {
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
 
 
 function SchoolSchedulePageContent() {
@@ -43,6 +44,7 @@ function SchoolSchedulePageContent() {
     const [selectedChildForNewEntry, setSelectedChildForNewEntry] = useState<ChildProfile | null>(null);
     const [entryToDelete, setEntryToDelete] = useState<SchoolScheduleEntry | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const { toast } = useToast();
     
     const [selectedDays, setSelectedDays] = useState<Weekday[]>(['MO', 'TU', 'WE', 'TH', 'FR']);
     const [showColors, setShowColors] = useState<boolean>(true);
@@ -109,9 +111,11 @@ function SchoolSchedulePageContent() {
         setIsDeleting(true);
         try {
             await deleteSchoolScheduleEntry(entryToDelete.id, user);
+            toast({ title: "Aula removida", description: `A aula de ${entryToDelete.subject} foi removida.` });
             fetchData(); // Refetch
         } catch (error) {
             console.error("Error deleting school schedule entry:", error);
+            toast({ title: "Erro ao remover aula", variant: 'destructive' });
         } finally {
             setIsDeleting(false);
             setEntryToDelete(null);
@@ -119,7 +123,7 @@ function SchoolSchedulePageContent() {
     };
     
     const visibleDays = useMemo(() => {
-        return weekdays.filter(day => selectedDays.includes(day));
+        return allWeekdays.filter(day => selectedDays.includes(day));
     }, [selectedDays]);
 
 
@@ -159,7 +163,7 @@ function SchoolSchedulePageContent() {
                     <div className="space-y-2">
                         <Label>Dias da Semana</Label>
                         <ToggleGroup type="multiple" value={selectedDays} onValueChange={(v) => setSelectedDays(v as Weekday[])} variant="outline" className="flex-wrap justify-start">
-                            {weekdays.map(day => (
+                            {allWeekdays.map(day => (
                                 <ToggleGroupItem key={day} value={day} aria-label={weekdayLabels[day].long} className="h-9 px-3">
                                     {weekdayLabels[day].short}
                                 </ToggleGroupItem>
