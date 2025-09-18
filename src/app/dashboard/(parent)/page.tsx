@@ -24,7 +24,7 @@ function DashboardCard({
   isModalTrigger?: boolean;
 }) {
   const content = (
-    <Card className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col">
+    <>
       <CardHeader>
         <div className="flex items-center gap-3 mb-2">
             <div className="p-3 bg-primary/10 rounded-xl shadow-clay">
@@ -35,19 +35,40 @@ function DashboardCard({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardFooter className="mt-auto">
-        <Button variant="outline" className="w-full justify-between">
+        <Button variant="outline" className="w-full justify-between" tabIndex={-1}>
           Acessar
           <ArrowRight className="h-4 w-4" />
         </Button>
       </CardFooter>
-    </Card>
+    </>
   );
 
   if (isModalTrigger && onClick) {
-    return <button onClick={onClick} className="text-left h-full w-full">{content}</button>;
+    return (
+        <Card
+            onClick={onClick}
+            className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }}
+        >
+            {content}
+        </Card>
+    );
   }
 
-  return <Link href={href || '#'} className="h-full">{content}</Link>;
+  return (
+    <Link href={href || '#'} className="h-full">
+      <Card className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col">
+        {content}
+      </Card>
+    </Link>
+  );
 }
 
 
