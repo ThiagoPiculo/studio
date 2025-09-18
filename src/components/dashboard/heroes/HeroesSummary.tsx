@@ -512,5 +512,3 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         </div>
     );
 }
-
-    

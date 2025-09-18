@@ -76,7 +76,6 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   const showMissionsHeaderActions = isClient && pathname.startsWith('/dashboard/missions');
   
   const selectedHero = childrenInContext.find(child => child.id === selectedChildId);
-  const showTrocarHeroiButton = isClient && selectedHero && pathname !== '/dashboard';
 
   const showContextSwitcher = isClient && ![
     '/dashboard',
@@ -220,6 +219,9 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
     ['/dashboard/heroes', '/dashboard/mural', '/dashboard/progressos', '/dashboard/agenda', '/dashboard/school-schedule', '/dashboard/achievements'].includes(pathname) &&
     childrenInContext.length > 1;
 
+  const showTrocarHeroiButton = isClient && selectedHero && pathname !== '/dashboard' && !showHeroSelector;
+
+
   return (
     <>
       <SidebarProvider>
@@ -228,7 +230,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
           <Sheet>
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
               <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-                <div className="flex items-center gap-1 sm:gap-3">
+                <div className={cn("flex items-center gap-2 sm:gap-4", isClient && isMobile && "gap-1")}>
                   {isClient && isMobile && !currentHeader && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                         <ArrowLeft className="h-4 w-4" />
