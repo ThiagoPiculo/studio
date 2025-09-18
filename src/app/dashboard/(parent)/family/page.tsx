@@ -20,8 +20,8 @@ export default function FamilyPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-8">
-            <CreateAllianceCard />
             <JoinAllianceCard />
+            <CreateAllianceCard />
         </div>
 
         <Separator />
