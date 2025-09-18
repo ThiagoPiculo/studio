@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, LifeBuoy, ListChecks, PlusCircle, UserPlus, Users, Wand2 } from 'lucide-react';
-import { HeroContextSelectorModal } from '@/components/dashboard/dashboard/HeroContextSelectorModal';
 import { useFamily } from '@/contexts/FamilyContext';
 
 function DashboardCard({
@@ -74,120 +73,112 @@ function DashboardCard({
 
 
 function DashboardPage() {
-    const { openModal, closeModal, isModalOpen } = useFamily();
+    const { openModal } = useFamily();
     
   return (
-    <>
-      <div className="space-y-8">
-        {/* Seção "Comece por Aqui!" */}
-        <Card className="bg-gradient-to-br from-card to-accent/5">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline flex items-center gap-2"><Wand2 className="text-primary"/>Comece por Aqui!</CardTitle>
-            <CardDescription>
-              Ações rápidas para configurar sua Central de Heróis e iniciar a jornada.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card className="bg-background/70">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><Users />Colaborar em Aliança</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-2">
-                     <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                        <Link href="/dashboard/family?action=join">
-                            <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
-                        </Link>
-                    </Button>
-                    <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                        <Link href="/dashboard/family?action=create">
-                            <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
-            <Card className="bg-background/70">
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <Button asChild className="w-full justify-start gap-2">
-                        <Link href="/dashboard/assistente">
-                            <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
-                        </Link>
-                    </Button>
-                </CardContent>
-            </Card>
-          </CardContent>
-        </Card>
+    <div className="space-y-8">
+      {/* Seção "Comece por Aqui!" */}
+      <Card className="bg-gradient-to-br from-card to-accent/5">
+        <CardHeader>
+          <CardTitle className="text-2xl font-headline flex items-center gap-2"><Wand2 className="text-primary"/>Comece por Aqui!</CardTitle>
+          <CardDescription>
+            Ações rápidas para configurar sua Central de Heróis e iniciar a jornada.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="bg-background/70">
+              <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2"><Users />Colaborar em Aliança</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                   <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                      <Link href="/dashboard/family?action=join">
+                          <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
+                      </Link>
+                  </Button>
+                  <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                      <Link href="/dashboard/family?action=create">
+                          <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
+                      </Link>
+                  </Button>
+              </CardContent>
+          </Card>
+          <Card className="bg-background/70">
+              <CardHeader>
+                  <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
+              </CardHeader>
+              <CardContent>
+                  <Button asChild className="w-full justify-start gap-2">
+                      <Link href="/dashboard/assistente">
+                          <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
+                      </Link>
+                  </Button>
+              </CardContent>
+          </Card>
+        </CardContent>
+      </Card>
 
-        {/* Seção "Meus Mini Heróis" */}
-        <div>
-            <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2"><Heart className="text-pink-500" />Meus Mini Heróis</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                <DashboardCard 
-                    icon={ListChecks}
-                    title="Rotina do Dia"
-                    description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/heroes')}
-                />
-                <DashboardCard 
-                    icon={ListChecks}
-                    title="Rotina da Semana"
-                    description="Visualize o calendário completo com a programação de missões da semana."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/agenda')}
-                />
-                 <DashboardCard 
-                    icon={BookOpen}
-                    title="Agenda Escolar"
-                    description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/school-schedule')}
-                />
-                 <DashboardCard 
-                    icon={GitBranch}
-                    title="Painel de Progressos"
-                    description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/progressos')}
-                />
-                 <DashboardCard 
-                    icon={Handshake}
-                    title="Aprovar Recompensas"
-                    description="Confirme os pedidos de resgate de recompensas feitos pelos seus heróis."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/mural?tab=rewards')}
-                />
-                <DashboardCard 
-                    icon={Contact}
-                    title="Perfil do Mini Herói"
-                    description="Acesse e edite as informações, missões e recompensas individuais."
-                    isModalTrigger
-                    onClick={() => openModal('/dashboard/mural')}
-                />
-                 <DashboardCard 
-                    icon={FilePlus}
-                    title="Catálogo de Missões"
-                    description="Crie e gerencie os modelos de todas as missões que podem ser atribuídas."
-                    href="/dashboard/missions"
-                />
-                 <DashboardCard 
-                    icon={LifeBuoy}
-                    title="Central de Ajuda"
-                    description="Aprenda sobre o Mini Heróis e tire suas dúvidas."
-                    href="/dashboard/help"
-                />
-            </div>
-        </div>
+      {/* Seção "Meus Mini Heróis" */}
+      <div>
+          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2"><Heart className="text-pink-500" />Meus Mini Heróis</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <DashboardCard 
+                  icon={ListChecks}
+                  title="Rotina do Dia"
+                  description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/heroes')}
+              />
+              <DashboardCard 
+                  icon={ListChecks}
+                  title="Rotina da Semana"
+                  description="Visualize o calendário completo com a programação de missões da semana."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/agenda')}
+              />
+               <DashboardCard 
+                  icon={BookOpen}
+                  title="Agenda Escolar"
+                  description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/school-schedule')}
+              />
+               <DashboardCard 
+                  icon={GitBranch}
+                  title="Painel de Progressos"
+                  description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/progressos')}
+              />
+               <DashboardCard 
+                  icon={Handshake}
+                  title="Aprovar Recompensas"
+                  description="Confirme os pedidos de resgate de recompensas feitos pelos seus heróis."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/mural?tab=rewards')}
+              />
+              <DashboardCard 
+                  icon={Contact}
+                  title="Perfil do Mini Herói"
+                  description="Acesse e edite as informações, missões e recompensas individuais."
+                  isModalTrigger
+                  onClick={() => openModal('/dashboard/mural')}
+              />
+               <DashboardCard 
+                  icon={FilePlus}
+                  title="Catálogo de Missões"
+                  description="Crie e gerencie os modelos de todas as missões que podem ser atribuídas."
+                  href="/dashboard/missions"
+              />
+               <DashboardCard 
+                  icon={LifeBuoy}
+                  title="Central de Ajuda"
+                  description="Aprenda sobre o Mini Heróis e tire suas dúvidas."
+                  href="/dashboard/help"
+              />
+          </div>
       </div>
-      <HeroContextSelectorModal
-        isOpen={isModalOpen}
-        onOpenChange={(isOpen) => {
-            if(!isOpen) closeModal();
-        }}
-      />
-    </>
+    </div>
   );
 }
 
