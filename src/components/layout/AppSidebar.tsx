@@ -65,7 +65,7 @@ const CustomAccordionTrigger = React.forwardRef<
 ));
 CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
-const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = false }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean, bypassModal?: boolean }) => {
+const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = false, ...props }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean, bypassModal?: boolean }) => {
     const pathname = usePathname();
     const router = useRouter();
     const { isLoading: isFamilyLoading, selectedChildId, openModal } = useFamily();
@@ -86,7 +86,7 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
     };
 
     return (
-        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick} bypassModal={bypassModal}>
+        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick} {...props}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>
