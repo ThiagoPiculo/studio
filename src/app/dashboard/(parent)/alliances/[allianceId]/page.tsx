@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
@@ -41,6 +42,7 @@ function AllianceManagementPage() {
     const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
     const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
     const [children, setChildren] = useState<ChildProfile[]>([]);
+    const [soloChildren, setSoloChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
 
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
@@ -48,6 +50,8 @@ function AllianceManagementPage() {
     const [childToRemove, setChildToRemove] = useState<ChildProfile | null>(null);
     const [childToMove, setChildToMove] = useState<ChildProfile | null>(null);
     const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+    const [isAddToAllianceDialogOpen, setIsAddToAllianceDialogOpen] = useState(false);
+    const [childrenToAddToAlliance, setChildrenToAddToAlliance] = useState<string[]>([]);
     const [selectedMoveContext, setSelectedMoveContext] = useState<string>('');
     const [isActionProcessing, setIsActionProcessing] = useState<string | null>(null);
 
@@ -70,12 +74,13 @@ function AllianceManagementPage() {
 
         setIsLoading(true);
         try {
-            const [allianceData, membersData, membershipsData, requestsData, childrenData] = await Promise.all([
+            const [allianceData, membersData, membershipsData, requestsData, childrenData, soloChildrenData] = await Promise.all([
                 getFamilyById(allianceId),
                 getFamilyMembers(allianceId),
                 getFamilyMemberships(allianceId),
                 isOwner ? getPendingJoinRequestsForFamily(allianceId) : Promise.resolve([]),
                 getChildProfilesByFamily(allianceId),
+                getChildProfilesByOwner(user.uid, true),
             ]);
 
             if (!allianceData || !membersData.some(m => m.uid === user.uid)) {
@@ -90,6 +95,7 @@ function AllianceManagementPage() {
             setMemberships(membershipsData);
             setJoinRequests(requestsData);
             setChildren(childrenData);
+            setSoloChildren(soloChildrenData);
 
         } catch (error) {
             console.error("Failed to fetch alliance data:", error);
@@ -178,6 +184,31 @@ function AllianceManagementPage() {
         } catch (error: any) {
             toast({ title: 'Erro ao Excluir', description: error.message, variant: 'destructive' });
             setIsDeletingAlliance(false);
+        }
+    };
+    
+    const handleAddChildrenToAlliance = async () => {
+        if (!user || childrenToAddToAlliance.length === 0) {
+            toast({ title: "Nenhum herói selecionado", variant: "default" });
+            return;
+        }
+        setIsActionProcessing('add-to-alliance');
+        try {
+            const movePromises = childrenToAddToAlliance.map(childId => moveChildToNewContext(childId, allianceId, user));
+            await Promise.all(movePromises);
+
+            toast({ title: "Heróis Adicionados!", description: `${childrenToAddToAlliance.length} herói(s) foram movidos para esta aliança.` });
+            
+            // Refetch all data to update the UI correctly
+            fetchData();
+            setIsAddToAllianceDialogOpen(false);
+            setChildrenToAddToAlliance([]);
+
+        } catch (error: any) {
+            console.error("Error adding children to alliance:", error);
+            toast({ title: 'Erro ao Mover', description: error.message, variant: 'destructive' });
+        } finally {
+            setIsActionProcessing(null);
         }
     };
 
@@ -301,11 +332,20 @@ function AllianceManagementPage() {
                         )}
                     </CardContent>
                     <CardFooter>
-                         <Button asChild>
-                           <Link href="/dashboard/novo-heroi">
-                             <UserPlus className="mr-2 h-4 w-4" /> Adicionar Novo Herói
-                           </Link>
-                         </Button>
+                         {soloChildren.length > 0 ? (
+                            <Button onClick={() => setIsAddToAllianceDialogOpen(true)}>
+                                <UserPlus className="mr-2 h-4 w-4" /> Adicionar Herói à Aliança
+                            </Button>
+                        ) : (
+                            <div className="text-center w-full">
+                                <p className="text-sm text-muted-foreground mb-2">Você não tem heróis no seu espaço pessoal para adicionar.</p>
+                                <Button asChild>
+                                   <Link href="/dashboard/assistente">
+                                     <UserPlus className="mr-2 h-4 w-4" /> Criar Novo Herói
+                                   </Link>
+                                </Button>
+                            </div>
+                        )}
                     </CardFooter>
                 </Card>
 
@@ -505,6 +545,54 @@ function AllianceManagementPage() {
                         >
                             {isDeletingAlliance ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                             Sim, Excluir Aliança
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            
+            <AlertDialog open={isAddToAllianceDialogOpen} onOpenChange={setIsAddToAllianceDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Adicionar Heróis à Aliança</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Selecione os heróis do seu espaço "Cuidar Solo" que você deseja mover para esta aliança.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                     <ScrollArea className="max-h-[50vh] mt-2 pr-3">
+                        <div className="space-y-3">
+                            {soloChildren.map(child => (
+                                <div
+                                    key={child.id}
+                                    className="flex items-center justify-between p-3 rounded-lg border bg-card"
+                                >
+                                    <Label htmlFor={`child-select-${child.id}`} className="flex items-center gap-3 cursor-pointer">
+                                        <Avatar
+                                            className="h-9 w-9 ring-2 ring-offset-background ring-[var(--ring-color)]"
+                                            style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
+                                        >
+                                            <AvatarImage src={child.avatar} alt={child.name} />
+                                            <AvatarFallback style={{backgroundColor: child.color}}>{getInitials(child.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <span className="font-medium">{child.name}</span>
+                                    </Label>
+                                    <Checkbox
+                                        id={`child-select-${child.id}`}
+                                        checked={childrenToAddToAlliance.includes(child.id)}
+                                        onCheckedChange={(checked) => {
+                                            setChildrenToAddToAlliance(prev => 
+                                                checked ? [...prev, child.id] : prev.filter(id => id !== child.id)
+                                            );
+                                        }}
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    </ScrollArea>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isActionProcessing === 'add-to-alliance'}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleAddChildrenToAlliance} disabled={isActionProcessing === 'add-to-alliance' || childrenToAddToAlliance.length === 0}>
+                            {isActionProcessing === 'add-to-alliance' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Mover Selecionados
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
