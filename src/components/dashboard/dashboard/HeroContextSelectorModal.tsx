@@ -19,6 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 interface HeroContextSelectorModalProps {
   isOpen: boolean;
@@ -118,9 +119,9 @@ export function HeroContextSelectorModal({ isOpen, onOpenChange, destination }: 
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Selecionar Herói</DialogTitle>
+          <DialogTitle>Escolha o Espaço e o Herói</DialogTitle>
           <DialogDescription>
-            Escolha um Mini Herói para visualizar esta seção.
+            Selecione um Mini Herói para visualizar esta seção.
           </DialogDescription>
         </DialogHeader>
         {isLoadingChildren ? (
