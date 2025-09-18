@@ -356,7 +356,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                             </CardContent>
 
                             <Tabs defaultValue="missions" className="w-full flex-grow flex flex-col">
-                                <TabsList className="grid w-full grid-cols-2">
+                                <TabsList className="w-full">
                                     <TabsTrigger value="missions"><ListChecks className="mr-2 h-4 w-4" />Missões Hoje</TabsTrigger>
                                     <TabsTrigger value="school"><NotebookPen className="mr-2 h-4 w-4" />Escola</TabsTrigger>
                                 </TabsList>
