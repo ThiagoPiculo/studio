@@ -10,6 +10,7 @@ import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Hand
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 function DashboardCard({
   icon: Icon,
@@ -84,45 +85,52 @@ function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* Seção "Comece por Aqui!" */}
-      <Card className="bg-gradient-to-br from-card to-accent/5">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline flex items-center gap-2"><Wand2 className="text-primary"/>Comece por Aqui!</CardTitle>
-          <CardDescription>
-            Ações rápidas para configurar sua Central de Heróis e iniciar a jornada.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="bg-background/70">
-              <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><Users />Colaborar em Aliança</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                   <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                      <Link href="/dashboard/family?action=join">
-                          <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
-                      </Link>
-                  </Button>
-                  <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                      <Link href="/dashboard/family?action=create">
-                          <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
-                      </Link>
-                  </Button>
-              </CardContent>
-          </Card>
-          <Card className="bg-background/70">
-              <CardHeader>
-                  <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
-              </CardHeader>
-              <CardContent>
-                  <Button asChild className="w-full justify-start gap-2">
-                      <Link href="/dashboard/assistente">
-                          <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
-                      </Link>
-                  </Button>
-              </CardContent>
-          </Card>
-        </CardContent>
-      </Card>
+      <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+        <AccordionItem value="item-1" className="border rounded-lg bg-gradient-to-br from-card to-accent/5">
+          <AccordionTrigger className="p-6 hover:no-underline">
+              <div className="flex flex-col text-left">
+                <CardTitle className="text-2xl font-headline flex items-center gap-2"><Wand2 className="text-primary"/>Comece por Aqui!</CardTitle>
+                <CardDescription className="mt-1">
+                  Ações rápidas para configurar sua Central de Heróis e iniciar a jornada.
+                </CardDescription>
+              </div>
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="px-6 pb-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-background/70">
+                  <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><Users />Colaborar em Aliança</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                          <Link href="/dashboard/family?action=join">
+                              <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
+                          </Link>
+                      </Button>
+                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                          <Link href="/dashboard/family?action=create">
+                              <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
+                          </Link>
+                      </Button>
+                  </CardContent>
+              </Card>
+              <Card className="bg-background/70">
+                  <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                      <Button asChild className="w-full justify-start gap-2">
+                          <Link href="/dashboard/assistente">
+                              <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
+                          </Link>
+                      </Button>
+                  </CardContent>
+              </Card>
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+
 
       {/* Seção "Meus Mini Heróis" */}
       <div>
