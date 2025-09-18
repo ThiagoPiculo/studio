@@ -520,21 +520,53 @@ const SidebarMenuButton = React.forwardRef<
     },
     ref
   ) => {
-    // Determine if the component should be a link or a button
-    const isLink = 'href' in props && props.href !== undefined;
-    const Comp = asChild ? Slot : (isLink ? Link : "button");
     const { isMobile, state } = useSidebar();
+    const isLink = 'href' in props;
+    
+    // If it's a link, we must use asChild with Link and Slot.
+    if (isLink) {
+        const Comp = asChild ? Slot : "button"; // This will actually not be a button, but it's for type consistency. Link handles it.
+        const button = (
+            <Slot 
+                ref={ref as React.Ref<any>}
+                data-sidebar="menu-button"
+                data-size={size}
+                data-active={isActive}
+                className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+                {...props}
+             />
+        );
 
+        if (!tooltip) {
+          return <Link {...props as React.ComponentProps<typeof Link>}>{button}</Link>;
+        }
+
+        return (
+           <Tooltip>
+            <TooltipTrigger asChild>
+              <Link {...props as React.ComponentProps<typeof Link>}>{button}</Link>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              align="center"
+              hidden={state !== "collapsed" || isMobile}
+              {...(typeof tooltip === "string" ? { children: tooltip } : tooltip)}
+            />
+          </Tooltip>
+        );
+    }
+    
+    // If it's a button
+    const Comp = asChild ? Slot : "button";
     const button = (
-      // @ts-expect-error - `Comp` can be a Link or button, but TS complains about the ref.
-      <Comp
-        ref={ref}
-        data-sidebar="menu-button"
-        data-size={size}
-        data-active={isActive}
-        className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
-        {...props}
-      />
+        <Comp
+            ref={ref as React.Ref<HTMLButtonElement>}
+            data-sidebar="menu-button"
+            data-size={size}
+            data-active={isActive}
+            className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+            {...props as React.ComponentProps<"button">}
+        />
     );
 
     if (!tooltip) {
