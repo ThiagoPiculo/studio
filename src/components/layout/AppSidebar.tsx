@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from 'react';
@@ -120,7 +119,7 @@ export function AppSidebar() {
     }
     
     const isMobile = useIsMobile();
-    const defaultAccordionValue = isMobile ? [] : ['item-1', 'item-2', 'item-3', 'item-4'];
+    const defaultAccordionValue = ['item-1', 'item-2', 'item-3', 'item-4'];
 
     return (
         <Sidebar>
