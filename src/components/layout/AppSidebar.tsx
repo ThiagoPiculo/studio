@@ -73,16 +73,20 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
     const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
     const handleClick = (e: React.MouseEvent) => {
-        if (bypassModal || !selectedChildId) {
+        if (bypassModal) {
             router.push(href);
             return;
         }
-        
-        openModal(href); 
+
+        if (selectedChildId) {
+            router.push(href);
+        } else {
+            openModal(href); 
+        }
     };
 
     return (
-        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick}>
+        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick} bypassModal={bypassModal}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>

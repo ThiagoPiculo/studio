@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { Suspense } from 'react';
@@ -7,24 +8,52 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, LifeBuoy, ListChecks, PlusCircle, UserPlus, Users, Wand2 } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
+import { useRouter } from 'next/navigation';
 
 function DashboardCard({
   icon: Icon,
   title,
   description,
   href,
-  onClick,
   isModalTrigger = false,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
   href?: string;
-  onClick?: () => void;
   isModalTrigger?: boolean;
 }) {
-  const content = (
-    <>
+  const router = useRouter();
+  const { selectedChildId, openModal } = useFamily();
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isModalTrigger) {
+      e.preventDefault();
+      if (selectedChildId) {
+        router.push(href || '/dashboard');
+      } else {
+        openModal(href);
+      }
+    }
+  };
+
+  const cardContent = (
+    <Card 
+      className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col cursor-pointer"
+      role="button"
+      tabIndex={0}
+      onClick={isModalTrigger ? handleClick : undefined}
+       onKeyDown={(e) => {
+          if (isModalTrigger && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            if (selectedChildId) {
+              router.push(href || '/dashboard');
+            } else {
+              openModal(href);
+            }
+          }
+        }}
+    >
       <CardHeader>
         <div className="flex items-center gap-3 mb-2">
             <div className="p-3 bg-primary/10 rounded-xl shadow-clay">
@@ -40,40 +69,16 @@ function DashboardCard({
           <ArrowRight className="h-4 w-4" />
         </Button>
       </CardFooter>
-    </>
+    </Card>
   );
 
-  if (isModalTrigger && onClick) {
-    return (
-        <Card
-            onClick={onClick}
-            className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col cursor-pointer"
-            role="button"
-            tabIndex={0}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                onClick();
-              }
-            }}
-        >
-            {content}
-        </Card>
-    );
-  }
-
-  return (
-    <Link href={href || '#'} className="h-full">
-      <Card className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col">
-        {content}
-      </Card>
-    </Link>
-  );
+  return isModalTrigger ? cardContent : <Link href={href || '#'} className="h-full">{cardContent}</Link>;
 }
 
 
 function DashboardPage() {
-    const { openModal } = useFamily();
+    const { openModal, selectedChildId } = useFamily();
+    const router = useRouter();
     
   return (
     <div className="space-y-8">
@@ -127,42 +132,42 @@ function DashboardPage() {
                   title="Rotina do Dia"
                   description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/heroes')}
+                  href="/dashboard/heroes"
               />
               <DashboardCard 
                   icon={ListChecks}
                   title="Rotina da Semana"
                   description="Visualize o calendário completo com a programação de missões da semana."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/agenda')}
+                  href="/dashboard/agenda"
               />
                <DashboardCard 
                   icon={BookOpen}
                   title="Agenda Escolar"
                   description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/school-schedule')}
+                  href="/dashboard/school-schedule"
               />
                <DashboardCard 
                   icon={GitBranch}
                   title="Painel de Progressos"
                   description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/progressos')}
+                  href="/dashboard/progressos"
               />
                <DashboardCard 
                   icon={Handshake}
                   title="Aprovar Recompensas"
                   description="Confirme os pedidos de resgate de recompensas feitos pelos seus heróis."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/mural?tab=rewards')}
+                  href="/dashboard/mural?tab=rewards"
               />
               <DashboardCard 
                   icon={Contact}
                   title="Perfil do Mini Herói"
                   description="Acesse e edite as informações, missões e recompensas individuais."
                   isModalTrigger
-                  onClick={() => openModal('/dashboard/mural')}
+                  href="/dashboard/mural"
               />
                <DashboardCard 
                   icon={FilePlus}
