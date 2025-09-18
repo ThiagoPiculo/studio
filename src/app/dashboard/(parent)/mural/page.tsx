@@ -794,7 +794,7 @@ function MuralCompletoPageContent() {
                                 <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
                                 <RadioGroup
                                     value={instanceStatusFilter}
-                                    onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'pending_approval' | 'redeemed' | 'disabled')}
+                                    onValueChange={(value) => setInstanceStatusFilter(value as any)}
                                     className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
                                 >
                                     <div className="flex items-center space-x-2">
@@ -877,10 +877,10 @@ function MuralCompletoPageContent() {
                                                 </p>
                                             )}
                                         </CardContent>
-                                        <CardFooter>
+                                        <CardFooter className="flex-wrap gap-2">
                                             {instance.status === 'pending_approval' && canEdit && (
                                                 <div className="w-full grid grid-cols-2 gap-2">
-                                                    <Button size="sm" variant="destructive" onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }} disabled={isDeleting}>
+                                                    <Button size="sm" variant="destructive" onClick={() => { setInstanceToManage(instance); handleDeleteInstance(); }} disabled={isDeleting}>
                                                         <XCircle className="mr-2 h-4 w-4"/>Recusar
                                                     </Button>
                                                     <Button size="sm" variant="default" onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting || child.stars < instance.starsCost}>
