@@ -523,7 +523,6 @@ const SidebarMenuButton = React.forwardRef<
     // Determine if the component should be a link or a button
     const isLink = 'href' in props && props.href !== undefined;
     const Comp = asChild ? Slot : (isLink ? Link : "button");
-
     const { isMobile, state } = useSidebar();
 
     const button = (
@@ -561,6 +560,7 @@ const SidebarMenuButton = React.forwardRef<
     );
   }
 );
+
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarMenuAction = React.forwardRef<
