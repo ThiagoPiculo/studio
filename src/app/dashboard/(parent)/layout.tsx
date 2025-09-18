@@ -238,7 +238,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                   {isClient && currentHeader ? (
                     <div className="flex items-center gap-3">
                         <currentHeader.icon className="h-6 w-6 text-primary" />
-                        <h1 className="text-2xl font-bold font-headline">{currentHeader.title}</h1>
+                        <h1 className="text-xl font-bold font-headline sm:text-2xl">{currentHeader.title}</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
