@@ -10,8 +10,6 @@ import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc 
 import { useRouter, usePathname } from 'next/navigation';
 import { populateInitialRewardTemplates } from '@/lib/firebase/firestore';
 
-const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
-
 const convertTimestampsInObject = (obj: any): any => {
     if (!obj) return obj;
     const newObj: { [key: string]: any } = {};
@@ -29,6 +27,8 @@ const convertTimestampsInObject = (obj: any): any => {
     }
     return newObj;
 };
+
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = React.useState<UserProfile | null>(null);
