@@ -235,10 +235,11 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
 
         return result;
     }, [missionInstances, children, schoolSchedules]);
-
-    const containerClasses = filteredChildren.length === 1
-        ? "max-w-2xl mx-auto"
+    
+    const containerClasses = filteredChildren.length === 1 
+        ? "max-w-2xl mx-auto" 
         : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6";
+
 
     return (
         <div className="space-y-6">
@@ -356,9 +357,9 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
                             </CardContent>
 
                             <Tabs defaultValue="missions" className="w-full flex-grow flex flex-col">
-                                <TabsList className="w-full">
-                                    <TabsTrigger value="missions"><ListChecks className="mr-2 h-4 w-4" />Missões Hoje</TabsTrigger>
-                                    <TabsTrigger value="school"><NotebookPen className="mr-2 h-4 w-4" />Escola</TabsTrigger>
+                                <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-lg inline-flex">
+                                    <TabsTrigger value="missions" className="flex-1"><ListChecks className="mr-2 h-4 w-4" />Missões Hoje</TabsTrigger>
+                                    <TabsTrigger value="school" className="flex-1"><NotebookPen className="mr-2 h-4 w-4" />Escola</TabsTrigger>
                                 </TabsList>
                                 <TabsContent value="missions" className="flex-grow">
                                     <CardContent className="p-4 pt-4 flex-grow">
