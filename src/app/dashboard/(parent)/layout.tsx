@@ -1,4 +1,5 @@
 
+
 // NOTA: Este arquivo define o layout para o grupo de rotas '(parent)'.
 // Qualquer página dentro do diretório /dashboard/(parent)/... herdará esta
 // interface com a barra lateral, cabeçalho e rodapé. O nome '(parent)' é
@@ -9,7 +10,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift, Medal, Users } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift, Medal, Users, ChevronsUpDown } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
@@ -29,6 +30,8 @@ import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
 import { CalendarDays, NotebookPen } from 'lucide-react';
 import { HeroContextSelectorModal } from '@/components/dashboard/dashboard/HeroContextSelectorModal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { getInitials } from '@/lib/utils';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -71,7 +74,9 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   
   const showRewardsHeaderActions = isClient && pathname.startsWith('/dashboard/rewards');
   const showMissionsHeaderActions = isClient && pathname.startsWith('/dashboard/missions');
-  const showTrocarHeroiButton = isClient && selectedChildId && pathname !== '/dashboard';
+  
+  const selectedHero = childrenInContext.find(child => child.id === selectedChildId);
+  const showTrocarHeroiButton = isClient && selectedHero && pathname !== '/dashboard';
 
   const showContextSwitcher = isClient && ![
     '/dashboard',
@@ -258,10 +263,14 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  {showTrocarHeroiButton && (
-                    <Button variant="outline" size="sm" onClick={() => openModal()}>
-                        <Users className="mr-2 h-4 w-4" />
-                        Trocar Herói
+                  {showTrocarHeroiButton && selectedHero && (
+                    <Button variant="outline" size="sm" onClick={() => openModal()} className="p-2 h-auto">
+                        <Avatar className="h-6 w-6 mr-2">
+                            <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
+                            <AvatarFallback style={{backgroundColor: selectedHero.color}}>{getInitials(selectedHero.name)}</AvatarFallback>
+                        </Avatar>
+                        <span className="font-semibold">Trocar</span>
+                        <ChevronsUpDown className="ml-1 h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
                   {!user?.isAnonymous && <Notifications />}
