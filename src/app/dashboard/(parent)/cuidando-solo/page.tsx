@@ -178,8 +178,8 @@ function CuidandoSoloPageContent() {
                                           </Button>
                                       </Link>
                                       {moveTargetContexts.length > 0 && (
-                                        <Button variant="outline" size="icon" className="h-9 w-9" onClick={() => handleOpenMoveDialog(child)}>
-                                            <Move className="h-4 w-4" />
+                                        <Button variant="outline" size="sm" onClick={() => handleOpenMoveDialog(child)}>
+                                            <Move className="h-4 w-4 mr-2" /> Mover
                                         </Button>
                                       )}
                                       <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-9 w-9" onClick={() => setChildToDelete(child)}>

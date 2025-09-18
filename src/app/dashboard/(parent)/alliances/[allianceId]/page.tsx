@@ -285,8 +285,8 @@ function AllianceManagementPage() {
                                                       <Settings className="h-4 w-4" />
                                                   </Button>
                                               </Link>
-                                              <Button variant="outline" size="icon" className="h-8 w-8" disabled={!canManage} onClick={() => { setChildToMove(child); setIsMoveDialogOpen(true); }}>
-                                                    <Move className="h-4 w-4" />
+                                              <Button variant="outline" size="sm" className="h-8" disabled={!canManage} onClick={() => { setChildToMove(child); setIsMoveDialogOpen(true); }}>
+                                                    <Move className="h-4 w-4 mr-2" /> Mover
                                               </Button>
                                               <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 h-8 w-8" disabled={!canManage} onClick={() => setChildToRemove(child)}>
                                                 <UserX className="h-4 w-4" />

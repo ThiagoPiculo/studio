@@ -1037,9 +1037,9 @@ function MuralCompletoPageContent() {
                             </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                        <Button type="button" variant="outline" className="w-full border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => setIsMoveDialogOpen(true)} disabled={isDeleting || isResettingProgress || isMoving || moveTargetContexts.length === 0}>
+                        <Button type="button" variant="outline" className="w-full" onClick={() => setIsMoveDialogOpen(true)} disabled={isDeleting || isResettingProgress || isMoving || moveTargetContexts.length === 0}>
                             <Move className="mr-2 h-4 w-4" />
-                            Mover Heroi
+                            Mover Herói
                         </Button>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
