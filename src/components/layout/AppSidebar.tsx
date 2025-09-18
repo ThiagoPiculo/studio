@@ -75,6 +75,7 @@ const NavLink = ({ href, tooltip, label, children, exact = false }: { href: stri
     const handleClick = (e: React.MouseEvent) => {
         // Para a página inicial, sempre navegue diretamente.
         if (href === '/dashboard') {
+            router.push(href);
             return;
         }
         
@@ -82,12 +83,13 @@ const NavLink = ({ href, tooltip, label, children, exact = false }: { href: stri
         if (!selectedChildId) {
             e.preventDefault();
             openModal(href); // Abre o modal passando o destino desejado
+        } else {
+            router.push(href);
         }
-        // Se um herói já está selecionado, o Link do Next.js cuidará da navegação.
     };
 
     return (
-        <SidebarMenuButton as={Link} href={href} tooltip={tooltip} isActive={isActive} onClick={handleClick}>
+        <SidebarMenuButton tooltip={tooltip} isActive={isActive} onClick={handleClick}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>

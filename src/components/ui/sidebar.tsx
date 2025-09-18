@@ -502,40 +502,53 @@ const sidebarMenuButtonVariants = cva(
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ComponentProps<"button"> & {
-    asChild?: boolean;
-    isActive?: boolean;
+  React.ComponentProps<typeof Button> & {
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
-  } & VariantProps<typeof sidebarMenuButtonVariants>
+    isActive?: boolean;
+    href?: string;
+  }
 >(
   (
     {
-      asChild = false,
-      isActive = false,
       variant = "default",
       size = "default",
       tooltip,
       className,
+      isActive,
+      href,
+      asChild,
       ...props
     },
     ref
   ) => {
     const { isMobile, state } = useSidebar();
-    const Comp = asChild ? Slot : "button";
+    const Comp = href ? Link : asChild ? Slot : "button";
 
-    const button = (
-      <Comp
+    const buttonContent = (
+      <button
         ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size, className }))}
-        {...props}
-      />
+        {...(Comp === 'button' ? props : {})}
+      >
+        {props.children}
+      </button>
     );
     
+    const renderButton = () => {
+      if (Comp === Link) {
+        return <Link href={href!} {...props as React.ComponentProps<typeof Link>}>{buttonContent}</Link>
+      }
+      if (asChild) {
+        return <Slot {...props}>{buttonContent}</Slot>
+      }
+      return buttonContent;
+    }
+
     if (!tooltip) {
-      return button;
+      return renderButton();
     }
 
     if (typeof tooltip === "string") {
@@ -544,11 +557,11 @@ const SidebarMenuButton = React.forwardRef<
       };
     }
 
-    // Since Link doesn't forward a ref properly in this structure,
-    // we wrap the TooltipTrigger with a div for tooltip positioning.
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>
+          {renderButton()}
+        </TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
