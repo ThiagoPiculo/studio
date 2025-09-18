@@ -501,8 +501,8 @@ const sidebarMenuButtonVariants = cva(
 )
 
 const SidebarMenuButton = React.forwardRef<
-  HTMLButtonElement | HTMLAnchorElement,
-  (React.ComponentProps<typeof Link> | React.ComponentProps<"button">) & {
+  HTMLButtonElement,
+  React.ComponentProps<"button"> & {
     asChild?: boolean;
     isActive?: boolean;
     tooltip?: string | React.ComponentProps<typeof TooltipContent>;
@@ -521,13 +521,11 @@ const SidebarMenuButton = React.forwardRef<
     ref
   ) => {
     const { isMobile, state } = useSidebar();
-    const isLink = 'href' in props;
+    const Comp = asChild ? Slot : "button";
 
-    const Comp = isLink ? Link : asChild ? Slot : "button";
-
-    const buttonContent = (
+    const button = (
       <Comp
-        ref={ref as any}
+        ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
@@ -537,7 +535,7 @@ const SidebarMenuButton = React.forwardRef<
     );
     
     if (!tooltip) {
-      return buttonContent;
+      return button;
     }
 
     if (typeof tooltip === "string") {
@@ -546,9 +544,11 @@ const SidebarMenuButton = React.forwardRef<
       };
     }
 
+    // Since Link doesn't forward a ref properly in this structure,
+    // we wrap the TooltipTrigger with a div for tooltip positioning.
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
+        <TooltipTrigger asChild>{button}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
@@ -559,8 +559,7 @@ const SidebarMenuButton = React.forwardRef<
     );
   }
 );
-
-SidebarMenuButton.displayName = "SidebarMenuButton"
+SidebarMenuButton.displayName = "SidebarMenuButton";
 
 const SidebarMenuAction = React.forwardRef<
   HTMLButtonElement,
