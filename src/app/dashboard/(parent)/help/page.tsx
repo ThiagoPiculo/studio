@@ -5,8 +5,10 @@ import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
-import { HelpCircle, Search, PackageSearch } from 'lucide-react';
+import { HelpCircle, Search, PackageSearch, Wand2, ChevronsRight, PlusCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 const helpContent = [
   {
@@ -71,9 +73,10 @@ const helpContent = [
 
 export default function HelpCenterPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [openItems, setOpenItems] = useState<string[]>([]);
+  const [openItems, setOpenItems] = useState<string[]>(['comece-aqui']);
 
   useEffect(() => {
+    const baseOpenItems = ['comece-aqui'];
     if (searchTerm.trim() !== '') {
       const matchingItems = helpContent
         .filter(item => 
@@ -81,9 +84,9 @@ export default function HelpCenterPage() {
           item.keywords.toLowerCase().includes(searchTerm.toLowerCase())
         )
         .map(item => item.value);
-      setOpenItems(matchingItems);
+      setOpenItems([...baseOpenItems, ...matchingItems]);
     } else {
-      setOpenItems([]);
+      setOpenItems(baseOpenItems);
     }
   }, [searchTerm]);
 
@@ -123,28 +126,70 @@ export default function HelpCenterPage() {
         </CardContent>
       </Card>
       
-      {filteredContent.length > 0 ? (
-        <Accordion type="multiple" value={openItems} onValueChange={setOpenItems} className="w-full space-y-2">
-          {filteredContent.map((item) => (
-            <AccordionItem value={item.value} key={item.value} className="border rounded-lg bg-card text-card-foreground shadow-sm">
-              <AccordionTrigger className="p-6 hover:no-underline w-full text-left">
-                <span className="text-lg font-semibold">{item.title}</span>
-              </AccordionTrigger>
-              <AccordionContent className="p-6 pt-0">
-                {item.content}
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      ) : (
-        <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-          <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-          <p className="text-lg text-muted-foreground">Nenhum resultado encontrado para "{searchTerm}".</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Tente buscar por outras palavras-chave.
-          </p>
-        </div>
-      )}
+      <Accordion type="multiple" value={openItems} onValueChange={setOpenItems} className="w-full space-y-2">
+        <AccordionItem value="comece-aqui" className="border rounded-lg bg-primary/5 text-card-foreground shadow-sm">
+            <AccordionTrigger className="p-6 hover:no-underline w-full text-left">
+                <div className="flex items-center gap-3">
+                    <Wand2 className="h-6 w-6 text-primary" />
+                    <span className="text-lg font-semibold">Comece por Aqui!</span>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent className="px-6 pb-6 pt-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card className="bg-background/70">
+                      <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">Colaborar em Aliança</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                          <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                              <Link href="/dashboard/family?action=join">
+                                  <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
+                              </Link>
+                          </Button>
+                          <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                              <Link href="/dashboard/family?action=create">
+                                  <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
+                              </Link>
+                          </Button>
+                      </CardContent>
+                  </Card>
+                  <Card className="bg-background/70">
+                      <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2">Criar Rotina para Criança</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                          <Button asChild className="w-full justify-start gap-2">
+                              <Link href="/dashboard/assistente">
+                                  <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
+                              </Link>
+                          </Button>
+                      </CardContent>
+                  </Card>
+                </div>
+            </AccordionContent>
+        </AccordionItem>
+
+        {filteredContent.length > 0 ? (
+            filteredContent.map((item) => (
+              <AccordionItem value={item.value} key={item.value} className="border rounded-lg bg-card text-card-foreground shadow-sm">
+                <AccordionTrigger className="p-6 hover:no-underline w-full text-left">
+                  <span className="text-lg font-semibold">{item.title}</span>
+                </AccordionTrigger>
+                <AccordionContent className="p-6 pt-0">
+                  {item.content}
+                </AccordionContent>
+              </AccordionItem>
+            ))
+        ) : (
+          <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+            <PackageSearch className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+            <p className="text-lg text-muted-foreground">Nenhum resultado encontrado para "{searchTerm}".</p>
+            <p className="text-sm text-muted-foreground mt-1">
+              Tente buscar por outras palavras-chave.
+            </p>
+          </div>
+        )}
+      </Accordion>
     </div>
   );
 }
