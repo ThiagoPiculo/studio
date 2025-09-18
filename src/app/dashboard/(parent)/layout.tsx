@@ -228,7 +228,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
           <Sheet>
             <div className="flex flex-col" style={{ minHeight: '100svh' }}>
               <header className="sticky top-0 z-40 flex h-14 items-center justify-between bg-background/80 px-4 backdrop-blur-sm sm:h-16 sm:px-6">
-                <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex items-center gap-1 sm:gap-3">
                   {isClient && isMobile && !currentHeader && (
                       <Button variant="outline" size="icon" className="h-8 w-8" onClick={handleBackClick}>
                         <ArrowLeft className="h-4 w-4" />
@@ -236,9 +236,9 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                       </Button>
                   )}
                   {isClient && currentHeader ? (
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-1 sm:gap-3">
                         <currentHeader.icon className="h-6 w-6 text-primary" />
-                        <h1 className="text-xl font-bold font-headline sm:text-2xl">{currentHeader.title}</h1>
+                        <h1 className="text-xl sm:text-2xl font-bold font-headline">{currentHeader.title}</h1>
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground shrink-0">
