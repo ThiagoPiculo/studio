@@ -5,13 +5,13 @@ import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner, approveJoinRequest, declineJoinRequest } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings, UserX, Edit, AlertTriangle } from 'lucide-react';
+import { Users, UserPlus, ArrowLeft, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Crown, Trash2, Move, Settings, UserX, Edit, AlertTriangle, Check, X } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -211,6 +211,25 @@ function AllianceManagementPage() {
             setIsActionProcessing(null);
         }
     };
+    
+    const handleJoinRequest = async (invitationId: string, approve: boolean) => {
+        if (!user) return;
+        setIsActionProcessing(invitationId);
+        try {
+            if (approve) {
+                await approveJoinRequest(invitationId, user.uid);
+                toast({ title: "Membro Aprovado!", description: "O novo membro agora faz parte da aliança." });
+            } else {
+                await declineJoinRequest(invitationId, user.uid);
+                toast({ title: "Pedido Recusado.", description: "O pedido de entrada foi recusado." });
+            }
+            fetchData(); // Refresh the list of members and requests
+        } catch (error: any) {
+            toast({ title: "Erro ao processar pedido", description: error.message, variant: 'destructive' });
+        } finally {
+            setIsActionProcessing(null);
+        }
+    };
 
     
     const moveTargetContexts = useMemo(() => {
@@ -280,6 +299,39 @@ function AllianceManagementPage() {
                         </div>
                     </CardContent>
                 </Card>
+                
+                {isOwner && joinRequests.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pedidos de Entrada Pendentes</CardTitle>
+                            <CardDescription>Aprove ou recuse os pedidos para entrar nesta aliança.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {joinRequests.map(req => (
+                                <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
+                                    <div className="flex items-center gap-4">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={(req as any).inviteeAvatarUrl || ''} alt={req.inviterName} />
+                                            <AvatarFallback>{getInitials(req.inviterName)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-semibold">{req.inviterName}</p>
+                                            <p className="text-xs text-muted-foreground">{req.inviteeEmail}</p>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleJoinRequest(req.id, false)} disabled={isActionProcessing === req.id}>
+                                            {isActionProcessing === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <X className="h-4 w-4"/>}
+                                        </Button>
+                                        <Button size="icon" className="h-8 w-8" onClick={() => handleJoinRequest(req.id, true)} disabled={isActionProcessing === req.id}>
+                                             {isActionProcessing === req.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4"/>}
+                                        </Button>
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
 
                 <Card>
                     <CardHeader>

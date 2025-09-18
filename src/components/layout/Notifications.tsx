@@ -1,7 +1,7 @@
 
 "use client";
 
-import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon } from 'lucide-react';
+import { Bell, CheckCircle, PlusCircle, UserPlus, Award, Loader2, Undo2, Edit3, Trash2, UserCheck, UserX, NotebookPen, Link as LinkIcon, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -33,7 +33,7 @@ import { convertTimestampsInObject } from '@/lib/utils';
 const notificationIcons: { [key in Notification['type']]: React.ElementType } = {
   new_level: Award,
   new_badge: Award,
-  alliance_join_request: UserPlus,
+  alliance_join_request: Users,
   alliance_ownership_request: UserPlus,
   alliance_join_approved: UserPlus,
   mission_assigned: PlusCircle,
@@ -204,18 +204,12 @@ export function Notifications() {
   }, [notifications, typeFilter, childFilter, readStatusFilter]);
   
   const handleNotificationClick = (notification: Notification) => {
-    // Ação especial para convites: nunca mudar o contexto, apenas navegar.
-    if (notification.type === 'alliance_join_request') {
-      router.push(notification.href);
-      return;
-    }
-    
-    // Se a notificação tem um contexto diferente do atual, muda o contexto primeiro
+    // If the notification has a context different from the current one, switch context first
     if (notification.relatedContextId && notification.relatedContextId !== currentContext) {
       setPendingNavigation({ href: notification.href, contextId: notification.relatedContextId });
       setCurrentContext(notification.relatedContextId);
     } else {
-      // Se não precisa de mudança de contexto, navega imediatamente.
+      // If no context change is needed, navigate immediately.
       router.push(notification.href);
     }
   };
