@@ -169,7 +169,7 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                     <SidebarMenuButton onClick={() => handleMenuClick('/dashboard/assistente')} tooltip="Assistente de Criação">
+                                     <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
                                         <span>Assistente de Criação</span>
                                     </SidebarMenuButton>
