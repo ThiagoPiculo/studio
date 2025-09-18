@@ -176,6 +176,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.removeItem('childProfile');
         setChildProfile(null);
         setIsChildAuthenticated(false);
+      } else {
+        // Clear admin/parent session data as well
+        sessionStorage.removeItem('currentContext');
+        sessionStorage.removeItem('selectedChildId');
       }
       await signOut(auth);
       router.push('/');
