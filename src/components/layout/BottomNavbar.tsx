@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import Link from 'next/link';
@@ -10,9 +9,9 @@ import { useSidebar } from '@/components/ui/sidebar';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 
 const navItems = [
-  { href: '/dashboard', label: 'Início', icon: Home, color: 'text-primary' },
   { href: '/dashboard/heroes', label: 'Hoje', icon: Calendar1Icon, color: 'text-chart-5' },
   { href: '/dashboard/agenda', label: 'Semana', icon: CalendarDays, color: 'text-chart-1' },
+  { href: '/dashboard', label: 'Início', icon: Home, color: 'text-primary' },
 ];
 
 const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[number]) => {
@@ -37,9 +36,6 @@ export function BottomNavbar() {
   return (
     <div className="fixed bottom-0 left-0 z-50 w-full h-16 bg-background/80 border-t border-border backdrop-blur-sm">
       <div className="grid h-full max-w-lg grid-cols-4 mx-auto font-medium">
-        {navItems.map((item) => (
-            <NavLink key={item.href} {...item} />
-        ))}
          <button
           type="button"
           onClick={toggleSidebar}
@@ -51,6 +47,9 @@ export function BottomNavbar() {
             Mais
           </span>
         </button>
+        {navItems.map((item) => (
+            <NavLink key={item.href} {...item} />
+        ))}
       </div>
     </div>
   );
