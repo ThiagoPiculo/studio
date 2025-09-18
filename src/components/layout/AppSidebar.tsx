@@ -27,7 +27,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useFamily } from '@/contexts/FamilyContext';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 import { useToast } from '@/hooks/use-toast';
 
@@ -73,16 +73,14 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
     const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
     const handleClick = (e: React.MouseEvent) => {
-        // Se a navegação não depende de um herói (bypassModal), navegue diretamente.
         if (bypassModal) {
             router.push(href);
             return;
         }
         
-        // Para outras páginas, se nenhum herói foi selecionado, intercepte e abra o modal.
         if (!selectedChildId) {
             e.preventDefault();
-            openModal(href); // Abre o modal passando o destino desejado
+            openModal(href); 
         } else {
             router.push(href);
         }
@@ -169,7 +167,7 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                     <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação">
+                                     <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação" bypassModal={true}>
                                         <Sparkles className="text-chart-4" />
                                         <span>Assistente de Criação</span>
                                     </SidebarMenuButton>
