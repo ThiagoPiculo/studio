@@ -4,24 +4,21 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { CalendarCheck2, CalendarDays, Settings, Menu } from 'lucide-react';
+import { CalendarCheck2, CalendarDays, Settings, Menu, Home } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useSidebar } from '@/components/ui/sidebar';
 import type { ReactNode } from 'react';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 
 const navItems = [
-  { href: '/dashboard/progressos', label: 'Progressos', icon: CalendarCheck2, color: 'text-chart-1' },
+  { href: '/dashboard', label: 'Início', icon: Home, color: 'text-primary' },
   { href: '/dashboard/heroes', label: 'Hoje', icon: Calendar1Icon, color: 'text-chart-5' },
   { href: '/dashboard/agenda', label: 'Semana', icon: CalendarDays, color: 'text-chart-5' },
 ];
 
-const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[0]) => {
+const NavLink = ({ href, label, icon: Icon, color }: typeof navItems[number]) => {
     const pathname = usePathname();
-    // More specific check for 'Hoje' to avoid it being active on other pages
-    const isActive = href === '/dashboard/heroes' 
-        ? (pathname === '/dashboard' || pathname === '/dashboard/heroes')
-        : pathname.startsWith(href);
+    const isActive = href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(href) && href !== '/dashboard';
     
     return (
         <Link href={href} className="relative inline-flex h-full flex-col items-center justify-center px-2 hover:bg-muted/50 group">

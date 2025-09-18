@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from 'react';
@@ -33,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 function AppLogo() {
     return (
         <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
-            <Link href="/dashboard/heroes" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
+            <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
                 <Rocket className="h-7 w-7 text-primary" />
                 <span className="font-headline text-xl font-bold text-foreground">
                     Mini Herois
@@ -64,17 +65,11 @@ const CustomAccordionTrigger = React.forwardRef<
 ));
 CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
-const NavLink = ({ href, tooltip, label, children }: { href: string; tooltip: string; label: string, children: React.ReactNode }) => {
+const NavLink = ({ href, tooltip, label, children, exact = false }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean }) => {
     const pathname = usePathname();
     const { isLoading: isFamilyLoading } = useFamily();
-
-    // The logic for `isActive` is now more specific for the 'Rotina Hoje' link.
-    // It is considered active if the path is exactly `/dashboard` OR `/dashboard/heroes`.
-    // Other links are active if the path starts with their href.
-    const isActive = !isFamilyLoading && (
-        (href === '/dashboard/heroes' && (pathname === '/dashboard' || pathname === '/dashboard/heroes')) ||
-        (href !== '/dashboard/heroes' && pathname.startsWith(href))
-    );
+    
+    const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
     return (
         <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
@@ -110,6 +105,11 @@ export function AppSidebar() {
 
             <SidebarContent>
                 <SidebarMenu>
+                     <SidebarMenuItem>
+                        <NavLink href="/dashboard" tooltip="Início" label="Início" exact={true}>
+                            <Home className="text-primary"/>
+                        </NavLink>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <NavLink href="/dashboard/heroes" tooltip="Rotina Hoje" label="Rotina Hoje">
                             <Calendar1Icon className="text-chart-5"/>
