@@ -1375,12 +1375,31 @@ export const addChildRewardInstance = async (
 };
 
 export const requestRewardRedemption = async (
-  rewardTemplate: RewardTemplate,
-  childId: string
-): Promise<void> => {
+  rewardTemplate: RewardTemplate | null,
+  childId: string,
+  fetchOnly?: boolean
+): Promise<ChildRewardInstance | ChildRewardInstance[] | void> => {
+  if (fetchOnly) {
+    const pendingQuery = query(
+      collection(db, 'childRewardInstances'),
+      where('childId', '==', childId),
+      where('status', '==', 'pending_approval')
+    );
+    const snapshot = await getDocs(pendingQuery);
+    return snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
+  }
+
+  if (!rewardTemplate) {
+    throw new Error("Template de recompensa não fornecido para a solicitação.");
+  }
+  
   const child = await getChildProfileById(childId);
   if (!child) {
     throw new Error("Herói não encontrado.");
+  }
+
+  if (child.stars < rewardTemplate.starsCost) {
+    throw new Error("Estrelas insuficientes para pedir esta recompensa.");
   }
 
   const existingRequestQuery = query(
@@ -1417,7 +1436,7 @@ export const requestRewardRedemption = async (
   await createAndDispatchNotifications(
     childId,
     {
-      type: 'reward_redeemed', // This type might need to be more specific, like 'reward_redemption_request'
+      type: 'reward_redeemed',
       title: 'Pedido de Resgate de Recompensa!',
       description: `${child.name} quer resgatar a recompensa: "${rewardTemplate.title}".`,
       href: `/dashboard/mural?childId=${childId}&tab=rewards`,
@@ -1425,6 +1444,8 @@ export const requestRewardRedemption = async (
     },
     child
   );
+  
+  return convertTimestampsInObject({ id: newInstanceRef.id, ...newInstance }) as ChildRewardInstance;
 };
 
 export const getActiveChildRewardInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<ChildRewardInstance[]> => {
@@ -2638,6 +2659,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 
