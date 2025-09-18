@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
@@ -241,13 +242,6 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
 
     return (
         <div className="space-y-6">
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-                <Button asChild className="w-full sm:w-auto">
-                    <Link href="/dashboard/missions/new">
-                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Missão
-                    </Link>
-                </Button>
-            </div>
             <div className={containerClasses}>
                 {filteredChildren.map(child => {
                     const allTodaysActivities = allTodaysActivitiesByChild[child.id] || [];
@@ -518,3 +512,5 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         </div>
     );
 }
+
+    
