@@ -65,7 +65,7 @@ const CustomAccordionTrigger = React.forwardRef<
 ));
 CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
-const NavLink = ({ href, tooltip, label, children, exact = false }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean }) => {
+const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = false }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean, bypassModal?: boolean }) => {
     const pathname = usePathname();
     const router = useRouter();
     const { isLoading: isFamilyLoading, selectedChildId, openModal } = useFamily();
@@ -73,13 +73,13 @@ const NavLink = ({ href, tooltip, label, children, exact = false }: { href: stri
     const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
     const handleClick = (e: React.MouseEvent) => {
-        // Para a página inicial, sempre navegue diretamente.
-        if (href === '/dashboard') {
+        // Se a navegação não depende de um herói (bypassModal), navegue diretamente.
+        if (bypassModal) {
             router.push(href);
             return;
         }
         
-        // Para outras páginas, se nenhum herói foi selecionado, intercepte a navegação.
+        // Para outras páginas, se nenhum herói foi selecionado, intercepte e abra o modal.
         if (!selectedChildId) {
             e.preventDefault();
             openModal(href); // Abre o modal passando o destino desejado
@@ -131,7 +131,7 @@ export function AppSidebar() {
             <SidebarContent>
                 <SidebarMenu>
                      <SidebarMenuItem>
-                        <NavLink href="/dashboard" tooltip="Início" label="Início" exact={true}>
+                        <NavLink href="/dashboard" tooltip="Início" label="Início" exact={true} bypassModal={true}>
                             <Home className="text-primary"/>
                         </NavLink>
                     </SidebarMenuItem>
@@ -183,12 +183,12 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/missions" tooltip="Quadro de Missões" label="Quadro de Missões">
+                                    <NavLink href="/dashboard/missions" tooltip="Quadro de Missões" label="Quadro de Missões" bypassModal={true}>
                                         <Target className="text-destructive" />
                                     </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/rewards" tooltip="Baú de Recompensas" label="Baú de Recompensas">
+                                    <NavLink href="/dashboard/rewards" tooltip="Baú de Recompensas" label="Baú de Recompensas" bypassModal={true}>
                                         <Gift className="text-chart-2" />
                                     </NavLink>
                                 </SidebarMenuItem>
@@ -206,12 +206,12 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                              <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/cuidando-solo" tooltip="Gerenciar Cuidar Solo" label="Gerenciar Cuidar Solo">
+                                    <NavLink href="/dashboard/cuidando-solo" tooltip="Gerenciar Cuidar Solo" label="Gerenciar Cuidar Solo" bypassModal={true}>
                                         <CircleDot className="text-chart-2" />
                                     </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/alliances" tooltip="Gerenciar Alianças" label="Gerenciar Alianças">
+                                    <NavLink href="/dashboard/alliances" tooltip="Gerenciar Alianças" label="Gerenciar Alianças" bypassModal={true}>
                                         <LinkIcon className="text-primary" />
                                     </NavLink>
                                 </SidebarMenuItem>
@@ -230,7 +230,7 @@ export function AppSidebar() {
             <SidebarFooter>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <NavLink href="/dashboard/help" tooltip="Central de Ajuda" label="Central de Ajuda">
+                        <NavLink href="/dashboard/help" tooltip="Central de Ajuda" label="Central de Ajuda" bypassModal={true}>
                             <HelpCircle className="text-chart-3" />
                         </NavLink>
                     </SidebarMenuItem>
