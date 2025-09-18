@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily, undoRewardRedemption } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole, RewardTemplate } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -218,6 +218,7 @@ function MuralCompletoPageContent() {
   // Reward-specific states
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
+  const [isUndoConfirmOpen, setIsUndoConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
   const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'pending_approval' | 'redeemed' | 'disabled'>('all');
 
@@ -519,6 +520,27 @@ function MuralCompletoPageContent() {
       setInstanceToManage(null);
     }
   };
+  
+  const handleUndoRedemption = async () => {
+    if (!instanceToManage || !user) return;
+    setIsDeleting(true);
+    try {
+        const updatedChild = await undoRewardRedemption(instanceToManage.id, user);
+        if (updatedChild) {
+            setChild(updatedChild);
+            setChildRewards(prev => prev.map(r => r.id === instanceToManage.id ? { ...r, status: 'active', redeemedAt: undefined } : r));
+            toast({ title: "Resgate Desfeito!", description: `As estrelas de "${instanceToManage.title}" foram devolvidas.` });
+        }
+    } catch (error: any) {
+        console.error("Error undoing redemption:", error);
+        toast({ title: "Erro ao Desfazer", description: error.message, variant: "destructive" });
+    } finally {
+        setIsDeleting(false);
+        setIsUndoConfirmOpen(false);
+        setInstanceToManage(null);
+    }
+  };
+
 
   const handleToggleInstanceStatus = async (instance: ChildRewardInstance, newStatus: 'active' | 'disabled') => {
     setIsDeleting(true);
@@ -897,9 +919,9 @@ function MuralCompletoPageContent() {
                                                     </DropdownMenuContent>
                                                 </DropdownMenu>
                                             )}
-                                            {instance.status === 'redeemed' && (
-                                                <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
-                                                    <CheckCircle className="mr-2 h-4 w-4" /> Recompensa Já Resgatada
+                                            {instance.status === 'redeemed' && canEdit && (
+                                                <Button variant="ghost" size="sm" className="w-full" onClick={() => { setInstanceToManage(instance); setIsUndoConfirmOpen(true); }} disabled={isDeleting}>
+                                                    <Undo2 className="mr-2 h-4 w-4" /> Desfazer Resgate
                                                 </Button>
                                             )}
                                         </CardFooter>
@@ -1160,6 +1182,27 @@ function MuralCompletoPageContent() {
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Undo Redemption Confirmation Dialog */}
+      {instanceToManage && isUndoConfirmOpen && (
+        <AlertDialog open={isUndoConfirmOpen} onOpenChange={setIsUndoConfirmOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Desfazer Resgate?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Isso devolverá {instanceToManage.starsCost} estrelas para {child.name} e tornará a recompensa "{instanceToManage.title}" ativa novamente.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleUndoRedemption} disabled={isDeleting}>
+                        {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Confirmar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
         </AlertDialog>
       )}
 

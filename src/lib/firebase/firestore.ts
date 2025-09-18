@@ -1542,6 +1542,59 @@ export const redeemChildRewardInstance = async (
 };
 
 
+export const undoRewardRedemption = async (instanceId: string, actor: UserProfile): Promise<ChildProfile> => {
+    const rewardInstanceRef = doc(db, 'childRewardInstances', instanceId);
+    
+    const updatedChildProfile = await runTransaction(db, async (transaction) => {
+        const instanceSnap = await transaction.get(rewardInstanceRef);
+        if (!instanceSnap.exists()) {
+            throw new Error("Instância da recompensa não encontrada.");
+        }
+        const instanceData = instanceSnap.data() as ChildRewardInstance;
+        if (instanceData.status !== 'redeemed') {
+            throw new Error("Esta recompensa não foi resgatada.");
+        }
+
+        const childRef = doc(db, 'children', instanceData.childId);
+        const childSnap = await transaction.get(childRef);
+        if (!childSnap.exists()) {
+            throw new Error("Perfil da criança não encontrado.");
+        }
+        const childData = childSnap.data() as ChildProfile;
+
+        transaction.update(childRef, {
+            stars: childData.stars + instanceData.starsCost,
+            updatedAt: serverTimestamp(),
+        });
+
+        transaction.update(rewardInstanceRef, {
+            status: 'active',
+            isRedeemed: false,
+            redeemedAt: deleteField(),
+            actorId: deleteField(),
+            updatedAt: serverTimestamp(),
+        });
+
+        return { ...childData, stars: childData.stars + instanceData.starsCost } as ChildProfile;
+    });
+
+    const instanceSnap = await getDoc(rewardInstanceRef);
+    const instanceData = instanceSnap.data() as ChildRewardInstance;
+    await createAndDispatchNotifications(
+        instanceData.childId, 
+        {
+            type: 'mission_completion_undone', // Re-using a similar type
+            title: 'Resgate de Recompensa Desfeito',
+            description: `${actor.name} desfez o resgate de "${instanceData.title}". As estrelas foram devolvidas.`,
+            href: `/dashboard/mural?childId=${instanceData.childId}&tab=rewards`,
+            relatedChildId: instanceData.childId,
+        },
+        actor
+    );
+
+    return convertTimestampsInObject(updatedChildProfile);
+};
+
 export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: string): Promise<void> => {
   const instanceRef = doc(db, 'childRewardInstances', instanceId);
   const instanceSnap = await getDoc(instanceRef);
@@ -1563,37 +1616,37 @@ export const deleteChildRewardInstance = async (actor: UserProfile, instanceId: 
 };
 
 export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserProfile, templateId: string, childId: string): Promise<void> => {
-  const q = query(
-    collection(db, "childRewardInstances"),
-    where("templateId", "==", templateId),
-    where("childId", "==", childId),
-    where("status", "==", "active") // Only delete active ones
-  );
-  const querySnapshot = await getDocs(q);
-  if (querySnapshot.empty) {
-    return;
-  }
+    const q = query(
+        collection(db, "childRewardInstances"),
+        where("templateId", "==", templateId),
+        where("childId", "==", childId),
+        where("status", "==", "active") // Only delete active ones
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty) {
+        return;
+    }
 
-  const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
-  const familyId = instanceData.familyId;
+    const instanceData = querySnapshot.docs[0].data() as ChildRewardInstance;
+    const familyId = instanceData.familyId;
 
-  const batch = writeBatch(db);
-  querySnapshot.forEach(doc => {
-    batch.delete(doc.ref);
-  });
-  await batch.commit();
-  
-  if (familyId) {
-    const child = await getChildProfileById(childId);
-    const template = await getRewardTemplateById(templateId);
-    await createAllianceNotification(familyId, actor, {
-      type: "instance_unassigned",
-      title: "Recompensa Desatribuída",
-      description: `${actor.name} removeu a recompensa "${template?.title}" de ${child?.name}.`,
-      href: `/dashboard/mural?childId=${childId}&tab=rewards`,
-      relatedChildId: childId,
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
     });
-  }
+    await batch.commit();
+    
+    if (familyId) {
+        const child = await getChildProfileById(childId);
+        const template = await getRewardTemplateById(templateId);
+        await createAllianceNotification(familyId, actor, {
+            type: "instance_unassigned",
+            title: "Recompensa Desatribuída",
+            description: `${actor.name} removeu a recompensa "${template?.title}" de ${child?.name}.`,
+            href: `/dashboard/mural?childId=${childId}&tab=rewards`,
+            relatedChildId: childId,
+        });
+    }
 };
 
 
@@ -2002,7 +2055,7 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
         await createAllianceNotification(familyId, actor, {
             type: 'instance_unassigned',
             title: 'Missão Desatribuída',
-            description: `${actor.name} removeu a missão "${template?.title}" de ${child?.name || 'um herói'}.`,
+            description: `${actor.name} removeu a missão "${template?.title}" de ${child?.name}.`,
             href: `/dashboard/mural?childId=${childId}&tab=missions`,
             relatedChildId: childId,
         });
@@ -2659,6 +2712,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 
