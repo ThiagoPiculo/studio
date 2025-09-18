@@ -236,10 +236,7 @@ export function HeroesSummary({ initialChildren, initialMissionInstances }: Hero
         return result;
     }, [missionInstances, children, schoolSchedules]);
     
-    const containerClasses = filteredChildren.length === 1 
-        ? "max-w-2xl mx-auto" 
-        : "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6";
-
+    const containerClasses = "grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3";
 
     return (
         <div className="space-y-6">
