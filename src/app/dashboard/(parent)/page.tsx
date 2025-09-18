@@ -6,9 +6,10 @@ import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, LifeBuoy, ListChecks, PlusCircle, UserPlus, Users, Wand2 } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck2, Gift, Target } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
+import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 
 function DashboardCard({
   icon: Icon,
@@ -128,39 +129,39 @@ function DashboardPage() {
           <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2"><Heart className="text-pink-500" />Meus Mini Heróis</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               <DashboardCard 
-                  icon={ListChecks}
+                  icon={Calendar1Icon}
                   title="Rotina do Dia"
                   description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
                   isModalTrigger
                   href="/dashboard/heroes"
               />
               <DashboardCard 
-                  icon={ListChecks}
+                  icon={CalendarDays}
                   title="Rotina da Semana"
                   description="Visualize o calendário completo com a programação de missões da semana."
                   isModalTrigger
                   href="/dashboard/agenda"
               />
                <DashboardCard 
-                  icon={BookOpen}
+                  icon={NotebookPen}
                   title="Agenda Escolar"
                   description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
                   isModalTrigger
                   href="/dashboard/school-schedule"
               />
                <DashboardCard 
-                  icon={GitBranch}
+                  icon={CalendarCheck2}
                   title="Painel de Progressos"
                   description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
                   isModalTrigger
                   href="/dashboard/progressos"
               />
                <DashboardCard 
-                  icon={Handshake}
-                  title="Aprovar Recompensas"
-                  description="Confirme os pedidos de resgate de recompensas feitos pelos seus heróis."
+                  icon={Gift}
+                  title="Baú de Recompensas"
+                  description="Crie e gerencie os prêmios que seus heróis podem conquistar com estrelas."
                   isModalTrigger
-                  href="/dashboard/mural?tab=rewards"
+                  href="/dashboard/rewards"
               />
               <DashboardCard 
                   icon={Contact}
@@ -170,15 +171,15 @@ function DashboardPage() {
                   href="/dashboard/mural"
               />
                <DashboardCard 
-                  icon={FilePlus}
-                  title="Catálogo de Missões"
+                  icon={Target}
+                  title="Quadro de Missões"
                   description="Crie e gerencie os modelos de todas as missões que podem ser atribuídas."
                   href="/dashboard/missions"
               />
                <DashboardCard 
-                  icon={LifeBuoy}
+                  icon={HelpCircle}
                   title="Central de Ajuda"
-                  description="Aprenda sobre o Mini Heróis e tire suas dúvidas."
+                  description="Aprenda sobre o Mini Herois e tire suas dúvidas."
                   href="/dashboard/help"
               />
           </div>
