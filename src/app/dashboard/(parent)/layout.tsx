@@ -73,6 +73,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   const showMissionsHeaderActions = isClient && pathname.startsWith('/dashboard/missions');
 
   const showContextSwitcher = isClient && ![
+    '/dashboard',
     '/dashboard/profile', 
     '/dashboard/settings', 
     '/dashboard/family', 
