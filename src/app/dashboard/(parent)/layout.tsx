@@ -266,13 +266,12 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                   {showTrocarHeroiButton && selectedHero && (
                     <Button variant="outline" size="sm" onClick={() => openModal()} className="p-2 h-auto">
                         <Avatar 
-                           className="h-6 w-6 mr-2 ring-2 ring-offset-1 ring-offset-background ring-[var(--ring-color)]"
+                           className="h-6 w-6 ring-2 ring-offset-1 ring-offset-background ring-[var(--ring-color)]"
                            style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}
                         >
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{backgroundColor: selectedHero.color}}>{getInitials(selectedHero.name)}</AvatarFallback>
                         </Avatar>
-                        <span className="font-semibold">Trocar</span>
                         <ChevronsUpDown className="ml-1 h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
