@@ -219,7 +219,7 @@ function MuralCompletoPageContent() {
   const [instanceToManage, setInstanceToManage] = useState<ChildRewardInstance | null>(null);
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
-  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'redeemed' | 'disabled'>('all');
+  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'pending_approval' | 'redeemed' | 'disabled'>('all');
 
   // School Schedule States
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
@@ -461,9 +461,9 @@ function MuralCompletoPageContent() {
   const getRewardStatusBadgeVariant = (status: ChildRewardInstance['status']): "default" | "secondary" | "outline" | "destructive" => {
     switch (status) {
       case 'active': return 'default';
+      case 'pending_approval': return 'outline';
       case 'redeemed': return 'secondary';
       case 'disabled': return 'outline';
-      case 'pending_approval': return 'outline';
       default: return 'outline';
     }
   };
@@ -764,146 +764,153 @@ function MuralCompletoPageContent() {
                 </TabsContent>
 
                 <TabsContent value="rewards">
-                <Card className="shadow-md">
-                <CardHeader>
-                    <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
-                    <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
-                    <div className="pt-4">
-                    <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
-                    <RadioGroup
-                        value={instanceStatusFilter}
-                        onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'redeemed' | 'disabled')}
-                        className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
-                    >
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="all" id={`instance-filter-all-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-all-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="active" id={`instance-filter-active-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-active-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-redeemed-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${selectedChildId}`} />
-                        <Label htmlFor={`instance-filter-disabled-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
-                        </div>
-                    </RadioGroup>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
-                    <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Recompensas
-                    </Button>
-                    {filteredChildRewards.length === 0 ? (
-                    <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                        <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                        <p className="text-lg text-muted-foreground">
-                        {childRewards.length === 0
-                            ? `${child.name} ainda não tem recompensas atribuídas.`
-                            : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceToManage?.status || 'active')}".`
-                        }
-                        </p>
-                        <p className="text-sm text-muted-foreground mt-1">
-                        {childRewards.length === 0
-                            ? 'Vá ao catálogo para atribuir algumas!'
-                            : 'Tente um filtro diferente ou verifique o catálogo.'
-                        }
-                        </p>
-                    </div>
-                    ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {filteredChildRewards.map((instance) => {
-                        const categoryDetails = getCategoryDetails(instance.category);
-                        const CategoryIconComponent = categoryDetails?.icon;
-                        return (
-                            <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
-                            <CardHeader>
-                                <div className="flex justify-between items-start">
-                                <CardTitle className="text-lg">{instance.title}</CardTitle>
-                                <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
-                                    {getRewardStatusText(instance.status)}
-                                </Badge>
-                                </div>
-                                {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
-                            </CardHeader>
-                            <CardContent className="space-y-2 flex-grow text-sm">
-                                {categoryDetails && (
-                                <div className="flex items-center">
-                                    <span className={`mr-2 p-1 rounded-full ${categoryDetails.colorClasses.split(' ')[0]}`}>
-                                    {CategoryIconComponent && <CategoryIconComponent className={`h-4 w-4 ${categoryDetails.colorClasses.split(' ')[1]}`} />}
-                                    </span>
-                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                                    {categoryDetails.label}
-                                    </span>
-                                </div>
-                                )}
-                                <div className="flex items-center text-muted-foreground">
-                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                                Custo: {instance.starsCost} estrelas
-                                </div>
-                                <p className="text-xs text-muted-foreground">
-                                Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
+                    <Card className="shadow-md">
+                        <CardHeader>
+                            <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
+                            <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
+                            <div className="pt-4">
+                                <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
+                                <RadioGroup
+                                    value={instanceStatusFilter}
+                                    onValueChange={(value) => setInstanceStatusFilter(value as 'all' | 'active' | 'pending_approval' | 'redeemed' | 'disabled')}
+                                    className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="all" id={`instance-filter-all-${selectedChildId}`} />
+                                        <Label htmlFor={`instance-filter-all-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Todas</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="active" id={`instance-filter-active-${selectedChildId}`} />
+                                        <Label htmlFor={`instance-filter-active-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Ativas</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="pending_approval" id={`instance-filter-pending-${selectedChildId}`} />
+                                        <Label htmlFor={`instance-filter-pending-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Aguardando Aprovação</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="redeemed" id={`instance-filter-redeemed-${selectedChildId}`} />
+                                        <Label htmlFor={`instance-filter-redeemed-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Resgatadas</Label>
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <RadioGroupItem value="disabled" id={`instance-filter-disabled-${selectedChildId}`} />
+                                        <Label htmlFor={`instance-filter-disabled-${selectedChildId}`} className="cursor-pointer hover:text-primary text-sm font-normal">Inativas</Label>
+                                    </div>
+                                </RadioGroup>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
+                                <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Quadro de Recompensas
+                            </Button>
+                            {filteredChildRewards.length === 0 ? (
+                            <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
+                                <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
+                                <p className="text-lg text-muted-foreground">
+                                {childRewards.length === 0
+                                    ? `${child.name} ainda não tem recompensas atribuídas.`
+                                    : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceStatusFilter as any)}".`
+                                }
                                 </p>
-                                {instance.status === 'redeemed' && instance.redeemedAt && (
-                                <p className="text-xs text-green-600 font-medium">
-                                    Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
+                                <p className="text-sm text-muted-foreground mt-1">
+                                {childRewards.length === 0
+                                    ? 'Vá ao catálogo para atribuir algumas!'
+                                    : 'Tente um filtro diferente ou verifique o catálogo.'
+                                }
                                 </p>
-                                )}
-                            </CardContent>
-                            <CardFooter>
-                                {instance.status !== 'redeemed' && canEdit ? (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
-                                        <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
-                                    </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-56">
-                                    <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    {instance.status === 'active' && (
-                                        <>
-                                        <DropdownMenuItem onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting}>
-                                            <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Marcar como Resgatada
-                                        </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
-                                            <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
-                                        </DropdownMenuItem>
-                                        </>
-                                    )}
-                                    {instance.status === 'disabled' && (
-                                        <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
-                                        <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
-                                        </DropdownMenuItem>
-                                    )}
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
-                                        className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
-                                        disabled={isDeleting}
-                                    >
-                                        <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
-                                    </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                                ) : (
-                                <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
-                                    <CheckCircle className="mr-2 h-4 w-4" /> {instance.status === 'redeemed' ? 'Recompensa Já Resgatada' : 'Ações Indisponíveis'}
-                                </Button>
-                                )}
-                            </CardFooter>
-                            </Card>
-                        );
-                        })}
-                    </div>
-                    )}
-                </CardContent>
-                </Card>
-            </TabsContent>
+                            </div>
+                            ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {filteredChildRewards.map((instance) => {
+                                const categoryDetails = getCategoryDetails(instance.category);
+                                const CategoryIconComponent = categoryDetails?.icon;
+                                return (
+                                    <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
+                                        <CardHeader>
+                                            <div className="flex justify-between items-start">
+                                                <CardTitle className="text-lg">{instance.title}</CardTitle>
+                                                <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
+                                                    {getRewardStatusText(instance.status)}
+                                                </Badge>
+                                            </div>
+                                            {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
+                                        </CardHeader>
+                                        <CardContent className="space-y-2 flex-grow text-sm">
+                                            {categoryDetails && (
+                                                <div className="flex items-center">
+                                                    <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
+                                                        {categoryDetails.label}
+                                                    </span>
+                                                </div>
+                                            )}
+                                            <div className="flex items-center text-muted-foreground">
+                                                <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
+                                                Custo: {instance.starsCost} estrelas
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
+                                            </p>
+                                            {instance.status === 'redeemed' && instance.redeemedAt && (
+                                                <p className="text-xs text-green-600 font-medium">
+                                                    Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
+                                                </p>
+                                            )}
+                                        </CardContent>
+                                        <CardFooter>
+                                            {instance.status === 'pending_approval' && canEdit && (
+                                                <div className="w-full grid grid-cols-2 gap-2">
+                                                    <Button size="sm" variant="destructive" onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }} disabled={isDeleting}>
+                                                        <XCircle className="mr-2 h-4 w-4"/>Recusar
+                                                    </Button>
+                                                    <Button size="sm" variant="default" onClick={() => { setInstanceToManage(instance); setIsRedeemConfirmOpen(true); }} disabled={isDeleting || child.stars < instance.starsCost}>
+                                                        <CheckCircle className="mr-2 h-4 w-4"/>Aprovar Resgate
+                                                    </Button>
+                                                </div>
+                                            )}
+                                            {(instance.status === 'active' || instance.status === 'disabled') && canEdit && (
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="outline" size="sm" className="w-full shadow-sm" disabled={isDeleting}>
+                                                            <MoreHorizontal className="mr-2 h-4 w-4" /> Ações
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="w-56">
+                                                        <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        {instance.status === 'active' && (
+                                                            <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
+                                                                <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        {instance.status === 'disabled' && (
+                                                            <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'active')} disabled={isDeleting}>
+                                                                <CheckCircle className="mr-2 h-4 w-4 text-green-500" /> Reativar para {child.name}
+                                                            </DropdownMenuItem>
+                                                        )}
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem
+                                                            onClick={() => { setInstanceToManage(instance); setIsDeleteInstanceConfirmOpen(true); }}
+                                                            className="text-destructive focus:text-destructive-foreground focus:bg-destructive"
+                                                            disabled={isDeleting}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" /> Remover Atribuição
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            )}
+                                            {instance.status === 'redeemed' && (
+                                                <Button variant="ghost" size="sm" className="w-full text-green-600" disabled>
+                                                    <CheckCircle className="mr-2 h-4 w-4" /> Recompensa Já Resgatada
+                                                </Button>
+                                            )}
+                                        </CardFooter>
+                                    </Card>
+                                );
+                                })}
+                            </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </TabsContent>
             <TabsContent value="school-schedule">
                 <Card className="shadow-md">
                     <CardHeader>
@@ -1219,3 +1226,5 @@ export default function MuralCompleto() {
         </Suspense>
     )
 }
+
+    
