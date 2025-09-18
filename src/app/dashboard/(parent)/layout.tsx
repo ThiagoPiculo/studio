@@ -8,14 +8,14 @@ import React, { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { Footer } from '@/components/layout/Footer';
-import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift, Medal } from 'lucide-react';
+import { Loader2, ArrowLeft, Home, HelpCircle, Radar, Contact, PlusCircle, CalendarCheck2, Target, Gift, Medal, Users } from 'lucide-react';
 import { Breadcrumbs } from '@/components/layout/Breadcrumbs';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { Notifications } from '@/components/layout/Notifications';
 import { FamilyContextSwitcher } from '@/components/layout/FamilyContextSwitcher';
 import { Button } from '@/components/ui/button';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { cn } from '@/lib/utils';
 import { BottomNavbar } from '@/components/layout/BottomNavbar';
 import { Sheet } from '@/components/ui/sheet';
@@ -27,6 +27,7 @@ import Link from 'next/link';
 import { useFamily } from '@/contexts/FamilyContext';
 import type { ChildProfile } from '@/lib/types';
 import { CalendarDays, NotebookPen } from 'lucide-react';
+import { HeroContextSelectorModal } from '@/components/dashboard/dashboard/HeroContextSelectorModal';
 
 
 function DashboardMainContent({ children }: { children: ReactNode }) {
@@ -55,7 +56,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   const router = useRouter();
   const pathname = usePathname();
   const { user } = useAuth();
-  const { currentContext, selectedChildId, setSelectedChildId, childrenInContext, isLoading: isFamilyLoading } = useFamily();
+  const { currentContext, selectedChildId, setSelectedChildId, childrenInContext, isLoading: isFamilyLoading, isModalOpen, openModal, closeModal } = useFamily();
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = React.useState(false);
 
@@ -66,11 +67,10 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
   const handleBackClick = () => {
     router.back();
   };
-
-  const isRootDashboard = pathname === '/dashboard';
   
   const showRewardsHeaderActions = isClient && pathname.startsWith('/dashboard/rewards');
   const showMissionsHeaderActions = isClient && pathname.startsWith('/dashboard/missions');
+  const showTrocarHeroiButton = isClient && selectedChildId && pathname !== '/dashboard';
 
   const showContextSwitcher = isClient && ![
     '/dashboard',
@@ -257,6 +257,12 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                   )}
                 </div>
                 <div className="flex items-center gap-2">
+                  {showTrocarHeroiButton && (
+                    <Button variant="outline" size="sm" onClick={() => openModal()}>
+                        <Users className="mr-2 h-4 w-4" />
+                        Trocar Herói
+                    </Button>
+                  )}
                   {!user?.isAnonymous && <Notifications />}
                 </div>
               </header>
@@ -303,6 +309,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
           </Sheet>
         </SidebarInset>
       </SidebarProvider>
+      <HeroContextSelectorModal isOpen={isModalOpen} onOpenChange={closeModal} />
     </>
   );
 }

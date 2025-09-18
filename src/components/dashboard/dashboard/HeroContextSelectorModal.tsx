@@ -24,10 +24,9 @@ import Link from "next/link";
 interface HeroContextSelectorModalProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  destination: string | null;
 }
 
-export function HeroContextSelectorModal({ isOpen, onOpenChange, destination }: HeroContextSelectorModalProps) {
+export function HeroContextSelectorModal({ isOpen, onOpenChange }: HeroContextSelectorModalProps) {
   const { user } = useAuth();
   const { availableContexts, setCurrentContext, setSelectedChildId } = useFamily();
   const router = useRouter();
@@ -67,9 +66,7 @@ export function HeroContextSelectorModal({ isOpen, onOpenChange, destination }: 
   const handleSelectChild = (contextId: string, childId: string) => {
     setCurrentContext(contextId);
     setSelectedChildId(childId);
-    if (destination) {
-      router.push(destination);
-    }
+    // The navigation is now handled by an effect in the FamilyContext
     onOpenChange(false);
   };
   

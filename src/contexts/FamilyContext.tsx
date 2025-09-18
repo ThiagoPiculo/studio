@@ -24,10 +24,15 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
   const [selectedChildId, _setSelectedChildId] = React.useState<string | null>(null);
   const [availableContexts, setAvailableContextsState] = React.useState<EnrichedContext[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isContextSelected, setIsContextSelected] = useState(false);
   
   const [childrenInContext, setChildrenInContext] = useState<ChildProfile[]>([]);
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
+
+  // State for the global modal
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalDestination, setModalDestination] = useState<string | null>(null);
+  const router = useRouter();
+
 
   // Load from session storage on initial mount
   useEffect(() => {
@@ -52,7 +57,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.setItem('currentContext', contextId);
         sessionStorage.removeItem('selectedChildId'); // Clear child selection
     }
-    setIsContextSelected(true);
   }, []);
 
   const setSelectedChildId = useCallback((childId: string | null) => {
@@ -66,6 +70,23 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             sessionStorage.removeItem('selectedChildId');
         }
     }
+  }, []);
+  
+  // Navigate to destination after a child is selected from the modal
+  useEffect(() => {
+    if (selectedChildId && modalDestination) {
+      router.push(modalDestination);
+      setModalDestination(null); // Reset destination
+    }
+  }, [selectedChildId, modalDestination, router]);
+  
+  const openModal = useCallback((destination?: string) => {
+    setModalDestination(destination || null);
+    setIsModalOpen(true);
+  }, []);
+
+  const closeModal = useCallback(() => {
+    setIsModalOpen(false);
   }, []);
 
 
@@ -97,7 +118,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
             _setCurrentContext(storedContext && isValidStoredContext ? storedContext : 'my-space');
             
             setIsLoading(false);
-            setIsContextSelected(true);
         };
 
         if (memberships.length === 0) {
@@ -136,7 +156,6 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
       setCurrentContext('my-space');
       setAvailableContextsState([]);
       setIsLoading(false);
-      setIsContextSelected(false);
     }
     
     return () => {
@@ -198,10 +217,12 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
     setAvailableContexts,
     isLoading: isLoading || isLoadingChildren || authLoading, // Combine loading states
     currentRole,
-    isContextSelected,
     selectedChildId,
     setSelectedChildId,
-    childrenInContext, // Expose children
+    childrenInContext,
+    isModalOpen,
+    openModal,
+    closeModal,
   };
 
   return (

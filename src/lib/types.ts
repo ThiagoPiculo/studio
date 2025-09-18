@@ -372,10 +372,12 @@ export type FamilyContextType = {
   setAvailableContexts: (contexts: { id: string; name: string; role?: FamilyRole | 'Personal' }[]) => void;
   isLoading: boolean;
   currentRole: FamilyRole | 'Personal' | null;
-  isContextSelected: boolean;
   selectedChildId: string | null;
   setSelectedChildId: (childId: string | null) => void;
   childrenInContext: ChildProfile[];
+  isModalOpen: boolean;
+  openModal: (destination?: string) => void;
+  closeModal: () => void;
 };
 
 export type AuthContextType = {

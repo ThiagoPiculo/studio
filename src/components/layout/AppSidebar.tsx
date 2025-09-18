@@ -67,12 +67,27 @@ CustomAccordionTrigger.displayName = "CustomAccordionTrigger";
 
 const NavLink = ({ href, tooltip, label, children, exact = false }: { href: string; tooltip: string; label: string, children: React.ReactNode, exact?: boolean }) => {
     const pathname = usePathname();
-    const { isLoading: isFamilyLoading } = useFamily();
+    const router = useRouter();
+    const { isLoading: isFamilyLoading, selectedChildId, openModal } = useFamily();
     
     const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
+    const handleClick = (e: React.MouseEvent) => {
+        // Para a página inicial, sempre navegue diretamente.
+        if (href === '/dashboard') {
+            return;
+        }
+        
+        // Para outras páginas, se nenhum herói foi selecionado, intercepte a navegação.
+        if (!selectedChildId) {
+            e.preventDefault();
+            openModal(href); // Abre o modal passando o destino desejado
+        }
+        // Se um herói já está selecionado, o Link do Next.js cuidará da navegação.
+    };
+
     return (
-        <SidebarMenuButton href={href} tooltip={tooltip} isActive={isActive}>
+        <SidebarMenuButton as={Link} href={href} tooltip={tooltip} isActive={isActive} onClick={handleClick}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>
@@ -83,7 +98,7 @@ const NavLink = ({ href, tooltip, label, children, exact = false }: { href: stri
 export function AppSidebar() {
     const pathname = usePathname();
     const router = useRouter();
-    const { availableContexts, currentContext, setCurrentContext } = useFamily();
+    const { availableContexts, currentContext, setCurrentContext, openModal, selectedChildId } = useFamily();
     const isInAnyAlliance = availableContexts.some(c => c.id !== 'my-space');
 
     const handleAllianceAction = (action: 'create' | 'join') => {
@@ -92,6 +107,14 @@ export function AppSidebar() {
         }
         router.push(`/dashboard/family?action=${action}`);
     };
+
+    const handleMenuClick = (href: string) => {
+        if (!selectedChildId) {
+            openModal(href);
+        } else {
+            router.push(href);
+        }
+    }
     
     const isMobile = useIsMobile();
     const defaultAccordionValue = isMobile ? [] : ['item-1', 'item-2', 'item-3', 'item-4'];
@@ -138,19 +161,16 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/mural" tooltip="Perfil Completo" label="Perfil Completo">
+                                    <SidebarMenuButton onClick={() => handleMenuClick('/dashboard/mural')} tooltip="Perfil Completo">
                                         <Contact className="text-chart-1" />
-                                    </NavLink>
+                                        <span>Perfil Completo</span>
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/novo-heroi" tooltip="Novo Mini Heroi" label="Novo Mini Heroi">
-                                        <UserPlus className="text-chart-2" />
-                                    </NavLink>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                     <NavLink href="/dashboard/assistente" tooltip="Assistente de Criação" label="Assistente de Criação">
+                                     <SidebarMenuButton onClick={() => handleMenuClick('/dashboard/assistente')} tooltip="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
-                                    </NavLink>
+                                        <span>Assistente de Criação</span>
+                                    </SidebarMenuButton>
                                 </SidebarMenuItem>
                             </AccordionContent>
                         </AccordionItem>
