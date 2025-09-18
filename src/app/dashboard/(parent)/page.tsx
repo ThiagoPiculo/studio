@@ -6,7 +6,7 @@ import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck2, Gift, Target } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
@@ -150,7 +150,7 @@ function DashboardPage() {
                   href="/dashboard/school-schedule"
               />
                <DashboardCard 
-                  icon={CalendarCheck2}
+                  icon={CalendarCheck}
                   title="Painel de Progressos"
                   description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
                   isModalTrigger

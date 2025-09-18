@@ -21,7 +21,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck2, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
+import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -74,9 +74,11 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
 
     const handleClick = (e: React.MouseEvent) => {
         if (bypassModal) {
-            router.push(href);
+            // router.push(href);
             return;
         }
+
+        e.preventDefault();
 
         if (selectedChildId) {
             router.push(href);
@@ -85,8 +87,10 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
         }
     };
 
+    const { bypassModal: _bypassModal, ...restProps } = props;
+
     return (
-        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick} {...props}>
+        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick} {...restProps}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>
@@ -144,7 +148,7 @@ export function AppSidebar() {
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                          <NavLink href="/dashboard/progressos" tooltip="Painel de Progressos" label="Painel de Progressos">
-                            <CalendarCheck2 className="text-chart-1" />
+                            <CalendarCheck className="text-chart-1" />
                         </NavLink>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
