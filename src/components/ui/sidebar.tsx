@@ -539,7 +539,9 @@ const SidebarMenuButton = React.forwardRef<
     
     const renderButton = () => {
       if (Comp === Link) {
-        return <Link href={href!} {...props as React.ComponentProps<typeof Link>}>{buttonContent}</Link>
+        // Explicitly cast props for Link component, ensuring only valid props are passed
+        const { onClick, ...linkProps } = props as React.ComponentProps<typeof Button> & { onClick?: React.MouseEventHandler<HTMLAnchorElement> };
+        return <Link href={href!} {...linkProps} onClick={onClick}>{buttonContent}</Link>
       }
       if (asChild) {
         return <Slot {...props}>{buttonContent}</Slot>

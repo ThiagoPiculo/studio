@@ -73,21 +73,16 @@ const NavLink = ({ href, tooltip, label, children, exact = false, bypassModal = 
     const isActive = !isFamilyLoading && (exact ? pathname === href : pathname.startsWith(href));
 
     const handleClick = (e: React.MouseEvent) => {
-        if (bypassModal) {
+        if (bypassModal || !selectedChildId) {
             router.push(href);
             return;
         }
         
-        if (!selectedChildId) {
-            e.preventDefault();
-            openModal(href); 
-        } else {
-            router.push(href);
-        }
+        openModal(href); 
     };
 
     return (
-        <SidebarMenuButton tooltip={tooltip} isActive={isActive} onClick={handleClick}>
+        <SidebarMenuButton tooltip={tooltip} isActive={isActive} href={href} onClick={handleClick}>
             {children}
             <span>{label}</span>
         </SidebarMenuButton>
@@ -167,7 +162,7 @@ export function AppSidebar() {
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
-                                     <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação" bypassModal={true}>
+                                     <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
                                         <span>Assistente de Criação</span>
                                     </SidebarMenuButton>
