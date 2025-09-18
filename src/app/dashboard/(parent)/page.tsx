@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from '@/components/ui/button';
 import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, LifeBuoy, ListChecks, PlusCircle, UserPlus, Users, Wand2 } from 'lucide-react';
 import { HeroContextSelectorModal } from '@/components/dashboard/dashboard/HeroContextSelectorModal';
+import { useFamily } from '@/contexts/FamilyContext';
 
 function DashboardCard({
   icon: Icon,
@@ -73,11 +74,7 @@ function DashboardCard({
 
 
 function DashboardPage() {
-    const [modalDestination, setModalDestination] = React.useState<string | null>(null);
-
-    const handleCardClick = (destination: string) => {
-        setModalDestination(destination);
-    };
+    const { openModal, closeModal, isModalOpen } = useFamily();
     
   return (
     <>
@@ -132,42 +129,42 @@ function DashboardPage() {
                     title="Rotina do Dia"
                     description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/heroes')}
+                    onClick={() => openModal('/dashboard/heroes')}
                 />
                 <DashboardCard 
                     icon={ListChecks}
                     title="Rotina da Semana"
                     description="Visualize o calendário completo com a programação de missões da semana."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/agenda')}
+                    onClick={() => openModal('/dashboard/agenda')}
                 />
                  <DashboardCard 
                     icon={BookOpen}
                     title="Agenda Escolar"
                     description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/school-schedule')}
+                    onClick={() => openModal('/dashboard/school-schedule')}
                 />
                  <DashboardCard 
                     icon={GitBranch}
                     title="Painel de Progressos"
                     description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/progressos')}
+                    onClick={() => openModal('/dashboard/progressos')}
                 />
                  <DashboardCard 
                     icon={Handshake}
                     title="Aprovar Recompensas"
                     description="Confirme os pedidos de resgate de recompensas feitos pelos seus heróis."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/mural?tab=rewards')}
+                    onClick={() => openModal('/dashboard/mural?tab=rewards')}
                 />
                 <DashboardCard 
                     icon={Contact}
                     title="Perfil do Mini Herói"
                     description="Acesse e edite as informações, missões e recompensas individuais."
                     isModalTrigger
-                    onClick={() => handleCardClick('/dashboard/mural')}
+                    onClick={() => openModal('/dashboard/mural')}
                 />
                  <DashboardCard 
                     icon={FilePlus}
@@ -184,11 +181,10 @@ function DashboardPage() {
             </div>
         </div>
       </div>
-      <HeroContextSelectorModal 
-        destination={modalDestination}
-        isOpen={!!modalDestination}
+      <HeroContextSelectorModal
+        isOpen={isModalOpen}
         onOpenChange={(isOpen) => {
-            if(!isOpen) setModalDestination(null);
+            if(!isOpen) closeModal();
         }}
       />
     </>

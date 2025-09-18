@@ -87,6 +87,7 @@ export const FamilyProvider = ({ children }: { children: ReactNode }) => {
 
   const closeModal = useCallback(() => {
     setIsModalOpen(false);
+    // Do not clear modalDestination here, it might be needed for navigation
   }, []);
 
 

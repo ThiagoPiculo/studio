@@ -12,7 +12,6 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChildProfilesForAttribution } from '@/lib/firebase/firestore';
 import type { ChildProfile } from '@/lib/types';
-import { useRouter } from 'next/navigation';
 import { useState, useEffect, useCallback, Fragment } from 'react';
 import { Loader2, CircleDot, Link as LinkIcon, UserPlus } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,7 +28,6 @@ interface HeroContextSelectorModalProps {
 export function HeroContextSelectorModal({ isOpen, onOpenChange }: HeroContextSelectorModalProps) {
   const { user } = useAuth();
   const { availableContexts, setCurrentContext, setSelectedChildId } = useFamily();
-  const router = useRouter();
 
   const [childrenByContext, setChildrenByContext] = useState<Record<string, ChildProfile[]>>({});
   const [isLoadingChildren, setIsLoadingChildren] = useState(true);
