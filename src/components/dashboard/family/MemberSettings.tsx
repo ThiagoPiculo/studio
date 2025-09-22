@@ -63,6 +63,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                 title: "Papel Alterado!",
                 description: `O papel de ${member.name} foi atualizado para ${familyRoles.find(r => r.id === newRole)?.label}.`
             });
+            // Ideally, the parent component would refetch or update state here.
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -88,6 +89,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                 description: `${member.name} foi removido da aliança.`,
             });
             setIsConfirmOpen(false);
+            // Parent component should ideally refetch data.
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -173,3 +175,5 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
       </>
     );
 }
+
+    

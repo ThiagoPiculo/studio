@@ -67,7 +67,6 @@ function AllianceManagementPage() {
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState('');
     const [isDeletingAlliance, setIsDeletingAlliance] = useState(false);
 
-
     const isOwner = useMemo(() => alliance?.ownerId === user?.uid, [alliance, user]);
 
     const fetchData = useCallback(async () => {
@@ -98,10 +97,9 @@ function AllianceManagementPage() {
             setMembers(membersData);
             setMemberships(membershipsData);
             
-            // Enrich join requests with avatar data
             const enrichedRequests = await Promise.all(
                 requestsData.map(async (req) => {
-                    if (req.type === 'request') { // 'request' type, where inviterName is the requester
+                    if (req.type === 'request') {
                         const requesterProfile = await getUserProfile(req.inviteeId);
                         return { ...req, inviteeAvatarUrl: requesterProfile?.avatarUrl };
                     }
@@ -135,7 +133,6 @@ function AllianceManagementPage() {
         if (!childToRemove || !user) return;
         setIsActionProcessing(childToRemove.id);
         try {
-            // Move child to their owner's personal space (familyId: null)
             await moveChildToNewContext(childToRemove.id, null, user);
             toast({ title: "Herói Removido da Aliança", description: `${childToRemove.name} agora está no espaço pessoal de seu criador.` });
             setChildren(prev => prev.filter(c => c.id !== childToRemove.id));
@@ -215,7 +212,6 @@ function AllianceManagementPage() {
 
             toast({ title: "Heróis Adicionados!", description: `${childrenToAddToAlliance.length} herói(s) foram movidos para esta aliança.` });
             
-            // Refetch all data to update the UI correctly
             fetchData();
             setIsAddToAllianceDialogOpen(false);
             setChildrenToAddToAlliance([]);
@@ -239,7 +235,7 @@ function AllianceManagementPage() {
                 await declineJoinRequest(invitationId, user.uid);
                 toast({ title: "Pedido Recusado.", description: "O pedido de entrada foi recusado." });
             }
-            fetchData(); // Refresh the list of members and requests
+            fetchData();
         } catch (error: any) {
             toast({ title: "Erro ao processar pedido", description: error.message, variant: 'destructive' });
         } finally {
@@ -265,7 +261,7 @@ function AllianceManagementPage() {
         const membership = memberships.find(m => m.userId === member.uid);
         return {
             ...member,
-            role: membership?.role || 'Guardian' // Default to Guardian if somehow missing
+            role: membership?.role || 'Guardian'
         };
     });
 
@@ -672,3 +668,5 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
+
+    
