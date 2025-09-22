@@ -25,6 +25,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { PopoverClose } from '@radix-ui/react-popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -414,17 +415,19 @@ function AllianceManagementPage() {
                     <CardHeader>
                         <div className="flex items-center gap-2">
                             <CardTitle>Membros da Aliança ({members.length})</CardTitle>
-                            <Popover>
-                                <PopoverTrigger asChild>
+                             <Dialog>
+                                <DialogTrigger asChild>
                                     <Button variant="link" size="sm" className="p-0 h-auto text-sm">O que são os papéis?</Button>
-                                </PopoverTrigger>
-                                <PopoverContent className="w-80 p-0">
-                                    <ScrollArea className="max-h-[60vh]">
-                                        <div className="space-y-4 p-4">
-                                            <h4 className="font-medium leading-none">Papéis na Aliança</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                              Em uma Aliança, existem diferentes papéis, cada um com permissões específicas para garantir que a colaboração seja organizada e segura.
-                                            </p>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogHeader>
+                                        <DialogTitle>Papéis na Aliança</DialogTitle>
+                                        <DialogDescription>
+                                            Cada papel tem permissões específicas para garantir uma colaboração organizada e segura.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <ScrollArea className="max-h-[60vh] -mx-4">
+                                        <div className="space-y-4 px-6 py-4">
                                             <ul className="text-sm text-muted-foreground space-y-3">
                                               <li><strong>👑 Proprietário (Owner)</strong>: O fundador da Aliança. Tem controle total, podendo convidar/remover qualquer membro e gerenciar os papéis de todos.</li>
                                               <li><strong>🛡️ Co-Proprietário (Co-Owner)</strong>: O braço direito do proprietário. Pode gerenciar outros membros, exceto o proprietário e outros co-proprietários.</li>
@@ -437,13 +440,11 @@ function AllianceManagementPage() {
                                             </p>
                                         </div>
                                     </ScrollArea>
-                                    <div className="p-4 border-t">
-                                        <PopoverClose asChild>
-                                            <Button className="w-full">Entendi 👍</Button>
-                                        </PopoverClose>
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
+                                    <DialogClose asChild>
+                                        <Button className="w-full mt-2">Entendi 👍</Button>
+                                    </DialogClose>
+                                </DialogContent>
+                            </Dialog>
                         </div>
                         <CardDescription>Gerencie os papéis e o acesso dos colaboradores.</CardDescription>
                     </CardHeader>
