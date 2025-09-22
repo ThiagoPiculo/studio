@@ -419,8 +419,8 @@ function AllianceManagementPage() {
                                     <Button variant="link" size="sm" className="p-0 h-auto text-sm">O que são os papéis?</Button>
                                 </PopoverTrigger>
                                 <PopoverContent className="w-80 p-0">
-                                    <ScrollArea className="max-h-[60vh] p-4">
-                                        <div className="space-y-4">
+                                    <ScrollArea className="max-h-[60vh]">
+                                        <div className="space-y-4 p-4">
                                             <h4 className="font-medium leading-none">Papéis na Aliança</h4>
                                             <p className="text-sm text-muted-foreground">
                                               Em uma Aliança, existem diferentes papéis, cada um com permissões específicas para garantir que a colaboração seja organizada e segura.
