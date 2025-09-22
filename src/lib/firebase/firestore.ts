@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import {
@@ -700,8 +699,8 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     throw new Error("Nenhum usuário encontrado com este e-mail.");
   }
   
-  if (invitee.uid === family.ownerId || invitee.uid === inviterId) {
-    throw new Error("Você não pode convidar a si mesmo ou o proprietário da aliança.");
+  if (invitee.uid === inviterId) {
+    throw new Error("Você não pode convidar a si mesmo.");
   }
 
   const existingMembershipRef = doc(db, 'familyMemberships', `${invitee.uid}_${family.id}`);
@@ -2712,6 +2711,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 

@@ -76,13 +76,13 @@ export function InviteMemberDialog({
       onOpenChange(false);
       form.reset();
     } catch (error: any) {
-       if (error.message === "Este usuário já é um membro da aliança.") {
+       if (error.message.includes("Este usuário já é um membro da aliança.")) {
         toast({
           title: "Membro já na equipe!",
           description: `O usuário com o e-mail ${values.email} já faz parte desta aliança.`,
           variant: "default",
         });
-      } else if (error.message === "Nenhum usuário encontrado com este e-mail.") {
+      } else if (error.message.includes("Nenhum usuário encontrado com este e-mail.")) {
           toast({
               title: "Herói Ainda Não Cadastrado",
               description: "O e-mail que você inseriu não pertence a um usuário cadastrado. Peça para a pessoa criar uma conta primeiro.",

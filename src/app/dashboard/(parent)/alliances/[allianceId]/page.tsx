@@ -259,15 +259,16 @@ function AllianceManagementPage() {
     
     const membersWithRoles = members.map(member => {
         const membership = memberships.find(m => m.userId === member.uid);
+        const isOwner = member.uid === alliance.ownerId;
         return {
             ...member,
-            role: membership?.role || 'Guardian'
+            role: isOwner ? 'Owner' : (membership?.role || 'Guardian' as FamilyRole)
         };
     });
 
     const currentUserAsMember = membersWithRoles.find(m => m.uid === user?.uid);
-    const owner = membersWithRoles.find(m => m.uid === alliance.ownerId && m.uid !== user?.uid);
-    const otherMembers = membersWithRoles.filter(m => m.uid !== alliance.ownerId && m.uid !== user?.uid);
+    const owner = membersWithRoles.find(m => m.role === 'Owner');
+    const otherMembers = membersWithRoles.filter(m => m.role !== 'Owner' && m.uid !== user?.uid);
 
 
     return (
@@ -452,12 +453,12 @@ function AllianceManagementPage() {
                         {currentUserAsMember && (
                             <>
                                 <h3 className="text-sm font-semibold text-muted-foreground">Seu Perfil</h3>
-                                <MemberSettings member={currentUserAsMember} isOwner={currentUserAsMember.uid === alliance.ownerId} />
+                                <MemberSettings member={currentUserAsMember} isOwner={currentUserAsMember.role === 'Owner'} />
                                 <Separator className="my-6"/>
                             </>
                         )}
                         
-                        {owner && (
+                        {owner && owner.uid !== currentUserAsMember?.uid && (
                             <>
                                 <h3 className="text-sm font-semibold text-muted-foreground">Proprietário</h3>
                                 <MemberSettings member={owner} isOwner={true} />
@@ -668,5 +669,3 @@ export default function AllianceManagementPageWrapper() {
     </Suspense>
   )
 }
-
-    
