@@ -355,6 +355,7 @@ function AllianceManagementPage() {
                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {children.map(child => {
                                     const canManage = user?.uid === child.ownerId;
+                                    const owner = members.find(m => m.uid === child.ownerId);
                                     return (
                                         <div key={child.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/30 transition-colors">
                                             <div className="flex items-center gap-4 min-w-0">
@@ -369,7 +370,11 @@ function AllianceManagementPage() {
                                                 </Avatar>
                                                 <div className="min-w-0">
                                                     <span className="font-semibold truncate block">{child.name}</span>
-                                                    <p className="text-sm text-muted-foreground">Nível: {child.level}</p>
+                                                    {owner && (
+                                                      <p className="text-xs text-muted-foreground truncate">
+                                                          Cadastrado por: {owner.name} ({owner.email})
+                                                      </p>
+                                                    )}
                                                 </div>
                                             </div>
                                             <div className="flex items-center gap-1 flex-shrink-0">
