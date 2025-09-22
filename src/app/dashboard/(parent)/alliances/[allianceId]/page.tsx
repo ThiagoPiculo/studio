@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner, approveJoinRequest, declineJoinRequest } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getFamilyById, getPendingJoinRequestsForFamily, getFamilyMemberships, getChildProfilesByFamily, moveChildToNewContext, updateFamilyName, deleteFamily, getChildProfilesByOwner, approveJoinRequest, declineJoinRequest, getUserProfile } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation, FamilyMembership } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -28,6 +29,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 
+interface EnrichedFamilyInvitation extends FamilyInvitation {
+  inviteeAvatarUrl?: string | null;
+}
+
 function AllianceManagementPage() {
     const { user, loading: authLoading } = useAuth();
     const { currentRole, isLoading: isFamilyLoading, availableContexts, setCurrentContext } = useFamily();
@@ -39,7 +44,7 @@ function AllianceManagementPage() {
     const [alliance, setAlliance] = useState<Family | null>(null);
     const [members, setMembers] = useState<UserProfile[]>([]);
     const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
-    const [joinRequests, setJoinRequests] = useState<FamilyInvitation[]>([]);
+    const [joinRequests, setJoinRequests] = useState<EnrichedFamilyInvitation[]>([]);
     const [children, setChildren] = useState<ChildProfile[]>([]);
     const [soloChildren, setSoloChildren] = useState<ChildProfile[]>([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -92,7 +97,19 @@ function AllianceManagementPage() {
             setNewAllianceName(allianceData.name);
             setMembers(membersData);
             setMemberships(membershipsData);
-            setJoinRequests(requestsData);
+            
+            // Enrich join requests with avatar data
+            const enrichedRequests = await Promise.all(
+                requestsData.map(async (req) => {
+                    if (req.type === 'request') { // 'request' type, where inviterName is the requester
+                        const requesterProfile = await getUserProfile(req.inviteeId);
+                        return { ...req, inviteeAvatarUrl: requesterProfile?.avatarUrl };
+                    }
+                    return req;
+                })
+            );
+
+            setJoinRequests(enrichedRequests);
             setChildren(childrenData);
             setSoloChildren(soloChildrenData);
 
@@ -308,7 +325,7 @@ function AllianceManagementPage() {
                                 <div key={req.id} className="flex items-center justify-between p-3 border rounded-lg bg-card">
                                     <div className="flex items-center gap-4">
                                         <Avatar className="h-10 w-10">
-                                            <AvatarImage src={(req as any).inviteeAvatarUrl || ''} alt={req.inviterName} />
+                                            <AvatarImage src={req.inviteeAvatarUrl || ''} alt={req.inviterName} />
                                             <AvatarFallback>{getInitials(req.inviterName)}</AvatarFallback>
                                         </Avatar>
                                         <div>
