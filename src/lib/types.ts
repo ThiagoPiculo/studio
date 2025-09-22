@@ -1,8 +1,7 @@
 
-
 import type { Timestamp } from 'firebase/firestore';
 import type { Icon as LucideIconType, LucideProps } from 'lucide-react';
-import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, HeartPulse, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages, ListChecks, CakeSlice, Utensils, FerrisWheel, Trees, Plane } from 'lucide-react';
+import { PartyPopper, Crown, GraduationCap, HeartHandshake, ShoppingBag, Home, NotebookPen, HeartPulse, Smile, Users, Coins, Leaf, Bike, PlusCircle, Edit3, Trash2, UserCheck, UserX, Palette, Languages, ListChecks, CakeSlice, Utensils, FerrisWheel, Trees, Plane, Shield, ClipboardList, BookOpen } from 'lucide-react';
 import type { ForwardRefExoticComponent, RefAttributes } from 'react';
 import type { HeroColor } from './hero-colors';
 
@@ -88,11 +87,11 @@ export interface Family {
 }
 
 export const familyRoles = [
-    { id: 'Owner', label: 'Proprietário', description: 'Controle total. Convida e remove membros, muda papéis e gerencia a aliança.'},
-    { id: 'Co-Owner', label: 'Co-Proprietário', description: 'Pode gerenciar membros (exceto o proprietário) e solicitar a propriedade da aliança.' },
-    { id: 'Guardian', label: 'Guardião', description: 'Gerencia missões e o progresso dos heróis. Ideal para pais e avós.' },
-    { id: 'Mentor', label: 'Mentor', description: 'Acesso de visualização para incentivar, sem poder de edição. Ideal para irmãos mais velhos.' },
-    { id: 'Specialist', label: 'Especialista', description: 'Acesso de leitura para acompanhamento profissional (ex: terapeutas).' },
+    { id: 'Owner', label: 'Proprietário', icon: Crown, description: 'Controle total. Convida e remove membros, muda papéis e gerencia a aliança.'},
+    { id: 'Co-Owner', label: 'Co-Proprietário', icon: Shield, description: 'Pode gerenciar membros (exceto o proprietário) e solicitar a propriedade da aliança.' },
+    { id: 'Guardian', label: 'Guardião', icon: Heart, description: 'Gerencia missões e o progresso dos heróis. Ideal para pais e avós.' },
+    { id: 'Mentor', label: 'Mentor', icon: BookOpen, description: 'Acesso de visualização para incentivar, sem poder de edição. Ideal para irmãos mais velhos.' },
+    { id: 'Specialist', label: 'Especialista', icon: ClipboardList, description: 'Acesso de leitura para acompanhamento profissional (ex: terapeutas).' },
 ] as const;
 
 export type FamilyRole = typeof familyRoles[number]['id'];

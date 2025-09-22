@@ -130,7 +130,7 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
     };
     
     const roleInfo = familyRoles.find(r => r.id === member.role);
-    const isMemberTheOwner = member.role === 'Owner';
+    const Icon = roleInfo?.icon || Shield;
 
     return (
       <>
@@ -147,8 +147,8 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
             </div>
 
             <div className="flex items-center gap-2">
-                <Badge variant={isMemberTheOwner ? "default" : "secondary"} className="text-sm">
-                    {isMemberTheOwner ? <Crown className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
+                <Badge variant={roleInfo?.id === 'Owner' ? "default" : "secondary"} className="text-sm">
+                    <Icon className="mr-2 h-4 w-4" />
                     {roleInfo?.label || 'Membro'}
                 </Badge>
                 <DropdownMenu>
