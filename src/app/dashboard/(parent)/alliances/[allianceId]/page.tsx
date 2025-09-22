@@ -63,7 +63,7 @@ function AllianceManagementPage() {
     const [isDeletingAlliance, setIsDeletingAlliance] = useState(false);
 
 
-    const isOwner = useMemo(() => currentRole === 'Owner', [currentRole]);
+    const isOwner = useMemo(() => alliance?.ownerId === user?.uid, [alliance, user]);
 
     const fetchData = useCallback(async () => {
         if (!allianceId || !user) {
@@ -494,7 +494,7 @@ function AllianceManagementPage() {
                         <AlertDialogHeader>
                             <AlertDialogTitle>Remover {childToRemove.name} da Aliança?</AlertDialogTitle>
                             <AlertDialogDescription>
-                                Esta ação irá remover o herói do gerenciamento compartilhado desta aliança, retornando-o ao espaço "Cuidar Solo" de seu criador. Nenhum progresso será perdido.
+                                Esta ação irá remover o herói do gerenciamento compartilhado desta aliança, retornando-o ao espaço pessoal de seu criador. Nenhum progresso será perdido.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
