@@ -4,7 +4,7 @@
 import { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal, UserX, Crown, Shield, LogOut } from "lucide-react";
+import { Loader2, MoreHorizontal, UserX, Crown, Shield, LogOut, Heart } from "lucide-react";
 import { UserProfile, type FamilyRole, familyRoles } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -134,39 +134,44 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
 
     return (
       <>
-        <div className="flex items-center justify-between p-3 rounded-lg border bg-card">
-            <div className="flex items-center gap-4">
-                <Avatar className="h-12 w-12">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 rounded-lg border bg-card gap-4">
+            <div className="flex items-center gap-4 w-full">
+                <Avatar className="h-12 w-12 shrink-0">
                     <AvatarImage src={member.avatarUrl ?? undefined} alt={member.name || ''} />
                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                 </Avatar>
-                <div>
+                <div className="flex-grow min-w-0">
                     <p className="font-semibold">{member.name} {isCurrentUserTheMember && !isOwner && '(Você)'}</p>
-                    <p className="text-sm text-muted-foreground">{member.email}</p>
+                    <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                    {roleInfo && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-2 sm:line-clamp-none">{roleInfo.description}</p>
+                    )}
                 </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
                 <Badge variant={roleInfo?.id === 'Owner' ? "default" : "secondary"} className="text-sm">
                     <Icon className="mr-2 h-4 w-4" />
                     {roleInfo?.label || 'Membro'}
                 </Badge>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={isPending}>
+                        <Button variant="ghost" size="icon" disabled={isPending || (!isOwner && !isCurrentUserTheMember)}>
                             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                         <DropdownMenuLabel>Ações para {isCurrentUserTheMember ? 'você' : member.name}</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        <DropdownMenuRadioGroup value={member.role} onValueChange={handleRoleChange} disabled={!canManageThisMember}>
-                            {familyRoles.filter(r => r.id !== 'Owner').map(role => (
-                                <DropdownMenuRadioItem key={role.id} value={role.id} className="cursor-pointer">
-                                    {role.label}
-                                </DropdownMenuRadioItem>
-                            ))}
-                        </DropdownMenuRadioGroup>
+                        {canManageThisMember && (
+                            <DropdownMenuRadioGroup value={member.role} onValueChange={handleRoleChange}>
+                                {familyRoles.filter(r => r.id !== 'Owner').map(role => (
+                                    <DropdownMenuRadioItem key={role.id} value={role.id} className="cursor-pointer">
+                                        {role.label}
+                                    </DropdownMenuRadioItem>
+                                ))}
+                            </DropdownMenuRadioGroup>
+                        )}
                         <DropdownMenuSeparator />
                         {isCurrentUserTheMember && !isOwner && (
                             <DropdownMenuItem onSelect={handleLeaveClick} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
