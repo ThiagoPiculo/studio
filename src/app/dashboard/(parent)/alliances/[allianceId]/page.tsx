@@ -259,17 +259,14 @@ function AllianceManagementPage() {
     
     const membersWithRoles = members.map(member => {
         const membership = memberships.find(m => m.userId === member.uid);
-        const isOwner = member.uid === alliance.ownerId;
         return {
             ...member,
-            role: isOwner ? 'Owner' : (membership?.role || 'Guardian' as FamilyRole)
+            role: member.uid === alliance.ownerId ? 'Owner' : (membership?.role || 'Guardian' as FamilyRole)
         };
+    }).sort((a, b) => {
+        const roleOrder: Record<FamilyRole, number> = { 'Owner': 0, 'Co-Owner': 1, 'Guardian': 2, 'Mentor': 3, 'Specialist': 4 };
+        return (roleOrder[a.role] ?? 99) - (roleOrder[b.role] ?? 99);
     });
-
-    const currentUserAsMember = membersWithRoles.find(m => m.uid === user?.uid);
-    const owner = membersWithRoles.find(m => m.role === 'Owner');
-    const otherMembers = membersWithRoles.filter(m => m.role !== 'Owner' && m.uid !== user?.uid);
-
 
     return (
         <>
@@ -450,25 +447,8 @@ function AllianceManagementPage() {
                         <CardDescription>Gerencie os papéis e o acesso dos colaboradores.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        {currentUserAsMember && (
-                            <>
-                                <h3 className="text-sm font-semibold text-muted-foreground">Seu Perfil</h3>
-                                <MemberSettings member={currentUserAsMember} isOwner={currentUserAsMember.role === 'Owner'} />
-                                <Separator className="my-6"/>
-                            </>
-                        )}
-                        
-                        {owner && owner.uid !== currentUserAsMember?.uid && (
-                            <>
-                                <h3 className="text-sm font-semibold text-muted-foreground">Proprietário</h3>
-                                <MemberSettings member={owner} isOwner={true} />
-                                <Separator className="my-6"/>
-                            </>
-                        )}
-                        
-                        {otherMembers.length > 0 && <h3 className="text-sm font-semibold text-muted-foreground">Colaboradores</h3>}
-                        {otherMembers.map(member => (
-                            <MemberSettings key={member.uid} member={member} isOwner={false} />
+                        {membersWithRoles.map(member => (
+                            <MemberSettings key={member.uid} member={member} isOwner={isOwner} onMemberUpdate={fetchData} />
                         ))}
                     </CardContent>
                      <CardFooter>

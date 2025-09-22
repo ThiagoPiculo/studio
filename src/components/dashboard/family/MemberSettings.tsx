@@ -34,28 +34,25 @@ import {
 import { Badge } from "@/components/ui/badge";
 
 interface MemberSettingsProps {
-    member: UserProfile;
-    isOwner: boolean;
+    member: UserProfile & { role: FamilyRole };
+    isOwner: boolean; // Is the logged-in user the owner of the alliance?
+    onMemberUpdate: () => void; // Callback to refresh data
 }
 
-export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
+export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettingsProps) {
     const { toast } = useToast();
-    const { currentRole, currentContext } = useFamily();
+    const { currentContext } = useFamily();
     const { user } = useAuth();
     
     const [isPending, setIsPending] = useState(false);
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
-    const canManageRoles = useMemo(() => currentRole === 'Owner', [currentRole]);
-    const canRemoveMember = useMemo(() => {
-        if (!currentRole || isOwner) return false; // Cannot remove owner
-        if (currentRole === 'Owner') return true; // Owner can remove anyone (except self)
-        if (currentRole === 'Co-Owner' && (member.role !== 'Owner' && member.role !== 'Co-Owner')) return true; // Co-owner can remove lower roles
-        return false;
-    }, [currentRole, isOwner, member.role]);
+    const isCurrentUserTheMember = member.uid === user?.uid;
+
+    const canManageThisMember = isOwner && !isCurrentUserTheMember;
 
     const handleRoleChange = async (newRole: string) => {
-        if (!user || !allianceId) return;
+        if (!user || !allianceId || !canManageThisMember) return;
         setIsPending(true);
         try {
             await updateFamilyMemberRole(allianceId, member.uid, newRole as FamilyRole, user.uid);
@@ -63,7 +60,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                 title: "Papel Alterado!",
                 description: `O papel de ${member.name} foi atualizado para ${familyRoles.find(r => r.id === newRole)?.label}.`
             });
-            // Ideally, the parent component would refetch or update state here.
+            onMemberUpdate();
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -80,7 +77,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
     };
 
     const handleRemoveConfirm = async () => {
-        if (!user || !allianceId) return;
+        if (!user || !allianceId || !canManageThisMember) return;
         setIsPending(true);
         try {
             await removeFamilyMember(allianceId, member.uid, user.uid);
@@ -89,7 +86,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                 description: `${member.name} foi removido da aliança.`,
             });
             setIsConfirmOpen(false);
-            // Parent component should ideally refetch data.
+            onMemberUpdate();
         } catch (error: any) {
             toast({
                 variant: "destructive",
@@ -103,6 +100,7 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
     
     const allianceId = currentContext;
     const roleInfo = familyRoles.find(r => r.id === member.role);
+    const isMemberTheOwner = member.role === 'Owner';
 
     return (
       <>
@@ -113,17 +111,17 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{member.name} {member.uid === user?.uid && '(Você)'}</p>
+                    <p className="font-semibold">{member.name} {isCurrentUserTheMember && '(Você)'}</p>
                     <p className="text-sm text-muted-foreground">{member.email}</p>
                 </div>
             </div>
 
             <div className="flex items-center gap-2">
-                <Badge variant={isOwner ? "default" : "secondary"} className="text-sm">
-                    {isOwner ? <Crown className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
+                <Badge variant={isMemberTheOwner ? "default" : "secondary"} className="text-sm">
+                    {isMemberTheOwner ? <Crown className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
                     {roleInfo?.label || 'Membro'}
                 </Badge>
-                {canManageRoles && member.uid !== user?.uid && (
+                {canManageThisMember && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" disabled={isPending}>
@@ -135,20 +133,16 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
                             <DropdownMenuSeparator />
                             <DropdownMenuRadioGroup value={member.role} onValueChange={handleRoleChange}>
                                 {familyRoles.filter(r => r.id !== 'Owner').map(role => (
-                                    <DropdownMenuRadioItem key={role.id} value={role.id}>
+                                    <DropdownMenuRadioItem key={role.id} value={role.id} className="cursor-pointer">
                                         {role.label}
                                     </DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>
-                             {canRemoveMember && (
-                                <>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={handleRemoveClick} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
-                                        <UserX className="mr-2 h-4 w-4" />
-                                        Remover da Aliança
-                                    </DropdownMenuItem>
-                                </>
-                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onSelect={handleRemoveClick} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
+                                <UserX className="mr-2 h-4 w-4" />
+                                Remover da Aliança
+                            </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )}
@@ -175,5 +169,3 @@ export function MemberSettings({ member, isOwner }: MemberSettingsProps) {
       </>
     );
 }
-
-    
