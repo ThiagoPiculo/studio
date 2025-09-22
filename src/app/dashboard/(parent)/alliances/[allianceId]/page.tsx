@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
@@ -565,7 +566,7 @@ function AllianceManagementPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Excluir Aliança "{alliance.name}"?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Esta ação é <strong>permanente e irreversível</strong>. Todos os membros serão removidos e os heróis desta aliança retornarão aos seus espaços "Cuidar Solo". Para confirmar, digite o nome exato da aliança abaixo.
+                            Esta ação é <strong>permanente e irreversível</strong>. Todos os membros serão removidos e os heróis desta aliança retornarão aos seus espaços "Cuidar Solo". Para confirmar, digite o nome exato (até as letras em caixa alta e acentos, se tiver) da aliança abaixo.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <div className="py-2">
