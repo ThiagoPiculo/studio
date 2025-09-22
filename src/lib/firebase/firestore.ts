@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -866,6 +867,16 @@ export const getFamilyById = async (familyId: string): Promise<Family | null> =>
 };
 
 export const leaveFamily = async (userId: string, familyId: string): Promise<void> => {
+  const familyRef = doc(db, 'families', familyId);
+  const familySnap = await getDoc(familyRef);
+  if (!familySnap.exists()) {
+    throw new Error("Aliança não encontrada.");
+  }
+  const familyData = familySnap.data() as Family;
+  if (familyData.ownerId === userId) {
+    throw new Error("O proprietário não pode sair da aliança. Transfira a propriedade primeiro.");
+  }
+
   const batch = writeBatch(db);
 
   const membershipRef = doc(db, 'familyMemberships', `${userId}_${familyId}`);
@@ -2711,6 +2722,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
     
 
     
+
 
 
 

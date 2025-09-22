@@ -4,13 +4,13 @@
 import { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal, UserX, Crown, Shield } from "lucide-react";
+import { Loader2, MoreHorizontal, UserX, Crown, Shield, LogOut } from "lucide-react";
 import { UserProfile, type FamilyRole, familyRoles } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { removeFamilyMember, updateFamilyMemberRole } from "@/lib/firebase/firestore";
+import { removeFamilyMember, updateFamilyMemberRole, leaveFamily } from "@/lib/firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +32,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";
 
 interface MemberSettingsProps {
     member: UserProfile & { role: FamilyRole };
@@ -43,13 +44,16 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
     const { toast } = useToast();
     const { currentContext } = useFamily();
     const { user } = useAuth();
+    const router = useRouter();
     
     const [isPending, setIsPending] = useState(false);
-    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [isConfirmRemoveOpen, setIsConfirmRemoveOpen] = useState(false);
+    const [isConfirmLeaveOpen, setIsConfirmLeaveOpen] = useState(false);
 
     const isCurrentUserTheMember = member.uid === user?.uid;
-
     const canManageThisMember = isOwner && !isCurrentUserTheMember;
+
+    const allianceId = currentContext;
 
     const handleRoleChange = async (newRole: string) => {
         if (!user || !allianceId || !canManageThisMember) return;
@@ -73,7 +77,11 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
     };
 
     const handleRemoveClick = () => {
-        setIsConfirmOpen(true);
+        setIsConfirmRemoveOpen(true);
+    };
+    
+    const handleLeaveClick = () => {
+        setIsConfirmLeaveOpen(true);
     };
 
     const handleRemoveConfirm = async () => {
@@ -85,7 +93,7 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
                 title: "Membro Removido",
                 description: `${member.name} foi removido da aliança.`,
             });
-            setIsConfirmOpen(false);
+            setIsConfirmRemoveOpen(false);
             onMemberUpdate();
         } catch (error: any) {
             toast({
@@ -98,7 +106,29 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
         }
     };
     
-    const allianceId = currentContext;
+    const handleLeaveConfirm = async () => {
+        if (!user || !allianceId || isOwner) return;
+        setIsPending(true);
+        try {
+            await leaveFamily(user.uid, allianceId);
+            toast({
+                title: "Você saiu da aliança",
+                description: `Você não faz mais parte da aliança "${member.name}".`,
+            });
+            setIsConfirmLeaveOpen(false);
+            router.push('/dashboard/alliances');
+            onMemberUpdate(); // Will trigger a re-fetch in the parent
+        } catch (error: any) {
+             toast({
+                variant: "destructive",
+                title: "Erro ao sair da aliança",
+                description: error.message,
+            });
+        } finally {
+            setIsPending(false);
+        }
+    };
+    
     const roleInfo = familyRoles.find(r => r.id === member.role);
     const isMemberTheOwner = member.role === 'Owner';
 
@@ -111,7 +141,7 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
                     <AvatarFallback>{getInitials(member.name)}</AvatarFallback>
                 </Avatar>
                 <div>
-                    <p className="font-semibold">{member.name} {isCurrentUserTheMember && '(Você)'}</p>
+                    <p className="font-semibold">{member.name} {isCurrentUserTheMember && !isOwner && '(Você)'}</p>
                     <p className="text-sm text-muted-foreground">{member.email}</p>
                 </div>
             </div>
@@ -121,40 +151,46 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
                     {isMemberTheOwner ? <Crown className="mr-2 h-4 w-4" /> : <Shield className="mr-2 h-4 w-4" />}
                     {roleInfo?.label || 'Membro'}
                 </Badge>
-                {canManageThisMember && (
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" disabled={isPending}>
-                                {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Ações para {member.name}</DropdownMenuLabel>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuRadioGroup value={member.role} onValueChange={handleRoleChange}>
-                                {familyRoles.filter(r => r.id !== 'Owner').map(role => (
-                                    <DropdownMenuRadioItem key={role.id} value={role.id} className="cursor-pointer">
-                                        {role.label}
-                                    </DropdownMenuRadioItem>
-                                ))}
-                            </DropdownMenuRadioGroup>
-                            <DropdownMenuSeparator />
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" disabled={isPending}>
+                            {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Ações para {isCurrentUserTheMember ? 'você' : member.name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuRadioGroup value={member.role} onValueChange={handleRoleChange} disabled={!canManageThisMember}>
+                            {familyRoles.filter(r => r.id !== 'Owner').map(role => (
+                                <DropdownMenuRadioItem key={role.id} value={role.id} className="cursor-pointer">
+                                    {role.label}
+                                </DropdownMenuRadioItem>
+                            ))}
+                        </DropdownMenuRadioGroup>
+                        <DropdownMenuSeparator />
+                        {isCurrentUserTheMember && !isOwner && (
+                            <DropdownMenuItem onSelect={handleLeaveClick} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
+                                <LogOut className="mr-2 h-4 w-4" />
+                                Sair da Aliança
+                            </DropdownMenuItem>
+                        )}
+                        {canManageThisMember && (
                             <DropdownMenuItem onSelect={handleRemoveClick} className="text-destructive focus:bg-destructive focus:text-destructive-foreground">
                                 <UserX className="mr-2 h-4 w-4" />
                                 Remover da Aliança
                             </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                )}
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
             </div>
         </div>
 
-        <AlertDialog open={isConfirmOpen} onOpenChange={setIsConfirmOpen}>
+        <AlertDialog open={isConfirmRemoveOpen} onOpenChange={setIsConfirmRemoveOpen}>
             <AlertDialogContent>
                 <AlertDialogHeader>
                     <AlertDialogTitle>Remover {member.name}?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Esta ação removerá permanentemente {member.name} da aliança. Eles perderão o acesso aos Mini Herois deste espaço. Tem certeza?
+                        Esta ação removerá permanentemente {member.name} da aliança. Tem certeza?
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -162,6 +198,24 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
                     <AlertDialogAction onClick={handleRemoveConfirm} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
                         {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserX className="mr-2 h-4 w-4" />}
                         Sim, Remover
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+        
+         <AlertDialog open={isConfirmLeaveOpen} onOpenChange={setIsConfirmLeaveOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Sair da Aliança?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Você tem certeza que deseja sair desta aliança? Você perderá o acesso aos heróis e precisará de um novo convite para retornar.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel disabled={isPending}>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLeaveConfirm} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+                        Sim, Sair
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>
