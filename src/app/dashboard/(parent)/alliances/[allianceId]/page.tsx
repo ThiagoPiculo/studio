@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, Suspense, useMemo, useCallback } from 'react';
@@ -78,7 +77,7 @@ function AllianceManagementPage() {
                 getFamilyById(allianceId),
                 getFamilyMembers(allianceId),
                 getFamilyMemberships(allianceId),
-                isOwner ? getPendingJoinRequestsForFamily(allianceId) : Promise.resolve([]),
+                getPendingJoinRequestsForFamily(allianceId),
                 getChildProfilesByFamily(allianceId),
                 getChildProfilesByOwner(user.uid, true),
             ]);
@@ -104,7 +103,7 @@ function AllianceManagementPage() {
         } finally {
             setIsLoading(false);
         }
-    }, [allianceId, user, router, toast, isOwner]);
+    }, [allianceId, user, router, toast]);
     
     useEffect(() => {
         fetchData();
@@ -268,11 +267,9 @@ function AllianceManagementPage() {
                             <h2 className="text-3xl font-headline font-bold flex items-center gap-2">
                                 {alliance.name}
                                 {isOwner && (
-                                     <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditNameOpen(true)}>
-                                            <Edit className="h-4 w-4" />
-                                        </Button>
-                                    </AlertDialogTrigger>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsEditNameOpen(true)}>
+                                        <Edit className="h-4 w-4" />
+                                    </Button>
                                 )}
                             </h2>
                             <p className="text-muted-foreground">Gerencie sua equipe de heróis e colaboradores.</p>
@@ -473,11 +470,9 @@ function AllianceManagementPage() {
                             <CardTitle className="flex items-center gap-2 text-destructive"><AlertTriangle/> Zona de Perigo</CardTitle>
                         </CardHeader>
                         <CardContent>
-                             <AlertDialogTrigger asChild>
-                                <Button variant="destructive" onClick={() => setIsDeleteConfirmOpen(true)}>
-                                    <Trash2 className="mr-2 h-4 w-4" /> Excluir Aliança
-                                </Button>
-                             </AlertDialogTrigger>
+                             <Button variant="destructive" onClick={() => setIsDeleteConfirmOpen(true)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Excluir Aliança
+                            </Button>
                         </CardContent>
                     </Card>
                 )}
