@@ -1,16 +1,17 @@
 
+
 'use client';
 
 import { useState, useMemo } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Loader2, MoreHorizontal, UserX, Crown, Shield, LogOut, Heart } from "lucide-react";
+import { Loader2, MoreHorizontal, UserX, Crown, Shield, LogOut, Heart, BookOpen, ClipboardList } from "lucide-react";
 import { UserProfile, type FamilyRole, familyRoles } from "@/lib/types";
 import { cn, getInitials } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useFamily } from "@/contexts/FamilyContext";
-import { removeFamilyMember, updateFamilyMemberRole, leaveFamily } from "@/lib/firebase/firestore";
+import { removeFamilyMember, updateFamilyMemberRole, leaveFamily, getFamilyById } from "@/lib/firebase/firestore";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,7 +43,7 @@ interface MemberSettingsProps {
 
 export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettingsProps) {
     const { toast } = useToast();
-    const { currentContext } = useFamily();
+    const { currentContext, availableContexts } = useFamily();
     const { user } = useAuth();
     const router = useRouter();
     
@@ -111,9 +112,10 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
         setIsPending(true);
         try {
             await leaveFamily(user.uid, allianceId);
+            const allianceName = availableContexts.find(c => c.id === allianceId)?.name || 'da aliança';
             toast({
                 title: "Você saiu da aliança",
-                description: `Você não faz mais parte da aliança "${member.name}".`,
+                description: `Você não faz mais parte da aliança "${allianceName}".`,
             });
             setIsConfirmLeaveOpen(false);
             router.push('/dashboard/alliances');
@@ -156,7 +158,7 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
                 </Badge>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" disabled={isPending || (!isOwner && !isCurrentUserTheMember)}>
+                        <Button variant="ghost" size="icon" disabled={isPending || (!canManageThisMember && !isCurrentUserTheMember)}>
                             {isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <MoreHorizontal className="h-4 w-4" />}
                         </Button>
                     </DropdownMenuTrigger>
