@@ -371,9 +371,10 @@ function AllianceManagementPage() {
                                                 <div className="min-w-0">
                                                     <span className="font-semibold truncate block">{child.name}</span>
                                                     {owner && (
-                                                      <p className="text-xs text-muted-foreground truncate">
-                                                          Cadastrado por: {owner.name} ({owner.email})
-                                                      </p>
+                                                      <div className="text-xs text-muted-foreground">
+                                                          <p>Cadastrado por:</p>
+                                                          <p className="truncate">{owner.name} ({owner.email})</p>
+                                                      </div>
                                                     )}
                                                 </div>
                                             </div>
