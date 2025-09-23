@@ -125,8 +125,10 @@ export default function SpaceSelector() {
 
     return (
         <div className="space-y-8">
-            {mySpaceContext && renderContextSection(mySpaceContext)}
-            {allianceContexts.map(renderContextSection)}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {mySpaceContext && renderContextSection(mySpaceContext)}
+              {allianceContexts.map(renderContextSection)}
+            </div>
             
              <Card className="shadow-md">
                 <CardHeader>

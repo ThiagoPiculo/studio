@@ -163,15 +163,15 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
+                                    <NavLink href="/dashboard/meus-herois" tooltip="Meus Mini Herois" label="Meus Mini Herois" bypassModal={true}>
+                                        <User className="text-primary" />
+                                    </NavLink>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <SidebarMenuButton onClick={() => handleMenuClick('/dashboard/mural')} tooltip="Perfil Completo">
                                         <Contact className="text-chart-1" />
                                         <span>Perfil Completo</span>
                                     </SidebarMenuButton>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/meus-herois" tooltip="Meus Mini Herois" label="Meus Mini Herois" bypassModal={true}>
-                                        <Users className="text-chart-3" />
-                                    </NavLink>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                      <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação">
