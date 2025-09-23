@@ -6,7 +6,7 @@ import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target, Link as LinkIcon, X } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target, Link as LinkIcon, X, Sparkles } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
@@ -26,16 +26,18 @@ function DesktopDashboardCard({
   title,
   description,
   href,
-  isModalTrigger = false,
+  bypassModal = false,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
   href?: string;
-  isModalTrigger?: boolean;
+  bypassModal?: boolean;
 }) {
   const router = useRouter();
   const { selectedChildId, openModal } = useFamily();
+
+  const isModalTrigger = !bypassModal;
 
   const handleClick = (e: React.MouseEvent) => {
     if (isModalTrigger) {
@@ -91,16 +93,18 @@ function MobileDashboardCard({
   title,
   description,
   href,
-  isModalTrigger = false,
+  bypassModal = false,
 }: {
   icon: React.ElementType;
   title: string;
   description: string;
   href?: string;
-  isModalTrigger?: boolean;
+  bypassModal?: boolean;
 }) {
   const router = useRouter();
   const { selectedChildId, openModal } = useFamily();
+  
+  const isModalTrigger = !bypassModal;
 
   const handleClick = (e: React.MouseEvent) => {
     if (isModalTrigger) {
@@ -224,7 +228,7 @@ function DashboardPage() {
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <Card className="bg-background/70">
                             <CardHeader>
-                                <CardTitle className="text-base">Criar Rotina para Criança</CardTitle>
+                                <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-chart-4"/>Assistente de Criação</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Button asChild className="w-full">
@@ -234,7 +238,7 @@ function DashboardPage() {
                         </Card>
                         <Card className="bg-background/70">
                             <CardHeader>
-                                <CardTitle className="text-base">Colaborar em Aliança</CardTitle>
+                                <CardTitle className="text-base flex items-center gap-2"><LinkIcon className="h-5 w-5 text-primary"/>Colaborar em Aliança</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-2">
                                 <Button asChild variant="secondary" className="w-full">
@@ -287,42 +291,37 @@ function DashboardPage() {
                   icon={Calendar1Icon}
                   title="Rotina do Dia"
                   description="Veja as missões agendadas para hoje e acompanhe o progresso em tempo real."
-                  isModalTrigger
                   href="/dashboard/heroes"
               />
               <DashboardCard 
                   icon={CalendarDays}
                   title="Rotina da Semana"
                   description="Visualize o calendário completo com a programação de missões da semana."
-                  isModalTrigger
                   href="/dashboard/agenda"
               />
                <DashboardCard 
                   icon={NotebookPen}
                   title="Agenda Escolar"
                   description="Gerencie os horários de aulas para planejar melhor o dia e a semana."
-                  isModalTrigger
                   href="/dashboard/school-schedule"
               />
                <DashboardCard 
                   icon={CalendarCheck}
                   title="Painel de Progressos"
                   description="Analise gráficos e relatórios sobre o desenvolvimento e as conquistas."
-                  isModalTrigger
                   href="/dashboard/progressos"
               />
                <DashboardCard 
                   icon={Gift}
                   title="Baú de Recompensas"
                   description="Crie e gerencie os prêmios que seus heróis podem conquistar com estrelas."
-                  isModalTrigger
                   href="/dashboard/rewards"
+                   bypassModal={true}
               />
               <DashboardCard 
                   icon={Contact}
                   title="Perfil do Mini Herói"
                   description="Acesse e edite as informações, missões e recompensas individuais."
-                  isModalTrigger
                   href="/dashboard/mural"
               />
                <DashboardCard 
@@ -330,12 +329,14 @@ function DashboardPage() {
                   title="Quadro de Missões"
                   description="Crie e gerencie os modelos de todas as missões que podem ser atribuídas."
                   href="/dashboard/missions"
+                  bypassModal={true}
               />
-               <DashboardCard 
-                  icon={HelpCircle}
-                  title="Central de Ajuda"
-                  description="Aprenda sobre o Mini Herois e tire suas dúvidas."
-                  href="/dashboard/help"
+                <DashboardCard 
+                  icon={Sparkles}
+                  title="Assistente de Criação"
+                  description="Deixe a Aura te guiar! Crie o perfil e a rotina de missões diárias de forma rápida e inteligente com nossa assistente"
+                  href="/dashboard/assistente"
+                  bypassModal={true}
               />
           </div>
       </div>
