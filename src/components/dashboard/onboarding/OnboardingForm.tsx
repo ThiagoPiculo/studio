@@ -289,7 +289,7 @@ const goToNextStep = async () => {
                  }
 
                  let emoji = '✨';
-                 let category: MissionCategory = 'essential_routines';
+                 let category: MissionCategory = 'hobbies';
                  let starsReward = 5;
 
                  if (predefinedMission) {
@@ -407,22 +407,20 @@ const goToNextStep = async () => {
           <div className="flex items-center gap-4">
               <AlertDialog>
                 <AlertDialogTrigger asChild>
-                    <Button type="button" variant="link">Pular</Button>
+                    <Button type="button" variant="link">Cancelar</Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                     <AlertDialogHeader>
                         <AlertDialogTitle>Sair do Assistente?</AlertDialogTitle>
                         <AlertDialogDescription>
-                          Você sairá do cadastro guiado. Nenhuma informação será salva agora, mas não se preocupe! Você pode voltar e criar um herói com o assistente a qualquer momento pelo menu <strong>'Novo Mini Herói'</strong>.
+                          Você sairá do cadastro guiado. Nenhuma informação será salva agora, mas não se preocupe! Você pode voltar e criar um herói com o assistente a qualquer momento pelo menu <strong>'Assistente de Criação'</strong>.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
-                        <AlertDialogAction onClick={() => {}}>
-                            Continuar no Assistente
-                        </AlertDialogAction>
-                        <AlertDialogCancel onClick={() => router.push('/dashboard/heroes')}>
+                        <AlertDialogCancel>Continuar no Assistente</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => router.push('/dashboard')}>
                             Sair Mesmo Assim
-                        </AlertDialogCancel>
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
