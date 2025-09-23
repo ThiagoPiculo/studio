@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useFamily } from '@/contexts/FamilyContext';
@@ -16,6 +15,7 @@ import { getInitials } from '@/lib/utils';
 import type { ChildProfile } from '@/lib/types';
 import { Skeleton } from '../ui/skeleton';
 import { ScrollArea, ScrollBar } from '../ui/scroll-area';
+import Link from 'next/link';
 
 interface HeroCardProps {
     child: ChildProfile;
