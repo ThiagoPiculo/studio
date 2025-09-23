@@ -99,35 +99,35 @@ function DashboardPage() {
             <div className="px-6 pb-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-background/70">
                   <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">Criar Rotina para Criança</CardTitle>
                   </CardHeader>
                   <CardContent>
-                      <Button asChild className="w-full justify-start gap-2">
+                      <Button asChild className="w-full">
                           <Link href="/dashboard/assistente">
-                              <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
+                               Usar o Assistente de Criação
                           </Link>
                       </Button>
                   </CardContent>
               </Card>
               <Card className="bg-background/70">
                   <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><LinkIcon />Colaborar em Aliança</CardTitle>
+                      <CardTitle className="text-base flex items-center gap-2">Colaborar em Aliança</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                      <Button asChild variant="secondary" className="w-full">
                           <Link href="/dashboard/family?action=join">
-                              <ChevronsRight className="h-4 w-4" /> Entrar em aliança com convite
+                               Entrar em aliança com convite
                           </Link>
                       </Button>
                       <div className="grid grid-cols-2 gap-2">
-                        <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                        <Button asChild variant="secondary" className="w-full">
                             <Link href="/dashboard/family?action=create">
-                                <PlusCircle className="h-4 w-4" /> Criar Aliança
+                                 Criar Aliança
                             </Link>
                         </Button>
-                         <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                         <Button asChild variant="secondary" className="w-full">
                             <Link href="/dashboard/alliances">
-                                <Users className="h-4 w-4" /> Gerenciar Alianças
+                                Gerenciar Alianças
                             </Link>
                         </Button>
                       </div>
