@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import {
@@ -2063,8 +2062,8 @@ export const deleteMissionInstancesByTemplateAndChild = async (actor: UserProfil
         const child = await getChildProfileById(childId);
         const template = await getMissionTemplateById(templateId);
         await createAllianceNotification(familyId, actor, {
-            type: 'instance_unassigned',
-            title: 'Missão Desatribuída',
+            type: "instance_unassigned",
+            title: "Missão Desatribuída",
             description: `${actor.name} removeu a missão "${template?.title}" de ${child?.name}.`,
             href: `/dashboard/mural?childId=${childId}&tab=missions`,
             relatedChildId: childId,
@@ -2739,3 +2738,4 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
 
     
+
