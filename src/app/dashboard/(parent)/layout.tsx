@@ -274,7 +274,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                 </div>
                 <div className="flex items-center gap-2">
                   {showTrocarHeroiButton && selectedHero && (
-                    <Button variant="outline" size="sm" onClick={() => openModal()} className="p-2 h-auto">
+                    <Button variant="outline" size="sm" onClick={() => openModal()} className="p-2 h-auto flex items-center gap-2">
                         <Avatar 
                            className="h-6 w-6 ring-2 ring-offset-1 ring-offset-background ring-[var(--ring-color)]"
                            style={selectedHero.color ? { '--ring-color': selectedHero.color } as React.CSSProperties : {}}
@@ -282,6 +282,7 @@ export default function ParentDashboardLayout({ children }: { children: ReactNod
                             <AvatarImage src={selectedHero.avatar} alt={selectedHero.name} />
                             <AvatarFallback style={{backgroundColor: selectedHero.color}}>{getInitials(selectedHero.name)}</AvatarFallback>
                         </Avatar>
+                        <span className="font-semibold text-sm hidden sm:inline">{selectedHero.name}</span>
                         <ChevronsUpDown className="ml-1 h-4 w-4 text-muted-foreground" />
                     </Button>
                   )}
