@@ -6,7 +6,7 @@ import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target, Link as LinkIcon } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
@@ -97,24 +97,7 @@ function DashboardPage() {
           </AccordionTrigger>
           <AccordionContent>
             <div className="px-6 pb-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card className="bg-background/70">
-                  <CardHeader>
-                      <CardTitle className="text-lg flex items-center gap-2"><Users />Colaborar em Aliança</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                          <Link href="/dashboard/family?action=join">
-                              <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
-                          </Link>
-                      </Button>
-                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                          <Link href="/dashboard/family?action=create">
-                              <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
-                          </Link>
-                      </Button>
-                  </CardContent>
-              </Card>
-              <Card className="bg-background/70">
+                <Card className="bg-background/70">
                   <CardHeader>
                       <CardTitle className="text-lg flex items-center gap-2"><UserPlus />Criar Rotina para Criança</CardTitle>
                   </CardHeader>
@@ -124,6 +107,30 @@ function DashboardPage() {
                               <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
                           </Link>
                       </Button>
+                  </CardContent>
+              </Card>
+              <Card className="bg-background/70">
+                  <CardHeader>
+                      <CardTitle className="text-lg flex items-center gap-2"><LinkIcon />Colaborar em Aliança</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                      <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                          <Link href="/dashboard/family?action=join">
+                              <ChevronsRight className="h-4 w-4" /> Entrar em aliança com convite
+                          </Link>
+                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                            <Link href="/dashboard/family?action=create">
+                                <PlusCircle className="h-4 w-4" /> Criar Aliança
+                            </Link>
+                        </Button>
+                         <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                            <Link href="/dashboard/alliances">
+                                <Users className="h-4 w-4" /> Gerenciar Alianças
+                            </Link>
+                        </Button>
+                      </div>
                   </CardContent>
               </Card>
             </div>

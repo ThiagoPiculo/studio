@@ -1,11 +1,12 @@
 
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Input } from '@/components/ui/input';
-import { HelpCircle, Search, PackageSearch, Wand2, ChevronsRight, PlusCircle } from 'lucide-react';
+import { HelpCircle, Search, PackageSearch, Wand2, ChevronsRight, PlusCircle, Link as LinkIcon, Users } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -135,25 +136,8 @@ export default function HelpCenterPage() {
                 </div>
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6 pt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="bg-background/70">
-                      <CardHeader>
-                          <CardTitle className="text-lg flex items-center gap-2">Colaborar em Aliança</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-2">
-                          <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                              <Link href="/dashboard/family?action=join">
-                                  <ChevronsRight className="h-4 w-4" /> Tenho um código de convite
-                              </Link>
-                          </Button>
-                          <Button asChild variant="secondary" className="w-full justify-start gap-2">
-                              <Link href="/dashboard/family?action=create">
-                                  <PlusCircle className="h-4 w-4" /> Criar uma nova Aliança
-                              </Link>
-                          </Button>
-                      </CardContent>
-                  </Card>
-                  <Card className="bg-background/70">
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <Card className="bg-background/70">
                       <CardHeader>
                           <CardTitle className="text-lg flex items-center gap-2">Criar Rotina para Criança</CardTitle>
                       </CardHeader>
@@ -163,6 +147,30 @@ export default function HelpCenterPage() {
                                   <Wand2 className="h-4 w-4" /> Usar o Assistente de Criação
                               </Link>
                           </Button>
+                      </CardContent>
+                  </Card>
+                  <Card className="bg-background/70">
+                      <CardHeader>
+                          <CardTitle className="text-lg flex items-center gap-2"><LinkIcon />Colaborar em Aliança</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                          <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                              <Link href="/dashboard/family?action=join">
+                                  <ChevronsRight className="h-4 w-4" /> Entrar em aliança com convite
+                              </Link>
+                          </Button>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                                <Link href="/dashboard/family?action=create">
+                                    <PlusCircle className="h-4 w-4" /> Criar Aliança
+                                </Link>
+                            </Button>
+                             <Button asChild variant="secondary" className="w-full justify-start gap-2">
+                                <Link href="/dashboard/alliances">
+                                    <Users className="h-4 w-4" /> Gerenciar Alianças
+                                </Link>
+                            </Button>
+                          </div>
                       </CardContent>
                   </Card>
                 </div>
