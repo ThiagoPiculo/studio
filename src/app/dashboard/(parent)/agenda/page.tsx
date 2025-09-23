@@ -1129,7 +1129,7 @@ function AgendaPageContent() {
                <div className="flex items-center justify-between gap-2">
                  <div className="flex items-center space-x-2">
                    <Switch id="kids-view-switch" checked={isKidsView} onCheckedChange={setIsKidsView}/>
-                   <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5"><Heart className="h-4 w-4 text-pink-500" /> Visão da Criança</Label>
+                   <Label htmlFor="kids-view-switch" className="text-sm whitespace-nowrap flex items-center gap-1.5">Visão da Criança</Label>
                  </div>
                  {canEdit && (
                     <Button asChild className="flex-grow-0 sm:flex-grow-0">

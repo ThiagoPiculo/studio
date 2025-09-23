@@ -214,7 +214,7 @@ function DashboardPage() {
 
       {/* Seção "Meus Mini Heróis" */}
       <div>
-          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2"><Heart className="text-pink-500" />Meus Mini Heróis</h2>
+          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Heróis</h2>
           <div className={cn("grid", gridClasses)}>
               <DashboardCard 
                   icon={Calendar1Icon}
