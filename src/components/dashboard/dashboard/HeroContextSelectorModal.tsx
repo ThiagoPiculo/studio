@@ -83,7 +83,7 @@ export function HeroContextSelectorModal({ isOpen, onOpenChange }: HeroContextSe
             {name}
         </h3>
         {children.length > 0 ? (
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-4 gap-3">
             {children.map(child => (
               <button
                 key={child.id}
@@ -91,7 +91,7 @@ export function HeroContextSelectorModal({ isOpen, onOpenChange }: HeroContextSe
                 className="flex flex-col items-center gap-2 p-2 rounded-lg hover:bg-accent transition-colors text-center"
               >
                 <Avatar
-                  className="h-20 w-20 text-2xl ring-2 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
+                  className="h-14 w-14 text-lg ring-1 ring-offset-2 ring-offset-background ring-[var(--ring-color)]"
                   style={child.color ? { '--ring-color': child.color } as React.CSSProperties : {}}
                 >
                   <AvatarImage src={child.avatar} alt={child.name} />
@@ -99,7 +99,7 @@ export function HeroContextSelectorModal({ isOpen, onOpenChange }: HeroContextSe
                     {getInitials(child.name)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="font-semibold text-sm leading-tight">{child.name}</span>
+                <span className="font-semibold text-xs leading-tight">{child.name}</span>
               </button>
             ))}
           </div>
