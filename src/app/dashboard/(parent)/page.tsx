@@ -18,7 +18,7 @@ import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide'
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 function DesktopDashboardCard({
