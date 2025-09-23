@@ -2,11 +2,11 @@
 
 "use client";
 
-import React, { Suspense } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target, Link as LinkIcon } from 'lucide-react';
+import { ArrowRight, BookOpen, ChevronsRight, Contact, FilePlus, GitBranch, Handshake, Heart, HelpCircle, ListChecks, PlusCircle, UserPlus, Users, Wand2, CalendarDays, NotebookPen, CalendarCheck, Gift, Target, Link as LinkIcon, X } from 'lucide-react';
 import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
@@ -16,9 +16,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
 import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
-import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 
 function DesktopDashboardCard({
@@ -164,6 +164,20 @@ function DashboardPage() {
     const [rewards, setRewards] = useState<RewardTemplate[]>([]);
     const [isLoadingData, setIsLoadingData] = useState(true);
 
+    const [isGuideVisible, setIsGuideVisible] = useState(false);
+
+    useEffect(() => {
+        const guideDismissed = localStorage.getItem('gettingStartedCardDismissed') === 'true';
+        if (!guideDismissed) {
+            setIsGuideVisible(true);
+        }
+    }, []);
+
+    const handleDismissGuide = () => {
+        localStorage.setItem('gettingStartedCardDismissed', 'true');
+        setIsGuideVisible(false);
+    };
+
     useEffect(() => {
         if (authLoading || isFamilyLoading || !user) {
             if (!user && !authLoading) setIsLoadingData(false);
@@ -197,7 +211,74 @@ function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <GettingStartedGuide hasChildren={children.length > 0} hasMissions={missions.length > 0} hasRewards={rewards.length > 0} />
+      {isGuideVisible && (
+        <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
+            <AccordionItem value="item-1" className="border-primary/20 bg-primary/5 rounded-2xl shadow-lg">
+                <AccordionTrigger className="p-4 hover:no-underline text-lg font-semibold">
+                    <div className="flex items-center gap-2">
+                        <Wand2 className="h-6 w-6 text-primary"/>
+                        Comece por Aqui!
+                    </div>
+                </AccordionTrigger>
+                <AccordionContent className="p-6 pt-0">
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card className="bg-background/70">
+                            <CardHeader>
+                                <CardTitle className="text-base">Criar Rotina para Criança</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <Button asChild className="w-full">
+                                    <Link href="/dashboard/assistente">Usar o Assistente de Criação</Link>
+                                </Button>
+                            </CardContent>
+                        </Card>
+                        <Card className="bg-background/70">
+                            <CardHeader>
+                                <CardTitle className="text-base">Colaborar em Aliança</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2">
+                                <Button asChild variant="secondary" className="w-full">
+                                    <Link href="/dashboard/family?action=join">Entrar em aliança com convite</Link>
+                                </Button>
+                                <div className="grid grid-cols-2 gap-2">
+                                <Button asChild variant="secondary" className="w-full">
+                                    <Link href="/dashboard/family?action=create">Criar Aliança</Link>
+                                </Button>
+                                <Button asChild variant="secondary" className="w-full">
+                                    <Link href="/dashboard/alliances">Gerenciar Alianças</Link>
+                                </Button>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                    <div className="mt-4 text-right">
+                         <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-muted-foreground text-xs">
+                                    <X className="mr-1 h-3 w-3"/>
+                                    Ocultar
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Ocultar esta seção?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        Esta seção de atalhos rápidos será ocultada da sua tela inicial. Você sempre poderá encontrar estas opções na Central de Ajuda ou no menu lateral.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleDismissGuide}>
+                                        Sim, ocultar
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </AccordionContent>
+            </AccordionItem>
+        </Accordion>
+      )}
       
       <div>
           <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Heróis</h2>
