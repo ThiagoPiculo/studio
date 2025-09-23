@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -59,16 +58,6 @@ export function ChildDashboard() {
     missions: MissionInstance[];
     stars: number;
   } | null>(null);
-
-  useEffect(() => {
-    if (!authLoading && (!isChildAuthenticated || !authChildProfile)) {
-        logout(); // Force logout for security if state is inconsistent
-        router.replace('/dashboard/child-login');
-    } else if (authChildProfile && authChildProfile.id !== childId) {
-        // Logged in as a different child, redirect to their correct page
-        router.replace(`/dashboard/child/${authChildProfile.id}`);
-    }
-  }, [childId, authChildProfile, isChildAuthenticated, authLoading, router, logout]);
 
   useEffect(() => {
     if (isChildAuthenticated && childId) {
@@ -173,7 +162,7 @@ export function ChildDashboard() {
     return <Loading />;
   }
   
-  const selectedDateLabel = formatDateFns(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+  const selectedDateLabel = formatDateFns(currentDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR });
   
   const handlePrevDay = () => setCurrentDate(prev => subDays(prev, 1));
   const handleNextDay = () => setCurrentDate(prev => addDays(prev, 1));
@@ -214,13 +203,15 @@ export function ChildDashboard() {
                 </div>
             </div>
 
-             <div className="flex items-center justify-center gap-2">
-                <Button variant="outline" size="icon" onClick={handlePrevDay} className="h-9 w-9 rounded-full"><ChevronLeft className="h-5 w-5"/></Button>
-                 <Button variant={isToday(currentDate) ? 'default' : 'outline'} onClick={handleToday}>Hoje</Button>
-                <h2 className="text-lg font-bold font-headline capitalize text-center w-48 truncate">
+            <div className="flex items-center justify-center gap-2">
+                <Button variant={isToday(currentDate) ? 'default' : 'outline'} size="sm" onClick={handleToday}>Hoje</Button>
+                <div className="flex items-center">
+                    <Button variant="ghost" size="icon" onClick={handlePrevDay} className="h-9 w-9 rounded-full"><ChevronLeft className="h-5 w-5"/></Button>
+                    <Button variant="ghost" size="icon" onClick={handleNextDay} className="h-9 w-9 rounded-full"><ChevronRight className="h-5 w-5"/></Button>
+                </div>
+                <h2 className="text-base sm:text-lg font-bold font-headline capitalize text-center truncate">
                     {selectedDateLabel}
                 </h2>
-                <Button variant="outline" size="icon" onClick={handleNextDay} className="h-9 w-9 rounded-full"><ChevronRight className="h-5 w-5"/></Button>
             </div>
         </div>
 
