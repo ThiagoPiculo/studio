@@ -20,14 +20,6 @@ export default function ChildDashboardLayout({
   const childId = params.childId as string;
 
   useEffect(() => {
-    const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
-    if (postLoginRefresh === 'true') {
-        sessionStorage.removeItem('postLoginRefresh');
-        window.location.reload();
-    }
-  }, []);
-
-  useEffect(() => {
     // Wait until authentication is fully loaded before checking credentials
     if (authLoading) {
       return;
