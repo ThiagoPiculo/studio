@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -13,7 +14,7 @@ import {
 import type { ChildProfile, MissionInstance } from '@/lib/types';
 import Loading from '@/app/dashboard/(child)/loading';
 import { isMissionScheduledForDate, isMissionCompletedForDate, getDateObject, getPeriodOfDay } from '@/lib/calendar-utils';
-import { startOfDay, format as formatDateFns } from 'date-fns';
+import { startOfDay, format as formatDateFns, subDays, addDays, isToday } from 'date-fns';
 import { onSnapshot, doc, query, collection, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase/config';
 import { convertTimestampsInObject } from '@/lib/utils';
@@ -24,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Star, Circle, CheckCircle, Sun, Moon, CloudSun, LogOut, Trophy } from 'lucide-react';
+import { Loader2, Star, Circle, CheckCircle, Sun, Moon, CloudSun, LogOut, Trophy, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ChildBottomNavbar } from './ChildBottomNavbar';
 import { cn, getInitials } from '@/lib/utils';
 import { ptBR } from 'date-fns/locale';
@@ -46,9 +47,11 @@ export function ChildDashboard() {
 
   const childId = params.childId as string;
   const [child, setChild] = useState<ChildProfile | null>(authChildProfile);
-  const [todaysMissions, setTodaysMissions] = useState<MissionInstance[]>([]);
+  const [allMissions, setAllMissions] = useState<MissionInstance[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [processingMissionId, setProcessingMissionId] = useState<string | null>(null);
+  
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const [victoryData, setVictoryData] = useState<{
     child: ChildProfile;
@@ -84,15 +87,7 @@ export function ChildDashboard() {
       const missionsQuery = query(collection(db, 'missionInstances'), where('childId', '==', childId));
       const missionsUnsubscribe = onSnapshot(missionsQuery, (snapshot) => {
           const missions = snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as MissionInstance);
-          const today = startOfDay(new Date());
-          const filteredMissions = missions
-            .filter(m => isMissionScheduledForDate(m, today) && m.status === 'pending')
-            .sort((a, b) => {
-                const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
-                const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
-                return timeA.getTime() - timeB.getTime();
-            });
-          setTodaysMissions(filteredMissions);
+          setAllMissions(missions);
           if (isLoading) setIsLoading(false);
       });
 
@@ -102,6 +97,18 @@ export function ChildDashboard() {
       };
     }
   }, [childId, isChildAuthenticated, toast, logout]);
+
+  const todaysMissions = useMemo(() => {
+    const selectedDate = startOfDay(currentDate);
+    return allMissions
+        .filter(m => isMissionScheduledForDate(m, selectedDate) && m.status === 'pending')
+        .sort((a, b) => {
+            const timeA = getDateObject(a.isRecurring ? a.startDate : a.dueDate) || new Date(0);
+            const timeB = getDateObject(b.isRecurring ? b.startDate : b.dueDate) || new Date(0);
+            return timeA.getTime() - timeB.getTime();
+        });
+  }, [allMissions, currentDate]);
+
 
   const missionsByPeriod = useMemo(() => {
     const byPeriod: { Manhã: MissionInstance[], Tarde: MissionInstance[], Noite: MissionInstance[] } = {
@@ -123,23 +130,21 @@ export function ChildDashboard() {
     if (!child) return;
     setProcessingMissionId(mission.id);
   
-    const isCompleted = isMissionCompletedForDate(mission, new Date());
-    const dateKey = formatDateFns(new Date(), 'yyyy-MM-dd');
+    const isCompleted = isMissionCompletedForDate(mission, currentDate);
 
     try {
         if (isCompleted) {
-             await reactivateMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+             await reactivateMissionInstance(mission.id, currentDate, { id: child.id, name: child.name });
         } else {
             const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
             const missionPeriod = getPeriodOfDay(missionTime);
             
-            const updatedChild = await completeMissionInstance(mission.id, new Date(), { id: child.id, name: child.name });
+            const updatedChild = await completeMissionInstance(mission.id, currentDate, { id: child.id, name: child.name });
             
             // Victory Parade Logic
-            // We need to check against the *new state* of missionInstances after completion.
             const allInPeriodComplete = missionsByPeriod[missionPeriod!].every(m => {
                  const isThisMission = m.id === mission.id;
-                 const wasAlreadyCompleted = isMissionCompletedForDate(m, new Date());
+                 const wasAlreadyCompleted = isMissionCompletedForDate(m, currentDate);
                  return isThisMission || wasAlreadyCompleted;
             });
             
@@ -168,7 +173,11 @@ export function ChildDashboard() {
     return <Loading />;
   }
   
-  const todayLabel = formatDateFns(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
+  const selectedDateLabel = formatDateFns(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR });
+  
+  const handlePrevDay = () => setCurrentDate(prev => subDays(prev, 1));
+  const handleNextDay = () => setCurrentDate(prev => addDays(prev, 1));
+  const handleToday = () => setCurrentDate(new Date());
 
   return (
     <>
@@ -205,19 +214,26 @@ export function ChildDashboard() {
                 </div>
             </div>
 
-            <h2 className="text-xl font-bold font-headline capitalize text-center">{todayLabel}</h2>
+             <div className="flex items-center justify-center gap-2">
+                <Button variant="outline" size="icon" onClick={handlePrevDay} className="h-9 w-9 rounded-full"><ChevronLeft className="h-5 w-5"/></Button>
+                 <Button variant={isToday(currentDate) ? 'default' : 'outline'} onClick={handleToday}>Hoje</Button>
+                <h2 className="text-lg font-bold font-headline capitalize text-center w-48 truncate">
+                    {selectedDateLabel}
+                </h2>
+                <Button variant="outline" size="icon" onClick={handleNextDay} className="h-9 w-9 rounded-full"><ChevronRight className="h-5 w-5"/></Button>
+            </div>
         </div>
 
         <div className="overflow-y-auto flex-1 pb-24">
             <div className="space-y-3 px-4 mt-4">
             {todaysMissions.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">
-                <p className="font-semibold">Nenhuma missão para hoje!</p>
+                <p className="font-semibold">Nenhuma missão para este dia!</p>
                 <p className="text-sm">Aproveite seu dia de folga, herói!</p>
                 </div>
             ) : (
                 todaysMissions.map(mission => {
-                const isCompleted = isMissionCompletedForDate(mission, new Date());
+                const isCompleted = isMissionCompletedForDate(mission, currentDate);
                 const missionTime = getDateObject(mission.isRecurring ? mission.startDate : mission.dueDate);
                 const period = missionTime ? getPeriodOfDay(missionTime) : null;
                 const PeriodIcon = period ? periodIcons[period] : null;
