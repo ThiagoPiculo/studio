@@ -39,6 +39,14 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
     const { isLoading: familyLoading } = useFamily();
     const isMobile = useIsMobile();
     
+    useEffect(() => {
+        const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
+        if (postLoginRefresh === 'true') {
+            sessionStorage.removeItem('postLoginRefresh');
+            window.location.reload();
+        }
+    }, []);
+
     // Show a centralized spinner while the initial auth and family context are loading.
     // This prevents the "flash" of different skeleton screens.
     if (authLoading || familyLoading) {

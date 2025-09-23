@@ -28,6 +28,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await loginWithGoogle();
+      sessionStorage.setItem('postLoginRefresh', 'true');
       toast({ title: "Boas-vindas!", description: "Sua aventura continua." });
       router.push("/dashboard");
     } catch (error: any) {

@@ -31,6 +31,7 @@ function RegisterPageContent() {
     try {
       // loginWithGoogle will create a user if they don't exist
       const userCredential = await loginWithGoogle(); 
+      sessionStorage.setItem('postLoginRefresh', 'true');
 
       // After login/signup, if there's an invite code, try to join the family
       if (inviteCode && user?.uid) {

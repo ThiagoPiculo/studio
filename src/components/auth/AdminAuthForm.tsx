@@ -114,11 +114,13 @@ export function MasterUserAuthForm({ mode, inviteCode }: MasterUserAuthFormProps
         }
 
         await signInAdmin(email, password);
+        sessionStorage.setItem('postLoginRefresh', 'true');
         toast({ title: "Que bom te ver de novo!", description: "Sua Central de Heróis está pronta para a aventura." });
         router.push("/dashboard");
       } else {
         const { name, email, password } = values as z.infer<typeof registerSchema>;
         const userProfile = await signUpAdmin(name, email, password);
+        sessionStorage.setItem('postLoginRefresh', 'true');
         
         if (inviteCode) {
           try {
