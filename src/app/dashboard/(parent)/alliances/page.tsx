@@ -5,7 +5,7 @@ import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getChildProfilesByFamily, getFamilyById } from '@/lib/firebase/firestore';
+import { getFamilyMembers, getChildProfilesByFamily, getFamilyById, getPendingJoinRequestsForFamily } from '@/lib/firebase/firestore';
 import type { UserProfile, ChildProfile, FamilyRole, Family } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -21,6 +21,7 @@ import { PopoverClose } from '@radix-ui/react-popover';
 import { useToast } from '@/hooks/use-toast';
 import { InviteMemberDialog } from '@/components/dashboard/family/InviteMemberDialog';
 import { FamilySwitcherClient } from './FamilySwitcherClient';
+import { Badge } from '@/components/ui/badge';
 
 
 type AllianceDetails = {
@@ -31,6 +32,7 @@ type AllianceDetails = {
   members: UserProfile[];
   children: ChildProfile[];
   owner: UserProfile | null;
+  pendingRequestsCount: number;
 };
 
 function AlliancesPageClient() {
@@ -75,10 +77,11 @@ function AlliancesPageClient() {
             
             try {
                 const detailsPromises = allianceContexts.map(async (context) => {
-                     const [members, children, familyDetails] = await Promise.all([
+                     const [members, children, familyDetails, pendingRequests] = await Promise.all([
                         getFamilyMembers(context.id),
                         getChildProfilesByFamily(context.id),
-                        getFamilyById(context.id)
+                        getFamilyById(context.id),
+                        getPendingJoinRequestsForFamily(context.id),
                     ]);
                     const owner = members.find(m => m.uid === familyDetails?.ownerId) || null;
                     return {
@@ -88,7 +91,8 @@ function AlliancesPageClient() {
                         role: context.role || null,
                         members,
                         children,
-                        owner
+                        owner,
+                        pendingRequestsCount: pendingRequests.length,
                     };
                 });
                 const results = await Promise.all(detailsPromises);
@@ -154,6 +158,7 @@ function AlliancesPageClient() {
                         {alliancesDetails.map(alliance => {
                         const roleInfo = familyRoles.find(r => r.id === alliance.role);
                         const otherMembers = alliance.members.filter(m => m.uid !== alliance.owner?.uid);
+                        const isOwner = user?.uid === alliance.owner?.uid;
 
                         return (
                             <Card key={alliance.id} className="flex flex-col">
@@ -231,7 +236,14 @@ function AlliancesPageClient() {
                                 <Button variant="outline" onClick={() => handleInviteClick(alliance)}>
                                     <UserPlus className="mr-2 h-4 w-4" /> Convidar
                                 </Button>
-                                <FamilySwitcherClient contextId={alliance.id} action="details" />
+                                <div className="relative">
+                                    <FamilySwitcherClient contextId={alliance.id} action="details" />
+                                    {isOwner && alliance.pendingRequestsCount > 0 && (
+                                        <Badge variant="destructive" className="absolute -top-2 -right-2 h-6 w-6 justify-center rounded-full p-0">
+                                            {alliance.pendingRequestsCount}
+                                        </Badge>
+                                    )}
+                                </div>
                             </CardFooter>
                             </Card>
                         )
@@ -259,3 +271,5 @@ export default function AlliancesPage() {
     </Suspense>
   )
 }
+
+    
