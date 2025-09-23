@@ -45,6 +45,7 @@ export function ChildLoginForm() {
     try {
       const childProfile = await findChildByAccessCode(values.accessCode);
       if (childProfile) {
+        sessionStorage.setItem('postLoginRefresh', 'true');
         setChildAuthenticatedState(childProfile);
         toast({ title: "Portal Desbloqueado!", description: `Bem-vindo(a) à aventura, ${childProfile.name}!` });
         router.push(`/dashboard/child/${childProfile.id}`);

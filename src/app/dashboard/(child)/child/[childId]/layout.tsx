@@ -1,3 +1,4 @@
+
 'use client';
 
 import { ChildBottomNavbar } from '@/components/dashboard/child/ChildBottomNavbar';
@@ -17,6 +18,14 @@ export default function ChildDashboardLayout({
   const { childProfile, isChildAuthenticated, loading: authLoading, logout } = useAuth();
 
   const childId = params.childId as string;
+
+  useEffect(() => {
+    const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
+    if (postLoginRefresh === 'true') {
+        sessionStorage.removeItem('postLoginRefresh');
+        window.location.reload();
+    }
+  }, []);
 
   useEffect(() => {
     if (!authLoading && (!isChildAuthenticated || !childProfile)) {
