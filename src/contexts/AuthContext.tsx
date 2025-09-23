@@ -47,21 +47,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
-        setLoading(true);
-        
         // Handle post-login refresh
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-            const hasRefreshed = sessionStorage.getItem('postLoginRefreshDone');
-            if (!hasRefreshed) {
-                sessionStorage.setItem('postLoginRefreshDone', 'true');
-                // Use a short delay to allow login state to settle before refresh
-                setTimeout(() => {
-                    router.replace('/dashboard?initial_load=true');
-                }, 100);
-                return; // Prevent further execution until after refresh
-            }
+        const hasRefreshed = sessionStorage.getItem('postLoginRefreshDone');
+        if (!hasRefreshed) {
+            sessionStorage.setItem('postLoginRefreshDone', 'true');
+            // Use a short delay to allow login state to settle before refresh
+            setTimeout(() => {
+                router.replace('/dashboard?initial_load=true');
+            }, 100);
+            return; // Prevent further execution until after refresh
         }
-
+        
+        setLoading(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { 
@@ -103,9 +100,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfileUnsubscribe(() => newProfileUnsubscribe);
       } else {
         // No Firebase user
-        if (typeof window !== 'undefined' && window.sessionStorage) {
-            sessionStorage.removeItem('postLoginRefreshDone'); // Clear flag on logout
-        }
+        sessionStorage.removeItem('postLoginRefreshDone'); // Clear flag on logout or session expiry
+        
         const storedChildProfile = sessionStorage.getItem('childProfile');
         if (storedChildProfile) {
           try {
