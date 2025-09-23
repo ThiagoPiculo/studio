@@ -48,7 +48,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (firebaseUser) {
         setLoading(true);
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
         
         // Handle post-login refresh
         if (typeof window !== 'undefined' && window.sessionStorage) {
@@ -63,6 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             }
         }
 
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { 
             if (docSnap.exists()) {
@@ -198,6 +198,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         sessionStorage.removeItem('currentContext');
         sessionStorage.removeItem('selectedChildId');
       }
+      // Always remove the refresh flag on any logout
+      sessionStorage.removeItem('postLoginRefreshDone');
       await signOut(auth);
       router.push('/');
     } catch (error) {
