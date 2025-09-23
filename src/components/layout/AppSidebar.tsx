@@ -168,6 +168,11 @@ export function AppSidebar() {
                                         <span>Perfil Completo</span>
                                     </SidebarMenuButton>
                                 </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <NavLink href="/dashboard/meus-herois" tooltip="Meus Mini Herois" label="Meus Mini Herois" bypassModal={true}>
+                                        <Users className="text-chart-3" />
+                                    </NavLink>
+                                </SidebarMenuItem>
                                 <SidebarMenuItem>
                                      <SidebarMenuButton onClick={() => router.push('/dashboard/assistente')} tooltip="Assistente de Criação">
                                         <Sparkles className="text-chart-4" />
