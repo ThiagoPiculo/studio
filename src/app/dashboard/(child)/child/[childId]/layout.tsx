@@ -20,27 +20,33 @@ export default function ChildDashboardLayout({
   const childId = params.childId as string;
 
   useEffect(() => {
-    // Wait until authentication is fully loaded before checking credentials
+    // Aguarda o fim do carregamento da autenticação para evitar race conditions
     if (authLoading) {
       return;
     }
 
-    // If, after loading, the user is not an authenticated child, log them out.
+    // Se, após o carregamento, não for uma criança autenticada, desloga e redireciona.
     if (!isChildAuthenticated) {
-      logout(); // This also clears child session data
+      logout(); // Limpa a sessão
       router.replace('/dashboard/child-login');
       return;
     }
 
-    // If the authenticated child's profile is available but doesn't match the URL, redirect them.
+    // Se o perfil da criança autenticada não corresponder ao da URL, redireciona para a página correta.
     if (childProfile && childProfile.id !== childId) {
       router.replace(`/dashboard/child/${childProfile.id}`);
     }
     
   }, [childId, childProfile, isChildAuthenticated, authLoading, router, logout]);
 
-  if (authLoading || !childProfile) {
+  // Exibe a tela de carregamento enquanto a autenticação está sendo verificada
+  if (authLoading) {
     return <Loading />;
+  }
+
+  // Se o usuário não for uma criança autenticada após o carregamento, não renderiza o conteúdo
+  if (!isChildAuthenticated) {
+    return null;
   }
 
   return (
