@@ -11,8 +11,11 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 
-function DashboardCard({
+function DesktopDashboardCard({
   icon: Icon,
   title,
   description,
@@ -77,11 +80,81 @@ function DashboardCard({
   return isModalTrigger ? cardContent : <Link href={href || '#'} className="h-full">{cardContent}</Link>;
 }
 
+function MobileDashboardCard({
+  icon: Icon,
+  title,
+  description,
+  href,
+  isModalTrigger = false,
+}: {
+  icon: React.ElementType;
+  title: string;
+  description: string;
+  href?: string;
+  isModalTrigger?: boolean;
+}) {
+  const router = useRouter();
+  const { selectedChildId, openModal } = useFamily();
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (isModalTrigger) {
+      e.preventDefault();
+      if (selectedChildId) {
+        router.push(href || '/dashboard');
+      } else {
+        openModal(href);
+      }
+    }
+  };
+
+  const cardContent = (
+      <Card 
+          className="shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all h-full flex flex-col cursor-pointer text-center relative"
+          role="button"
+          tabIndex={0}
+          onClick={isModalTrigger ? handleClick : undefined}
+          onKeyDown={(e) => {
+              if (isModalTrigger && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                if (selectedChildId) {
+                  router.push(href || '/dashboard');
+                } else {
+                  openModal(href);
+                }
+              }
+            }}
+        >
+          <CardContent className="p-4 flex flex-col items-center justify-center gap-2 flex-grow">
+              <div className="p-3 bg-primary/10 rounded-2xl shadow-clay mb-2">
+                  <Icon className="h-7 w-7 text-primary" />
+              </div>
+              <CardTitle className="font-headline text-base leading-tight">{title}</CardTitle>
+          </CardContent>
+          <Popover>
+              <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-7 w-7 text-muted-foreground" onClick={(e) => e.stopPropagation()}>
+                    <HelpCircle className="h-4 w-4"/>
+                  </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64 text-sm" onClick={(e) => e.stopPropagation()}>
+                {description}
+              </PopoverContent>
+          </Popover>
+      </Card>
+  );
+
+  return isModalTrigger ? cardContent : <Link href={href || '#'} className="h-full">{cardContent}</Link>;
+}
+
 
 function DashboardPage() {
     const { openModal, selectedChildId } = useFamily();
     const router = useRouter();
+    const isMobile = useIsMobile();
     
+    const DashboardCard = isMobile ? MobileDashboardCard : DesktopDashboardCard;
+    const gridClasses = isMobile ? "grid-cols-2 sm:grid-cols-3 gap-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
+
   return (
     <div className="space-y-8">
       {/* Seção "Comece por Aqui!" */}
@@ -99,7 +172,7 @@ function DashboardPage() {
             <div className="px-6 pb-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card className="bg-background/70">
                   <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">Criar Rotina para Criança</CardTitle>
+                      <CardTitle className="text-base">Criar Rotina para Criança</CardTitle>
                   </CardHeader>
                   <CardContent>
                       <Button asChild className="w-full">
@@ -111,7 +184,7 @@ function DashboardPage() {
               </Card>
               <Card className="bg-background/70">
                   <CardHeader>
-                      <CardTitle className="text-base flex items-center gap-2">Colaborar em Aliança</CardTitle>
+                      <CardTitle className="text-base">Colaborar em Aliança</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
                       <Button asChild variant="secondary" className="w-full">
@@ -142,7 +215,7 @@ function DashboardPage() {
       {/* Seção "Meus Mini Heróis" */}
       <div>
           <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2"><Heart className="text-pink-500" />Meus Mini Heróis</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className={cn("grid", gridClasses)}>
               <DashboardCard 
                   icon={Calendar1Icon}
                   title="Rotina do Dia"
