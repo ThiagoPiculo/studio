@@ -334,7 +334,7 @@ function DashboardPage() {
                 <DashboardCard 
                   icon={Sparkles}
                   title="Assistente de Criação"
-                  description="Deixe a Aura te guiar! Crie o perfil e a rotina de missões diárias de forma rápida e inteligente com nossa assistente"
+                  description="Crie um novo perfil de herói e sua rotina de missões de forma guiada e inteligente."
                   href="/dashboard/assistente"
                   bypassModal={true}
               />
