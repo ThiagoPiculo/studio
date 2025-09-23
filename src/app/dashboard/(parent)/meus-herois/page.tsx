@@ -11,7 +11,7 @@ export default function MeusHeroisPage() {
                 <Users className="h-8 w-8 text-primary" />
                 <div>
                     <h2 className="text-3xl font-headline font-bold">Meus Mini Heróis</h2>
-                    <p className="text-muted-foreground">Selecione um espaço para gerenciar ou clique em um herói para ver seu perfil.</p>
+                    <p className="text-muted-foreground">Selecione um herói para ver sua rotina ou gerencie seus espaços de cuidado.</p>
                 </div>
             </div>
             <SpaceSelector />
