@@ -11,7 +11,7 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
 import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
