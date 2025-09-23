@@ -10,6 +10,8 @@ import { doc, getDoc, setDoc, serverTimestamp, onSnapshot, Timestamp, updateDoc 
 import { useRouter, usePathname } from 'next/navigation';
 import { populateInitialRewardTemplates } from '@/lib/firebase/firestore';
 
+const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
+
 const convertTimestampsInObject = (obj: any): any => {
     if (!obj) return obj;
     const newObj: { [key: string]: any } = {};
@@ -27,8 +29,6 @@ const convertTimestampsInObject = (obj: any): any => {
     }
     return newObj;
 };
-
-const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
 const getInitialChildState = (): { profile: ChildProfile | null; isAuthenticated: boolean } => {
     if (typeof window === 'undefined') {
@@ -64,15 +64,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
-        // Handle post-login refresh for admin/parent user
         const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
         if (postLoginRefresh === 'true') {
             sessionStorage.removeItem('postLoginRefresh');
-            // Use a short delay to allow login state to settle before refresh
             setTimeout(() => {
                 router.replace('/dashboard?initial_load=true');
             }, 100);
-            return; // Prevent further execution until after refresh
+            return;
         }
         
         setLoading(true);
@@ -81,7 +79,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           async (docSnap) => { 
             if (docSnap.exists()) {
               const userData = convertTimestampsInObject(docSnap.data()) as UserProfile;
-              // Check if existing user is missing avatarUrl from Google login
               if (!userData.avatarUrl && firebaseUser.photoURL) {
                 await updateDoc(userDocRef, { avatarUrl: firebaseUser.photoURL });
                 setUser({ ...userData, avatarUrl: firebaseUser.photoURL });
@@ -89,8 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUser({ uid: docSnap.id, ...userData });
               }
             } else {
-              // This case might happen if a user was created but firestore doc failed.
-              // The `loginWithGoogle` function handles creation, this is a fallback.
               const newUserProfile: UserProfile = {
                 uid: firebaseUser.uid,
                 email: firebaseUser.email,
@@ -101,12 +96,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(newUserProfile);
             }
             
-            // This is a parent/admin login, so clear any child state
             setIsChildAuthenticated(false);
             setChildProfile(null);
             sessionStorage.removeItem('childProfile');
 
-            // Run the sync function for the user
             await populateInitialRewardTemplates(firebaseUser.uid, null);
             setLoading(false);
           },
@@ -117,30 +110,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
         setProfileUnsubscribe(() => newProfileUnsubscribe);
-      } else { // No Firebase user (could be logged out or a child user)
+      } else { 
         const childState = getInitialChildState();
         if (childState.isAuthenticated) {
             setChildProfile(childState.profile);
             setIsChildAuthenticated(true);
             setUser(null);
         } else {
-            // Logged out state for everyone
+            setUser(null);
             setChildProfile(null);
             setIsChildAuthenticated(false);
-            setUser(null);
         }
-
         setLoading(false);
-        
-        const isChildDashboard = pathname.startsWith('/dashboard/child/');
-        const isChildLogin = pathname.startsWith('/dashboard/child-login');
-        const isPublicAuthPath = pathname.startsWith('/auth/');
-        const isHomePage = pathname === '/';
-        const isAllowedPublic = isPublicAuthPath || isHomePage || isChildLogin;
-
-        if (!user && !isChildAuthenticated && !isAllowedPublic && !isChildDashboard) {
-            router.replace('/auth/login');
-        }
       }
     });
 
@@ -150,8 +131,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         profileUnsubscribe();
       }
     };
-  // Deliberately empty dependency array to run only on mount and unmount
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loginWithGoogle = async () => {
@@ -179,7 +158,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         await setDoc(userDocRef, userProfile);
         await populateInitialRewardTemplates(googleUser.uid, null);
       } else {
-        // If user exists but is missing avatar, update it.
         const userData = userDocSnap.data();
         if (!userData.avatarUrl && googleUser.photoURL) {
           await updateDoc(userDocRef, { avatarUrl: googleUser.photoURL });
@@ -199,20 +177,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      await signOut(auth); // This will trigger onAuthStateChanged
-      
-      // Clear all our custom session states regardless of user type
+      // Clear local state BEFORE signing out to prevent race conditions
       sessionStorage.removeItem('childProfile');
       sessionStorage.removeItem('currentContext');
       sessionStorage.removeItem('selectedChildId');
       sessionStorage.removeItem('postLoginRefresh');
       
-      // Manually update state to reflect logout immediately
       setUser(null);
       setChildProfile(null);
       setIsChildAuthenticated(false);
       
+      // Redirect to home page immediately
       router.push('/');
+
+      // Finally, sign out from Firebase
+      await signOut(auth); // This will trigger onAuthStateChanged to confirm state
     } catch (error) {
       console.error("Error signing out:", error);
     }
@@ -225,7 +204,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     const safeProfile = convertTimestampsInObject(profile);
     
-    // Explicitly set parent user to null
     setUser(null); 
 
     setChildProfile(safeProfile);
