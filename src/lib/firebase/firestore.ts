@@ -740,7 +740,7 @@ export const createFamilyInvitation = async (familyId: string, inviterId: string
     type: 'alliance_join_request',
     title: 'Você foi convidado!',
     description: `${inviterName} convidou você para se juntar à aliança "${family.name}".`,
-    href: '/dashboard/family',
+    href: '/dashboard/alliances',
     relatedContextId: family.id,
   });
 };
@@ -793,7 +793,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
       type: 'alliance_join_request',
       title: 'Pedido para entrar na Aliança',
       description: `${joiningUserProfile.name || 'Um usuário'} deseja entrar na sua aliança "${family.name}".`,
-      href: '/dashboard/family',
+      href: `/dashboard/alliances/${family.id}`,
       relatedContextId: family.id,
     });
 
@@ -834,7 +834,7 @@ export const joinFamilyByInviteCode = async (userId: string, inviteCode: string)
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
               description: `${joiningUserProfile?.name || 'Um novo heroi'} juntou-se à aliança via código.`,
-              href: '/dashboard/family',
+              href: `/dashboard/alliances/${family.id}`,
               relatedContextId: family.id,
           });
       });
@@ -1044,7 +1044,7 @@ export const resendFamilyInvitationNotification = async (invitationId: string): 
       type: 'alliance_join_request',
       title: `Lembrete de Convite`,
       description: `${invite.inviterName} está aguardando você na aliança "${invite.familyName}".`,
-      href: '/dashboard/family',
+      href: '/dashboard/alliances',
       relatedContextId: invite.familyId,
     });
 };
@@ -1095,7 +1095,7 @@ export const acceptFamilyInvitation = async (invitationId: string, userId: strin
               type: 'alliance_join_approved',
               title: 'Novo membro na Aliança!',
               description: `${newMemberProfile?.name || 'Um novo heroi'} juntou-se à aliança ${family.name}.`,
-              href: '/dashboard/family',
+              href: `/dashboard/alliances/${family.id}`,
               relatedContextId: family.id,
           });
       });
@@ -1166,7 +1166,7 @@ export const approveJoinRequest = async (invitationId: string, approverId: strin
       type: 'alliance_join_approved',
       title: 'Você entrou na Aliança!',
       description: `Seu pedido para entrar na aliança "${updatedInvitation.familyName}" foi aprovado.`,
-      href: '/dashboard/family',
+      href: `/dashboard/alliances/${familyId}`,
       relatedContextId: updatedInvitation.familyId,
   });
 };
@@ -1195,7 +1195,7 @@ export const resendJoinRequestNotification = async (requestId: string): Promise<
     type: 'alliance_join_request',
     title: 'Lembrete: Pedido de Entrada',
     description: `${request.inviterName} ainda aguarda sua aprovação para entrar na aliança "${request.familyName}".`,
-    href: '/dashboard/family',
+    href: `/dashboard/alliances/${request.familyId}`,
     relatedContextId: request.familyId,
   });
 };

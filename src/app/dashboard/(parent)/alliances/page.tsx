@@ -1,17 +1,18 @@
 
+
 "use client";
 
 import { useEffect, useState, Suspense, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useFamily } from '@/contexts/FamilyContext';
-import { getFamilyMembers, getChildProfilesByFamily, getFamilyById, getPendingJoinRequestsForFamily } from '@/lib/firebase/firestore';
-import type { UserProfile, ChildProfile, FamilyRole, Family } from '@/lib/types';
+import { getFamilyMembers, getChildProfilesByFamily, getFamilyById, getPendingJoinRequestsForFamily, getPendingActionsForUser, acceptFamilyInvitation, declineFamilyInvitation, cancelFamilyInvitation } from '@/lib/firebase/firestore';
+import type { UserProfile, ChildProfile, FamilyRole, Family, FamilyInvitation } from '@/lib/types';
 import { familyRoles } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2 } from 'lucide-react';
+import { Users, UserPlus, ArrowRight, Shield, Link as LinkIcon, Info, HelpCircle, Copy, Loader2, Clock, Check, X } from 'lucide-react';
 import { getInitials } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
 import Loading from './loading';
@@ -22,6 +23,9 @@ import { useToast } from '@/hooks/use-toast';
 import { InviteMemberDialog } from '@/components/dashboard/family/InviteMemberDialog';
 import { FamilySwitcherClient } from './FamilySwitcherClient';
 import { Badge } from '@/components/ui/badge';
+import { formatDistanceToNowStrict } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { getDateObject } from '@/lib/calendar-utils';
 
 
 type AllianceDetails = {
@@ -44,6 +48,9 @@ function AlliancesPageClient() {
 
     const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
     const [allianceToInvite, setAllianceToInvite] = useState<{ id: string, name: string, inviteCode: string } | null>(null);
+    const [pendingActions, setPendingActions] = useState<FamilyInvitation[]>([]);
+    const [isLoadingActions, setIsLoadingActions] = useState(true);
+    const [actionProcessing, setActionProcessing] = useState<string | null>(null);
 
     const handleCopyCode = (code: string) => {
         navigator.clipboard.writeText(code);
@@ -55,59 +62,96 @@ function AlliancesPageClient() {
         setIsInviteDialogOpen(true);
     };
 
-    useEffect(() => {
-        if (authLoading || isFamilyLoading) {
+    const fetchAllData = async () => {
+        if (!user) {
+            setIsLoadingDetails(false);
+            setIsLoadingActions(false);
             return;
         }
 
-        const fetchDetails = async () => {
-            if (!user) {
-                setIsLoadingDetails(false);
-                return;
-            }
+        const allianceContexts = availableContexts.filter(c => c.id !== 'my-space');
+        
+        setIsLoadingDetails(true);
+        setIsLoadingActions(true);
+        
+        try {
+            const detailsPromises = allianceContexts.map(async (context) => {
+                 const [members, children, familyDetails, pendingRequests] = await Promise.all([
+                    getFamilyMembers(context.id),
+                    getChildProfilesByFamily(context.id),
+                    getFamilyById(context.id),
+                    getPendingJoinRequestsForFamily(context.id),
+                ]);
+                const owner = members.find(m => m.uid === familyDetails?.ownerId) || null;
+                return {
+                    id: context.id,
+                    name: context.name,
+                    inviteCode: familyDetails?.inviteCode || '------',
+                    role: context.role || null,
+                    members,
+                    children,
+                    owner,
+                    pendingRequestsCount: pendingRequests.length,
+                };
+            });
 
-            const allianceContexts = availableContexts.filter(c => c.id !== 'my-space');
-            
-            if (allianceContexts.length === 0) {
-              setIsLoadingDetails(false);
-              return;
-            }
-            
-            setIsLoadingDetails(true);
-            
-            try {
-                const detailsPromises = allianceContexts.map(async (context) => {
-                     const [members, children, familyDetails, pendingRequests] = await Promise.all([
-                        getFamilyMembers(context.id),
-                        getChildProfilesByFamily(context.id),
-                        getFamilyById(context.id),
-                        getPendingJoinRequestsForFamily(context.id),
-                    ]);
-                    const owner = members.find(m => m.uid === familyDetails?.ownerId) || null;
-                    return {
-                        id: context.id,
-                        name: context.name,
-                        inviteCode: familyDetails?.inviteCode || '------',
-                        role: context.role || null,
-                        members,
-                        children,
-                        owner,
-                        pendingRequestsCount: pendingRequests.length,
-                    };
-                });
-                const results = await Promise.all(detailsPromises);
-                setAlliancesDetails(results);
-            } catch (error) {
-                console.error("Failed to fetch alliance details:", error);
-            } finally {
-                setIsLoadingDetails(false);
-            }
-        };
+            const [detailsResults, pendingActionsData] = await Promise.all([
+                Promise.all(detailsPromises),
+                getPendingActionsForUser(user.uid),
+            ]);
 
-        fetchDetails();
-    }, [availableContexts, isFamilyLoading, authLoading, user]);
+            setAlliancesDetails(detailsResults);
+            setPendingActions(pendingActionsData);
 
-    if (authLoading || isFamilyLoading || isLoadingDetails) {
+        } catch (error) {
+            console.error("Failed to fetch alliance details:", error);
+            toast({ title: "Erro ao carregar dados", variant: "destructive" });
+        } finally {
+            setIsLoadingDetails(false);
+            setIsLoadingActions(false);
+        }
+    };
+
+    useEffect(() => {
+        if (!authLoading && !isFamilyLoading) {
+            fetchAllData();
+        }
+    }, [availableContexts, authLoading, isFamilyLoading, user]);
+
+    const handleInvitationResponse = async (invitationId: string, accept: boolean) => {
+      if (!user) return;
+      setActionProcessing(invitationId);
+      try {
+        if (accept) {
+          await acceptFamilyInvitation(invitationId, user.uid);
+          toast({ title: "Bem-vindo(a) à Aliança!", description: "Você aceitou o convite e agora faz parte da equipe." });
+        } else {
+          await declineFamilyInvitation(invitationId);
+          toast({ title: "Convite Recusado", description: "Você recusou o convite para a aliança." });
+        }
+        fetchAllData(); // Refetch all data to update state
+      } catch (error: any) {
+        toast({ title: "Erro ao processar convite", description: error.message, variant: "destructive" });
+      } finally {
+        setActionProcessing(null);
+      }
+    };
+
+    const handleCancelRequest = async (invitationId: string) => {
+        setActionProcessing(invitationId);
+        try {
+            await cancelFamilyInvitation(invitationId);
+            toast({ title: "Pedido Cancelado", description: "Seu pedido de entrada na aliança foi cancelado." });
+            setPendingActions(prev => prev.filter(p => p.id !== invitationId));
+        } catch (error: any) {
+            toast({ title: "Erro ao cancelar", description: error.message, variant: "destructive" });
+        } finally {
+            setActionProcessing(null);
+        }
+    };
+
+
+    if (authLoading || isFamilyLoading || isLoadingDetails || isLoadingActions) {
         return <Loading />;
     }
 
@@ -142,7 +186,48 @@ function AlliancesPageClient() {
                     </Popover>
                 </div>
                 
-                {alliancesDetails.length === 0 ? (
+                {pendingActions.length > 0 && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Ações Pendentes</CardTitle>
+                            <CardDescription>Responda a convites ou gerencie seus pedidos de entrada.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                            {pendingActions.map(action => (
+                                <div key={action.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg bg-accent/30 gap-2">
+                                    <div className="text-sm">
+                                        {action.type === 'invite' ? (
+                                            <p><strong className="font-semibold">{action.inviterName}</strong> convidou você para a aliança <strong className="font-semibold text-primary">{action.familyName}</strong>.</p>
+                                        ) : (
+                                            <p>Seu pedido para entrar na aliança <strong className="font-semibold text-primary">{action.familyName}</strong> está <strong className="font-semibold">aguardando aprovação</strong>.</p>
+                                        )}
+                                        <p className="text-xs text-muted-foreground flex items-center gap-1"><Clock className="h-3 w-3"/>
+                                            {formatDistanceToNowStrict(getDateObject(action.createdAt)!, { locale: ptBR, addSuffix: true })}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 self-end sm:self-center">
+                                        {action.type === 'invite' ? (
+                                            <>
+                                                <Button size="sm" variant="destructive" onClick={() => handleInvitationResponse(action.id, false)} disabled={actionProcessing === action.id}>
+                                                    {actionProcessing === action.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <X className="h-4 w-4"/>}
+                                                </Button>
+                                                <Button size="sm" onClick={() => handleInvitationResponse(action.id, true)} disabled={actionProcessing === action.id}>
+                                                    {actionProcessing === action.id ? <Loader2 className="h-4 w-4 animate-spin"/> : <Check className="h-4 w-4"/>}
+                                                </Button>
+                                            </>
+                                        ) : (
+                                            <Button size="sm" variant="ghost" className="text-destructive" onClick={() => handleCancelRequest(action.id)} disabled={actionProcessing === action.id}>
+                                                {actionProcessing === action.id ? <Loader2 className="h-4 w-4 animate-spin"/> : "Cancelar Pedido"}
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                )}
+
+                {alliancesDetails.length === 0 && pendingActions.length === 0 ? (
                     <Card>
                         <CardContent className="p-6 text-center text-muted-foreground">
                             <p>Você ainda não faz parte de nenhuma Aliança.</p>
