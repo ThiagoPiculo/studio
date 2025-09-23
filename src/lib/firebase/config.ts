@@ -3,6 +3,7 @@ import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getAuth, Auth } from 'firebase/auth';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
+import { getAnalytics, Analytics } from "firebase/analytics";
 
 // Your web app's Firebase configuration
 let firebaseConfig;
@@ -24,7 +25,8 @@ if (!firebaseConfig) {
       projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
       storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
       messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+      appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+      measurementId: process.env.NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID,
     };
 }
 
@@ -33,6 +35,8 @@ let app: FirebaseApp;
 let auth: Auth;
 let db: Firestore;
 let storage: FirebaseStorage;
+let analytics: Analytics | undefined;
+
 
 // Initialize Firebase only if it hasn't been initialized yet
 if (!getApps().length) {
@@ -54,4 +58,11 @@ auth = getAuth(app);
 db = getFirestore(app);
 storage = getStorage(app);
 
-export { app, auth, db, storage };
+if (typeof window !== 'undefined') {
+    if ('measurementId' in firebaseConfig) {
+        analytics = getAnalytics(app);
+    }
+}
+
+
+export { app, auth, db, storage, analytics };
