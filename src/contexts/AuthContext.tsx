@@ -49,6 +49,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         setLoading(true);
         const userDocRef = doc(db, 'users', firebaseUser.uid);
+        
+        // Handle post-login refresh
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            const hasRefreshed = sessionStorage.getItem('postLoginRefreshDone');
+            if (!hasRefreshed) {
+                sessionStorage.setItem('postLoginRefreshDone', 'true');
+                // Use a short delay to allow login state to settle before refresh
+                setTimeout(() => {
+                    router.replace('/dashboard?initial_load=true');
+                }, 100);
+                return; // Prevent further execution until after refresh
+            }
+        }
+
         const newProfileUnsubscribe = onSnapshot(userDocRef,
           async (docSnap) => { 
             if (docSnap.exists()) {
@@ -89,6 +103,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setProfileUnsubscribe(() => newProfileUnsubscribe);
       } else {
         // No Firebase user
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+            sessionStorage.removeItem('postLoginRefreshDone'); // Clear flag on logout
+        }
         const storedChildProfile = sessionStorage.getItem('childProfile');
         if (storedChildProfile) {
           try {
