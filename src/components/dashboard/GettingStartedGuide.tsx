@@ -56,12 +56,12 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const hasAlliances = availableContexts.length > 1;
 
   useEffect(() => {
-    const isNewUser = !hasChildren && !hasAlliances;
+    // Only run on client
     const dismissed = localStorage.getItem('gettingStartedDismissed');
-    if (isNewUser && dismissed !== 'true') {
+    if (dismissed !== 'true') {
         setIsVisible(true);
     }
-  }, [hasChildren, hasAlliances]);
+  }, []);
 
   const handleDismiss = (dismissed: boolean) => {
     if (dismissed) {
@@ -69,6 +69,8 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
       setIsVisible(false);
     } else {
       localStorage.removeItem('gettingStartedDismissed');
+      // Note: This won't make it reappear instantly unless state is also set.
+      // But the main goal is to dismiss it.
     }
   };
 
@@ -81,9 +83,10 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
   const completedSteps = steps.filter(step => step.complete).length;
   const progress = (completedSteps / steps.length) * 100;
   
-  const isForEmptyPersonalSpace = hasAlliances && !hasChildren;
+  // This guide should only show for users who truly have nothing set up.
+  const isNewUser = !hasChildren && !hasMissions && !hasRewards;
 
-  if (!isVisible && !isForEmptyPersonalSpace) {
+  if (!isNewUser || !isVisible) {
     return null;
   }
 
@@ -91,13 +94,10 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
     <Card className="shadow-lg overflow-hidden">
       <CardHeader>
         <CardTitle className="text-2xl font-headline">
-          {isForEmptyPersonalSpace ? 'Selecione a Aliança☝️' : 'Primeiros Passos'}
+          Comece por Aqui!
         </CardTitle>
         <CardDescription>
-          {isForEmptyPersonalSpace
-            ? <>Seus Mini Heróis <strong>estão em suas Alianças</strong>. Para cadastrar Mini herois com ajuda do Assistente Herói, comece por aqui 👇</>
-            : "Siga estes passos para configurar sua central de missões e começar a aventura!"
-          }
+          Siga estes passos para configurar sua central de missões e começar a aventura!
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -116,14 +116,12 @@ export function GettingStartedGuide({ hasChildren, hasMissions, hasRewards }: Ge
             />
           ))}
         </div>
-        {!isForEmptyPersonalSpace && (
-             <div className="flex items-center space-x-2 pt-2">
-                <Checkbox id="dismiss-guide" onCheckedChange={handleDismiss} />
-                <Label htmlFor="dismiss-guide" className="text-sm font-normal text-muted-foreground">
-                    Não exibir mais esta seção.
-                </Label>
-            </div>
-        )}
+         <div className="flex items-center space-x-2 pt-2">
+            <Checkbox id="dismiss-guide" onCheckedChange={handleDismiss} />
+            <Label htmlFor="dismiss-guide" className="text-sm font-normal text-muted-foreground">
+                Não exibir mais esta seção.
+            </Label>
+        </div>
       </CardContent>
     </Card>
   );

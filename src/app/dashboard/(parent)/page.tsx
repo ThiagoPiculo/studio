@@ -11,9 +11,15 @@ import { useFamily } from '@/contexts/FamilyContext';
 import { useRouter } from 'next/navigation';
 import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
+import { GettingStartedGuide } from '@/components/dashboard/GettingStartedGuide';
+import type { ChildProfile, MissionInstance, RewardTemplate } from '@/lib/types';
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/contexts/AuthContext';
+import { getChildProfilesForAttribution, getMissionInstancesForContext, getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+
 
 function DesktopDashboardCard({
   icon: Icon,
@@ -148,71 +154,51 @@ function MobileDashboardCard({
 
 
 function DashboardPage() {
-    const { openModal, selectedChildId } = useFamily();
+    const { user, loading: authLoading } = useAuth();
+    const { openModal, selectedChildId, currentContext, isLoading: isFamilyLoading } = useFamily();
     const router = useRouter();
     const isMobile = useIsMobile();
+    
+    const [children, setChildren] = useState<ChildProfile[]>([]);
+    const [missions, setMissions] = useState<MissionInstance[]>([]);
+    const [rewards, setRewards] = useState<RewardTemplate[]>([]);
+    const [isLoadingData, setIsLoadingData] = useState(true);
+
+    useEffect(() => {
+        if (authLoading || isFamilyLoading || !user) {
+            if (!user && !authLoading) setIsLoadingData(false);
+            return;
+        }
+
+        const familyIdToQuery = currentContext === 'my-space' ? null : currentContext;
+        const fetchData = async () => {
+            setIsLoadingData(true);
+            try {
+                const [childData, missionData, rewardData] = await Promise.all([
+                    getChildProfilesForAttribution(user.uid, currentContext),
+                    getMissionInstancesForContext(user.uid, currentContext),
+                    getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
+                ]);
+                setChildren(childData);
+                setMissions(missionData);
+                setRewards(rewardData);
+            } catch (error) {
+                console.error("Error fetching dashboard content data:", error);
+            } finally {
+                setIsLoadingData(false);
+            }
+        };
+
+        fetchData();
+    }, [user, currentContext, authLoading, isFamilyLoading]);
     
     const DashboardCard = isMobile ? MobileDashboardCard : DesktopDashboardCard;
     const gridClasses = isMobile ? "grid-cols-2 sm:grid-cols-3 gap-3" : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6";
 
   return (
     <div className="space-y-8">
-      {/* Seção "Comece por Aqui!" */}
-      <Accordion type="single" collapsible defaultValue="item-1" className="w-full">
-        <AccordionItem value="item-1" className="border rounded-lg bg-gradient-to-br from-card to-accent/5">
-          <AccordionTrigger className="p-6 hover:no-underline">
-              <div className="flex flex-col text-left">
-                <CardTitle className="text-2xl font-headline flex items-center gap-2"><Wand2 className="text-primary"/>Comece por Aqui!</CardTitle>
-                <CardDescription className="mt-1">
-                  Ações rápidas para configurar sua Central de Heróis e iniciar a jornada.
-                </CardDescription>
-              </div>
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="px-6 pb-6 pt-0 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="bg-background/70">
-                  <CardHeader>
-                      <CardTitle className="text-base">Criar Rotina para Criança</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                      <Button asChild className="w-full">
-                          <Link href="/dashboard/assistente">
-                               Usar o Assistente de Criação
-                          </Link>
-                      </Button>
-                  </CardContent>
-              </Card>
-              <Card className="bg-background/70">
-                  <CardHeader>
-                      <CardTitle className="text-base">Colaborar em Aliança</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                      <Button asChild variant="secondary" className="w-full">
-                          <Link href="/dashboard/family?action=join">
-                               Entrar em aliança com convite
-                          </Link>
-                      </Button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button asChild variant="secondary" className="w-full">
-                            <Link href="/dashboard/family?action=create">
-                                 Criar Aliança
-                            </Link>
-                        </Button>
-                         <Button asChild variant="secondary" className="w-full">
-                            <Link href="/dashboard/alliances">
-                                Gerenciar Alianças
-                            </Link>
-                        </Button>
-                      </div>
-                  </CardContent>
-              </Card>
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
-
-
-      {/* Seção "Meus Mini Heróis" */}
+      <GettingStartedGuide hasChildren={children.length > 0} hasMissions={missions.length > 0} hasRewards={rewards.length > 0} />
+      
       <div>
           <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Heróis</h2>
           <div className={cn("grid", gridClasses)}>
