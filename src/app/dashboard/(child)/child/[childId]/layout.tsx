@@ -28,13 +28,23 @@ export default function ChildDashboardLayout({
   }, []);
 
   useEffect(() => {
-    if (!authLoading && (!isChildAuthenticated || !childProfile)) {
-        logout(); // Force logout for security if state is inconsistent
-        router.replace('/dashboard/child-login');
-    } else if (childProfile && childProfile.id !== childId) {
-        // Logged in as a different child, redirect to their correct page
-        router.replace(`/dashboard/child/${childProfile.id}`);
+    // Wait until authentication is fully loaded before checking credentials
+    if (authLoading) {
+      return;
     }
+
+    // If, after loading, the user is not an authenticated child, log them out.
+    if (!isChildAuthenticated) {
+      logout(); // This also clears child session data
+      router.replace('/dashboard/child-login');
+      return;
+    }
+
+    // If the authenticated child's profile is available but doesn't match the URL, redirect them.
+    if (childProfile && childProfile.id !== childId) {
+      router.replace(`/dashboard/child/${childProfile.id}`);
+    }
+    
   }, [childId, childProfile, isChildAuthenticated, authLoading, router, logout]);
 
   if (authLoading || !childProfile) {
