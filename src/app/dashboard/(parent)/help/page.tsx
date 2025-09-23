@@ -140,6 +140,7 @@ export default function HelpCenterPage() {
                      <Card className="bg-background/70">
                       <CardHeader>
                           <CardTitle className="text-base flex items-center gap-2">Criar Rotina para Criança</CardTitle>
+                           <CardDescription>Deixe a assitente <strong>Aura</strong> te guiar! Crie o perfil e a rotina de missões diárias de forma rápida e inteligente</CardDescription>
                       </CardHeader>
                       <CardContent>
                           <Button asChild className="w-full">

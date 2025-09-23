@@ -229,6 +229,7 @@ function DashboardPage() {
                         <Card className="bg-background/70">
                             <CardHeader>
                                 <CardTitle className="text-base flex items-center gap-2"><Sparkles className="h-5 w-5 text-chart-4"/>Criar Rotina para Criança</CardTitle>
+                                <CardDescription className="text-sm">Deixe a assitente <strong>Aura</strong> te guiar! Crie o perfil e a rotina de missões diárias de forma rápida e inteligente</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Button asChild className="w-full">
@@ -285,7 +286,7 @@ function DashboardPage() {
       )}
       
       <div>
-          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Heróis</h2>
+          <h2 className="text-2xl font-headline font-bold mb-4 flex items-center gap-2">Meus Mini Herois</h2>
           <div className={cn("grid", gridClasses)}>
               <DashboardCard 
                   icon={Calendar1Icon}
