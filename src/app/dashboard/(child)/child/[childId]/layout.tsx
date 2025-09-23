@@ -40,7 +40,8 @@ export default function ChildDashboardLayout({
   }, [childId, childProfile, isChildAuthenticated, authLoading, router, logout]);
 
   // Exibe a tela de carregamento enquanto a autenticação está sendo verificada
-  if (authLoading) {
+  // ou se o perfil da criança ainda não corresponde ao da URL.
+  if (authLoading || (isChildAuthenticated && childProfile?.id !== childId)) {
     return <Loading />;
   }
 

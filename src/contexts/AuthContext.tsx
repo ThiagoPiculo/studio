@@ -30,10 +30,27 @@ const convertTimestampsInObject = (obj: any): any => {
 
 const AuthContext = React.createContext<AuthContextType | undefined>(undefined);
 
+const getInitialChildState = (): { profile: ChildProfile | null; isAuthenticated: boolean } => {
+    if (typeof window === 'undefined') {
+        return { profile: null, isAuthenticated: false };
+    }
+    try {
+        const storedChildProfile = sessionStorage.getItem('childProfile');
+        if (storedChildProfile) {
+            const profile = JSON.parse(storedChildProfile);
+            return { profile, isAuthenticated: true };
+        }
+    } catch (e) {
+        console.error("Failed to parse child profile from session storage:", e);
+    }
+    return { profile: null, isAuthenticated: false };
+};
+
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = React.useState<UserProfile | null>(null);
-  const [childProfile, setChildProfile] = React.useState<ChildProfile | null>(null);
-  const [isChildAuthenticated, setIsChildAuthenticated] = React.useState(false);
+  const [childProfile, setChildProfile] = React.useState<ChildProfile | null>(() => getInitialChildState().profile);
+  const [isChildAuthenticated, setIsChildAuthenticated] = React.useState<boolean>(() => getInitialChildState().isAuthenticated);
   const [loading, setLoading] = React.useState(true);
   const router = useRouter();
   const pathname = usePathname();
@@ -47,10 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       if (firebaseUser) {
-        // Handle post-login refresh
-        const hasRefreshed = sessionStorage.getItem('postLoginRefreshDone');
-        if (!hasRefreshed) {
-            sessionStorage.setItem('postLoginRefreshDone', 'true');
+        // Handle post-login refresh for admin/parent user
+        const postLoginRefresh = sessionStorage.getItem('postLoginRefresh');
+        if (postLoginRefresh === 'true') {
+            sessionStorage.removeItem('postLoginRefresh');
             // Use a short delay to allow login state to settle before refresh
             setTimeout(() => {
                 router.replace('/dashboard?initial_load=true');
@@ -84,9 +101,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               setUser(newUserProfile);
             }
             
+            // This is a parent/admin login, so clear any child state
             setIsChildAuthenticated(false);
             setChildProfile(null);
-            
+            sessionStorage.removeItem('childProfile');
+
             // Run the sync function for the user
             await populateInitialRewardTemplates(firebaseUser.uid, null);
             setLoading(false);
@@ -98,35 +117,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           }
         );
         setProfileUnsubscribe(() => newProfileUnsubscribe);
-      } else {
-        // No Firebase user
-        sessionStorage.removeItem('postLoginRefreshDone'); // Clear flag on logout or session expiry
-        
-        const storedChildProfile = sessionStorage.getItem('childProfile');
-        if (storedChildProfile) {
-          try {
-              const profile = JSON.parse(storedChildProfile);
-              setChildProfile(profile);
-              setIsChildAuthenticated(true);
-          } catch(e) {
-              sessionStorage.removeItem('childProfile');
-              setIsChildAuthenticated(false);
-          }
+      } else { // No Firebase user (could be logged out or a child user)
+        const childState = getInitialChildState();
+        if (childState.isAuthenticated) {
+            setChildProfile(childState.profile);
+            setIsChildAuthenticated(true);
+            setUser(null);
         } else {
-          setChildProfile(null);
-          setIsChildAuthenticated(false);
+            // Logged out state for everyone
+            setChildProfile(null);
+            setIsChildAuthenticated(false);
+            setUser(null);
         }
-        setUser(null);
-        setLoading(false);
 
-        const isChildDashboard = pathname.startsWith('/dashboard/child/');
-        const publicPaths = ['/', '/auth/login', '/auth/register', '/dashboard/child-login'];
-        const isPublic = publicPaths.some(p => pathname.startsWith(p));
+        setLoading(false);
         
-        if (!isChildAuthenticated && !isPublic && !isChildDashboard) {
+        const isChildDashboard = pathname.startsWith('/dashboard/child/');
+        const isChildLogin = pathname.startsWith('/dashboard/child-login');
+        const isPublicAuthPath = pathname.startsWith('/auth/');
+        const isHomePage = pathname === '/';
+        const isAllowedPublic = isPublicAuthPath || isHomePage || isChildLogin;
+
+        if (!user && !isChildAuthenticated && !isAllowedPublic && !isChildDashboard) {
             router.replace('/auth/login');
-        } else if (!isChildAuthenticated && isChildDashboard) {
-             router.replace('/dashboard/child-login');
         }
       }
     });
@@ -173,6 +186,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
         await populateInitialRewardTemplates(googleUser.uid, null);
       }
+      sessionStorage.setItem('postLoginRefresh', 'true');
 
     } catch (error: any) {
         if (error.code !== 'auth/popup-closed-by-user') {
@@ -185,18 +199,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     try {
-      if (isChildAuthenticated) {
-        sessionStorage.removeItem('childProfile');
-        setChildProfile(null);
-        setIsChildAuthenticated(false);
-      } else {
-        // Clear admin/parent session data as well
-        sessionStorage.removeItem('currentContext');
-        sessionStorage.removeItem('selectedChildId');
-      }
-      // Always remove the refresh flag on any logout
-      sessionStorage.removeItem('postLoginRefreshDone');
-      await signOut(auth);
+      await signOut(auth); // This will trigger onAuthStateChanged
+      
+      // Clear all our custom session states regardless of user type
+      sessionStorage.removeItem('childProfile');
+      sessionStorage.removeItem('currentContext');
+      sessionStorage.removeItem('selectedChildId');
+      sessionStorage.removeItem('postLoginRefresh');
+      
+      // Manually update state to reflect logout immediately
+      setUser(null);
+      setChildProfile(null);
+      setIsChildAuthenticated(false);
+      
       router.push('/');
     } catch (error) {
       console.error("Error signing out:", error);
@@ -209,8 +224,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setProfileUnsubscribe(null);
     }
     const safeProfile = convertTimestampsInObject(profile);
-    setChildProfile(safeProfile);
+    
+    // Explicitly set parent user to null
     setUser(null); 
+
+    setChildProfile(safeProfile);
     setIsChildAuthenticated(true);
     sessionStorage.setItem('childProfile', JSON.stringify(safeProfile));
     setLoading(false);
