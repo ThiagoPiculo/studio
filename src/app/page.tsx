@@ -20,7 +20,7 @@ function LandingPageHeader() {
           <Button variant="ghost" asChild>
             <Link href="/auth/login">Login</Link>
           </Button>
-          <Button asChild className="hidden sm:inline-flex">
+          <Button asChild>
             <Link href="/auth/register">Cadastre-se Gratuitamente</Link>
           </Button>
         </div>
