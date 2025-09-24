@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://mini-herois-app.com'; // TODO: Substituir pelo domínio real
+  const baseUrl = 'https://mini-herois-app.com'; // TODO: Substituir pelo seu domínio real
 
   return [
     {
