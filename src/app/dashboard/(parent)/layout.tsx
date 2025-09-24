@@ -67,14 +67,20 @@ function DashboardMainContent({ children }: { children: ReactNode }) {
 export default function ParentDashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { currentContext, selectedChildId, setSelectedChildId, childrenInContext, isLoading: isFamilyLoading, isModalOpen, openModal, closeModal } = useFamily();
   const isMobile = useIsMobile();
   const [isClient, setIsClient] = React.useState(false);
 
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
+    useEffect(() => {
+        setIsClient(true);
+        if (!authLoading && !user) {
+            const isPublicPage = ['/auth/login', '/auth/register', '/'].includes(pathname);
+            if (!isPublicPage) {
+                router.replace('/auth/login');
+            }
+        }
+    }, [user, authLoading, pathname, router]);
 
   const handleBackClick = () => {
     router.back();

@@ -9,8 +9,26 @@ import { config } from 'dotenv';
 config();
 
 export const metadata: Metadata = {
-  title: 'Mini Herois Construtor de Hábitos',
-  description: 'Plataforma gamificada para ajudar a gerenciar e incentivar a formação de hábitos em crianças.',
+  title: 'Mini Herois: Construtor de Hábitos para Crianças',
+  description: 'Transforme a rotina em aventura! Plataforma gamificada para gerenciar tarefas, incentivar hábitos e fortalecer laços familiares com missões e recompensas.',
+  metadataBase: new URL('https://mini-herois-app.com'), // TODO: Substituir pelo domínio real
+  keywords: ['construtor de hábitos', 'crianças', 'gamificação', 'rotina infantil', 'tarefas para crianças', 'reforço positivo'],
+  creator: 'Mini Herois Team',
+  openGraph: {
+    type: 'website',
+    url: '/',
+    title: 'Mini Herois: Construtor de Hábitos para Crianças',
+    description: 'Transforme a rotina em aventura! Gamificação para gerenciar tarefas e incentivar hábitos em crianças.',
+    images: [
+      {
+        url: '/opengraph-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Mini Herois - A Aventura da Rotina',
+      },
+    ],
+    siteName: 'Mini Herois',
+  },
 };
 
 export default function RootLayout({
