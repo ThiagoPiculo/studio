@@ -23,7 +23,7 @@ function RegisterPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const inviteCode = searchParams.get('invite_code');
 
-  const title = inviteCode ? "Junte-se à Equipe de Herois!" : "Criar conta no Mini Heróis";
+  const title = inviteCode ? "Junte-se à Equipe de Heróis!" : "Criar conta no Mini Heróis";
   const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Guie seus heróis em jornadas inesquecíveis.";
   
   const handleGoogleSignUp = async () => {
@@ -112,7 +112,7 @@ function RegisterPageContent() {
             </div>
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Já possui uma conta?{' '}
-              <Link href="/auth/login" className="font-medium text-primary hover:underline">
+              <Link href="/dashboard/login-responsavel" className="font-medium text-primary hover:underline">
                 Fazer login no Mini Heróis
               </Link>
             </p>

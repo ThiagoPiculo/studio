@@ -8,7 +8,7 @@ export default function ChildLoginPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
       <Card className="relative w-full max-w-sm overflow-hidden shadow-clay rounded-2xl transition-all hover:shadow-clay-hover pt-12">
-        <Link href="/" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
+        <Link href="/auth/login" className="absolute top-4 left-4 inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors">
             <ArrowLeft className="mr-1 h-4 w-4" />
             voltar
         </Link>
@@ -41,7 +41,7 @@ export default function ChildLoginPage() {
           </div>
           <p className="mt-8 text-center text-sm text-muted-foreground">
             É um pai/mãe/responsável?{' '}
-            <Link href="/auth/login" className="font-medium text-primary hover:underline">
+            <Link href="/dashboard/login-responsavel" className="font-medium text-primary hover:underline">
               Fazer login no Mini Heróis
             </Link>
           </p>
