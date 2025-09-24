@@ -1,5 +1,13 @@
 # Versão Estável Atual
 
+- **Commit:** `a0b1c2d`
+- **Data:** 2025-09-07 15:00
+- **Descrição:** Nova Landing Page de alta conversão implementada. Inclui seções de benefícios, como funciona, depoimentos e FAQ. Corrigido o domínio de imagem para avatares de depoimento e ajustado o acordeão na página de registro.
+
+---
+
+# Versão Anterior
+
 - **Commit:** `7e2b8f8`
 - **Data:** 2025-09-06 11:45
 - **Descrição:** Versão estável após ajustes de layout e terminologia ("Acesso do Herói" e "Agenda Escolar").
