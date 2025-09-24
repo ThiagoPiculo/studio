@@ -21,7 +21,7 @@ function LandingPageHeader() {
             <Link href="/auth/login">Login</Link>
           </Button>
           <Button asChild>
-            <Link href="/auth/register">Cadastre-se Gratuitamente</Link>
+            <Link href="/auth/register">Comece Grátis</Link>
           </Button>
         </div>
       </div>
