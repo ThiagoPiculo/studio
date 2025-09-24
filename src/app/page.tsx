@@ -6,6 +6,8 @@ import { Rocket, Star, Gift, Target, Heart, Shield, Sparkles, UserCheck } from '
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { getInitials } from '@/lib/utils';
+import { Calendar1Icon } from '@/components/icons/Calendar1Icon';
+import Image from 'next/image';
 
 // Componente do Cabeçalho Fixo
 function LandingPageHeader() {
@@ -13,8 +15,8 @@ function LandingPageHeader() {
     <header className="sticky top-0 z-50 w-full bg-background/80 py-3 backdrop-blur-sm border-b">
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-primary">
-          <Rocket className="h-7 w-7" />
-          <span className="text-xl font-bold font-headline">Mini Herois</span>
+          <Image src="/logo.png" alt="Mini Heróis Logo" width={28} height={28} />
+          <span className="text-xl font-bold font-headline">Mini Heróis</span>
         </Link>
         <div className="flex items-center gap-2">
           <Button variant="ghost" asChild>
@@ -95,7 +97,7 @@ function BenefitsSection() {
             <div className="container mx-auto">
                 <div className="text-center mb-12">
                     <h2 className="text-3xl font-bold font-headline">Mais que um App, um Aliado da Família</h2>
-                    <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Veja como o Mini Herois pode transformar o dia a dia da sua casa.</p>
+                    <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">Veja como o Mini Heróis pode transformar o dia a dia da sua casa.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     {benefits.map((benefit) => (
@@ -118,7 +120,7 @@ function BenefitsSection() {
 // Seção de Depoimentos
 function TestimonialsSection() {
   const testimonials = [
-    { name: "Juliana M.", role: "Mãe do Léo, 7 anos", text: "O Mini Herois mudou nossa rotina da água para o vinho. A briga para escovar os dentes virou uma caça às estrelas. É incrível!", avatar: "https://i.pravatar.cc/150?img=1" },
+    { name: "Juliana M.", role: "Mãe do Léo, 7 anos", text: "O Mini Heróis mudou nossa rotina da água para o vinho. A briga para escovar os dentes virou uma caça às estrelas. É incrível!", avatar: "https://i.pravatar.cc/150?img=1" },
     { name: "Carlos S.", role: "Pai da Sofia, 9 anos", text: "Minha filha agora pede para fazer as tarefas para juntar estrelas para a 'noite de cinema'. Fortaleceu muito nosso vínculo.", avatar: "https://i.pravatar.cc/150?img=32" },
   ];
   return (
@@ -153,8 +155,8 @@ function TestimonialsSection() {
 // Seção de FAQ
 function FaqSection() {
     const faqs = [
-        { q: "Para qual idade o Mini Herois é indicado?", a: "Recomendamos o Mini Herois para crianças de 4 a 12 anos. Nessa fase, a gamificação é extremamente eficaz para a construção de hábitos e o desenvolvimento do senso de responsabilidade." },
-        { q: "Posso usar com mais de um filho?", a: "Sim! Você pode cadastrar quantos Mini Herois quiser. Cada um terá seu próprio perfil, com suas missões, recompensas e progresso individual." },
+        { q: "Para qual idade o Mini Heróis é indicado?", a: "Recomendamos o Mini Heróis para crianças de 4 a 12 anos. Nessa fase, a gamificação é extremamente eficaz para a construção de hábitos e o desenvolvimento do senso de responsabilidade." },
+        { q: "Posso usar com mais de um filho?", a: "Sim! Você pode cadastrar quantos Mini Heróis quiser. Cada um terá seu próprio perfil, com suas missões, recompensas e progresso individual." },
         { q: "É possível convidar outro responsável para ajudar?", a: "Com certeza! Através do sistema de 'Alianças', você pode convidar outro pai, mãe, avós ou cuidadores para gerenciar a rotina dos heróis em equipe, garantindo consistência." },
         { q: "O aplicativo é seguro para crianças?", a: "Totalmente. A interface da criança é um ambiente controlado e seguro, focado apenas em suas missões e recompensas. Não há anúncios ou acesso a conteúdos externos." },
     ];
@@ -202,7 +204,7 @@ function LandingPageFooter() {
     return (
         <footer className="py-8 bg-background">
             <div className="container mx-auto text-center text-muted-foreground text-sm">
-                <p>&copy; {new Date().getFullYear()} Mini Herois. Todos os direitos reservados.</p>
+                <p>&copy; {new Date().getFullYear()} Mini Heróis. Todos os direitos reservados.</p>
                  <Link href="/dashboard/child-login" className="mt-2 inline-block font-medium text-primary hover:underline">
                     É um Mini Herói? Acesse seu portal aqui!
                 </Link>

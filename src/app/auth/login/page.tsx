@@ -17,6 +17,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Separator } from '@/components/ui/separator';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -37,7 +38,7 @@ export default function LoginPage() {
           console.error("Google Sign-In failed:", error);
           toast({
             title: "E-mail ou senha incorretos?",
-            description: "Acontece com os melhores heróis! Tente usar sua conta do Google para entrar com um clique. Se você ainda não tem uma Central de Mini Herois, crie uma agora e comece a diversão.",
+            description: "Acontece com os melhores heróis! Tente usar sua conta do Google para entrar com um clique. Se você ainda não tem uma Central de Mini Heróis, crie uma agora e comece a diversão.",
             variant: "destructive",
           });
       }
@@ -57,7 +58,7 @@ export default function LoginPage() {
         <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">
              <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
-                <Rocket className="h-12 w-12 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
+                <Image src="/logo.png" alt="Mini Heróis Logo" width={48} height={48} className="filter drop-shadow-lg group-hover:scale-110 transition-transform" />
              </div>
           </div>
           <CardTitle className="font-headline text-3xl">Que bom te ver de novo!</CardTitle>

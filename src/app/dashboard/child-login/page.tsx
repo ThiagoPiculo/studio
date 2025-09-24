@@ -1,3 +1,4 @@
+
 import { ChildLoginForm } from '@/components/auth/ChildLoginForm';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sparkles, ListChecks, Star as StarIcon, Trophy, HelpCircle, ArrowLeft } from 'lucide-react';
@@ -17,7 +18,7 @@ export default function ChildLoginPage() {
               <Sparkles className="h-12 w-12 text-primary filter drop-shadow-lg group-hover:scale-110 transition-transform" />
             </div>
           </div>
-          <CardTitle className="font-headline text-3xl">Olá, Mini Herois!</CardTitle>
+          <CardTitle className="font-headline text-3xl">Olá, Mini Herói!</CardTitle>
           <CardDescription className="text-muted-foreground">
             Sua próxima missão está pronta! Use seu <strong>Código de Acesso</strong> para começar a aventura.
           </CardDescription>
@@ -41,7 +42,7 @@ export default function ChildLoginPage() {
           <p className="mt-8 text-center text-sm text-muted-foreground">
             É um pai/mãe/responsável?{' '}
             <Link href="/auth/login" className="font-medium text-primary hover:underline">
-              Fazer login no Mini Herois
+              Fazer login no Mini Heróis
             </Link>
           </p>
         </CardContent>

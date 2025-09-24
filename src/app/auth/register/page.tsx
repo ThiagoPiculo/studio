@@ -23,8 +23,8 @@ function RegisterPageContent() {
   const [isLoading, setIsLoading] = useState(false);
   const inviteCode = searchParams.get('invite_code');
 
-  const title = inviteCode ? "Junte-se à Equipe de Herois!" : "Criar conta no Mini Herois";
-  const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Guie seus herois em jornadas inesquecíveis.";
+  const title = inviteCode ? "Junte-se à Equipe de Herois!" : "Criar conta no Mini Heróis";
+  const description = inviteCode ? "Crie sua conta para se juntar à família e começar a colaborar." : "Guie seus heróis em jornadas inesquecíveis.";
   
   const handleGoogleSignUp = async () => {
     setIsLoading(true);
@@ -47,7 +47,7 @@ function RegisterPageContent() {
             }
           }
       } else {
-        toast({ title: "Boas-vindas!", description: "Sua Central de Mini Herois foi criada com sucesso." });
+        toast({ title: "Boas-vindas!", description: "Sua Central de Mini Heróis foi criada com sucesso." });
       }
 
       router.push("/dashboard");
@@ -113,7 +113,7 @@ function RegisterPageContent() {
             <p className="mt-6 text-center text-sm text-muted-foreground">
               Já possui uma conta?{' '}
               <Link href="/auth/login" className="font-medium text-primary hover:underline">
-                Fazer login no Mini Herois
+                Fazer login no Mini Heróis
               </Link>
             </p>
         </CardContent>

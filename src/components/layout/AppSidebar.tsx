@@ -20,7 +20,7 @@ import {
     AccordionItem,
     AccordionTrigger,
 } from "@/components/ui/accordion"
-import { Rocket, Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
+import { Users, CalendarDays, Target, Gift, Link as LinkIcon, NotebookPen, Medal, UserPlus, Home, PlusCircle, View, ChevronsUpDown, Menu, Sparkles, User, CalendarCheck, Settings, Radar, Contact, CircleDot, HelpCircle } from 'lucide-react';
 import { UserNav } from './UserNav';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -29,14 +29,15 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Calendar1Icon } from '../icons/Calendar1Icon';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 function AppLogo() {
     return (
         <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-                <Rocket className="h-7 w-7 text-primary" />
+                <Image src="/logo.png" alt="Mini Heróis Logo" width={28} height={28} />
                 <span className="font-headline text-xl font-bold text-foreground">
-                    Mini Herois
+                    Mini Heróis
                 </span>
             </Link>
             <SidebarTrigger />
@@ -163,7 +164,7 @@ export function AppSidebar() {
                             </CustomAccordionTrigger>
                             <AccordionContent className="pt-1">
                                 <SidebarMenuItem>
-                                    <NavLink href="/dashboard/meus-herois" tooltip="Meus Mini Herois" label="Meus Mini Herois" bypassModal={true}>
+                                    <NavLink href="/dashboard/meus-herois" tooltip="Meus Mini Heróis" label="Meus Mini Heróis" bypassModal={true}>
                                         <User className="text-primary" />
                                     </NavLink>
                                 </SidebarMenuItem>
