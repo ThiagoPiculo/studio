@@ -44,7 +44,7 @@ function HeroSection() {
         </p>
         <div className="mt-8 flex justify-center gap-4">
           <Button size="lg" asChild>
-            <Link href="/auth/register">Comece Agora, é Grátis!</Link>
+            <Link href="/auth/register">Comece Grátis</Link>
           </Button>
         </div>
       </div>
@@ -191,7 +191,7 @@ function FinalCtaSection() {
                 <p className="mt-3 max-w-xl mx-auto text-lg opacity-90">Junte-se a milhares de famílias e descubra o poder de transformar a rotina em uma jornada heroica.</p>
                 <div className="mt-8">
                      <Button size="lg" variant="secondary" asChild>
-                        <Link href="/auth/register">Cadastre-se Gratuitamente Agora!</Link>
+                        <Link href="/auth/register">Comece Grátis</Link>
                     </Button>
                 </div>
             </div>
