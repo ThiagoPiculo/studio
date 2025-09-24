@@ -15,7 +15,9 @@ function LandingPageHeader() {
     <header className="sticky top-0 z-50 w-full bg-background/80 py-3 backdrop-blur-sm border-b">
       <div className="container mx-auto flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2 text-primary">
-          <Image src="/logo.png" alt="Mini Heróis Logo" width={28} height={28} />
+          <div className="relative h-7 w-7">
+            <Image src="/logo.png" alt="Mini Heróis Logo" fill style={{objectFit: "contain"}} />
+          </div>
           <span className="text-xl font-bold font-headline">Mini Heróis</span>
         </Link>
         <div className="flex items-center gap-2">

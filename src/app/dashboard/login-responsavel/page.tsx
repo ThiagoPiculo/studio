@@ -57,8 +57,8 @@ export default function LoginPage() {
         </Link>
         <CardHeader className="text-center p-6 pt-0">
           <div className="mb-4 flex justify-center group">
-             <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3">
-                <Image src="/logo.png" alt="Mini Heróis Logo" width={48} height={48} className="filter drop-shadow-lg group-hover:scale-110 transition-transform" />
+             <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center shadow-clay mb-3 relative">
+                <Image src="/logo.png" alt="Mini Heróis Logo" fill style={{objectFit: "contain"}} className="filter drop-shadow-lg group-hover:scale-110 transition-transform p-3" />
              </div>
           </div>
           <CardTitle className="font-headline text-3xl">Que bom te ver de novo!</CardTitle>

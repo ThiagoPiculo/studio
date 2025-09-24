@@ -35,7 +35,9 @@ function AppLogo() {
     return (
         <div className="flex h-10 items-center justify-between px-2 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <Link href="/dashboard" className="flex items-center gap-2 group-data-[collapsible=icon]:hidden">
-                <Image src="/logo.png" alt="Mini Heróis Logo" width={28} height={28} />
+                <div className="relative w-7 h-7">
+                  <Image src="/logo.png" alt="Mini Heróis Logo" fill style={{objectFit:"contain"}}/>
+                </div>
                 <span className="font-headline text-xl font-bold text-foreground">
                     Mini Heróis
                 </span>
