@@ -98,7 +98,7 @@ function RegisterPageContent() {
                 Continuar com o Google
               </Button>
               
-              <Accordion type="single" collapsible className="w-full">
+              <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
                 <AccordionItem value="item-1" className="border-none">
                   <AccordionTrigger className="w-full justify-center text-base rounded-xl h-12 bg-transparent border border-input shadow-clay hover:shadow-clay-hover active:shadow-clay-inset hover:no-underline [&[data-state=open]>svg]:rotate-180">
                       <Mail className="mr-2 h-5 w-5"/>
