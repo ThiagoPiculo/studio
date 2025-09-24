@@ -109,16 +109,19 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
     
     const handleLeaveConfirm = async () => {
         if (!user || !allianceId || isOwner) return;
+
+        const alliance = availableContexts.find(c => c.id === allianceId);
+        if (!alliance) {
+            toast({ title: "Erro", description: "Não foi possível encontrar os dados da aliança atual.", variant: "destructive" });
+            return;
+        }
+
         setIsPending(true);
         try {
-            const family = await getFamilyById(allianceId);
-            if (!family) {
-              throw new Error("Aliança não encontrada.");
-            }
             await leaveFamily(user.uid, allianceId);
             toast({
                 title: "Você saiu da aliança",
-                description: `Você não faz mais parte da aliança "${family.name}".`,
+                description: `Você não faz mais parte da aliança "${alliance.name}".`,
             });
             setIsConfirmLeaveOpen(false);
             router.push('/dashboard/alliances');
@@ -233,5 +236,3 @@ export function MemberSettings({ member, isOwner, onMemberUpdate }: MemberSettin
       </>
     );
 }
-
-    
