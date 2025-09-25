@@ -66,13 +66,19 @@ export default function ChildRewardsPage() {
   
   const { availableRewards, goalRewards } = useMemo(() => {
     if (!child) return { availableRewards: [], goalRewards: [] };
+
+    const pendingTemplateIds = new Set(pendingRedemptions.map(r => r.templateId));
     
-    const available = allRewards.filter(r => child.stars >= r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
-    const goals = allRewards.filter(r => child.stars < r.starsCost).sort((a,b) => a.starsCost - b.starsCost);
+    const available = allRewards.filter(r => 
+        child.stars >= r.starsCost && !pendingTemplateIds.has(r.id)
+    ).sort((a,b) => a.starsCost - b.starsCost);
+    
+    const goals = allRewards.filter(r => 
+        child.stars < r.starsCost && !pendingTemplateIds.has(r.id)
+    ).sort((a,b) => a.starsCost - b.starsCost);
     
     return { availableRewards: available, goalRewards: goals };
-
-  }, [allRewards, child]);
+  }, [allRewards, child, pendingRedemptions]);
 
   const goalRewardsByCategory = useMemo(() => {
     const grouped: Record<string, RewardTemplate[]> = {};
@@ -245,5 +251,7 @@ export default function ChildRewardsPage() {
 
     </div>
   );
+
+    
 
     
