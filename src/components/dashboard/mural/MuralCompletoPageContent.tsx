@@ -1,5 +1,5 @@
 
-'use client';
+"use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -41,7 +41,7 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays, isValid, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import Loading from './loading';
+import Loading from '@/app/dashboard/(parent)/mural/loading';
 import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -62,7 +62,7 @@ import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 
 type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
-    | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
+    | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string, childId: string });
 
 function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstance, onManage: (instance: MissionInstance) => void, onDelete: (instance: MissionInstance) => void }) {
     const categoryDetails = missionCategories.find(cat => cat.id === instance.category);
@@ -820,9 +820,9 @@ export function MuralCompletoPageContent() {
                            <CardDescription>Gerencie as recompensas disponíveis para o herói e aprove os resgates.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            {availableForRedemption.length > 0 && (
-                                <section>
-                                    <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgate do Catálogo</h3>
+                            <section>
+                                <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgate do Catálogo</h3>
+                                {availableForRedemption.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {availableForRedemption.map((template) => (
                                             <Card key={template.id} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
@@ -838,8 +838,10 @@ export function MuralCompletoPageContent() {
                                             </Card>
                                         ))}
                                     </div>
-                                </section>
-                            )}
+                                ) : (
+                                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhuma nova recompensa do catálogo pode ser resgatada com as estrelas atuais. Continue completando missões!</p>
+                                )}
+                            </section>
 
                              <section>
                                <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between mb-4">
@@ -1259,3 +1261,5 @@ export function MuralCompletoPageContent() {
     </div>
   );
 }
+
+    
