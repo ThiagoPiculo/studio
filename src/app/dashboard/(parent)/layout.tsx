@@ -34,7 +34,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getInitials } from '@/lib/utils';
 
 
-function DashboardMainContent({ children }: { children: ReactNode }) {
+function DashboardMainContent({ children }: { children: React.ReactNode }) {
     const { loading: authLoading } = useAuth();
     const { isLoading: familyLoading } = useFamily();
     const isMobile = useIsMobile();
