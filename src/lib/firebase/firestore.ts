@@ -19,6 +19,8 @@ import {
   orderBy,
   runTransaction,
   deleteField,
+  arrayUnion,
+  arrayRemove,
 } from 'firebase/firestore';
 import { db, storage } from './config';
 import { ref, uploadBytes, getDownloadURL, getMetadata, deleteObject } from "firebase/storage";
@@ -1655,6 +1657,26 @@ export const deleteChildRewardInstancesByTemplateAndChild = async (actor: UserPr
     }
 };
 
+export const toggleFavoriteReward = async (childId: string, rewardTitle: string): Promise<void> => {
+  const childRef = doc(db, 'children', childId);
+
+  await runTransaction(db, async (transaction) => {
+    const childSnap = await transaction.get(childRef);
+    if (!childSnap.exists()) {
+      throw new Error("Perfil da criança não encontrado.");
+    }
+    const childData = childSnap.data() as ChildProfile;
+    const favorites = childData.favoriteRewardIds || [];
+
+    if (favorites.includes(rewardTitle)) {
+      // Remove from favorites
+      transaction.update(childRef, { favoriteRewardIds: arrayRemove(rewardTitle) });
+    } else {
+      // Add to favorites
+      transaction.update(childRef, { favoriteRewardIds: arrayUnion(rewardTitle) });
+    }
+  });
+};
 
 
 // --- Mission Templates (Catálogo de Missões) ---
@@ -2735,6 +2757,7 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
 
     
+
 
 
 
