@@ -4,8 +4,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { requestRewardRedemption, getChildProfileById, getUserProfile } from '@/lib/firebase/firestore';
-import { getRewardTemplatesByOwnerOrFamily } from '@/lib/firebase/firestore';
+import { requestRewardRedemption, getChildProfileById, getUserProfile, getRewardTemplatesByOwnerOrFamily, getPendingRewardInstancesByChild } from '@/lib/firebase/firestore';
 import type { ChildRewardInstance, ChildProfile, RewardTemplate, UserProfile, RewardCategoryDetails } from '@/lib/types';
 import { rewardCategories } from '@/lib/types';
 import Loading from '../loading';
@@ -49,11 +48,11 @@ export default function ChildRewardsPage() {
           const familyIdToQuery = childProfile.familyId || null;
           const [rewardData, pendingData] = await Promise.all([
              getRewardTemplatesByOwnerOrFamily(childProfile.ownerId, familyIdToQuery),
-             requestRewardRedemption(null, childId, true) // Fetch pending redemptions
+             getPendingRewardInstancesByChild(childId)
           ]);
           
           setAllRewards(rewardData.filter(r => r.status === 'active'));
-          setPendingRedemptions(pendingData as ChildRewardInstance[]);
+          setPendingRedemptions(pendingData);
 
         }).catch(error => {
           console.error("Error fetching child rewards data:", error);

@@ -1384,23 +1384,9 @@ export const addChildRewardInstance = async (
 };
 
 export const requestRewardRedemption = async (
-  rewardTemplate: RewardTemplate | null,
+  rewardTemplate: RewardTemplate,
   childId: string,
-  fetchOnly?: boolean
-): Promise<ChildRewardInstance | ChildRewardInstance[] | void> => {
-  if (fetchOnly) {
-    const pendingQuery = query(
-      collection(db, 'childRewardInstances'),
-      where('childId', '==', childId),
-      where('status', '==', 'pending_approval')
-    );
-    const snapshot = await getDocs(pendingQuery);
-    return snapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
-  }
-
-  if (!rewardTemplate) {
-    throw new Error("Template de recompensa não fornecido para a solicitação.");
-  }
+): Promise<ChildRewardInstance | void> => {
   
   const child = await getChildProfileById(childId);
   if (!child) {
@@ -1455,6 +1441,16 @@ export const requestRewardRedemption = async (
   );
   
   return convertTimestampsInObject({ id: newInstanceRef.id, ...newInstance }) as ChildRewardInstance;
+};
+
+export const getPendingRewardInstancesByChild = async (childId: string): Promise<ChildRewardInstance[]> => {
+    const q = query(
+        collection(db, 'childRewardInstances'),
+        where('childId', '==', childId),
+        where('status', '==', 'pending_approval')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => convertTimestampsInObject({ id: doc.id, ...doc.data() }) as ChildRewardInstance);
 };
 
 export const getActiveChildRewardInstancesByTemplateAndChild = async (templateId: string, childId: string): Promise<ChildRewardInstance[]> => {
@@ -2738,4 +2734,5 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
 
     
+
 
