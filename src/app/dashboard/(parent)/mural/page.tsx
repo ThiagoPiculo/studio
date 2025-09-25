@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
@@ -63,7 +62,7 @@ import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 
 type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
-    | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string });
+    | (ChildRewardInstance & { type: 'reward', completedAt: string, actorId?: string, actorName?: string, childId: string });
 
 function MissionCard({ instance, onManage, onDelete }: { instance: MissionInstance, onManage: (instance: MissionInstance) => void, onDelete: (instance: MissionInstance) => void }) {
     const categoryDetails = missionCategories.find(cat => cat.id === instance.category);
@@ -817,43 +816,25 @@ function MuralCompletoPageContent() {
                 <TabsContent value="rewards">
                     <Card className="shadow-md">
                         <CardHeader>
-                            <CardTitle>Quadro de Recompensas de {child.name}</CardTitle>
-                            <CardDescription>Veja e gerencie as recompensas disponíveis para {child.name}.</CardDescription>
-                            <div className="pt-4">
-                                <Label className="text-sm font-medium text-muted-foreground">Filtrar por Status da Recompensa:</Label>
-                                <RadioGroup
-                                    value={instanceStatusFilter}
-                                    onValueChange={(value) => setInstanceStatusFilter(value as any)}
-                                    className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
-                                >
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="all" id={`rf-all`} /><Label htmlFor={`rf-all`} className="cursor-pointer hover:text-primary font-normal">Todas</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="active" id={`rf-active`} /><Label htmlFor={`rf-active`} className="cursor-pointer hover:text-primary font-normal">Ativas</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="pending_approval" id={`rf-pending`} /><Label htmlFor={`rf-pending`} className="cursor-pointer hover:text-primary font-normal">Aguardando Aprovação</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="redeemed" id={`rf-redeemed`} /><Label htmlFor={`rf-redeemed`} className="cursor-pointer hover:text-primary font-normal">Resgatadas</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="disabled" id={`rf-disabled`} /><Label htmlFor={`rf-disabled`} className="cursor-pointer hover:text-primary font-normal">Inativas</Label></div>
-                                </RadioGroup>
-                            </div>
+                           <CardTitle className="flex items-center gap-2"><Gift className="h-5 w-5 text-chart-2" />Recompensas de {child.name}</CardTitle>
+                           <CardDescription>Gerencie as recompensas disponíveis para o herói e aprove os resgates.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-4">
-                            <Button onClick={() => router.push('/dashboard/rewards')} variant="outline" className="mb-4 shadow-sm">
-                                <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Baú de Recompensas
-                            </Button>
+                        <CardContent className="space-y-6">
                             
                             {availableForRedemption.length > 0 && (
                                 <section>
                                     <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgate do Catálogo</h3>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {availableForRedemption.map((template) => (
                                             <Card key={template.id} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
-                                                <CardHeader>
-                                                <CardTitle className="text-lg">{template.title}</CardTitle>
-                                                {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
+                                                <CardHeader className="pb-3">
+                                                    <CardTitle className="text-base">{template.title}</CardTitle>
                                                 </CardHeader>
-                                                <CardContent className="flex-grow text-sm space-y-2">
-                                                <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {template.starsCost} estrelas</div>
+                                                <CardContent className="flex-grow text-sm">
+                                                    <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {template.starsCost} estrelas</div>
                                                 </CardContent>
-                                                <CardFooter>
-                                                    <Button size="sm" className="w-full" disabled={!canEdit || isDeleting} onClick={() => handleAssignReward(template)}>Atribuir Recompensa</Button>
+                                                <CardFooter className="p-3">
+                                                    <Button size="sm" className="w-full" disabled={!canEdit || isDeleting} onClick={() => handleAssignReward(template)}>Atribuir ao Herói</Button>
                                                 </CardFooter>
                                             </Card>
                                         ))}
@@ -861,43 +842,36 @@ function MuralCompletoPageContent() {
                                 </section>
                             )}
 
-                            {filteredChildRewards.length > 0 && (
-                                <section>
-                                     <h3 className="text-lg font-semibold mb-2 mt-6">Recompensas Atribuídas</h3>
+                             <section>
+                               <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:justify-between mb-4">
+                                  <h3 className="text-lg font-semibold">Recompensas Atribuídas</h3>
+                                   <div className="flex-shrink-0">
+                                      <Label className="text-xs font-medium text-muted-foreground mr-2">Filtrar por Status:</Label>
+                                      <RadioGroup value={instanceStatusFilter} onValueChange={(v) => setInstanceStatusFilter(v as any)} className="flex items-center gap-1 bg-muted p-1 rounded-md">
+                                        <RadioGroupItem value="all" id="rf-all" className="sr-only"/> <Label htmlFor="rf-all" className="px-2 py-1 text-xs rounded-sm cursor-pointer data-[state=checked]:bg-background data-[state=checked]:shadow">Todas</Label>
+                                        <RadioGroupItem value="pending_approval" id="rf-pending" className="sr-only"/> <Label htmlFor="rf-pending" className="px-2 py-1 text-xs rounded-sm cursor-pointer data-[state=checked]:bg-background data-[state=checked]:shadow">Pendentes</Label>
+                                        <RadioGroupItem value="redeemed" id="rf-redeemed" className="sr-only"/> <Label htmlFor="rf-redeemed" className="px-2 py-1 text-xs rounded-sm cursor-pointer data-[state=checked]:bg-background data-[state=checked]:shadow">Resgatadas</Label>
+                                      </RadioGroup>
+                                   </div>
+                               </div>
+                                {filteredChildRewards.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {filteredChildRewards.map((instance) => {
                                         const categoryDetails = getCategoryDetails(instance.category);
-                                        const CategoryIconComponent = categoryDetails?.icon;
                                         return (
                                             <Card key={instance.id} className="shadow-sm hover:shadow-md transition-shadow flex flex-col">
                                                 <CardHeader>
                                                     <div className="flex justify-between items-start">
-                                                        <CardTitle className="text-lg">{instance.title}</CardTitle>
+                                                        <CardTitle className="text-base">{instance.title}</CardTitle>
                                                         <Badge variant={getRewardStatusBadgeVariant(instance.status)} className="capitalize text-xs">
                                                             {getRewardStatusText(instance.status)}
                                                         </Badge>
                                                     </div>
-                                                    {instance.description && <CardDescription className="text-xs pt-1 line-clamp-2">{instance.description}</CardDescription>}
                                                 </CardHeader>
                                                 <CardContent className="space-y-2 flex-grow text-sm">
-                                                    {categoryDetails && (
-                                                        <div className="flex items-center">
-                                                            <span className={`px-2 py-0.5 rounded-full text-xs border ${categoryDetails.colorClasses}`}>
-                                                                {categoryDetails.label}
-                                                            </span>
-                                                        </div>
-                                                    )}
-                                                    <div className="flex items-center text-muted-foreground">
-                                                        <StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />
-                                                        Custo: {instance.starsCost} estrelas
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Atribuída em: {getDateObject(instance.assignedAt)?.toLocaleDateString('pt-BR')}
-                                                    </p>
+                                                    <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {instance.starsCost} estrelas</div>
                                                     {instance.status === 'redeemed' && instance.redeemedAt && (
-                                                        <p className="text-xs text-green-600 font-medium">
-                                                            Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}
-                                                        </p>
+                                                        <p className="text-xs text-green-600 font-medium">Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}</p>
                                                     )}
                                                 </CardContent>
                                                 <CardFooter className="flex-wrap gap-2">
@@ -919,8 +893,6 @@ function MuralCompletoPageContent() {
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="w-56">
-                                                                <DropdownMenuLabel>Gerenciar para {child.name}</DropdownMenuLabel>
-                                                                <DropdownMenuSeparator />
                                                                 {instance.status === 'active' && (
                                                                     <DropdownMenuItem onClick={() => handleToggleInstanceStatus(instance, 'disabled')} disabled={isDeleting}>
                                                                         <XCircle className="mr-2 h-4 w-4 text-orange-500" /> Tornar Inativa para {child.name}
@@ -952,19 +924,10 @@ function MuralCompletoPageContent() {
                                         );
                                         })}
                                     </div>
-                                </section>
-                            )}
-                             {filteredChildRewards.length === 0 && availableForRedemption.length === 0 && (
-                                <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                                    <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                                    <p className="text-lg text-muted-foreground">
-                                        Nenhuma recompensa encontrada.
-                                    </p>
-                                    <p className="text-sm text-muted-foreground mt-1">
-                                        Tente um filtro diferente ou verifique o catálogo.
-                                    </p>
-                                </div>
-                            )}
+                                ) : (
+                                    <p className="text-center py-6 text-sm text-muted-foreground">Nenhuma recompensa atribuída encontrada com o filtro "{getRewardStatusText(instanceStatusFilter)}".</p>
+                                )}
+                            </section>
                         </CardContent>
                     </Card>
                 </TabsContent>
@@ -1227,7 +1190,7 @@ function MuralCompletoPageContent() {
                 <AlertDialogHeader>
                     <AlertDialogTitle>Desfazer Resgate?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        Isso devolverá {instanceToManage.starsCost} estrelas para {child.name} e tornará a recompensa "{instanceToManage.title}" ativa novamente.
+                        Isso devolverá {instanceToManage.starsCost} estrelas para {child.name} e tornará a recompensa ativa novamente.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -1297,13 +1260,4 @@ function MuralCompletoPageContent() {
   );
 }
 
-export default function MuralCompleto() {
-    return (
-        <Suspense>
-            <MuralCompletoPageContent />
-        </Suspense>
-    )
-}
-
     
-
