@@ -20,6 +20,7 @@ import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 import { Loader2 } from 'lucide-react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useAuth } from '@/contexts/AuthContext';
+import { Progress } from '@/components/ui/progress';
 
 
 interface RewardCardProps {
@@ -33,6 +34,7 @@ interface RewardCardProps {
 
 function RewardCard({ reward, childStars, isFavorited, onToggleFavorite, onRedeem, isProcessing }: RewardCardProps) {
     const canAfford = reward.starsCost ? childStars >= reward.starsCost : false;
+    const progress = reward.starsCost ? (childStars / reward.starsCost) * 100 : 0;
 
     return (
         <Card className={cn(
@@ -48,7 +50,7 @@ function RewardCard({ reward, childStars, isFavorited, onToggleFavorite, onRedee
                         className="h-8 w-8 shrink-0"
                         onClick={() => onToggleFavorite(reward.title, isFavorited)}
                     >
-                        <Star className={cn("h-5 w-5", isFavorited ? "text-yellow-400 fill-yellow-400" : "text-muted-foreground")} />
+                        <Heart className={cn("h-5 w-5", isFavorited ? "text-pink-500 fill-pink-500" : "text-muted-foreground")} />
                     </Button>
                 </div>
             </CardHeader>
@@ -59,16 +61,25 @@ function RewardCard({ reward, childStars, isFavorited, onToggleFavorite, onRedee
             </CardContent>
             <CardFooter className="p-4 pt-0 flex-col items-start gap-3">
                  <Badge variant="secondary" className="font-semibold text-sm py-1 px-3">
-                    {reward.starsCost} <Star className="ml-1.5 h-4 w-4 text-yellow-400 fill-current" />
+                    {reward.starsCost?.toLocaleString('pt-BR')} <Star className="ml-1.5 h-4 w-4 text-yellow-400 fill-current" />
                 </Badge>
-                <Button
-                    size="sm"
-                    className="w-full"
-                    disabled={!canAfford || isProcessing}
-                    onClick={() => onRedeem(reward)}
-                >
-                    {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Pedir Resgate'}
-                </Button>
+                {canAfford ? (
+                    <Button
+                        size="sm"
+                        className="w-full"
+                        disabled={isProcessing}
+                        onClick={() => onRedeem(reward)}
+                    >
+                        {isProcessing ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : 'Pedir Resgate'}
+                    </Button>
+                ) : (
+                    <div className="w-full space-y-1">
+                        <Progress value={progress} className="h-2" />
+                        <p className="text-xs text-muted-foreground text-center font-semibold">
+                            {childStars.toLocaleString('pt-BR')} / {reward.starsCost?.toLocaleString('pt-BR')} estrelas
+                        </p>
+                    </div>
+                )}
             </CardFooter>
         </Card>
     );
@@ -200,7 +211,7 @@ export default function ChildRewardsPage() {
         <p className="text-muted-foreground">Aqui estão os tesouros que você pode conquistar!</p>
         <div className="mt-4 inline-flex items-center justify-center gap-2 text-3xl font-bold text-amber-500 bg-amber-500/10 px-4 py-2 rounded-full border border-amber-500/20 shadow-inner">
             <Star className="h-8 w-8 fill-current" />
-            <span>{child.stars}</span>
+            <span>{child.stars.toLocaleString('pt-BR')}</span>
         </div>
       </div>
       
@@ -238,7 +249,7 @@ export default function ChildRewardsPage() {
                          <CardContent className="p-3">
                              <p className="font-semibold text-sm text-blue-800 line-clamp-2 pr-4">{reward.title}</p>
                              <Badge variant="outline" className="text-xs font-semibold h-6 mt-2">
-                                {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
+                                {reward.starsCost.toLocaleString('pt-BR')} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
                             </Badge>
                          </CardContent>
                      </Card>
@@ -289,7 +300,7 @@ export default function ChildRewardsPage() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Pedido de Resgate?</AlertDialogTitle>
               <AlertDialogDescription>
-                Você tem certeza que quer usar {rewardToRedeem.starsCost} estrelas para pedir a recompensa "{rewardToRedeem.title}"? Um adulto precisará confirmar depois.
+                Você tem certeza que quer usar {rewardToRedeem.starsCost?.toLocaleString('pt-BR')} estrelas para pedir a recompensa "{rewardToRedeem.title}"? Um adulto precisará confirmar depois.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>

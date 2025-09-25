@@ -701,7 +701,7 @@ export function MuralCompletoPageContent() {
                   <div className="mt-4 flex items-center justify-center sm:justify-start gap-4">
                       <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400">
                           <StarIcon className="h-7 w-7 fill-current"/>
-                          <span className="text-2xl font-bold">{child.stars}</span>
+                          <span className="text-2xl font-bold">{child.stars.toLocaleString('pt-BR')}</span>
                       </div>
                   </div>
               </div>
@@ -856,7 +856,7 @@ export function MuralCompletoPageContent() {
                                                  <Card key={instance.id} className="p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 bg-amber-500/10 border-amber-500/20">
                                                      <div>
                                                          <p className="font-semibold">{instance.title}</p>
-                                                         <Badge variant="secondary">{instance.starsCost} <StarIcon className="ml-1.5 h-3 w-3 text-yellow-500" /></Badge>
+                                                         <Badge variant="secondary">{instance.starsCost.toLocaleString('pt-BR')} <StarIcon className="ml-1.5 h-3 w-3 text-yellow-500" /></Badge>
                                                      </div>
                                                      {canEdit && (
                                                          <div className="flex gap-2 self-end sm:self-center">
@@ -888,7 +888,7 @@ export function MuralCompletoPageContent() {
                                                         <p className="font-semibold text-muted-foreground">{instance.title}</p>
                                                         <p className="text-xs text-muted-foreground">Resgatada em: {getDateObject(instance.redeemedAt)?.toLocaleDateString('pt-BR')}</p>
                                                     </div>
-                                                    <Badge variant="outline">{instance.starsCost} <StarIcon className="ml-1.5 h-3 w-3 text-muted-foreground" /></Badge>
+                                                    <Badge variant="outline">{instance.starsCost.toLocaleString('pt-BR')} <StarIcon className="ml-1.5 h-3 w-3 text-muted-foreground" /></Badge>
                                                 </div>
                                              ))}
                                          </div>
@@ -1131,9 +1131,9 @@ export function MuralCompletoPageContent() {
             <AlertDialogHeader>
               <AlertDialogTitle>Confirmar Resgate de Recompensa</AlertDialogTitle>
               <AlertDialogDescription>
-                Você tem certeza que deseja marcar a recompensa "{instanceToManage.title}" ({instanceToManage.starsCost} estrelas) como resgatada por {child.name}? Isso deduzirá as estrelas do saldo de {child.name}.
+                Você tem certeza que deseja marcar a recompensa "{instanceToManage.title}" ({instanceToManage.starsCost.toLocaleString('pt-BR')} estrelas) como resgatada por {child.name}? Isso deduzirá as estrelas do saldo de {child.name}.
                 <br/>
-                Saldo atual de estrelas de {child.name}: {child.stars}.
+                Saldo atual de estrelas de {child.name}: {child.stars.toLocaleString('pt-BR')}.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
