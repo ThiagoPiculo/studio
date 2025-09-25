@@ -41,7 +41,6 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { format, differenceInYears, isSameDay, parse, formatDistanceToNowStrict, startOfDay, differenceInDays, eachDayOfInterval, subDays, isValid, addDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import Loading from '@/app/dashboard/(parent)/mural/loading';
 import { formatRecurrenceSummary, isMissionScheduledForDate, getDateObject, getPeriodOfDay, isMissionCompletedForDate } from '@/lib/calendar-utils';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
@@ -59,6 +58,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
+import Loading from '@/app/dashboard/(parent)/mural/loading';
 
 type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
@@ -619,16 +619,12 @@ export function MuralCompletoPageContent() {
       setIsEntryDialogOpen(false); // Close edit dialog if delete is triggered from there
     }
   };
-
-  const availableForRedemption = useMemo(() => {
-    if (!child || rewardTemplates.length === 0) return [];
-    const assignedTemplateIds = new Set(childRewards.map(cr => cr.templateId));
-    return rewardTemplates.filter(template => 
-      template.status === 'active' && 
-      !assignedTemplateIds.has(template.id) &&
-      child.stars >= template.starsCost
-    );
-  }, [child, rewardTemplates, childRewards]);
+  
+    const availableForRedemption = rewardTemplates.filter(template => {
+        if (!child || template.status !== 'active') return false;
+        const isAlreadyAssigned = childRewards.some(cr => cr.templateId === template.id);
+        return !isAlreadyAssigned && child.stars >= template.starsCost;
+    }).sort((a,b) => a.starsCost - b.starsCost);
 
 
   const filteredChildRewards = useMemo(() => {
@@ -822,7 +818,7 @@ export function MuralCompletoPageContent() {
                            <CardDescription>Gerencie as recompensas disponíveis para o herói e aprove os resgates.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
-                            <section>
+                             <section>
                                 <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgate do Catálogo</h3>
                                 {availableForRedemption.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
