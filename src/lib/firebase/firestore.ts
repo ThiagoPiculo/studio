@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import {
@@ -1386,7 +1387,7 @@ export const addChildRewardInstance = async (
 export const requestRewardRedemption = async (
   rewardTemplate: RewardTemplate,
   childId: string,
-): Promise<ChildRewardInstance | void> => {
+): Promise<ChildRewardInstance> => {
   
   const child = await getChildProfileById(childId);
   if (!child) {
@@ -1411,7 +1412,7 @@ export const requestRewardRedemption = async (
   const newInstanceRef = doc(collection(db, 'childRewardInstances'));
   const now = serverTimestamp() as Timestamp;
 
-  const newInstance: Omit<ChildRewardInstance, 'id'> = {
+  const newInstanceData: Omit<ChildRewardInstance, 'id'> = {
     templateId: rewardTemplate.id,
     childId: childId,
     ownerId: child.ownerId,
@@ -1426,7 +1427,7 @@ export const requestRewardRedemption = async (
     assignedAt: now,
     updatedAt: now,
   };
-  await setDoc(newInstanceRef, newInstance);
+  await setDoc(newInstanceRef, newInstanceData);
 
   await createAndDispatchNotifications(
     childId,
@@ -1440,7 +1441,7 @@ export const requestRewardRedemption = async (
     child
   );
   
-  return convertTimestampsInObject({ id: newInstanceRef.id, ...newInstance }) as ChildRewardInstance;
+  return convertTimestampsInObject({ id: newInstanceRef.id, ...newInstanceData }) as ChildRewardInstance;
 };
 
 export const getPendingRewardInstancesByChild = async (childId: string): Promise<ChildRewardInstance[]> => {
@@ -2486,7 +2487,7 @@ export const updateRecurringMissionInstance = async (
       const originalRule = originalInstance.recurrenceRule || { freq: 'DAILY', interval: 1 };
       const newEndDate = subDays(startOfDay(occurrenceDate), 1);
       transaction.update(originalInstanceRef, {
-        recurrenceRule: { ...originalRule, endDate: Timestamp.fromDate(newEndDate) }
+        recurrenceRule: { ...rule, endDate: Timestamp.fromDate(newEndDate) }
       });
       
       const newInstanceRef = doc(collection(db, 'missionInstances'));
@@ -2734,5 +2735,6 @@ export const populateInitialRewardTemplates = async (userId: string, familyId: s
 
 
     
+
 
 
