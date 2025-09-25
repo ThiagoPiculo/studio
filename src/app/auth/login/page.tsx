@@ -10,7 +10,7 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-col items-center justify-center bg-transparent p-4 selection:bg-accent selection:text-accent-foreground">
        <div className="flex items-center gap-3 mb-8">
          <div className="relative w-10 h-10">
-          <Image src="/logo.png" alt="Mini Heróis Logo" fill style={{objectFit: "contain"}} />
+          <Image src="/logo.png" alt="Mini Heróis Logo" fill sizes="40px" style={{objectFit: "contain"}} />
          </div>
          <h1 className="text-4xl font-bold font-headline text-primary">Mini Heróis</h1>
        </div>
