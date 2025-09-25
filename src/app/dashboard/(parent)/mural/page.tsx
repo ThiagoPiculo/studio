@@ -4,7 +4,7 @@
 
 import { useEffect, useState, useMemo, useCallback, Fragment, Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily, undoRewardRedemption } from '@/lib/firebase/firestore';
+import { regenerateChildAccessCode, deleteChildProfile, updateChildRewardInstance, deleteChildRewardInstance, updateChildProfile, getMissionInstancesByChild, deleteMissionInstance, reactivateMissionInstance, getChildRewardInstancesByChild, resetChildProgress, redeemChildRewardInstance, getChildProfileById, checkAndAwardBadges, recalculateAndSyncBadges, getSchoolScheduleForChild, moveChildToNewContext, deleteSchoolScheduleEntry, getChildProfilesForAttribution, getFamilyMembers, getFamilyMemberships, getRewardTemplatesByOwnerOrFamily, undoRewardRedemption, addChildRewardInstance } from '@/lib/firebase/firestore';
 import type { ChildProfile, ChildRewardInstance, RewardCategoryDetails, MissionInstance, MissionCategoryDetails, SchoolScheduleEntry, UserProfile, FamilyMembership, FamilyRole, RewardTemplate } from '@/lib/types';
 import { rewardCategories, missionCategories, weekdays, weekdayLabels, familyRoles } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -220,7 +220,7 @@ function MuralCompletoPageContent() {
   const [isRedeemConfirmOpen, setIsRedeemConfirmOpen] = useState(false);
   const [isUndoConfirmOpen, setIsUndoConfirmOpen] = useState(false);
   const [isDeleteInstanceConfirmOpen, setIsDeleteInstanceConfirmOpen] = useState(false);
-  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'available' | 'active' | 'pending_approval' | 'redeemed' | 'disabled'>('all');
+  const [instanceStatusFilter, setInstanceStatusFilter] = useState<'all' | 'active' | 'pending_approval' | 'redeemed' | 'disabled'>('all');
 
   // School Schedule States
   const [isEntryDialogOpen, setIsEntryDialogOpen] = useState(false);
@@ -541,6 +541,26 @@ function MuralCompletoPageContent() {
     }
   };
 
+  const handleAssignReward = async (template: RewardTemplate) => {
+    if (!user || !child) return;
+    setIsDeleting(true); // Re-use processing state
+    try {
+      const actor = { id: user.uid, name: user.name };
+      const newInstance = await addChildRewardInstance(actor, {
+        templateId: template.id,
+        childId: child.id,
+        ownerId: child.ownerId,
+        familyId: child.familyId,
+      }, template);
+      setChildRewards(prev => [newInstance, ...prev]);
+      toast({ title: "Recompensa Atribuída!", description: `"${template.title}" foi adicionada à lista de ${child.name}.` });
+    } catch (error: any) {
+      toast({ title: "Erro ao Atribuir", description: error.message || "Não foi possível atribuir a recompensa.", variant: "destructive" });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
 
   const handleToggleInstanceStatus = async (instance: ChildRewardInstance, newStatus: 'active' | 'disabled') => {
     setIsDeleting(true);
@@ -603,7 +623,6 @@ function MuralCompletoPageContent() {
 
   const filteredChildRewards = useMemo(() => {
     if (instanceStatusFilter === 'all') return childRewards;
-    if (instanceStatusFilter === 'available') return []; // This is handled by a separate list now
     return childRewards.filter(reward => reward.status === instanceStatusFilter);
   }, [childRewards, instanceStatusFilter]);
   
@@ -808,7 +827,6 @@ function MuralCompletoPageContent() {
                                     className="flex flex-wrap gap-x-4 gap-y-2 pt-2"
                                 >
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="all" id={`rf-all`} /><Label htmlFor={`rf-all`} className="cursor-pointer hover:text-primary font-normal">Todas</Label></div>
-                                    <div className="flex items-center space-x-2"><RadioGroupItem value="available" id={`rf-available`} /><Label htmlFor={`rf-available`} className="cursor-pointer hover:text-primary font-normal">Disponíveis p/ Resgate</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="active" id={`rf-active`} /><Label htmlFor={`rf-active`} className="cursor-pointer hover:text-primary font-normal">Ativas</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="pending_approval" id={`rf-pending`} /><Label htmlFor={`rf-pending`} className="cursor-pointer hover:text-primary font-normal">Aguardando Aprovação</Label></div>
                                     <div className="flex items-center space-x-2"><RadioGroupItem value="redeemed" id={`rf-redeemed`} /><Label htmlFor={`rf-redeemed`} className="cursor-pointer hover:text-primary font-normal">Resgatadas</Label></div>
@@ -821,23 +839,23 @@ function MuralCompletoPageContent() {
                                 <ExternalLink className="mr-2 h-4 w-4" /> Ir para o Baú de Recompensas
                             </Button>
                             
-                            {(instanceStatusFilter === 'all' || instanceStatusFilter === 'available') && availableForRedemption.length > 0 && (
+                            {availableForRedemption.length > 0 && (
                                 <section>
-                                    <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgatar do Catálogo</h3>
+                                    <h3 className="text-lg font-semibold mb-2">Disponíveis para Resgate do Catálogo</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         {availableForRedemption.map((template) => (
-                                             <Card key={template.id} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
-                                                 <CardHeader>
-                                                    <CardTitle className="text-lg">{template.title}</CardTitle>
-                                                    {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
-                                                 </CardHeader>
-                                                 <CardContent className="flex-grow text-sm space-y-2">
-                                                    <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {template.starsCost} estrelas</div>
-                                                 </CardContent>
-                                                 <CardFooter>
-                                                    <Button size="sm" className="w-full" disabled>Atribuir e Resgatar</Button>
-                                                 </CardFooter>
-                                             </Card>
+                                            <Card key={template.id} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
+                                                <CardHeader>
+                                                <CardTitle className="text-lg">{template.title}</CardTitle>
+                                                {template.description && <CardDescription className="text-xs pt-1 line-clamp-2">{template.description}</CardDescription>}
+                                                </CardHeader>
+                                                <CardContent className="flex-grow text-sm space-y-2">
+                                                <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {template.starsCost} estrelas</div>
+                                                </CardContent>
+                                                <CardFooter>
+                                                    <Button size="sm" className="w-full" disabled={!canEdit || isDeleting} onClick={() => handleAssignReward(template)}>Atribuir Recompensa</Button>
+                                                </CardFooter>
+                                            </Card>
                                         ))}
                                     </div>
                                 </section>
@@ -936,28 +954,14 @@ function MuralCompletoPageContent() {
                                     </div>
                                 </section>
                             )}
-                             {instanceStatusFilter !== 'all' && instanceStatusFilter !== 'available' && filteredChildRewards.length === 0 && (
+                             {filteredChildRewards.length === 0 && availableForRedemption.length === 0 && (
                                 <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
                                     <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
                                     <p className="text-lg text-muted-foreground">
-                                        Nenhuma recompensa encontrada com o status "{getRewardStatusText(instanceStatusFilter as any)}".
-                                    </p>
-                                </div>
-                            )}
-                             {(instanceStatusFilter === 'all' || instanceStatusFilter === 'available') && filteredChildRewards.length === 0 && availableForRedemption.length === 0 && (
-                                <div className="text-center py-10 border-2 border-dashed border-muted-foreground/30 rounded-lg">
-                                    <Gift className="mx-auto h-16 w-16 text-muted-foreground mb-4" />
-                                    <p className="text-lg text-muted-foreground">
-                                        {childRewards.length === 0
-                                            ? `${child.name} ainda não tem recompensas atribuídas.`
-                                            : `Nenhuma recompensa encontrada com o status "${getRewardStatusText(instanceStatusFilter as any)}".`
-                                        }
+                                        Nenhuma recompensa encontrada.
                                     </p>
                                     <p className="text-sm text-muted-foreground mt-1">
-                                        {childRewards.length === 0
-                                            ? 'Vá ao catálogo para atribuir algumas!'
-                                            : 'Tente um filtro diferente ou verifique o catálogo.'
-                                        }
+                                        Tente um filtro diferente ou verifique o catálogo.
                                     </p>
                                 </div>
                             )}
@@ -1302,3 +1306,4 @@ export default function MuralCompleto() {
 }
 
     
+
