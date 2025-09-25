@@ -59,6 +59,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { UnlockedRewards } from '@/components/dashboard/dashboard/UnlockedRewards';
 import { RecentMedals } from '@/components/dashboard/dashboard/RecentMedals';
 import Loading from '@/app/dashboard/(parent)/mural/loading';
+import { predefinedRewardGroups } from '@/lib/predefined-reward-ideas';
 
 type Activity =
     | (MissionInstance & { type: 'mission', scheduledFor: Date, missionTypeLabel: string, completionLogEntry: { completedAt: string, stars: number, actorId?: string, actorName?: string } })
@@ -182,10 +183,10 @@ export function MuralCompletoPageContent() {
   const [allChildrenInContext, setAllChildrenInContext] = useState<ChildProfile[]>([]);
   const [missionInstances, setMissionInstances] = useState<MissionInstance[]>([]);
   const [childRewards, setChildRewards] = useState<ChildRewardInstance[]>([]);
-  const [rewardTemplates, setRewardTemplates] = useState<RewardTemplate[]>([]);
   const [schoolSchedule, setSchoolSchedule] = useState<SchoolScheduleEntry[]>([]);
   const [collaborators, setCollaborators] = useState<UserProfile[]>([]);
   const [memberships, setMemberships] = useState<FamilyMembership[]>([]);
+  const rewardTemplates = useMemo(() => predefinedRewardGroups.flatMap(g => g.items), []);
 
   // Loading and action states
   const [isLoading, setIsLoading] = useState(true);
@@ -250,14 +251,13 @@ export function MuralCompletoPageContent() {
     try {
         const familyIdToQuery = currentContext !== 'my-space' ? currentContext : null;
         
-        const [childData, missions, rewards, schedule, collaborators, memberships, templates] = await Promise.all([
+        const [childData, missions, rewards, schedule, collaborators, memberships] = await Promise.all([
             getChildProfileById(childIdToFetch),
             getMissionInstancesByChild(childIdToFetch),
             getChildRewardInstancesByChild(childIdToFetch),
             getSchoolScheduleForChild(childIdToFetch),
             familyIdToQuery ? getFamilyMembers(familyIdToQuery) : Promise.resolve([user as UserProfile]),
             familyIdToQuery ? getFamilyMemberships(familyIdToQuery) : Promise.resolve([] as FamilyMembership[]),
-            getRewardTemplatesByOwnerOrFamily(user.uid, familyIdToQuery)
         ]);
         
         setChild(childData);
@@ -274,7 +274,6 @@ export function MuralCompletoPageContent() {
         setSchoolSchedule(schedule.sort((a,b) => a.startTime.localeCompare(b.startTime)));
         setCollaborators(collaborators);
         setMemberships(memberships);
-        setRewardTemplates(templates);
 
     } catch (error) {
         console.error("Error fetching secondary child data:", error);
@@ -449,12 +448,14 @@ export function MuralCompletoPageContent() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().substring(0, 2);
   };
 
-  const getCategoryDetails = (categoryId: ChildRewardInstance['category']): RewardCategoryDetails | undefined => {
-    return rewardCategories.find(cat => cat.id === categoryId);
+  const getCategoryDetails = (categoryId: string): RewardCategoryDetails | undefined => {
+    const id = categoryId as RewardCategoryDetails['id'];
+    return rewardCategories.find(cat => cat.id === id);
   };
 
-  const getMissionCategoryDetails = (categoryId: MissionInstance['category']): MissionCategoryDetails | undefined => {
-    return missionCategories.find(cat => cat.id === categoryId);
+  const getMissionCategoryDetails = (categoryId: string): MissionCategoryDetails | undefined => {
+    const id = categoryId as MissionCategoryDetails['id'];
+    return missionCategories.find(cat => cat.id === id);
   };
 
 
@@ -622,10 +623,14 @@ export function MuralCompletoPageContent() {
   
     const availableForRedemption = useMemo(() => {
         if (!child) return [];
+        const assignedOrPendingTemplateIds = new Set(
+            childRewards.map(cr => cr.templateId)
+        );
         return rewardTemplates.filter(template => {
-            return template.status === 'active' && template.starsCost <= child.stars;
+            return template.starsCost <= child.stars &&
+                   !assignedOrPendingTemplateIds.has(template.id);
         });
-    }, [child, rewardTemplates]);
+    }, [child, rewardTemplates, childRewards]);
 
 
   const filteredChildRewards = useMemo(() => {
@@ -755,7 +760,7 @@ export function MuralCompletoPageContent() {
             <>
                 <TabsContent value="overview" className="space-y-6">
                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <UnlockedRewards childrenProfiles={[child]} rewardTemplates={rewardTemplates} />
+                        <UnlockedRewards childrenProfiles={[child]} rewardTemplates={rewardTemplates.map(rt => ({ ...rt, id: rt.title }))} />
                     </div>
                 </TabsContent>
                 <TabsContent value="missions">
@@ -824,7 +829,7 @@ export function MuralCompletoPageContent() {
                                 {availableForRedemption.length > 0 ? (
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         {availableForRedemption.map((template) => (
-                                            <Card key={template.id} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
+                                            <Card key={template.title} className="shadow-sm border-dashed border-primary/50 hover:shadow-md transition-shadow flex flex-col bg-primary/5">
                                                 <CardHeader>
                                                     <CardTitle className="text-base">{template.title}</CardTitle>
                                                 </CardHeader>
@@ -832,7 +837,7 @@ export function MuralCompletoPageContent() {
                                                     <div className="flex items-center text-muted-foreground"><StarIcon className="h-4 w-4 mr-1.5 text-yellow-400 fill-yellow-400" />Custo: {template.starsCost} estrelas</div>
                                                 </CardContent>
                                                 <CardFooter>
-                                                    <Button size="sm" className="w-full" disabled={!canEdit || isDeleting} onClick={() => handleAssignReward(template)}>Atribuir ao Herói</Button>
+                                                    <Button size="sm" className="w-full" disabled={!canEdit || isDeleting} onClick={() => handleAssignReward(template as any)}>Atribuir ao Herói</Button>
                                                 </CardFooter>
                                             </Card>
                                         ))}
@@ -1260,5 +1265,3 @@ export function MuralCompletoPageContent() {
     </div>
   );
 }
-
-    
