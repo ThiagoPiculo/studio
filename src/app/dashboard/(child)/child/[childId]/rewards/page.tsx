@@ -153,11 +153,11 @@ export default function ChildRewardsPage() {
                         <AccordionContent className="p-4 pt-2">
                              <div className="space-y-2 border-t pt-3">
                                 {group.items.map(reward => (
-                                    <div key={reward.title} className="p-2 rounded-md hover:bg-muted/50 flex items-center justify-between">
-                                        <p className="font-medium text-sm">{reward.title}</p>
-                                        <div className="flex items-center gap-2">
+                                    <div key={reward.title} className="p-2 rounded-md hover:bg-muted/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                                        <p className="font-medium text-sm flex-grow">{reward.title}</p>
+                                        <div className="flex items-center gap-2 self-end sm:self-center flex-shrink-0">
                                             <Badge variant="outline" className="font-semibold">{reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-yellow-500" /></Badge>
-                                            <Button size="xs" variant="default" className="h-6 text-xs" onClick={() => setRewardToRedeem(reward)}>Resgatar</Button>
+                                            <Button size="xs" variant="default" className="h-6 text-xs px-3" onClick={() => setRewardToRedeem(reward)}>Resgatar</Button>
                                         </div>
                                     </div>
                                 ))}
