@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { requestRewardRedemption, getChildProfileById, getUserProfile, getRewardTemplatesByOwnerOrFamily, getPendingRewardInstancesByChild } from '@/lib/firebase/firestore';
@@ -63,44 +63,6 @@ export default function ChildRewardsPage() {
     }
   }, [childId, toast]);
   
-  const { availableRewards, goalRewards } = useMemo(() => {
-    if (!child) return { availableRewards: [], goalRewards: [] };
-
-    const pendingTemplateIds = new Set(pendingRedemptions.map(r => r.templateId));
-    const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
-    const effectiveStars = Math.max(0, child.stars - starsCommitted);
-
-    const unrequestedRewards = allRewards.filter(r => !pendingTemplateIds.has(r.id));
-    
-    const available = unrequestedRewards
-      .filter(r => effectiveStars >= r.starsCost)
-      .sort((a,b) => a.starsCost - b.starsCost);
-    
-    const goals = unrequestedRewards
-      .filter(r => effectiveStars < r.starsCost)
-      .sort((a,b) => a.starsCost - b.starsCost);
-    
-    return { availableRewards: available, goalRewards: goals };
-  }, [allRewards, child, pendingRedemptions]);
-
-  const effectiveStars = useMemo(() => {
-    if (!child) return 0;
-    const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
-    return Math.max(0, child.stars - starsCommitted);
-  }, [child, pendingRedemptions]);
-
-
-  const goalRewardsByCategory = useMemo(() => {
-    const grouped: Record<string, RewardTemplate[]> = {};
-    goalRewards.forEach(reward => {
-      if (!grouped[reward.category]) {
-        grouped[reward.category] = [];
-      }
-      grouped[reward.category].push(reward);
-    });
-    return grouped;
-  }, [goalRewards]);
-
   const getCategoryDetails = (categoryId: string): RewardCategoryDetails | undefined => {
     return rewardCategories.find(cat => cat.id === categoryId);
   };
@@ -138,6 +100,29 @@ export default function ChildRewardsPage() {
   if (isLoading || !child) {
     return <Loading />;
   }
+  
+  const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
+  const effectiveStars = Math.max(0, child.stars - starsCommitted);
+  
+  const pendingTemplateIds = new Set(pendingRedemptions.map(r => r.templateId));
+  const unrequestedRewards = allRewards.filter(r => !pendingTemplateIds.has(r.id));
+  
+  const availableRewards = unrequestedRewards
+    .filter(r => effectiveStars >= r.starsCost)
+    .sort((a,b) => a.starsCost - b.starsCost);
+  
+  const goalRewards = unrequestedRewards
+    .filter(r => effectiveStars < r.starsCost)
+    .sort((a,b) => a.starsCost - b.starsCost);
+
+  const goalRewardsByCategory: Record<string, RewardTemplate[]> = {};
+  goalRewards.forEach(reward => {
+      if (!goalRewardsByCategory[reward.category]) {
+        goalRewardsByCategory[reward.category] = [];
+      }
+      goalRewardsByCategory[reward.category].push(reward);
+  });
+
 
   return (
     <div className="p-4 pb-24 space-y-8">
