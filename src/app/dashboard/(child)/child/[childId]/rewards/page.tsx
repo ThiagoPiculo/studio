@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
@@ -65,16 +66,10 @@ export default function ChildRewardsPage() {
   const { availableRewards, goalRewards } = useMemo(() => {
     if (!child) return { availableRewards: [], goalRewards: [] };
 
-    // IDs das recompensas que já estão aguardando aprovação
     const pendingTemplateIds = new Set(pendingRedemptions.map(r => r.templateId));
-    
-    // Custo total das recompensas pendentes
     const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
-    
-    // Saldo de estrelas efetivo que a criança pode usar para novas recompensas
-    const effectiveStars = child.stars - starsCommitted;
+    const effectiveStars = Math.max(0, child.stars - starsCommitted);
 
-    // Filtra as recompensas do catálogo que ainda não foram solicitadas
     const unrequestedRewards = allRewards.filter(r => !pendingTemplateIds.has(r.id));
     
     const available = unrequestedRewards
@@ -87,6 +82,12 @@ export default function ChildRewardsPage() {
     
     return { availableRewards: available, goalRewards: goals };
   }, [allRewards, child, pendingRedemptions]);
+
+  const effectiveStars = useMemo(() => {
+    if (!child) return 0;
+    const starsCommitted = pendingRedemptions.reduce((sum, r) => sum + r.starsCost, 0);
+    return Math.max(0, child.stars - starsCommitted);
+  }, [child, pendingRedemptions]);
 
 
   const goalRewardsByCategory = useMemo(() => {
@@ -223,7 +224,7 @@ export default function ChildRewardsPage() {
                                      <Badge variant="outline" className="text-xs font-semibold h-6">
                                         {reward.starsCost} <Star className="ml-1.5 h-3 w-3 text-muted-foreground/50"/>
                                     </Badge>
-                                     <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - child.stars}!</div>
+                                     <div className="text-xs font-semibold text-primary">Faltam {reward.starsCost - effectiveStars}!</div>
                                 </div>
                             </Card>
                         ))}
@@ -260,8 +261,4 @@ export default function ChildRewardsPage() {
 
     </div>
   );
-
-    
-
-    
-
+}
